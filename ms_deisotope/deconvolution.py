@@ -43,11 +43,17 @@ class AveragineDeconvoluter(DeconvoluterBase):
             results.append((score, charge, tid, eid))
         return min(results, key=operator.itemgetter(0))
 
-    def subtraction(self, isotopic_cluster):
+    def subtraction(self, isotopic_cluster, error_tolerance_ppm=2e-5):
         for peak in isotopic_cluster:
-            match = self.peaklist.has_peak(peak.mz)
+            match = self.peaklist.has_peak(peak.mz, error_tolerance_ppm)
             if match is not None:
                 match.intensity -= peak.intensity
+
+    def scale_theoretical_distribution(self, theoretical_distribution, experimental_distribution):
+        total_abundance = sum(p.intensity for p in experimental_distribution)
+        for peak in theoretical_distribution:
+            peak.intensity *= total_abundance
+        return theoretical_distribution
 
     def deconvolute_peak(self, peak, charge_range=(1, 8)):
         score, charge, tid, eid = self.charge_state_determination(peak, charge_range=charge_range)
@@ -58,9 +64,10 @@ class AveragineDeconvoluter(DeconvoluterBase):
                                     index=len(self._deconvoluted_peaks),
                                     full_width_at_half_max=eid[0].full_width_at_half_max)
             self._deconvoluted_peaks.append(peak)
+            self.scale_theoretical_distribution(tid)
             self.subtraction(tid)
 
     def deconvolute(self, charge_range=(1, 8)):
-        for peak in self.peaklist:
+        for peak in sorted(self.peaklist, key=operator.attrgetter('intensity'), reverse=True):
             self.deconvolute_peak(peak)
         return DeconvolutedPeakSet(self._deconvoluted_peaks)
