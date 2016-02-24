@@ -25,8 +25,11 @@ class DeconvolutedPeak(Base):
 class DeconvolutedPeakSet(Base):
     def __init__(self, peaks):
         self.peaks = tuple(sorted(peaks, key=operator.attrgetter("neutral_mass")))
-        for i, peak in enumerate(peaks):
+
+    def _reindex(self):
+        for i, peak in enumerate(self.peaks):
             peak.index = i
+        return self
 
     def __len__(self):
         return len(self.peaks)
@@ -39,7 +42,7 @@ class DeconvolutedPeakSet(Base):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return DeconvolutedPeakSet(self.peaks[item])
+            return DeconvolutedPeakSet(p.clone() for p in self.peaks[item])
         return self.peaks[item]
 
     def clone(self):

@@ -104,4 +104,4 @@ class AveragineDeconvoluter(DeconvoluterBase):
     def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
         for peak in sorted(self.peaklist, key=operator.attrgetter('intensity'), reverse=True):
             self.deconvolute_peak(peak)
-        return DeconvolutedPeakSet(self._deconvoluted_peaks)
+        return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
