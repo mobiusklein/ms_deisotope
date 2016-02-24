@@ -2,6 +2,7 @@ import operator
 from .averagine import Averagine, peptide, neutral_mass
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from .scoring import g_test_scaled
+import numpy as np
 
 from ms_peak_picker import FittedPeak
 
@@ -40,6 +41,9 @@ class AveragineDeconvoluter(DeconvoluterBase):
             if len(eid) < 2:
                 continue
             score = self.scorer(eid, tid)
+            if np.isnan(score):
+                continue
+
             results.append((score, charge, tid, eid))
         return min(results, key=operator.itemgetter(0))
 
