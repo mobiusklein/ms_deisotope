@@ -45,7 +45,11 @@ class AveragineDeconvoluter(DeconvoluterBase):
                 continue
 
             results.append((score, charge, tid, eid))
-        return min(results, key=operator.itemgetter(0))
+        try:
+            result = min(results, key=operator.itemgetter(0))
+            return result
+        except ValueError:
+            return None
 
     def subtraction(self, isotopic_cluster, error_tolerance_ppm=2e-5):
         for peak in isotopic_cluster:
@@ -60,7 +64,10 @@ class AveragineDeconvoluter(DeconvoluterBase):
         return theoretical_distribution
 
     def deconvolute_peak(self, peak, charge_range=(1, 8)):
-        score, charge, tid, eid = self.charge_state_determination(peak, charge_range=charge_range)
+        charge_det = self.charge_state_determination(peak, charge_range=charge_range)
+        if charge_det is None:
+            return
+        score, charge, tid, eid = charge_det
         if self.decider(score):
             total_abundance = sum(p.intensity for p in eid)
             monoisotopic_mass = neutral_mass(eid[0].mz, charge)
