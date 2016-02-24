@@ -4,7 +4,7 @@ import numpy as np
 from .averagine import Averagine, peptide, neutral_mass
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from .scoring import g_test_scaled
-from .utils import range
+from .utils import range, Base
 
 from ms_peak_picker import FittedPeak
 
@@ -23,6 +23,15 @@ def minimizer_below_10(score):
     return score < 0.1
 
 
+class MinimizeDecider(Base):
+    def __init__(self, threshold):
+        self.threshold = threshold
+
+    def __call__(self, score):
+        if score <= self.threshold:
+            return True
+
+
 def charge_range_(lo, hi, step=None):
     sign = -1 if lo < 0 else 1
     abs_lo, abs_hi = abs(lo), abs(hi)
@@ -34,11 +43,13 @@ def charge_range_(lo, hi, step=None):
 
 
 class AveragineDeconvoluter(DeconvoluterBase):
-    def __init__(self, peaklist, averagine=None, scorer=g_test_scaled, decider=minimizer_below_10):
+    def __init__(self, peaklist, averagine=None, scorer=g_test_scaled, decider=MinimizeDecider(0.5)):
         if averagine is None:
             averagine = peptide
         else:
             averagine = Averagine(averagine)
+        if isinstance(decider, float):
+            decider = MinimizeDecider(decider)
         self.peaklist = peaklist.clone()
         self.averagine = averagine
         self.scorer = scorer
