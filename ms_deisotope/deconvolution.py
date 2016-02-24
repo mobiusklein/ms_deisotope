@@ -23,7 +23,7 @@ def minimizer_below_10(score):
     return score < 0.1
 
 
-def charge_range(lo, hi, step=None):
+def charge_range_(lo, hi, step=None):
     sign = -1 if lo < 0 else 1
     abs_lo, abs_hi = abs(lo), abs(hi)
     upper = max(abs_lo, abs_hi)
@@ -47,7 +47,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
 
     def charge_state_determination(self, peak, charge_range=(1, 8)):
         results = []
-        for charge in charge_range(*charge_range):
+        for charge in charge_range_(*charge_range):
             tid = self.averagine.isotopic_cluster(peak.mz, charge)
             eid = self.match_theoretical_isotopic_distribution(tid)
             if len(eid) < 2:
