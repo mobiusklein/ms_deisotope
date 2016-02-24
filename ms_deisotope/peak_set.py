@@ -4,17 +4,18 @@ from brainpy import mass_charge_ratio
 
 
 class DeconvolutedPeak(Base):
-    def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max):
+    def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max, score=None):
         self.neutral_mass = neutral_mass
         self.intensity = intensity
         self.signal_to_noise = signal_to_noise
         self.index = index
         self.full_width_at_half_max = full_width_at_half_max
         self.charge = charge
+        self.score = score
 
     def clone(self):
         return DeconvolutedPeak(self.mz, self.intensity, self.charge, self.signal_to_noise,
-                                self.index, self.full_width_at_half_max)
+                                self.index, self.full_width_at_half_max, self.score)
 
     @property
     def mz(self):
@@ -24,6 +25,8 @@ class DeconvolutedPeak(Base):
 class DeconvolutedPeakSet(Base):
     def __init__(self, peaks):
         self.peaks = tuple(sorted(peaks, key=operator.attrgetter("neutral_mass")))
+        for i, peak in enumerate(peaks):
+            peak.index = i
 
     def __len__(self):
         return len(self.peaks)
@@ -41,6 +44,11 @@ class DeconvolutedPeakSet(Base):
 
     def clone(self):
         return DeconvolutedPeakSet(p.clone() for p in self)
+
+    def between(self, m1, m2, tolerance=1e-5):
+        p1 = self.has_peak(m1, tolerance)
+        p2 = self.has_peak(m2, tolerance)
+        return self[p1.index:p2.index]
 
 
 def _sweep_solution(array, value, lo, hi, tolerance, verbose=False):

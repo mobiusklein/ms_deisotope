@@ -96,7 +96,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
             monoisotopic_mass = neutral_mass(eid[0].mz, charge)
             peak = DeconvolutedPeak(monoisotopic_mass, total_abundance, charge, signal_to_noise=eid[0].signal_to_noise,
                                     index=len(self._deconvoluted_peaks),
-                                    full_width_at_half_max=eid[0].full_width_at_half_max)
+                                    full_width_at_half_max=eid[0].full_width_at_half_max, score=score)
             self._deconvoluted_peaks.append(peak)
             self.scale_theoretical_distribution(tid, eid)
             self.subtraction(tid, error_tolerance_ppm)
