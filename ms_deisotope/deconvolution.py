@@ -68,7 +68,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
                                     index=len(self._deconvoluted_peaks),
                                     full_width_at_half_max=eid[0].full_width_at_half_max)
             self._deconvoluted_peaks.append(peak)
-            self.scale_theoretical_distribution(tid)
+            self.scale_theoretical_distribution(tid, eid)
             self.subtraction(tid)
 
     def deconvolute(self, charge_range=(1, 8)):
