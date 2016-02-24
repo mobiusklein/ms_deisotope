@@ -1,7 +1,7 @@
 import operator
 from .averagine import Averagine, peptide, neutral_mass
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet
-from .scoring import g_test, g_test_scaled, decon2ls_chisqr_test
+from .scoring import g_test_scaled
 
 from ms_peak_picker import FittedPeak
 
@@ -16,8 +16,12 @@ class DeconvoluterBase(object):
         return experimental_distribution
 
 
+def minimizer_below_10(score):
+    return score < 0.1
+
+
 class AveragineDeconvoluter(DeconvoluterBase):
-    def __init__(self, peaklist, averagine=None, scorer=g_test_scaled):
+    def __init__(self, peaklist, averagine=None, scorer=g_test_scaled, decider=minimizer_below_10):
         if averagine is None:
             averagine = peptide
         else:
@@ -25,6 +29,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
         self.peaklist = peaklist.clone()
         self.averagine = averagine
         self.scorer = scorer
+        self.decider = decider
         self._deconvoluted_peaks = []
 
     def charge_state_determination(self, peak, charge_range=(1, 8)):
@@ -46,13 +51,14 @@ class AveragineDeconvoluter(DeconvoluterBase):
 
     def deconvolute_peak(self, peak, charge_range=(1, 8)):
         score, charge, tid, eid = self.charge_state_determination(peak, charge_range=charge_range)
-        total_abundance = sum(p.intensity for p in eid)
-        monoisotopic_mass = neutral_mass(eid[0].mz, charge)
-        peak = DeconvolutedPeak(monoisotopic_mass, total_abundance, charge, signal_to_noise=eid[0].signal_to_noise,
-                                index=len(self._deconvoluted_peaks),
-                                full_width_at_half_max=eid[0].full_width_at_half_max)
-        self._deconvoluted_peaks.append(peak)
-        self.subtraction(tid)
+        if self.decider(score):
+            total_abundance = sum(p.intensity for p in eid)
+            monoisotopic_mass = neutral_mass(eid[0].mz, charge)
+            peak = DeconvolutedPeak(monoisotopic_mass, total_abundance, charge, signal_to_noise=eid[0].signal_to_noise,
+                                    index=len(self._deconvoluted_peaks),
+                                    full_width_at_half_max=eid[0].full_width_at_half_max)
+            self._deconvoluted_peaks.append(peak)
+            self.subtraction(tid)
 
     def deconvolute(self, charge_range=(1, 8)):
         for peak in self.peaklist:

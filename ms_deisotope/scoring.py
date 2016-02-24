@@ -15,9 +15,7 @@ def g_test_scaled(observed, expected):
     total_observed = sum(p.intensity for p in observed)
     total_expected = sum(p.intensity for p in expected)
     normalized_observed = [obs.intensity/total_observed for obs in observed]
-    print(sum(normalized_observed))
     normalized_expected = [theo.intensity/total_expected for theo in expected]
-    print(sum(normalized_expected))
     g_score = 2 * sum([obs * np.log(obs / theo) for obs, theo in zip(
         normalized_observed, normalized_expected)])
     return g_score
