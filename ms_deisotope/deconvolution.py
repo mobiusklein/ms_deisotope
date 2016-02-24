@@ -45,11 +45,11 @@ class AveragineDeconvoluter(DeconvoluterBase):
         self.decider = decider
         self._deconvoluted_peaks = []
 
-    def charge_state_determination(self, peak, charge_range=(1, 8)):
+    def charge_state_determination(self, peak, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
         results = []
         for charge in charge_range_(*charge_range):
             tid = self.averagine.isotopic_cluster(peak.mz, charge)
-            eid = self.match_theoretical_isotopic_distribution(tid)
+            eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance_ppm)
             if len(eid) < 2:
                 continue
             score = self.scorer(eid, tid)
@@ -75,7 +75,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
             peak.intensity *= total_abundance
         return theoretical_distribution
 
-    def deconvolute_peak(self, peak, charge_range=(1, 8)):
+    def deconvolute_peak(self, peak, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
         charge_det = self.charge_state_determination(peak, charge_range=charge_range)
         if charge_det is None:
             return
@@ -88,9 +88,9 @@ class AveragineDeconvoluter(DeconvoluterBase):
                                     full_width_at_half_max=eid[0].full_width_at_half_max)
             self._deconvoluted_peaks.append(peak)
             self.scale_theoretical_distribution(tid, eid)
-            self.subtraction(tid)
+            self.subtraction(tid, error_tolerance_ppm)
 
-    def deconvolute(self, charge_range=(1, 8)):
+    def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
         for peak in sorted(self.peaklist, key=operator.attrgetter('intensity'), reverse=True):
             self.deconvolute_peak(peak)
         return DeconvolutedPeakSet(self._deconvoluted_peaks)

@@ -1,5 +1,6 @@
 import operator
 from .utils import Base, ppm_error
+from brainpy import mass_charge_ratio
 
 
 class DeconvolutedPeak(Base):
@@ -14,6 +15,10 @@ class DeconvolutedPeak(Base):
     def clone(self):
         return DeconvolutedPeak(self.mz, self.intensity, self.charge, self.signal_to_noise,
                                 self.index, self.full_width_at_half_max)
+
+    @property
+    def mz(self):
+        return mass_charge_ratio(self.neutral_mass, self.charge)
 
 
 class DeconvolutedPeakSet(Base):
