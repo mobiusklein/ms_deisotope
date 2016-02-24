@@ -1,3 +1,4 @@
+import operator
 from .utils import Base, ppm_error
 
 
@@ -17,7 +18,7 @@ class DeconvolutedPeak(Base):
 
 class DeconvolutedPeakSet(Base):
     def __init__(self, peaks):
-        self.peaks = tuple(peaks)
+        self.peaks = tuple(sorted(peaks, key=operator.attrgetter("neutral_mass")))
 
     def __len__(self):
         return len(self.peaks)
