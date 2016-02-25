@@ -140,4 +140,4 @@ class CompositionListDeconvoluter(DeconvoluterBase):
         for composition in self.composition_list:
             self.deconvolute_composition(composition, error_tolerance_ppm=error_tolerance_ppm,
                                          charge_range=charge_range)
-        return DeconvolutedPeakSet(self._deconvoluted_peaks)
+        return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
