@@ -79,6 +79,8 @@ class AveragineDeconvoluter(DeconvoluterBase):
             match = self.peaklist.has_peak(peak.mz, error_tolerance_ppm)
             if match is not None:
                 match.intensity -= peak.intensity
+                if match.intensity < 0:
+                    match.intensity = 1.
 
     def scale_theoretical_distribution(self, theoretical_distribution, experimental_distribution):
         total_abundance = sum(p.intensity for p in experimental_distribution)
