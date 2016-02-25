@@ -14,7 +14,7 @@ class DeconvoluterBase(object):
     def match_theoretical_isotopic_distribution(self, theoretical_distribution, error_tolerance_ppm=2e-5):
         experimental_distribution = [self.peaklist.has_peak(
             p.mz, error_tolerance_ppm) for p in theoretical_distribution]
-        experimental_distribution = [p if p is not None else FittedPeak(None, 1.0, 0, 0, 0, 0)
+        experimental_distribution = [p if p is not None else FittedPeak(-1., 1.0, 0, 0, 0, 0)
                                      for p in experimental_distribution]
         return experimental_distribution
 
