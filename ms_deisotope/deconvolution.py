@@ -103,7 +103,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
             self.scale_theoretical_distribution(tid, eid)
             self.subtraction(tid, error_tolerance_ppm)
 
-    def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
-        for peak in sorted(self.peaklist, key=operator.attrgetter('intensity'), reverse=True):
+    def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8), order_chooser='signal_to_noise'):
+        for peak in sorted(self.peaklist, key=operator.attrgetter(order_chooser), reverse=True):
             self.deconvolute_peak(peak)
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()

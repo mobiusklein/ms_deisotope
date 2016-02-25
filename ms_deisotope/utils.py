@@ -23,14 +23,7 @@ def ppm_error(x, y):
 try:
     has_plot = True
     from matplotlib import pyplot as plt
-
-    def draw_peaklist(peaklist, ax=None, **kwargs):
-        kwargs.setdefault("width", 0.1)
-        if ax is None:
-            fig, ax = plt.subplots(1)
-        ax.bar([p.mz for p in peaklist], [p.intensity for p in peaklist], **kwargs)
-        ax.xaxis.set_ticks_position('none')
-        return ax
+    from ms_peak_picker.utils import draw_peaklist
 
 except ImportError:
     has_plot = False

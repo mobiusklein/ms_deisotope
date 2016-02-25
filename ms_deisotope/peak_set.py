@@ -48,13 +48,14 @@ class DeconvolutedPeakSet(Base):
     def clone(self):
         return self.__class__(p.clone() for p in self)
 
-    def between(self, m1, m2, tolerance=1e-5):
+    def between(self, m1, m2, tolerance=1e-5, use_mz=False):
         acc = []
         collecting = False
+        getter = operator.attrgetter("neutral_mass") if not use_mz else operator.attrgetter("mz")
         for peak in self:
-            if not collecting and peak.neutral_mass >= m1:
+            if not collecting and getter(peak) >= m1:
                 collecting = True
-            elif collecting and peak.neutral_mass >= m2:
+            elif collecting and getter(peak) >= m2:
                 break
             elif collecting:
                 acc.append(peak)
