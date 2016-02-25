@@ -42,16 +42,23 @@ class DeconvolutedPeakSet(Base):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return DeconvolutedPeakSet(p.clone() for p in self.peaks[item])
+            return self.__class__(p.clone() for p in self.peaks[item])
         return self.peaks[item]
 
     def clone(self):
-        return DeconvolutedPeakSet(p.clone() for p in self)
+        return self.__class__(p.clone() for p in self)
 
     def between(self, m1, m2, tolerance=1e-5):
-        p1 = self.has_peak(m1, tolerance)
-        p2 = self.has_peak(m2, tolerance)
-        return self[p1.index:p2.index]
+        acc = []
+        collecting = False
+        for peak in self:
+            if not collecting and peak.neutral_mass >= m1:
+                collecting = True
+            elif collecting and peak.neutral_mass >= m2:
+                break
+            elif collecting:
+                acc.append(peak)
+        return self.__class__(acc)
 
 
 def _sweep_solution(array, value, lo, hi, tolerance, verbose=False):
