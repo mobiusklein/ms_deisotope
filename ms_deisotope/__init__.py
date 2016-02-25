@@ -1,2 +1,2 @@
 from .averagine import Averagine, peptide
-from .deconvolution import AveragineDeconvoluter
+from .deconvolution import AveragineDeconvoluter, CompositionListDeconvoluter

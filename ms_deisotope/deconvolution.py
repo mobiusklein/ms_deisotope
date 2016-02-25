@@ -1,7 +1,7 @@
 import operator
 import numpy as np
 
-from .averagine import Averagine, peptide, neutral_mass
+from .averagine import Averagine, peptide, neutral_mass, isotopic_variants
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from .scoring import g_test_scaled
 from .utils import range, Base
@@ -18,9 +18,19 @@ class DeconvoluterBase(object):
                                      for p in experimental_distribution]
         return experimental_distribution
 
+    def scale_theoretical_distribution(self, theoretical_distribution, experimental_distribution):
+        total_abundance = sum(p.intensity for p in experimental_distribution)
+        for peak in theoretical_distribution:
+            peak.intensity *= total_abundance
+        return theoretical_distribution
 
-def minimizer_below_10(score):
-    return score < 0.1
+    def subtraction(self, isotopic_cluster, error_tolerance_ppm=2e-5):
+        for peak in isotopic_cluster:
+            match = self.peaklist.has_peak(peak.mz, error_tolerance_ppm)
+            if match is not None:
+                match.intensity -= peak.intensity
+                if match.intensity < 0:
+                    match.intensity = 1.
 
 
 class MinimizeDecider(Base):
@@ -74,20 +84,6 @@ class AveragineDeconvoluter(DeconvoluterBase):
         except ValueError:
             return None
 
-    def subtraction(self, isotopic_cluster, error_tolerance_ppm=2e-5):
-        for peak in isotopic_cluster:
-            match = self.peaklist.has_peak(peak.mz, error_tolerance_ppm)
-            if match is not None:
-                match.intensity -= peak.intensity
-                if match.intensity < 0:
-                    match.intensity = 1.
-
-    def scale_theoretical_distribution(self, theoretical_distribution, experimental_distribution):
-        total_abundance = sum(p.intensity for p in experimental_distribution)
-        for peak in theoretical_distribution:
-            peak.intensity *= total_abundance
-        return theoretical_distribution
-
     def deconvolute_peak(self, peak, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
         charge_det = self.charge_state_determination(peak, charge_range=charge_range)
         if charge_det is None:
@@ -105,5 +101,43 @@ class AveragineDeconvoluter(DeconvoluterBase):
 
     def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8), order_chooser='signal_to_noise'):
         for peak in sorted(self.peaklist, key=operator.attrgetter(order_chooser), reverse=True):
-            self.deconvolute_peak(peak)
+            self.deconvolute_peak(peak, error_tolerance_ppm=error_tolerance_ppm,  charge_range=charge_range)
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
+
+
+class CompositionListDeconvoluter(DeconvoluterBase):
+    def __init__(self, peaklist, composition_list, scorer=g_test_scaled, decider=MinimizeDecider(0.5)):
+        if isinstance(decider, float):
+            decider = MinimizeDecider(decider)
+        self.peaklist = peaklist.clone()
+        self.composition_list = composition_list
+        self.scorer = scorer
+        self.decider = decider
+        self._deconvoluted_peaks = []
+
+    def deconvolute_composition(self, composition, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
+        for charge in charge_range_(*charge_range):
+            tid = isotopic_variants(composition, charge=charge)
+            eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance_ppm)
+
+            if len(eid) < 2:
+                continue
+            score = self.scorer(eid, tid)
+            if np.isnan(score):
+                continue
+            if self.decider(score):
+                total_abundance = sum(p.intensity for p in eid)
+                monoisotopic_mass = neutral_mass(eid[0].mz, charge)
+                peak = DeconvolutedPeak(monoisotopic_mass, total_abundance, charge,
+                                        signal_to_noise=eid[0].signal_to_noise,
+                                        index=len(self._deconvoluted_peaks),
+                                        full_width_at_half_max=eid[0].full_width_at_half_max, score=score)
+                self._deconvoluted_peaks.append(peak)
+                self.scale_theoretical_distribution(tid, eid)
+                self.subtraction(tid, error_tolerance_ppm)
+
+    def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
+        for composition in self.composition_list:
+            self.deconvolute_composition(composition, error_tolerance_ppm=error_tolerance_ppm,
+                                         charge_range=charge_range)
+        return DeconvolutedPeakSet(self._deconvoluted_peaks)
