@@ -75,7 +75,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
         for charge in charge_range_(*charge_range):
             tid = self.averagine.isotopic_cluster(peak.mz, charge)
             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
-            if len(eid) < 2:
+            if len(eid) < 2 and len(tid) > 1:
                 continue
             score = self.scorer(eid, tid, error_tolerance=error_tolerance)
             if np.isnan(score):
@@ -126,7 +126,7 @@ class CompositionListDeconvoluter(DeconvoluterBase):
             tid = isotopic_variants(composition, charge=charge)
             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
 
-            if len(eid) < 2:
+            if len(eid) < 2 and len(tid) > 1:
                 continue
             score = self.scorer(eid, tid)
             if np.isnan(score):
@@ -171,10 +171,12 @@ class MultipleAveragineDiagnosticFitter(DeconvoluterBase):
             results = []
             for averagine, tid in self.averagine.isotopic_cluster(peak.mz, charge):
                 eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
-                if len(eid) < 2:
+                if len(eid) < 2 and len(tid) > 1:
+                    results.append(float('inf'), charge, tid, eid)
                     continue
                 score = self.scorer(eid, tid, error_tolerance=error_tolerance)
                 if np.isnan(score):
+                    results.append(float('inf'), charge, tid, eid)
                     continue
 
                 results.append((score, charge, tid, eid))
