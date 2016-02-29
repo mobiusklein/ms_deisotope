@@ -172,14 +172,14 @@ class MultipleAveragineDiagnosticFitter(DeconvoluterBase):
             for averagine, tid in self.averagine.isotopic_cluster(peak.mz, charge):
                 eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
                 if len(eid) < 2 and len(tid) > 1:
-                    results.append(float('inf'), charge, tid, eid)
+                    results.append(float('inf'), charge, tid, eid, averagine)
                     continue
                 score = self.scorer(eid, tid, error_tolerance=error_tolerance)
                 if np.isnan(score):
-                    results.append(float('inf'), charge, tid, eid)
+                    results.append(float('inf'), charge, tid, eid, averagine)
                     continue
 
-                results.append((score, charge, tid, eid))
+                results.append((score, charge, tid, eid, averagine))
             totals.append(results)
         return totals
 
