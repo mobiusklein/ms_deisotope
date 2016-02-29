@@ -1,7 +1,7 @@
 import operator
 import numpy as np
 
-from .averagine import Averagine, peptide, neutral_mass, isotopic_variants
+from .averagine import Averagine, MultipleAveragine, peptide, multiple, neutral_mass, isotopic_variants
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from .scoring import g_test_scaled
 from .utils import range, Base
@@ -10,10 +10,11 @@ from ms_peak_picker import FittedPeak
 
 
 class DeconvoluterBase(object):
+    use_subtraction = False
 
-    def match_theoretical_isotopic_distribution(self, theoretical_distribution, error_tolerance_ppm=2e-5):
+    def match_theoretical_isotopic_distribution(self, theoretical_distribution, error_tolerance=2e-5):
         experimental_distribution = [self.peaklist.has_peak(
-            p.mz, error_tolerance_ppm) for p in theoretical_distribution]
+            p.mz, error_tolerance) for p in theoretical_distribution]
         experimental_distribution = [p if p is not None else FittedPeak(-1., 1.0, 0, 0, 0, 0)
                                      for p in experimental_distribution]
         return experimental_distribution
@@ -24,13 +25,14 @@ class DeconvoluterBase(object):
             peak.intensity *= total_abundance
         return theoretical_distribution
 
-    def subtraction(self, isotopic_cluster, error_tolerance_ppm=2e-5):
-        for peak in isotopic_cluster:
-            match = self.peaklist.has_peak(peak.mz, error_tolerance_ppm)
-            if match is not None:
-                match.intensity -= peak.intensity
-                if match.intensity < 0:
-                    match.intensity = 1.
+    def subtraction(self, isotopic_cluster, error_tolerance=2e-5):
+        if self.use_subtraction:
+            for peak in isotopic_cluster:
+                match = self.peaklist.has_peak(peak.mz, error_tolerance)
+                if match is not None:
+                    match.intensity -= peak.intensity
+                    if match.intensity < 0:
+                        match.intensity = 1.
 
 
 class MinimizeDecider(Base):
@@ -53,7 +55,8 @@ def charge_range_(lo, hi, step=None):
 
 
 class AveragineDeconvoluter(DeconvoluterBase):
-    def __init__(self, peaklist, averagine=None, scorer=g_test_scaled, decider=MinimizeDecider(0.5)):
+    def __init__(self, peaklist, averagine=None, scorer=g_test_scaled, decider=MinimizeDecider(0.5),
+                 use_subtraction=False):
         if averagine is None:
             averagine = peptide
         else:
@@ -65,15 +68,16 @@ class AveragineDeconvoluter(DeconvoluterBase):
         self.scorer = scorer
         self.decider = decider
         self._deconvoluted_peaks = []
+        self.use_subtraction = use_subtraction
 
-    def charge_state_determination(self, peak, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
+    def charge_state_determination(self, peak, error_tolerance=2e-5, charge_range=(1, 8)):
         results = []
         for charge in charge_range_(*charge_range):
             tid = self.averagine.isotopic_cluster(peak.mz, charge)
-            eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance_ppm)
+            eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
             if len(eid) < 2:
                 continue
-            score = self.scorer(eid, tid)
+            score = self.scorer(eid, tid, error_tolerance=error_tolerance)
             if np.isnan(score):
                 continue
 
@@ -84,7 +88,7 @@ class AveragineDeconvoluter(DeconvoluterBase):
         except ValueError:
             return None
 
-    def deconvolute_peak(self, peak, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
+    def deconvolute_peak(self, peak, error_tolerance=2e-5, charge_range=(1, 8)):
         charge_det = self.charge_state_determination(peak, charge_range=charge_range)
         if charge_det is None:
             return
@@ -97,28 +101,30 @@ class AveragineDeconvoluter(DeconvoluterBase):
                                     full_width_at_half_max=eid[0].full_width_at_half_max, score=score)
             self._deconvoluted_peaks.append(peak)
             self.scale_theoretical_distribution(tid, eid)
-            self.subtraction(tid, error_tolerance_ppm)
+            self.subtraction(tid, error_tolerance)
 
-    def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8), order_chooser='signal_to_noise'):
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), order_chooser='signal_to_noise'):
         for peak in sorted(self.peaklist, key=operator.attrgetter(order_chooser), reverse=True):
-            self.deconvolute_peak(peak, error_tolerance_ppm=error_tolerance_ppm,  charge_range=charge_range)
+            self.deconvolute_peak(peak, error_tolerance=error_tolerance,  charge_range=charge_range)
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
 
 
 class CompositionListDeconvoluter(DeconvoluterBase):
-    def __init__(self, peaklist, composition_list, scorer=g_test_scaled, decider=MinimizeDecider(0.5)):
+    def __init__(self, peaklist, composition_list, scorer=g_test_scaled, decider=MinimizeDecider(0.5),
+                 use_subtraction=False):
         if isinstance(decider, float):
             decider = MinimizeDecider(decider)
         self.peaklist = peaklist.clone()
         self.composition_list = composition_list
         self.scorer = scorer
         self.decider = decider
+        self.use_subtraction = use_subtraction
         self._deconvoluted_peaks = []
 
-    def deconvolute_composition(self, composition, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
+    def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8)):
         for charge in charge_range_(*charge_range):
             tid = isotopic_variants(composition, charge=charge)
-            eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance_ppm)
+            eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
 
             if len(eid) < 2:
                 continue
@@ -134,10 +140,57 @@ class CompositionListDeconvoluter(DeconvoluterBase):
                                         full_width_at_half_max=eid[0].full_width_at_half_max, score=score)
                 self._deconvoluted_peaks.append(peak)
                 self.scale_theoretical_distribution(tid, eid)
-                self.subtraction(tid, error_tolerance_ppm)
+                self.subtraction(tid, error_tolerance)
 
-    def deconvolute(self, error_tolerance_ppm=2e-5, charge_range=(1, 8)):
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8)):
         for composition in self.composition_list:
-            self.deconvolute_composition(composition, error_tolerance_ppm=error_tolerance_ppm,
+            self.deconvolute_composition(composition, error_tolerance=error_tolerance,
                                          charge_range=charge_range)
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
+
+
+class MultipleAveragineDiagnosticFitter(DeconvoluterBase):
+    def __init__(self, peaklist, averagine=None, scorer=g_test_scaled, decider=MinimizeDecider(0.5),
+                 use_subtraction=False):
+        if averagine is None:
+            averagine = multiple
+        else:
+            averagine = MultipleAveragine(averagine)
+        if isinstance(decider, float):
+            decider = MinimizeDecider(decider)
+        self.peaklist = peaklist.clone()
+        self.averagine = averagine
+        self.scorer = scorer
+        self.decider = decider
+        self._deconvoluted_peaks = []
+        self.use_subtraction = use_subtraction
+
+    def charge_state_determination(self, peak, error_tolerance=2e-5, charge_range=(1, 8)):
+        totals = []
+        for charge in charge_range_(*charge_range):
+            results = []
+            for averagine, tid in self.averagine.isotopic_cluster(peak.mz, charge):
+                eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
+                if len(eid) < 2:
+                    continue
+                score = self.scorer(eid, tid, error_tolerance=error_tolerance)
+                if np.isnan(score):
+                    continue
+
+                results.append((score, charge, tid, eid))
+            totals.append(results)
+        return totals
+
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), order_chooser='signal_to_noise'):
+        for peak in sorted(self.peaklist, key=operator.attrgetter(order_chooser), reverse=True):
+            scores = self.charge_state_determination(peak, error_tolerance=error_tolerance,  charge_range=charge_range)
+            self._deconvoluted_peaks.append(scores)
+        return self._deconvoluted_peaks
+
+
+def deconvolute_peaks(peaklist, deconvoluter_type=AveragineDeconvoluter, decon_config=None, charge_range=(1, 8),
+                      error_tolerance=2e-5):
+    decon_config = decon_config or {}
+    decon = deconvoluter_type(peaklist=peaklist, **decon_config)
+    deconvoluted_peaks = decon.deconvolute
+    return deconvoluted_peaks
