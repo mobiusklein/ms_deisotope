@@ -379,7 +379,7 @@ class CompositionListDeconvoluter(DeconvoluterBase):
         self.verbose = verbose
         self._deconvoluted_peaks = []
 
-    def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=0.9999):
+    def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=0.999):
         cumsum = 0
         result = []
         for peak in isotopic_variants(composition, charge=charge):
