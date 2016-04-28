@@ -7,6 +7,7 @@ from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from .scoring import IsotopicFitRecord, penalized_msdeconv
 from .utils import range, Base
 from .envelope_statistics import a_to_a2_ratio, average_mz, most_abundant_mz
+from .peak_dependency_network import PeakDependenceGraph
 
 from ms_peak_picker import FittedPeak
 
@@ -46,6 +47,14 @@ def drop_placeholders(peaks):
     return [peak for peak in peaks if peak.mz > 1 and peak.intensity > 1]
 
 
+def count_placeholders(peaks):
+    i = 0
+    for peak in peaks:
+        if peak.intensity <= 1:
+            i += 1
+    return i
+
+
 def drop_placeholders_parallel(peaks, otherpeaks):
     new_peaks = []
     new_otherpeaks = []
@@ -64,7 +73,12 @@ class DeconvoluterBase(Base):
     minimum_intensity = 5.
     verbose = False
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
+                 minimum_intensity=5., *args, **kwargs):
+        self.use_subtraction = use_subtraction
+        self.scale_method = scale_method
+        self.merge_isobaric_peaks = merge_isobaric_peaks
+        self.minimum_intensity = minimum_intensity
         self._slice_cache = {}
 
     def has_peak(self, mz, error_tolerance):
@@ -84,7 +98,7 @@ class DeconvoluterBase(Base):
 
     def match_theoretical_isotopic_distribution(self, theoretical_distribution, error_tolerance=2e-5):
         experimental_distribution = [self.has_peak(
-                    p.mz, error_tolerance) for p in theoretical_distribution]
+            p.mz, error_tolerance) for p in theoretical_distribution]
         return experimental_distribution
 
     def scale_theoretical_distribution(self, theoretical_distribution, experimental_distribution):
@@ -101,13 +115,12 @@ class DeconvoluterBase(Base):
             return theoretical_distribution
 
     def subtraction(self, isotopic_cluster, error_tolerance=2e-5):
-        if self.use_subtraction:
-            for peak in isotopic_cluster:
-                match = self.peaklist.has_peak(peak.mz, error_tolerance)
-                if match is not None:
-                    match.intensity -= peak.intensity
-                    if match.intensity < 0:
-                        match.intensity = 1.
+        for peak in isotopic_cluster:
+            match = self.peaklist.has_peak(peak.mz, error_tolerance)
+            if match is not None:
+                match.intensity -= peak.intensity
+                if match.intensity < 0:
+                    match.intensity = 1.
 
     def _merge_peaks(self, peak_list):
         peak_list = sorted(peak_list, key=operator.attrgetter("neutral_mass"))
@@ -179,8 +192,11 @@ class DeconvoluterBase(Base):
 
 
 class AveragineDeconvoluterBase(DeconvoluterBase):
-    def __init__(self, *args, **kwargs):
-        super(AveragineDeconvoluterBase, self).__init__()
+    def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
+                 minimum_intensity=5., *args, **kwargs):
+        super(AveragineDeconvoluterBase, self).__init__(
+            use_subtraction, scale_method, merge_isobaric_peaks,
+            minimum_intensity, *args, **kwargs)
 
     def fit_theoretical_distribution(self, peak, error_tolerance, charge):
         tid = self.averagine.isotopic_cluster(peak.mz, charge)
@@ -196,7 +212,7 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             if peak.mz < 1:
                 continue
             fit = self.fit_theoretical_distribution(
-                     peak, error_tolerance, charge)
+                peak, error_tolerance, charge)
             if len(drop_placeholders(fit.experimental)) == 1 and fit.charge > 1:
                 continue
             if self.scorer.reject(fit):
@@ -315,7 +331,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             envelope=[(p.mz, p.intensity) for p in rep_eid])
 
         self._deconvoluted_peaks.append(dpeak)
-        self.subtraction(tid, error_tolerance)
+        if self.use_subtraction:
+            self.subtraction(tid, error_tolerance)
         return dpeak
 
     def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8),
@@ -338,6 +355,66 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
 
 
+class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
+
+    def __init__(self, peaklist, *args, **kwargs):
+        super(PeakDependenceGraphDeconvoluterBase, self).__init__(peaklist=peaklist, *args, **kwargs)
+        self.peak_dependency_network = PeakDependenceGraph(self.peaklist)
+
+    def charge_state_determination(self, peak, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=3,
+                                   right_search_limit=3, use_charge_state_hint=False):
+        results = self._fit_all_charge_states(
+            peak, error_tolerance=error_tolerance, charge_range=charge_range, left_search_limit=left_search_limit,
+            right_search_limit=right_search_limit,
+            use_charge_state_hint=use_charge_state_hint)
+
+        n = len(results)
+        stop = n / 2
+
+        for i in range(stop):
+            candidate = self.scorer.select(results)
+            self.peak_dependency_network.add_fit_dependence(candidate)
+            results.discard(candidate)
+
+        if self.verbose:
+            info("\nFits for %r" % peak)
+            for rec in sorted(results)[-10:]:
+                info(rec)
+
+        return i
+
+    def deconvolute_peak(self, peak, error_tolerance=2e-5, charge_range=(1, 8), use_charge_state_hint=False,
+                         left_search_limit=3, right_search_limit=3):
+        charge_det = self.charge_state_determination(
+            peak, error_tolerance=error_tolerance,
+            charge_range=charge_range, use_charge_state_hint=use_charge_state_hint,
+            left_search_limit=left_search_limit, right_search_limit=right_search_limit)
+        # if charge_det is None:
+        #     return
+        # score, charge, eid, tid = charge_det
+        # rep_eid = drop_placeholders(eid)
+        # total_abundance = sum(p.intensity for p in rep_eid)
+        # monoisotopic_mass = neutral_mass(eid[0].mz, charge)
+        # reference_peak = first_peak(eid)
+
+        # dpeak = DeconvolutedPeak(
+        #     neutral_mass=monoisotopic_mass, intensity=total_abundance, charge=charge,
+        #     signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
+        #     index=reference_peak.index,
+        #     full_width_at_half_max=mean(p.full_width_at_half_max for p in rep_eid),
+        #     a_to_a2_ratio=a_to_a2_ratio(tid),
+        #     most_abundant_mass=neutral_mass(most_abundant_mz(eid), charge),
+        #     average_mass=neutral_mass(average_mz(eid), charge),
+        #     score=score,
+        #     envelope=[(p.mz, p.intensity) for p in rep_eid])
+
+        # self._deconvoluted_peaks.append(dpeak)
+        # if self.use_subtraction:
+        #     self.subtraction(tid, error_tolerance)
+        # return dpeak
+        return charge_det
+
+
 class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDeconvoluterBase):
     def __init__(self, peaklist, averagine=None, scorer=penalized_msdeconv,
                  use_subtraction=True, cache_backend=None, scale_method='sum',
@@ -350,12 +427,13 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
         self.peaklist = peaklist.clone()
         self.averagine = averagine
         self.scorer = scorer
-        self.scale_method = scale_method
         self._deconvoluted_peaks = []
-        self.use_subtraction = use_subtraction
+        # self.scale_method = scale_method
+        # self.use_subtraction = use_subtraction
         self.verbose = verbose
 
-        super(AveragineDeconvoluter, self).__init__()
+        super(AveragineDeconvoluter, self).__init__(
+            use_subtraction, scale_method, merge_isobaric_peaks=True)
 
     def config(self):
         return {
@@ -374,10 +452,12 @@ class CompositionListDeconvoluter(DeconvoluterBase):
         self.peaklist = peaklist.clone()
         self.composition_list = composition_list
         self.scorer = scorer
-        self.use_subtraction = use_subtraction
         self.scale_method = scale_method
         self.verbose = verbose
         self._deconvoluted_peaks = []
+        super(CompositionListDeconvoluter, self).__init__(
+            use_subtraction=use_subtraction, scale_method=scale_method, merge_isobaric_peaks=True)
+        self.use_subtraction = use_subtraction
 
     def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=0.999):
         cumsum = 0
@@ -389,18 +469,13 @@ class CompositionListDeconvoluter(DeconvoluterBase):
                 break
         return result
 
-    def fit_composition_at_charge(self, composition, charge, error_tolerance=2e-5):
-        tid = self.generate_theoretical_isotopic_cluster(composition, charge=charge)
-        eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
-        self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer(self.peaklist, eid, tid)
-        fit = IsotopicFitRecord(None, score, charge, tid, eid)
-        return fit
-
     def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8)):
         for charge in charge_range_(*charge_range):
             tid = self.generate_theoretical_isotopic_cluster(composition, charge=charge)
             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
+
+            if count_placeholders(eid) > len(eid) / 2:
+                continue
 
             self.scale_theoretical_distribution(tid, eid)
             score = self.scorer.evaluate(self.peaklist, eid, tid)
@@ -428,7 +503,8 @@ class CompositionListDeconvoluter(DeconvoluterBase):
                     envelope=[(p.mz, p.intensity) for p in rep_eid])
 
                 self._deconvoluted_peaks.append((composition, peak, fit))
-                self.subtraction(tid, error_tolerance)
+                if self.use_subtraction:
+                    self.subtraction(tid, error_tolerance)
 
     def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), **kwargs):
         for composition in self.composition_list:

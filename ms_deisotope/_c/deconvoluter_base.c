@@ -9,7 +9,7 @@
         ], 
         "include_dirs": [
             "C:\\Users\\Joshua\\Anaconda2\\lib\\site-packages\\numpy\\core\\include", 
-            "d:\\programming\\exploration\\peak_picker\\ms_peak_picker\\_c"
+            "C:\\Users\\Joshua\\Anaconda2\\lib\\site-packages\\ms_peak_picker-0.1.0-py2.7-win-amd64.egg\\ms_peak_picker\\_c"
         ]
     }
 }
@@ -1154,7 +1154,7 @@ struct __pyx_opt_args_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_
 struct __pyx_opt_args_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase__find_next_putative_peak;
 struct __pyx_opt_args_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase__find_previous_putative_peak;
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":77
+/* "ms_deisotope\_c\deconvoluter_base.pyx":78
  *         return peak
  * 
  *     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -1166,7 +1166,7 @@ struct __pyx_opt_args_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_
   double error_tolerance;
 };
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":111
+/* "ms_deisotope\_c\deconvoluter_base.pyx":112
  *         #     return theoretical_distribution
  * 
  *     cpdef subtraction(self, list isotopic_cluster, double error_tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -1459,7 +1459,7 @@ struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBas
 };
 
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":272
+/* "ms_deisotope\_c\deconvoluter_base.pyx":275
  * 
  * 
  * cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):             # <<<<<<<<<<<<<<
@@ -1720,7 +1720,7 @@ struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvol
 static struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase;
 
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":272
+/* "ms_deisotope\_c\deconvoluter_base.pyx":275
  * 
  * 
  * cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):             # <<<<<<<<<<<<<<
@@ -2018,10 +2018,11 @@ static void __Pyx_WriteUnraisable(const char *name, int clineno,
                                   int lineno, const char *filename,
                                   int full_traceback, int nogil);
 
-static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
-    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
+static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
 
-static CYTHON_INLINE int __Pyx_CheckKeywordStrings(PyObject *kwdict, const char* function_name, int kw_allowed);
+static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
+    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
+    const char* function_name);
 
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
@@ -2031,11 +2032,8 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg
 
 static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
 
-static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
-
-static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
-    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
-    const char* function_name);
+static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
+    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
@@ -2124,6 +2122,8 @@ static CYTHON_INLINE int __Pyx_PyList_Extend(PyObject* L, PyObject* v) {
     return PyList_SetSlice(L, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, v);
 #endif
 }
+
+static CYTHON_INLINE int __Pyx_CheckKeywordStrings(PyObject *kwdict, const char* function_name, int kw_allowed);
 
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
@@ -2468,14 +2468,18 @@ static char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
 static char __pyx_k_subtraction[] = "subtraction";
 static char __pyx_k_RuntimeError[] = "RuntimeError";
 static char __pyx_k_neutral_mass[] = "neutral_mass";
+static char __pyx_k_scale_method[] = "scale_method";
 static char __pyx_k_verbose_bool[] = "verbose: 'bool'";
 static char __pyx_k_averagines_list[] = "averagines: list";
 static char __pyx_k_error_tolerance[] = "error_tolerance";
 static char __pyx_k_peak_charge_set[] = "peak_charge_set";
+static char __pyx_k_use_subtraction[] = "use_subtraction";
 static char __pyx_k_isotopic_cluster[] = "isotopic_cluster";
 static char __pyx_k_scale_method_str[] = "scale_method: str";
 static char __pyx_k_slice_cache_dict[] = "_slice_cache: dict";
+static char __pyx_k_minimum_intensity[] = "minimum_intensity";
 static char __pyx_k_fit_peaks_at_charges[] = "_fit_peaks_at_charges";
+static char __pyx_k_merge_isobaric_peaks[] = "merge_isobaric_peaks";
 static char __pyx_k_use_subtraction_bool[] = "use_subtraction: 'bool'";
 static char __pyx_k_find_next_putative_peak[] = "_find_next_putative_peak";
 static char __pyx_k_minimum_intensity_double[] = "minimum_intensity: 'double'";
@@ -2519,6 +2523,8 @@ static PyObject *__pyx_n_s_m1;
 static PyObject *__pyx_n_s_m2;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_match_theoretical_isotopic_distr;
+static PyObject *__pyx_n_s_merge_isobaric_peaks;
+static PyObject *__pyx_n_s_minimum_intensity;
 static PyObject *__pyx_n_s_mz;
 static PyObject *__pyx_kp_u_ndarray_is_not_C_contiguous;
 static PyObject *__pyx_kp_u_ndarray_is_not_Fortran_contiguou;
@@ -2528,6 +2534,7 @@ static PyObject *__pyx_n_s_peak;
 static PyObject *__pyx_n_s_peak_charge_set;
 static PyObject *__pyx_n_s_pyx_vtable;
 static PyObject *__pyx_n_s_range;
+static PyObject *__pyx_n_s_scale_method;
 static PyObject *__pyx_n_s_scale_theoretical_distribution;
 static PyObject *__pyx_n_s_sorted;
 static PyObject *__pyx_n_s_step;
@@ -2538,7 +2545,8 @@ static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_theoretical_distribution;
 static PyObject *__pyx_n_s_tolerance;
 static PyObject *__pyx_kp_u_unknown_dtype_code_in_numpy_pxd;
-static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase___cinit__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self); /* proto */
+static PyObject *__pyx_n_s_use_subtraction;
+static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase___init__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self, PyObject *__pyx_v_use_subtraction, PyObject *__pyx_v_scale_method, PyObject *__pyx_v_merge_isobaric_peaks, PyObject *__pyx_v_minimum_intensity, CYTHON_UNUSED PyObject *__pyx_v_args, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
 static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_2between(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self, double __pyx_v_m1, double __pyx_v_m2); /* proto */
 static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_4has_peak(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self, double __pyx_v_mz, double __pyx_v_error_tolerance); /* proto */
 static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_6match_theoretical_isotopic_distribution(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self, PyObject *__pyx_v_theoretical_distribution, double __pyx_v_error_tolerance); /* proto */
@@ -2567,7 +2575,7 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_7v
 static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_12_slice_cache___get__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self); /* proto */
 static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_12_slice_cache_2__set__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
 static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_12_slice_cache_4__del__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self); /* proto */
-static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase___init__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_args, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
+static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase___init__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_v_self, int __pyx_v_use_subtraction, PyObject *__pyx_v_scale_method, int __pyx_v_merge_isobaric_peaks, double __pyx_v_minimum_intensity, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs); /* proto */
 static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_2fit_theoretical_distribution(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_v_self, struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_v_peak, double __pyx_v_error_tolerance, int __pyx_v_charge); /* proto */
 static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_4_fit_peaks_at_charges(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_v_self, PyObject *__pyx_v_peak_charge_set, double __pyx_v_error_tolerance); /* proto */
 static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_9averagine___get__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_v_self); /* proto */
@@ -2583,6 +2591,7 @@ static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_s
 static PyObject *__pyx_tp_new_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_float_5_;
 static PyObject *__pyx_float_1_0;
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
@@ -2620,9 +2629,18 @@ static double __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_sum_intensity(PyObj
   __Pyx_RefNannySetupContext("sum_intensity", 0);
   __Pyx_TraceCall("sum_intensity", __pyx_f[0], 24, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 24; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
 
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":29
+ *         double total
+ *         FittedPeak peak
+ *     total = 0             # <<<<<<<<<<<<<<
+ *     for i in range(PyList_GET_SIZE(peaklist)):
+ *         peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
+ */
+  __pyx_v_total = 0.0;
+
   /* "ms_deisotope\_c\deconvoluter_base.pyx":30
  *         FittedPeak peak
- * 
+ *     total = 0
  *     for i in range(PyList_GET_SIZE(peaklist)):             # <<<<<<<<<<<<<<
  *         peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
  *         total += peak.intensity
@@ -2632,7 +2650,7 @@ static double __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_sum_intensity(PyObj
     __pyx_v_i = __pyx_t_2;
 
     /* "ms_deisotope\_c\deconvoluter_base.pyx":31
- * 
+ *     total = 0
  *     for i in range(PyList_GET_SIZE(peaklist)):
  *         peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)             # <<<<<<<<<<<<<<
  *         total += peak.intensity
@@ -2687,107 +2705,204 @@ static double __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_sum_intensity(PyObj
 /* "ms_deisotope\_c\deconvoluter_base.pyx":49
  *         public dict _slice_cache
  * 
- *     def __cinit__(self):             # <<<<<<<<<<<<<<
- *         self.use_subtraction = False
- *         self.scale_method = 'sum'
+ *     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,             # <<<<<<<<<<<<<<
+ *                   minimum_intensity=5., *args, **kwargs):
+ *         self.use_subtraction = use_subtraction
  */
 
 /* Python wrapper */
-static int __pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_use_subtraction = 0;
+  PyObject *__pyx_v_scale_method = 0;
+  PyObject *__pyx_v_merge_isobaric_peaks = 0;
+  PyObject *__pyx_v_minimum_intensity = 0;
+  CYTHON_UNUSED PyObject *__pyx_v_args = 0;
+  CYTHON_UNUSED PyObject *__pyx_v_kwargs = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("__cinit__ (wrapper)", 0);
-  if (unlikely(PyTuple_GET_SIZE(__pyx_args) > 0)) {
-    __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); return -1;}
-  if (unlikely(__pyx_kwds) && unlikely(PyDict_Size(__pyx_kwds) > 0) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__cinit__", 0))) return -1;
-  __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase___cinit__(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self));
+  __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
+  __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return -1;
+  __Pyx_GOTREF(__pyx_v_kwargs);
+  if (PyTuple_GET_SIZE(__pyx_args) > 4) {
+    __pyx_v_args = PyTuple_GetSlice(__pyx_args, 4, PyTuple_GET_SIZE(__pyx_args));
+    if (unlikely(!__pyx_v_args)) {
+      __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
+      __Pyx_RefNannyFinishContext();
+      return -1;
+    }
+    __Pyx_GOTREF(__pyx_v_args);
+  } else {
+    __pyx_v_args = __pyx_empty_tuple; __Pyx_INCREF(__pyx_empty_tuple);
+  }
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_use_subtraction,&__pyx_n_s_scale_method,&__pyx_n_s_merge_isobaric_peaks,&__pyx_n_s_minimum_intensity,0};
+    PyObject* values[4] = {0,0,0,0};
+    values[0] = ((PyObject *)Py_False);
+    values[1] = ((PyObject *)__pyx_n_s_sum);
+    values[2] = ((PyObject *)Py_True);
+    values[3] = ((PyObject *)__pyx_float_5_);
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        default:
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_use_subtraction);
+          if (value) { values[0] = value; kw_args--; }
+        }
+        case  1:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_scale_method);
+          if (value) { values[1] = value; kw_args--; }
+        }
+        case  2:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_merge_isobaric_peaks);
+          if (value) { values[2] = value; kw_args--; }
+        }
+        case  3:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_minimum_intensity);
+          if (value) { values[3] = value; kw_args--; }
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t used_pos_args = (pos_args < 4) ? pos_args : 4;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      }
+    } else {
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        default:
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+      }
+    }
+    __pyx_v_use_subtraction = values[0];
+    __pyx_v_scale_method = values[1];
+    __pyx_v_merge_isobaric_peaks = values[2];
+    __pyx_v_minimum_intensity = values[3];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
+  __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
+  __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase___init__(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_use_subtraction, __pyx_v_scale_method, __pyx_v_merge_isobaric_peaks, __pyx_v_minimum_intensity, __pyx_v_args, __pyx_v_kwargs);
 
   /* function exit code */
+  __Pyx_XDECREF(__pyx_v_args);
+  __Pyx_XDECREF(__pyx_v_kwargs);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase___cinit__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self) {
+static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase___init__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *__pyx_v_self, PyObject *__pyx_v_use_subtraction, PyObject *__pyx_v_scale_method, PyObject *__pyx_v_merge_isobaric_peaks, PyObject *__pyx_v_minimum_intensity, CYTHON_UNUSED PyObject *__pyx_v_args, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
   int __pyx_r;
   __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  double __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("__cinit__", 0);
-  __Pyx_TraceCall("__cinit__", __pyx_f[0], 49, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
-
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":50
- * 
- *     def __cinit__(self):
- *         self.use_subtraction = False             # <<<<<<<<<<<<<<
- *         self.scale_method = 'sum'
- *         self.merge_isobaric_peaks = True
- */
-  __pyx_v_self->use_subtraction = 0;
+  __Pyx_RefNannySetupContext("__init__", 0);
+  __Pyx_TraceCall("__init__", __pyx_f[0], 49, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
 
   /* "ms_deisotope\_c\deconvoluter_base.pyx":51
- *     def __cinit__(self):
- *         self.use_subtraction = False
- *         self.scale_method = 'sum'             # <<<<<<<<<<<<<<
- *         self.merge_isobaric_peaks = True
- *         self.minimum_intensity = 5.
+ *     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
+ *                   minimum_intensity=5., *args, **kwargs):
+ *         self.use_subtraction = use_subtraction             # <<<<<<<<<<<<<<
+ *         self.scale_method = scale_method
+ *         self.merge_isobaric_peaks = merge_isobaric_peaks
  */
-  __Pyx_INCREF(__pyx_n_s_sum);
-  __Pyx_GIVEREF(__pyx_n_s_sum);
-  __Pyx_GOTREF(__pyx_v_self->scale_method);
-  __Pyx_DECREF(__pyx_v_self->scale_method);
-  __pyx_v_self->scale_method = __pyx_n_s_sum;
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_use_subtraction); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->use_subtraction = __pyx_t_1;
 
   /* "ms_deisotope\_c\deconvoluter_base.pyx":52
- *         self.use_subtraction = False
- *         self.scale_method = 'sum'
- *         self.merge_isobaric_peaks = True             # <<<<<<<<<<<<<<
- *         self.minimum_intensity = 5.
- *         self._slice_cache = {}
+ *                   minimum_intensity=5., *args, **kwargs):
+ *         self.use_subtraction = use_subtraction
+ *         self.scale_method = scale_method             # <<<<<<<<<<<<<<
+ *         self.merge_isobaric_peaks = merge_isobaric_peaks
+ *         self.minimum_intensity = minimum_intensity
  */
-  __pyx_v_self->merge_isobaric_peaks = 1;
+  if (!(likely(PyString_CheckExact(__pyx_v_scale_method))||((__pyx_v_scale_method) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_scale_method)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __pyx_v_scale_method;
+  __Pyx_INCREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
+  __Pyx_GOTREF(__pyx_v_self->scale_method);
+  __Pyx_DECREF(__pyx_v_self->scale_method);
+  __pyx_v_self->scale_method = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
 
   /* "ms_deisotope\_c\deconvoluter_base.pyx":53
- *         self.scale_method = 'sum'
- *         self.merge_isobaric_peaks = True
- *         self.minimum_intensity = 5.             # <<<<<<<<<<<<<<
+ *         self.use_subtraction = use_subtraction
+ *         self.scale_method = scale_method
+ *         self.merge_isobaric_peaks = merge_isobaric_peaks             # <<<<<<<<<<<<<<
+ *         self.minimum_intensity = minimum_intensity
+ *         self._slice_cache = {}
+ */
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_merge_isobaric_peaks); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->merge_isobaric_peaks = __pyx_t_1;
+
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":54
+ *         self.scale_method = scale_method
+ *         self.merge_isobaric_peaks = merge_isobaric_peaks
+ *         self.minimum_intensity = minimum_intensity             # <<<<<<<<<<<<<<
  *         self._slice_cache = {}
  * 
  */
-  __pyx_v_self->minimum_intensity = 5.;
+  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_v_minimum_intensity); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 54; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_self->minimum_intensity = __pyx_t_3;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":54
- *         self.merge_isobaric_peaks = True
- *         self.minimum_intensity = 5.
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":55
+ *         self.merge_isobaric_peaks = merge_isobaric_peaks
+ *         self.minimum_intensity = minimum_intensity
  *         self._slice_cache = {}             # <<<<<<<<<<<<<<
  * 
  *     cpdef PeakSet between(self, double m1, double m2):
  */
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 54; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 55; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_2);
   __Pyx_GOTREF(__pyx_v_self->_slice_cache);
   __Pyx_DECREF(__pyx_v_self->_slice_cache);
-  __pyx_v_self->_slice_cache = ((PyObject*)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_v_self->_slice_cache = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
 
   /* "ms_deisotope\_c\deconvoluter_base.pyx":49
  *         public dict _slice_cache
  * 
- *     def __cinit__(self):             # <<<<<<<<<<<<<<
- *         self.use_subtraction = False
- *         self.scale_method = 'sum'
+ *     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,             # <<<<<<<<<<<<<<
+ *                   minimum_intensity=5., *args, **kwargs):
+ *         self.use_subtraction = use_subtraction
  */
 
   /* function exit code */
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_TraceReturn(Py_None, 0);
@@ -2795,7 +2910,7 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase___
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":56
+/* "ms_deisotope\_c\deconvoluter_base.pyx":57
  *         self._slice_cache = {}
  * 
  *     cpdef PeakSet between(self, double m1, double m2):             # <<<<<<<<<<<<<<
@@ -2825,18 +2940,18 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("between", 0);
-  __Pyx_TraceCall("between", __pyx_f[0], 56, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("between", __pyx_f[0], 57, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   /* Check if called by wrapper */
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_between); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_between); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_3between)) {
       __Pyx_XDECREF(((PyObject *)__pyx_r));
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_m1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_m1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_m2); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_m2); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_5 = __pyx_t_1; __pyx_t_6 = NULL;
@@ -2851,7 +2966,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
           __pyx_t_7 = 1;
         }
       }
-      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -2862,11 +2977,11 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
       PyTuple_SET_ITEM(__pyx_t_8, 1+__pyx_t_7, __pyx_t_4);
       __pyx_t_3 = 0;
       __pyx_t_4 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_14ms_peak_picker_2_c_8peak_set_PeakSet))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_14ms_peak_picker_2_c_8peak_set_PeakSet))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_r = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -2875,18 +2990,18 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":61
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":62
  *             PyObject* p
  *             PeakSet region
  *         key = (m1, m2)             # <<<<<<<<<<<<<<
  *         p = PyDict_GetItem(self._slice_cache, key)
  *         if p == NULL:
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_m1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_m1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_m2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_m2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
@@ -2897,7 +3012,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
   __pyx_v_key = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":62
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":63
  *             PeakSet region
  *         key = (m1, m2)
  *         p = PyDict_GetItem(self._slice_cache, key)             # <<<<<<<<<<<<<<
@@ -2909,7 +3024,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
   __pyx_v_p = PyDict_GetItem(__pyx_t_5, __pyx_v_key);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":63
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":64
  *         key = (m1, m2)
  *         p = PyDict_GetItem(self._slice_cache, key)
  *         if p == NULL:             # <<<<<<<<<<<<<<
@@ -2919,19 +3034,19 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
   __pyx_t_9 = ((__pyx_v_p == NULL) != 0);
   if (__pyx_t_9) {
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":64
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":65
  *         p = PyDict_GetItem(self._slice_cache, key)
  *         if p == NULL:
  *             region = self.peaklist._between(m1, m2)             # <<<<<<<<<<<<<<
  *             PyDict_SetItem(self._slice_cache, key, region)
  *             return region
  */
-    __pyx_t_5 = ((PyObject *)((struct __pyx_vtabstruct_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_v_self->peaklist->__pyx_vtab)->_between(__pyx_v_self->peaklist, __pyx_v_m1, __pyx_v_m2)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 64; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = ((PyObject *)((struct __pyx_vtabstruct_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_v_self->peaklist->__pyx_vtab)->_between(__pyx_v_self->peaklist, __pyx_v_m1, __pyx_v_m2)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_v_region = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":65
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":66
  *         if p == NULL:
  *             region = self.peaklist._between(m1, m2)
  *             PyDict_SetItem(self._slice_cache, key, region)             # <<<<<<<<<<<<<<
@@ -2940,10 +3055,10 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
  */
     __pyx_t_5 = __pyx_v_self->_slice_cache;
     __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_10 = PyDict_SetItem(__pyx_t_5, __pyx_v_key, ((PyObject *)__pyx_v_region)); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_10 = PyDict_SetItem(__pyx_t_5, __pyx_v_key, ((PyObject *)__pyx_v_region)); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":66
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":67
  *             region = self.peaklist._between(m1, m2)
  *             PyDict_SetItem(self._slice_cache, key, region)
  *             return region             # <<<<<<<<<<<<<<
@@ -2955,7 +3070,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
     __pyx_r = __pyx_v_region;
     goto __pyx_L0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":63
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":64
  *         key = (m1, m2)
  *         p = PyDict_GetItem(self._slice_cache, key)
  *         if p == NULL:             # <<<<<<<<<<<<<<
@@ -2964,7 +3079,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
  */
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":68
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":69
  *             return region
  *         else:
  *             region = <PeakSet>p             # <<<<<<<<<<<<<<
@@ -2977,7 +3092,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
     __pyx_v_region = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":69
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":70
  *         else:
  *             region = <PeakSet>p
  *             return region             # <<<<<<<<<<<<<<
@@ -2990,7 +3105,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_PeakSet *__pyx_f_12ms_dei
     goto __pyx_L0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":56
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":57
  *         self._slice_cache = {}
  * 
  *     cpdef PeakSet between(self, double m1, double m2):             # <<<<<<<<<<<<<<
@@ -3050,11 +3165,11 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_m2)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("between", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("between", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "between") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "between") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3062,12 +3177,12 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_m1 = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_m1 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_m2 = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_m2 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_m1 = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_m1 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_m2 = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_m2 == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("between", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("between", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.between", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3089,9 +3204,9 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("between", 0);
-  __Pyx_TraceCall("between", __pyx_f[0], 56, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("between", __pyx_f[0], 57, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_between(__pyx_v_self, __pyx_v_m1, __pyx_v_m2, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_between(__pyx_v_self, __pyx_v_m1, __pyx_v_m2, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 57; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3109,7 +3224,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":71
+/* "ms_deisotope\_c\deconvoluter_base.pyx":72
  *             return region
  * 
  *     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):             # <<<<<<<<<<<<<<
@@ -3139,18 +3254,18 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("has_peak", 0);
-  __Pyx_TraceCall("has_peak", __pyx_f[0], 71, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("has_peak", __pyx_f[0], 72, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   /* Check if called by wrapper */
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_has_peak); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_has_peak); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_5has_peak)) {
       __Pyx_XDECREF(((PyObject *)__pyx_r));
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mz); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mz); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_5 = __pyx_t_1; __pyx_t_6 = NULL;
@@ -3165,7 +3280,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
           __pyx_t_7 = 1;
         }
       }
-      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -3176,11 +3291,11 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
       PyTuple_SET_ITEM(__pyx_t_8, 1+__pyx_t_7, __pyx_t_4);
       __pyx_t_3 = 0;
       __pyx_t_4 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_r = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -3189,7 +3304,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":72
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":73
  * 
  *     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
  *         peak = self.peaklist._has_peak(mz, error_tolerance)             # <<<<<<<<<<<<<<
@@ -3198,12 +3313,12 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
  */
   __pyx_t_9.__pyx_n = 1;
   __pyx_t_9.tolerance = __pyx_v_error_tolerance;
-  __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_v_self->peaklist->__pyx_vtab)->_has_peak(__pyx_v_self->peaklist, __pyx_v_mz, &__pyx_t_9)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_v_self->peaklist->__pyx_vtab)->_has_peak(__pyx_v_self->peaklist, __pyx_v_mz, &__pyx_t_9)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_peak = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":73
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":74
  *     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
  *         peak = self.peaklist._has_peak(mz, error_tolerance)
  *         if peak is None or peak.intensity < self.minimum_intensity:             # <<<<<<<<<<<<<<
@@ -3222,7 +3337,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_10) {
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":74
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":75
  *         peak = self.peaklist._has_peak(mz, error_tolerance)
  *         if peak is None or peak.intensity < self.minimum_intensity:
  *             return FittedPeak(mz, 1.0, 0, 0, 0, 0, 0)             # <<<<<<<<<<<<<<
@@ -3230,9 +3345,9 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
  * 
  */
     __Pyx_XDECREF(((PyObject *)__pyx_r));
-    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_mz); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_mz); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = PyTuple_New(7); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyTuple_New(7); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GIVEREF(__pyx_t_1);
     PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -3255,14 +3370,14 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
     __Pyx_GIVEREF(__pyx_int_0);
     PyTuple_SET_ITEM(__pyx_t_2, 6, __pyx_int_0);
     __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak), __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak), __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_r = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)__pyx_t_1);
     __pyx_t_1 = 0;
     goto __pyx_L0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":73
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":74
  *     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
  *         peak = self.peaklist._has_peak(mz, error_tolerance)
  *         if peak is None or peak.intensity < self.minimum_intensity:             # <<<<<<<<<<<<<<
@@ -3271,7 +3386,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
  */
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":75
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":76
  *         if peak is None or peak.intensity < self.minimum_intensity:
  *             return FittedPeak(mz, 1.0, 0, 0, 0, 0, 0)
  *         return peak             # <<<<<<<<<<<<<<
@@ -3283,7 +3398,7 @@ static struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *__pyx_f_12ms_
   __pyx_r = __pyx_v_peak;
   goto __pyx_L0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":71
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":72
  *             return region
  * 
  *     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):             # <<<<<<<<<<<<<<
@@ -3342,11 +3457,11 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_error_tolerance)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("has_peak", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("has_peak", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "has_peak") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "has_peak") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3354,12 +3469,12 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_mz = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mz == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_mz = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mz == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("has_peak", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("has_peak", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.has_peak", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3381,9 +3496,9 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("has_peak", 0);
-  __Pyx_TraceCall("has_peak", __pyx_f[0], 71, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("has_peak", __pyx_f[0], 72, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_has_peak(__pyx_v_self, __pyx_v_mz, __pyx_v_error_tolerance, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_has_peak(__pyx_v_self, __pyx_v_mz, __pyx_v_error_tolerance, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3401,7 +3516,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":77
+/* "ms_deisotope\_c\deconvoluter_base.pyx":78
  *         return peak
  * 
  *     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -3432,7 +3547,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("match_theoretical_isotopic_distribution", 0);
-  __Pyx_TraceCall("match_theoretical_isotopic_distribution", __pyx_f[0], 77, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("match_theoretical_isotopic_distribution", __pyx_f[0], 78, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   if (__pyx_optional_args) {
     if (__pyx_optional_args->__pyx_n > 0) {
       __pyx_v_error_tolerance = __pyx_optional_args->error_tolerance;
@@ -3442,11 +3557,11 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_match_theoretical_isotopic_distr); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_match_theoretical_isotopic_distr); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_7match_theoretical_isotopic_distribution)) {
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -3461,7 +3576,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
           __pyx_t_6 = 1;
         }
       }
-      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_7);
       if (__pyx_t_5) {
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -3472,11 +3587,11 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_6, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_r = ((PyObject*)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -3485,19 +3600,19 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":83
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":84
  *             TheoreticalPeak theo_peak
  * 
  *         experimental_distribution = []             # <<<<<<<<<<<<<<
  * 
  *         for i in range(PyList_GET_SIZE(theoretical_distribution)):
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_experimental_distribution = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":85
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":86
  *         experimental_distribution = []
  * 
  *         for i in range(PyList_GET_SIZE(theoretical_distribution)):             # <<<<<<<<<<<<<<
@@ -3508,7 +3623,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_6; __pyx_t_8+=1) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":86
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":87
  * 
  *         for i in range(PyList_GET_SIZE(theoretical_distribution)):
  *             theo_peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)             # <<<<<<<<<<<<<<
@@ -3521,20 +3636,20 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
     __Pyx_XDECREF_SET(__pyx_v_theo_peak, ((struct __pyx_obj_7brainpy_2_c_21isotopic_distribution_TheoreticalPeak *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":87
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":88
  *         for i in range(PyList_GET_SIZE(theoretical_distribution)):
  *             theo_peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)
  *             experimental_distribution.append(self.has_peak(theo_peak.mz, error_tolerance))             # <<<<<<<<<<<<<<
  * 
  * 
  */
-    __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self->__pyx_vtab)->has_peak(__pyx_v_self, __pyx_v_theo_peak->mz, __pyx_v_error_tolerance, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self->__pyx_vtab)->has_peak(__pyx_v_self, __pyx_v_theo_peak->mz, __pyx_v_error_tolerance, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 88; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_experimental_distribution, __pyx_t_1); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_10 = __Pyx_PyList_Append(__pyx_v_experimental_distribution, __pyx_t_1); if (unlikely(__pyx_t_10 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 88; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":90
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":91
  * 
  * 
  *         return experimental_distribution             # <<<<<<<<<<<<<<
@@ -3546,7 +3661,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
   __pyx_r = __pyx_v_experimental_distribution;
   goto __pyx_L0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":77
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":78
  *         return peak
  * 
  *     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -3609,7 +3724,7 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "match_theoretical_isotopic_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "match_theoretical_isotopic_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -3621,20 +3736,20 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
     }
     __pyx_v_theoretical_distribution = ((PyObject*)values[0]);
     if (values[1]) {
-      __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_error_tolerance = ((double)2e-5);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("match_theoretical_isotopic_distribution", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("match_theoretical_isotopic_distribution", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.match_theoretical_isotopic_distribution", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_theoretical_distribution), (&PyList_Type), 1, "theoretical_distribution", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_theoretical_distribution), (&PyList_Type), 1, "theoretical_distribution", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_6match_theoretical_isotopic_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_theoretical_distribution, __pyx_v_error_tolerance);
 
   /* function exit code */
@@ -3656,11 +3771,11 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("match_theoretical_isotopic_distribution", 0);
-  __Pyx_TraceCall("match_theoretical_isotopic_distribution", __pyx_f[0], 77, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("match_theoretical_isotopic_distribution", __pyx_f[0], 78, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.error_tolerance = __pyx_v_error_tolerance;
-  __pyx_t_1 = __pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase->match_theoretical_isotopic_distribution(__pyx_v_self, __pyx_v_theoretical_distribution, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase->match_theoretical_isotopic_distribution(__pyx_v_self, __pyx_v_theoretical_distribution, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3678,7 +3793,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":92
+/* "ms_deisotope\_c\deconvoluter_base.pyx":93
  *         return experimental_distribution
  * 
  *     cpdef scale_theoretical_distribution(self, list theoretical_distribution, list experimental_distribution):             # <<<<<<<<<<<<<<
@@ -3708,12 +3823,12 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("scale_theoretical_distribution", 0);
-  __Pyx_TraceCall("scale_theoretical_distribution", __pyx_f[0], 92, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("scale_theoretical_distribution", __pyx_f[0], 93, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   /* Check if called by wrapper */
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_scale_theoretical_distribution); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_scale_theoretical_distribution); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_9scale_theoretical_distribution)) {
       __Pyx_XDECREF(__pyx_r);
@@ -3730,7 +3845,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
           __pyx_t_5 = 1;
         }
       }
-      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       if (__pyx_t_4) {
         __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -3741,7 +3856,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
       __Pyx_INCREF(__pyx_v_experimental_distribution);
       __Pyx_GIVEREF(__pyx_v_experimental_distribution);
       PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_v_experimental_distribution);
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -3753,18 +3868,18 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":98
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":99
  *             double total_abundance
  * 
  *         if self.scale_method == 'sum':             # <<<<<<<<<<<<<<
  *             total_abundance = sum_intensity(experimental_distribution)
  *             for i in range(PyList_GET_SIZE(theoretical_distribution)):
  */
-  __pyx_t_7 = (__Pyx_PyString_Equals(__pyx_v_self->scale_method, __pyx_n_s_sum, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 98; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = (__Pyx_PyString_Equals(__pyx_v_self->scale_method, __pyx_n_s_sum, Py_EQ)); if (unlikely(__pyx_t_7 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 99; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_8 = (__pyx_t_7 != 0);
   if (__pyx_t_8) {
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":99
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":100
  * 
  *         if self.scale_method == 'sum':
  *             total_abundance = sum_intensity(experimental_distribution)             # <<<<<<<<<<<<<<
@@ -3773,7 +3888,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
  */
     __pyx_v_total_abundance = __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_sum_intensity(__pyx_v_experimental_distribution);
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":100
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":101
  *         if self.scale_method == 'sum':
  *             total_abundance = sum_intensity(experimental_distribution)
  *             for i in range(PyList_GET_SIZE(theoretical_distribution)):             # <<<<<<<<<<<<<<
@@ -3784,7 +3899,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
     for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_5; __pyx_t_9+=1) {
       __pyx_v_i = __pyx_t_9;
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":101
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":102
  *             total_abundance = sum_intensity(experimental_distribution)
  *             for i in range(PyList_GET_SIZE(theoretical_distribution)):
  *                 peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)             # <<<<<<<<<<<<<<
@@ -3797,7 +3912,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
       __Pyx_XDECREF_SET(__pyx_v_peak, ((struct __pyx_obj_7brainpy_2_c_21isotopic_distribution_TheoreticalPeak *)__pyx_t_1));
       __pyx_t_1 = 0;
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":102
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":103
  *             for i in range(PyList_GET_SIZE(theoretical_distribution)):
  *                 peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)
  *                 peak.intensity *= total_abundance             # <<<<<<<<<<<<<<
@@ -3807,7 +3922,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
       __pyx_v_peak->intensity = (__pyx_v_peak->intensity * __pyx_v_total_abundance);
     }
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":103
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":104
  *                 peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)
  *                 peak.intensity *= total_abundance
  *             return theoretical_distribution             # <<<<<<<<<<<<<<
@@ -3819,7 +3934,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
     __pyx_r = __pyx_v_theoretical_distribution;
     goto __pyx_L0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":98
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":99
  *             double total_abundance
  * 
  *         if self.scale_method == 'sum':             # <<<<<<<<<<<<<<
@@ -3828,7 +3943,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
  */
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":92
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":93
  *         return experimental_distribution
  * 
  *     cpdef scale_theoretical_distribution(self, list theoretical_distribution, list experimental_distribution):             # <<<<<<<<<<<<<<
@@ -3887,11 +4002,11 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_experimental_distribution)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("scale_theoretical_distribution", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("scale_theoretical_distribution", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "scale_theoretical_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "scale_theoretical_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3904,14 +4019,14 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("scale_theoretical_distribution", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("scale_theoretical_distribution", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.scale_theoretical_distribution", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_theoretical_distribution), (&PyList_Type), 1, "theoretical_distribution", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_experimental_distribution), (&PyList_Type), 1, "experimental_distribution", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_theoretical_distribution), (&PyList_Type), 1, "theoretical_distribution", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_experimental_distribution), (&PyList_Type), 1, "experimental_distribution", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_8scale_theoretical_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_theoretical_distribution, __pyx_v_experimental_distribution);
 
   /* function exit code */
@@ -3932,9 +4047,9 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("scale_theoretical_distribution", 0);
-  __Pyx_TraceCall("scale_theoretical_distribution", __pyx_f[0], 92, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("scale_theoretical_distribution", __pyx_f[0], 93, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_scale_theoretical_distribution(__pyx_v_self, __pyx_v_theoretical_distribution, __pyx_v_experimental_distribution, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 92; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_scale_theoretical_distribution(__pyx_v_self, __pyx_v_theoretical_distribution, __pyx_v_experimental_distribution, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 93; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3952,7 +4067,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":111
+/* "ms_deisotope\_c\deconvoluter_base.pyx":112
  *         #     return theoretical_distribution
  * 
  *     cpdef subtraction(self, list isotopic_cluster, double error_tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -3976,16 +4091,16 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
   PyObject *__pyx_t_5 = NULL;
   Py_ssize_t __pyx_t_6;
   PyObject *__pyx_t_7 = NULL;
-  int __pyx_t_8;
-  size_t __pyx_t_9;
-  PyObject *__pyx_t_10;
-  struct __pyx_opt_args_14ms_peak_picker_2_c_10peak_index_9PeakIndex__has_peak __pyx_t_11;
+  size_t __pyx_t_8;
+  PyObject *__pyx_t_9;
+  struct __pyx_opt_args_14ms_peak_picker_2_c_10peak_index_9PeakIndex__has_peak __pyx_t_10;
+  int __pyx_t_11;
   int __pyx_t_12;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("subtraction", 0);
-  __Pyx_TraceCall("subtraction", __pyx_f[0], 111, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("subtraction", __pyx_f[0], 112, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   if (__pyx_optional_args) {
     if (__pyx_optional_args->__pyx_n > 0) {
       __pyx_v_error_tolerance = __pyx_optional_args->error_tolerance;
@@ -3995,11 +4110,11 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_subtraction); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_subtraction); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_11subtraction)) {
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -4014,7 +4129,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
           __pyx_t_6 = 1;
         }
       }
-      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_7);
       if (__pyx_t_5) {
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -4025,7 +4140,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_6, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -4037,122 +4152,103 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBa
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":116
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":117
  *             TheoreticalPeak peak
  *             FittedPeak match
- *         if self.use_subtraction:             # <<<<<<<<<<<<<<
- *             for i in range(PyList_GET_SIZE(isotopic_cluster)):
- *                 peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+ *         for i in range(PyList_GET_SIZE(isotopic_cluster)):             # <<<<<<<<<<<<<<
+ *             peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+ *             match = self.peaklist._has_peak(peak.mz, error_tolerance)
  */
-  __pyx_t_8 = (__pyx_v_self->use_subtraction != 0);
-  if (__pyx_t_8) {
+  __pyx_t_6 = PyList_GET_SIZE(__pyx_v_isotopic_cluster);
+  for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_6; __pyx_t_8+=1) {
+    __pyx_v_i = __pyx_t_8;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":117
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":118
  *             FittedPeak match
- *         if self.use_subtraction:
- *             for i in range(PyList_GET_SIZE(isotopic_cluster)):             # <<<<<<<<<<<<<<
- *                 peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
- *                 match = self.peaklist._has_peak(peak.mz, error_tolerance)
+ *         for i in range(PyList_GET_SIZE(isotopic_cluster)):
+ *             peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)             # <<<<<<<<<<<<<<
+ *             match = self.peaklist._has_peak(peak.mz, error_tolerance)
+ *             if match is not None:
  */
-    __pyx_t_6 = PyList_GET_SIZE(__pyx_v_isotopic_cluster);
-    for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_6; __pyx_t_9+=1) {
-      __pyx_v_i = __pyx_t_9;
+    __pyx_t_9 = PyList_GET_ITEM(__pyx_v_isotopic_cluster, __pyx_v_i);
+    __pyx_t_1 = ((PyObject *)__pyx_t_9);
+    __Pyx_INCREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_peak, ((struct __pyx_obj_7brainpy_2_c_21isotopic_distribution_TheoreticalPeak *)__pyx_t_1));
+    __pyx_t_1 = 0;
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":118
- *         if self.use_subtraction:
- *             for i in range(PyList_GET_SIZE(isotopic_cluster)):
- *                 peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)             # <<<<<<<<<<<<<<
- *                 match = self.peaklist._has_peak(peak.mz, error_tolerance)
- *                 if match is not None:
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":119
+ *         for i in range(PyList_GET_SIZE(isotopic_cluster)):
+ *             peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+ *             match = self.peaklist._has_peak(peak.mz, error_tolerance)             # <<<<<<<<<<<<<<
+ *             if match is not None:
+ *                 match.intensity -= peak.intensity
  */
-      __pyx_t_10 = PyList_GET_ITEM(__pyx_v_isotopic_cluster, __pyx_v_i);
-      __pyx_t_1 = ((PyObject *)__pyx_t_10);
-      __Pyx_INCREF(__pyx_t_1);
-      __Pyx_XDECREF_SET(__pyx_v_peak, ((struct __pyx_obj_7brainpy_2_c_21isotopic_distribution_TheoreticalPeak *)__pyx_t_1));
-      __pyx_t_1 = 0;
+    __pyx_t_10.__pyx_n = 1;
+    __pyx_t_10.tolerance = __pyx_v_error_tolerance;
+    __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_v_self->peaklist->__pyx_vtab)->_has_peak(__pyx_v_self->peaklist, __pyx_v_peak->mz, &__pyx_t_10)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_match, ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)__pyx_t_1));
+    __pyx_t_1 = 0;
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":119
- *             for i in range(PyList_GET_SIZE(isotopic_cluster)):
- *                 peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
- *                 match = self.peaklist._has_peak(peak.mz, error_tolerance)             # <<<<<<<<<<<<<<
- *                 if match is not None:
- *                     match.intensity -= peak.intensity
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":120
+ *             peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+ *             match = self.peaklist._has_peak(peak.mz, error_tolerance)
+ *             if match is not None:             # <<<<<<<<<<<<<<
+ *                 match.intensity -= peak.intensity
+ *                 if match.intensity < 0:
  */
-      __pyx_t_11.__pyx_n = 1;
-      __pyx_t_11.tolerance = __pyx_v_error_tolerance;
-      __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_v_self->peaklist->__pyx_vtab)->_has_peak(__pyx_v_self->peaklist, __pyx_v_peak->mz, &__pyx_t_11)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_XDECREF_SET(__pyx_v_match, ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)__pyx_t_1));
-      __pyx_t_1 = 0;
+    __pyx_t_11 = (((PyObject *)__pyx_v_match) != Py_None);
+    __pyx_t_12 = (__pyx_t_11 != 0);
+    if (__pyx_t_12) {
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":120
- *                 peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
- *                 match = self.peaklist._has_peak(peak.mz, error_tolerance)
- *                 if match is not None:             # <<<<<<<<<<<<<<
- *                     match.intensity -= peak.intensity
- *                     if match.intensity < 0:
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":121
+ *             match = self.peaklist._has_peak(peak.mz, error_tolerance)
+ *             if match is not None:
+ *                 match.intensity -= peak.intensity             # <<<<<<<<<<<<<<
+ *                 if match.intensity < 0:
+ *                     match.intensity = 1.
  */
-      __pyx_t_8 = (((PyObject *)__pyx_v_match) != Py_None);
-      __pyx_t_12 = (__pyx_t_8 != 0);
-      if (__pyx_t_12) {
+      __pyx_v_match->intensity = (__pyx_v_match->intensity - __pyx_v_peak->intensity);
 
-        /* "ms_deisotope\_c\deconvoluter_base.pyx":121
- *                 match = self.peaklist._has_peak(peak.mz, error_tolerance)
- *                 if match is not None:
- *                     match.intensity -= peak.intensity             # <<<<<<<<<<<<<<
- *                     if match.intensity < 0:
- *                         match.intensity = 1.
- */
-        __pyx_v_match->intensity = (__pyx_v_match->intensity - __pyx_v_peak->intensity);
-
-        /* "ms_deisotope\_c\deconvoluter_base.pyx":122
- *                 if match is not None:
- *                     match.intensity -= peak.intensity
- *                     if match.intensity < 0:             # <<<<<<<<<<<<<<
- *                         match.intensity = 1.
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":122
+ *             if match is not None:
+ *                 match.intensity -= peak.intensity
+ *                 if match.intensity < 0:             # <<<<<<<<<<<<<<
+ *                     match.intensity = 1.
  * 
  */
-        __pyx_t_12 = ((__pyx_v_match->intensity < 0.0) != 0);
-        if (__pyx_t_12) {
+      __pyx_t_12 = ((__pyx_v_match->intensity < 0.0) != 0);
+      if (__pyx_t_12) {
 
-          /* "ms_deisotope\_c\deconvoluter_base.pyx":123
- *                     match.intensity -= peak.intensity
- *                     if match.intensity < 0:
- *                         match.intensity = 1.             # <<<<<<<<<<<<<<
+        /* "ms_deisotope\_c\deconvoluter_base.pyx":123
+ *                 match.intensity -= peak.intensity
+ *                 if match.intensity < 0:
+ *                     match.intensity = 1.             # <<<<<<<<<<<<<<
  * 
  *     def _merge_peaks(self, peak_list):
  */
-          __pyx_v_match->intensity = 1.;
+        __pyx_v_match->intensity = 1.;
 
-          /* "ms_deisotope\_c\deconvoluter_base.pyx":122
- *                 if match is not None:
- *                     match.intensity -= peak.intensity
- *                     if match.intensity < 0:             # <<<<<<<<<<<<<<
- *                         match.intensity = 1.
+        /* "ms_deisotope\_c\deconvoluter_base.pyx":122
+ *             if match is not None:
+ *                 match.intensity -= peak.intensity
+ *                 if match.intensity < 0:             # <<<<<<<<<<<<<<
+ *                     match.intensity = 1.
  * 
  */
-        }
-
-        /* "ms_deisotope\_c\deconvoluter_base.pyx":120
- *                 peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
- *                 match = self.peaklist._has_peak(peak.mz, error_tolerance)
- *                 if match is not None:             # <<<<<<<<<<<<<<
- *                     match.intensity -= peak.intensity
- *                     if match.intensity < 0:
- */
       }
-    }
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":116
- *             TheoreticalPeak peak
- *             FittedPeak match
- *         if self.use_subtraction:             # <<<<<<<<<<<<<<
- *             for i in range(PyList_GET_SIZE(isotopic_cluster)):
- *                 peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":120
+ *             peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+ *             match = self.peaklist._has_peak(peak.mz, error_tolerance)
+ *             if match is not None:             # <<<<<<<<<<<<<<
+ *                 match.intensity -= peak.intensity
+ *                 if match.intensity < 0:
  */
+    }
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":111
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":112
  *         #     return theoretical_distribution
  * 
  *     cpdef subtraction(self, list isotopic_cluster, double error_tolerance=2e-5):             # <<<<<<<<<<<<<<
@@ -4217,7 +4313,7 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "subtraction") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "subtraction") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -4229,20 +4325,20 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
     }
     __pyx_v_isotopic_cluster = ((PyObject*)values[0]);
     if (values[1]) {
-      __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_error_tolerance = ((double)2e-5);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("subtraction", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("subtraction", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.DeconvoluterBase.subtraction", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_isotopic_cluster), (&PyList_Type), 1, "isotopic_cluster", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_isotopic_cluster), (&PyList_Type), 1, "isotopic_cluster", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_10subtraction(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_isotopic_cluster, __pyx_v_error_tolerance);
 
   /* function exit code */
@@ -4264,11 +4360,11 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("subtraction", 0);
-  __Pyx_TraceCall("subtraction", __pyx_f[0], 111, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("subtraction", __pyx_f[0], 112, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.error_tolerance = __pyx_v_error_tolerance;
-  __pyx_t_1 = __pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase->subtraction(__pyx_v_self, __pyx_v_isotopic_cluster, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase->subtraction(__pyx_v_self, __pyx_v_isotopic_cluster, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4287,7 +4383,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
 }
 
 /* "ms_deisotope\_c\deconvoluter_base.pyx":125
- *                         match.intensity = 1.
+ *                     match.intensity = 1.
  * 
  *     def _merge_peaks(self, peak_list):             # <<<<<<<<<<<<<<
  *         peak_list = sorted(peak_list, key=operator.attrgetter("neutral_mass"))
@@ -4545,7 +4641,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterB
   goto __pyx_L0;
 
   /* "ms_deisotope\_c\deconvoluter_base.pyx":125
- *                         match.intensity = 1.
+ *                     match.intensity = 1.
  * 
  *     def _merge_peaks(self, peak_list):             # <<<<<<<<<<<<<<
  *         peak_list = sorted(peak_list, key=operator.attrgetter("neutral_mass"))
@@ -6180,7 +6276,7 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_7v
  *         public bint verbose
  *         public dict _slice_cache             # <<<<<<<<<<<<<<
  * 
- *     def __cinit__(self):
+ *     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
  */
 
 /* Python wrapper */
@@ -6436,91 +6532,241 @@ static int __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_has_multiple_real_peak
 /* "ms_deisotope\_c\deconvoluter_base.pyx":231
  *         public AveragineCache averagine
  * 
- *     def __init__(self, *args, **kwargs):             # <<<<<<<<<<<<<<
- *         super(AveragineDeconvoluterBase, self).__init__()
- * 
+ *     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,             # <<<<<<<<<<<<<<
+ *                  double minimum_intensity=5., *args, **kwargs):
+ *         super(AveragineDeconvoluterBase, self).__init__(
  */
 
 /* Python wrapper */
 static int __pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static int __pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  CYTHON_UNUSED PyObject *__pyx_v_args = 0;
-  CYTHON_UNUSED PyObject *__pyx_v_kwargs = 0;
+  int __pyx_v_use_subtraction;
+  PyObject *__pyx_v_scale_method = 0;
+  int __pyx_v_merge_isobaric_peaks;
+  double __pyx_v_minimum_intensity;
+  PyObject *__pyx_v_args = 0;
+  PyObject *__pyx_v_kwargs = 0;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
-  if (unlikely(__pyx_kwds) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__init__", 1))) return -1;
-  __Pyx_INCREF(__pyx_args);
-  __pyx_v_args = __pyx_args;
-  __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase___init__(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self), __pyx_v_args, __pyx_v_kwargs);
+  __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return -1;
+  __Pyx_GOTREF(__pyx_v_kwargs);
+  if (PyTuple_GET_SIZE(__pyx_args) > 4) {
+    __pyx_v_args = PyTuple_GetSlice(__pyx_args, 4, PyTuple_GET_SIZE(__pyx_args));
+    if (unlikely(!__pyx_v_args)) {
+      __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
+      __Pyx_RefNannyFinishContext();
+      return -1;
+    }
+    __Pyx_GOTREF(__pyx_v_args);
+  } else {
+    __pyx_v_args = __pyx_empty_tuple; __Pyx_INCREF(__pyx_empty_tuple);
+  }
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_use_subtraction,&__pyx_n_s_scale_method,&__pyx_n_s_merge_isobaric_peaks,&__pyx_n_s_minimum_intensity,0};
+    PyObject* values[4] = {0,0,0,0};
+    values[1] = ((PyObject*)__pyx_n_s_sum);
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        default:
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_use_subtraction);
+          if (value) { values[0] = value; kw_args--; }
+        }
+        case  1:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_scale_method);
+          if (value) { values[1] = value; kw_args--; }
+        }
+        case  2:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_merge_isobaric_peaks);
+          if (value) { values[2] = value; kw_args--; }
+        }
+        case  3:
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_minimum_intensity);
+          if (value) { values[3] = value; kw_args--; }
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        const Py_ssize_t used_pos_args = (pos_args < 4) ? pos_args : 4;
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, used_pos_args, "__init__") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 231; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      }
+    } else {
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        default:
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        case  0: break;
+      }
+    }
+    if (values[0]) {
+      __pyx_v_use_subtraction = __Pyx_PyObject_IsTrue(values[0]); if (unlikely((__pyx_v_use_subtraction == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 231; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    } else {
+      __pyx_v_use_subtraction = ((int)0);
+    }
+    __pyx_v_scale_method = ((PyObject*)values[1]);
+    if (values[2]) {
+      __pyx_v_merge_isobaric_peaks = __Pyx_PyObject_IsTrue(values[2]); if (unlikely((__pyx_v_merge_isobaric_peaks == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 231; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    } else {
+      __pyx_v_merge_isobaric_peaks = ((int)1);
+    }
+    if (values[3]) {
+      __pyx_v_minimum_intensity = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_minimum_intensity == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    } else {
+      __pyx_v_minimum_intensity = ((double)5.);
+    }
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
+  __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
+  __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.AveragineDeconvoluterBase.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return -1;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_scale_method), (&PyString_Type), 1, "scale_method", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 231; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase___init__(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self), __pyx_v_use_subtraction, __pyx_v_scale_method, __pyx_v_merge_isobaric_peaks, __pyx_v_minimum_intensity, __pyx_v_args, __pyx_v_kwargs);
 
   /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = -1;
+  __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_args);
   __Pyx_XDECREF(__pyx_v_kwargs);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase___init__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_args, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
+static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase___init__(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *__pyx_v_self, int __pyx_v_use_subtraction, PyObject *__pyx_v_scale_method, int __pyx_v_merge_isobaric_peaks, double __pyx_v_minimum_intensity, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs) {
   int __pyx_r;
   __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
   __Pyx_TraceCall("__init__", __pyx_f[0], 231, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 231; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":232
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":233
+ *     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
+ *                  double minimum_intensity=5., *args, **kwargs):
+ *         super(AveragineDeconvoluterBase, self).__init__(             # <<<<<<<<<<<<<<
+ *             use_subtraction, scale_method, merge_isobaric_peaks,
+ *             minimum_intensity, *args, **kwargs)
+ */
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase));
+  __Pyx_GIVEREF(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase));
+  PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase));
+  __Pyx_INCREF(((PyObject *)__pyx_v_self));
+  __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
+  PyTuple_SET_ITEM(__pyx_t_1, 1, ((PyObject *)__pyx_v_self));
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_1, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_init); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":234
+ *                  double minimum_intensity=5., *args, **kwargs):
+ *         super(AveragineDeconvoluterBase, self).__init__(
+ *             use_subtraction, scale_method, merge_isobaric_peaks,             # <<<<<<<<<<<<<<
+ *             minimum_intensity, *args, **kwargs)
  * 
- *     def __init__(self, *args, **kwargs):
- *         super(AveragineDeconvoluterBase, self).__init__()             # <<<<<<<<<<<<<<
+ */
+  __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_v_use_subtraction); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_merge_isobaric_peaks); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":235
+ *         super(AveragineDeconvoluterBase, self).__init__(
+ *             use_subtraction, scale_method, merge_isobaric_peaks,
+ *             minimum_intensity, *args, **kwargs)             # <<<<<<<<<<<<<<
  * 
  *     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):
  */
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase));
-  __Pyx_GIVEREF(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase));
-  PyTuple_SET_ITEM(__pyx_t_2, 0, ((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase));
-  __Pyx_INCREF(((PyObject *)__pyx_v_self));
-  __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
-  PyTuple_SET_ITEM(__pyx_t_2, 1, ((PyObject *)__pyx_v_self));
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = NULL;
-  if (CYTHON_COMPILING_IN_CPYTHON && likely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
-    if (likely(__pyx_t_3)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
-      __Pyx_INCREF(__pyx_t_3);
-      __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_2, function);
-    }
-  }
-  if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  }
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_minimum_intensity); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 235; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":233
+ *     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
+ *                  double minimum_intensity=5., *args, **kwargs):
+ *         super(AveragineDeconvoluterBase, self).__init__(             # <<<<<<<<<<<<<<
+ *             use_subtraction, scale_method, merge_isobaric_peaks,
+ *             minimum_intensity, *args, **kwargs)
+ */
+  __pyx_t_5 = PyTuple_New(4); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_GIVEREF(__pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_2);
+  __Pyx_INCREF(__pyx_v_scale_method);
+  __Pyx_GIVEREF(__pyx_v_scale_method);
+  PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_v_scale_method);
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_5, 2, __pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_4);
+  PyTuple_SET_ITEM(__pyx_t_5, 3, __pyx_t_4);
+  __pyx_t_2 = 0;
+  __pyx_t_3 = 0;
+  __pyx_t_4 = 0;
+
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":235
+ *         super(AveragineDeconvoluterBase, self).__init__(
+ *             use_subtraction, scale_method, merge_isobaric_peaks,
+ *             minimum_intensity, *args, **kwargs)             # <<<<<<<<<<<<<<
+ * 
+ *     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):
+ */
+  __pyx_t_4 = PyNumber_Add(__pyx_t_5, __pyx_v_args); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":233
+ *     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
+ *                  double minimum_intensity=5., *args, **kwargs):
+ *         super(AveragineDeconvoluterBase, self).__init__(             # <<<<<<<<<<<<<<
+ *             use_subtraction, scale_method, merge_isobaric_peaks,
+ *             minimum_intensity, *args, **kwargs)
+ */
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, __pyx_v_kwargs); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
   /* "ms_deisotope\_c\deconvoluter_base.pyx":231
  *         public AveragineCache averagine
  * 
- *     def __init__(self, *args, **kwargs):             # <<<<<<<<<<<<<<
- *         super(AveragineDeconvoluterBase, self).__init__()
- * 
+ *     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,             # <<<<<<<<<<<<<<
+ *                  double minimum_intensity=5., *args, **kwargs):
+ *         super(AveragineDeconvoluterBase, self).__init__(
  */
 
   /* function exit code */
@@ -6530,6 +6776,8 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvolut
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.AveragineDeconvoluterBase.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
@@ -6538,8 +6786,8 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvolut
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":234
- *         super(AveragineDeconvoluterBase, self).__init__()
+/* "ms_deisotope\_c\deconvoluter_base.pyx":237
+ *             minimum_intensity, *args, **kwargs)
  * 
  *     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):             # <<<<<<<<<<<<<<
  *         cdef:
@@ -6568,18 +6816,18 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("fit_theoretical_distribution", 0);
-  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 234, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 237, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   /* Check if called by wrapper */
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fit_theoretical_distribution); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fit_theoretical_distribution); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_3fit_theoretical_distribution)) {
       __Pyx_XDECREF(((PyObject *)__pyx_r));
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_5 = __pyx_t_1; __pyx_t_6 = NULL;
@@ -6594,7 +6842,7 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
           __pyx_t_7 = 1;
         }
       }
-      __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -6608,11 +6856,11 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
       PyTuple_SET_ITEM(__pyx_t_8, 2+__pyx_t_7, __pyx_t_4);
       __pyx_t_3 = 0;
       __pyx_t_4 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_12ms_deisotope_2_c_7scoring_IsotopicFitRecord))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_12ms_deisotope_2_c_7scoring_IsotopicFitRecord))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_r = ((struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6621,7 +6869,7 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":238
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":241
  *             list tid, eid
  *             double score
  *         tid = self.averagine.isotopic_cluster(peak.mz, charge)             # <<<<<<<<<<<<<<
@@ -6630,12 +6878,12 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
  */
   __pyx_t_9.__pyx_n = 1;
   __pyx_t_9.charge = __pyx_v_charge;
-  __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_9averagine_AveragineCache *)__pyx_v_self->averagine->__pyx_vtab)->isotopic_cluster(__pyx_v_self->averagine, __pyx_v_peak->mz, 0, &__pyx_t_9); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 238; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_9averagine_AveragineCache *)__pyx_v_self->averagine->__pyx_vtab)->isotopic_cluster(__pyx_v_self->averagine, __pyx_v_peak->mz, 0, &__pyx_t_9); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 241; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_tid = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":239
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":242
  *             double score
  *         tid = self.averagine.isotopic_cluster(peak.mz, charge)
  *         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)             # <<<<<<<<<<<<<<
@@ -6644,23 +6892,23 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
  */
   __pyx_t_10.__pyx_n = 1;
   __pyx_t_10.error_tolerance = __pyx_v_error_tolerance;
-  __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.match_theoretical_isotopic_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, 0, &__pyx_t_10); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 239; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.match_theoretical_isotopic_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, 0, &__pyx_t_10); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_eid = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":240
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":243
  *         tid = self.averagine.isotopic_cluster(peak.mz, charge)
  *         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
  *         self.scale_theoretical_distribution(tid, eid)             # <<<<<<<<<<<<<<
  *         score = self.scorer._evaluate(self.peaklist, eid, tid)
  *         return IsotopicFitRecord(peak, score, charge, tid, eid)
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.scale_theoretical_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, __pyx_v_eid, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 240; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.scale_theoretical_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, __pyx_v_eid, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 243; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":241
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":244
  *         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
  *         self.scale_theoretical_distribution(tid, eid)
  *         score = self.scorer._evaluate(self.peaklist, eid, tid)             # <<<<<<<<<<<<<<
@@ -6672,7 +6920,7 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
   __pyx_v_score = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_7scoring_IsotopicFitterBase *)__pyx_v_self->__pyx_base.scorer->__pyx_vtab)->_evaluate(__pyx_v_self->__pyx_base.scorer, ((struct __pyx_obj_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_t_1), __pyx_v_eid, __pyx_v_tid, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":242
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":245
  *         self.scale_theoretical_distribution(tid, eid)
  *         score = self.scorer._evaluate(self.peaklist, eid, tid)
  *         return IsotopicFitRecord(peak, score, charge, tid, eid)             # <<<<<<<<<<<<<<
@@ -6680,11 +6928,11 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
  *     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance):
  */
   __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 245; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 245; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = PyTuple_New(5); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyTuple_New(5); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 245; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_INCREF(((PyObject *)__pyx_v_peak));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_peak));
@@ -6701,15 +6949,15 @@ static struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *__pyx_f_1
   PyTuple_SET_ITEM(__pyx_t_5, 4, __pyx_v_eid);
   __pyx_t_1 = 0;
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_7scoring_IsotopicFitRecord), __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 242; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_7scoring_IsotopicFitRecord), __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 245; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_r = ((struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *)__pyx_t_2);
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":234
- *         super(AveragineDeconvoluterBase, self).__init__()
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":237
+ *             minimum_intensity, *args, **kwargs)
  * 
  *     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):             # <<<<<<<<<<<<<<
  *         cdef:
@@ -6770,16 +7018,16 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_error_tolerance)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_charge)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "fit_theoretical_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "fit_theoretical_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -6789,18 +7037,18 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
     __pyx_v_peak = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)values[0]);
-    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_charge = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_charge == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_charge = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_charge == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.AveragineDeconvoluterBase.fit_theoretical_distribution", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_2fit_theoretical_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self), __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge);
 
   /* function exit code */
@@ -6821,9 +7069,9 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("fit_theoretical_distribution", 0);
-  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 234, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 237, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_fit_theoretical_distribution(__pyx_v_self, __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 234; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_fit_theoretical_distribution(__pyx_v_self, __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6841,7 +7089,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":244
+/* "ms_deisotope\_c\deconvoluter_base.pyx":247
  *         return IsotopicFitRecord(peak, score, charge, tid, eid)
  * 
  *     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance):             # <<<<<<<<<<<<<<
@@ -6878,16 +7126,16 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_fit_peaks_at_charges", 0);
-  __Pyx_TraceCall("_fit_peaks_at_charges", __pyx_f[0], 244, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("_fit_peaks_at_charges", __pyx_f[0], 247, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   /* Check if called by wrapper */
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fit_peaks_at_charges); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fit_peaks_at_charges); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_5_fit_peaks_at_charges)) {
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -6902,7 +7150,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
           __pyx_t_6 = 1;
         }
       }
-      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_7);
       if (__pyx_t_5) {
         __Pyx_GIVEREF(__pyx_t_5); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_5); __pyx_t_5 = NULL;
@@ -6913,11 +7161,11 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_6, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_7, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (!(likely(PySet_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "set", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (!(likely(PySet_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "set", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_r = ((PyObject*)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6926,31 +7174,31 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":252
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":255
  *             int charge
  *             peak_charge_list
  *         results = []             # <<<<<<<<<<<<<<
  *         peak_charge_list = list(peak_charge_set)
  *         for i in range(PyList_GET_SIZE(peak_charge_list)):
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 252; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 255; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_results = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":253
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":256
  *             peak_charge_list
  *         results = []
  *         peak_charge_list = list(peak_charge_set)             # <<<<<<<<<<<<<<
  *         for i in range(PyList_GET_SIZE(peak_charge_list)):
  *             peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)
  */
-  __pyx_t_1 = PySequence_List(__pyx_v_peak_charge_set); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 253; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PySequence_List(__pyx_v_peak_charge_set); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 256; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_peak_charge_list = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":254
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":257
  *         results = []
  *         peak_charge_list = list(peak_charge_set)
  *         for i in range(PyList_GET_SIZE(peak_charge_list)):             # <<<<<<<<<<<<<<
@@ -6961,7 +7209,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_6; __pyx_t_8+=1) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":255
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":258
  *         peak_charge_list = list(peak_charge_set)
  *         for i in range(PyList_GET_SIZE(peak_charge_list)):
  *             peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)             # <<<<<<<<<<<<<<
@@ -6974,7 +7222,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
     __Pyx_XDECREF_SET(__pyx_v_peak_charge, ((PyObject*)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":256
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":259
  *         for i in range(PyList_GET_SIZE(peak_charge_list)):
  *             peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)
  *             peak = <FittedPeak>PyTuple_GET_ITEM(peak_charge, 0)             # <<<<<<<<<<<<<<
@@ -6987,7 +7235,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
     __Pyx_XDECREF_SET(__pyx_v_peak, ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":257
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":260
  *             peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)
  *             peak = <FittedPeak>PyTuple_GET_ITEM(peak_charge, 0)
  *             charge = PyInt_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))             # <<<<<<<<<<<<<<
@@ -6995,10 +7243,10 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  *             if peak.mz < 1:
  */
     __pyx_t_9 = PyTuple_GET_ITEM(__pyx_v_peak_charge, 1);
-    __pyx_t_10 = PyInt_AsLong(((PyObject *)__pyx_t_9)); if (unlikely(__pyx_t_10 == -1L && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_10 = PyInt_AsLong(((PyObject *)__pyx_t_9)); if (unlikely(__pyx_t_10 == -1L && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 260; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_v_charge = __pyx_t_10;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":259
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":262
  *             charge = PyInt_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
  * 
  *             if peak.mz < 1:             # <<<<<<<<<<<<<<
@@ -7008,7 +7256,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
     __pyx_t_11 = ((__pyx_v_peak->mz < 1.0) != 0);
     if (__pyx_t_11) {
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":260
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":263
  * 
  *             if peak.mz < 1:
  *                 continue             # <<<<<<<<<<<<<<
@@ -7017,7 +7265,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  */
       goto __pyx_L3_continue;
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":259
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":262
  *             charge = PyInt_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
  * 
  *             if peak.mz < 1:             # <<<<<<<<<<<<<<
@@ -7026,19 +7274,19 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  */
     }
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":262
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":265
  *                 continue
  * 
  *             fit = self.fit_theoretical_distribution(             # <<<<<<<<<<<<<<
  *                      peak, error_tolerance, charge)
  *             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
  */
-    __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->fit_theoretical_distribution(__pyx_v_self, __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 262; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = ((PyObject *)((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->fit_theoretical_distribution(__pyx_v_self, __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge, 0)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 265; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_fit, ((struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitRecord *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":264
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":267
  *             fit = self.fit_theoretical_distribution(
  *                      peak, error_tolerance, charge)
  *             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:             # <<<<<<<<<<<<<<
@@ -7059,7 +7307,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
     __pyx_L7_bool_binop_done:;
     if (__pyx_t_11) {
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":265
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":268
  *                      peak, error_tolerance, charge)
  *             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
  *                 continue             # <<<<<<<<<<<<<<
@@ -7068,7 +7316,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  */
       goto __pyx_L3_continue;
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":264
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":267
  *             fit = self.fit_theoretical_distribution(
  *                      peak, error_tolerance, charge)
  *             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:             # <<<<<<<<<<<<<<
@@ -7077,7 +7325,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  */
     }
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":266
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":269
  *             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
  *                 continue
  *             if self.scorer.reject(fit):             # <<<<<<<<<<<<<<
@@ -7087,7 +7335,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
     __pyx_t_11 = (((struct __pyx_vtabstruct_12ms_deisotope_2_c_7scoring_IsotopicFitterBase *)__pyx_v_self->__pyx_base.scorer->__pyx_vtab)->reject(__pyx_v_self->__pyx_base.scorer, __pyx_v_fit, 0) != 0);
     if (__pyx_t_11) {
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":267
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":270
  *                 continue
  *             if self.scorer.reject(fit):
  *                 continue             # <<<<<<<<<<<<<<
@@ -7096,7 +7344,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  */
       goto __pyx_L3_continue;
 
-      /* "ms_deisotope\_c\deconvoluter_base.pyx":266
+      /* "ms_deisotope\_c\deconvoluter_base.pyx":269
  *             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
  *                 continue
  *             if self.scorer.reject(fit):             # <<<<<<<<<<<<<<
@@ -7105,18 +7353,18 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  */
     }
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":268
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":271
  *             if self.scorer.reject(fit):
  *                 continue
  *             results.append(fit)             # <<<<<<<<<<<<<<
  *         return set(results)
  * 
  */
-    __pyx_t_13 = __Pyx_PyList_Append(__pyx_v_results, ((PyObject *)__pyx_v_fit)); if (unlikely(__pyx_t_13 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 268; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_13 = __Pyx_PyList_Append(__pyx_v_results, ((PyObject *)__pyx_v_fit)); if (unlikely(__pyx_t_13 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 271; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_L3_continue:;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":269
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":272
  *                 continue
  *             results.append(fit)
  *         return set(results)             # <<<<<<<<<<<<<<
@@ -7124,13 +7372,13 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDecon
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PySet_New(__pyx_v_results); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 269; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PySet_New(__pyx_v_results); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":244
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":247
  *         return IsotopicFitRecord(peak, score, charge, tid, eid)
  * 
  *     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance):             # <<<<<<<<<<<<<<
@@ -7192,11 +7440,11 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_error_tolerance)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_fit_peaks_at_charges", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("_fit_peaks_at_charges", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_fit_peaks_at_charges") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_fit_peaks_at_charges") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -7205,17 +7453,17 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
     __pyx_v_peak_charge_set = ((PyObject*)values[0]);
-    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_fit_peaks_at_charges", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("_fit_peaks_at_charges", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.AveragineDeconvoluterBase._fit_peaks_at_charges", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_charge_set), (&PySet_Type), 1, "peak_charge_set", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak_charge_set), (&PySet_Type), 1, "peak_charge_set", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase_4_fit_peaks_at_charges(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase *)__pyx_v_self), __pyx_v_peak_charge_set, __pyx_v_error_tolerance);
 
   /* function exit code */
@@ -7236,9 +7484,9 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_fit_peaks_at_charges", 0);
-  __Pyx_TraceCall("_fit_peaks_at_charges", __pyx_f[0], 244, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("_fit_peaks_at_charges", __pyx_f[0], 247, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase__fit_peaks_at_charges(__pyx_v_self, __pyx_v_peak_charge_set, __pyx_v_error_tolerance, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 244; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvoluterBase__fit_peaks_at_charges(__pyx_v_self, __pyx_v_peak_charge_set, __pyx_v_error_tolerance, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 247; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7261,7 +7509,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeco
  *     cdef:
  *         public AveragineCache averagine             # <<<<<<<<<<<<<<
  * 
- *     def __init__(self, *args, **kwargs):
+ *     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
  */
 
 /* Python wrapper */
@@ -7387,7 +7635,7 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_25AveragineDeconvolut
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":276
+/* "ms_deisotope\_c\deconvoluter_base.pyx":279
  *         public list averagines
  * 
  *     def __init__(self, *args, **kwargs):             # <<<<<<<<<<<<<<
@@ -7426,16 +7674,16 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDecon
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
-  __Pyx_TraceCall("__init__", __pyx_f[0], 276, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("__init__", __pyx_f[0], 279, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":277
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":280
  * 
  *     def __init__(self, *args, **kwargs):
  *         super(MultiAveragineDeconvoluterBase, self).__init__()             # <<<<<<<<<<<<<<
  * 
  *     cpdef list fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):
  */
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase));
   __Pyx_GIVEREF(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase));
@@ -7443,10 +7691,10 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDecon
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
   PyTuple_SET_ITEM(__pyx_t_2, 1, ((PyObject *)__pyx_v_self));
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_super, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_init); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -7460,16 +7708,16 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDecon
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 280; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":276
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":279
  *         public list averagines
  * 
  *     def __init__(self, *args, **kwargs):             # <<<<<<<<<<<<<<
@@ -7492,7 +7740,7 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDecon
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":279
+/* "ms_deisotope\_c\deconvoluter_base.pyx":282
  *         super(MultiAveragineDeconvoluterBase, self).__init__()
  * 
  *     cpdef list fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):             # <<<<<<<<<<<<<<
@@ -7507,6 +7755,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragine
   PyObject *__pyx_v_tid = 0;
   PyObject *__pyx_v_eid = 0;
   double __pyx_v_score;
+  size_t __pyx_v_i;
   PyObject *__pyx_r = NULL;
   __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
@@ -7518,25 +7767,27 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragine
   PyObject *__pyx_t_6 = NULL;
   Py_ssize_t __pyx_t_7;
   PyObject *__pyx_t_8 = NULL;
-  struct __pyx_opt_args_12ms_deisotope_2_c_9averagine_14AveragineCache_isotopic_cluster __pyx_t_9;
-  struct __pyx_opt_args_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_match_theoretical_isotopic_distribution __pyx_t_10;
-  int __pyx_t_11;
+  size_t __pyx_t_9;
+  PyObject *__pyx_t_10;
+  struct __pyx_opt_args_12ms_deisotope_2_c_9averagine_14AveragineCache_isotopic_cluster __pyx_t_11;
+  struct __pyx_opt_args_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_match_theoretical_isotopic_distribution __pyx_t_12;
+  int __pyx_t_13;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("fit_theoretical_distribution", 0);
-  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 279, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 282, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   /* Check if called by wrapper */
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fit_theoretical_distribution); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fit_theoretical_distribution); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDeconvoluterBase_3fit_theoretical_distribution)) {
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_error_tolerance); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_5 = __pyx_t_1; __pyx_t_6 = NULL;
@@ -7551,7 +7802,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragine
           __pyx_t_7 = 1;
         }
       }
-      __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -7565,11 +7816,11 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragine
       PyTuple_SET_ITEM(__pyx_t_8, 2+__pyx_t_7, __pyx_t_4);
       __pyx_t_3 = 0;
       __pyx_t_4 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_t_2)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __pyx_r = ((PyObject*)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7578,134 +7829,144 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragine
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":285
- *             list tid, eid
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":289
  *             double score
+ *             size_t i
  *         fits = []             # <<<<<<<<<<<<<<
- *         for averagine in self.averagines:
- *             tid = averagine.isotopic_cluster(peak.mz, charge)
+ *         i = 0
+ *         for i in range(len(self.averagines)):
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 289; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_fits = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":286
- *             double score
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":290
+ *             size_t i
  *         fits = []
- *         for averagine in self.averagines:             # <<<<<<<<<<<<<<
+ *         i = 0             # <<<<<<<<<<<<<<
+ *         for i in range(len(self.averagines)):
+ *             averagine = <AveragineCache>PyList_GET_ITEM(self.averagines, i)
+ */
+  __pyx_v_i = 0;
+
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":291
+ *         fits = []
+ *         i = 0
+ *         for i in range(len(self.averagines)):             # <<<<<<<<<<<<<<
+ *             averagine = <AveragineCache>PyList_GET_ITEM(self.averagines, i)
+ *             tid = averagine.isotopic_cluster(peak.mz, charge)
+ */
+  __pyx_t_1 = __pyx_v_self->averagines;
+  __Pyx_INCREF(__pyx_t_1);
+  if (unlikely(__pyx_t_1 == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  }
+  __pyx_t_7 = PyList_GET_SIZE(__pyx_t_1); if (unlikely(__pyx_t_7 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_7; __pyx_t_9+=1) {
+    __pyx_v_i = __pyx_t_9;
+
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":292
+ *         i = 0
+ *         for i in range(len(self.averagines)):
+ *             averagine = <AveragineCache>PyList_GET_ITEM(self.averagines, i)             # <<<<<<<<<<<<<<
  *             tid = averagine.isotopic_cluster(peak.mz, charge)
  *             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
  */
-  if (unlikely(__pyx_v_self->averagines == Py_None)) {
-    PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  }
-  __pyx_t_1 = __pyx_v_self->averagines; __Pyx_INCREF(__pyx_t_1); __pyx_t_7 = 0;
-  for (;;) {
-    if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_1)) break;
-    #if CYTHON_COMPILING_IN_CPYTHON
-    __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_7); __Pyx_INCREF(__pyx_t_2); __pyx_t_7++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    #else
-    __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_2);
-    #endif
-    if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_12ms_deisotope_2_c_9averagine_AveragineCache))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_XDECREF_SET(__pyx_v_averagine, ((struct __pyx_obj_12ms_deisotope_2_c_9averagine_AveragineCache *)__pyx_t_2));
-    __pyx_t_2 = 0;
+    __pyx_t_1 = __pyx_v_self->averagines;
+    __Pyx_INCREF(__pyx_t_1);
+    __pyx_t_10 = PyList_GET_ITEM(__pyx_t_1, __pyx_v_i);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_1 = ((PyObject *)__pyx_t_10);
+    __Pyx_INCREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_averagine, ((struct __pyx_obj_12ms_deisotope_2_c_9averagine_AveragineCache *)__pyx_t_1));
+    __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":287
- *         fits = []
- *         for averagine in self.averagines:
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":293
+ *         for i in range(len(self.averagines)):
+ *             averagine = <AveragineCache>PyList_GET_ITEM(self.averagines, i)
  *             tid = averagine.isotopic_cluster(peak.mz, charge)             # <<<<<<<<<<<<<<
  *             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
  *             self.scale_theoretical_distribution(tid, eid)
  */
-    __pyx_t_9.__pyx_n = 1;
-    __pyx_t_9.charge = __pyx_v_charge;
-    __pyx_t_2 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_9averagine_AveragineCache *)__pyx_v_averagine->__pyx_vtab)->isotopic_cluster(__pyx_v_averagine, __pyx_v_peak->mz, 0, &__pyx_t_9); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 287; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_XDECREF_SET(__pyx_v_tid, ((PyObject*)__pyx_t_2));
-    __pyx_t_2 = 0;
+    __pyx_t_11.__pyx_n = 1;
+    __pyx_t_11.charge = __pyx_v_charge;
+    __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_9averagine_AveragineCache *)__pyx_v_averagine->__pyx_vtab)->isotopic_cluster(__pyx_v_averagine, __pyx_v_peak->mz, 0, &__pyx_t_11); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_tid, ((PyObject*)__pyx_t_1));
+    __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":288
- *         for averagine in self.averagines:
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":294
+ *             averagine = <AveragineCache>PyList_GET_ITEM(self.averagines, i)
  *             tid = averagine.isotopic_cluster(peak.mz, charge)
  *             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)             # <<<<<<<<<<<<<<
  *             self.scale_theoretical_distribution(tid, eid)
  *             score = self.scorer._evaluate(self.peaklist, eid, tid)
  */
-    __pyx_t_10.__pyx_n = 1;
-    __pyx_t_10.error_tolerance = __pyx_v_error_tolerance;
-    __pyx_t_2 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.match_theoretical_isotopic_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, 0, &__pyx_t_10); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 288; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_XDECREF_SET(__pyx_v_eid, ((PyObject*)__pyx_t_2));
-    __pyx_t_2 = 0;
+    __pyx_t_12.__pyx_n = 1;
+    __pyx_t_12.error_tolerance = __pyx_v_error_tolerance;
+    __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.match_theoretical_isotopic_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, 0, &__pyx_t_12); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 294; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_XDECREF_SET(__pyx_v_eid, ((PyObject*)__pyx_t_1));
+    __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":289
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":295
  *             tid = averagine.isotopic_cluster(peak.mz, charge)
  *             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
  *             self.scale_theoretical_distribution(tid, eid)             # <<<<<<<<<<<<<<
  *             score = self.scorer._evaluate(self.peaklist, eid, tid)
  *             fits.append(IsotopicFitRecord(score, charge, tid, eid))
  */
-    __pyx_t_2 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.scale_theoretical_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, __pyx_v_eid, 0); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 289; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_1 = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase *)__pyx_v_self->__pyx_base.__pyx_vtab)->__pyx_base.scale_theoretical_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase *)__pyx_v_self), __pyx_v_tid, __pyx_v_eid, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 295; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":290
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":296
  *             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
  *             self.scale_theoretical_distribution(tid, eid)
  *             score = self.scorer._evaluate(self.peaklist, eid, tid)             # <<<<<<<<<<<<<<
  *             fits.append(IsotopicFitRecord(score, charge, tid, eid))
  *         return fits
  */
-    __pyx_t_2 = ((PyObject *)__pyx_v_self->__pyx_base.peaklist);
-    __Pyx_INCREF(__pyx_t_2);
-    __pyx_v_score = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_7scoring_IsotopicFitterBase *)__pyx_v_self->__pyx_base.scorer->__pyx_vtab)->_evaluate(__pyx_v_self->__pyx_base.scorer, ((struct __pyx_obj_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_t_2), __pyx_v_eid, __pyx_v_tid, 0);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_1 = ((PyObject *)__pyx_v_self->__pyx_base.peaklist);
+    __Pyx_INCREF(__pyx_t_1);
+    __pyx_v_score = ((struct __pyx_vtabstruct_12ms_deisotope_2_c_7scoring_IsotopicFitterBase *)__pyx_v_self->__pyx_base.scorer->__pyx_vtab)->_evaluate(__pyx_v_self->__pyx_base.scorer, ((struct __pyx_obj_14ms_peak_picker_2_c_10peak_index_PeakIndex *)__pyx_t_1), __pyx_v_eid, __pyx_v_tid, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":291
+    /* "ms_deisotope\_c\deconvoluter_base.pyx":297
  *             self.scale_theoretical_distribution(tid, eid)
  *             score = self.scorer._evaluate(self.peaklist, eid, tid)
  *             fits.append(IsotopicFitRecord(score, charge, tid, eid))             # <<<<<<<<<<<<<<
  *         return fits
  */
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 297; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 297; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_charge); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = PyTuple_New(4); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 297; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_8 = PyTuple_New(4); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_8);
+    __Pyx_GIVEREF(__pyx_t_1);
+    PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_2);
-    PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_2);
-    __Pyx_GIVEREF(__pyx_t_5);
-    PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_t_5);
+    PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_2);
     __Pyx_INCREF(__pyx_v_tid);
     __Pyx_GIVEREF(__pyx_v_tid);
-    PyTuple_SET_ITEM(__pyx_t_8, 2, __pyx_v_tid);
+    PyTuple_SET_ITEM(__pyx_t_5, 2, __pyx_v_tid);
     __Pyx_INCREF(__pyx_v_eid);
     __Pyx_GIVEREF(__pyx_v_eid);
-    PyTuple_SET_ITEM(__pyx_t_8, 3, __pyx_v_eid);
+    PyTuple_SET_ITEM(__pyx_t_5, 3, __pyx_v_eid);
+    __pyx_t_1 = 0;
     __pyx_t_2 = 0;
-    __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_7scoring_IsotopicFitRecord), __pyx_t_8, NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_fits, __pyx_t_5); if (unlikely(__pyx_t_11 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 291; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_12ms_deisotope_2_c_7scoring_IsotopicFitRecord), __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 297; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-    /* "ms_deisotope\_c\deconvoluter_base.pyx":286
- *             double score
- *         fits = []
- *         for averagine in self.averagines:             # <<<<<<<<<<<<<<
- *             tid = averagine.isotopic_cluster(peak.mz, charge)
- *             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
- */
+    __pyx_t_13 = __Pyx_PyList_Append(__pyx_v_fits, __pyx_t_2); if (unlikely(__pyx_t_13 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 297; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":292
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":298
  *             score = self.scorer._evaluate(self.peaklist, eid, tid)
  *             fits.append(IsotopicFitRecord(score, charge, tid, eid))
  *         return fits             # <<<<<<<<<<<<<<
@@ -7715,7 +7976,7 @@ static PyObject *__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragine
   __pyx_r = __pyx_v_fits;
   goto __pyx_L0;
 
-  /* "ms_deisotope\_c\deconvoluter_base.pyx":279
+  /* "ms_deisotope\_c\deconvoluter_base.pyx":282
  *         super(MultiAveragineDeconvoluterBase, self).__init__()
  * 
  *     cpdef list fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):             # <<<<<<<<<<<<<<
@@ -7779,16 +8040,16 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragin
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_error_tolerance)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_charge)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "fit_theoretical_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "fit_theoretical_distribution") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -7798,18 +8059,18 @@ static PyObject *__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragin
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
     __pyx_v_peak = ((struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *)values[0]);
-    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_charge = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_charge == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_error_tolerance = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_error_tolerance == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_charge = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_charge == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("fit_theoretical_distribution", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("ms_deisotope._c.deconvoluter_base.MultiAveragineDeconvoluterBase.fit_theoretical_distribution", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_peak), __pyx_ptype_14ms_peak_picker_2_c_8peak_set_FittedPeak, 1, "peak", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDeconvoluterBase_2fit_theoretical_distribution(((struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase *)__pyx_v_self), __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge);
 
   /* function exit code */
@@ -7830,9 +8091,9 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragin
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("fit_theoretical_distribution", 0);
-  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 279, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("fit_theoretical_distribution", __pyx_f[0], 282, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDeconvoluterBase_fit_theoretical_distribution(__pyx_v_self, __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 279; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDeconvoluterBase_fit_theoretical_distribution(__pyx_v_self, __pyx_v_peak, __pyx_v_error_tolerance, __pyx_v_charge, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7850,7 +8111,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragin
   return __pyx_r;
 }
 
-/* "ms_deisotope\_c\deconvoluter_base.pyx":274
+/* "ms_deisotope\_c\deconvoluter_base.pyx":277
  * cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
  *     cdef:
  *         public list averagines             # <<<<<<<<<<<<<<
@@ -7879,7 +8140,7 @@ static PyObject *__pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragin
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
-  __Pyx_TraceCall("__get__", __pyx_f[0], 274, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("__get__", __pyx_f[0], 277, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_v_self->averagines);
   __pyx_r = __pyx_v_self->averagines;
@@ -7918,8 +8179,8 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDecon
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __Pyx_TraceCall("__set__", __pyx_f[0], 274, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
-  if (!(likely(PyList_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_TraceCall("__set__", __pyx_f[0], 277, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  if (!(likely(PyList_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "list", Py_TYPE(__pyx_v_value)->tp_name), 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -7962,7 +8223,7 @@ static int __pyx_pf_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDecon
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__del__", 0);
-  __Pyx_TraceCall("__del__", __pyx_f[0], 274, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
+  __Pyx_TraceCall("__del__", __pyx_f[0], 277, 0, {__pyx_filename = __pyx_f[0]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;});
   __Pyx_INCREF(Py_None);
   __Pyx_GIVEREF(Py_None);
   __Pyx_GOTREF(__pyx_v_self->averagines);
@@ -10190,9 +10451,6 @@ static PyObject *__pyx_tp_new_12ms_deisotope_2_c_17deconvoluter_base_Deconvolute
   p->peaklist = ((struct __pyx_obj_14ms_peak_picker_2_c_10peak_index_PeakIndex *)Py_None); Py_INCREF(Py_None);
   p->scorer = ((struct __pyx_obj_12ms_deisotope_2_c_7scoring_IsotopicFitterBase *)Py_None); Py_INCREF(Py_None);
   p->_slice_cache = ((PyObject*)Py_None); Py_INCREF(Py_None);
-  if (unlikely(__pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_1__cinit__(o, __pyx_empty_tuple, NULL) < 0)) {
-    Py_DECREF(o); o = 0;
-  }
   return o;
 }
 
@@ -10399,7 +10657,7 @@ static PyTypeObject __pyx_type_12ms_deisotope_2_c_17deconvoluter_base_Deconvolut
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-  0, /*tp_doc*/
+  "DeconvoluterBase(use_subtraction=False, scale_method='sum', merge_isobaric_peaks=True, minimum_intensity=5.0, *args, **kwargs)", /*tp_doc*/
   __pyx_tp_traverse_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase, /*tp_traverse*/
   __pyx_tp_clear_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase, /*tp_clear*/
   0, /*tp_richcompare*/
@@ -10414,7 +10672,7 @@ static PyTypeObject __pyx_type_12ms_deisotope_2_c_17deconvoluter_base_Deconvolut
   0, /*tp_descr_get*/
   0, /*tp_descr_set*/
   0, /*tp_dictoffset*/
-  0, /*tp_init*/
+  __pyx_pw_12ms_deisotope_2_c_17deconvoluter_base_16DeconvoluterBase_1__init__, /*tp_init*/
   0, /*tp_alloc*/
   __pyx_tp_new_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase, /*tp_new*/
   0, /*tp_free*/
@@ -10525,7 +10783,7 @@ static PyTypeObject __pyx_type_12ms_deisotope_2_c_17deconvoluter_base_AveragineD
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-  "AveragineDeconvoluterBase(*args, **kwargs)", /*tp_doc*/
+  "AveragineDeconvoluterBase(bool use_subtraction=False, str scale_method='sum', bool merge_isobaric_peaks=True, double minimum_intensity=5.0, *args, **kwargs)", /*tp_doc*/
   __pyx_tp_traverse_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase, /*tp_traverse*/
   __pyx_tp_clear_12ms_deisotope_2_c_17deconvoluter_base_AveragineDeconvoluterBase, /*tp_clear*/
   0, /*tp_richcompare*/
@@ -10729,6 +10987,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_m2, __pyx_k_m2, sizeof(__pyx_k_m2), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_match_theoretical_isotopic_distr, __pyx_k_match_theoretical_isotopic_distr, sizeof(__pyx_k_match_theoretical_isotopic_distr), 0, 0, 1, 1},
+  {&__pyx_n_s_merge_isobaric_peaks, __pyx_k_merge_isobaric_peaks, sizeof(__pyx_k_merge_isobaric_peaks), 0, 0, 1, 1},
+  {&__pyx_n_s_minimum_intensity, __pyx_k_minimum_intensity, sizeof(__pyx_k_minimum_intensity), 0, 0, 1, 1},
   {&__pyx_n_s_mz, __pyx_k_mz, sizeof(__pyx_k_mz), 0, 0, 1, 1},
   {&__pyx_kp_u_ndarray_is_not_C_contiguous, __pyx_k_ndarray_is_not_C_contiguous, sizeof(__pyx_k_ndarray_is_not_C_contiguous), 0, 1, 0, 0},
   {&__pyx_kp_u_ndarray_is_not_Fortran_contiguou, __pyx_k_ndarray_is_not_Fortran_contiguou, sizeof(__pyx_k_ndarray_is_not_Fortran_contiguou), 0, 1, 0, 0},
@@ -10738,6 +10998,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_peak_charge_set, __pyx_k_peak_charge_set, sizeof(__pyx_k_peak_charge_set), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
+  {&__pyx_n_s_scale_method, __pyx_k_scale_method, sizeof(__pyx_k_scale_method), 0, 0, 1, 1},
   {&__pyx_n_s_scale_theoretical_distribution, __pyx_k_scale_theoretical_distribution, sizeof(__pyx_k_scale_theoretical_distribution), 0, 0, 1, 1},
   {&__pyx_n_s_sorted, __pyx_k_sorted, sizeof(__pyx_k_sorted), 0, 0, 1, 1},
   {&__pyx_n_s_step, __pyx_k_step, sizeof(__pyx_k_step), 0, 0, 1, 1},
@@ -10748,12 +11009,13 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_theoretical_distribution, __pyx_k_theoretical_distribution, sizeof(__pyx_k_theoretical_distribution), 0, 0, 1, 1},
   {&__pyx_n_s_tolerance, __pyx_k_tolerance, sizeof(__pyx_k_tolerance), 0, 0, 1, 1},
   {&__pyx_kp_u_unknown_dtype_code_in_numpy_pxd, __pyx_k_unknown_dtype_code_in_numpy_pxd, sizeof(__pyx_k_unknown_dtype_code_in_numpy_pxd), 0, 1, 0, 0},
+  {&__pyx_n_s_use_subtraction, __pyx_k_use_subtraction, sizeof(__pyx_k_use_subtraction), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_builtin_sorted = __Pyx_GetBuiltinName(__pyx_n_s_sorted); if (!__pyx_builtin_sorted) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 126; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_builtin_super = __Pyx_GetBuiltinName(__pyx_n_s_super); if (!__pyx_builtin_super) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 232; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_super = __Pyx_GetBuiltinName(__pyx_n_s_super); if (!__pyx_builtin_super) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 233; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 799; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
@@ -10861,6 +11123,7 @@ static int __Pyx_InitCachedConstants(void) {
 
 static int __Pyx_InitGlobals(void) {
   if (__Pyx_InitStrings(__pyx_string_tab) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
+  __pyx_float_5_ = PyFloat_FromDouble(5.); if (unlikely(!__pyx_float_5_)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_float_1_0 = PyFloat_FromDouble(1.0); if (unlikely(!__pyx_float_1_0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_int_0 = PyInt_FromLong(0); if (unlikely(!__pyx_int_0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_int_1 = PyInt_FromLong(1); if (unlikely(!__pyx_int_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -10986,10 +11249,10 @@ PyMODINIT_FUNC PyInit_deconvoluter_base(void)
   __pyx_vtable_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase.__pyx_base = *__pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase;
   __pyx_vtable_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase.fit_theoretical_distribution = (PyObject *(*)(struct __pyx_obj_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase *, struct __pyx_obj_14ms_peak_picker_2_c_8peak_set_FittedPeak *, double, int, int __pyx_skip_dispatch))__pyx_f_12ms_deisotope_2_c_17deconvoluter_base_30MultiAveragineDeconvoluterBase_fit_theoretical_distribution;
   __pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase.tp_base = __pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_DeconvoluterBase;
-  if (PyType_Ready(&__pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyType_Ready(&__pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 275; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase.tp_dict, __pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "MultiAveragineDeconvoluterBase", (PyObject *)&__pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 272; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (__Pyx_SetVtable(__pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase.tp_dict, __pyx_vtabptr_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 275; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "MultiAveragineDeconvoluterBase", (PyObject *)&__pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 275; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_ptype_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase = &__pyx_type_12ms_deisotope_2_c_17deconvoluter_base_MultiAveragineDeconvoluterBase;
   /*--- Type import code ---*/
   __pyx_ptype_7cpython_4type_type = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "type", 
@@ -11297,101 +11560,6 @@ static void __Pyx_WriteUnraisable(const char *name, CYTHON_UNUSED int clineno,
 #endif
 }
 
-static void __Pyx_RaiseArgtupleInvalid(
-    const char* func_name,
-    int exact,
-    Py_ssize_t num_min,
-    Py_ssize_t num_max,
-    Py_ssize_t num_found)
-{
-    Py_ssize_t num_expected;
-    const char *more_or_less;
-    if (num_found < num_min) {
-        num_expected = num_min;
-        more_or_less = "at least";
-    } else {
-        num_expected = num_max;
-        more_or_less = "at most";
-    }
-    if (exact) {
-        more_or_less = "exactly";
-    }
-    PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
-                 func_name, more_or_less, num_expected,
-                 (num_expected == 1) ? "" : "s", num_found);
-}
-
-static CYTHON_INLINE int __Pyx_CheckKeywordStrings(
-    PyObject *kwdict,
-    const char* function_name,
-    int kw_allowed)
-{
-    PyObject* key = 0;
-    Py_ssize_t pos = 0;
-#if CYTHON_COMPILING_IN_PYPY
-    if (!kw_allowed && PyDict_Next(kwdict, &pos, &key, 0))
-        goto invalid_keyword;
-    return 1;
-#else
-    while (PyDict_Next(kwdict, &pos, &key, 0)) {
-        #if PY_MAJOR_VERSION < 3
-        if (unlikely(!PyString_CheckExact(key)) && unlikely(!PyString_Check(key)))
-        #endif
-            if (unlikely(!PyUnicode_Check(key)))
-                goto invalid_keyword_type;
-    }
-    if ((!kw_allowed) && unlikely(key))
-        goto invalid_keyword;
-    return 1;
-invalid_keyword_type:
-    PyErr_Format(PyExc_TypeError,
-        "%.200s() keywords must be strings", function_name);
-    return 0;
-#endif
-invalid_keyword:
-    PyErr_Format(PyExc_TypeError,
-    #if PY_MAJOR_VERSION < 3
-        "%.200s() got an unexpected keyword argument '%.200s'",
-        function_name, PyString_AsString(key));
-    #else
-        "%s() got an unexpected keyword argument '%U'",
-        function_name, key);
-    #endif
-    return 0;
-}
-
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-    PyObject *result;
-    ternaryfunc call = func->ob_type->tp_call;
-    if (unlikely(!call))
-        return PyObject_Call(func, arg, kw);
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    result = (*call)(func, arg, kw);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
-static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    if (likely(PyObject_TypeCheck(obj, type)))
-        return 1;
-    PyErr_Format(PyExc_TypeError, "Cannot convert %.200s to %.200s",
-                 Py_TYPE(obj)->tp_name, type->tp_name);
-    return 0;
-}
-
 static void __Pyx_RaiseDoubleKeywordsError(
     const char* func_name,
     PyObject* kw_name)
@@ -11504,6 +11672,62 @@ invalid_keyword:
     #endif
 bad:
     return -1;
+}
+
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
+    PyObject *result;
+    ternaryfunc call = func->ob_type->tp_call;
+    if (unlikely(!call))
+        return PyObject_Call(func, arg, kw);
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    result = (*call)(func, arg, kw);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
+
+static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
+        return 0;
+    }
+    if (likely(PyObject_TypeCheck(obj, type)))
+        return 1;
+    PyErr_Format(PyExc_TypeError, "Cannot convert %.200s to %.200s",
+                 Py_TYPE(obj)->tp_name, type->tp_name);
+    return 0;
+}
+
+static void __Pyx_RaiseArgtupleInvalid(
+    const char* func_name,
+    int exact,
+    Py_ssize_t num_min,
+    Py_ssize_t num_max,
+    Py_ssize_t num_found)
+{
+    Py_ssize_t num_expected;
+    const char *more_or_less;
+    if (num_found < num_min) {
+        num_expected = num_min;
+        more_or_less = "at least";
+    } else {
+        num_expected = num_max;
+        more_or_less = "at most";
+    }
+    if (exact) {
+        more_or_less = "exactly";
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
+                 func_name, more_or_less, num_expected,
+                 (num_expected == 1) ? "" : "s", num_found);
 }
 
 static void __Pyx_RaiseArgumentTypeInvalid(const char* name, PyObject *obj, PyTypeObject *type) {
@@ -11845,6 +12069,45 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GetSlice(PyObject* obj,
         "'%.200s' object is unsliceable", Py_TYPE(obj)->tp_name);
 bad:
     return NULL;
+}
+
+static CYTHON_INLINE int __Pyx_CheckKeywordStrings(
+    PyObject *kwdict,
+    const char* function_name,
+    int kw_allowed)
+{
+    PyObject* key = 0;
+    Py_ssize_t pos = 0;
+#if CYTHON_COMPILING_IN_PYPY
+    if (!kw_allowed && PyDict_Next(kwdict, &pos, &key, 0))
+        goto invalid_keyword;
+    return 1;
+#else
+    while (PyDict_Next(kwdict, &pos, &key, 0)) {
+        #if PY_MAJOR_VERSION < 3
+        if (unlikely(!PyString_CheckExact(key)) && unlikely(!PyString_Check(key)))
+        #endif
+            if (unlikely(!PyUnicode_Check(key)))
+                goto invalid_keyword_type;
+    }
+    if ((!kw_allowed) && unlikely(key))
+        goto invalid_keyword;
+    return 1;
+invalid_keyword_type:
+    PyErr_Format(PyExc_TypeError,
+        "%.200s() keywords must be strings", function_name);
+    return 0;
+#endif
+invalid_keyword:
+    PyErr_Format(PyExc_TypeError,
+    #if PY_MAJOR_VERSION < 3
+        "%.200s() got an unexpected keyword argument '%.200s'",
+        function_name, PyString_AsString(key));
+    #else
+        "%s() got an unexpected keyword argument '%U'",
+        function_name, key);
+    #endif
+    return 0;
 }
 
 #if CYTHON_COMPILING_IN_CPYTHON

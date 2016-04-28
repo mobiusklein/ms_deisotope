@@ -3,6 +3,15 @@ from brainpy import calculate_mass, neutral_mass, PROTON, isotopic_variants, mas
 
 from .utils import dict_proxy
 
+def slide(mz, cluster):
+    first_peak = cluster[0]
+    for peak in cluster[1:]:
+        delta = (peak.mz - first_peak.mz)
+        peak.mz = mz + delta
+
+    cluster[0].mz = mz
+    return cluster
+
 
 @dict_proxy("base_composition")
 class Averagine(object):
@@ -37,16 +46,7 @@ class Averagine(object):
             result.append(peak)
             if cumsum >= truncate_after:
                 break
-        return self.slide(mz, result)
-
-    def slide(self, mz, cluster):
-        first_peak = cluster[0]
-        for peak in cluster[1:]:
-            delta = (peak.mz - first_peak.mz)
-            peak.mz = mz + delta
-
-        cluster[0].mz = mz
-        return cluster
+        return slide(mz, result)
 
     def __repr__(self):
         return "Averagine(%r)" % self.base_composition
@@ -105,9 +105,9 @@ class AveragineCache(object):
         self.mz_precision = mz_precision
 
     def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.98):
-        key_mz = mz
+        key_mz = round(mz)
         if (key_mz, charge, charge_carrier) in self.backend:
-            return [p.clone() for p in self.backend[key_mz, charge, charge_carrier]]
+            return slide(mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])
         else:
             tid = self.averagine.isotopic_cluster(mz, charge, charge_carrier, truncate_after)
             self.backend[key_mz, charge, charge_carrier] = [p.clone() for p in tid]

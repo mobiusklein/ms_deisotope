@@ -9,7 +9,7 @@
         ], 
         "include_dirs": [
             "C:\\Users\\Joshua\\Anaconda2\\lib\\site-packages\\brainpy-1.0.8-py2.7-win-amd64.egg\\brainpy\\_c", 
-            "d:\\programming\\exploration\\peak_picker\\ms_peak_picker\\_c", 
+            "C:\\Users\\Joshua\\Anaconda2\\lib\\site-packages\\ms_peak_picker-0.1.0-py2.7-win-amd64.egg\\ms_peak_picker\\_c", 
             "C:\\Users\\Joshua\\Anaconda2\\lib\\site-packages\\numpy\\core\\include"
         ]
     }

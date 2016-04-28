@@ -46,11 +46,12 @@ cdef class DeconvoluterBase(object):
         public bint verbose
         public dict _slice_cache
 
-    def __cinit__(self):
-        self.use_subtraction = False
-        self.scale_method = 'sum'
-        self.merge_isobaric_peaks = True
-        self.minimum_intensity = 5.
+    def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
+                  minimum_intensity=5., *args, **kwargs):
+        self.use_subtraction = use_subtraction
+        self.scale_method = scale_method
+        self.merge_isobaric_peaks = merge_isobaric_peaks
+        self.minimum_intensity = minimum_intensity
         self._slice_cache = {}
 
     cpdef PeakSet between(self, double m1, double m2):
@@ -113,14 +114,13 @@ cdef class DeconvoluterBase(object):
             size_t i
             TheoreticalPeak peak
             FittedPeak match
-        if self.use_subtraction:
-            for i in range(PyList_GET_SIZE(isotopic_cluster)):
-                peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
-                match = self.peaklist._has_peak(peak.mz, error_tolerance)
-                if match is not None:
-                    match.intensity -= peak.intensity
-                    if match.intensity < 0:
-                        match.intensity = 1.
+        for i in range(PyList_GET_SIZE(isotopic_cluster)):
+            peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+            match = self.peaklist._has_peak(peak.mz, error_tolerance)
+            if match is not None:
+                match.intensity -= peak.intensity
+                if match.intensity < 0:
+                    match.intensity = 1.
 
     def _merge_peaks(self, peak_list):
         peak_list = sorted(peak_list, key=operator.attrgetter("neutral_mass"))
@@ -228,8 +228,11 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
     cdef:
         public AveragineCache averagine
 
-    def __init__(self, *args, **kwargs):
-        super(AveragineDeconvoluterBase, self).__init__()
+    def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
+                 double minimum_intensity=5., *args, **kwargs):
+        super(AveragineDeconvoluterBase, self).__init__(
+            use_subtraction, scale_method, merge_isobaric_peaks,
+            minimum_intensity, *args, **kwargs)
 
     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge):
         cdef:
@@ -282,8 +285,11 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             AveragineCache averagine
             list tid, eid
             double score
+            size_t i
         fits = []
-        for averagine in self.averagines:
+        i = 0
+        for i in range(len(self.averagines)):
+            averagine = <AveragineCache>PyList_GET_ITEM(self.averagines, i)
             tid = averagine.isotopic_cluster(peak.mz, charge)
             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
             self.scale_theoretical_distribution(tid, eid)

@@ -8,10 +8,14 @@ from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 from libc.math cimport floor
 from libc.stdlib cimport malloc, free
 
-from brainpy import PROTON, isotopic_variants, calculate_mass as _py_calculate_mass
+from brainpy import PROTON as _PROTON, isotopic_variants, calculate_mass as _py_calculate_mass
 from brainpy._c.isotopic_distribution cimport _isotopic_variants
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from brainpy._speedup cimport calculate_mass
+
+
+cdef double PROTON
+PROTON = _PROTON
 
 
 cdef inline double _round(double x):
@@ -64,7 +68,9 @@ cdef class Averagine(object):
     def __init__(self, object base_composition):
         self.base_composition = dict(**base_composition)
         self.base_mass = calculate_mass(self.base_composition)
+        assert self.base_mass > 0
 
+    @cython.cdivision
     cpdef dict scale(self, double mz, int charge=1, double charge_carrier=PROTON):
         cdef:
             double neutral, scale, scaled_mass
@@ -113,7 +119,7 @@ cdef class Averagine(object):
 
         return result
 
-    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.9):
+    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.98):
         cdef:
             list out
         out = self._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
@@ -174,7 +180,7 @@ cdef class AveragineCache(object):
             tuple key_tuple
             PyObject* pvalue
             list tid
-        key_mz = mz
+        key_mz = _round(mz)
         key_tuple = (key_mz, charge, charge_carrier)
         pvalue = PyDict_GetItem(self.backend, key_tuple)
         if pvalue == NULL:
@@ -183,7 +189,9 @@ cdef class AveragineCache(object):
             return tid
         else:
             tid = <list>pvalue
-            return clone_peak_list(tid)
+            tid = clone_peak_list(tid)
+            slide(mz, tid)
+            return tid
 
     cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.9):
         return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after)
