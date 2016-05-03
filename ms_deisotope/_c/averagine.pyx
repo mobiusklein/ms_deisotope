@@ -180,7 +180,7 @@ cdef class AveragineCache(object):
             tuple key_tuple
             PyObject* pvalue
             list tid
-        key_mz = _round(mz)
+        key_mz = _round(mz / 100) * 100
         key_tuple = (key_mz, charge, charge_carrier)
         pvalue = PyDict_GetItem(self.backend, key_tuple)
         if pvalue == NULL:
