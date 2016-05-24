@@ -3,6 +3,7 @@ from brainpy import calculate_mass, neutral_mass, PROTON, isotopic_variants, mas
 
 from .utils import dict_proxy
 
+
 def slide(mz, cluster):
     first_peak = cluster[0]
     for peak in cluster[1:]:
@@ -37,7 +38,7 @@ class Averagine(object):
 
         return scaled
 
-    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.98):
+    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95):
         composition = self.scale(mz, charge, charge_carrier)
         cumsum = 0
         result = []
@@ -97,14 +98,13 @@ def isotopic_shift(charge=1):
 
 @dict_proxy("averagine")
 class AveragineCache(object):
-    def __init__(self, averagine, backend=None, mz_precision=8):
+    def __init__(self, averagine, backend=None):
         if backend is None:
             backend = {}
         self.backend = backend
         self.averagine = Averagine(averagine)
-        self.mz_precision = mz_precision
 
-    def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.98):
+    def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95):
         key_mz = round(mz)
         if (key_mz, charge, charge_carrier) in self.backend:
             return slide(mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])

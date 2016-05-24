@@ -8,27 +8,36 @@ eps = 1e-4
 
 class IsotopicFitRecord(object):
 
-    __slots__ = ["seed_peak", "score", "charge", "experimental", "theoretical", "monoisotopic_peak"]
+    __slots__ = ["seed_peak", "score", "charge", "experimental", "theoretical",
+                 "monoisotopic_peak", "data", "missed_peaks"]
 
-    def __init__(self, seed_peak, score, charge, theoretical, experimental, **kwargs):
+    def __init__(self, seed_peak, score, charge, theoretical, experimental, data=None,
+                 missed_peaks=0, **kwargs):
         self.seed_peak = seed_peak
         self.score = score
         self.charge = charge
         self.experimental = experimental
         self.theoretical = theoretical
         self.monoisotopic_peak = experimental[0]
+        self.data = data
+        self.missed_peaks = missed_peaks
 
     def clone(self):
-        return self.__class__(self.seed_peak, self.score, self.charge, self.theoretical, self.experimental)
+        return self.__class__(
+            self.seed_peak, self.score, self.charge, self.theoretical, self.experimental, self.data, self.missed_peaks)
 
     def __reduce__(self):
-        return self.__class__, (self.seed_peak, self.score, self.charge, self.theoretical, self.experimental)
+        return self.__class__, (
+            self.seed_peak, self.score, self.charge, self.theoretical, self.experimental, self.data, self.missed_peaks)
 
     def __eq__(self, other):
-        return (self.score == other.score and
-                self.charge == other.charge and
-                self.experimental == other.experimental and
-                self.theoretical == other.theoretical)
+        val = (self.score == other.score and
+               self.charge == other.charge and
+               self.experimental == other.experimental and
+               self.theoretical == other.theoretical)
+        if self.data is not None or other.data is not None:
+            val = val and (self.data == other.data)
+        return val
 
     def __ne__(self, other):
         return not (self == other)
@@ -41,12 +50,6 @@ class IsotopicFitRecord(object):
 
     def __hash__(self):
         return hash((self.monoisotopic_peak.mz, self.charge))
-
-    def __getitem__(self, index):
-        if index == 0:
-            return self.score
-        else:
-            raise KeyError(index)
 
     def __iter__(self):
         yield self.score
@@ -78,6 +81,9 @@ class FitSelectorBase(Base):
     def reject(self, result):
         return NotImplemented
 
+    def is_maximizing(self):
+        return False
+
 
 class MinimizeFitSelector(FitSelectorBase):
     def best(self, results):
@@ -85,6 +91,9 @@ class MinimizeFitSelector(FitSelectorBase):
 
     def reject(self, fit):
         return fit.score > self.minimum_score
+
+    def is_maximizing(self):
+        return False
 
 
 class MaximizeFitSelector(FitSelectorBase):
@@ -94,9 +103,14 @@ class MaximizeFitSelector(FitSelectorBase):
     def reject(self, fit):
         return fit.score < self.minimum_score
 
+    def is_maximizing(self):
+        return False
+
 
 class IsotopicFitterBase(Base):
-    select = MinimizeFitSelector()
+
+    def __init__(self, score_threshold=0.5):
+        self.select = MinimizeFitSelector(score_threshold)
 
     def evaluate(self, peaklist, observed, expected, **kwargs):
         return NotImplemented
@@ -109,6 +123,9 @@ class IsotopicFitterBase(Base):
 
     def reject(self, fit):
         return self.select.reject(fit)
+
+    def is_maximizing(self):
+        return self.select.is_maximizing()
 
 
 class GTestFitter(IsotopicFitterBase):
@@ -126,8 +143,8 @@ class ScaledGTestFitter(IsotopicFitterBase):
         total_observed = sum(p.intensity for p in observed)
         total_expected = sum(p.intensity for p in expected)
         total_expected += eps
-        normalized_observed = [obs.intensity/total_observed for obs in observed]
-        normalized_expected = [theo.intensity/total_expected for theo in expected]
+        normalized_observed = [obs.intensity / total_observed for obs in observed]
+        normalized_expected = [theo.intensity / total_expected for theo in expected]
         g_score = 2 * sum([obs * np.log(obs / theo) for obs, theo in zip(
             normalized_observed, normalized_expected)])
         return g_score
@@ -165,34 +182,9 @@ class LeastSquaresFitter(IsotopicFitterBase):
 least_squares = LeastSquaresFitter()
 
 
-class TopFixingFitterSelector(MaximizeFitSelector):
-    def best(self, results):
-        if len(results) == 0:
-            raise ValueError("No options for selection")
-        results = sorted(results, reverse=True)
-        lower_limit = results[0].score * 0.75
-        filtered = [x for x in results if x.score > lower_limit]
-
-        best_score = self.minimum_score - 0.0000001
-        best_case = None
-
-        for case in filtered:
-            score = g_test_scaled(case.experimental, case.theoretical)
-            new_score = case.score * (1 - score)
-            if new_score > best_score:
-                best_score = new_score
-                # case.score = new_score
-                best_case = case
-        return best_case
-
-
 class MSDeconVFitter(IsotopicFitterBase):
-    select_type = TopFixingFitterSelector
-    select = TopFixingFitterSelector()
-    select.minimum_score = 10
-
     def __init__(self, minimum_score=10):
-        self.select = self.select_type()
+        self.select = MaximizeFitSelector()
         self.select.minimum_score = minimum_score
 
     def calculate_minimum_signal_to_noise(self, observed):
@@ -239,15 +231,16 @@ class MSDeconVFitter(IsotopicFitterBase):
 
 
 class PenalizedMSDeconVFitter(IsotopicFitterBase):
-    def __init__(self, minimum_score=10):
+    def __init__(self, minimum_score=10, penalty_factor=1.):
         self.select = MaximizeFitSelector(minimum_score)
         self.msdeconv = MSDeconVFitter()
         self.penalizer = ScaledGTestFitter()
+        self.penalty_factor = penalty_factor
 
     def evaluate(self, peaklist, observed, expected, mass_error_tolerance=0.02, **kwargs):
         score = self.msdeconv.evaluate(observed, expected, mass_error_tolerance)
         penalty = self.penalizer.evaluate(observed, expected)
-        return score * (1 - penalty)
+        return score * (1 - penalty * self.penalty_factor)
 
 
 def decon2ls_chisqr_test(peaklist, observed, expected, **kwargs):
@@ -260,19 +253,60 @@ def decon2ls_chisqr_test(peaklist, observed, expected, **kwargs):
     return fit_total / (sum_total + 0.01)
 
 
+class InterferenceDetection(object):
+    def __init__(self, peaklist):
+        self.peaklist = peaklist
+
+    def detect_interference(self, experimental_peaks):
+        min_peak = experimental_peaks[0]
+        max_peak = experimental_peaks[-1]
+
+        region = self.peaklist.between(
+            min_peak.mz - min_peak.full_width_at_half_max,
+            max_peak.mz + max_peak.full_width_at_half_max)
+
+        included_intensity = sum(p.intensity for p in experimental_peaks)
+        region_intensity = sum(p.intensity for p in region)
+
+        score = 1 - (included_intensity / region_intensity)
+        return score
+
+
+class DistinctPatternFitter(IsotopicFitterBase):
+
+    def __init__(self, minimum_score=0.3):
+        self.select = MinimizeFitSelector(minimum_score)
+        self.interference_detector = None
+        self.g_test_scaled = ScaledGTestFitter()
+
+    def evaluate(self, peaklist, experimental, theoretical):
+        npeaks = float(len(experimental))
+        if self.interference_detector is None:
+            self.interference_detector = InterferenceDetection(peaklist)
+
+        score = self.g_test_scaled(peaklist, experimental, theoretical)
+        score *= abs((self.interference_detector.detect_interference(experimental) + 0.01) / (npeaks * 2)) * 100
+        return score
+
+
 try:
+    _c = True
     _IsotopicFitRecord = IsotopicFitRecord
     _LeastSquaresFitter = LeastSquaresFitter
     _MSDeconVFitter = MSDeconVFitter
     _ScaledGTestFitter = ScaledGTestFitter
     _PenalizedMSDeconVFitter = PenalizedMSDeconVFitter
+    _DistinctPatternFitter = DistinctPatternFitter
     from ._c.scoring import (
-        IsotopicFitRecord, LeastSquaresFitter, TopFixingFitterSelector, MSDeconVFitter,
-        ScaledGTestFitter, PenalizedMSDeconVFitter)
-except ImportError:
-    pass
+        IsotopicFitRecord, LeastSquaresFitter, MSDeconVFitter,
+        ScaledGTestFitter, PenalizedMSDeconVFitter, DistinctPatternFitter,
+        ScaledPenalizedMSDeconvFitter)
+except ImportError, e:
+    print e
+    _c = False
 
 msdeconv = MSDeconVFitter()
 least_squares = LeastSquaresFitter()
 g_test_scaled = ScaledGTestFitter()
 penalized_msdeconv = PenalizedMSDeconVFitter()
+distinct_pattern_fitter = DistinctPatternFitter()

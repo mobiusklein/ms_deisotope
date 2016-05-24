@@ -1,3 +1,4 @@
+# cython: embedsignature=True
 
 cimport cython
 from cpython cimport PyObject
@@ -96,7 +97,7 @@ cdef class Averagine(object):
 
         return scaled
 
-    cdef list _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.98):
+    cdef list _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
         cdef:
             dict composition
             list result, tid
@@ -119,7 +120,7 @@ cdef class Averagine(object):
 
         return result
 
-    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.98):
+    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
         cdef:
             list out
         out = self._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
@@ -174,7 +175,7 @@ cdef class AveragineCache(object):
         self.backend = dict(backend)
         self.averagine = Averagine(averagine)
 
-    cdef list has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.98):
+    cdef list has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
         cdef:
             double key_mz
             tuple key_tuple
@@ -193,7 +194,7 @@ cdef class AveragineCache(object):
             slide(mz, tid)
             return tid
 
-    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.9):
+    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
         return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after)
 
     def __getitem__(self, key):

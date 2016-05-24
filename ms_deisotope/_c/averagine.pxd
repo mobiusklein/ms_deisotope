@@ -1,4 +1,6 @@
 
+cdef double PROTON
+
 cdef double mass_charge_ratio(double neutral_mass, int z, double charge_carrier=*)
 cdef double neutral_mass(double mz,  int z, double charge_carrier=*)
 cdef void slide(double mz, list peaklist)

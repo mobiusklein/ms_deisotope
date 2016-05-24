@@ -4,14 +4,15 @@ from weakref import WeakValueDictionary
 
 
 class PyteomicsMzMLLoader(object):
-    def __init__(self, mzml_file):
+    def __init__(self, mzml_file, use_index=False):
         self.mzml_file = mzml_file
-        self._source = mzml.MzML(mzml_file, read_schema=True, iterative=True)
+        self._source = mzml.MzML(mzml_file, read_schema=True, iterative=True, use_index=use_index)
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
+        self._use_index = use_index
 
     def __reduce__(self):
-        return PyteomicsMzMLLoader, (self.mzml_file,)
+        return PyteomicsMzMLLoader, (self.mzml_file, self._use_index)
 
     def scan_arrays(self, scan):
         return scan['m/z array'], scan["intensity array"]
