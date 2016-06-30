@@ -477,7 +477,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
                 maximum = peak.intensity
         return maximum
 
-    cpdef void scale_fitted_peaks(self, list experimental, double factor):
+    cdef void scale_fitted_peaks(self, list experimental, double factor):
         cdef:
             size_t i
             FittedPeak peak
@@ -485,7 +485,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
             peak = <FittedPeak>PyList_GET_ITEM(experimental, i)
             peak.intensity *= factor        
 
-    cpdef void scale_theoretical_peaks(self, list theoretical, double factor):
+    cdef void scale_theoretical_peaks(self, list theoretical, double factor):
         cdef:
             size_t i
             TheoreticalPeak peak
