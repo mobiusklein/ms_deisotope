@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import operator
 
@@ -274,10 +275,12 @@ class InterferenceDetection(object):
 
 class DistinctPatternFitter(IsotopicFitterBase):
 
-    def __init__(self, minimum_score=0.3):
+    def __init__(self, minimum_score=0.3, peak_count_scale=1.5, domain_scale=100.):
         self.select = MinimizeFitSelector(minimum_score)
         self.interference_detector = None
         self.g_test_scaled = ScaledGTestFitter()
+        self.peak_count_scale = peak_count_scale
+        self.domain_scale = domain_scale
 
     def evaluate(self, peaklist, experimental, theoretical):
         npeaks = float(len(experimental))
@@ -285,8 +288,22 @@ class DistinctPatternFitter(IsotopicFitterBase):
             self.interference_detector = InterferenceDetection(peaklist)
 
         score = self.g_test_scaled(peaklist, experimental, theoretical)
-        score *= abs((self.interference_detector.detect_interference(experimental) + 0.01) / (npeaks * 2)) * 100
+        score *= abs((self.interference_detector.detect_interference(experimental) + 0.00001) / (
+            npeaks * self.peak_count_scale)) * self.domain_scale
         return score
+
+
+def percentile(N, percent):
+    if not N:
+        return None
+    k = (len(N) - 1) * percent
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return N[int(k)]
+    d0 = N[int(f)] * (c - k)
+    d1 = N[int(c)] * (k - f)
+    return d0 + d1
 
 
 try:

@@ -1,7 +1,7 @@
 # cython: embedsignature=True
 
 cimport cython
-from libc.math cimport fabs, sqrt, log
+from libc.math cimport fabs, sqrt, log, ceil, floor
 from libc.stdlib cimport malloc, free
 import operator
 
@@ -410,10 +410,12 @@ cdef class InterferenceDetection(object):
 
 cdef class DistinctPatternFitter(IsotopicFitterBase):
 
-    def __init__(self, minimum_score=0.3):
+    def __init__(self, minimum_score=0.3, peak_count_scale=1.5, domain_scale=100.):
         self.select = MinimizeFitSelector(minimum_score)
         self.interference_detector = None
         self.g_test_scaled = ScaledGTestFitter()
+        self.peak_count_scale = peak_count_scale
+        self.domain_scale = domain_scale
 
     cpdef double _evaluate(self, PeakIndex peaklist, list experimental, list theoretical):
         cdef:
@@ -426,8 +428,22 @@ cdef class DistinctPatternFitter(IsotopicFitterBase):
             self.interference_detector = InterferenceDetection(peaklist)
 
         score = self.g_test_scaled._evaluate(peaklist, experimental, theoretical)
-        score *= abs((self.interference_detector.detect_interference(experimental) + 0.01) / (npeaks * 2)) * 100
+        score *= abs((self.interference_detector.detect_interference(experimental) + 0.00001) / (
+            npeaks * self.peak_count_scale)) * self.domain_scale
         return score
+
+
+cdef double percentile(double[:] N, double percent):
+    cdef:
+        double k, f, c, d0, d1
+    k = (N.shape[0] - 1) * percent
+    f = floor(k)
+    c = ceil(k)
+    if f == c:
+        return N[<size_t>(k)]
+    d0 = N[<size_t>(f)] * (c - k)
+    d1 = N[<size_t>(c)] * (k - f)
+    return d0 + d1
 
 
 cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):

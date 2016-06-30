@@ -1,29 +1,89 @@
 from collections import namedtuple
+import abc
 
 from ms_peak_picker import pick_peaks
 from ..averagine import neutral_mass, mass_charge_ratio
-
+from ..utils import Constant
 
 ScanBunch = namedtuple("ScanBunch", ["precursor", "products"])
 
 
+ChargeNotProvided = Constant("ChargeNotProvided")
+IsolationWindowNotProvided = Constant("IsolationWindowNotProvided")
+
+
+class ScanDataSourceBase(object):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def scan_arrays(self, scan):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def precursor_information(self, scan):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def scan_title(self, scan):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def scan_id(self, scan):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def scan_index(self, scan):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def ms_level(self, scan):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def scan_time(self, scan):
+        raise NotImplementedError()
+
+
+class ScanIteratorBase(ScanDataSourceBase):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def next(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_scan_by_id(self, scan_id):
+        raise NotImplementedError()
+
+    def _make_scan(self, data):
+        return Scan(data, self)
+
+    def __next__(self):
+        return self.next()
+
+    def __iter__(self):
+        return self
+
+
 class Scan(object):
-    _arrays = None
-    _id = None
-    _title = None
-    _ms_level = None
-    _scan_time = None
-    _precursor_information = None
-    _index = None
 
     def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None):
         if product_scans is None:
             product_scans = []
-        self._data = data
         self.source = source
         self.peak_set = peak_set
         self.deconvoluted_peak_set = deconvoluted_peak_set
+
+        self._data = data
+
+        self._arrays = None
+        self._id = None
+        self._title = None
+        self._ms_level = None
+        self._scan_time = None
         self._precursor_information = None
+        self._index = None
+
         self.product_scans = product_scans
 
     def __getitem__(self, key):

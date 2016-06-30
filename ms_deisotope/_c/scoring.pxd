@@ -69,6 +69,8 @@ cdef class DistinctPatternFitter(IsotopicFitterBase):
     cdef:
         public InterferenceDetection interference_detector
         public ScaledGTestFitter g_test_scaled
+        public double peak_count_scale
+        public double domain_scale
 
 cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
     cdef:

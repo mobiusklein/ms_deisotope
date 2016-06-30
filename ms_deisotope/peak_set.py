@@ -1,4 +1,6 @@
 import operator
+from collections import namedtuple
+
 from .utils import Base, ppm_error
 from brainpy import mass_charge_ratio
 
@@ -26,6 +28,9 @@ class _Index(object):
         return self.__class__(self.neutral_mass, self.mz)
 
 
+EnvelopePair = namedtuple("EnvelopePair", ("mz", "intensity"))
+
+
 class Envelope(object):
     """
     Represents a sequence of (mz, intensity) pairs which store peak positions
@@ -40,7 +45,7 @@ class Envelope(object):
         list of (mz, intensity) pairs
     """
     def __init__(self, pairs):
-        self.pairs = tuple(pairs)
+        self.pairs = tuple(map(lambda x: EnvelopePair(*x), pairs))
 
     def __getitem__(self, i):
         return self.pairs[i]
@@ -229,6 +234,19 @@ class DeconvolutedPeakSet(Base):
         if use_mz:
             return binary_search(self._mz_ordered, neutral_mass, tolerance, mz_getter)
         return binary_search(self.peaks, neutral_mass, tolerance, neutral_mass_getter)
+
+    def all_peaks_for(self, neutral_mass, tolerance=1e-5):
+        lo = neutral_mass - neutral_mass * tolerance
+        hi = neutral_mass + neutral_mass * tolerance
+        lo_peak, lo_err = self.get_nearest_peak(lo)
+        hi_peak, hi_err = self.get_nearest_peak(hi)
+        lo_ix = lo_peak.index.neutral_mass
+        if abs(ppm_error(lo_peak.neutral_mass, neutral_mass)) > tolerance:
+            lo_ix += 1
+        hi_ix = hi_peak.index.neutral_mass + 1
+        if abs(ppm_error(hi_peak.neutral_mass, neutral_mass)) > tolerance:
+            hi_ix -= 1
+        return self[lo_ix:hi_ix]
 
     def __repr__(self):
         return "<DeconvolutedPeakSet %d Peaks>" % (len(self))

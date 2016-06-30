@@ -132,6 +132,7 @@ class DeconvoluterBase(Base):
             else:
                 merged_peaks.append(current_peak)
                 current_peak = peak
+        merged_peaks.append(current_peak)
         return merged_peaks
 
     def _find_next_putative_peak(self, mz, charge, step=1, tolerance=2e-5):
@@ -472,7 +473,6 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
         n = len(results)
         stop = max(min(n / 2, 100), 3)
-
         if n == 0:
             return 0
 
@@ -493,17 +493,16 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, use_charge_state_hint=False, charge_carrier=PROTON):
         for peak in self.peaklist:
-            self._explore_local(
+            out = self._explore_local(
                 peak, error_tolerance=error_tolerance, charge_range=charge_range,
                 left_search_limit=left_search_limit, right_search_limit=right_search_limit,
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier)
 
     def select_best_disjoint_subgraphs(self, error_tolerance=2e-5, charge_carrier=PROTON):
         disjoint_envelopes = self.peak_dependency_network.find_non_overlapping_intervals()
-
+        i = 0
         for cluster in disjoint_envelopes:
             disjoint_best_fits = cluster.disjoint_best_fits()
-            # disjoint_best_fits = [cluster.best_fit]
             for fit in disjoint_best_fits:
                 score, charge, eid, tid = fit
                 rep_eid = drop_placeholders(eid)
@@ -524,8 +523,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                     score=score,
                     envelope=[(p.mz, p.intensity) for p in rep_eid],
                     mz=eid[0].mz)
-
                 self._deconvoluted_peaks.append(dpeak)
+                i += 1
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
 
@@ -543,7 +542,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         if self.merge_isobaric_peaks:
             self._deconvoluted_peaks = self._merge_peaks(self._deconvoluted_peaks)
 
-        return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
+        return DeconvolutedPeakSet(list(self._deconvoluted_peaks))._reindex()
 
 
 class AveraginePeakDependenceGraphDeconvoluter(AveragineDeconvoluter, PeakDependenceGraphDeconvoluterBase):
@@ -559,7 +558,7 @@ class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, 
 
 
 class CompositionListDeconvoluter(DeconvoluterBase):
-    def __init__(self, peaklist, composition_list, scorer=distinct_pattern_fitter,
+    def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',
                  verbose=False):
         self.peaklist = peaklist.clone()
@@ -648,7 +647,7 @@ class CompositionListDeconvoluter(DeconvoluterBase):
 
 
 class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter):
-    def __init__(self, peaklist, composition_list, scorer=distinct_pattern_fitter,
+    def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',
                  verbose=False, **kwargs):
         max_missed_peaks = kwargs.get("max_missed_peaks", 1)
@@ -742,12 +741,10 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
 
 
 def deconvolute_peaks(peaklist, deconvoluter_type=AveraginePeakDependenceGraphDeconvoluter,
-                      decon_config=None, charge_range=(1, 8),
-                      error_tolerance=2e-5, priority_list=[], use_charge_state_hint_for_priorities=True,
-                      left_search_limit=3, right_search_limit=3, left_search_limit_for_priorities=None,
-                      right_search_limit_for_priorities=None, verbose_priorities=False, verbose=False,
-                      charge_carrier=PROTON,
-                      **kwargs):
+                      decon_config=None, charge_range=(1, 8), error_tolerance=2e-5, priority_list=[],
+                      use_charge_state_hint_for_priorities=True, left_search_limit=3, right_search_limit=3,
+                      left_search_limit_for_priorities=None, right_search_limit_for_priorities=None,
+                      verbose_priorities=False, verbose=False, charge_carrier=PROTON, **kwargs):
     if left_search_limit_for_priorities is None:
         left_search_limit_for_priorities = left_search_limit
     if right_search_limit_for_priorities is None:

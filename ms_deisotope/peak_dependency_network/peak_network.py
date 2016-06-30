@@ -191,12 +191,23 @@ class PeakDependenceGraph(object):
             self.nodes[peak.index].links[fit_record] = fit_record.score
         self.dependencies.add(fit_record)
 
-    def nodes_for(self, fit_record):
-        return [self.nodes[p.index] for p in fit_record.experimental if p.index != 0]
+    def nodes_for(self, fit_record, cache=None):
+        if cache is None:
+            return [self.nodes[p.index] for p in fit_record.experimental if p.index != 0]
+        else:
+            try:
+                return cache[fit_record]
+            except KeyError:
+                cache[fit_record] = value = [
+                    self.nodes[p.index] for p in fit_record.experimental if p.index != 0]
+                return value
 
     def drop_fit_dependence(self, fit_record):
         for node in self.nodes_for(fit_record):
-            del node.links[fit_record]
+            try:
+                del node.links[fit_record]
+            except KeyError:
+                pass
 
     def claimed_nodes(self):
         peaks = set()
@@ -266,6 +277,8 @@ class PeakDependenceGraph(object):
         if self.use_monoisotopic_superceded_filtering:
             self.drop_superceded_fits()
 
+        nodes_for_cache = {}
+
         for node in self.nodes.values():
             # This peak is depended upon by each fit in `dependencies`
             dependencies = set(node.links.keys())
@@ -276,7 +289,7 @@ class PeakDependenceGraph(object):
             # These fits also depend upon these other peaks, and those peaks are depended upon
             # for other fits in turn, which depend upon the assignment of this peak.
             for dep in list(dependencies):
-                for node in self.nodes_for(dep):
+                for node in self.nodes_for(dep, nodes_for_cache):
                     dependencies |= clusters[node]
 
             # Create a fresh copy to share out again to avoid eliminate possible errors of shared storage.
@@ -285,7 +298,7 @@ class PeakDependenceGraph(object):
 
             # Update all co-depended nodes with the full set of all fits which depend upon them
             for dep in dependencies:
-                for node in self.nodes_for(dep):
+                for node in self.nodes_for(dep, nodes_for_cache):
                     clusters[node] = dependencies
 
         # Use an `id` keyed dictionary over these copied sets to ensure we have exactly one reference

@@ -145,6 +145,7 @@ cdef class DeconvoluterBase(object):
             else:
                 merged_peaks.append(current_peak)
                 current_peak = peak
+        merged_peaks.append(current_peak)
         return merged_peaks
 
     cpdef list _find_next_putative_peak(self, double mz, int charge, int step=1, double tolerance=2e-5):

@@ -1,29 +1,9 @@
 from .utils import GeneratorQueue
+from .intervals import SpanningMixin
 
 
 def ident(x):
     return x
-
-
-class SpanningMixin(object):
-    def __contains__(self, i):
-        return self.start <= i <= self.end
-
-    def overlaps(self, interval):
-        cond = ((self.start <= interval.start and self.end >= interval.end) or (
-            self.start >= interval.start and self.end <= interval.end) or (
-            self.start >= interval.start and self.end >= interval.end))
-        return cond
-
-    def overlap_size(self, interval):
-        if interval.start in self and interval.end in self:
-            return interval.end - interval.start
-        elif self.start in interval and self.end in interval:
-            return self.end - self.start
-        if self.end >= interval.start:
-            return self.end - interval.start
-        elif self.start >= interval.end:
-            return self.start - interval.end
 
 
 class FitNode(SpanningMixin):

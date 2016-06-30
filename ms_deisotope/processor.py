@@ -4,9 +4,11 @@ import logging
 from ms_peak_picker import pick_peaks
 
 from .deconvolution import deconvolute_peaks
-from .data_source.mzml import PyteomicsMzMLLoader
+from .data_source.mzml import MzMLLoader
 from .data_source.common import ScanBunch
 
+
+PyteomicsMzMLLoader = MzMLLoader
 
 logger = logging.getLogger("deconvolution_scan_processor")
 
@@ -36,7 +38,7 @@ class ScanProcessor(object):
         self.pick_only_tandem_envelopes = pick_only_tandem_envelopes
         self.precursor_ion_mass_accuracy = precursor_ion_mass_accuracy
 
-        self._signal_source = PyteomicsMzMLLoader(mzml_file)
+        self._signal_source = MzMLLoader(mzml_file)
 
     def pick_precursor_scan_peaks(self, precursor_scan):
         logger.info("Picking Precursor Scan Peaks: %r", precursor_scan)

@@ -1,9 +1,9 @@
 import operator
 
 try:
-    has_plot = True
     from matplotlib import pyplot as plt
     from ms_peak_picker.utils import draw_peaklist
+    has_plot = True
 
 except ImportError:
     has_plot = False
@@ -41,11 +41,42 @@ class Base(object):
     __repr__ = simple_repr
 
 
+class Constant(object):
+
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, other):
+        return self.name == str(other)
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __repr__(self):
+        return str(self.name)
+
+    def __nonzero__(self):
+        return False
+
+
 def ppm_error(x, y):
     return (x - y) / y
 
 
 def dict_proxy(attribute):
+    """Return a decorator for a class to give it a `dict`-like API proxied
+    from one of its attributes
+
+    Parameters
+    ----------
+    attribute : str
+        The string corresponding to the attribute which will
+        be used
+
+    Returns
+    -------
+    function
+    """
     getter = operator.attrgetter(attribute)
 
     def wrap(cls):
