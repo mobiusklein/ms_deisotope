@@ -49,9 +49,9 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
 
 cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
     cdef:
-        MSDeconVFitter msdeconv
-        ScaledGTestFitter penalizer
-        double penalty_factor
+        public MSDeconVFitter msdeconv
+        public ScaledGTestFitter penalizer
+        public double penalty_factor
 
 
 cdef class FunctionScorer(IsotopicFitterBase):

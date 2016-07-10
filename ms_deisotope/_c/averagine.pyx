@@ -71,6 +71,14 @@ cdef class Averagine(object):
         self.base_mass = calculate_mass(self.base_composition)
         assert self.base_mass > 0
 
+    def __getstate__(self):
+        return self.base_composition, self.base_mass
+
+    def __setstate__(self, state):
+        composition, mass = state
+        self.base_composition = dict(composition)
+        self.base_mass = float(mass)
+
     @cython.cdivision
     cpdef dict scale(self, double mz, int charge=1, double charge_carrier=PROTON):
         cdef:
@@ -174,6 +182,14 @@ cdef class AveragineCache(object):
             backend = {}
         self.backend = dict(backend)
         self.averagine = Averagine(averagine)
+
+    def __getstate__(self):
+        return self.averagine, self.backend
+
+    def __setstate__(self, state):
+        avg, store = state
+        self.averagine = Averagine(avg)
+        self.store = dict(store)
 
     cdef list has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
         cdef:

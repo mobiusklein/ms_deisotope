@@ -1,5 +1,5 @@
 from pyteomics import mzml
-from .common import PrecursorInformation, ScanIteratorBase, ChargeNotProvided
+from .common import PrecursorInformation, ScanIteratorBase, ScanDataSourceBase, ChargeNotProvided
 from weakref import WeakValueDictionary
 
 
@@ -43,7 +43,44 @@ class PaddedBuffer(object):
                     return self.end[self.diff:diff]
 
 
-class MzMLLoader(ScanIteratorBase):
+class MzMLDataInterface(ScanDataSourceBase):
+    def scan_arrays(self, scan):
+        try:
+            return scan['m/z array'], scan["intensity array"]
+        except KeyError:
+            return mzml.np.array([]), mzml.np.array([])
+
+    def precursor_information(self, scan):
+        pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
+        precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
+        pinfo = PrecursorInformation(
+            mz=pinfo_dict['selected ion m/z'],
+            intensity=pinfo_dict.get('peak intensity', 0.0),
+            charge=pinfo_dict.get('charge state', ChargeNotProvided),
+            precursor_scan_id=precursor_scan_id,
+            _source=self)
+        return pinfo
+
+    def scan_title(self, scan):
+        return scan["spectrum title"]
+
+    def scan_id(self, scan):
+        return scan["id"]
+
+    def scan_index(self, scan):
+        return scan['index']
+
+    def ms_level(self, scan):
+        return scan['ms level']
+
+    def scan_time(self, scan):
+        return scan['scanList']['scan'][0]['scan start time']
+
+
+class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
+
+    __data_interface__ = MzMLDataInterface
+
     def __init__(self, mzml_file, use_index=True):
         self.mzml_file = mzml_file
         self._source = mzml.MzML(mzml_file, read_schema=True, iterative=True, use_index=use_index)
@@ -52,7 +89,11 @@ class MzMLLoader(ScanIteratorBase):
         self._use_index = use_index
 
     def __reduce__(self):
-        return PyteomicsMzMLLoader, (self.mzml_file, self._use_index)
+        return MzMLLoader, (self.mzml_file, self._use_index)
+
+    @property
+    def index(self):
+        self._source._offset_index
 
     def reset(self):
         self._make_iterator(None)
@@ -60,6 +101,9 @@ class MzMLLoader(ScanIteratorBase):
 
     def _make_iterator(self, iterator=None):
         self._producer = self._scan_group_iterator(iterator)
+
+    def _validate(self, scan_dict):
+        return "m/z array" in scan_dict
 
     def _scan_group_iterator(self, iterator=None):
         if iterator is None:
@@ -72,6 +116,8 @@ class MzMLLoader(ScanIteratorBase):
         _make_scan = self._make_scan
 
         for scan in iterator:
+            if not self._validate(scan):
+                continue
             packed = _make_scan(scan)
             self._scan_cache[packed.id] = packed
             if scan['ms level'] == 2:
@@ -105,37 +151,6 @@ class MzMLLoader(ScanIteratorBase):
     def start_from_scan(self, scan_id):
         iterator = _yield_from_index(self._source, scan_id)
         self._make_iterator(iterator)
-
-    # Begin ScanDataSourceBase API
-
-    def scan_arrays(self, scan):
-        return scan['m/z array'], scan["intensity array"]
-
-    def precursor_information(self, scan):
-        pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
-        precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
-        pinfo = PrecursorInformation(
-            mz=pinfo_dict['selected ion m/z'],
-            intensity=pinfo_dict.get('peak intensity', 0.0),
-            charge=pinfo_dict.get('charge state', ChargeNotProvided),
-            precursor_scan_id=precursor_scan_id,
-            _source=self)
-        return pinfo
-
-    def scan_title(self, scan):
-        return scan["spectrum title"]
-
-    def scan_id(self, scan):
-        return scan["id"]
-
-    def scan_index(self, scan):
-        return scan['index']
-
-    def ms_level(self, scan):
-        return scan['ms level']
-
-    def scan_time(self, scan):
-        return scan['scanList']['scan'][0]['scan start time']
 
 
 PyteomicsMzMLLoader = MzMLLoader

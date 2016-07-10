@@ -124,6 +124,8 @@ class DeconvoluterBase(Base):
 
     def _merge_peaks(self, peak_list):
         peak_list = sorted(peak_list, key=operator.attrgetter("neutral_mass"))
+        if not peak_list:
+            return []
         current_peak = peak_list[0]
         merged_peaks = []
         for peak in peak_list[1:]:

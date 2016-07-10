@@ -65,6 +65,23 @@ class ScanIteratorBase(ScanDataSourceBase):
         return self
 
 
+class DetachedAccessError(Exception):
+    pass
+
+
+class DataAccessProxyBase(object):
+    def attach(self, source):
+        self.source = source
+
+    def raise_if_detached(self):
+        if self.source is None:
+            raise DetachedAccessError("Cannot perform operation. Instance is detached.")
+
+    def get_scan_by_id(self, scan_id):
+        self.raise_if_detached()
+        return self.source.get_scan_by_id(scan_id)
+
+
 class Scan(object):
 
     def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None):
@@ -146,7 +163,7 @@ class Scan(object):
     def pack(self):
         return ProcessedScan(
             self.id, self.title, self.precursor_information,
-            self.ms_level, self.scan_time,
+            self.ms_level, self.scan_time, self.index,
             self.deconvoluted_peak_set)
 
 
@@ -187,19 +204,20 @@ class PrecursorInformation(object):
 
 
 class ProcessedScan(object):
-    def __init__(self, id, title, precursor_information, ms_level, scan_time, peaks):
+    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, deconvoluted_peak_set):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
         self.ms_level = ms_level
         self.scan_time = scan_time
-        self.peaks = peaks
+        self.index = index
+        self.deconvoluted_peak_set = deconvoluted_peak_set
 
     def __iter__(self):
-        return iter(self.peaks)
+        return iter(self.deconvoluted_peak_set)
 
     def __getitem__(self, index):
-        return self.peaks[index]
+        return self.deconvoluted_peak_set[index]
 
     def __repr__(self):
-        return "ProcessedScan(id=%s, ms_level=%d, %d peaks)" % (self.id, self.ms_level, len(self.peaks))
+        return "ProcessedScan(id=%s, ms_level=%d, %d peaks)" % (self.id, self.ms_level, len(self.deconvoluted_peak_set))
