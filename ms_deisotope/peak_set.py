@@ -277,7 +277,7 @@ class DeconvolutedPeakSet(Base):
             if collecting:
                 acc.append(peak)
 
-        return self.__class__(acc)
+        return self.__class__(acc)._reindex()
 
 
 mz_getter = operator.attrgetter('mz')

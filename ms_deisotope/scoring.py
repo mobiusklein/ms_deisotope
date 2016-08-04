@@ -128,6 +128,9 @@ class IsotopicFitterBase(Base):
     def is_maximizing(self):
         return self.select.is_maximizing()
 
+    def configure(self, deconvoluter, **kwargs):
+        return self
+
 
 class GTestFitter(IsotopicFitterBase):
     def evaluate(self, peaklist, observed, expected, **kwargs):

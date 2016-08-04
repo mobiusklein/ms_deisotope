@@ -43,6 +43,10 @@ class ScanDataSourceBase(object):
     def scan_time(self, scan):
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def is_profile(self, scan):
+        raise NotImplementedError()
+
 
 class ScanIteratorBase(ScanDataSourceBase):
     __metaclass__ = abc.ABCMeta
@@ -69,9 +73,18 @@ class DetachedAccessError(Exception):
     pass
 
 
-class DataAccessProxyBase(object):
+class DataAccessProxy(object):
     def attach(self, source):
         self.source = source
+
+    def detach(self):
+        self.source = None
+
+    def __getstate__(self):
+        return ()
+
+    def __setstate__(self, state):
+        self.source = None
 
     def raise_if_detached(self):
         if self.source is None:
@@ -100,8 +113,19 @@ class Scan(object):
         self._scan_time = None
         self._precursor_information = None
         self._index = None
+        self._is_profile = None
+        self._polarity = None
 
         self.product_scans = product_scans
+
+    def _load(self):
+        self.arrays
+        self.id
+        self.title
+        self.ms_level
+        self.scan_time
+        self.index
+        self.precursor_information
 
     def __getitem__(self, key):
         return self._data[key]
@@ -117,6 +141,18 @@ class Scan(object):
         if self._ms_level is None:
             self._ms_level = self.source.ms_level(self._data)
         return self._ms_level
+
+    @property
+    def is_profile(self):
+        if self._is_profile is None:
+            self._is_profile = self.source.is_profile(self._data)
+        return self._is_profile
+
+    @property
+    def polarity(self):
+        if self._polarity is None:
+            self._polarity = self.source.polarity(self._data)
+        return self._polarity
 
     @property
     def scan_time(self):
@@ -151,9 +187,9 @@ class Scan(object):
         return self._precursor_information
 
     def __repr__(self):
-        return "Scan(%s %s)" % (
+        return "Scan(%s%s)" % (
             self.id,
-            self.precursor_information if self.precursor_information else '')
+            " " + str(self.precursor_information) if self.precursor_information else '')
 
     def pick_peaks(self, *args, **kwargs):
         mzs, intensities = self.arrays
@@ -161,24 +197,26 @@ class Scan(object):
         return self
 
     def pack(self):
+        precursor_info = self.precursor_information
         return ProcessedScan(
-            self.id, self.title, self.precursor_information,
+            self.id, self.title, precursor_info,
             self.ms_level, self.scan_time, self.index,
+            self.peak_set.pack(),
             self.deconvoluted_peak_set)
 
 
 class PrecursorInformation(object):
-    def __init__(self, mz, intensity, charge, precursor_scan_id=None, _source=None,
-                 extracted_neutral_mass=0, extracted_charge=0, extracted_peak_height=0,
+    def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
+                 extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
                  peak=None, extracted_peak=None):
         self.mz = mz
         self.intensity = intensity
         self.charge = charge
         self.precursor_scan_id = precursor_scan_id
-        self._source = _source
+        self.source = source
         self.extracted_neutral_mass = extracted_neutral_mass
         self.extracted_charge = extracted_charge
-        self.extracted_peak_height = extracted_peak_height
+        self.extracted_intensity = extracted_intensity
         self.peak = peak
         self.extracted_peak = extracted_peak
 
@@ -187,8 +225,27 @@ class PrecursorInformation(object):
             self.mz,
             mass_charge_ratio(self.extracted_neutral_mass, self.extracted_charge if self.extracted_charge != 0 else 1)
             if self.extracted_neutral_mass != 0. else 0.,
-            self.intensity, self.extracted_peak_height or 0., self.charge,
+            self.intensity, self.extracted_intensity or 0., self.charge,
             self.extracted_charge or 0., self.precursor_scan_id)
+
+    def __getstate__(self):
+        return (self.mz, self.intensity, self.charge, self.precursor_scan_id, None, self.extracted_neutral_mass,
+                self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak)
+
+    def __setstate__(self, state):
+        (self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source, self.extracted_neutral_mass,
+         self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak) = state
+
+    def extract(self, peak, override_charge=None):
+        self.extracted_neutral_mass = peak.neutral_mass
+        self.extracted_charge = int(peak.charge) if override_charge is None else override_charge
+        self.extracted_intensity = peak.intensity
+        self.extracted_peak = peak
+
+    def default(self):
+        self.extracted_neutral_mass = self.neutral_mass
+        self.extracted_charge = int(self.charge)
+        self.extracted_intensity = self.intensity
 
     @property
     def neutral_mass(self):
@@ -200,17 +257,18 @@ class PrecursorInformation(object):
 
     @property
     def precursor(self):
-        return self._source.get_scan_by_id(self.precursor_scan_id)
+        return self.source.get_scan_by_id(self.precursor_scan_id)
 
 
 class ProcessedScan(object):
-    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, deconvoluted_peak_set):
+    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set, deconvoluted_peak_set):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
         self.ms_level = ms_level
         self.scan_time = scan_time
         self.index = index
+        self.peak_set = peak_set
         self.deconvoluted_peak_set = deconvoluted_peak_set
 
     def __iter__(self):

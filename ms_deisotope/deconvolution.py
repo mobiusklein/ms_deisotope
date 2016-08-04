@@ -28,26 +28,94 @@ def mean(numbers):
 
 
 def has_previous_peak_at_charge(peak_index, peak, charge=2, step=1):
+    """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
+    charge state `charge`, or return `None` if it is missing.
+
+    Parameters
+    ----------
+    peak_index : ms_peak_picker.PeakIndex
+        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
+    peak : ms_peak_picker.FittedPeak
+        The peak to use as a point of reference
+    charge : int, optional
+        The charge state to interpolate from. Defaults to `2`.
+    step : int, optional
+        The number of peaks along the isotopic pattern to search.
+
+    Returns
+    -------
+    FittedPeak
+    """
     prev = peak.mz - isotopic_shift(charge) * step
     return peak_index.has_peak(prev)
 
 
 def has_successor_peak_at_charge(peak_index, peak, charge=2, step=1):
+    """Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
+    charge state `charge`, or return `None` if it is missing.
+
+    Parameters
+    ----------
+    peak_index : ms_peak_picker.PeakIndex
+        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
+    peak : ms_peak_picker.FittedPeak
+        The peak to use as a point of reference
+    charge : int, optional
+        The charge state to interpolate from. Defaults to `2`.
+    step : int, optional
+        The number of peaks along the isotopic pattern to search.
+
+    Returns
+    -------
+    FittedPeak
+    """
     nxt = peak.mz + isotopic_shift(charge) * step
     return peak_index.has_peak(nxt)
 
 
 def first_peak(peaks):
+    """Get the first non-placeholder peak in a list of peaks
+
+    Parameters
+    ----------
+    peaks : Iterable of FittedPeak
+
+    Returns
+    -------
+    FittedPeak
+    """
     for peak in peaks:
         if peak.intensity > 1 and peak.mz > 1:
             return peak
 
 
 def drop_placeholders(peaks):
+    """Removes all placeholder peaks from an iterable of peaks
+
+    Parameters
+    ----------
+    peaks : Iterable of FittedPeak
+
+    Returns
+    -------
+    list
+    """
     return [peak for peak in peaks if peak.mz > 1 and peak.intensity > 1]
 
 
 def count_placeholders(peaks):
+    """Counts the number of placeholder peaks in an iterable
+    of FittedPeaks
+
+    Parameters
+    ----------
+    peaks : Iterable of FittedPeak
+
+    Returns
+    -------
+    int
+        Number of placeholder peaks
+    """
     i = 0
     for peak in peaks:
         if peak.intensity <= 1:
@@ -56,6 +124,25 @@ def count_placeholders(peaks):
 
 
 def drop_placeholders_parallel(peaks, otherpeaks):
+    """Given two parallel iterables of Peak objects, `peaks` and `otherpeaks`,
+    for each position that is not a placeholder in `peaks`, include that Peak object
+    and its counterpart in `otherpeaks` in a pair of output lists.
+
+    Parameters
+    ----------
+    peaks : Iterable of FittedPeak
+        Peak collection to filter against
+    otherpeaks : Iterable
+        Collection of objects (Peak-like) to include based upon
+        contents of `peaks`
+
+    Returns
+    -------
+    list
+        Filtered form of `peaks`
+    list
+        Filtered form of `otherpeaks`
+    """
     new_peaks = []
     new_otherpeaks = []
     for i in range(len(peaks)):
@@ -67,6 +154,28 @@ def drop_placeholders_parallel(peaks, otherpeaks):
 
 
 class DeconvoluterBase(Base):
+    """Base class for all Deconvoluter types. Provides basic configuration for common operations,
+    regardless of implementation. Because these methods form the backbone of all deconvolution algorithms,
+    this class has a C-extension implementation as well.
+
+    Attributes
+    ----------
+    merge_isobaric_peaks : bool
+        If multiple passes produce peaks with identical mass values,
+        should those peaks be summed
+    minimum_intensity : float
+        Experimental peaks whose intensity is below this level will be ignored
+        by peak querying methods
+    scale_method : str
+        The name of the method to use to scale theoretical isotopic pattern intensities
+        to match the experimental isotopic pattern
+    use_subtraction : bool
+        Whether or not to apply a subtraction procedure to experimental peaks after they
+        have been fitted. This is only necessary if the same signal may be examined multiple
+        times as in a multi-pass method or when peak dependence is not considered
+    verbose : bool
+        Produce extra logging information
+    """
     use_subtraction = False
     scale_method = 'sum'
     merge_isobaric_peaks = True
@@ -82,12 +191,42 @@ class DeconvoluterBase(Base):
         self._slice_cache = {}
 
     def has_peak(self, mz, error_tolerance):
+        """Query :attr:`peaklist` for a peak at `mz` within `error_tolerance` ppm. If a peak
+        is not found, this method returns a placeholder peak.
+        
+        Parameters
+        ----------
+        mz : float
+            The m/z to search for a peak at
+        error_tolerance : float
+            The parts-per-million error tolerance to search with
+        
+        Returns
+        -------
+        FittedPeak
+            A peak from :attr:`peaklist` if present, else a placeholder peak.
+        """
         peak = self.peaklist.has_peak(mz, error_tolerance)
         if peak is None or peak.intensity < self.minimum_intensity:
             return FittedPeak(mz, 1.0, 0, 0, 0, 0, 0)
         return peak
 
     def between(self, m1, m2):
+        """Take a slice from :attr:`peaklist` using it's :meth:`between` method. Caches
+        repeated queries in :attr:`_scan_cache`.
+        
+        Parameters
+        ----------
+        m1 : float
+            The low m/z to slice from
+        m2 : float
+            The high m/z to slice from
+        
+        Returns
+        -------
+        PeakSet
+            The subset of peaks from :attr:`peaklist` between `m1` and `m2`
+        """
         key = (m1, m2)
         if key in self._slice_cache:
             return self._slice_cache[key]
@@ -250,7 +389,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
                                    recalculate_starting_peak=True):
         if use_charge_state_hint:
             upper_charge_limit = self.peaklist.predict_charge_state(peak) + 2
-            if upper_charge_limit < 1:
+            if upper_charge_limit <= 1:
                 upper_charge_limit = charge_range[-1]
             charge_range = (charge_range[0], min(upper_charge_limit, charge_range[-1]))
 
@@ -474,12 +613,12 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier)
 
         n = len(results)
-        stop = max(min(n / 2, 100), 3)
+        stop = max(min(n / 2, 100), 10)
         if n == 0:
             return 0
 
         if self.verbose:
-            info("\nFits for %r" % peak)
+            info("\nFits for %r (%f)" % (peak, peak.mz))
 
         for i in range(stop):
             if len(results) == 0:
@@ -603,6 +742,7 @@ class CompositionListDeconvoluter(DeconvoluterBase):
         for charge in charge_range_(*charge_range):
             tid = self.generate_theoretical_isotopic_cluster(composition, charge=charge, truncate_after=truncate_after,
                                                              charge_carrier=charge_carrier)
+
             eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
 
             if count_placeholders(eid) > len(eid) / 2:

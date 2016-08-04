@@ -98,14 +98,18 @@ def isotopic_shift(charge=1):
 
 @dict_proxy("averagine")
 class AveragineCache(object):
-    def __init__(self, averagine, backend=None):
+    def __init__(self, averagine, backend=None, cache_truncation=1.0):
         if backend is None:
             backend = {}
         self.backend = backend
         self.averagine = Averagine(averagine)
+        self.cache_truncation = cache_truncation
 
     def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95):
-        key_mz = round(mz)
+        if self.cache_truncation == 0.0:
+            key_mz = mz
+        else:
+            key_mz = round(mz / self.cache_truncation) * self.cache_truncation
         if (key_mz, charge, charge_carrier) in self.backend:
             return slide(mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])
         else:

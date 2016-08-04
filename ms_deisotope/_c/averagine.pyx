@@ -71,6 +71,9 @@ cdef class Averagine(object):
         self.base_mass = calculate_mass(self.base_composition)
         assert self.base_mass > 0
 
+    def __reduce__(self):
+        return self.__class__, (self.base_composition,), self.__getstate__()
+
     def __getstate__(self):
         return self.base_composition, self.base_mass
 
@@ -175,21 +178,27 @@ cdef list clone_peak_list(list peaklist):
     return result
 
 
+
 cdef class AveragineCache(object):
 
-    def __init__(self, object averagine, object backend=None):
+    def __init__(self, object averagine, object backend=None, double cache_truncation=1.):
         if backend is None:
             backend = {}
         self.backend = dict(backend)
         self.averagine = Averagine(averagine)
+        self.cache_truncation = cache_truncation
+
+    def __reduce__(self):
+        return self.__class__, self.__getstate__()
 
     def __getstate__(self):
-        return self.averagine, self.backend
+        return self.averagine, self.backend, self.cache_truncation
 
     def __setstate__(self, state):
-        avg, store = state
+        avg, store, trunc = state
         self.averagine = Averagine(avg)
         self.store = dict(store)
+        self.cache_truncation = trunc
 
     cdef list has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
         cdef:
@@ -197,7 +206,10 @@ cdef class AveragineCache(object):
             tuple key_tuple
             PyObject* pvalue
             list tid
-        key_mz = _round(mz / 100) * 100
+        if self.cache_truncation == 0.0:
+            key_mz = mz
+        else:
+            key_mz = _round(mz / self.cache_truncation) * self.cache_truncation
         key_tuple = (key_mz, charge, charge_carrier)
         pvalue = PyDict_GetItem(self.backend, key_tuple)
         if pvalue == NULL:

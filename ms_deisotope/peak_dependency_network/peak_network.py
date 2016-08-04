@@ -178,7 +178,7 @@ class PeakDependenceGraph(object):
         self.maximize = maximize
         if len(self.nodes) == 0:
             self._populate_initial_graph()
-        self._clusters = None
+        self.clusters = None
 
     def _populate_initial_graph(self):
         for peak in self.peaklist:
@@ -306,7 +306,7 @@ class PeakDependenceGraph(object):
         clusters = [DependenceCluster(dependencies=c, maximize=self.maximize) for c in {
             id(v): v for v in clusters.values() if v}.values()]
         clusters = sorted(clusters, key=operator.attrgetter("start"))
-        self._clusters = clusters
+        self.clusters = clusters
         return clusters
 
     def __repr__(self):

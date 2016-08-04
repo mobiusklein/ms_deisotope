@@ -2,6 +2,9 @@ from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 from ms_peak_picker._c.peak_index cimport PeakIndex
 
+from ms_deisotope._c.deconvoluter_base cimport DeconvoluterBase
+
+
 cdef class IsotopicFitRecord(object):
     cdef:
         public FittedPeak seed_peak
@@ -35,6 +38,9 @@ cdef class IsotopicFitterBase(object):
     cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected)
     cpdef bint reject(self, IsotopicFitRecord fit)
     cpdef bint is_maximizing(self)
+
+    cpdef IsotopicFitterBase _configure(self, DeconvoluterBase deconvoluter, dict kwargs)
+
 
 cdef class LeastSquaresFitter(IsotopicFitterBase):
     pass

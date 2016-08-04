@@ -99,6 +99,9 @@ cdef class FitSelectorBase(object):
     def __init__(self, minimum_score=0):
         self.minimum_score = minimum_score
 
+    def __reduce__(self):
+        return self.__class__, (self.minimum_score,)
+
     cpdef IsotopicFitRecord best(self, object results):
         return NotImplemented
 
@@ -139,6 +142,15 @@ cdef class IsotopicFitterBase(object):
     def __init__(self, score_threshold=0.5):
         self.select = MinimizeFitSelector(score_threshold)
 
+    def __reduce__(self):
+        return self.__class__, (0,), self.__getstate__()
+
+    def __getstate__(self):
+        return (self.select,)
+
+    def __setstate__(self, state):
+        self.select, = state
+
     def evaluate(self, PeakIndex peaklist, list observed, list expected, **kwargs):
         return self._evaluate(peaklist, observed, expected)
 
@@ -153,6 +165,12 @@ cdef class IsotopicFitterBase(object):
 
     cpdef bint is_maximizing(self):
         return self.select.is_maximizing()
+
+    cpdef IsotopicFitterBase _configure(self, DeconvoluterBase deconvoluter, dict kwargs):
+        return self
+
+    def configure(self, DeconvoluterBase deconvoluter, **kwargs):
+        return self._configure(deconvoluter, kwargs)
 
 
 cdef double sum_intensity_theoretical(list peaklist):
@@ -359,6 +377,15 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
         self.penalizer = ScaledGTestFitter()
         self.penalty_factor = penalty_factor
 
+    def __reduce__(self):
+        return self.__class__, (0,), self.__getstate__()
+
+    def __getstate__(self):
+        return (self.select, self.msdeconv, self.penalizer, self.penalty_factor)
+
+    def __setstate__(self, state):
+        self.select, self.msdeconv, self.penalizer, self.penalty_factor = state
+
     cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected, double mass_error_tolerance=0.02):
         cdef:
             double score, penalty
@@ -371,7 +398,16 @@ cdef class FunctionScorer(IsotopicFitterBase):
 
     def __init__(self, function, minimum_score=10, selector_type=MaximizeFitSelector):
         self.function = function
-        self.select = MaximizeFitSelector(minimum_score)
+        self.select = selector_type(minimum_score)
+
+    def __getstate__(self):
+        return self.select, self.function
+
+    def __setstate__(self, state):
+        self.select, self.function = state
+
+    def __reduce__(self):
+        return self.__class__, (None,), self.__getstate__()
 
     cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected):
         return self.function(observed, expected)
@@ -380,6 +416,15 @@ cdef class FunctionScorer(IsotopicFitterBase):
 cdef class InterferenceDetection(object):
     def __init__(self, PeakIndex peaklist):
         self.peaklist = peaklist
+
+    def __reduce__(self):
+        return self.__class__, (None,), self.__getstate__()
+
+    def __getstate__(self):
+        return (self.peaklist,)
+
+    def __setstate__(self, state):
+        self.peaklist, = state
 
     cdef double detect_interference(self, list experimental_peaks):
         cdef:
@@ -417,6 +462,16 @@ cdef class DistinctPatternFitter(IsotopicFitterBase):
         self.peak_count_scale = peak_count_scale
         self.domain_scale = domain_scale
 
+    def __getstate__(self):
+        return self.select, self.interference_detector, self.g_test_scaled, self.peak_count_scale, self.domain_scale
+
+    def __setstate__(self, state):
+        self.select, self.interference_detector, self.g_test_scaled, self.peak_count_scale, self.domain_scale = state
+
+    cpdef IsotopicFitterBase _configure(self, DeconvoluterBase deconvoluter, dict kwargs):
+        self.interference_detector = InterferenceDetection(deconvoluter.peaklist)
+        return self    
+
     cpdef double _evaluate(self, PeakIndex peaklist, list experimental, list theoretical):
         cdef:
             double score
@@ -452,6 +507,12 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
         self.select = MaximizeFitSelector(minimum_score)
         self.scale_factor = 0.
         self.scorer = PenalizedMSDeconVFitter(penalty_factor=penalty_factor)
+
+    def __getstate__(self):
+        return self.select, self.scale_factor, self.scorer
+
+    def __setstate__(self, state):
+        self.select, self.scale_factor, self.scorer = state
 
     @property
     def penalty_factor(self):

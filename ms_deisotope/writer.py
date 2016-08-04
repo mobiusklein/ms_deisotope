@@ -1,6 +1,5 @@
 import csv
 from pyteomics import mgf
-
 from StringIO import StringIO
 
 

@@ -58,7 +58,7 @@ class MzMLDataInterface(ScanDataSourceBase):
             intensity=pinfo_dict.get('peak intensity', 0.0),
             charge=pinfo_dict.get('charge state', ChargeNotProvided),
             precursor_scan_id=precursor_scan_id,
-            _source=self)
+            source=self)
         return pinfo
 
     def scan_title(self, scan):
@@ -75,6 +75,15 @@ class MzMLDataInterface(ScanDataSourceBase):
 
     def scan_time(self, scan):
         return scan['scanList']['scan'][0]['scan start time']
+
+    def is_profile(self, scan):
+        return "profile spectrum" in scan
+
+    def polarity(self, scan):
+        if "positive scan" in scan:
+            return 1
+        elif "negative scan" in scan:
+            return -1
 
 
 class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
@@ -93,7 +102,7 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
 
     @property
     def index(self):
-        self._source._offset_index
+        return self._source._offset_index
 
     def reset(self):
         self._make_iterator(None)
@@ -140,6 +149,9 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
     def next(self):
         return self._producer.next()
 
+    def __next__(self):
+        return self.next()
+
     def get_scan_by_id(self, scan_id):
         try:
             return self._scan_cache[scan_id]
@@ -148,7 +160,46 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
             self._scan_cache[packed.id] = packed
             return packed
 
-    def start_from_scan(self, scan_id):
+    def get_scan_by_time(self, time):
+        scan_ids = tuple(self.index)
+        lo = 0
+        hi = len(scan_ids)
+        while hi != lo:
+            mid = (hi + lo) / 2
+            sid = scan_ids[mid]
+            scan = self.get_scan_by_id(sid)
+            scan_time = scan.scan_time
+            if scan_time == time:
+                return scan
+            elif (hi - lo) == 1:
+                return scan
+            elif scan_time > time:
+                hi = mid
+            else:
+                lo = mid
+
+    def get_scan_by_index(self, index):
+        return self.get_scan_by_id(tuple(self.index)[index])
+
+    def _locate_ms1_scan(self, scan):
+        while scan.ms_level != 1:
+            if scan.index <= 0:
+                raise IndexError("Cannot search backwards with a scan index <= 0 (%r)" % scan.index)
+            scan = self.get_scan_by_index(scan.index - 1)
+        return scan
+
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True):
+        if scan_id is None:
+            if rt is not None:
+                scan = self.get_scan_by_time(rt)
+            elif index is not None:
+                scan = self.get_scan_by_index(index)
+
+            # We must start at an MS1 scan, so backtrack until we reach one
+            if require_ms1:
+                scan = self._locate_ms1_scan(scan)
+            scan_id = scan.id
+
         iterator = _yield_from_index(self._source, scan_id)
         self._make_iterator(iterator)
 

@@ -47,17 +47,6 @@ cdef double sum_intensity(list peaklist):
 
 
 cdef class DeconvoluterBase(object):
-    cdef:
-        public bint use_subtraction
-        public str scale_method
-        public bint merge_isobaric_peaks
-        public double minimum_intensity
-
-        public PeakIndex peaklist
-
-        public IsotopicFitterBase scorer
-        public bint verbose
-        public dict _slice_cache
 
     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
                   minimum_intensity=5., *args, **kwargs):
@@ -245,8 +234,6 @@ cdef bint has_multiple_real_peaks(list peaklist):
 
 
 cdef class AveragineDeconvoluterBase(DeconvoluterBase):
-    cdef:
-        public AveragineCache averagine
 
     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
                  double minimum_intensity=5., *args, **kwargs):
@@ -297,8 +284,6 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
 
 
 cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
-    cdef:
-        public list averagines
 
     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
                  double minimum_intensity=5., *args, **kwargs):
