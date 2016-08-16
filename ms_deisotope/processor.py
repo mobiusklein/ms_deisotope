@@ -6,15 +6,11 @@ from ms_peak_picker import pick_peaks
 from .deconvolution import deconvolute_peaks
 from .data_source.mzml import MzMLLoader
 from .data_source.common import ScanBunch
-
+from .utils import Base
 
 PyteomicsMzMLLoader = MzMLLoader
 
 logger = logging.getLogger("deconvolution_scan_processor")
-
-
-def identity(x):
-    return x
 
 
 def get_nearest_index(query_mz, peak_list):
@@ -29,11 +25,37 @@ def get_nearest_index(query_mz, peak_list):
     return best_index
 
 
-class ScanProcessor(object):
+class PriorityTarget(Base):
+    def __init__(self, peak, info, trust_charge_hint=True):
+        self.peak = peak
+        self.info = info
+        self.trust_charge_hint = trust_charge_hint
+
+    def __iter__(self):
+        yield self.peak
+        yield self.info
+
+    @property
+    def mz(self):
+        return self.peak.mz
+
+    @property
+    def charge(self):
+        return int(self.info.charge)
+
+    def charge_range_hint(self, charge_range):
+        if self.trust_charge_hint:
+            return (self.charge, self.charge)
+        else:
+            return charge_range
+
+
+class ScanProcessor(Base):
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
-                 pick_only_tandem_envelopes=False, precursor_ion_mass_accuracy=2e-5,
+                 pick_only_tandem_envelopes=False, precursor_selection_window=1.5,
+                 trust_charge_hint=True,
                  loader_type=MzMLLoader):
         if loader_type is None:
             loader_type = MzMLLoader
@@ -44,7 +66,8 @@ class ScanProcessor(object):
         self.ms1_deconvolution_args = ms1_deconvolution_args or {}
         self.msn_deconvolution_args = msn_deconvolution_args or {}
         self.pick_only_tandem_envelopes = pick_only_tandem_envelopes
-        self.precursor_ion_mass_accuracy = precursor_ion_mass_accuracy
+        self.precursor_selection_window = precursor_selection_window
+        self.trust_charge_hint = trust_charge_hint
 
         self.loader_type = loader_type
 
@@ -80,13 +103,14 @@ class ScanProcessor(object):
                 peaks = self.pick_precursor_scan_peaks(precursor_scan)
             peak, err = peaks.get_nearest_peak(precursor_ion.mz)
             precursor_ion.peak = peak
-            if abs(err) > 0.5:
-                warnings.warn(
+            target = PriorityTarget(peak, precursor_ion, self.trust_charge_hint)
+            if abs(err) > self.precursor_selection_window:
+                logger.info(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
                         precursor_ion, scan.title,
                         precursor_scan.title))
             else:
-                priorities.append(peak)
+                priorities.append(target)
         return priorities
 
     def process_scan_group(self, precursor_scan, product_scans):
@@ -99,13 +123,14 @@ class ScanProcessor(object):
                 prec_peaks = self.pick_precursor_scan_peaks(precursor_scan)
             peak, err = prec_peaks.get_nearest_peak(precursor_ion.mz)
             precursor_ion.peak = peak
-            if abs(err) > 0.5:
-                warnings.warn(
+            target = PriorityTarget(peak, precursor_ion, self.trust_charge_hint)
+            if abs(err) > self.precursor_selection_window:
+                logger.info(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
                         precursor_ion, scan.id,
                         precursor_scan.id))
             else:
-                priorities.append(peak)
+                priorities.append(target)
         if prec_peaks is None:
             prec_peaks = self.pick_precursor_scan_peaks(precursor_scan)
 
@@ -120,21 +145,43 @@ class ScanProcessor(object):
 
         dec_peaks, priority_results = deconvolute_peaks(
             precursor_scan.peak_set, priority_list=priorities,
+            verbose_priorities=True,
             **self.ms1_deconvolution_args)
+
+        for pr in priority_results:
+            if pr is None:
+                continue
+            else:
+                pr.chosen_for_msms = True
+
+        # `priorities` and `priority_results` are parallel lists. The
+        # ith position in `priorities` corresponds to the ith deconvoluted
+        # priority result in `priority_results`. The entry in `priority_results`
+        # may be `None` if the deconvolution failed, but elements of `priorities`
+        # should always be FittedPeak or Peak-like instances
 
         for product_scan in precursor_scan.product_scans:
             precursor_information = product_scan.precursor_information
 
             i = get_nearest_index(precursor_information.mz, priorities)
+
+            # If no peak is found in the priority list, it means the priority list is empty.
+            # This should never happen in the current implementation. If it did, then we forgot
+            # to pass the priority list to this function.
             if i is None:
-                logger.info("Could not find deconvolution for %r (1)" % precursor_information)
+                logger.info(
+                    "Could not find deconvolution for %r (No nearby peak in the priority list)",
+                    precursor_information)
                 logger.info("%f, %r, %r", precursor_information.mz, priority_results, i)
                 precursor_information.default()
                 continue
 
             peak = priority_results[i]
+            # If the deconvolution result is None, then we have no answer
             if peak is None:
-                logger.info("Could not find deconvolution for %r (2)" % precursor_information)
+                logger.info(
+                    "Could not find deconvolution for %r (No solution was found for this region)",
+                    precursor_information)
                 logger.info("%r, %r, %r, %r", precursor_information, priority_results, i, peak)
                 precursor_information.default()
 

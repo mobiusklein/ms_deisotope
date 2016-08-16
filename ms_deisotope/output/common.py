@@ -1,4 +1,4 @@
-from ..data_source.common import Scan, ScanBunch, ProcessedScan, PrecursorInformation
+from ..data_source.common import Scan, ScanBunch, ProcessedScan, PrecursorInformation, ScanIteratorBase
 
 
 class ScanSerializerBase(object):
@@ -17,10 +17,10 @@ class ScanDeserializerBase(object):
         pass
 
     def __next__(self):
-        raise NotImplementedError()
+        return self.next()
 
     def next(self):
-        return self.__next__()
+        raise NotImplementedError()
 
     def get_scan_by_id(self, x):
         raise NotImplementedError()
@@ -30,3 +30,6 @@ class ScanDeserializerBase(object):
 
     def get_scan_by_index(self, x):
         raise NotImplementedError()
+
+
+ScanIteratorBase.register(ScanDeserializerBase)

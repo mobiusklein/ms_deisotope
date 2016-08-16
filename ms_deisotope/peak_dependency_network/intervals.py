@@ -5,9 +5,11 @@ class SpanningMixin(object):
         return self.start <= i <= self.end
 
     def overlaps(self, interval):
-        cond = ((self.start <= interval.start and self.end >= interval.end) or (
+        cond = ((self.start <= interval.start and self.end >= interval.start) or (
             self.start >= interval.start and self.end <= interval.end) or (
-            self.start >= interval.start and self.end >= interval.end))
+            self.start >= interval.start and self.end >= interval.end and self.start <= interval.end) or (
+            self.start <= interval.start and self.end >= interval.start) or (
+            self.start <= interval.end and self.end >= interval.end))
         return cond
 
     def overlap_size(self, interval):
@@ -68,6 +70,18 @@ class IntervalTreeNode(object):
         else:
             self.start = self.end = center
 
+    def node_contains_point(self, x):
+        if x < self.start:
+            if self.left is not None:
+                return self.left.node_contains_point(x)
+            return None
+        elif x > self.end:
+            if self.right is not None:
+                return self.right.node_contains_point(x)
+            return None
+        else:
+            return self
+
     def contains_point(self, x):
         if x < self.start:
             if self.left is not None:
@@ -80,7 +94,7 @@ class IntervalTreeNode(object):
         else:
             inner = [
                 i for i in self.contained
-                if i.start < x < i.end
+                if i.start <= x <= i.end
             ]
             return inner
 
@@ -122,34 +136,112 @@ class IntervalTreeNode(object):
                 result.extend(self.right.overlaps(start, end))
             return result
 
-    @classmethod
-    def build(cls, intervals, level=0):
-        if len(intervals) > 0:
+    def __repr__(self):
+        return "IntervalTreeNode(level=%d, center=%0.4f)" % (self.level, self.center)
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        else:
+            result = self.contained == other.contained
+            if result:
+                result = self.left == other.left
+                if result:
+                    result = self.right == other.right
+            return result
+
+    def __diagnostic_eq__(self, other):
+        if other is None:
+            return False
+        else:
+            result = self.contained == other.contained
+            if result:
+                try:
+                    result = self.left.__diagnostic_eq__(other.left)
+                except AttributeError:
+                    result = self.left == other.left
+                if result:
+                    try:
+                        result = self.right.__diagnostic_eq__(other.right)
+                    except AttributeError:
+                        result = self.right == other.right
+                    if not result:
+                        print self.right, "r!=", other.right
+                else:
+                    print self.left, "l!=", other.left
+            else:
+                print self, "!=", other
+            return result
+
+
+def iterative_build_interval_tree(cls, intervals):
+    stack = []
+    root = cls(0, None, [], None, -1)
+
+    stack.append((root, intervals, "left"))
+
+    while stack:
+        parent, members, side = stack.pop()
+        if len(members) > 0:
             centers = [
-                float(i.start + i.end) / 2. for i in intervals
+                float(i.start + i.end) / 2. for i in members
             ]
             left = []
             right = []
             contained = []
             center = sum(centers) / len(centers)
-            if len(intervals) > 20:
-                for i in intervals:
+            if len(members) > 20:
+                for i in members:
                     if center >= i.end:
                         left.append(i)
                     elif center < i.start:
                         right.append(i)
                     else:
                         contained.append(i)
-                left = cls.build(left, level + 1)
-                right = cls.build(right, level + 1)
             else:
-                contained = intervals
-                left = None
-                right = None
+                contained = members[:]
+            node = cls(center, left=None, contained=contained, right=None, level=parent.level + 1)
+            if side == 'left':
+                parent.left = node
+            elif side == 'right':
+                parent.right = node
+            else:
+                raise ValueError(side)
+            stack.append((node, left, "left"))
+            stack.append((node, right, "right"))
+    return root.left
 
-            return cls(center, left, contained, right, level)
+IntervalTreeNode.build = classmethod(iterative_build_interval_tree)
+
+
+def recursive_build_interval_tree(cls, intervals, level=0):
+    if len(intervals) > 0:
+        centers = [
+            float(i.start + i.end) / 2. for i in intervals
+        ]
+        left = []
+        right = []
+        contained = []
+        center = sum(centers) / len(centers)
+        if len(intervals) > 20:
+            for i in intervals:
+                if center >= i.end:
+                    left.append(i)
+                elif center < i.start:
+                    right.append(i)
+                else:
+                    contained.append(i)
+            left = cls.recursive_build_interval_tree(left, level + 1)
+            right = cls.recursive_build_interval_tree(right, level + 1)
         else:
-            return None
+            contained = intervals
+            left = None
+            right = None
 
-    def __repr__(self):
-        return "IntervalTreeNode(level=%d, center=%0.4f)" % (self.level, self.center)
+        return cls(center, left, contained, right, level)
+    else:
+        return None
+
+
+IntervalTreeNode.recursive_build_interval_tree = classmethod(
+    recursive_build_interval_tree)

@@ -208,7 +208,7 @@ class Scan(object):
 class PrecursorInformation(object):
     def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
-                 peak=None, extracted_peak=None):
+                 peak=None, extracted_peak=None, defaulted=False, orphan=False):
         self.mz = mz
         self.intensity = intensity
         self.charge = charge
@@ -219,6 +219,8 @@ class PrecursorInformation(object):
         self.extracted_intensity = extracted_intensity
         self.peak = peak
         self.extracted_peak = extracted_peak
+        self.defaulted = defaulted
+        self.orphan = orphan
 
     def __repr__(self):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%d/%d, scan_id=%s)" % (

@@ -243,6 +243,9 @@ cdef class AveragineCache(object):
     def __repr__(self):
         return "AveragineCache(%r)" % self.averagine
 
+    def clear(self):
+        self.backend.clear()
+
 
 cdef double _neutron_shift
 _neutron_shift = _py_calculate_mass({"C[13]": 1}) - _py_calculate_mass({"C[12]": 1})

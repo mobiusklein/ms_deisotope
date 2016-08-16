@@ -2,8 +2,8 @@ import operator
 from collections import defaultdict
 
 from .subgraph import ConnectedSubgraph
-from .intervals import SpanningMixin
-from ..utils import Base
+from .intervals import SpanningMixin, IntervalTreeNode
+from ..utils import Base, TargetedDeconvolutionResultBase
 
 
 def ident(x):
@@ -46,7 +46,7 @@ class PeakNode(Base):
         return fit in self.links
 
     def __repr__(self):
-        return "PeakNode(%s, %d)" % (self.peak, self.links)
+        return "PeakNode(%s, %s)" % (self.peak, self.links)
 
 
 class DependenceCluster(SpanningMixin):
@@ -179,6 +179,77 @@ class PeakDependenceGraph(object):
         if len(self.nodes) == 0:
             self._populate_initial_graph()
         self.clusters = None
+        self._interval_tree = None
+        self._solution_map = {}
+
+    def add_solution(self, key, solution):
+        self._solution_map[key] = solution
+
+    @property
+    def interval_tree(self):
+        if self._interval_tree is None:
+            self._interval_tree = IntervalTreeNode.build(self.clusters)
+        return self._interval_tree
+
+    def _deep_fuzzy_solution_for(self, peak, shift=0.5):
+        pass
+
+    def _find_fuzzy_solution_for(self, peak, shift=0.5):
+        tree = self.interval_tree
+        clusters = tree.contains_point(peak.mz + shift)
+        if len(clusters) == 0:
+            return None
+        else:
+            best_fits = [cluster.disjoint_best_fits() for cluster in clusters]
+
+            acc = []
+            for fits in best_fits:
+                acc.extend(fits)
+            best_fits = acc
+
+            index = 0
+            error = float('inf')
+
+            for i, fit in enumerate(best_fits):
+                err = abs(fit.monoisotopic_peak.mz - peak.mz)
+                if err < error:
+                    error = err
+                    index = i
+            fit = best_fits[index]
+            return self._solution_map[fit]
+
+    def find_solution_for(self, peak):
+        peak_node = self.nodes[peak.index]
+        tree = self.interval_tree
+
+        clusters = tree.contains_point(peak.mz)
+        if len(clusters) == 0:
+            return self._find_fuzzy_solution_for(peak)
+        best_fits = [cluster.disjoint_best_fits() for cluster in clusters]
+
+        acc = []
+        for fits in best_fits:
+            acc.extend(fits)
+        best_fits = acc
+
+        common = tuple(set(best_fits) & set(peak_node.links))
+
+        if len(common) > 1:
+            raise ValueError("Too many solutions exist for %r" % peak)
+        elif len(common) == 0:
+            # If there were no fits for this peak, then it may be that this peak
+            # was not included in a fit. Try to find the nearest solution.
+            i = 0
+            err = float('inf')
+            for j, case in enumerate(best_fits):
+                case_err = abs(case.monoisotopic_peak.mz - peak.mz)
+                if case_err < err:
+                    i = j
+                    err = case_err
+            fit = best_fits[i]
+        else:
+            fit = common[0]
+        return self._solution_map[fit]
 
     def _populate_initial_graph(self):
         for peak in self.peaklist:
@@ -311,3 +382,21 @@ class PeakDependenceGraph(object):
 
     def __repr__(self):
         return "PeakDependenceNetwork(%s, %d)" % (self.peaklist, len(self.dependencies))
+
+
+class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
+    def __init__(self, deconvoluter, peak, *args, **kwargs):
+        super(NetworkedTargetedDeconvolutionResult, self).__init__(deconvoluter, *args, **kwargs)
+        self.query_peak = peak
+        self.solution_peak = None
+
+    def _get_solution(self):
+        try:
+            self.solution_peak = self.deconvoluter.peak_dependency_network.find_solution_for(
+                self.query_peak)
+        except IndexError:
+            pass
+
+    def get(self):
+        self._get_solution()
+        return self.solution_peak

@@ -242,17 +242,19 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
             minimum_intensity, *args, **kwargs)
 
     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge,
-                                                         double charge_carrier=PROTON):
+                                                         double charge_carrier=PROTON, double truncate_after=0.95):
         cdef:
             list tid, eid
             double score
-        tid = self.averagine.isotopic_cluster(peak.mz, charge, charge_carrier=charge_carrier)
+        tid = self.averagine.isotopic_cluster(
+            peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after)
         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
         score = self.scorer._evaluate(self.peaklist, eid, tid)
         return IsotopicFitRecord(peak, score, charge, tid, eid)
 
-    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON):
+    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
+                                    double truncate_after=0.95):
         cdef:
             list results
             tuple peak_charge
@@ -273,7 +275,7 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
 
             fit = self.fit_theoretical_distribution(
                      peak, error_tolerance, charge,
-                     charge_carrier)
+                     charge_carrier, truncate_after=truncate_after)
             fit.missed_peaks = count_missed_peaks(fit.experimental)
             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
                 continue
@@ -292,17 +294,19 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             minimum_intensity, *args, **kwargs)
 
     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge,
-                                                         AveragineCache  averagine, double charge_carrier=PROTON):
+                                                         AveragineCache  averagine, double charge_carrier=PROTON,
+                                                         double truncate_after=0.95):
         cdef:
             list tid, eid
             double score
-        tid = averagine.isotopic_cluster(peak.mz, charge, charge_carrier=charge_carrier)
+        tid = averagine.isotopic_cluster(peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after)
         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
         score = self.scorer(self.peaklist, eid, tid)
         return IsotopicFitRecord(peak, score, charge, tid, eid)
 
-    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON):
+    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
+                                    double truncate_after=0.95):
         cdef:
             list results
             tuple peak_charge
@@ -318,7 +322,8 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             for j in range(n_averagine):
                 averagine = <AveragineCache>PyList_GET_ITEM(self.averagine, j)
                 fit = self.fit_theoretical_distribution(
-                    peak, error_tolerance, charge, averagine, charge_carrier)
+                    peak, error_tolerance, charge, averagine, charge_carrier,
+                    truncate_after=truncate_after)
                 fit.missed_peaks = count_missed_peaks(fit.experimental)
                 fit.data = averagine
                 if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:

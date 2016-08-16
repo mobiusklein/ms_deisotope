@@ -17,9 +17,15 @@ class _Index(object):
     neutral_mass : int
         Index of this object (or its parent), ordered by neutral mass
     """
+
+    __slots__ = ["neutral_mass", "mz"]
+
     def __init__(self, neutral_mass=None, mz=None):
         self.neutral_mass = neutral_mass
         self.mz = mz
+
+    def __reduce__(self):
+        return self.__class__, (self.neutral_mass, self.mz)
 
     def __repr__(self):
         return "%d|%d" % (self.neutral_mass, self.mz)
@@ -44,8 +50,13 @@ class Envelope(object):
     pairs : tuple of tuple of (float, float)
         list of (mz, intensity) pairs
     """
+    __slots__ = ['pairs']
+
     def __init__(self, pairs):
         self.pairs = tuple(map(lambda x: EnvelopePair(*x), pairs))
+
+    def __reduce__(self):
+        return self.__class__, (self.pairs,)
 
     def __getitem__(self, i):
         return self.pairs[i]
@@ -98,12 +109,12 @@ class DeconvolutedPeak(Base):
         "neutral_mass", "intensity", "signal_to_noise",
         "index", "full_width_at_half_max", "charge",
         "a_to_a2_ratio", "most_abundant_mass", "average_mass",
-        "score", "envelope", "mz"
+        "score", "envelope", "mz", "fit", "chosen_for_msms"
     ]
 
     def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
                  a_to_a2_ratio=None, most_abundant_mass=None, average_mass=None, score=None,
-                 envelope=None, mz=None):
+                 envelope=None, mz=None, fit=None, chosen_for_msms=False):
         if index is None:
             index = _Index()
         self.neutral_mass = neutral_mass
@@ -118,6 +129,8 @@ class DeconvolutedPeak(Base):
         self.score = score
         self.envelope = Envelope(envelope)
         self.mz = mz or mass_charge_ratio(self.neutral_mass, self.charge)
+        self.fit = fit
+        self.chosen_for_msms = chosen_for_msms
 
     def __eq__(self, other):
         return (abs(self.neutral_mass - other.neutral_mass) < 1e-5) and (
@@ -133,13 +146,13 @@ class DeconvolutedPeak(Base):
         return DeconvolutedPeak(self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
                                 self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
                                 self.most_abundant_mass, self.average_mass, self.score,
-                                self.envelope, self.mz)
+                                self.envelope, self.mz, self.fit, self.chosen_for_msms)
 
     def __reduce__(self):
         return DeconvolutedPeak, (self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
                                   self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
                                   self.most_abundant_mass, self.average_mass, self.score,
-                                  self.envelope, self.mz)
+                                  self.envelope, self.mz, self.fit, self.chosen_for_msms)
 
 
 class DeconvolutedPeakSolution(DeconvolutedPeak):
@@ -160,7 +173,7 @@ class DeconvolutedPeakSolution(DeconvolutedPeak):
         "neutral_mass", "intensity", "signal_to_noise",
         "index", "full_width_at_half_max", "charge",
         "a_to_a2_ratio", "most_abundant_mass", "average_mass",
-        "score", "envelope", "mz"
+        "score", "envelope", "mz", "chosen_for_msms"
     ]
 
     def __init__(self, solution, fit, *args, **kwargs):
@@ -173,14 +186,14 @@ class DeconvolutedPeakSolution(DeconvolutedPeak):
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
             self.most_abundant_mass, self.average_mass, self.score,
-            self.envelope, self.mz)
+            self.envelope, self.mz, self.chosen_for_msms)
 
     def __reduce__(self):
         return DeconvolutedPeakSolution, (
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
             self.most_abundant_mass, self.average_mass, self.score,
-            self.envelope, self.mz)
+            self.envelope, self.mz, self.chosen_for_msms)
 
     def __iter__(self):
         yield self.solution
@@ -275,7 +288,7 @@ class DeconvolutedPeakSet(Base):
                 break
 
             if collecting:
-                acc.append(peak)
+                acc.append(peak.clone())
 
         return self.__class__(acc)._reindex()
 

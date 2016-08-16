@@ -59,6 +59,46 @@ class Constant(object):
         return False
 
 
+class DeconvolutionProcessResult(object):
+    def __init__(self, deconvoluter, peak_set, priorities):
+        self.deconvoluter = deconvoluter
+        self.peak_set = peak_set
+        self.priorities = priorities
+
+    def __getitem__(self, i):
+        if i == 0:
+            return self.peak_set
+        elif i == 1:
+            return self.priorities
+        else:
+            raise IndexError(i)
+
+    def __iter__(self):
+        yield self.peak_set
+        yield self.priorities
+
+    def __repr__(self):
+        return "DeconvolutionProcessResult(%s, %s)" % tuple(self)
+
+
+class TargetedDeconvolutionResultBase(Base):
+    def __init__(self, deconvoluter, *args, **kwargs):
+        self.deconvoluter = deconvoluter
+
+    def get(self):
+        raise NotImplementedError()
+
+
+class TrivialTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
+    def __init__(self, deconvoluter, solution_peak, query_peak, *args, **kwargs):
+        super(TrivialTargetedDeconvolutionResult, self).__init__(deconvoluter, *args, **kwargs)
+        self.solution_peak = solution_peak
+        self.query_peak = query_peak
+
+    def get(self):
+        return self.solution_peak
+
+
 def ppm_error(x, y):
     return (x - y) / y
 

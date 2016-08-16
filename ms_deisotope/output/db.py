@@ -26,8 +26,8 @@ from ms_deisotope.data_source.common import (
 from .common import ScanSerializerBase, ScanDeserializerBase
 
 
-def Mass():
-    return Column(Numeric(14, 6, asdecimal=False), index=True)
+def Mass(index=True):
+    return Column(Numeric(14, 6, asdecimal=False), index=index)
 
 
 class MutableList(Mutable, list):
@@ -77,6 +77,9 @@ class SampleRun(Base):
     def save_bunch(self, bunch):
         session = object_session(self)
         return serialize_scan_bunch(session, bunch, self.id)
+
+    def __repr__(self):
+        return "SampleRun(id=%d, name=%s)" % (self.id, self.name)
 
 
 class MSScan(Base):
@@ -164,7 +167,7 @@ class PrecursorInformation(Base):
     intensity = Column(Numeric(12, 4, asdecimal=False))
 
     def __repr__(self):
-        return "PrecursorInformation({}, {}, {})".format(
+        return "DBPrecursorInformation({}, {}, {})".format(
             self.precursor.scan_id, self.neutral_mass, self.charge)
 
     def convert(self, data_source=None):
@@ -173,12 +176,11 @@ class PrecursorInformation(Base):
 
 
 class PeakMixin(object):
-    mz = Column(Numeric(12, 6, asdecimal=False), index=True)
+    mz = Mass()
     intensity = Column(Numeric(12, 4, asdecimal=False))
-    full_width_at_half_max = Column(Numeric(8, 7, asdecimal=False))
-    signal_to_noise = Column(Numeric(8, 7, asdecimal=False))
-    scan_peak_index = Column(Integer, index=True)
-    area = Column(Numeric(12, 6, asdecimal=False))
+    full_width_at_half_max = Column(Numeric(5, 4, asdecimal=False))
+    signal_to_noise = Column(Numeric(10, 3, asdecimal=False))
+    area = Column(Numeric(12, 4, asdecimal=False))
 
     @classmethod
     def _serialize_bulk_list(cls, peaks, scan_id, session):
@@ -189,6 +191,9 @@ class PeakMixin(object):
             out.append(db_peak)
         session.bulk_save_objects(out)
 
+    def __repr__(self):
+        return "DB" + repr(self.convert())
+
 
 class FittedPeak(Base, PeakMixin):
     __tablename__ = "FittedPeak"
@@ -198,15 +203,14 @@ class FittedPeak(Base, PeakMixin):
 
     def convert(self):
         return MemoryFittedPeak(
-            self.mz, self.intensity, self.signal_to_noise, -1, self.scan_peak_index,
+            self.mz, self.intensity, self.signal_to_noise, -1, -1,
             self.full_width_at_half_max, self.area)
 
     @classmethod
     def serialize(cls, peak):
         return cls(
             mz=peak.mz, intensity=peak.intensity, signal_to_noise=peak.signal_to_noise,
-            scan_peak_index=peak.index, full_width_at_half_max=peak.full_width_at_half_max,
-            area=peak.area)
+            full_width_at_half_max=peak.full_width_at_half_max, area=peak.area)
 
 
 class DeconvolutedPeak(Base, PeakMixin):
@@ -214,8 +218,8 @@ class DeconvolutedPeak(Base, PeakMixin):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     neutral_mass = Mass()
-    average_mass = Mass()
-    most_abundant_mass = Mass()
+    average_mass = Mass(False)
+    most_abundant_mass = Mass(False)
 
     charge = Column(Integer)
 
@@ -223,22 +227,24 @@ class DeconvolutedPeak(Base, PeakMixin):
     scan_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
     envelope = Column(MutableList.as_mutable(PickleType))
     a_to_a2_ratio = Column(Numeric(8, 7, asdecimal=False))
+    chosen_for_msms = Column(Boolean)
 
     def convert(self):
         return MemoryDeconvolutedPeak(
             self.neutral_mass, self.intensity, self.charge,
             self.signal_to_noise, -1, self.full_width_at_half_max,
             self.a_to_a2_ratio, self.most_abundant_mass, self.average_mass,
-            self.score, Envelope(self.envelope), self.mz)
+            self.score, Envelope(self.envelope), self.mz, None, self.chosen_for_msms)
 
     @classmethod
     def serialize(cls, peak):
         return cls(
             mz=peak.mz, intensity=peak.intensity, signal_to_noise=peak.signal_to_noise,
-            scan_peak_index=peak.index.neutral_mass, full_width_at_half_max=peak.full_width_at_half_max,
+            full_width_at_half_max=peak.full_width_at_half_max,
             neutral_mass=peak.neutral_mass, average_mass=peak.average_mass,
             most_abundant_mass=peak.most_abundant_mass, charge=peak.charge, score=peak.score,
-            envelope=list(peak.envelope), a_to_a2_ratio=peak.a_to_a2_ratio)
+            envelope=list(peak.envelope), a_to_a2_ratio=peak.a_to_a2_ratio,
+            chosen_for_msms=peak.chosen_for_msms)
 
 
 def serialize_scan_bunch(session, bunch, sample_run_id=None):
@@ -309,6 +315,8 @@ class DatabaseScanSerializer(ScanSerializerBase):
                 self.session.delete(sample_run)
                 self.session.commit()
                 self._construct_sample_run()
+            else:
+                raise
 
     def _construct_sample_run(self):
         sr = SampleRun(uuid=self.uuid, name=self.sample_name)
@@ -316,6 +324,11 @@ class DatabaseScanSerializer(ScanSerializerBase):
         self.session.commit()
         self._sample_run = sr
         self._sample_run_id = sr.id
+
+    def complete(self):
+        self.sample_run.completed = True
+        self.session.add(self.sample_run)
+        self.session.commit()
 
     @property
     def sample_run_id(self):
@@ -374,6 +387,12 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
         self._sample_run = None
         self._sample_run_id = None
         self._iterator = None
+        self._scan_id_to_retention_time_cache = None
+
+    def _intialize_scan_id_to_retention_time_cache(self):
+        self._scan_id_to_retention_time_cache = dict(
+            self.session.query(MSScan.scan_id, MSScan.scan_time).filter(
+                MSScan.sample_run_id == self.sample_run_id))
 
     @property
     def sample_run_id(self):
@@ -393,7 +412,10 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
 
     def _retrieve_sample_run(self):
         session = self.session
-        sr = session.query(SampleRun).filter(SampleRun.name == self.sample_name).one()
+        if self.sample_name is not None:
+            sr = session.query(SampleRun).filter(SampleRun.name == self.sample_name).one()
+        else:
+            sr = session.query(SampleRun).first()
         self._sample_run = sr
         self._sample_run_id = sr.id
 
@@ -410,6 +432,17 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
     def get_scan_by_id(self, scan_id):
         q = self._get_by_scan_id(scan_id)
         return q.convert()
+
+    def convert_scan_id_to_retention_time(self, scan_id):
+        if self._scan_id_to_retention_time_cache is None:
+            self._intialize_scan_id_to_retention_time_cache()
+        try:
+            return self._scan_id_to_retention_time_cache[scan_id]
+        except KeyError:
+            q = self.session.query(MSScan.scan_time).filter(
+                MSScan.scan_id == scan_id, MSScan.sample_run_id == self.sample_run_id).scalar()
+            self._scan_id_to_retention_time_cache[scan_id] = q
+            return q
 
     def _iterate_over_index(self, start=0, require_ms1=True):
         indices_q = self.session.query(MSScan.index).filter(
@@ -451,7 +484,7 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def next(self):
         if self._iterator is None:
             self._iterator = self._iterate_over_index()
         return next(self._iterator)
@@ -490,6 +523,9 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
             MSScan.scan_time == times[i],
             MSScan.sample_run_id == self.sample_run_id).one()
         return scan
+
+    def reset(self):
+        self._iterator = None
 
     def get_scan_by_time(self, rt, require_ms1=False):
         q = self._get_scan_by_time(rt, require_ms1)

@@ -1,7 +1,8 @@
 from . import peak_network, intervals, subgraph, utils
 
 from .peak_network import (
-    PeakNode, DependenceCluster, PeakDependenceGraph)
+    PeakNode, DependenceCluster, PeakDependenceGraph,
+    NetworkedTargetedDeconvolutionResult)
 
 from .subgraph import (
     ConnectedSubgraph, FitNode,
