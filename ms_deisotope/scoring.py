@@ -330,3 +330,22 @@ least_squares = LeastSquaresFitter()
 g_test_scaled = ScaledGTestFitter()
 penalized_msdeconv = PenalizedMSDeconVFitter()
 distinct_pattern_fitter = DistinctPatternFitter()
+
+
+class MassShiftSupportPostProcessorBase(object):
+    def __init__(self, shifts=None):
+        if shifts is None:
+            shifts = []
+        self.shifts = shifts
+        self._fits = None
+
+    @property
+    def fits(self):
+        return self._fits
+
+    @fits.setter
+    def fits(self, value):
+        self._fits = value
+
+    def reweight(self, fit, shift):
+        pass

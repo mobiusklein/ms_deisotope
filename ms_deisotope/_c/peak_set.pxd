@@ -22,14 +22,15 @@ cdef class DeconvolutedPeak:
         public double neutral_mass
         public double intensity
         public double signal_to_noise
-        public object index
+        public _Index _index
         public double full_width_at_half_max
         public int charge
         public double a_to_a2_ratio
         public double most_abundant_mass
         public double average_mass
         public double score
-        public object envelope
+        public double area
+        public Envelope envelope
         public double mz
         public IsotopicFitRecord fit
         public bint chosen_for_msms
@@ -50,3 +51,4 @@ cdef class DeconvolutedPeakSet:
 
     cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)
 
+    cdef DeconvolutedPeak getitem(self, size_t i)

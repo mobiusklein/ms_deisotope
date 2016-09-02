@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker, scoped_session, validates
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.engine import Connectable
 
@@ -61,12 +61,46 @@ class MutableList(Mutable, list):
 Base = declarative_base()
 
 
-class SampleRun(Base):
+def find_by_name(session, model_class, name):
+    return session.query(model_class).filter(model_class.name == name).first()
+
+
+def make_unique_name(session, model_class, name):
+    marked_name = name
+    i = 1
+    while find_by_name(session, model_class, marked_name) is not None:
+        marked_name = "%s (%d)" % (name, i)
+        i += 1
+    return marked_name
+
+
+class HasUniqueName(object):
+    name = Column(String(128), default=u"", unique=True)
+    uuid = Column(String(32), index=True, unique=True)
+
+    @classmethod
+    def make_unique_name(cls, session, name):
+        return make_unique_name(session, cls, name)
+
+    @classmethod
+    def find_by_name(cls, session, name):
+        return find_by_name(session, cls, name)
+
+    # @validates("name")
+    # def ensure_unique_name(self, key, name):
+    #     session = object_session(self)
+    #     if session is not None:
+    #         model_class = self.__class__
+    #         name = make_unique_name(session, model_class, name)
+    #         return name
+    #     else:
+    #         return name
+
+
+class SampleRun(Base, HasUniqueName):
     __tablename__ = "SampleRun"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    uuid = Column(String(32), index=True, unique=True)
-    name = Column(String(128), unique=True)
 
     ms_scans = relationship(
         "MSScan", backref=backref("sample_run"), lazy='dynamic')
@@ -109,12 +143,26 @@ class MSScan(Base):
     def convert(self):
         precursor_information = self.precursor_information.convert() if self.precursor_information is not None else None
 
-        peak_set_items = [p.convert() for p in self.peak_set]
+        session = object_session(self)
+
+        # Faster than going through the ORM and THEN converting to pure memory objects
+        # because the ORM includes extra logic for reloading data over the course of the
+        # object's life time.
+        peak_set_items = list(
+            map(make_memory_fitted_peak, session.query(
+                FittedPeak.__table__).filter(
+                FittedPeak.__table__.c.scan_id == self.id)))
+
+        # peak_set_items = [p.convert() for p in self.peak_set]
         peak_set = PeakSet(peak_set_items)
         peak_set._index()
         peak_index = PeakIndex(np.array([], dtype=np.float64), np.array([], dtype=np.float64), peak_set)
 
-        deconvoluted_peak_set_items = [p.convert() for p in self.deconvoluted_peak_set]
+        deconvoluted_peak_set_items = list(
+            map(make_memory_deconvoluted_peak, session.query(
+                DeconvolutedPeak.__table__).filter(
+                DeconvolutedPeak.__table__.c.scan_id == self.id)))
+        # deconvoluted_peak_set_items = [p.convert() for p in self.deconvoluted_peak_set]
         deconvoluted_peak_set = DeconvolutedPeakSet(deconvoluted_peak_set_items)
         deconvoluted_peak_set._reindex()
 
@@ -165,6 +213,8 @@ class PrecursorInformation(Base):
     neutral_mass = Mass()
     charge = Column(Integer)
     intensity = Column(Numeric(12, 4, asdecimal=False))
+    defaulted = Column(Boolean)
+    orphan = Column(Boolean)
 
     def __repr__(self):
         return "DBPrecursorInformation({}, {}, {})".format(
@@ -173,6 +223,15 @@ class PrecursorInformation(Base):
     def convert(self, data_source=None):
         return MemoryPrecursorInformation(
             0, 0, 0, self.precursor.scan_id, data_source, self.neutral_mass, self.charge, self.intensity)
+
+    @classmethod
+    def serialize(cls, inst, precursor, product, sample_run_id):
+        db_pi = PrecursorInformation(
+            precursor_id=precursor.id, product_id=product.id,
+            charge=inst.extracted_charge, intensity=inst.extracted_intensity,
+            neutral_mass=inst.extracted_neutral_mass, sample_run_id=sample_run_id,
+            defaulted=inst.defaulted, orphan=inst.orphan)
+        return db_pi
 
 
 class PeakMixin(object):
@@ -195,22 +254,34 @@ class PeakMixin(object):
         return "DB" + repr(self.convert())
 
 
+def make_memory_fitted_peak(self):
+    return MemoryFittedPeak(
+        self.mz, self.intensity, self.signal_to_noise, -1, -1,
+        self.full_width_at_half_max, (self.area if self.area is not None else 0.))
+
+
 class FittedPeak(Base, PeakMixin):
     __tablename__ = "FittedPeak"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     scan_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
 
-    def convert(self):
-        return MemoryFittedPeak(
-            self.mz, self.intensity, self.signal_to_noise, -1, -1,
-            self.full_width_at_half_max, self.area)
+    convert = make_memory_fitted_peak
 
     @classmethod
     def serialize(cls, peak):
         return cls(
             mz=peak.mz, intensity=peak.intensity, signal_to_noise=peak.signal_to_noise,
             full_width_at_half_max=peak.full_width_at_half_max, area=peak.area)
+
+
+def make_memory_deconvoluted_peak(self):
+    return MemoryDeconvolutedPeak(
+        self.neutral_mass, self.intensity, self.charge,
+        self.signal_to_noise, -1, self.full_width_at_half_max,
+        self.a_to_a2_ratio, self.most_abundant_mass, self.average_mass,
+        self.score, Envelope(self.envelope), self.mz, None, self.chosen_for_msms,
+        (self.area if self.area is not None else 0.))
 
 
 class DeconvolutedPeak(Base, PeakMixin):
@@ -229,12 +300,17 @@ class DeconvolutedPeak(Base, PeakMixin):
     a_to_a2_ratio = Column(Numeric(8, 7, asdecimal=False))
     chosen_for_msms = Column(Boolean)
 
-    def convert(self):
-        return MemoryDeconvolutedPeak(
-            self.neutral_mass, self.intensity, self.charge,
-            self.signal_to_noise, -1, self.full_width_at_half_max,
-            self.a_to_a2_ratio, self.most_abundant_mass, self.average_mass,
-            self.score, Envelope(self.envelope), self.mz, None, self.chosen_for_msms)
+    def __eq__(self, other):
+        return (abs(self.neutral_mass - other.neutral_mass) < 1e-5) and (
+            abs(self.intensity - other.intensity) < 1e-5)
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash((self.mz, self.intensity, self.charge))
+
+    convert = make_memory_deconvoluted_peak
 
     @classmethod
     def serialize(cls, peak):
@@ -244,7 +320,7 @@ class DeconvolutedPeak(Base, PeakMixin):
             neutral_mass=peak.neutral_mass, average_mass=peak.average_mass,
             most_abundant_mass=peak.most_abundant_mass, charge=peak.charge, score=peak.score,
             envelope=list(peak.envelope), a_to_a2_ratio=peak.a_to_a2_ratio,
-            chosen_for_msms=peak.chosen_for_msms)
+            chosen_for_msms=peak.chosen_for_msms, area=(peak.area if peak.area is not None else 0.))
 
 
 def serialize_scan_bunch(session, bunch, sample_run_id=None):
@@ -257,10 +333,7 @@ def serialize_scan_bunch(session, bunch, sample_run_id=None):
     session.flush()
     for scan, db_scan in zip(bunch.products, db_products):
         pi = scan.precursor_information
-        db_pi = PrecursorInformation(
-            precursor_id=db_precursor.id, product_id=db_scan.id,
-            charge=pi.extracted_charge, intensity=pi.extracted_intensity,
-            neutral_mass=pi.extracted_neutral_mass, sample_run_id=sample_run_id)
+        db_pi = PrecursorInformation.serialize(pi, db_precursor, db_scan, sample_run_id)
         session.add(db_pi)
     session.flush()
     return db_precursor, db_products
@@ -285,6 +358,19 @@ def serialize_scan_bunch_bulk(session, bunch, sample_run_id):
 def initialize(path):
     eng = create_engine("sqlite:///%s" % path)
     Base.metadata.create_all(bind=eng)
+    return eng
+
+
+def configure_connection(connection, create_tables=True):
+    if isinstance(connection, basestring):
+        try:
+            eng = create_engine(connection)
+        except exc.ArgumentError:
+            eng = create_engine("sqlite:///%s" % connection)
+    elif isinstance(connection, Connectable):
+        eng = connection
+    if create_tables:
+        Base.metadata.create_all(bind=eng)
     return eng
 
 
@@ -345,17 +431,10 @@ class DatabaseScanSerializer(ScanSerializerBase):
 
     @property
     def session(self):
-        return self._sessionmaker()
+        return self._sessionmaker
 
     def _configure_connection(self, connection):
-        if isinstance(connection, basestring):
-            try:
-                eng = create_engine(connection)
-            except exc.ArgumentError:
-                eng = create_engine("sqlite:///%s" % connection)
-        elif isinstance(connection, Connectable):
-            eng = connection
-        Base.metadata.create_all(bind=eng)
+        eng = configure_connection(connection, create_tables=True)
         return eng
 
     def save(self, bunch, commit=True, bulk=True):
@@ -377,15 +456,14 @@ def flatten(iterable):
 
 class DatabaseScanDeserializer(ScanDeserializerBase):
 
-    def __init__(self, connection, sample_name=None):
-
-        self.sample_name = sample_name
+    def __init__(self, connection, sample_name=None, sample_run_id=None):
 
         self.engine = self._configure_connection(connection)
         self._sessionmaker = scoped_session(sessionmaker(bind=self.engine, autoflush=False))
         self._session = None
         self._sample_run = None
-        self._sample_run_id = None
+        self._sample_name = sample_name
+        self._sample_run_id = sample_run_id
         self._iterator = None
         self._scan_id_to_retention_time_cache = None
 
@@ -393,6 +471,8 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
         self._scan_id_to_retention_time_cache = dict(
             self.session.query(MSScan.scan_id, MSScan.scan_time).filter(
                 MSScan.sample_run_id == self.sample_run_id))
+
+    # Sample Run Bound Handle API
 
     @property
     def sample_run_id(self):
@@ -407,27 +487,32 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
         return self._sample_run
 
     @property
+    def sample_name(self):
+        if self._sample_name is None:
+            self._retrieve_sample_run()
+        return self._sample_name
+
+    @property
     def session(self):
-        return self._sessionmaker()
+        return self._sessionmaker
 
     def _retrieve_sample_run(self):
         session = self.session
-        if self.sample_name is not None:
-            sr = session.query(SampleRun).filter(SampleRun.name == self.sample_name).one()
+        if self._sample_name is not None:
+            sr = session.query(SampleRun).filter(SampleRun.name == self._sample_name).one()
+        elif self._sample_run_id is not None:
+            sr = session.query(SampleRun).filter(SampleRun.id == self._sample_run_id).one()
         else:
             sr = session.query(SampleRun).first()
         self._sample_run = sr
         self._sample_run_id = sr.id
+        self._sample_name = sr.name
 
     def _configure_connection(self, connection):
-        if isinstance(connection, basestring):
-            try:
-                eng = create_engine(connection)
-            except exc.ArgumentError:
-                eng = create_engine("sqlite:///%s" % connection)
-        elif isinstance(connection, Connectable):
-            eng = connection
+        eng = configure_connection(connection, create_tables=False)
         return eng
+
+    # Scan Generator Public API
 
     def get_scan_by_id(self, scan_id):
         q = self._get_by_scan_id(scan_id)
@@ -557,3 +642,27 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
         if require_ms1:
             scan = self._locate_ms1_scan(scan)
         self._iterator = self._iterate_over_index(scan.index)
+
+    # LC-MS/MS Database API
+
+    def msms_for(self, neutral_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
+        m = neutral_mass
+        w = neutral_mass * mass_error_tolerance
+        q = self.session.query(PrecursorInformation).join(
+            PrecursorInformation.precursor).filter(
+            PrecursorInformation.neutral_mass.between(m - w, m + w)).order_by(
+            MSScan.scan_time)
+        if start_time is not None:
+            q = q.filter(MSScan.scan_time >= start_time)
+        if end_time is not None:
+            q = q.filter(MSScan.scan_time <= end_time)
+        return q
+
+    def ms1_peaks_above(self, threshold=1000):
+        accumulate = [
+            (x[0], x[1].convert(), x[1].id) for x in self.session.query(MSScan.scan_id, DeconvolutedPeak).join(
+                DeconvolutedPeak).filter(
+                MSScan.ms_level == 1, MSScan.sample_run_id == self.sample_run_id,
+                DeconvolutedPeak.neutral_mass > threshold
+            ).order_by(MSScan.index).yield_per(1000)]
+        return accumulate

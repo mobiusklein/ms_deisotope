@@ -27,8 +27,10 @@ try:
         Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.pyx"],
                   include_dirs=[brainpy.get_include()]),
         Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.pyx"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+        Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()])
-        ])
+    ])
 except ImportError:
     extensions = ([
         Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],
@@ -37,7 +39,7 @@ except ImportError:
                   include_dirs=[brainpy.get_include()]),
         Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()])
-        ])
+    ])
 
 from distutils.command.build_ext import build_ext
 from distutils.errors import (CCompilerError, DistutilsExecError,

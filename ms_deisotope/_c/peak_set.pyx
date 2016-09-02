@@ -1,6 +1,8 @@
 import operator
 
 cimport cython
+from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice, PyTuple_GET_SIZE
+
 from ms_deisotope._c.averagine cimport mass_charge_ratio
 
 
@@ -9,6 +11,16 @@ cdef double ppm_error(double x, double y):
     return (x - y) / y
 
 
+cdef:
+    object neutral_mass_getter
+    object mz_getter
+
+
+neutral_mass_getter = operator.attrgetter("neutral_mass")
+mz_getter = operator.attrgetter('mz')
+
+
+@cython.freelist(1000)
 cdef class _Index(object):
     """
     Stores the ordered index of an object under sort by `mz` and
@@ -31,11 +43,34 @@ cdef class _Index(object):
     def clone(self):
         return self.__class__(self.neutral_mass, self.mz)
 
+    def __reduce__(self):
+        return _Index, (self.neutral_mass, self.mz)
 
+
+@cython.freelist(10000)
 cdef class EnvelopePair:
-    pass
+
+    def __init__(self, mz, intensity):
+        self.mz = mz
+        self.intensity = intensity
+    
+    def __getitem__(self, i):
+        if i == 0:
+            return self.mz
+        elif i == 1:
+            return self.intensity
+        else:
+            raise IndexError(i)
+
+    def __iter__(self):
+        yield self.mz
+        yield self.intensity
+
+    def __reduce__(self):
+        return EnvelopePair, (self.mz, self.intensity,)
 
 
+@cython.freelist(1000)
 cdef class Envelope(object):
     """
     Represents a sequence of (mz, intensity) pairs which store peak positions
@@ -59,18 +94,24 @@ cdef class Envelope(object):
         return iter(self.pairs)
 
     def __repr__(self):
-        return "[%s]" % (', '.join("(%0.4f, %0.2f)" % t for t in self),)
+        return "[%s]" % (', '.join("(%0.4f, %0.2f)" % tuple(t) for t in self))
 
     def clone(self):
         return self.__class__(self)
 
+    def __reduce__(self):
+        return Envelope, (self.pairs,)
 
+
+@cython.freelist(1000)
 cdef class DeconvolutedPeak:
     def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
                  a_to_a2_ratio=None, most_abundant_mass=None, average_mass=None, score=None,
-                 envelope=None, mz=None, fit=None, chosen_for_msms=False):
+                 envelope=None, mz=None, fit=None, chosen_for_msms=False, area=0):
         if index is None:
             index = _Index()
+        elif index == -1:
+            index = _Index(0, 0)            
         self.neutral_mass = neutral_mass
         self.intensity = intensity
         self.signal_to_noise = signal_to_noise
@@ -85,6 +126,19 @@ cdef class DeconvolutedPeak:
         self.mz = mz or mass_charge_ratio(self.neutral_mass, self.charge)
         self.fit = fit
         self.chosen_for_msms = chosen_for_msms
+        self.area = area
+
+    property index:
+        def __get__(self):
+            return self._index
+
+        def __set__(self, value):
+            if isinstance(value, _Index):
+                self._index = value
+            elif value >= 0:
+                self._index = _Index(value, value)
+            else:
+                self._index = _Index(0, 0)
 
     def __hash__(self):
         return hash((self.mz, self.intensity, self.charge))
@@ -93,13 +147,13 @@ cdef class DeconvolutedPeak:
         return DeconvolutedPeak(self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
                                 self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
                                 self.most_abundant_mass, self.average_mass, self.score,
-                                self.envelope, self.mz, self.fit, self.chosen_for_msms)
+                                self.envelope, self.mz, self.fit, self.chosen_for_msms, self.area)
 
     def __reduce__(self):
         return DeconvolutedPeak, (self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
                                   self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
                                   self.most_abundant_mass, self.average_mass, self.score,
-                                  self.envelope, self.mz, self.fit, self.chosen_for_msms)
+                                  self.envelope, self.mz, self.fit, self.chosen_for_msms, self.area)
 
     cpdef bint _eq(self, DeconvolutedPeak other):
         return (abs(self.neutral_mass - other.neutral_mass) < 1e-5) and (
@@ -110,6 +164,13 @@ cdef class DeconvolutedPeak:
             return self._eq(other)
         elif code == 3:
             return not (self._eq(other))
+
+    def __repr__(self):
+        return ("DeconvolutedPeak(a_to_a2_ratio={self.a_to_a2_ratio}, area={self.area}, "
+            "average_mass={self.average_mass}, charge={self.charge}, chosen_for_msms={self.chosen_for_msms}, "
+            "envelope={self.envelope}, full_width_at_half_max={self.full_width_at_half_max}, index={self.index}, "
+            "intensity={self.intensity}, most_abundant_mass={self.most_abundant_mass}, mz={self.mz}, "
+            "neutral_mass={self.neutral_mass}, score={self.score}, signal_to_noise={self.signal_to_noise})").format(self=self)
 
 
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
@@ -123,14 +184,14 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
             self.most_abundant_mass, self.average_mass, self.score,
-            self.envelope, self.mz, self.chosen_for_msms)
+            self.envelope, self.mz, self.chosen_for_msms, self.area)
 
     def __reduce__(self):
         return DeconvolutedPeakSolution, (
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
             self.most_abundant_mass, self.average_mass, self.score,
-            self.envelope, self.mz, self.chosen_for_msms)
+            self.envelope, self.mz, self.chosen_for_msms, self.area)
 
     def __iter__(self):
         yield self.solution
@@ -141,7 +202,7 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
 cdef class DeconvolutedPeakSet:
 
     def __init__(self, peaks):
-        self.peaks = peaks
+        self.peaks = tuple(peaks)
         self._mz_ordered = None
 
     def _reindex(self):
@@ -153,28 +214,84 @@ cdef class DeconvolutedPeakSet:
         -------
         self: DeconvolutedPeakSet
         """
-        self.peaks = tuple(sorted(self.peaks, key=operator.attrgetter("neutral_mass")))
-        self._mz_ordered = tuple(sorted(self.peaks, key=operator.attrgetter("mz")))
-        for i, peak in enumerate(self.peaks):
-            peak.index = _Index()
-            peak.index.neutral_mass = i
-        for i, peak in enumerate(self._mz_ordered):
-            peak.index.mz = i
+        cdef:
+            size_t i, n
+            DeconvolutedPeak peak
+        self.peaks = tuple(sorted(self.peaks, key=neutral_mass_getter))
+        self._mz_ordered = tuple(sorted(self.peaks, key=mz_getter))
+        n = PyTuple_GET_SIZE(self.peaks)
+        i = 0
+        for i in range(n):
+            peak = self.getitem(i)
+            peak._index = _Index(0, 0)
+            peak._index.neutral_mass = i
+        i = 0
+        for i in range(n):
+            peak = <DeconvolutedPeak>PyTuple_GET_ITEM(self._mz_ordered, i)
+            peak._index.mz = i
         return self
 
-    def __len__(self):
-        return len(self.peaks)
+    def __iter__(self):
+        return iter(self.peaks)
 
-    cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=2e-5, bint use_mz=False):
+    def __len__(self):
+        return PyTuple_GET_SIZE(self.peaks)
+
+    def __repr__(self):
+        return "<DeconvolutedPeakSet %d Peaks>" % (len(self))
+
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return self.__class__(tuple(p.clone() for p in self.peaks[item]))
+        return self.peaks[item]
+
+    def __iter__(self):
+        return iter(self.peaks)
+
+    def clone(self):
+        return self.__class__(tuple(p.clone() for p in self))
+
+    def __reduce__(self):
+        return DeconvolutedPeakSet, (self.peaks, )
+
+    cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
         if use_mz:
-            return None
+            return binary_search_mz(self._mz_ordered, neutral_mass, error_tolerance)
         else:
             return binary_search_neutral_mass(self.peaks, neutral_mass, error_tolerance)
 
-    cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=2e-5, bint use_mz=False):
+    cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
         return self._has_peak(neutral_mass, error_tolerance, use_mz)
 
+    cdef DeconvolutedPeak getitem(self, size_t i):
+        return <DeconvolutedPeak>PyTuple_GET_ITEM(self.peaks, i)
 
+    def get_nearest_peak(self, double neutral_mass):
+        cdef:
+            DeconvolutedPeak peak
+            double errout
+        peak = binary_search_nearest_neutral_mass(self.peaks, neutral_mass, &errout)
+        return peak, errout
+
+    def between(self, m1, m2, tolerance=1e-5, use_mz=False):
+        acc = []
+        collecting = False
+        if not use_mz:
+            getter = operator.attrgetter("neutral_mass")
+            iterator = self.peaks
+        else:
+            getter = operator.attrgetter("mz")
+            iterator = self._mz_ordered
+        for peak in iterator:
+            if not collecting and getter(peak) >= m1:
+                collecting = True
+            elif collecting and getter(peak) > m2:
+                break
+
+            if collecting:
+                acc.append(peak.clone())
+
+        return self.__class__(acc)._reindex()
 
 cdef double INF
 INF = float('inf')
@@ -188,10 +305,10 @@ cdef DeconvolutedPeak _sweep_solution_neutral_mass(tuple array, double value, si
 
     best_index = mid
     best_error = INF
-    n = len(array)
+    n = PyTuple_GET_SIZE(array)
 
     i = 0
-    while mid - i != 0:
+    while mid - i >= 0 and i <= mid:
         target = <DeconvolutedPeak>array[mid - i]
         abs_error = abs(ppm_error(value, target.neutral_mass))
         if abs_error < tolerance:
@@ -202,7 +319,7 @@ cdef DeconvolutedPeak _sweep_solution_neutral_mass(tuple array, double value, si
             break
         i += 1
     i = 1
-    while (mid + i) != (n - 1):
+    while (mid + i) < (n - 1):
         target = <DeconvolutedPeak>array[mid + i]
         abs_error = abs(ppm_error(value, target.neutral_mass))
         if abs_error < tolerance:
@@ -233,7 +350,7 @@ cdef DeconvolutedPeak binary_search_neutral_mass(tuple peak_set, double neutral_
         found_mass = found_peak.neutral_mass
 
         if abs(ppm_error(found_mass, neutral_mass)) < error_tolerance:
-            _sweep_solution_neutral_mass(peak_set, neutral_mass, mid, error_tolerance)
+            found_peak = _sweep_solution_neutral_mass(peak_set, neutral_mass, mid, error_tolerance)
             return found_peak
         elif hi - lo == 1:
             return None
@@ -241,3 +358,119 @@ cdef DeconvolutedPeak binary_search_neutral_mass(tuple peak_set, double neutral_
             hi = mid
         else:
             lo = mid
+
+
+cdef DeconvolutedPeak _sweep_solution_mz(tuple array, double value, size_t mid, double tolerance):
+    cdef:
+        size_t best_index, i, n
+        double best_error, abs_error
+        DeconvolutedPeak target
+
+    best_index = mid
+    best_error = INF
+    n = PyTuple_GET_SIZE(array)
+
+    i = 0
+    while mid - i >= 0 and i <= mid:
+        target = <DeconvolutedPeak>array[mid - i]
+        abs_error = abs(ppm_error(value, target.mz))
+        if abs_error < tolerance:
+            if abs_error < best_error:
+                best_index = mid - i
+                best_error = abs_error
+        else:
+            break
+        i += 1
+    i = 1
+    while (mid + i) < (n - 1):
+        target = <DeconvolutedPeak>array[mid + i]
+        abs_error = abs(ppm_error(value, target.mz))
+        if abs_error < tolerance:
+            if abs_error < best_error:
+                best_index = mid + i
+                best_error = abs_error
+        else:
+            break
+        i += 1
+    if best_error == INF:
+        return None
+    else:
+        return array[best_index]
+
+
+cdef DeconvolutedPeak binary_search_mz(tuple peak_set, double mz, double error_tolerance):
+    cdef:
+        size_t lo, hi, mid, i, j
+        double err, found_mass
+        DeconvolutedPeak found_peak
+
+    lo = 0
+    hi = len(peak_set)
+
+    while hi != lo:
+        mid = (hi + lo) / 2
+        found_peak = <DeconvolutedPeak>peak_set[mid]
+        found_mass = found_peak.mz
+
+        if abs(ppm_error(found_mass, mz)) < error_tolerance:
+            found_peak = _sweep_solution_mz(peak_set, mz, mid, error_tolerance)
+            return found_peak
+        elif hi - lo == 1:
+            return None
+        elif found_mass > mz:
+            hi = mid
+        else:
+            lo = mid
+
+
+cdef DeconvolutedPeak _sweep_nearest_match_neutral_mass(tuple array, double value, size_t lo, size_t hi, double* errout):
+    cdef:
+        size_t i
+        size_t best_index
+        double best_error, err
+        double v
+
+    best_error = float('inf')
+    best_index = -1
+    for i in range(hi - lo):
+        i += lo
+        v = array[i].neutral_mass
+        err = abs(v - value)
+        if err < best_error:
+            best_error = err
+            best_index = i
+    errout[0] = best_error
+    return array[best_index]
+
+cdef DeconvolutedPeak binary_search_nearest_neutral_mass(tuple peak_set, double neutral_mass, double* errout):
+    cdef:
+        size_t lo, hi, mid, i, j
+        double err, found_mass
+        DeconvolutedPeak found_peak
+
+    lo = 0
+    hi = len(peak_set)
+    while hi != lo:
+        mid = (hi + lo) / 2
+        found_peak = <DeconvolutedPeak>peak_set[mid]
+        found_mass = found_peak.neutral_mass
+
+        if abs(ppm_error(found_mass, neutral_mass)) < 1:
+            found_peak = _sweep_nearest_match_neutral_mass(peak_set, neutral_mass, lo, hi, errout)
+            return found_peak
+        elif hi - lo == 1:
+            errout[0] = found_mass - neutral_mass
+            return found_peak
+        elif found_mass > neutral_mass:
+            hi = mid
+        else:
+            lo = mid
+
+
+def convert(self):
+    return DeconvolutedPeak(
+        self.neutral_mass, self.intensity, self.charge,
+        self.signal_to_noise, -1, self.full_width_at_half_max,
+        self.a_to_a2_ratio, self.most_abundant_mass, self.average_mass,
+        self.score, Envelope(self.envelope), self.mz, None, self.chosen_for_msms,
+        self.area)

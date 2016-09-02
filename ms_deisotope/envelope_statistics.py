@@ -16,15 +16,23 @@ def a_to_a2_ratio(envelope):
     return a0.intensity / a2.intensity
 
 
+def total_area(envelope):
+    return sum(p.area for p in envelope)
+
+
 def most_abundant_mz(envelope):
     return max([p for p in envelope if p.mz > 1], key=intensity_getter).mz
 
 
 def average_mz(envelope):
     envelope = [p for p in envelope if p.mz > 1]
-    return sum(map(mz_getter, envelope)) / float(len(envelope))
+    return weighted_average(map(mz_getter, envelope), map(intensity_getter, envelope))
 
 
 def average_signal_to_noise(envelope):
     envelope = [p for p in envelope if p.mz > 1]
     return sum(map(snr_getter, envelope)) / float(len(envelope))
+
+
+def weighted_average(values, weights):
+    return sum(v * w for v, w in zip(values, weights)) / float(sum(weights))

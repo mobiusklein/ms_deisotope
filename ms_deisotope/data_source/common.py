@@ -187,8 +187,8 @@ class Scan(object):
         return self._precursor_information
 
     def __repr__(self):
-        return "Scan(%s%s)" % (
-            self.id,
+        return "Scan(%s, index=%d, time=%s%s)" % (
+            self.id, self.index, self.scan_time,
             " " + str(self.precursor_information) if self.precursor_information else '')
 
     def pick_peaks(self, *args, **kwargs):
@@ -248,6 +248,7 @@ class PrecursorInformation(object):
         self.extracted_neutral_mass = self.neutral_mass
         self.extracted_charge = int(self.charge)
         self.extracted_intensity = self.intensity
+        self.defaulted = True
 
     @property
     def neutral_mass(self):

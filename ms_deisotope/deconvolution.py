@@ -780,7 +780,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             score=score,
             envelope=[(p.mz, p.intensity) for p in rep_eid],
             mz=eid[0].mz,
-            fit=fit)
+            fit=fit,
+            area=sum(e.area for e in eid))
 
         self._deconvoluted_peaks.append(dpeak)
         if self.use_subtraction:
@@ -1020,11 +1021,18 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                        right_search_limit=0, use_charge_state_hint=False, charge_carrier=PROTON,
                        truncate_after=0.95):
         for peak in self.peaklist:
+            if peak in self._priority_map:
+                continue
             out = self._explore_local(
                 peak, error_tolerance=error_tolerance, charge_range=charge_range,
                 left_search_limit=left_search_limit, right_search_limit=right_search_limit,
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier,
                 truncate_after=truncate_after)
+
+    def postprocess_fits(self, fit_postprocessor=None, error_tolerance=2e-5, charge_range=(1, 8),
+                         charge_carrier=PROTON, *args, **kwargs):
+        if fit_postprocessor is None:
+            return
 
     def select_best_disjoint_subgraphs(self, error_tolerance=2e-5, charge_carrier=PROTON):
         disjoint_envelopes = self.peak_dependency_network.find_non_overlapping_intervals()
@@ -1053,7 +1061,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                     average_mass=neutral_mass(average_mz(eid), charge),
                     score=score,
                     envelope=[(p.mz, p.intensity) for p in rep_eid],
-                    mz=eid[0].mz, fit=fit)
+                    mz=eid[0].mz, fit=fit,
+                    area=sum(e.area for e in eid))
 
                 self.peak_dependency_network.add_solution(fit, dpeak)
 
@@ -1075,7 +1084,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8),
                     use_charge_state_hint=False, left_search_limit=1,
                     right_search_limit=0, iterations=1, charge_carrier=PROTON,
-                    truncate_after=0.95):
+                    truncate_after=0.95, fit_postprocessor=None):
 
         for i in range(iterations):
             self.populate_graph(
@@ -1083,6 +1092,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 left_search_limit=left_search_limit, right_search_limit=right_search_limit,
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier,
                 truncate_after=truncate_after)
+            self.postprocess_fits(
+                fit_postprocessor=fit_postprocessor, charge_range=charge_range, charge_carrier=charge_carrier,
+                error_tolerance=error_tolerance)
             self.select_best_disjoint_subgraphs(
                 error_tolerance, charge_carrier)
 
@@ -1147,6 +1159,8 @@ class CompositionListDeconvoluterBase(object):
         for charge in charge_range_(*charge_range):
             fit = self.fit_composition_at_charge(composition, charge=charge, truncate_after=truncate_after,
                                                  charge_carrier=charge_carrier, mass_shift=mass_shift)
+            if fit is None:
+                continue
             if not self.scorer.reject(fit):
                 eid = fit.experimental
                 tid = fit.theoretical
@@ -1175,7 +1189,7 @@ class CompositionListDeconvoluterBase(object):
                     average_mass=neutral_mass(average_mz(eid), charge),
                     score=fit.score,
                     envelope=[(p.mz, p.intensity) for p in rep_eid],
-                    mz=monoisotopic_mz)
+                    mz=monoisotopic_mz, area=sum(e.area for e in eid))
 
                 self._deconvoluted_peaks.append(peak)
                 if self.use_subtraction:
@@ -1237,7 +1251,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
             fit = self.fit_composition_at_charge(
                 composition, charge, error_tolerance, charge_carrier=charge_carrier,
                 truncate_after=truncate_after, mass_shift=mass_shift)
-
+            if fit is None:
+                continue
             if not self.scorer.reject(fit):
                 self.peak_dependency_network.add_fit_dependence(fit)
 
@@ -1281,7 +1296,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                     average_mass=neutral_mass(average_mz(eid), charge),
                     score=score,
                     envelope=[(p.mz, p.intensity) for p in rep_eid],
-                    mz=monoisotopic_mz)
+                    mz=monoisotopic_mz, area=sum(e.area for e in eid))
 
                 self._save_peak_solution(peak)
                 if self.use_subtraction:

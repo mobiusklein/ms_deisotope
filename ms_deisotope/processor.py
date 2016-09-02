@@ -172,7 +172,6 @@ class ScanProcessor(Base):
                 logger.info(
                     "Could not find deconvolution for %r (No nearby peak in the priority list)",
                     precursor_information)
-                logger.info("%f, %r, %r", precursor_information.mz, priority_results, i)
                 precursor_information.default()
                 continue
 
@@ -182,11 +181,13 @@ class ScanProcessor(Base):
                 logger.info(
                     "Could not find deconvolution for %r (No solution was found for this region)",
                     precursor_information)
-                logger.info("%r, %r, %r, %r", precursor_information, priority_results, i, peak)
                 precursor_information.default()
 
                 continue
-            elif peak.charge == 1:
+            elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
+                logger.info(
+                    "Could not find deconvolution for %r (Unacceptable solution was proposed)",
+                    precursor_information)
                 precursor_information.default()
                 continue
 

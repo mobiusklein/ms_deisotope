@@ -22,6 +22,12 @@ class SpanningMixin(object):
         elif self.start >= interval.end:
             return self.start - interval.end
 
+    def is_contained_in_interval(self, interval):
+        return self.start >= interval.start and self.end <= interval.end
+
+    def contains_interval(self, interval):
+        return self.start <= interval.start and self.end >= interval.end
+
 
 class Interval(SpanningMixin):
     def __init__(self, start, end, members=None, **kwargs):

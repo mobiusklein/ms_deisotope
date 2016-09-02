@@ -1,4 +1,8 @@
 import operator
+import math
+
+from collections import defaultdict
+
 
 try:
     from matplotlib import pyplot as plt
@@ -42,7 +46,14 @@ class Base(object):
 
 
 class Constant(object):
+    """A convenience type meant to be used to instantiate singletons for signaling
+    specific states in return values. Similar to `None`.
 
+    Attributes
+    ----------
+    name: str
+        The name of the constant
+    """
     def __init__(self, name):
         self.name = name
 
@@ -82,14 +93,39 @@ class DeconvolutionProcessResult(object):
 
 
 class TargetedDeconvolutionResultBase(Base):
+    """Base class to store all of the necessary information to retrieve the optimal
+    solution for a single peak.
+
+    Attributes
+    ----------
+    deconvoluter : DeconvoluterBase
+        The deconvoluter to use to look up the result
+    """
     def __init__(self, deconvoluter, *args, **kwargs):
         self.deconvoluter = deconvoluter
 
     def get(self):
+        """Fetch the optimal solution after the computation has finished.
+
+        Returns
+        -------
+        DeconvolutedPeak
+        """
         raise NotImplementedError()
 
 
 class TrivialTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
+    """Stores the necessary information to retrieve the local optimal solution for
+    a single peak for a deconvolution algorithm where the local optimum is the best
+    solution.
+
+    Attributes
+    ----------
+    query_peak : FittedPeak
+        The peak queried with
+    solution_peak : DeconvolutedPeak
+        The optimal solution peak
+    """
     def __init__(self, deconvoluter, solution_peak, query_peak, *args, **kwargs):
         super(TrivialTargetedDeconvolutionResult, self).__init__(deconvoluter, *args, **kwargs)
         self.solution_peak = solution_peak
@@ -145,3 +181,32 @@ def dict_proxy(attribute):
 
         return cls
     return wrap
+
+
+class PaddedBuffer(object):
+    def __init__(self, content, start='<pad>', end="</pad>"):
+        self.content = content
+        self.start = start
+        self.end = end
+        self.position = 0
+        self.diff = 0
+
+    def read(self, n):
+        if self.position < len(self.start):
+            out = "".join([self.start, self.content.read(n - len(self.start))])
+            self.position += n
+            return out
+        else:
+            out = self.content.read(n)
+            if len(out) < n:
+                diff = n - len(out)
+                if self.diff == 0:
+                    self.diff = diff
+                    self.position += n
+                    return "".join([out, self.end[:diff]])
+                else:
+                    self.position += n
+                    return self.end[self.diff:diff]
+            else:
+                self.position += n
+                return out
