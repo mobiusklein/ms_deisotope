@@ -20,7 +20,33 @@ cdef bint isclose(double x, double y, double rtol=1.e-5, double atol=1.e-8):
 
 @cython.freelist(500)
 cdef class IsotopicFitRecord(object):
+    """Describes a single isotopic pattern fit, comparing how well an
+    experimentally observed sequence of peaks matches a theoretical isotopic
+    pattern.
+    
+    IsotopicFitRecord instances are hashable and orderable (by score).
 
+    Attributes
+    ----------
+    charge : int
+        The charge state used to generate the theoretical pattern
+    data : object
+        An arbitrary Python object containing extra information
+    experimental : list of FittedPeak
+        The observed experimental peaks to be fitted
+    missed_peaks : int
+        The number of peaks in the theoretical pattern that do not
+        have a matching experimental peak
+    monoisotopic_peak : FittedPeak
+        The fitted peak which corresponds to the monoisotopic peak
+    score : float
+        The score assigned to the fit by an IsotopicFitter object
+    seed_peak : FittedPeak
+        The peak that was used to initiate the fit. This may be unused
+        if not using an Averagine method
+    theoretical : list of TheoreticalPeak
+        The theoretical isotopic pattern being fitted on the experimental data
+    """
     def __cinit__(self, FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
                   object data=None, int missed_peaks=0):
         self.seed_peak = seed_peak
@@ -95,7 +121,15 @@ cdef class IsotopicFitRecord(object):
 
 
 cdef class FitSelectorBase(object):
+    """An object that controls the filtering and
+    selection of IsotopicFitRecord
 
+    Attributes
+    ----------
+    minimum_score : int
+        The minimum score needed to be a candidate for selection. If the
+        FitSelector is `minimizing` it is the maximal score to be a candidate.
+    """
     def __init__(self, minimum_score=0):
         self.minimum_score = minimum_score
 
@@ -116,24 +150,86 @@ cdef class FitSelectorBase(object):
 
 
 cdef class MinimizeFitSelector(FitSelectorBase):
+    """A FitSelector which tries to minimize the score of the best fit.
+    """
     cpdef IsotopicFitRecord best(self, object results):
+        """Returns the IsotopicFitRecord with the smallest score
+        
+        Parameters
+        ----------
+        results : list of IsotopicFitRecord
+            List of isotopic fits to select the most optimal case from
+        
+        Returns
+        -------
+        IsotopicFitRecord
+            The most optimal fit
+        """
         return min(results, key=operator.attrgetter("score"))
 
     cpdef bint reject(self, IsotopicFitRecord fit):
+        """Decide whether the fit should be discarded for having too
+        large a score. Compares against :attr:`minimum_score`
+        
+        Parameters
+        ----------
+        fit : IsotopicFitRecord
+        
+        Returns
+        -------
+        bool
+        """
         return fit.score > self.minimum_score
 
     cpdef bint is_maximizing(self):
+        """Returns that this is *not* a maximizing selector
+
+        Returns
+        -------
+        False
+        """
         return False
 
 
 cdef class MaximizeFitSelector(FitSelectorBase):
+    """A FitSelector which tries to maximize the score of the best fit.
+    """
     cpdef IsotopicFitRecord best(self, object results):
+        """Returns the IsotopicFitRecord with the largest score
+        
+        Parameters
+        ----------
+        results : list of IsotopicFitRecord
+            List of isotopic fits to select the most optimal case from
+        
+        Returns
+        -------
+        IsotopicFitRecord
+            The most optimal fit
+        """
         return max(results, key=operator.attrgetter("score"))
 
     cpdef bint reject(self, IsotopicFitRecord fit):
+        """Decide whether the fit should be discarded for having too
+        small a score. Compares against :attr:`minimum_score`
+        
+        Parameters
+        ----------
+        fit : IsotopicFitRecord
+        
+        Returns
+        -------
+        bool
+        """
         return fit.score < self.minimum_score
 
     cpdef bint is_maximizing(self):
+        """Returns that this *is* a maximizing selector
+
+        Returns
+        -------
+        False
+        """
         return True
 
 

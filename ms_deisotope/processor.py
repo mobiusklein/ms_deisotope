@@ -1,4 +1,3 @@
-import warnings
 import logging
 
 from ms_peak_picker import pick_peaks
@@ -26,6 +25,23 @@ def get_nearest_index(query_mz, peak_list):
 
 
 class PriorityTarget(Base):
+    """Represent a targeted deconvolution's parameters and constraints.
+
+    Attributes
+    ----------
+    info : PrecursorInformation
+        The associated precursor information block which contains
+        the charge state hint.
+    peak : FittedPeak
+        The peak from which to start the deconvolution
+    trust_charge_hint : bool
+        Whether or not to force the deconvoluter to only consider
+        the charge specified in the hint.
+    mz : float
+        The m/z of :attr:`peak`
+    charge : int
+        The charge state hint from :attr:`info`
+    """
     def __init__(self, peak, info, trust_charge_hint=True):
         self.peak = peak
         self.info = info
@@ -44,13 +60,79 @@ class PriorityTarget(Base):
         return int(self.info.charge)
 
     def charge_range_hint(self, charge_range):
+        """Create an updated charge range for a Deconvoluter to search.
+
+        At the moment, this only amounts to either returning the charge
+        range unchanged or returning a charge range that only contains
+        the hinted charge state, depending upon whether :attr:`trust_charge_hint`
+        is `False` or not.
+
+        Parameters
+        ----------
+        charge_range : tuple
+            The charge range to update
+
+        Returns
+        -------
+        tuple
+            The updated charge range
+        """
         if self.trust_charge_hint:
             return (self.charge, self.charge)
         else:
             return charge_range
 
+    def __repr__(self):
+        return "PriorityTarget(mz=%0.4f, intensity=%0.4f, charge_hint=%d)" % (
+            self.mz, self.peak.intensity, self.charge)
+
 
 class ScanProcessor(Base):
+    """Orchestrates the deconvolution of a `ScanIterator` scan by scan. This process will
+    apply different rules for MS^1 scans and MS^n scans. This type itself is an Iterator,
+    consuming (raw) mass spectral data and producing deisotoped and charge deconvolved spectra.
+
+    The algorithms used for each task are independent and can be specified in the appropriate
+    attribute dictionary, however there is information sharing between each MS^1 scan and its
+    MS^n scans as the precursor monoisotopic mass is recalibrated according to the MS^1 processing
+    arguments, and the selected charge state is used to limit the charge range used in the matching
+    MS^n scan. These are described by :class:`PriorityTarget` objects.
+
+    At the moment, MS^n assumes only MS^2. Until MS^3 data become available for testing, this limit
+    will remain.
+
+    Attributes
+    ----------
+    data_source : str or file-like
+        Any valid object to be passed to the `loader_type` callable to produce
+        a :class:`ScanIterator` instance. A path to an mzML file will work for the
+        default loader. Used to populate :attr:`reader`
+    loader_type : callable
+        A callable, which when passed `data_source` returns an instance of :class:`ScanIterator`.
+        By default, this is :class:`MzMLLoader`. Used to populate :attr:`reader`
+    reader: ScanIterator
+        Any object implementing the :class:`ScanIterator` interface, produced by calling
+        :attr:`loader_type` on :attr:`data_source`.
+    ms1_deconvolution_args : dict
+        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MS^1
+        scans.
+    ms1_peak_picking_args : dict
+        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS^1 scans.
+    msn_deconvolution_args : dict
+        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MS^n
+        scans.
+    msn_peak_picking_args : dict
+        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS^n scans.
+    pick_only_tandem_envelopes : bool
+        Whether or not to process whole MS^1 scans or just the regions around those peaks
+        chosen for MS^n
+    precursor_selection_window : float
+        Size of the selection window to use when `pick_only_tandem_envelopes` is `True`
+        and the information is not available in the scan.
+    trust_charge_hint : bool
+        Whether or not to trust the charge provided by the data source when determining
+        the charge state of precursor isotopic patterns. Defaults to `True`
+    """
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
@@ -73,24 +155,37 @@ class ScanProcessor(Base):
 
         self._signal_source = self.loader_type(data_source)
 
+    @property
+    def reader(self):
+        return self._signal_source
+
     def pick_precursor_scan_peaks(self, precursor_scan):
         logger.info("Picking Precursor Scan Peaks: %r", precursor_scan)
+        if precursor_scan.is_profile:
+            peak_mode = 'profile'
+        else:
+            peak_mode = 'centroid'
         prec_mz, prec_intensity = precursor_scan.arrays
         if not self.pick_only_tandem_envelopes:
-            prec_peaks = pick_peaks(prec_mz, prec_intensity, **self.ms1_peak_picking_args)
+            prec_peaks = pick_peaks(prec_mz, prec_intensity, peak_mode=peak_mode, **self.ms1_peak_picking_args)
         else:
             chosen_envelopes = [s.precursor_information for s in precursor_scan.product_scans]
             chosen_envelopes = sorted([(p.mz - 5, p.mz + 10) for p in chosen_envelopes])
-            prec_peaks = pick_peaks(prec_mz, prec_intensity, target_envelopes=chosen_envelopes,
+            prec_peaks = pick_peaks(prec_mz, prec_intensity, peak_mode=peak_mode,
+                                    target_envelopes=chosen_envelopes,
                                     **self.ms1_peak_picking_args)
 
         precursor_scan.peak_set = prec_peaks
         return prec_peaks
 
     def pick_product_scan_peaks(self, product_scan):
-        logger.info("Picking Product Scan Peaks: %r", product_scan)
+        # logger.info("Picking Product Scan Peaks: %r", product_scan)
+        if product_scan.is_profile:
+            peak_mode = 'profile'
+        else:
+            peak_mode = 'centroid'
         product_mz, product_intensity = product_scan.arrays
-        peaks = pick_peaks(product_mz, product_intensity, **self.msn_peak_picking_args)
+        peaks = pick_peaks(product_mz, product_intensity, peak_mode=peak_mode, **self.msn_peak_picking_args)
         product_scan.peak_set = peaks
         return peaks
 
@@ -114,6 +209,28 @@ class ScanProcessor(Base):
         return priorities
 
     def process_scan_group(self, precursor_scan, product_scans):
+        """Performs the initial extraction of information relating
+        `precursor_scan` to `product_scans` and picks peaks for `precursor_scan`.
+        Called by :meth:`process`. May be used separately if doing the process step
+        by step.
+
+        Parameters
+        ----------
+        precursor_scan : Scan
+            An MS^1 Scan
+        product_scans : list of Scan
+            A list of MS^n Scans related to `precursor_scan`
+
+        Returns
+        -------
+        precursor_scan: Scan
+            As Parameter
+        prioritiies: list of PriorityTarget
+            list of the peak target windows in `precursor_scan` which
+            are related to `product_scans`
+        product_scans: list of Scan
+            As Parameter
+        """
         prec_peaks = None
         priorities = []
 
@@ -145,7 +262,6 @@ class ScanProcessor(Base):
 
         dec_peaks, priority_results = deconvolute_peaks(
             precursor_scan.peak_set, priority_list=priorities,
-            verbose_priorities=True,
             **self.ms1_deconvolution_args)
 
         for pr in priority_results:
@@ -186,8 +302,8 @@ class ScanProcessor(Base):
                 continue
             elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
                 logger.info(
-                    "Could not find deconvolution for %r (Unacceptable solution was proposed)",
-                    precursor_information)
+                    "Could not find deconvolution for %r (Unacceptable solution was proposed: %r)",
+                    precursor_information, peak)
                 precursor_information.default()
                 continue
 
@@ -211,15 +327,32 @@ class ScanProcessor(Base):
         return dec_peaks
 
     def _get_next_scans(self):
-        precursor, products = next(self._signal_source)
+        precursor, products = next(self.reader)
 
         if self.pick_only_tandem_envelopes:
             while len(products) == 0:
-                precursor, products = next(self._signal_source)
+                precursor, products = next(self.reader)
 
         return precursor, products
 
-    def _process(self, precursor, products):
+    def process(self, precursor, products):
+        """Fully preprocesses the `precursor` and `products` scans, performing
+        any necessary information sharing.
+
+        Parameters
+        ----------
+        precursor : Scan
+            An MS^1 Scan
+        products : list of Scan
+            A list of MS^n Scans related to `precursor`
+
+        Returns
+        -------
+        precursor_scan: Scan
+            The fully processed version of `precursor`
+        product_scans: list of Scan
+            The fully processed version of `products`
+        """
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
         self.deconvolute_precursor_scan(precursor_scan, priorities)
 
@@ -230,35 +363,58 @@ class ScanProcessor(Base):
         return precursor_scan, product_scans
 
     def next(self):
+        """Fetches the next bunch of scans from :attr:`reader` and
+        invokes :meth:`process` on them, picking peaks and deconvoluting them.
+
+        Returns
+        -------
+        ScanBunch
+        """
         precursor, products = self._get_next_scans()
-        precursor_scan, product_scans = self._process(precursor, products)
+        precursor_scan, product_scans = self.process(precursor, products)
         return ScanBunch(precursor_scan, product_scans)
 
     def __next__(self):
+        """Fetches the next bunch of scans from :attr:`reader` and
+        invokes :meth:`process` on them, picking peaks and deconvoluting them.
+
+        Returns
+        -------
+        ScanBunch
+        """
         return self.next()
 
-    def seek_precursor_scan(self, scan_id):
-        precursor_scan, product_scans = self._get_next_scans()
-        while precursor_scan.id != scan_id:
-            precursor_scan, product_scans = self._get_next_scans()
-        precursor_scan, product_scans = self._process(precursor_scan, product_scans)
-        return ScanBunch(precursor_scan, product_scans)
-
-    def seek_while(self, condition):
-        precursor_scan, product_scans = self._get_next_scans()
-        while not condition(precursor_scan, product_scans):
-            precursor_scan, product_scans = self._get_next_scans()
-        precursor_scan, product_scans = self._process(precursor_scan, product_scans)
-        return ScanBunch(precursor_scan, product_scans)
-
     def pack_next(self):
+        """As :meth:`next`, except instead of producing :class:`ScanBunch` of
+        :class:`Scan` instances, instead it uses :class:`ProcessedScan` to strip away
+        much of the heavy information like the raw data arrays.
+
+        Returns
+        -------
+        ScanBunch
+        """
         precursor, products = self._get_next_scans()
-        precursor_scan, product_scans = self._process(precursor, products)
+        precursor_scan, product_scans = self.process(precursor, products)
         return ScanBunch(precursor_scan.pack(), [p.pack() for p in product_scans])
+
+    def start_from_scan(self, *args, **kwargs):
+        """A wrapper around :meth:`start_from_scan` provided by
+        :attr:`reader`.
+
+        Returns
+        -------
+        self
+
+        See Also
+        --------
+        ms_deisotope.data_source.mzml.start_from_scan
+        """
+        self.reader.start_from_scan(*args, **kwargs)
+        return self
 
 
 class PrecursorSkimmingProcessor(ScanProcessor):
-    def _process(self, precursor, products):
+    def process(self, precursor, products):
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
         self.deconvolute_precursor_scan(precursor_scan, priorities)
         return precursor_scan, product_scans

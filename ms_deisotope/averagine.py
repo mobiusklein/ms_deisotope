@@ -77,6 +77,7 @@ def add_compositions(a, b):
         a[k] += v
     return dict(a)
 
+
 try:
     _Averagine = Averagine
     from ms_deisotope._c.averagine import Averagine
@@ -87,6 +88,7 @@ except ImportError, e:
 peptide = Averagine({"C": 4.9384, "H": 7.7583, "N": 1.3577, "O": 1.4773, "S": 0.0417})
 glycopeptide = Averagine({"C": 10.93, "H": 15.75, "N": 1.6577, "O": 6.4773, "S": 0.02054})
 glycan = Averagine({'C': 7.0, 'H': 11.8333, 'N': 0.5, 'O': 5.16666})
+permethylated_glycan = Averagine({'C': 12.0, 'H': 21.8333, 'N': 0.5, 'O': 5.16666})
 
 
 _neutron_shift = calculate_mass({"C[13]": 1}) - calculate_mass({"C[12]": 1})
@@ -124,6 +126,7 @@ class AveragineCache(object):
 
     def clear(self):
         self.backend.clear()
+
 
 try:
     _AveragineCache = AveragineCache

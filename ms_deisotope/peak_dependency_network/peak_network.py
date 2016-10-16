@@ -182,6 +182,13 @@ class PeakDependenceGraph(object):
         self._interval_tree = None
         self._solution_map = {}
 
+    def reset(self):
+        self.nodes = dict()
+        self.dependencies = set()
+        self._interval_tree = None
+        self._solution_map = dict()
+        self._populate_initial_graph()
+
     def add_solution(self, key, solution):
         self._solution_map[key] = solution
 

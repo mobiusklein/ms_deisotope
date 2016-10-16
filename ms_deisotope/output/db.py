@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, func, event
 from sqlalchemy.orm import sessionmaker, scoped_session, validates
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.engine import Connectable
@@ -19,6 +19,7 @@ import numpy as np
 from ms_peak_picker import FittedPeak as MemoryFittedPeak, PeakIndex, PeakSet
 from ms_deisotope import DeconvolutedPeak as MemoryDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_set import Envelope
+from ms_deisotope.averagine import mass_charge_ratio, neutral_mass as calc_neutral_mass
 
 from ms_deisotope.data_source.common import (
     ProcessedScan, PrecursorInformation as MemoryPrecursorInformation, ScanBunch)
@@ -58,6 +59,7 @@ class MutableList(Mutable, list):
     def __setstate__(self, state):
         self[:] = state
 
+
 Base = declarative_base()
 
 
@@ -76,7 +78,7 @@ def make_unique_name(session, model_class, name):
 
 class HasUniqueName(object):
     name = Column(String(128), default=u"", unique=True)
-    uuid = Column(String(32), index=True, unique=True)
+    uuid = Column(String(64), index=True, unique=True)
 
     @classmethod
     def make_unique_name(cls, session, name):
@@ -86,15 +88,15 @@ class HasUniqueName(object):
     def find_by_name(cls, session, name):
         return find_by_name(session, cls, name)
 
-    # @validates("name")
-    # def ensure_unique_name(self, key, name):
-    #     session = object_session(self)
-    #     if session is not None:
-    #         model_class = self.__class__
-    #         name = make_unique_name(session, model_class, name)
-    #         return name
-    #     else:
-    #         return name
+    @validates("name")
+    def ensure_unique_name(self, key, name):
+        session = object_session(self)
+        if session is not None:
+            model_class = self.__class__
+            name = make_unique_name(session, model_class, name)
+            return name
+        else:
+            return name
 
 
 class SampleRun(Base, HasUniqueName):
@@ -140,31 +142,35 @@ class MSScan(Base):
         f += ")"
         return f
 
-    def convert(self):
+    def convert(self, fitted=True, deconvoluted=True):
         precursor_information = self.precursor_information.convert() if self.precursor_information is not None else None
 
         session = object_session(self)
+        conn = session.connection()
 
-        # Faster than going through the ORM and THEN converting to pure memory objects
-        # because the ORM includes extra logic for reloading data over the course of the
-        # object's life time.
-        peak_set_items = list(
-            map(make_memory_fitted_peak, session.query(
-                FittedPeak.__table__).filter(
-                FittedPeak.__table__.c.scan_id == self.id)))
+        if fitted:
+            q = conn.execute(select([FittedPeak.__table__]).where(FittedPeak.__table__.c.scan_id == self.id)).fetchall()
 
-        # peak_set_items = [p.convert() for p in self.peak_set]
-        peak_set = PeakSet(peak_set_items)
-        peak_set._index()
-        peak_index = PeakIndex(np.array([], dtype=np.float64), np.array([], dtype=np.float64), peak_set)
+            peak_set_items = list(
+                map(make_memory_fitted_peak, q))
 
-        deconvoluted_peak_set_items = list(
-            map(make_memory_deconvoluted_peak, session.query(
-                DeconvolutedPeak.__table__).filter(
-                DeconvolutedPeak.__table__.c.scan_id == self.id)))
-        # deconvoluted_peak_set_items = [p.convert() for p in self.deconvoluted_peak_set]
-        deconvoluted_peak_set = DeconvolutedPeakSet(deconvoluted_peak_set_items)
-        deconvoluted_peak_set._reindex()
+            peak_set = PeakSet(peak_set_items)
+            peak_set._index()
+            peak_index = PeakIndex(np.array([], dtype=np.float64), np.array([], dtype=np.float64), peak_set)
+        else:
+            peak_index = PeakIndex(np.array([], dtype=np.float64), np.array([], dtype=np.float64), PeakSet([]))
+
+        if deconvoluted:
+            q = conn.execute(select([DeconvolutedPeak.__table__]).where(
+                DeconvolutedPeak.__table__.c.scan_id == self.id)).fetchall()
+
+            deconvoluted_peak_set_items = list(
+                map(make_memory_deconvoluted_peak, q))
+
+            deconvoluted_peak_set = DeconvolutedPeakSet(deconvoluted_peak_set_items)
+            deconvoluted_peak_set._reindex()
+        else:
+            deconvoluted_peak_set = DeconvolutedPeakSet([])
 
         scan = ProcessedScan(
             self.scan_id, self.title, precursor_information, self.ms_level,
@@ -202,11 +208,11 @@ class PrecursorInformation(Base):
     id = Column(Integer, primary_key=True)
     sample_run_id = Column(Integer, ForeignKey(SampleRun.id, ondelete='CASCADE'), index=True)
 
-    precursor_id = Column(Integer, ForeignKey(MSScan.id), index=True)
+    precursor_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
     precursor = relationship(MSScan, backref=backref("product_information"),
                              primaryjoin="PrecursorInformation.precursor_id == MSScan.id",
                              uselist=False)
-    product_id = Column(Integer, ForeignKey(MSScan.id), index=True)
+    product_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
     product = relationship(MSScan, backref=backref("precursor_information", uselist=False),
                            primaryjoin="PrecursorInformation.product_id == MSScan.id",
                            uselist=False)
@@ -216,13 +222,27 @@ class PrecursorInformation(Base):
     defaulted = Column(Boolean)
     orphan = Column(Boolean)
 
+    @property
+    def extracted_neutral_mass(self):
+        return self.neutral_mass
+
+    @property
+    def extracted_charge(self):
+        return self.charge
+
+    @property
+    def extracted_intensity(self):
+        return self.intensity
+
     def __repr__(self):
         return "DBPrecursorInformation({}, {}, {})".format(
             self.precursor.scan_id, self.neutral_mass, self.charge)
 
     def convert(self, data_source=None):
         return MemoryPrecursorInformation(
-            0, 0, 0, self.precursor.scan_id, data_source, self.neutral_mass, self.charge, self.intensity)
+            mass_charge_ratio(self.neutral_mass, self.charge), self.intensity, self.charge,
+            self.precursor.scan_id, data_source, self.neutral_mass, self.charge,
+            self.intensity)
 
     @classmethod
     def serialize(cls, inst, precursor, product, sample_run_id):
@@ -237,7 +257,7 @@ class PrecursorInformation(Base):
 class PeakMixin(object):
     mz = Mass()
     intensity = Column(Numeric(12, 4, asdecimal=False))
-    full_width_at_half_max = Column(Numeric(5, 4, asdecimal=False))
+    full_width_at_half_max = Column(Numeric(7, 6, asdecimal=False))
     signal_to_noise = Column(Numeric(10, 3, asdecimal=False))
     area = Column(Numeric(12, 4, asdecimal=False))
 
@@ -355,37 +375,113 @@ def serialize_scan_bunch_bulk(session, bunch, sample_run_id):
     return db_precursor, db_products
 
 
-def initialize(path):
-    eng = create_engine("sqlite:///%s" % path)
-    Base.metadata.create_all(bind=eng)
-    return eng
-
-
 def configure_connection(connection, create_tables=True):
     if isinstance(connection, basestring):
         try:
             eng = create_engine(connection)
         except exc.ArgumentError:
-            eng = create_engine("sqlite:///%s" % connection)
+            eng = SQLiteConnectionRecipe(connection)()
     elif isinstance(connection, Connectable):
         eng = connection
+    elif isinstance(connection, ConnectionRecipe):
+        eng = connection()
+    elif isinstance(connection, scoped_session):
+        eng = connection.get_bind()
+    else:
+        raise ValueError("Could not determine how to get a database connection from %r" % connection)
     if create_tables:
         Base.metadata.create_all(bind=eng)
     return eng
 
 
-class DatabaseScanSerializer(ScanSerializerBase):
+initialize = configure_connection
+
+
+class ConnectionRecipe(object):
+    def __init__(self, connection_url, connect_args=None, on_connect=None, **engine_args):
+        if connect_args is None:
+            connect_args = {}
+        if on_connect is None:
+            def on_connect(connection, connection_record):
+                pass
+
+        self.connection_url = connection_url
+        self.connect_args = connect_args
+        self.on_connect = on_connect
+        self.engine_args = engine_args
+
+    def __call__(self):
+        connection = create_engine(
+            self.connection_url, connect_args=self.connect_args,
+            **self.engine_args)
+        event.listens_for(connection, 'connect')(self.on_connect)
+        return connection
+
+
+class SQLiteConnectionRecipe(ConnectionRecipe):
+    connect_args = {
+        'timeout': 1200,
+    }
+
+    @staticmethod
+    def _configure_connection(dbapi_connection, connection_record):
+        # disable pysqlite's emitting of the BEGIN statement entirely.
+        # also stops it from emitting COMMIT before any DDL.
+        iso_level = dbapi_connection.isolation_level
+        dbapi_connection.isolation_level = None
+        try:
+            dbapi_connection.execute("PRAGMA page_size = 5120;")
+            dbapi_connection.execute("PRAGMA cache_size = 12000;")
+            dbapi_connection.execute("PRAGMA foreign_keys = ON;")
+            # dbapi_connection.execute("PRAGMA journal_mode = WAL;")
+
+        except:
+            pass
+        dbapi_connection.isolation_level = iso_level
+
+    def __init__(self, connection_url, **engine_args):
+        super(SQLiteConnectionRecipe, self).__init__(
+            self._construct_url(connection_url), self.connect_args, self._configure_connection)
+
+    def _construct_url(self, path):
+        if path.startswith("sqlite://"):
+            return path
+        else:
+            return "sqlite:///%s" % path
+
+
+class DatabaseBoundOperation(object):
+    def __init__(self, connection):
+        self.engine = self._configure_connection(connection)
+
+        self._original_connection = connection
+        self._sessionmaker = scoped_session(sessionmaker(bind=self.engine, autoflush=False))
+        self._session = None
+
+    def _configure_connection(self, connection):
+        eng = configure_connection(connection, create_tables=True)
+        return eng
+
+    def __reduce__(self):
+        return self.__class__, (self._original_connection,)
+
+    @property
+    def session(self):
+        return self._sessionmaker
+
+    def query(self, *args):
+        return self.session.query(*args)
+
+
+class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
     def __init__(self, connection, sample_name=None, overwrite=True):
         self.uuid = str(uuid4())
 
         if sample_name is None:
             sample_name = self.uuid
 
-        self.sample_name = sample_name
-        self.engine = self._configure_connection(connection)
-
-        self._sessionmaker = scoped_session(sessionmaker(bind=self.engine, autoflush=False))
-        self._session = None
+        self._sample_name = sample_name
+        DatabaseBoundOperation.__init__(self, connection)
         self._sample_run = None
         self._sample_run_id = None
 
@@ -396,7 +492,8 @@ class DatabaseScanSerializer(ScanSerializerBase):
             sample_run = self.sample_run
         except exc.IntegrityError:
             self.session.rollback()
-            sample_run = self.session.query(SampleRun).filter(SampleRun.name == self.sample_name).first()
+            sample_run = self.session.query(SampleRun).filter(
+                SampleRun.name == self.sample_name).first()
             if not sample_run.completed or overwrite:
                 self.session.delete(sample_run)
                 self.session.commit()
@@ -404,12 +501,16 @@ class DatabaseScanSerializer(ScanSerializerBase):
             else:
                 raise
 
+    def __reduce__(self):
+        return self.__class__, (self._original_connection, self.sample_name, False)
+
     def _construct_sample_run(self):
-        sr = SampleRun(uuid=self.uuid, name=self.sample_name)
+        sr = SampleRun(uuid=self.uuid, name=self._sample_name)
         self.session.add(sr)
         self.session.commit()
         self._sample_run = sr
         self._sample_run_id = sr.id
+        self._sample_name = sr.name
 
     def complete(self):
         self.sample_run.completed = True
@@ -430,12 +531,10 @@ class DatabaseScanSerializer(ScanSerializerBase):
         return self._sample_run
 
     @property
-    def session(self):
-        return self._sessionmaker
-
-    def _configure_connection(self, connection):
-        eng = configure_connection(connection, create_tables=True)
-        return eng
+    def sample_name(self):
+        if self._sample_run is None:
+            self._construct_sample_run()
+        return self._sample_name
 
     def save(self, bunch, commit=True, bulk=True):
         if bulk:
@@ -446,21 +545,17 @@ class DatabaseScanSerializer(ScanSerializerBase):
             self.session.commit()
         return out
 
-    def query(self, *args):
-        return self.session.query(*args)
-
 
 def flatten(iterable):
     return [y for x in iterable for y in x]
 
 
-class DatabaseScanDeserializer(ScanDeserializerBase):
+class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
 
     def __init__(self, connection, sample_name=None, sample_run_id=None):
 
-        self.engine = self._configure_connection(connection)
-        self._sessionmaker = scoped_session(sessionmaker(bind=self.engine, autoflush=False))
-        self._session = None
+        DatabaseBoundOperation.__init__(self, connection)
+
         self._sample_run = None
         self._sample_name = sample_name
         self._sample_run_id = sample_run_id
@@ -471,6 +566,10 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
         self._scan_id_to_retention_time_cache = dict(
             self.session.query(MSScan.scan_id, MSScan.scan_time).filter(
                 MSScan.sample_run_id == self.sample_run_id))
+
+    def __reduce__(self):
+        return self.__class__, (
+            self._original_connection, self.sample_name, self.sample_run_id)
 
     # Sample Run Bound Handle API
 
@@ -492,10 +591,6 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
             self._retrieve_sample_run()
         return self._sample_name
 
-    @property
-    def session(self):
-        return self._sessionmaker
-
     def _retrieve_sample_run(self):
         session = self.session
         if self._sample_name is not None:
@@ -508,15 +603,14 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
         self._sample_run_id = sr.id
         self._sample_name = sr.name
 
-    def _configure_connection(self, connection):
-        eng = configure_connection(connection, create_tables=False)
-        return eng
-
     # Scan Generator Public API
 
     def get_scan_by_id(self, scan_id):
         q = self._get_by_scan_id(scan_id)
-        return q.convert()
+        mem = q.convert()
+        if mem.precursor_information:
+            mem.precursor_information.source = self
+        return mem
 
     def convert_scan_id_to_retention_time(self, scan_id):
         if self._scan_id_to_retention_time_cache is None:
@@ -614,7 +708,10 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
 
     def get_scan_by_time(self, rt, require_ms1=False):
         q = self._get_scan_by_time(rt, require_ms1)
-        return q.convert()
+        mem = q.convert()
+        if mem.precursor_information:
+            mem.precursor_information.source = self
+        return mem
 
     def _get_scan_by_index(self, index):
         q = self.session.query(MSScan).filter(
@@ -622,7 +719,10 @@ class DatabaseScanDeserializer(ScanDeserializerBase):
         return q
 
     def get_scan_by_index(self, index):
-        return self._get_scan_by_index(index).convert()
+        mem = self._get_scan_by_index(index).convert()
+        if mem.precursor_information:
+            mem.precursor_information.source = self
+        return mem
 
     def _locate_ms1_scan(self, scan):
         while scan.ms_level != 1:

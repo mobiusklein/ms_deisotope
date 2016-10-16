@@ -1,4 +1,4 @@
-from ..data_source.common import Scan, ScanBunch, ProcessedScan, PrecursorInformation, ScanIteratorBase
+from ..data_source.common import Scan, ScanBunch, ProcessedScan, PrecursorInformation, ScanIterator
 
 
 class ScanSerializerBase(object):
@@ -32,4 +32,4 @@ class ScanDeserializerBase(object):
         raise NotImplementedError()
 
 
-ScanIteratorBase.register(ScanDeserializerBase)
+ScanIterator.register(ScanDeserializerBase)

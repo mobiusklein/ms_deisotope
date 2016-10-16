@@ -8,7 +8,33 @@ eps = 1e-4
 
 
 class IsotopicFitRecord(object):
+    """Describes a single isotopic pattern fit, comparing how well an
+    experimentally observed sequence of peaks matches a theoretical isotopic
+    pattern.
 
+    IsotopicFitRecord instances are hashable and orderable (by score).
+
+    Attributes
+    ----------
+    charge : int
+        The charge state used to generate the theoretical pattern
+    data : object
+        An arbitrary Python object containing extra information
+    experimental : list of FittedPeak
+        The observed experimental peaks to be fitted
+    missed_peaks : int
+        The number of peaks in the theoretical pattern that do not
+        have a matching experimental peak
+    monoisotopic_peak : FittedPeak
+        The fitted peak which corresponds to the monoisotopic peak
+    score : float
+        The score assigned to the fit by an IsotopicFitter object
+    seed_peak : FittedPeak
+        The peak that was used to initiate the fit. This may be unused
+        if not using an Averagine method
+    theoretical : list of TheoreticalPeak
+        The theoretical isotopic pattern being fitted on the experimental data
+    """
     __slots__ = ["seed_peak", "score", "charge", "experimental", "theoretical",
                  "monoisotopic_peak", "data", "missed_peaks"]
 
@@ -68,6 +94,15 @@ class IsotopicFitRecord(object):
 
 
 class FitSelectorBase(Base):
+    """An object that controls the filtering and
+    selection of IsotopicFitRecord
+
+    Attributes
+    ----------
+    minimum_score : int
+        The minimum score needed to be a candidate for selection. If the
+        FitSelector is `minimizing` it is the maximal score to be a candidate.
+    """
     minimum_score = 0
 
     def __init__(self, minimum_score=0):
@@ -87,25 +122,87 @@ class FitSelectorBase(Base):
 
 
 class MinimizeFitSelector(FitSelectorBase):
+    """A FitSelector which tries to minimize the score of the best fit.
+    """
     def best(self, results):
+        """Returns the IsotopicFitRecord with the smallest score
+        
+        Parameters
+        ----------
+        results : list of IsotopicFitRecord
+            List of isotopic fits to select the most optimal case from
+        
+        Returns
+        -------
+        IsotopicFitRecord
+            The most optimal fit
+        """
         return min(results, key=operator.attrgetter("score"))
 
     def reject(self, fit):
+        """Decide whether the fit should be discarded for having too
+        large a score. Compares against :attr:`minimum_score`
+        
+        Parameters
+        ----------
+        fit : IsotopicFitRecord
+        
+        Returns
+        -------
+        bool
+        """
         return fit.score > self.minimum_score
 
     def is_maximizing(self):
+        """Returns that this is *not* a maximizing selector
+
+        Returns
+        -------
+        False
+        """
         return False
 
 
 class MaximizeFitSelector(FitSelectorBase):
+    """A FitSelector which tries to maximize the score of the best fit.
+    """
     def best(self, results):
+        """Returns the IsotopicFitRecord with the largest score
+        
+        Parameters
+        ----------
+        results : list of IsotopicFitRecord
+            List of isotopic fits to select the most optimal case from
+        
+        Returns
+        -------
+        IsotopicFitRecord
+            The most optimal fit
+        """
         return max(results, key=operator.attrgetter("score"))
 
     def reject(self, fit):
+        """Decide whether the fit should be discarded for having too
+        small a score. Compares against :attr:`minimum_score`
+        
+        Parameters
+        ----------
+        fit : IsotopicFitRecord
+        
+        Returns
+        -------
+        bool
+        """
         return fit.score < self.minimum_score
 
     def is_maximizing(self):
-        return False
+        """Returns that this *is* a maximizing selector
+
+        Returns
+        -------
+        False
+        """
+        return True
 
 
 class IsotopicFitterBase(Base):
@@ -133,6 +230,7 @@ class IsotopicFitterBase(Base):
 
 
 class GTestFitter(IsotopicFitterBase):
+
     def evaluate(self, peaklist, observed, expected, **kwargs):
         g_score = 2 * sum([obs.intensity * np.log(
             obs.intensity / theo.intensity) for obs, theo in zip(observed, expected)])
@@ -143,12 +241,15 @@ g_test = GTestFitter()
 
 
 class ScaledGTestFitter(IsotopicFitterBase):
+
     def evaluate(self, peaklist, observed, expected, **kwargs):
         total_observed = sum(p.intensity for p in observed)
         total_expected = sum(p.intensity for p in expected)
         total_expected += eps
-        normalized_observed = [obs.intensity / total_observed for obs in observed]
-        normalized_expected = [theo.intensity / total_expected for theo in expected]
+        normalized_observed = [obs.intensity /
+                               total_observed for obs in observed]
+        normalized_expected = [theo.intensity /
+                               total_expected for theo in expected]
         g_score = 2 * sum([obs * np.log(obs / theo) for obs, theo in zip(
             normalized_observed, normalized_expected)])
         return g_score
@@ -158,6 +259,7 @@ g_test_scaled = ScaledGTestFitter()
 
 
 class ChiSquareFitter(IsotopicFitterBase):
+
     def evaluate(self, peaklist, observed, expected, **kwargs):
         score = sum([(obs.intensity - theo.intensity)**2 / theo.intensity
                      for obs, theo in zip(observed, expected)])
@@ -168,6 +270,7 @@ chi_sqr_test = ChiSquareFitter()
 
 
 class LeastSquaresFitter(IsotopicFitterBase):
+
     def evaluate(self, peaklist, observed, expected, **kwargs):
         exp_max = max(p.intensity for p in observed)
         theo_max = max(p.intensity for p in expected)
@@ -187,6 +290,7 @@ least_squares = LeastSquaresFitter()
 
 
 class MSDeconVFitter(IsotopicFitterBase):
+
     def __init__(self, minimum_score=10):
         self.select = MaximizeFitSelector()
         self.select.minimum_score = minimum_score
@@ -218,9 +322,11 @@ class MSDeconVFitter(IsotopicFitterBase):
             mass_accuracy = 0
 
         if obs.intensity < theo.intensity and (((theo.intensity - obs.intensity) / obs.intensity) <= 1):
-            abundance_diff = 1 - ((theo.intensity - obs.intensity) / obs.intensity)
+            abundance_diff = 1 - \
+                ((theo.intensity - obs.intensity) / obs.intensity)
         elif obs.intensity >= theo.intensity and (((obs.intensity - theo.intensity) / obs.intensity) <= 1):
-            abundance_diff = np.sqrt(1 - ((obs.intensity - theo.intensity) / obs.intensity))
+            abundance_diff = np.sqrt(
+                1 - ((obs.intensity - theo.intensity) / obs.intensity))
         else:
             abundance_diff = 0.
         score = np.sqrt(theo.intensity) * mass_accuracy * abundance_diff
@@ -235,6 +341,7 @@ class MSDeconVFitter(IsotopicFitterBase):
 
 
 class PenalizedMSDeconVFitter(IsotopicFitterBase):
+
     def __init__(self, minimum_score=10, penalty_factor=1.):
         self.select = MaximizeFitSelector(minimum_score)
         self.msdeconv = MSDeconVFitter()
@@ -242,7 +349,8 @@ class PenalizedMSDeconVFitter(IsotopicFitterBase):
         self.penalty_factor = penalty_factor
 
     def evaluate(self, peaklist, observed, expected, mass_error_tolerance=0.02, **kwargs):
-        score = self.msdeconv.evaluate(observed, expected, mass_error_tolerance)
+        score = self.msdeconv.evaluate(
+            observed, expected, mass_error_tolerance)
         penalty = self.penalizer.evaluate(observed, expected)
         return score * (1 - penalty * self.penalty_factor)
 
@@ -258,6 +366,7 @@ def decon2ls_chisqr_test(peaklist, observed, expected, **kwargs):
 
 
 class InterferenceDetection(object):
+
     def __init__(self, peaklist):
         self.peaklist = peaklist
 
@@ -333,6 +442,7 @@ distinct_pattern_fitter = DistinctPatternFitter()
 
 
 class MassShiftSupportPostProcessorBase(object):
+
     def __init__(self, shifts=None):
         if shifts is None:
             shifts = []

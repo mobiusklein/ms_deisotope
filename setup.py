@@ -38,6 +38,8 @@ except ImportError:
         Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.c"],
                   include_dirs=[brainpy.get_include()]),
         Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.c"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+        Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()])
     ])
 

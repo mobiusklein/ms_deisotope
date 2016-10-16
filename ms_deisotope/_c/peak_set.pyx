@@ -1,3 +1,5 @@
+# cython: embedsignature=True
+
 import operator
 
 cimport cython
@@ -20,7 +22,7 @@ neutral_mass_getter = operator.attrgetter("neutral_mass")
 mz_getter = operator.attrgetter('mz')
 
 
-@cython.freelist(1000)
+@cython.freelist(100000)
 cdef class _Index(object):
     """
     Stores the ordered index of an object under sort by `mz` and
@@ -47,7 +49,7 @@ cdef class _Index(object):
         return _Index, (self.neutral_mass, self.mz)
 
 
-@cython.freelist(10000)
+@cython.freelist(1000000)
 cdef class EnvelopePair:
 
     def __init__(self, mz, intensity):
@@ -70,7 +72,7 @@ cdef class EnvelopePair:
         return EnvelopePair, (self.mz, self.intensity,)
 
 
-@cython.freelist(1000)
+@cython.freelist(100000)
 cdef class Envelope(object):
     """
     Represents a sequence of (mz, intensity) pairs which store peak positions
@@ -103,8 +105,41 @@ cdef class Envelope(object):
         return Envelope, (self.pairs,)
 
 
-@cython.freelist(1000)
+@cython.freelist(100000)
 cdef class DeconvolutedPeak:
+    """
+    Represent a single deconvoluted peak which represents an aggregated isotopic
+    pattern collapsed to its monoisotopic peak, with a known charge state
+
+    Attributes
+    ----------
+    a_to_a2_ratio : float
+        Ratio of intensities of A peak to A+2 peak
+    average_mass : float
+        The averaged neutral mass of the composition, the weighted average
+        of the envelope peaks.
+    charge : int
+        The signed charge state of the isotopic pattern
+    envelope : Envelope
+        The sequence of (mz, intensity) pairs which map to this peak
+    full_width_at_half_max : float
+        The averaged full width at half max of this isotopic pattern
+    index : _Index
+        The position of this peak in different orderings
+    intensity : float
+        The summed height of the peaks in the isotopic pattern this peak captures
+    most_abundant_mass : float
+        The neutral mass of the most abundant peak in the isotopic pattern this peak captures
+    mz : float
+        The mass-charge-ratio of the monoisotopic peak
+    neutral_mass : float
+        The neutral mass of the monoisotopic peak
+    score : float
+        An assigned value describing the quality of this peak's fit. The semantics of this score
+        depends upon the scoring function
+    signal_to_noise : float
+        The average signal-to-noise ratio of the peaks in the isotopic pattern this peak captures
+    """
     def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
                  a_to_a2_ratio=None, most_abundant_mass=None, average_mass=None, score=None,
                  envelope=None, mz=None, fit=None, chosen_for_msms=False, area=0):
@@ -174,6 +209,18 @@ cdef class DeconvolutedPeak:
 
 
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
+    """
+    Extends :class:`DeconvolutedPeak` to also include a reference to
+    the :class:`IsotopicFitRecord` instance it is derived from, and optionally an
+    object which the fit derives from.
+
+    Attributes
+    ----------
+    fit : IsotpicFitRecord
+        The isotopic pattern fit used to construct this peak
+    solution : object
+        Representation of the "source" of the isotopic fit
+    """
     def __init__(self, solution, fit, *args, **kwargs):
         self.solution = solution
         self.fit = fit
@@ -200,7 +247,16 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
 
 
 cdef class DeconvolutedPeakSet:
+    """
+    Represents a collection of :class:`DeconvolutedPeak` instances under multiple orderings.
 
+    Attributes
+    ----------
+    peaks : tuple of DeconvolutedPeak
+        Collection of peaks ordered by `neutral_mass`
+    _mz_ordered: tuple of DeconvolutedPeak
+        Collection of peaks ordered by `mz`
+    """
     def __init__(self, peaks):
         self.peaks = tuple(peaks)
         self._mz_ordered = None
@@ -265,6 +321,19 @@ cdef class DeconvolutedPeakSet:
 
     cdef DeconvolutedPeak getitem(self, size_t i):
         return <DeconvolutedPeak>PyTuple_GET_ITEM(self.peaks, i)
+
+    def all_peaks_for(self, neutral_mass, tolerance=1e-5):
+        lo = neutral_mass - neutral_mass * tolerance
+        hi = neutral_mass + neutral_mass * tolerance
+        lo_peak, lo_err = self.get_nearest_peak(lo)
+        hi_peak, hi_err = self.get_nearest_peak(hi)
+        lo_ix = lo_peak.index.neutral_mass
+        if abs(ppm_error(lo_peak.neutral_mass, neutral_mass)) > tolerance:
+            lo_ix += 1
+        hi_ix = hi_peak.index.neutral_mass + 1
+        if abs(ppm_error(hi_peak.neutral_mass, neutral_mass)) > tolerance:
+            hi_ix -= 1
+        return self[lo_ix:hi_ix]
 
     def get_nearest_peak(self, double neutral_mass):
         cdef:
@@ -441,6 +510,7 @@ cdef DeconvolutedPeak _sweep_nearest_match_neutral_mass(tuple array, double valu
             best_index = i
     errout[0] = best_error
     return array[best_index]
+
 
 cdef DeconvolutedPeak binary_search_nearest_neutral_mass(tuple peak_set, double neutral_mass, double* errout):
     cdef:

@@ -1,6 +1,9 @@
 from pyteomics import mzml
-from .common import PrecursorInformation, ScanIteratorBase, ScanDataSourceBase, ChargeNotProvided
+from .common import (
+    PrecursorInformation, ScanIterator, ScanDataSource, ChargeNotProvided,
+    ScanBunch)
 from weakref import WeakValueDictionary
+from lxml.etree import XMLSyntaxError
 
 
 def _yield_from_index(self, start=None):
@@ -19,14 +22,17 @@ def _yield_from_index(self, start=None):
         yield self.get_by_id(key)
 
 
-class MzMLDataInterface(ScanDataSourceBase):
-    def scan_arrays(self, scan):
+class MzMLDataInterface(ScanDataSource):
+    """Provides implementations of all of the methods needed to implement the
+    :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.
+    """
+    def _scan_arrays(self, scan):
         try:
             return scan['m/z array'], scan["intensity array"]
         except KeyError:
             return mzml.np.array([]), mzml.np.array([])
 
-    def precursor_information(self, scan):
+    def _precursor_information(self, scan):
         pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
         precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
         pinfo = PrecursorInformation(
@@ -37,32 +43,32 @@ class MzMLDataInterface(ScanDataSourceBase):
             source=self)
         return pinfo
 
-    def scan_title(self, scan):
+    def _scan_title(self, scan):
         return scan["spectrum title"]
 
-    def scan_id(self, scan):
+    def _scan_id(self, scan):
         return scan["id"]
 
-    def scan_index(self, scan):
+    def _scan_index(self, scan):
         return scan['index']
 
-    def ms_level(self, scan):
+    def _ms_level(self, scan):
         return scan['ms level']
 
-    def scan_time(self, scan):
+    def _scan_time(self, scan):
         return scan['scanList']['scan'][0]['scan start time']
 
-    def is_profile(self, scan):
+    def _is_profile(self, scan):
         return "profile spectrum" in scan
 
-    def polarity(self, scan):
+    def _polarity(self, scan):
         if "positive scan" in scan:
             return 1
         elif "negative scan" in scan:
             return -1
 
 
-class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
+class MzMLLoader(MzMLDataInterface, ScanIterator):
 
     __data_interface__ = MzMLDataInterface
 
@@ -79,6 +85,10 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
     @property
     def index(self):
         return self._source._offset_index
+
+    @property
+    def source(self):
+        return self._source
 
     def reset(self):
         self._make_iterator(None)
@@ -112,23 +122,42 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
             elif scan['ms level'] == 1:
                 if current_level > 1:
                     precursor_scan.product_scans = list(product_scans)
-                    yield precursor_scan, product_scans
+                    yield ScanBunch(precursor_scan, product_scans)
                 else:
                     if precursor_scan is not None:
                         precursor_scan.product_scans = list(product_scans)
-                        yield precursor_scan, product_scans
+                        yield ScanBunch(precursor_scan, product_scans)
                 precursor_scan = packed
                 product_scans = []
             else:
                 raise Exception("This library is not able to handle MS levels higher than 2")
 
     def next(self):
-        return self._producer.next()
+        try:
+            return self._producer.next()
+        except XMLSyntaxError:
+            raise StopIteration(
+                "This iterator may need to be reset to continue using it after"
+                " using a random-access function like `get_by_id`")
 
     def __next__(self):
         return self.next()
 
     def get_scan_by_id(self, scan_id):
+        """Retrieve the scan object for the specified scan id. If the
+        scan object is still bound and in memory somewhere, a reference
+        to that same object will be returned. Otherwise, a new object will
+        be created.
+
+        Parameters
+        ----------
+        scan_id : str
+            The unique scan id value to be retrieved
+
+        Returns
+        -------
+        Scan
+        """
         try:
             return self._scan_cache[scan_id]
         except KeyError:
@@ -144,6 +173,10 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
             mid = (hi + lo) / 2
             sid = scan_ids[mid]
             scan = self.get_scan_by_id(sid)
+            if not self._validate(scan._data):
+                sid = scan_ids[mid - 1]
+                scan = self.get_scan_by_id(sid)
+
             scan_time = scan.scan_time
             if scan_time == time:
                 return scan
@@ -153,8 +186,12 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
                 hi = mid
             else:
                 lo = mid
+        if hi == 0 and not self._use_index:
+            raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
 
     def get_scan_by_index(self, index):
+        if not self._use_index:
+            raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
         return self.get_scan_by_id(tuple(self.index)[index])
 
     def _locate_ms1_scan(self, scan):
@@ -171,13 +208,16 @@ class MzMLLoader(MzMLDataInterface, ScanIteratorBase):
             elif index is not None:
                 scan = self.get_scan_by_index(index)
 
-            # We must start at an MS1 scan, so backtrack until we reach one
-            if require_ms1:
-                scan = self._locate_ms1_scan(scan)
+            scan_id = scan.id
+
+        # We must start at an MS1 scan, so backtrack until we reach one
+        if require_ms1:
+            scan = self._locate_ms1_scan(scan)
             scan_id = scan.id
 
         iterator = _yield_from_index(self._source, scan_id)
         self._make_iterator(iterator)
+        return self
 
 
 PyteomicsMzMLLoader = MzMLLoader
