@@ -766,3 +766,8 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
                 DeconvolutedPeak.neutral_mass > threshold
             ).order_by(MSScan.index).yield_per(1000)]
         return accumulate
+
+    def precursor_information(self):
+        prec_info = self.session.query(PrecursorInformation).filter(
+            PrecursorInformation.sample_run_id == self.sample_run_id).all()
+        return prec_info

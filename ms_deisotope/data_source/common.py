@@ -195,7 +195,7 @@ class Scan(object):
         return iter(self.peak_set)
 
     def has_peak(self, *args, **kwargs):
-        """A wrapper around :meth:`ms_pPeakIndex.has_peak` to query the
+        """A wrapper around :meth:`ms_peak_picker.PeakIndex.has_peak` to query the
         :class:`ms_peak_picker.FittedPeak` objects picked for this scan. If
         peaks have not yet been picked (e.g. :meth:`pick_peaks` has not been called)
         this method will return `None`
