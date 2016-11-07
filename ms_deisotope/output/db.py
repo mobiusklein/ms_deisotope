@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, select, func, event
 from sqlalchemy.orm import sessionmaker, scoped_session, validates
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.engine import Connectable
+from sqlalchemy.pool import QueuePool
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
@@ -218,7 +219,7 @@ class PrecursorInformation(Base):
                            uselist=False)
     neutral_mass = Mass()
     charge = Column(Integer)
-    intensity = Column(Numeric(12, 4, asdecimal=False))
+    intensity = Column(Numeric(16, 4, asdecimal=False))
     defaulted = Column(Boolean)
     orphan = Column(Boolean)
 
@@ -256,7 +257,7 @@ class PrecursorInformation(Base):
 
 class PeakMixin(object):
     mz = Mass()
-    intensity = Column(Numeric(12, 4, asdecimal=False))
+    intensity = Column(Numeric(16, 4, asdecimal=False))
     full_width_at_half_max = Column(Numeric(7, 6, asdecimal=False))
     signal_to_noise = Column(Numeric(10, 3, asdecimal=False))
     area = Column(Numeric(12, 4, asdecimal=False))
@@ -420,7 +421,7 @@ class ConnectionRecipe(object):
 
 class SQLiteConnectionRecipe(ConnectionRecipe):
     connect_args = {
-        'timeout': 1200,
+        'timeout': 15,
     }
 
     @staticmethod

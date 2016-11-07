@@ -207,8 +207,12 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
                 scan = self.get_scan_by_time(rt)
             elif index is not None:
                 scan = self.get_scan_by_index(index)
+            else:
+                raise ValueError("Must provide a scan locator, one of (scan_id, rt, index)")
 
             scan_id = scan.id
+        else:
+            scan = self.get_scan_by_id(scan_id)
 
         # We must start at an MS1 scan, so backtrack until we reach one
         if require_ms1:
