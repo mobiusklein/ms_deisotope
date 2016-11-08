@@ -124,8 +124,9 @@ def run_setup(include_cext=True):
                 'Development Status :: 3 - Alpha',
                 'Intended Audience :: Science/Research',
                 'License :: OSI Approved :: BSD License',
-                'Topic :: Scientific/Engineering :: Bio-Informatics']
-    )
+                'Topic :: Scientific/Engineering :: Bio-Informatics'],
+        zip_safe=False)
+
 
 try:
     run_setup(True)

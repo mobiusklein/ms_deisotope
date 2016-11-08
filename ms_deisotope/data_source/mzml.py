@@ -130,7 +130,7 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
                 precursor_scan = packed
                 product_scans = []
             else:
-                raise Exception("This library is not able to handle MS levels higher than 2")
+                raise Exception("This object is not able to handle MS levels higher than 2")
 
     def next(self):
         try:
