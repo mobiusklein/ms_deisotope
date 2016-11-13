@@ -1671,6 +1671,7 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
             if len(rep_eid) == 1 and fit.charge > 1:
                 continue
             if not self.scorer.reject(fit):
+                print(composition, charge, fit)
                 self.peak_dependency_network.add_fit_dependence(fit)
 
     def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=1,
