@@ -98,6 +98,9 @@ cdef class Envelope(object):
     def __repr__(self):
         return "[%s]" % (', '.join("(%0.4f, %0.2f)" % tuple(t) for t in self))
 
+    def __len__(self):
+        return len(self.pairs)
+
     def clone(self):
         return self.__class__(self)
 

@@ -12,7 +12,7 @@ class FitNode(SpanningMixin):
         self.fit = fit
         self.edges = set()
         self.overlap_edges = set()
-        self.peak_indices = {p.index for p in fit.experimental if p.index > 0}
+        self.peak_indices = {p.peak_count for p in fit.experimental if p.peak_count > 0}
         self._hash = None
         self.score = fit.score
         self.start = fit.experimental[0].mz

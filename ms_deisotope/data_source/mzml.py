@@ -137,7 +137,7 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
             return self._producer.next()
         except XMLSyntaxError:
             raise StopIteration(
-                "This iterator may need to be reset to continue using it after"
+                "This iterator may need to be reset by calling `reset` to continue using it after"
                 " using a random-access function like `get_by_id`")
 
     def __next__(self):

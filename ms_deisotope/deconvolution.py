@@ -1075,8 +1075,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     """
     def __init__(self, peaklist, *args, **kwargs):
         max_missed_peaks = kwargs.pop("max_missed_peaks", 1)
-        super(PeakDependenceGraphDeconvoluterBase, self).__init__(
-            peaklist=peaklist, *args, **kwargs)
+        ExhaustivePeakSearchDeconvoluterBase.__init__(self)
         self.peak_dependency_network = PeakDependenceGraph(
             self.peaklist, maximize=self.scorer.is_maximizing())
         self.max_missed_peaks = max_missed_peaks
@@ -1135,6 +1134,14 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             peak, error_tolerance=error_tolerance, charge_range=charge_range, left_search_limit=left_search_limit,
             right_search_limit=right_search_limit,
             use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier, truncate_after=truncate_after)
+
+        hold = set()
+        for fit in results:
+            if fit.charge > 1 and len(drop_placeholders(fit.experimental)) == 1:
+                continue
+            hold.add(fit)
+
+        results = hold
 
         n = len(results)
         stop = max(min(n / 2, 100), 10)
@@ -1507,7 +1514,7 @@ class CompositionListDeconvoluterBase(object):
 
                 reference_peak = first_peak(eid)
                 rep_eid = drop_placeholders(eid)
-                if len(rep_eid) < 2 or len(rep_eid) < len(tid) / 2.:
+                if len(rep_eid) < 2 or len(rep_eid) < len(tid) / 2. or len(rep_eid) == 1 and fit.charge > 1:
                     continue
                 peak = DeconvolutedPeakSolution(
                     composition, fit,
@@ -1585,6 +1592,9 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                 truncate_after=truncate_after, mass_shift=mass_shift)
             if fit is None:
                 continue
+            rep_eid = drop_placeholders(fit.experimental)
+            if len(rep_eid) == 1 and fit.charge > 1:
+                continue
             if not self.scorer.reject(fit):
                 self.peak_dependency_network.add_fit_dependence(fit)
 
@@ -1655,23 +1665,30 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
             fit = self.fit_composition_at_charge(
                 composition, charge, error_tolerance, charge_carrier=charge_carrier,
                 truncate_after=truncate_after, mass_shift=mass_shift)
-
+            if fit is None:
+                continue
+            rep_eid = drop_placeholders(fit.experimental)
+            if len(rep_eid) == 1 and fit.charge > 1:
+                continue
             if not self.scorer.reject(fit):
                 self.peak_dependency_network.add_fit_dependence(fit)
 
     def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, use_charge_state_hint=False, charge_carrier=PROTON,
                        truncate_after=0.8, mass_shift=None):
-
         for composition in self.composition_list:
             self.deconvolute_composition(
-                composition, error_tolerance, charge_range,
+                composition, error_tolerance, charge_range=charge_range,
                 truncate_after=truncate_after, charge_carrier=charge_carrier,
                 mass_shift=mass_shift)
 
         AveraginePeakDependenceGraphDeconvoluter.populate_graph(
-            self, error_tolerance, charge_range, left_search_limit, right_search_limit, use_charge_state_hint,
-            charge_carrier, truncate_after=truncate_after)
+            self, error_tolerance,
+            charge_range=charge_range,
+            left_search_limit=left_search_limit,
+            right_search_limit=right_search_limit,
+            use_charge_state_hint=use_charge_state_hint,
+            charge_carrier=charge_carrier, truncate_after=truncate_after)
 
 
 def deconvolute_peaks(peaklist, deconvoluter_type=AveraginePeakDependenceGraphDeconvoluter,
