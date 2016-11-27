@@ -1671,7 +1671,7 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
             if len(rep_eid) == 1 and fit.charge > 1:
                 continue
             if not self.scorer.reject(fit):
-                print(composition, charge, fit)
+                fit.data = (composition, charge)
                 self.peak_dependency_network.add_fit_dependence(fit)
 
     def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=1,
@@ -1682,7 +1682,6 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
                 composition, error_tolerance, charge_range=charge_range,
                 truncate_after=truncate_after, charge_carrier=charge_carrier,
                 mass_shift=mass_shift)
-
         AveraginePeakDependenceGraphDeconvoluter.populate_graph(
             self, error_tolerance,
             charge_range=charge_range,
@@ -1690,6 +1689,10 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
             right_search_limit=right_search_limit,
             use_charge_state_hint=use_charge_state_hint,
             charge_carrier=charge_carrier, truncate_after=truncate_after)
+
+    def subtraction(self, isotopic_cluster, error_tolerance):
+        super(HybridAveragineCompositionListPeakDependenceGraphDeconvoluter, self).subtraction(
+            isotopic_cluster, error_tolerance)
 
 
 def deconvolute_peaks(peaklist, deconvoluter_type=AveraginePeakDependenceGraphDeconvoluter,

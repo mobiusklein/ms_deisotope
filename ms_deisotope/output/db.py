@@ -126,8 +126,8 @@ class MSScan(Base):
     index = Column(Integer, index=True)
     ms_level = Column(Integer)
     scan_time = Column(Numeric(10, 5, asdecimal=False), index=True)
-    title = Column(String(128), index=True)
-    scan_id = Column(String(128), index=True)
+    title = Column(String(256))
+    scan_id = Column(String(256), index=True)
     sample_run_id = Column(Integer, ForeignKey(SampleRun.id, ondelete='CASCADE'), index=True)
 
     peak_set = relationship("FittedPeak", backref="scan", lazy="dynamic")
@@ -472,6 +472,24 @@ class DatabaseBoundOperation(object):
 
     def query(self, *args):
         return self.session.query(*args)
+
+    def _analyze_database(self):
+        conn = self.engine.connect()
+        inner = conn.connection.connection
+        cur = inner.cursor()
+        cur.execute("analyze;")
+
+    def _sqlite_reload_analysis_plan(self):
+        conn = self.engine.connect()
+        conn.execute("ANALYZE sqlite_master;")
+
+    @property
+    def dialect(self):
+        return self.engine.dialect
+
+    def is_sqlite(self):
+        return self.dialect.name == "sqlite"
+
 
 
 class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):

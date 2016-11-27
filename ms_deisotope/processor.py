@@ -260,9 +260,16 @@ class ScanProcessor(Base):
         logger.info("Deconvoluting Precursor Scan %r", precursor_scan)
         logger.info("Priorities: %r", priorities)
 
+        ms1_deconvolution_args = self.ms1_deconvolution_args.copy()
+
+        if precursor_scan.polarity in (1, -1):
+            polarity = precursor_scan.polarity
+            ms1_deconvolution_args['charge_range'] = tuple(
+                polarity * abs(c) for c in ms1_deconvolution_args['charge_range'])
+
         dec_peaks, priority_results = deconvolute_peaks(
             precursor_scan.peak_set, priority_list=priorities,
-            **self.ms1_deconvolution_args)
+            **ms1_deconvolution_args)
 
         for pr in priority_results:
             if pr is None:
@@ -321,6 +328,12 @@ class ScanProcessor(Base):
             charge_range[1] = top_charge_state
 
         deconargs["charge_range"] = charge_range
+
+        if product_scan.polarity in (-1, 1):
+            polarity = product_scan.polarity
+            deconargs["charge_range"] = [
+                polarity * abs(c) for c in deconargs["charge_range"]]
+
 
         dec_peaks, _ = deconvolute_peaks(product_scan.peak_set, **deconargs)
         product_scan.deconvoluted_peak_set = dec_peaks

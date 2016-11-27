@@ -3,7 +3,7 @@ import abc
 
 from ms_peak_picker import pick_peaks
 from ..averagine import neutral_mass, mass_charge_ratio
-from ..utils import Constant
+from ..utils import Constant, add_metaclass
 
 ScanBunch = namedtuple("ScanBunch", ["precursor", "products"])
 
@@ -28,8 +28,8 @@ ChargeNotProvided = Constant("ChargeNotProvided")
 IsolationWindowNotProvided = Constant("IsolationWindowNotProvided")
 
 
+@add_metaclass(abc.ABCMeta)
 class ScanDataSource(object):
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def _scan_arrays(self, scan):
@@ -64,8 +64,8 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
 
+@add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def next(self):
