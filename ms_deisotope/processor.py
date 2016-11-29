@@ -146,7 +146,9 @@ class ScanProcessor(Base):
         self.ms1_peak_picking_args = ms1_peak_picking_args or {}
         self.msn_peak_picking_args = msn_peak_picking_args or ms1_peak_picking_args or {}
         self.ms1_deconvolution_args = ms1_deconvolution_args or {}
+        self.ms1_deconvolution_args.setdefault("charge_range", (1, 8))
         self.msn_deconvolution_args = msn_deconvolution_args or {}
+        self.msn_deconvolution_args.setdefault("charge_range", (1, 8))
         self.pick_only_tandem_envelopes = pick_only_tandem_envelopes
         self.precursor_selection_window = precursor_selection_window
         self.trust_charge_hint = trust_charge_hint
