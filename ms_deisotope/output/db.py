@@ -645,12 +645,16 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
             self._scan_id_to_retention_time_cache[scan_id] = q
             return q
 
-    def _iterate_over_index(self, start=0, require_ms1=True):
+    def _select_index(self, require_ms1=True):
         indices_q = self.session.query(MSScan.index).filter(
-            MSScan.sample_run_id == self.sample_run_id)
+            MSScan.sample_run_id == self.sample_run_id).order_by(MSScan.index.asc())
         if require_ms1:
             indices_q = indices_q.filter(MSScan.ms_level == 1)
         indices = flatten(indices_q.all())
+        return indices
+
+    def _iterate_over_index(self, start=0, require_ms1=True):
+        indices = self._select_index(require_ms1)
         try:
             i = indices.index(start)
         except ValueError:
@@ -672,8 +676,8 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
                     lo = mid
         items = indices[i:]
         i = 0
-
-        while i < len(items):
+        n = len(items)
+        while i < n:
             index = items[i]
             scan = self.session.query(MSScan).filter(
                 MSScan.index == index,
@@ -697,7 +701,7 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
 
     def _get_scan_by_time(self, rt, require_ms1=False):
         times_q = self.session.query(MSScan.scan_time).filter(
-            MSScan.sample_run_id == self.sample_run_id)
+            MSScan.sample_run_id == self.sample_run_id).order_by(MSScan.scan_time.asc())
         if require_ms1:
             times_q = times_q.filter(MSScan.ms_level == 1)
         times = flatten(times_q.all())
@@ -764,6 +768,7 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
         if require_ms1:
             scan = self._locate_ms1_scan(scan)
         self._iterator = self._iterate_over_index(scan.index)
+        return self
 
     # LC-MS/MS Database API
 
