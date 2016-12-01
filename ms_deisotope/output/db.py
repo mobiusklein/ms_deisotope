@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from sqlalchemy import create_engine, select, func, event
-from sqlalchemy.orm import sessionmaker, scoped_session, validates
+from sqlalchemy.orm import sessionmaker, scoped_session, validates, deferred
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.engine import Connectable
 from sqlalchemy.pool import QueuePool
@@ -11,7 +11,7 @@ from sqlalchemy import (
     Column, Numeric, Integer, String, ForeignKey, PickleType,
     Boolean)
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.ext.mutable import Mutable, MutableDict
 
 from sqlalchemy import exc
 
@@ -126,13 +126,15 @@ class MSScan(Base):
     index = Column(Integer, index=True)
     ms_level = Column(Integer)
     scan_time = Column(Numeric(10, 5, asdecimal=False), index=True)
-    title = Column(String(256))
-    scan_id = Column(String(256), index=True)
+    title = Column(String(512))
+    scan_id = Column(String(512), index=True)
     sample_run_id = Column(Integer, ForeignKey(SampleRun.id, ondelete='CASCADE'), index=True)
 
     peak_set = relationship("FittedPeak", backref="scan", lazy="dynamic")
     deconvoluted_peak_set = relationship(
         "DeconvolutedPeak", backref='scan', lazy='dynamic')
+
+    info = deferred(Column(MutableDict.as_mutable(PickleType)))
 
     def __repr__(self):
         f = "{}({}, {}, {}, {}".format(
@@ -435,6 +437,8 @@ class SQLiteConnectionRecipe(ConnectionRecipe):
             dbapi_connection.execute("PRAGMA cache_size = 12000;")
             dbapi_connection.execute("PRAGMA foreign_keys = ON;")
             dbapi_connection.execute("PRAGMA journal_mode = WAL;")
+            dbapi_connection.execute("PRAGMA wal_autocheckpoint = 100;")
+            dbapi_connection.execute("PRAGMA wal_checkpoint;")
 
         except:
             pass
@@ -489,7 +493,6 @@ class DatabaseBoundOperation(object):
 
     def is_sqlite(self):
         return self.dialect.name == "sqlite"
-
 
 
 class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
