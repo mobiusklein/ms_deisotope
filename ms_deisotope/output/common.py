@@ -11,6 +11,9 @@ class ScanSerializerBase(object):
     def save(self, bunch, **kwargs):
         self.save_scan_bunch(bunch, **kwargs)
 
+    def complete(self):
+        pass
+
 
 class ScanDeserializerBase(object):
     def __init__(self, *args, **kwargs):

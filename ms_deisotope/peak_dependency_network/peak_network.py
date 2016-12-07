@@ -1,4 +1,5 @@
 import operator
+import warnings
 from collections import defaultdict
 
 from .subgraph import ConnectedSubgraph
@@ -241,9 +242,9 @@ class PeakDependenceGraph(object):
 
         common = tuple(set(best_fits) & set(peak_node.links))
 
-        if len(common) > 1:
-            raise ValueError("Too many solutions exist for %r" % peak)
-        elif len(common) == 0:
+        if len(common) > 1 or len(common) == 0:
+            if len(common) > 1:
+                warnings.warn("Too many solutions exist for %r" % peak)
             # If there were no fits for this peak, then it may be that this peak
             # was not included in a fit. Try to find the nearest solution.
             i = 0

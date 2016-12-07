@@ -131,6 +131,8 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
                 product_scans = []
             else:
                 raise Exception("This object is not able to handle MS levels higher than 2")
+        if precursor_scan is not None:
+            yield ScanBunch(precursor_scan, product_scans)
 
     def next(self):
         try:

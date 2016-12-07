@@ -16,7 +16,7 @@ def encode_array(array, compression=COMPRESSION_NONE, dtype=np.float32):
         bytestring = zlib.compress(bytestring)
     else:
         raise ValueError("Unknown compression: %s" % compression)
-    encoded_string = base64.encodestring(bytestring)
+    encoded_string = base64.standard_b64encode(bytestring)
     return encoded_string
 
 
