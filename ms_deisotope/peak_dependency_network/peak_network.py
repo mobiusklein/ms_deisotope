@@ -197,6 +197,10 @@ class PeakDependenceGraph(object):
     def interval_tree(self):
         if self._interval_tree is None:
             self._interval_tree = IntervalTreeNode.build(self.clusters)
+            if self._interval_tree is None:
+                raise ValueError(
+                    "Could not build intervals for peak retrieval with %d clusters" % len(
+                        self.clusters))
         return self._interval_tree
 
     def _deep_fuzzy_solution_for(self, peak, shift=0.5):
@@ -229,7 +233,12 @@ class PeakDependenceGraph(object):
     def find_solution_for(self, peak):
         peak_node = self.nodes[peak.index]
         tree = self.interval_tree
-
+        if tree is None:
+            tree = IntervalTreeNode.build(self.clusters)
+            if tree is None:
+                raise ValueError(
+                    "Could not build intervals for peak retrieval with %d clusters" % len(
+                        self.clusters))
         clusters = tree.contains_point(peak.mz)
         if len(clusters) == 0:
             return self._find_fuzzy_solution_for(peak)

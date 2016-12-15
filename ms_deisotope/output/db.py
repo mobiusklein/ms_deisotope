@@ -191,7 +191,7 @@ class MSScan(Base):
         return db_scan
 
     @classmethod
-    def serialize_bulk(self, scan, sample_run_id, session):
+    def serialize_bulk(self, scan, sample_run_id, session, fitted=True, deconvoluted=True):
         db_scan = MSScan(
             index=scan.index, ms_level=scan.ms_level,
             scan_time=scan.scan_time, title=scan.title,
@@ -200,8 +200,10 @@ class MSScan(Base):
         session.add(db_scan)
         session.flush()
 
-        FittedPeak._serialize_bulk_list(scan.peak_set, db_scan.id, session)
-        DeconvolutedPeak._serialize_bulk_list(scan.deconvoluted_peak_set, db_scan.id, session)
+        if fitted:
+            FittedPeak._serialize_bulk_list(scan.peak_set, db_scan.id, session)
+        if deconvoluted:
+            DeconvolutedPeak._serialize_bulk_list(scan.deconvoluted_peak_set, db_scan.id, session)
         return db_scan
 
 
@@ -362,10 +364,10 @@ def serialize_scan_bunch(session, bunch, sample_run_id=None):
     return db_precursor, db_products
 
 
-def serialize_scan_bunch_bulk(session, bunch, sample_run_id):
+def serialize_scan_bunch_bulk(session, bunch, sample_run_id, ms1_fitted=True, msn_fitted=True):
     precursor = bunch.precursor
-    db_precursor = MSScan.serialize_bulk(precursor, sample_run_id, session)
-    db_products = [MSScan.serialize_bulk(p, sample_run_id, session)
+    db_precursor = MSScan.serialize_bulk(precursor, sample_run_id, session, fitted=ms1_fitted)
+    db_products = [MSScan.serialize_bulk(p, sample_run_id, session, fitted=msn_fitted)
                    for p in bunch.products]
     for scan, db_scan in zip(bunch.products, db_products):
         pi = scan.precursor_information
@@ -438,7 +440,8 @@ class SQLiteConnectionRecipe(ConnectionRecipe):
             dbapi_connection.execute("PRAGMA foreign_keys = ON;")
             dbapi_connection.execute("PRAGMA journal_mode = WAL;")
             dbapi_connection.execute("PRAGMA wal_autocheckpoint = 100;")
-            dbapi_connection.execute("PRAGMA wal_checkpoint;")
+            dbapi_connection.execute("PRAGMA wal_checkpoint(SQLITE_CHECKPOINT_RESTART);")
+            dbapi_connection.execute("PRAGMA journal_size_limit = 1000000")
 
         except:
             pass
@@ -496,7 +499,7 @@ class DatabaseBoundOperation(object):
 
 
 class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
-    def __init__(self, connection, sample_name=None, overwrite=True):
+    def __init__(self, connection, sample_name=None, overwrite=True, save_fitted=False):
         self.uuid = str(uuid4())
 
         if sample_name is None:
@@ -506,6 +509,7 @@ class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
         DatabaseBoundOperation.__init__(self, connection)
         self._sample_run = None
         self._sample_run_id = None
+        self.save_fitted = save_fitted
 
         self._overwrite(overwrite)
 
@@ -560,7 +564,9 @@ class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
 
     def save(self, bunch, commit=True, bulk=True):
         if bulk:
-            out = serialize_scan_bunch_bulk(self.session, bunch, self.sample_run_id)
+            out = serialize_scan_bunch_bulk(
+                self.session, bunch, self.sample_run_id,
+                ms1_fitted=self.save_fitted, msn_fitted=self.save_fitted)
         else:
             out = serialize_scan_bunch(self.session, bunch, self.sample_run_id)
         if commit:
@@ -629,6 +635,8 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
 
     def get_scan_by_id(self, scan_id):
         q = self._get_by_scan_id(scan_id)
+        if q is None:
+            raise KeyError(scan_id)
         mem = q.convert()
         if mem.precursor_information:
             mem.precursor_information.source = self
@@ -696,7 +704,7 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
 
     def _get_by_scan_id(self, scan_id):
         q = self.session.query(MSScan).filter(
-            MSScan.scan_id == scan_id, MSScan.sample_run_id == self.sample_run_id).one()
+            MSScan.scan_id == scan_id, MSScan.sample_run_id == self.sample_run_id).first()
         return q
 
     def _get_scan_by_time(self, rt, require_ms1=False):
