@@ -181,21 +181,23 @@ class MSScan(Base):
         return scan
 
     @classmethod
-    def serialize(self, scan, sample_run_id=None):
-        db_scan = MSScan(
+    def _serialize_scan(cls, scan, sample_run_id=None):
+        db_scan = cls(
             index=scan.index, ms_level=scan.ms_level,
             scan_time=scan.scan_time, title=scan.title,
             scan_id=scan.id, sample_run_id=sample_run_id)
+        return db_scan
+
+    @classmethod
+    def serialize(cls, scan, sample_run_id=None):
+        db_scan = cls._serialize_scan(scan, sample_run_id)
         db_scan.peak_set = map(FittedPeak.serialize, scan.peak_set)
         db_scan.deconvoluted_peak_set = map(DeconvolutedPeak.serialize, scan.deconvoluted_peak_set)
         return db_scan
 
     @classmethod
-    def serialize_bulk(self, scan, sample_run_id, session, fitted=True, deconvoluted=True):
-        db_scan = MSScan(
-            index=scan.index, ms_level=scan.ms_level,
-            scan_time=scan.scan_time, title=scan.title,
-            scan_id=scan.id, sample_run_id=sample_run_id)
+    def serialize_bulk(cls, scan, sample_run_id, session, fitted=True, deconvoluted=True):
+        db_scan = cls._serialize_scan(scan, sample_run_id)
 
         session.add(db_scan)
         session.flush()
@@ -268,12 +270,17 @@ class PeakMixin(object):
 
     @classmethod
     def _serialize_bulk_list(cls, peaks, scan_id, session):
+        out = cls._prepare_serialize_list(peaks, scan_id)
+        session.bulk_save_objects(out)
+
+    @classmethod
+    def _prepare_serialize_list(cls, peaks, scan_id):
         out = []
         for peak in peaks:
             db_peak = cls.serialize(peak)
             db_peak.scan_id = scan_id
             out.append(db_peak)
-        session.bulk_save_objects(out)
+        return out
 
     def __repr__(self):
         return "DB" + repr(self.convert())
@@ -380,6 +387,62 @@ def serialize_scan_bunch_bulk(session, bunch, sample_run_id, ms1_fitted=True, ms
     return db_precursor, db_products
 
 
+class ScanSerializationBatcher(object):
+    def __init__(self, session, sample_run_id, batch_size=10, ms1_fitted=True, msn_fitted=True):
+        self.session = session
+        self.sample_run_id = sample_run_id
+        self.batch_size = batch_size
+        self.ms1_fitted = ms1_fitted
+        self.msn_fitted = msn_fitted
+        self.fitted_list = []
+        self.deconvoluted_list = []
+        self.count = 0
+        self.n_batches = 0
+
+    def add(self, bunch):
+        precursor = bunch.precursor
+        db_precursor = MSScan._serialize_scan(precursor, self.sample_run_id)
+        db_products = [MSScan._serialize_scan(prod, self.sample_run_id) for prod in bunch.products]
+        self.session.add(db_precursor)
+        self.session.add_all(db_products)
+        self.session.flush()
+        if self.ms1_fitted:
+            self.fitted_list.extend(
+                FittedPeak._prepare_serialize_list(precursor.peak_set, db_precursor.id))
+        self.deconvoluted_list.extend(
+            DeconvolutedPeak._prepare_serialize_list(
+                precursor.deconvoluted_peak_set, db_precursor.id))
+        for scan, db_scan in zip(bunch.products, db_products):
+            pi = scan.precursor_information
+            db_pi = PrecursorInformation(
+                precursor_id=db_precursor.id, product_id=db_scan.id,
+                charge=pi.extracted_charge, intensity=pi.extracted_intensity,
+                neutral_mass=pi.extracted_neutral_mass, sample_run_id=self.sample_run_id)
+            self.session.add(db_pi)
+            if self.msn_fitted:
+                self.fitted_list.extend(
+                    FittedPeak._prepare_serialize_list(scan.peak_set, db_scan.id))
+            self.deconvoluted_list.extend(
+                DeconvolutedPeak._prepare_serialize_list(
+                    scan.deconvoluted_peak_set, db_scan.id))
+        self.count += 1
+        self.session.flush()
+        self.check_condition()
+
+    def check_condition(self):
+        if self.count >= self.batch_size:
+            self.serialize_peaks()
+
+    def serialize_peaks(self):
+        if self.fitted_list:
+            self.session.bulk_save_objects(self.fitted_list)
+            self.fitted_list = []
+        self.session.bulk_save_objects(self.deconvoluted_list)
+        self.deconvoluted_list = []
+        self.session.flush()
+        self.count = 0
+
+
 def configure_connection(connection, create_tables=True):
     if isinstance(connection, basestring):
         try:
@@ -441,7 +504,7 @@ class SQLiteConnectionRecipe(ConnectionRecipe):
             dbapi_connection.execute("PRAGMA journal_mode = WAL;")
             dbapi_connection.execute("PRAGMA wal_autocheckpoint = 100;")
             dbapi_connection.execute("PRAGMA wal_checkpoint(SQLITE_CHECKPOINT_RESTART);")
-            dbapi_connection.execute("PRAGMA journal_size_limit = 1000000")
+            dbapi_connection.execute("PRAGMA journal_size_limit = 1000000;")
 
         except:
             pass
@@ -489,6 +552,12 @@ class DatabaseBoundOperation(object):
     def _sqlite_reload_analysis_plan(self):
         conn = self.engine.connect()
         conn.execute("ANALYZE sqlite_master;")
+
+    def _sqlite_checkpoint_wal(self):
+        conn = self.engine.connect()
+        inner = conn.connection.connection
+        cur = inner.cursor()
+        cur.execute("PRAGMA wal_checkpoint(SQLITE_CHECKPOINT_RESTART);")
 
     @property
     def dialect(self):
@@ -572,6 +641,33 @@ class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
         if commit:
             self.session.commit()
         return out
+
+    def commit(self):
+        self.session.commit()
+
+
+class BatchingDatabaseScanSerializer(DatabaseScanSerializer):
+    def __init__(self, connection, sample_name=None, overwrite=True, save_fitted=False):
+        super(BatchingDatabaseScanSerializer, self).__init__(connection, sample_name, overwrite, save_fitted)
+        self._batch = None
+
+    @property
+    def batch(self):
+        if self._batch is None:
+            self._batch = ScanSerializationBatcher(
+                self.session, self.sample_run_id, 10, self.save_fitted, self.save_fitted)
+        return self._batch
+
+    def save(self, bunch, commit=True):
+        self.batch.add(bunch)
+
+    def commit(self):
+        self.batch.serialize_peaks()
+        self.session.commit()
+
+    def complete(self):
+        self.batch.serialize_peaks()
+        super(BatchingDatabaseScanSerializer, self).complete()
 
 
 def flatten(iterable):
