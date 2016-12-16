@@ -388,7 +388,7 @@ def serialize_scan_bunch_bulk(session, bunch, sample_run_id, ms1_fitted=True, ms
 
 
 class ScanSerializationBatcher(object):
-    def __init__(self, session, sample_run_id, batch_size=10, ms1_fitted=True, msn_fitted=True):
+    def __init__(self, session, sample_run_id, batch_size=50, ms1_fitted=True, msn_fitted=True):
         self.session = session
         self.sample_run_id = sample_run_id
         self.batch_size = batch_size
@@ -655,7 +655,7 @@ class BatchingDatabaseScanSerializer(DatabaseScanSerializer):
     def batch(self):
         if self._batch is None:
             self._batch = ScanSerializationBatcher(
-                self.session, self.sample_run_id, 10, self.save_fitted, self.save_fitted)
+                self.session, self.sample_run_id, 50, self.save_fitted, self.save_fitted)
         return self._batch
 
     def save(self, bunch, commit=True):
