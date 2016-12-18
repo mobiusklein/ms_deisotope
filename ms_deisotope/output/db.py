@@ -563,7 +563,7 @@ class ConnectionRecipe(object):
 
 class SQLiteConnectionRecipe(ConnectionRecipe):
     connect_args = {
-        'timeout': 45,
+        'timeout': 180,
     }
 
     @staticmethod
