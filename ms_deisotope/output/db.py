@@ -128,7 +128,8 @@ class MSScan(Base):
     scan_time = Column(Numeric(10, 5, asdecimal=False), index=True)
     title = Column(String(512))
     scan_id = Column(String(512), index=True)
-    sample_run_id = Column(Integer, ForeignKey(SampleRun.id, ondelete='CASCADE'), index=True)
+    sample_run_id = Column(Integer, ForeignKey(
+        SampleRun.id, ondelete='CASCADE'), index=True)
 
     peak_set = relationship("FittedPeak", backref="scan", lazy="dynamic")
     deconvoluted_peak_set = relationship(
@@ -146,22 +147,26 @@ class MSScan(Base):
         return f
 
     def convert(self, fitted=True, deconvoluted=True):
-        precursor_information = self.precursor_information.convert() if self.precursor_information is not None else None
+        precursor_information = self.precursor_information.convert(
+        ) if self.precursor_information is not None else None
 
         session = object_session(self)
         conn = session.connection()
 
         if fitted:
-            q = conn.execute(select([FittedPeak.__table__]).where(FittedPeak.__table__.c.scan_id == self.id)).fetchall()
+            q = conn.execute(select([FittedPeak.__table__]).where(
+                FittedPeak.__table__.c.scan_id == self.id)).fetchall()
 
             peak_set_items = list(
                 map(make_memory_fitted_peak, q))
 
             peak_set = PeakSet(peak_set_items)
             peak_set._index()
-            peak_index = PeakIndex(np.array([], dtype=np.float64), np.array([], dtype=np.float64), peak_set)
+            peak_index = PeakIndex(np.array([], dtype=np.float64), np.array(
+                [], dtype=np.float64), peak_set)
         else:
-            peak_index = PeakIndex(np.array([], dtype=np.float64), np.array([], dtype=np.float64), PeakSet([]))
+            peak_index = PeakIndex(np.array([], dtype=np.float64), np.array(
+                [], dtype=np.float64), PeakSet([]))
 
         if deconvoluted:
             q = conn.execute(select([DeconvolutedPeak.__table__]).where(
@@ -170,7 +175,8 @@ class MSScan(Base):
             deconvoluted_peak_set_items = list(
                 map(make_memory_deconvoluted_peak, q))
 
-            deconvoluted_peak_set = DeconvolutedPeakSet(deconvoluted_peak_set_items)
+            deconvoluted_peak_set = DeconvolutedPeakSet(
+                deconvoluted_peak_set_items)
             deconvoluted_peak_set._reindex()
         else:
             deconvoluted_peak_set = DeconvolutedPeakSet([])
@@ -192,7 +198,8 @@ class MSScan(Base):
     def serialize(cls, scan, sample_run_id=None):
         db_scan = cls._serialize_scan(scan, sample_run_id)
         db_scan.peak_set = map(FittedPeak.serialize, scan.peak_set)
-        db_scan.deconvoluted_peak_set = map(DeconvolutedPeak.serialize, scan.deconvoluted_peak_set)
+        db_scan.deconvoluted_peak_set = map(
+            DeconvolutedPeak.serialize, scan.deconvoluted_peak_set)
         return db_scan
 
     @classmethod
@@ -205,7 +212,8 @@ class MSScan(Base):
         if fitted:
             FittedPeak._serialize_bulk_list(scan.peak_set, db_scan.id, session)
         if deconvoluted:
-            DeconvolutedPeak._serialize_bulk_list(scan.deconvoluted_peak_set, db_scan.id, session)
+            DeconvolutedPeak._serialize_bulk_list(
+                scan.deconvoluted_peak_set, db_scan.id, session)
         return db_scan
 
 
@@ -213,13 +221,16 @@ class PrecursorInformation(Base):
     __tablename__ = "PrecursorInformation"
 
     id = Column(Integer, primary_key=True)
-    sample_run_id = Column(Integer, ForeignKey(SampleRun.id, ondelete='CASCADE'), index=True)
+    sample_run_id = Column(Integer, ForeignKey(
+        SampleRun.id, ondelete='CASCADE'), index=True)
 
-    precursor_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
+    precursor_id = Column(Integer, ForeignKey(
+        MSScan.id, ondelete='CASCADE'), index=True)
     precursor = relationship(MSScan, backref=backref("product_information"),
                              primaryjoin="PrecursorInformation.precursor_id == MSScan.id",
                              uselist=False)
-    product_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
+    product_id = Column(Integer, ForeignKey(
+        MSScan.id, ondelete='CASCADE'), index=True)
     product = relationship(MSScan, backref=backref("precursor_information", uselist=False),
                            primaryjoin="PrecursorInformation.product_id == MSScan.id",
                            uselist=False)
@@ -247,7 +258,8 @@ class PrecursorInformation(Base):
 
     def convert(self, data_source=None):
         return MemoryPrecursorInformation(
-            mass_charge_ratio(self.neutral_mass, self.charge), self.intensity, self.charge,
+            mass_charge_ratio(self.neutral_mass,
+                              self.charge), self.intensity, self.charge,
             self.precursor.scan_id, data_source, self.neutral_mass, self.charge,
             self.intensity)
 
@@ -296,7 +308,8 @@ class FittedPeak(Base, PeakMixin):
     __tablename__ = "FittedPeak"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    scan_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
+    scan_id = Column(Integer, ForeignKey(
+        MSScan.id, ondelete='CASCADE'), index=True)
 
     convert = make_memory_fitted_peak
 
@@ -312,7 +325,8 @@ def make_memory_deconvoluted_peak(self):
         self.neutral_mass, self.intensity, self.charge,
         self.signal_to_noise, -1, self.full_width_at_half_max,
         self.a_to_a2_ratio, self.most_abundant_mass, self.average_mass,
-        self.score, Envelope(self.envelope), self.mz, None, self.chosen_for_msms,
+        self.score, Envelope(
+            self.envelope), self.mz, None, self.chosen_for_msms,
         (self.area if self.area is not None else 0.))
 
 
@@ -327,7 +341,8 @@ class DeconvolutedPeak(Base, PeakMixin):
     charge = Column(Integer)
 
     score = Column(Numeric(12, 6, asdecimal=False))
-    scan_id = Column(Integer, ForeignKey(MSScan.id, ondelete='CASCADE'), index=True)
+    scan_id = Column(Integer, ForeignKey(
+        MSScan.id, ondelete='CASCADE'), index=True)
     envelope = Column(MutableList.as_mutable(PickleType))
     a_to_a2_ratio = Column(Numeric(8, 7, asdecimal=False))
     chosen_for_msms = Column(Boolean)
@@ -365,7 +380,8 @@ def serialize_scan_bunch(session, bunch, sample_run_id=None):
     session.flush()
     for scan, db_scan in zip(bunch.products, db_products):
         pi = scan.precursor_information
-        db_pi = PrecursorInformation.serialize(pi, db_precursor, db_scan, sample_run_id)
+        db_pi = PrecursorInformation.serialize(
+            pi, db_precursor, db_scan, sample_run_id)
         session.add(db_pi)
     session.flush()
     return db_precursor, db_products
@@ -373,7 +389,8 @@ def serialize_scan_bunch(session, bunch, sample_run_id=None):
 
 def serialize_scan_bunch_bulk(session, bunch, sample_run_id, ms1_fitted=True, msn_fitted=True):
     precursor = bunch.precursor
-    db_precursor = MSScan.serialize_bulk(precursor, sample_run_id, session, fitted=ms1_fitted)
+    db_precursor = MSScan.serialize_bulk(
+        precursor, sample_run_id, session, fitted=ms1_fitted)
     db_products = [MSScan.serialize_bulk(p, sample_run_id, session, fitted=msn_fitted)
                    for p in bunch.products]
     for scan, db_scan in zip(bunch.products, db_products):
@@ -388,6 +405,41 @@ def serialize_scan_bunch_bulk(session, bunch, sample_run_id, ms1_fitted=True, ms
 
 
 class ScanSerializationBatcher(object):
+    """Encapsulates the process of saving ScanBunch objects to the database
+    incrementally, delaying writing peak information until a large collection
+    of peaks are waiting to be written in a single burst to minimize overhead.
+
+    This object assumes it can reuse the same Session over and over again.
+
+    Attributes
+    ----------
+    batch_size : int
+        The number of ScanBunch objects to try to save before
+        flushing all peaks to disk.
+    count : int
+        The number of ScanBunch objects saved since the last
+        flush.
+    deconvoluted_list : list
+        Accumulator of db.DeconvolutedPeak objects whose :attr:`scan_id`
+        attribute has been set to their parent db.MSScan's primary key
+        awaiting being sent to the database.
+    fitted_list : list
+        Accumulator of db.FittedPeak objects whose :attr:`scan_id`
+        attribute has been set to their parent db.MSScan's primary key
+        awaiting being sent to the database.
+    ms1_fitted : bool
+        Whether or not to save FittedPeak objects attatched to scans where
+        :attr:`ms_level` == `1`
+    msn_fitted : bool
+        Whether or not to save FittedPeak objects attatched to scans where
+        :attr:`ms_level` > `1`
+    sample_run_id : int
+        The primary key of the db.SampleRun that all created db.MSScan objects
+        should belong to.
+    session : Session
+        The `sqlalchemy` session object that this object uses to communicate
+        with the database
+    """
     def __init__(self, session, sample_run_id, batch_size=50, ms1_fitted=True, msn_fitted=True):
         self.session = session
         self.sample_run_id = sample_run_id
@@ -397,12 +449,25 @@ class ScanSerializationBatcher(object):
         self.fitted_list = []
         self.deconvoluted_list = []
         self.count = 0
-        self.n_batches = 0
 
     def add(self, bunch):
+        """Save the incoming ScanBunch object partially, sending all contained Scan
+        and PrecursorInformation to the database, but only mapping Peak objects to
+        their equivalent ORM classes and populating the relevant foreign key attributes
+        and accumulating those for later flushing.
+
+        This function invokes :meth:`check_condition` which may cause peaks to be sent
+        to the database and have the session flushed.
+
+        Parameters
+        ----------
+        bunch : ScanBunch
+            The set of related scans to be saved
+        """
         precursor = bunch.precursor
         db_precursor = MSScan._serialize_scan(precursor, self.sample_run_id)
-        db_products = [MSScan._serialize_scan(prod, self.sample_run_id) for prod in bunch.products]
+        db_products = [MSScan._serialize_scan(
+            prod, self.sample_run_id) for prod in bunch.products]
         self.session.add(db_precursor)
         self.session.add_all(db_products)
         self.session.flush()
@@ -430,10 +495,18 @@ class ScanSerializationBatcher(object):
         self.check_condition()
 
     def check_condition(self):
+        """Checks to see if the batch is done,
+        and if the batch is done, send the accumulated
+        peaks to the database and clear the accumulators
+        """
         if self.count >= self.batch_size:
             self.serialize_peaks()
 
     def serialize_peaks(self):
+        """Sends accumulated peaks to the database and flushes
+        :attr:`session`. Also resets the accumulator lists and
+        sets :attr:`count` to `0`
+        """
         if self.fitted_list:
             self.session.bulk_save_objects(self.fitted_list)
             self.fitted_list = []
@@ -456,7 +529,8 @@ def configure_connection(connection, create_tables=True):
     elif isinstance(connection, scoped_session):
         eng = connection.get_bind()
     else:
-        raise ValueError("Could not determine how to get a database connection from %r" % connection)
+        raise ValueError(
+            "Could not determine how to get a database connection from %r" % connection)
     if create_tables:
         Base.metadata.create_all(bind=eng)
     return eng
@@ -466,6 +540,7 @@ initialize = configure_connection
 
 
 class ConnectionRecipe(object):
+
     def __init__(self, connection_url, connect_args=None, on_connect=None, **engine_args):
         if connect_args is None:
             connect_args = {}
@@ -488,7 +563,7 @@ class ConnectionRecipe(object):
 
 class SQLiteConnectionRecipe(ConnectionRecipe):
     connect_args = {
-        'timeout': 15,
+        'timeout': 45,
     }
 
     @staticmethod
@@ -503,7 +578,8 @@ class SQLiteConnectionRecipe(ConnectionRecipe):
             dbapi_connection.execute("PRAGMA foreign_keys = ON;")
             dbapi_connection.execute("PRAGMA journal_mode = WAL;")
             dbapi_connection.execute("PRAGMA wal_autocheckpoint = 100;")
-            dbapi_connection.execute("PRAGMA wal_checkpoint(SQLITE_CHECKPOINT_RESTART);")
+            dbapi_connection.execute(
+                "PRAGMA wal_checkpoint(SQLITE_CHECKPOINT_RESTART);")
             dbapi_connection.execute("PRAGMA journal_size_limit = 1000000;")
 
         except:
@@ -522,11 +598,13 @@ class SQLiteConnectionRecipe(ConnectionRecipe):
 
 
 class DatabaseBoundOperation(object):
+
     def __init__(self, connection):
         self.engine = self._configure_connection(connection)
 
         self._original_connection = connection
-        self._sessionmaker = scoped_session(sessionmaker(bind=self.engine, autoflush=False))
+        self._sessionmaker = scoped_session(
+            sessionmaker(bind=self.engine, autoflush=False))
         self._session = None
 
     def _configure_connection(self, connection):
@@ -568,6 +646,7 @@ class DatabaseBoundOperation(object):
 
 
 class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
+
     def __init__(self, connection, sample_name=None, overwrite=True, save_fitted=False):
         self.uuid = str(uuid4())
 
@@ -647,8 +726,10 @@ class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
 
 
 class BatchingDatabaseScanSerializer(DatabaseScanSerializer):
+
     def __init__(self, connection, sample_name=None, overwrite=True, save_fitted=False):
-        super(BatchingDatabaseScanSerializer, self).__init__(connection, sample_name, overwrite, save_fitted)
+        super(BatchingDatabaseScanSerializer, self).__init__(
+            connection, sample_name, overwrite, save_fitted)
         self._batch = None
 
     @property
@@ -718,9 +799,11 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
     def _retrieve_sample_run(self):
         session = self.session
         if self._sample_name is not None:
-            sr = session.query(SampleRun).filter(SampleRun.name == self._sample_name).one()
+            sr = session.query(SampleRun).filter(
+                SampleRun.name == self._sample_name).one()
         elif self._sample_run_id is not None:
-            sr = session.query(SampleRun).filter(SampleRun.id == self._sample_run_id).one()
+            sr = session.query(SampleRun).filter(
+                SampleRun.id == self._sample_run_id).one()
         else:
             sr = session.query(SampleRun).first()
         self._sample_run = sr
