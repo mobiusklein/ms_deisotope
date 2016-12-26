@@ -455,9 +455,10 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             The fitted isotopic pattern
         """
         tid = self.averagine.isotopic_cluster(
-            peak.mz, charge, charge_carrier=charge_carrier)
+            peak.mz, charge, charge_carrier=charge_carrier,
+            truncate_after=truncate_after)
         eid = self.match_theoretical_isotopic_distribution(
-            tid, error_tolerance=error_tolerance, truncate_after=truncate_after)
+            tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
         score = self.scorer(self.peaklist, eid, tid)
         return IsotopicFitRecord(peak, score, charge, tid, eid)

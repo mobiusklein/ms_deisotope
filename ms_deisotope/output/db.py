@@ -727,16 +727,17 @@ class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
 
 class BatchingDatabaseScanSerializer(DatabaseScanSerializer):
 
-    def __init__(self, connection, sample_name=None, overwrite=True, save_fitted=False):
+    def __init__(self, connection, sample_name=None, overwrite=True, save_fitted=False, batch_size=10):
         super(BatchingDatabaseScanSerializer, self).__init__(
             connection, sample_name, overwrite, save_fitted)
         self._batch = None
+        self.batch_size = batch_size
 
     @property
     def batch(self):
         if self._batch is None:
             self._batch = ScanSerializationBatcher(
-                self.session, self.sample_run_id, 50, self.save_fitted, self.save_fitted)
+                self.session, self.sample_run_id, self.batch_size, self.save_fitted, self.save_fitted)
         return self._batch
 
     def save(self, bunch, commit=True):
