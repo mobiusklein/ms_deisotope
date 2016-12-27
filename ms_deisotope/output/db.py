@@ -20,7 +20,8 @@ import numpy as np
 from ms_peak_picker import FittedPeak as MemoryFittedPeak, PeakIndex, PeakSet
 from ms_deisotope import DeconvolutedPeak as MemoryDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_set import Envelope
-from ms_deisotope.averagine import mass_charge_ratio, neutral_mass as calc_neutral_mass
+from ms_deisotope.averagine import (
+    mass_charge_ratio, neutral_mass as calc_neutral_mass)
 
 from ms_deisotope.data_source.common import (
     ProcessedScan, PrecursorInformation as MemoryPrecursorInformation, ScanBunch)

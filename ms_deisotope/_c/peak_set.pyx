@@ -325,16 +325,23 @@ cdef class DeconvolutedPeakSet:
     cdef DeconvolutedPeak getitem(self, size_t i):
         return <DeconvolutedPeak>PyTuple_GET_ITEM(self.peaks, i)
 
-    def all_peaks_for(self, neutral_mass, tolerance=1e-5):
+    def all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
+        cdef:
+            double lo, hi, lo_err, hi_err
+            int lo_ix, hi_ix
+            DeconvolutedPeak lo_peak
+            DeconvolutedPeak hi_peak
         lo = neutral_mass - neutral_mass * tolerance
         hi = neutral_mass + neutral_mass * tolerance
-        lo_peak, lo_err = self.get_nearest_peak(lo)
-        hi_peak, hi_err = self.get_nearest_peak(hi)
-        lo_ix = lo_peak.index.neutral_mass
-        if abs(ppm_error(lo_peak.neutral_mass, neutral_mass)) > tolerance:
+        lo_peak = binary_search_nearest_neutral_mass(self.peaks, lo, &lo_err)
+        hi_peak = binary_search_nearest_neutral_mass(self.peaks, hi, &hi_err)
+        lo_ix = lo_peak._index.neutral_mass
+        if lo_ix < PyTuple_GET_SIZE(self.peaks) and abs(
+                ppm_error(lo_peak.neutral_mass, neutral_mass)) > tolerance:
             lo_ix += 1
-        hi_ix = hi_peak.index.neutral_mass + 1
-        if abs(ppm_error(hi_peak.neutral_mass, neutral_mass)) > tolerance:
+        hi_ix = hi_peak._index.neutral_mass + 1
+        if hi_ix != 0 and abs(
+                ppm_error(hi_peak.neutral_mass, neutral_mass)) > tolerance:
             hi_ix -= 1
         return self[lo_ix:hi_ix]
 
