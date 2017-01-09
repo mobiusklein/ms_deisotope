@@ -174,6 +174,7 @@ class Scan(object):
         self._index = None
         self._is_profile = None
         self._polarity = None
+        self._activation = None
 
         self.product_scans = product_scans
 
@@ -272,6 +273,14 @@ class Scan(object):
         if self._precursor_information is None:
             self._precursor_information = self.source._precursor_information(self._data)
         return self._precursor_information
+
+    @property
+    def activation(self):
+        if self.ms_level < 2:
+            return None
+        if self._activation is None:
+            self._activation = self.source._activation(self._data)
+        return self._activation
 
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f%s)" % (
@@ -414,7 +423,8 @@ class PrecursorInformation(object):
 
 
 class ProcessedScan(object):
-    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set, deconvoluted_peak_set):
+    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set, deconvoluted_peak_set,
+                 activation=None):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
@@ -423,6 +433,7 @@ class ProcessedScan(object):
         self.index = index
         self.peak_set = peak_set
         self.deconvoluted_peak_set = deconvoluted_peak_set
+        self.activation = activation
 
     def __iter__(self):
         return iter(self.deconvoluted_peak_set)

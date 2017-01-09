@@ -4,6 +4,7 @@ from ms_peak_picker import pick_peaks
 
 from .deconvolution import deconvolute_peaks
 from .data_source.mzml import MzMLLoader
+from .data_source.infer_type import guess_type
 from .data_source.common import ScanBunch
 from .utils import Base
 
@@ -138,9 +139,9 @@ class ScanProcessor(Base):
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  pick_only_tandem_envelopes=False, precursor_selection_window=1.5,
                  trust_charge_hint=True,
-                 loader_type=MzMLLoader):
+                 loader_type=None):
         if loader_type is None:
-            loader_type = MzMLLoader
+            loader_type = guess_type(data_source)
 
         self.data_source = data_source
         self.ms1_peak_picking_args = ms1_peak_picking_args or {}

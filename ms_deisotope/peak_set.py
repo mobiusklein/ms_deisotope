@@ -218,6 +218,17 @@ class DeconvolutedPeakSet(Base):
         self.peaks = peaks
         self._mz_ordered = None
 
+    def reindex(self):
+        """
+        Updates the :attr:`index` of each peak in `self` and updates the
+        sorted order.
+
+        Returns
+        -------
+        self: DeconvolutedPeakSet
+        """
+        self._reindex()
+
     def _reindex(self):
         """
         Updates the :attr:`index` of each peak in `self` and updates the

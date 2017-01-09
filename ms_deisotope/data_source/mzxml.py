@@ -1,5 +1,5 @@
 import numpy as np
-from pyteomics import mzml
+from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanIterator, ScanDataSource, ChargeNotProvided,
     ScanBunch)
@@ -20,12 +20,13 @@ def _yield_from_index(self, start=None):
     else:
         start = 0
     for key in keys[start:]:
-        yield self.get_by_id(key)
+        scan = self.get_by_id(key, "num")
+        yield scan
 
 
-class MzMLDataInterface(ScanDataSource):
+class MzXMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the
-    :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.
+    :class:`ScanDataSource` for mzXML files. Not intended for direct instantiation.
     """
     def _scan_arrays(self, scan):
         try:
@@ -34,80 +35,84 @@ class MzMLDataInterface(ScanDataSource):
             return np.array([]), np.array([])
 
     def _precursor_information(self, scan):
-        pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
-        precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
+        pinfo_dict = scan['precursorMz'][0]
+        precursor_scan_id = pinfo_dict['precursorScanNum']
         pinfo = PrecursorInformation(
-            mz=pinfo_dict['selected ion m/z'],
-            intensity=pinfo_dict.get('peak intensity', 0.0),
-            charge=pinfo_dict.get('charge state', ChargeNotProvided),
+            mz=float(pinfo_dict['precursorMz']),
+            intensity=float(pinfo_dict.get('precursorIntensity', 0.0)),
+            charge=int(pinfo_dict.get('precursorCharge')) if pinfo_dict.get('precursorCharge') else ChargeNotProvided,
             precursor_scan_id=precursor_scan_id,
             source=self)
         return pinfo
 
-    # Optional
     def _scan_title(self, scan):
-        try:
-            return scan["spectrum title"]
-        except KeyError:
-            return scan["id"]
+        return self._scan_id(scan)
 
     def _scan_id(self, scan):
-        return scan["id"]
+        return scan["num"]
 
     def _scan_index(self, scan):
-        return scan['index']
+        try:
+            if self._scan_index_lookup is None:
+                raise ValueError("Index Not Built")
+            scan_index = self._scan_index_lookup[self._scan_id(scan)]
+            return scan_index
+        except KeyError:
+            return -1
+        except ValueError:
+            return -1
 
     def _ms_level(self, scan):
-        return scan['ms level']
+        return int(scan['msLevel'])
 
     def _scan_time(self, scan):
         try:
-            return scan['scanList']['scan'][0]['scan start time']
+            return scan['retentionTime']
         except KeyError:
             return None
 
     def _is_profile(self, scan):
-        return "profile spectrum" in scan
+        return not bool(int(scan['centroided']))
 
     def _polarity(self, scan):
-        if "positive scan" in scan:
+        if scan['polarity'] == '+':
             return 1
-        elif "negative scan" in scan:
+        else:
             return -1
 
     def _activation(self, scan):
         try:
-            return scan['precursorList']['precursor'][0]['activation']
+            return (scan['precursorMz'][0]['activationMethod'], scan['collisionEnergy'])
         except KeyError:
             return None
 
 
-def _find_section(source, section):
-    return next(source.iterfind(section))
+class MzXMLLoader(MzXMLDataInterface, ScanIterator):
 
+    __data_interface__ = MzXMLDataInterface
 
-class MzMLLoader(MzMLDataInterface, ScanIterator):
-
-    __data_interface__ = MzMLDataInterface
-
-    def __init__(self, mzml_file, use_index=True):
-        self.mzml_file = mzml_file
-        self._source = mzml.MzML(mzml_file, read_schema=True, iterative=True, use_index=use_index)
+    def __init__(self, mzxml_file, use_index=True):
+        self.mzxml_file = mzxml_file
+        self._source = mzxml.MzXML(mzxml_file, read_schema=True, iterative=True, use_index=use_index)
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
+        self._scan_index_lookup = None
+        if self._use_index:
+            self._build_scan_index_lookup()
 
     def __reduce__(self):
-        return MzMLLoader, (self.mzml_file, self._use_index)
+        return MzXMLLoader, (self.mzml_file, self._use_index)
 
-    def file_description(self):
-        return _find_section(self._source, "fileDescription")
-
-    def instrument_configuration(self):
-        return _find_section(self._source, "instrumentConfigurationList")
-
-    def data_processing(self):
-        return _find_section(self._source, "dataProcessingList")
+    def _build_scan_index_lookup(self):
+        if not self._use_index:
+            raise ValueError("Must index the entire file before sequential indices may computed.")
+        index = dict()
+        i = 0
+        for scan, offset in self.index.items():
+            index[scan] = i
+            i += 1
+        self._scan_index_lookup = index
 
     @property
     def index(self):
@@ -120,6 +125,7 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
     def reset(self):
         self._make_iterator(None)
         self._scan_cache = WeakValueDictionary()
+        self._source.reset()
 
     def _make_iterator(self, iterator=None):
         self._producer = self._scan_group_iterator(iterator)
@@ -142,11 +148,11 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
                 continue
             packed = _make_scan(scan)
             self._scan_cache[packed.id] = packed
-            if scan['ms level'] == 2:
+            if packed.ms_level == 2:
                 if current_level < 2:
                     current_level = 2
                 product_scans.append(packed)
-            elif scan['ms level'] == 1:
+            elif packed.ms_level == 1:
                 if current_level > 1:
                     precursor_scan.product_scans = list(product_scans)
                     yield ScanBunch(precursor_scan, product_scans)
@@ -190,7 +196,7 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
         try:
             return self._scan_cache[scan_id]
         except KeyError:
-            packed = self._make_scan(self._source.get_by_id(scan_id))
+            packed = self._make_scan(self._source.get_by_id(scan_id, id_key='num'))
             self._scan_cache[packed.id] = packed
             return packed
 
@@ -251,6 +257,3 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
         iterator = _yield_from_index(self._source, scan_id)
         self._make_iterator(iterator)
         return self
-
-
-PyteomicsMzMLLoader = MzMLLoader

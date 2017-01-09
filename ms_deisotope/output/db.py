@@ -21,7 +21,7 @@ from ms_peak_picker import FittedPeak as MemoryFittedPeak, PeakIndex, PeakSet
 from ms_deisotope import DeconvolutedPeak as MemoryDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_set import Envelope
 from ms_deisotope.averagine import (
-    mass_charge_ratio, neutral_mass as calc_neutral_mass)
+    mass_charge_ratio)
 
 from ms_deisotope.data_source.common import (
     ProcessedScan, PrecursorInformation as MemoryPrecursorInformation, ScanBunch)
@@ -183,15 +183,15 @@ class MSScan(Base):
             deconvoluted_peak_set = DeconvolutedPeakSet([])
 
         scan = ProcessedScan(
-            self.scan_id, self.title, precursor_information, self.ms_level,
-            self.scan_time, self.index, peak_index, deconvoluted_peak_set)
+            self.scan_id, self.title, precursor_information, int(self.ms_level),
+            float(self.scan_time), self.index, peak_index, deconvoluted_peak_set)
         return scan
 
     @classmethod
     def _serialize_scan(cls, scan, sample_run_id=None):
         db_scan = cls(
             index=scan.index, ms_level=scan.ms_level,
-            scan_time=scan.scan_time, title=scan.title,
+            scan_time=float(scan.scan_time), title=scan.title,
             scan_id=scan.id, sample_run_id=sample_run_id)
         return db_scan
 
@@ -611,6 +611,16 @@ class DatabaseBoundOperation(object):
     def _configure_connection(self, connection):
         eng = configure_connection(connection, create_tables=True)
         return eng
+
+    def __eq__(self, other):
+        return str(self.engine) == str(other.engine) and\
+            (self.__class__ is other.__class__)
+
+    def __hash__(self):
+        return hash(str(self.engine))
+
+    def __ne__(self, other):
+        return not (self == other)
 
     def __reduce__(self):
         return self.__class__, (self._original_connection,)
