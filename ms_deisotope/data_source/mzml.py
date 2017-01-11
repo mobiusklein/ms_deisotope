@@ -2,7 +2,7 @@ import numpy as np
 from pyteomics import mzml
 from .common import (
     PrecursorInformation, ScanIterator, ScanDataSource, ChargeNotProvided,
-    ScanBunch)
+    ScanBunch, ActivationInformation)
 from weakref import WeakValueDictionary
 from lxml.etree import XMLSyntaxError
 
@@ -77,7 +77,17 @@ class MzMLDataInterface(ScanDataSource):
 
     def _activation(self, scan):
         try:
-            return scan['precursorList']['precursor'][0]['activation']
+            struct = dict(scan['precursorList']['precursor'][0]['activation'])
+            activation = None
+            for key in tuple(struct):
+                if key in ActivationInformation.dissociation_methods:
+                    activation = key
+                    struct.pop(key)
+                    break
+            else:
+                activation = "unknown dissociation method"
+            energy = struct.pop("collision energy", -1)
+            return ActivationInformation(activation, energy, struct)
         except KeyError:
             return None
 
@@ -118,6 +128,7 @@ class MzMLLoader(MzMLDataInterface, ScanIterator):
         return self._source
 
     def reset(self):
+        self._source.reset()
         self._make_iterator(None)
         self._scan_cache = WeakValueDictionary()
 

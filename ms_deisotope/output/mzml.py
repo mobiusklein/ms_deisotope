@@ -49,7 +49,31 @@ class MzMLScanSerializer(ScanSerializerBase):
         self.context_stack.append(self.writer.spectrum_list(count=self.n_spectra))
         self.context_stack[-1].__enter__()
 
-    def _pack_precursor_information(self, precursor_information):
+    def _pack_activation(self, activation_information):
+        params = []
+        params.append({
+            "name": str(activation_information.method),
+        })
+        # NOTE: Only correct for CID/HCD spectra with absolute collision energies, but that is all I have
+        # to test with.
+        params.append({
+            "name": "collision energy",
+            "value": activation_information.energy,
+            "unitName": "electron volts"
+        })
+        for key, val in activation_information.items():
+            arg = {
+                "name": key,
+                "value": val
+            }
+            try:
+                arg['unitName'] = val.unit_info
+            except AttributeError:
+                pass
+            params.append(arg)
+        return params
+
+    def _pack_precursor_information(self, precursor_information, activation_information=None):
         # If the scan bunch has been fully deconvoluted and it's PrecursorInformation
         # filled in, its extracted fields will be populated and should be used, otherwise
         # use the default read values.
@@ -67,6 +91,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 "charge": precursor_information.charge,
                 "scan_id": precursor_information.precursor_scan_id
             }
+        if activation_information is not None:
+            package['activation'] = self._pack_activation(activation_information)
         return package
 
     def save_scan_bunch(self, bunch, **kwargs):
@@ -116,7 +142,7 @@ class MzMLScanSerializer(ScanSerializerBase):
                     {"name": "MSn spectrum"}] + descriptors,
                 polarity=prod.polarity,
                 scan_start_time=prod.scan_time, precursor_information=self._pack_precursor_information(
-                    prod.precursor_information),
+                    prod.precursor_information, prod.activation),
                 compression=self.compression)
 
     def complete(self):

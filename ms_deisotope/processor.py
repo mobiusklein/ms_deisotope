@@ -4,9 +4,10 @@ from ms_peak_picker import pick_peaks
 
 from .deconvolution import deconvolute_peaks
 from .data_source.mzml import MzMLLoader
-from .data_source.infer_type import guess_type
+from .data_source.infer_type import MSFileLoader
 from .data_source.common import ScanBunch
 from .utils import Base
+from .peak_dependency_network import Interval, IntervalTreeNode
 
 PyteomicsMzMLLoader = MzMLLoader
 
@@ -43,6 +44,7 @@ class PriorityTarget(Base):
     charge : int
         The charge state hint from :attr:`info`
     """
+
     def __init__(self, peak, info, trust_charge_hint=True):
         self.peak = peak
         self.info = info
@@ -134,14 +136,16 @@ class ScanProcessor(Base):
         Whether or not to trust the charge provided by the data source when determining
         the charge state of precursor isotopic patterns. Defaults to `True`
     """
+
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  pick_only_tandem_envelopes=False, precursor_selection_window=1.5,
                  trust_charge_hint=True,
-                 loader_type=None):
+                 loader_type=None,
+                 envelope_selector=None):
         if loader_type is None:
-            loader_type = guess_type(data_source)
+            loader_type = MSFileLoader
 
         self.data_source = data_source
         self.ms1_peak_picking_args = ms1_peak_picking_args or {}
@@ -172,8 +176,11 @@ class ScanProcessor(Base):
         if not self.pick_only_tandem_envelopes:
             prec_peaks = pick_peaks(prec_mz, prec_intensity, peak_mode=peak_mode, **self.ms1_peak_picking_args)
         else:
-            chosen_envelopes = [s.precursor_information for s in precursor_scan.product_scans]
-            chosen_envelopes = sorted([(p.mz - 5, p.mz + 10) for p in chosen_envelopes])
+            if self.envelope_selector is None:
+                chosen_envelopes = [s.precursor_information for s in precursor_scan.product_scans]
+                chosen_envelopes = sorted([(p.mz - 5, p.mz + 10) for p in chosen_envelopes])
+            else:
+                chosen_envelopes = self.envelope_selector(precursor_scan)
             prec_peaks = pick_peaks(prec_mz, prec_intensity, peak_mode=peak_mode,
                                     target_envelopes=chosen_envelopes,
                                     **self.ms1_peak_picking_args)
@@ -327,7 +334,8 @@ class ScanProcessor(Base):
         top_charge_state = precursor_ion.extracted_charge
         deconargs = dict(self.msn_deconvolution_args)
         charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
-        if top_charge_state is not None and top_charge_state != 0:
+        if top_charge_state is not None and top_charge_state != 0 and abs(
+                top_charge_state) < abs(charge_range[1]):
             charge_range[1] = top_charge_state
 
         deconargs["charge_range"] = charge_range
@@ -336,7 +344,6 @@ class ScanProcessor(Base):
             polarity = product_scan.polarity
             deconargs["charge_range"] = [
                 polarity * abs(c) for c in deconargs["charge_range"]]
-
 
         dec_peaks, _ = deconvolute_peaks(product_scan.peak_set, **deconargs)
         product_scan.deconvoluted_peak_set = dec_peaks
@@ -434,3 +441,77 @@ class PrecursorSkimmingProcessor(ScanProcessor):
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
         self.deconvolute_precursor_scan(precursor_scan, priorities)
         return precursor_scan, product_scans
+
+
+def extract_intervals(scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
+    intervals = []
+    for scan, products in scan_iterator:
+        for product in products:
+            intervals.append((
+                Interval(max(0, product.precursor_information.mz - mz_lower),
+                         product.precursor_information.mz + mz_higher),
+                Interval(max(0, product.scan_time - time_radius),
+                         product.scan_time + time_radius)))
+    return intervals
+
+
+def combine_intervals(a, b):
+    min_mz = min(a[0].start, b[0].start)
+    max_mz = max(a[0].end, b[0].end)
+    min_rt = min(a[1].start, b[1].start)
+    max_rt = max(a[1].end, b[1].end)
+    return (Interval(min_mz, max_mz), Interval(min_rt, max_rt))
+
+
+def overlaps_2d(a, b):
+    return a[0].overlaps(b[0]) and a[1].overlaps(b[1])
+
+
+def merge_interval_set(intervals):
+    merged_intervals = []
+    for interval in intervals:
+        for i, candidate in enumerate(merged_intervals):
+            if overlaps_2d(interval, candidate):
+                merged_intervals[i] = combine_intervals(candidate, interval)
+                break
+        else:
+            merged_intervals.append(interval)
+    return merged_intervals
+
+
+def smooth_intervals(intervals):
+    prev_set = intervals
+    next_set = merge_interval_set(prev_set)
+    while len(prev_set) != len(next_set):
+        prev_set = next_set
+        next_set = merge_interval_set(prev_set)
+    return next_set
+
+
+def make_rt_tree(intervals):
+    temp = []
+    for interval in intervals:
+        mz, rt = interval
+        rt.members.append(mz)
+        temp.append(rt)
+    tree = IntervalTreeNode.build(temp)
+    return tree
+
+
+class ScanIntervalTree(object):
+    @classmethod
+    def build(cls, scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
+        intervals = extract_intervals(scan_iterator, time_radius=time_radius, mz_lower=mz_lower, mz_higher=mz_higher)
+        merged_intervals = smooth_intervals(intervals)
+        return cls(make_rt_tree(merged_intervals))
+
+    def __init__(self, rt_tree):
+        self.rt_tree = rt_tree
+
+    def get_mz_intervals_for_rt(self, rt_point):
+        return [
+            i.members[0] for i in self.rt_tree.contains_point(rt_point)
+        ]
+
+    def __call__(self, rt_point):
+        return self.get_mz_intervals_for_rt(rt_point)

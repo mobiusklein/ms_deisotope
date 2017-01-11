@@ -182,9 +182,12 @@ class MSScan(Base):
         else:
             deconvoluted_peak_set = DeconvolutedPeakSet([])
 
+        info = self.info or {}
+
         scan = ProcessedScan(
             self.scan_id, self.title, precursor_information, int(self.ms_level),
-            float(self.scan_time), self.index, peak_index, deconvoluted_peak_set)
+            float(self.scan_time), self.index, peak_index, deconvoluted_peak_set,
+            activation=info.get('activation'))
         return scan
 
     @classmethod
@@ -192,7 +195,8 @@ class MSScan(Base):
         db_scan = cls(
             index=scan.index, ms_level=scan.ms_level,
             scan_time=float(scan.scan_time), title=scan.title,
-            scan_id=scan.id, sample_run_id=sample_run_id)
+            scan_id=scan.id, sample_run_id=sample_run_id,
+            info={'activation': scan.activation})
         return db_scan
 
     @classmethod

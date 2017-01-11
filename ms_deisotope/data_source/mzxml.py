@@ -2,7 +2,7 @@ import numpy as np
 from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanIterator, ScanDataSource, ChargeNotProvided,
-    ScanBunch)
+    ScanBunch, ActivationInformation)
 from weakref import WeakValueDictionary
 from lxml.etree import XMLSyntaxError
 
@@ -82,7 +82,8 @@ class MzXMLDataInterface(ScanDataSource):
 
     def _activation(self, scan):
         try:
-            return (scan['precursorMz'][0]['activationMethod'], scan['collisionEnergy'])
+            return ActivationInformation(
+                scan['precursorMz'][0]['activationMethod'], scan['collisionEnergy'])
         except KeyError:
             return None
 

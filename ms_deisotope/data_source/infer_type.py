@@ -32,3 +32,8 @@ def guess_type(file_path):
             return guess_type_from_file_sniffing(file_path)
         except ValueError:
             raise ValueError("Cannot determine ScanLoader type")
+
+
+def MSFileLoader(file_path, *args, **kwargs):
+    reader_type = guess_type(file_path)
+    return reader_type(file_path, *args, **kwargs)

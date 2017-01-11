@@ -63,6 +63,14 @@ class ScanDataSource(object):
     def _is_profile(self, scan):
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def _polarity(self, scan):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _activation(self, scan):
+        raise NotImplementedError()
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
@@ -155,6 +163,9 @@ class Scan(object):
     polarity: int
         If the scan was acquired in positive mode, the value `+1`.  If the scan was acquired in negative
         mode, the value `-1`. May be used to indicating how to calibrate charge state determination methods.
+    activation: object
+        If this scan is an MS^n scan, this attribute will contain information about the process
+        used to produce it from its parent ion.
     """
     def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None):
         if product_scans is None:
@@ -319,7 +330,8 @@ class Scan(object):
             self.id, self.title, precursor_info,
             self.ms_level, self.scan_time, self.index,
             self.peak_set.pack(),
-            self.deconvoluted_peak_set)
+            self.deconvoluted_peak_set,
+            self.activation)
 
 
 class PrecursorInformation(object):
@@ -443,3 +455,39 @@ class ProcessedScan(object):
 
     def __repr__(self):
         return "ProcessedScan(id=%s, ms_level=%d, %d peaks)" % (self.id, self.ms_level, len(self.deconvoluted_peak_set))
+
+
+class ActivationInformation(object):
+    def __init__(self, method, energy, data=None):
+        if data is None:
+            data = dict()
+        self.method = dissociation_methods.get(str(method).lower(), method)
+        self.energy = energy
+        self.data = data
+
+    def __repr__(self):
+        return "ActivationInformation(%r, %r)%s" % (self.method, self.energy, "" if not self.data else self.data)
+
+    def __str__(self):
+        return str(self.method)
+
+
+CID = Constant("collision-induced dissociation")
+HCD = Constant("beam-type collision-induced dissociation")
+ETD = Constant("electron transfer dissociation")
+ECD = Constant("electron capture dissociation")
+
+dissociation_methods = {
+    "cid": CID,
+    'cad': CID,
+    CID.name.lower(): CID,
+    'hcd': HCD,
+    HCD.name.lower(): HCD,
+    'etd': ETD,
+    ETD.name.lower(): ETD,
+    "ecd": ECD,
+    ECD.name.lower(): ECD
+}
+
+
+ActivationInformation.dissociation_methods = dissociation_methods
