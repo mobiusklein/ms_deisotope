@@ -980,7 +980,8 @@ class DatabaseScanDeserializer(ScanDeserializerBase, DatabaseBoundOperation):
         w = neutral_mass * mass_error_tolerance
         q = self.session.query(PrecursorInformation).join(
             PrecursorInformation.precursor).filter(
-            PrecursorInformation.neutral_mass.between(m - w, m + w)).order_by(
+            PrecursorInformation.neutral_mass.between(m - w, m + w),
+            PrecursorInformation.sample_run_id == self.sample_run_id).order_by(
             MSScan.scan_time)
         if start_time is not None:
             q = q.filter(MSScan.scan_time >= start_time)

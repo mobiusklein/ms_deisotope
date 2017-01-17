@@ -161,6 +161,7 @@ class ScanProcessor(Base):
         self.loader_type = loader_type
 
         self._signal_source = self.loader_type(data_source)
+        self.envelope_selector = envelope_selector
 
     @property
     def reader(self):
@@ -173,7 +174,7 @@ class ScanProcessor(Base):
         else:
             peak_mode = 'centroid'
         prec_mz, prec_intensity = precursor_scan.arrays
-        if not self.pick_only_tandem_envelopes:
+        if not self.pick_only_tandem_envelopes and self.envelope_selector is None:
             prec_peaks = pick_peaks(prec_mz, prec_intensity, peak_mode=peak_mode, **self.ms1_peak_picking_args)
         else:
             if self.envelope_selector is None:
@@ -467,25 +468,17 @@ def overlaps_2d(a, b):
     return a[0].overlaps(b[0]) and a[1].overlaps(b[1])
 
 
-def merge_interval_set(intervals):
+def merge_interval_set(intervals, minimum_overlap_size=0.3):
     merged_intervals = []
     for interval in intervals:
         for i, candidate in enumerate(merged_intervals):
-            if overlaps_2d(interval, candidate):
+            if overlaps_2d(interval, candidate) and interval[0].overlap_size(
+                    candidate[0]) > (interval[0].end - interva[0].start * minimum_overlap_size):
                 merged_intervals[i] = combine_intervals(candidate, interval)
                 break
         else:
             merged_intervals.append(interval)
     return merged_intervals
-
-
-def smooth_intervals(intervals):
-    prev_set = intervals
-    next_set = merge_interval_set(prev_set)
-    while len(prev_set) != len(next_set):
-        prev_set = next_set
-        next_set = merge_interval_set(prev_set)
-    return next_set
 
 
 def make_rt_tree(intervals):
@@ -502,16 +495,30 @@ class ScanIntervalTree(object):
     @classmethod
     def build(cls, scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
         intervals = extract_intervals(scan_iterator, time_radius=time_radius, mz_lower=mz_lower, mz_higher=mz_higher)
-        merged_intervals = smooth_intervals(intervals)
-        return cls(make_rt_tree(merged_intervals))
+        # merged_intervals = merge_interval_set(intervals)
+        merged_intervals = intervals
+        return cls(make_rt_tree(merged_intervals), intervals)
 
-    def __init__(self, rt_tree):
+    def __init__(self, rt_tree, original_intervals=None):
         self.rt_tree = rt_tree
+        self.original_intervals = original_intervals
 
     def get_mz_intervals_for_rt(self, rt_point):
-        return [
+        intervals = [
             i.members[0] for i in self.rt_tree.contains_point(rt_point)
         ]
+        intervals = sorted([[i.start, i.end] for i in intervals])
+        out = []
+        last = intervals[0]
+        for interval in intervals[1:]:
+            if interval[0] < last[1]:
+                last[1] = interval[1]
+            else:
+                out.append(last)
+                last = interval
+        out.append(last)
+        return out
 
-    def __call__(self, rt_point):
-        return self.get_mz_intervals_for_rt(rt_point)
+    def __call__(self, scan):
+        intervals = self.get_mz_intervals_for_rt(scan.scan_time)
+        return intervals

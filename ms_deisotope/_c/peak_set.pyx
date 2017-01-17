@@ -432,7 +432,7 @@ cdef DeconvolutedPeak binary_search_neutral_mass(tuple peak_set, double neutral_
         DeconvolutedPeak found_peak
 
     lo = 0
-    hi = len(peak_set)
+    hi = PyTuple_GET_SIZE(peak_set)
 
     while hi != lo:
         mid = (hi + lo) / 2

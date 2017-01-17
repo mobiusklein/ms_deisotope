@@ -30,51 +30,210 @@ IsolationWindowNotProvided = Constant("IsolationWindowNotProvided")
 
 @add_metaclass(abc.ABCMeta)
 class ScanDataSource(object):
+    """An Abstract Base Class describing an object
+    which can provide a consistent set of accessors
+    for a particular format of mass spectrometry data.
 
+    Data files come in many shapes and sizes, with different
+    underlying structures. This class provides an API that
+    should make features as consistent as possible to clients
+    of Scan objects, making the format those Scan objects
+    were read from unimportant.
+    """
     @abc.abstractmethod
     def _scan_arrays(self, scan):
+        """Returns raw data arrays for m/z and intensity
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        mz: np.array
+            An array of m/z values for this scan
+        intensity: np.array
+            An array of intensity values for this scan
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _precursor_information(self, scan):
+        """Returns information about the precursor ion,
+        if any, that this scan was derived form.
+
+        Returns `None` if this scan has no precursor ion
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        PrecursorInformation
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _scan_title(self, scan):
+        """Returns a verbose name for this scan, if one
+        were stored in the file. Usually includes both the
+        scan's id string, as well as information about the
+        original file and format.
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        str
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _scan_id(self, scan):
+        """Returns the scan's id string, a unique
+        identifier for this scan in the context of
+        the data file it is recordered in
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        str
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _scan_index(self, scan):
+        """Returns the base 0 offset from the start
+        of the data file in number of scans to reach
+        this scan.
+
+        If the original format does not natively include
+        an index value, this value may be computed from
+        the byte offset index.
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        int
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _ms_level(self, scan):
+        """Returns the degree of exponential fragmentation
+        used to produce this scan. 1 refers to a survey scan
+        of unfragmented ions, 2 refers to a tandem scan derived
+        from an ms level 1 ion, and so on.
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        int
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _scan_time(self, scan):
+        """Returns the time in minutes from the start of data
+        acquisition to when this scan was acquired.
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        float
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _is_profile(self, scan):
+        """Returns whether the scan contains profile data (`True`)
+        or centroided data (`False`).
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        bool
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _polarity(self, scan):
+        """Returns whether this scan was acquired in positive mode (+1)
+        or negative mode (-1).
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        int
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def _activation(self, scan):
+        """Returns information about the activation method used to
+        produce this scan, if any.
+
+        Returns `None` for MS1 scans
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        ActivationInformation
+        """
         raise NotImplementedError()
 
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
-
+    """An Abstract Base Class that extends ScanDataSource
+    with additional requirements that enable clients of the
+    class to treat the object as an iterator over the underlying
+    data file.
+    """
     @abc.abstractmethod
     def next(self):
         raise NotImplementedError()

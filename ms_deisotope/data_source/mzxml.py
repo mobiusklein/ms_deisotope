@@ -92,9 +92,9 @@ class MzXMLLoader(MzXMLDataInterface, ScanIterator):
 
     __data_interface__ = MzXMLDataInterface
 
-    def __init__(self, mzxml_file, use_index=True):
-        self.mzxml_file = mzxml_file
-        self._source = mzxml.MzXML(mzxml_file, read_schema=True, iterative=True, use_index=use_index)
+    def __init__(self, source_file, use_index=True):
+        self.source_file = source_file
+        self._source = mzxml.MzXML(source_file, read_schema=True, iterative=True, use_index=use_index)
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
@@ -103,7 +103,7 @@ class MzXMLLoader(MzXMLDataInterface, ScanIterator):
             self._build_scan_index_lookup()
 
     def __reduce__(self):
-        return MzXMLLoader, (self.mzml_file, self._use_index)
+        return MzXMLLoader, (self.source_file, self._use_index)
 
     def _build_scan_index_lookup(self):
         if not self._use_index:

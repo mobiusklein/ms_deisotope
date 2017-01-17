@@ -93,22 +93,24 @@ class MzMLDataInterface(ScanDataSource):
 
 
 def _find_section(source, section):
-    return next(source.iterfind(section))
+    value = next(source.iterfind(section))
+    source.reset()
+    return value
 
 
 class MzMLLoader(MzMLDataInterface, ScanIterator):
 
     __data_interface__ = MzMLDataInterface
 
-    def __init__(self, mzml_file, use_index=True):
-        self.mzml_file = mzml_file
-        self._source = mzml.MzML(mzml_file, read_schema=True, iterative=True, use_index=use_index)
+    def __init__(self, source_file, use_index=True):
+        self.source_file = source_file
+        self._source = mzml.MzML(source_file, read_schema=True, iterative=True, use_index=use_index)
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
 
     def __reduce__(self):
-        return MzMLLoader, (self.mzml_file, self._use_index)
+        return MzMLLoader, (self.source_file, self._use_index)
 
     def file_description(self):
         return _find_section(self._source, "fileDescription")
