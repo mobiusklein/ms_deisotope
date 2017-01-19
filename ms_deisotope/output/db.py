@@ -1,5 +1,5 @@
 from uuid import uuid4
-
+import os
 from sqlalchemy import create_engine, select, func, event
 from sqlalchemy.orm import sessionmaker, scoped_session, validates, deferred
 from sqlalchemy.orm.session import object_session
@@ -581,14 +581,13 @@ class SQLiteConnectionRecipe(ConnectionRecipe):
             dbapi_connection.execute("PRAGMA page_size = 5120;")
             dbapi_connection.execute("PRAGMA cache_size = 12000;")
             dbapi_connection.execute("PRAGMA foreign_keys = ON;")
-            dbapi_connection.execute("PRAGMA journal_mode = WAL;")
+            if not int(os.environ.get("NOWAL", '0')):
+                dbapi_connection.execute("PRAGMA journal_mode = WAL;")
             dbapi_connection.execute("PRAGMA wal_autocheckpoint = 100;")
-            dbapi_connection.execute(
-                "PRAGMA wal_checkpoint(SQLITE_CHECKPOINT_RESTART);")
             dbapi_connection.execute("PRAGMA journal_size_limit = 1000000;")
-
-        except:
             pass
+        except Exception as e:
+            print(e)
         dbapi_connection.isolation_level = iso_level
 
     def __init__(self, connection_url, **engine_args):
