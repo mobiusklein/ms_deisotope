@@ -279,7 +279,7 @@ class PrecursorInformation(Base):
 
 
 class PeakMixin(object):
-    mz = Mass()
+    mz = Mass(False)
     intensity = Column(Numeric(16, 4, asdecimal=False))
     full_width_at_half_max = Column(Numeric(7, 6, asdecimal=False))
     signal_to_noise = Column(Numeric(10, 3, asdecimal=False))
@@ -339,7 +339,7 @@ class DeconvolutedPeak(Base, PeakMixin):
     __tablename__ = "DeconvolutedPeak"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    neutral_mass = Mass()
+    neutral_mass = Mass(False)
     average_mass = Mass(False)
     most_abundant_mass = Mass(False)
 
@@ -641,6 +641,7 @@ class DatabaseBoundOperation(object):
         inner = conn.connection.connection
         cur = inner.cursor()
         cur.execute("analyze;")
+        inner.commit()
 
     def _sqlite_reload_analysis_plan(self):
         conn = self.engine.connect()

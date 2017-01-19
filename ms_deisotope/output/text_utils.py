@@ -34,3 +34,30 @@ def decode_array(bytestring, compression=COMPRESSION_NONE, dtype=np.float32):
         raise ValueError("Unknown compression: %s" % compression)
     array = np.fromstring(decoded_string, dtype=dtype)
     return array
+
+
+def envelopes_to_array(envelope_list):
+    collection = []
+    for envelope in envelope_list:
+        collection.append(0)
+        collection.append(0)
+        for pair in envelope:
+            collection.extend(pair)
+    return np.array(collection)
+
+
+def decode_envelopes(array):
+    envelope_list = []
+    current_envelope = []
+    i = 0
+    n = len(array)
+    while i < n:
+        a = array[i]
+        b = array[i + 1]
+        if a == 0 and b == 0:
+            if current_envelope is not None:
+                envelope_list.append(current_envelope)
+                current_envelope = []
+        else:
+            current_envelope.append((a, b))
+    return envelope_list

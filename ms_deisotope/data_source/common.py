@@ -490,6 +490,7 @@ class Scan(object):
             self.ms_level, self.scan_time, self.index,
             self.peak_set.pack(),
             self.deconvoluted_peak_set,
+            self.polarity,
             self.activation)
 
 
@@ -595,7 +596,7 @@ class PrecursorInformation(object):
 
 class ProcessedScan(object):
     def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set, deconvoluted_peak_set,
-                 activation=None):
+                 polarity=None, activation=None):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
@@ -604,6 +605,7 @@ class ProcessedScan(object):
         self.index = index
         self.peak_set = peak_set
         self.deconvoluted_peak_set = deconvoluted_peak_set
+        self.polarity = polarity
         self.activation = activation
 
     def __iter__(self):

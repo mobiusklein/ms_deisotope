@@ -1,4 +1,5 @@
 from .common import ScanSerializerBase
+from .text_utils import envelopes_to_array
 
 from psims.mzml import writer
 
@@ -61,7 +62,7 @@ class MzMLScanSerializer(ScanSerializerBase):
             "value": activation_information.energy,
             "unitName": "electron volts"
         })
-        for key, val in activation_information.items():
+        for key, val in activation_information.data.items():
             arg = {
                 "name": key,
                 "value": val
@@ -95,6 +96,20 @@ class MzMLScanSerializer(ScanSerializerBase):
             package['activation'] = self._pack_activation(activation_information)
         return package
 
+    def _prepare_extra_arrays(self, scan):
+        extra_arrays = []
+        if self.deconvoluted:
+            # extra_arrays["signal to noise array"] = [
+            #     peak.signal_to_noise for peak in scan.deconvoluted_peak_set
+            # ]
+            score_array = [
+                peak.score for peak in scan.deconvoluted_peak_set
+            ]
+            extra_arrays.append((score_array, "deconvolution score array"))
+            envelope_array = envelopes_to_array([peak.envelope for peak in scan.deconvoluted_peak_set])
+            extra_arrays.append((envelope_array, "isotopic envelopes"))
+        return extra_arrays
+
     def save_scan_bunch(self, bunch, **kwargs):
         if not self._has_started_writing_spectra:
             self._add_spectrum_list()
@@ -120,7 +135,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 {"name": "MS1 spectrum"}] + descriptors,
             polarity=polarity,
             scan_start_time=bunch.precursor.scan_time,
-            compression=self.compression)
+            compression=self.compression,
+            other_arrays=self._prepare_extra_arrays(bunch.precursor))
 
         for prod in bunch.products:
             if self.deconvoluted:
@@ -143,7 +159,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 polarity=prod.polarity,
                 scan_start_time=prod.scan_time, precursor_information=self._pack_precursor_information(
                     prod.precursor_information, prod.activation),
-                compression=self.compression)
+                compression=self.compression,
+                other_arrays=self._prepare_extra_arrays(prod))
 
     def complete(self):
         for element in self.context_stack[::-1]:
