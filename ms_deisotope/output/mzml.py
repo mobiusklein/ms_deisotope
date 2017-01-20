@@ -113,8 +113,12 @@ class MzMLScanSerializer(ScanSerializerBase):
         self.n_spectra = n_spectra
         self.compression = compression
         self._has_started_writing_spectra = False
+
         self.writer.__enter__()
-        self.context_stack = [self.writer]
+        self._run_tag = None
+        self._spectrum_list_tag = None
+        self._chromatogram_list_tag = None
+
         self.writer.controlled_vocabularies()
         self.deconvoluted = deconvoluted
         self.sample_name = sample_name
@@ -127,6 +131,7 @@ class MzMLScanSerializer(ScanSerializerBase):
 
         self.total_ion_chromatogram_tracker = OrderedDict()
         self.base_peak_chromatogram_tracker = OrderedDict()
+
         self.indexer = None
         if build_extra_index:
             self.indexer = ExtendedScanIndex()
@@ -155,13 +160,23 @@ class MzMLScanSerializer(ScanSerializerBase):
             "name": "ms_deisotope"
         }])
 
+    def _create_data_processing_list(self):
+        self.writer.data_processing_list(self.data_processing_list)
+
+    def _create_instrument_configuration(self):
+        self.writer.instrument_configuration_list(
+            self.instrument_configuration_list)
+
     def _add_spectrum_list(self):
         self._create_file_description()
         self._create_software_list()
-        self.context_stack.append(self.writer.run(id=self.sample_name))
-        self.context_stack[-1].__enter__()
-        self.context_stack.append(self.writer.spectrum_list(count=self.n_spectra))
-        self.context_stack[-1].__enter__()
+        self._create_data_processing_list()
+        self._create_instrument_configuration()
+
+        self._run_tag = self.writer.run(id=self.sample_name)
+        self._run_tag.__enter__()
+        self._spectrum_list_tag = self.writer.spectrum_list(count=self.n_spectra)
+        self._spectrum_list_tag.__enter__()
 
     def _pack_activation(self, activation_information):
         params = []
@@ -285,10 +300,30 @@ class MzMLScanSerializer(ScanSerializerBase):
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)
 
+    def save_chromatogram(self, chromatogram_dict, chromatogram_type, params=None, **kwargs):
+        time_array, intensity_array = zip(*chromatogram_dict.items())
+        self.writer.write_chromatogram(
+            time_array, intensity_array, id=kwargs.get('id'),
+            chromatogram_type=chromatogram_type, compression=self.compression,
+            params=params)
+
+    def write_default_chromatograms(self):
+        self._chromatogram_list_tag = self.writer.chromatogram_list(count=2)
+        with self._chromatogram_list_tag:
+            self.save_chromatogram(
+                self.total_ion_chromatogram_tracker,
+                chromatogram_type='total ion current chromatogram',
+                id='TIC')
+            self.save_chromatogram(
+                self.base_peak_chromatogram_tracker,
+                chromatogram_type="basepeak chromatogram",
+                id='BPC')
+
     def complete(self):
-        for element in self.context_stack[::-1]:
-            element.__exit__(None, None, None)
-        self.context_stack = []
+        self._spectrum_list_tag.__exit__(None, None, None)
+        self.write_default_chromatograms()
+        self._run_tag.__exit__(None, None, None)
+        self.writer.__exit__(None, None, None)
         if self.indexer is not None:
             try:
                 name = self.handle.name
