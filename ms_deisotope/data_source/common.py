@@ -536,7 +536,8 @@ class PrecursorInformation(object):
     """
     def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
-                 peak=None, extracted_peak=None, defaulted=False, orphan=False):
+                 peak=None, extracted_peak=None, defaulted=False, orphan=False,
+                 product_scan_id=None):
         self.mz = mz
         self.intensity = intensity
         self.charge = charge
@@ -552,6 +553,7 @@ class PrecursorInformation(object):
         self.extracted_peak = extracted_peak
         self.defaulted = defaulted
         self.orphan = orphan
+        self.product_scan_id = product_scan_id
 
     def __repr__(self):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%d/%d, scan_id=%r)" % (
@@ -592,6 +594,10 @@ class PrecursorInformation(object):
     @property
     def precursor(self):
         return self.source.get_scan_by_id(self.precursor_scan_id)
+
+    @property
+    def product(self):
+        return self.source.get_scan_by_id(self.product_scan_id)
 
 
 class ProcessedScan(object):

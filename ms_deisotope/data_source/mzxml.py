@@ -42,7 +42,8 @@ class MzXMLDataInterface(ScanDataSource):
             intensity=float(pinfo_dict.get('precursorIntensity', 0.0)),
             charge=int(pinfo_dict.get('precursorCharge')) if pinfo_dict.get('precursorCharge') else ChargeNotProvided,
             precursor_scan_id=precursor_scan_id,
-            source=self)
+            source=self,
+            product_scan_id=self._scan_id(scan))
         return pinfo
 
     def _scan_title(self, scan):

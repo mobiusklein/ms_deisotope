@@ -41,7 +41,8 @@ class MzMLDataInterface(ScanDataSource):
             intensity=pinfo_dict.get('peak intensity', 0.0),
             charge=pinfo_dict.get('charge state', ChargeNotProvided),
             precursor_scan_id=precursor_scan_id,
-            source=self)
+            source=self,
+            product_scan_id=self._scan_id(scan))
         return pinfo
 
     # Optional

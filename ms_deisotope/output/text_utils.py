@@ -3,6 +3,7 @@ import zlib
 
 import numpy as np
 
+from ms_deisotope.peak_set import Envelope, EnvelopePair
 
 COMPRESSION_NONE = 'none'
 COMPRESSION_ZLIB = 'zlib'
@@ -54,10 +55,13 @@ def decode_envelopes(array):
     while i < n:
         a = array[i]
         b = array[i + 1]
+        i += 2
         if a == 0 and b == 0:
             if current_envelope is not None:
-                envelope_list.append(current_envelope)
+                if current_envelope:
+                    envelope_list.append(Envelope(current_envelope))
                 current_envelope = []
         else:
-            current_envelope.append((a, b))
+            current_envelope.append(EnvelopePair(a, b))
+    envelope_list.append(Envelope(current_envelope))
     return envelope_list
