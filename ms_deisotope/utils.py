@@ -1,12 +1,9 @@
 import operator
-import math
-
-from collections import defaultdict
 
 
 try:
     from matplotlib import pyplot as plt
-    from ms_peak_picker.utils import draw_peaklist
+    from ms_peak_picker.utils import draw_peaklist, draw_raw
     has_plot = True
 
 except ImportError:
@@ -64,15 +61,16 @@ class Base(object):
 
 class Constant(object):
     """A convenience type meant to be used to instantiate singletons for signaling
-    specific states in return values. Similar to `None`.
+    specific states in return values.
 
     Attributes
     ----------
     name: str
         The name of the constant
     """
-    def __init__(self, name):
+    def __init__(self, name, is_true=True):
         self.name = name
+        self.is_true = is_true
 
     def __eq__(self, other):
         return self.name == str(other)
@@ -84,7 +82,7 @@ class Constant(object):
         return str(self.name)
 
     def __nonzero__(self):
-        return False
+        return self.is_true
 
 
 class DeconvolutionProcessResult(object):

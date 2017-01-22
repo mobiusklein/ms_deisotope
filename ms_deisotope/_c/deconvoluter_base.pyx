@@ -216,7 +216,7 @@ cdef class DeconvoluterBase(object):
 
     def __repr__(self):
         type_name = self.__class__.__name__
-        return "%s(peaklist=%s)" % (type_name, self.peaklist)
+        return "%s(peaklist=%s, scorer=%s)" % (type_name, self.peaklist, self.scorer)
 
 
 cdef bint has_multiple_real_peaks(list peaklist):

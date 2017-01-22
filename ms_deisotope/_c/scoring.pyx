@@ -148,6 +148,9 @@ cdef class FitSelectorBase(object):
     cpdef bint is_maximizing(self):
         return False
 
+    def __repr__(self):
+        return "{self.__class__.__name__}(minimum_score={self.minimum_score})".format(self=self)
+
 
 cdef class MinimizeFitSelector(FitSelectorBase):
     """A FitSelector which tries to minimize the score of the best fit.
@@ -267,6 +270,9 @@ cdef class IsotopicFitterBase(object):
 
     def configure(self, DeconvoluterBase deconvoluter, **kwargs):
         return self._configure(deconvoluter, kwargs)
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({fields})".format(self=self, fields=self.__getstate__())
 
 
 cdef double sum_intensity_theoretical(list peaklist):

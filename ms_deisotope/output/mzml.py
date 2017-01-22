@@ -58,6 +58,7 @@ class ExtendedScanIndex(object):
             msn_ids = {}
         self.ms1_ids = OrderedDict(ms1_ids)
         self.msn_ids = OrderedDict(msn_ids)
+        self.count = 0
 
     def _package_precursor_information(self, product):
         precursor_information = product.precursor_information
@@ -83,7 +84,16 @@ class ExtendedScanIndex(object):
         return package
 
     def add_scan_bunch(self, bunch):
-        self.ms1_ids[bunch.precursor.id] = bunch.precursor.scan_time
+        self.ms1_ids[bunch.precursor.id] = {
+            "scan_time": bunch.precursor.scan_time,
+            "product_scan_ids": [
+                product.id for product in bunch.products
+            ],
+            "msms_peaks": [
+                p.index.neutral_mass for p in bunch.precursor.deconvoluted_peak_set
+                if p.chosen_for_msms
+            ],
+        }
         for product in bunch.products:
             self.msn_ids[product.id] = self._package_precursor_information(product)
 
@@ -106,8 +116,8 @@ class ExtendedScanIndex(object):
 
 class MzMLScanSerializer(ScanSerializerBase):
 
-    def __init__(self, handle, n_spectra=2e4, compression="zlib", deconvoluted=True,
-                 sample_name=None, build_extra_index=True):
+    def __init__(self, handle, n_spectra=2e4, compression=writer.COMPRESSION_ZLIB,
+                 deconvoluted=True, sample_name=None, build_extra_index=True):
         self.handle = handle
         self.writer = writer.MzMLWriter(handle)
         self.n_spectra = n_spectra
@@ -160,7 +170,38 @@ class MzMLScanSerializer(ScanSerializerBase):
             "name": "ms_deisotope"
         }])
 
+    def _build_processing_method(self, order=1, picked_peaks=True, smoothing=True, baseline_reduction=True):
+        if self.deconvoluted:
+            params = [
+                "deisotoping",
+                "charge deconvolution",
+                "precursor recalculation",
+            ]
+        else:
+            params = []
+
+        if picked_peaks:
+            params.append("peak picking")
+        if smoothing:
+            params.append("smoothing")
+        if baseline_reduction:
+            params.append("baseline reduction")
+        params.append("Conversion to mzML")
+
+        mapping = {
+            "software_reference": "ms_deisotope_1",
+            "order": order,
+            "params": params
+        }
+        return mapping
+
     def _create_data_processing_list(self):
+        n = len(self.data_processing_list) - 1
+        entry = {
+            "id": "ms_deisotope_processing_1",
+            "processing_methods": [self._build_processing_method(n)]
+        }
+        self.add_data_processing(entry)
         self.writer.data_processing_list(self.data_processing_list)
 
     def _create_instrument_configuration(self):
@@ -170,8 +211,8 @@ class MzMLScanSerializer(ScanSerializerBase):
     def _add_spectrum_list(self):
         self._create_file_description()
         self._create_software_list()
-        self._create_data_processing_list()
         self._create_instrument_configuration()
+        self._create_data_processing_list()
 
         self._run_tag = self.writer.run(id=self.sample_name)
         self._run_tag.__enter__()
@@ -245,6 +286,9 @@ class MzMLScanSerializer(ScanSerializerBase):
         else:
             precursor_peaks = bunch.precursor.peak_set
 
+        if len(precursor_peaks) == 0:
+            return
+
         polarity = bunch.precursor.polarity
         if self.deconvoluted:
             charge_array = [p.charge for p in precursor_peaks]
@@ -273,7 +317,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 product_peaks = prod.deconvoluted_peak_set
             else:
                 product_peaks = prod.peak_set
-
+            if len(product_peaks) == 0:
+                continue
             descriptors = describe_spectrum(product_peaks)
 
             self.total_ion_chromatogram_tracker[
@@ -373,6 +418,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 pass
 
     def iter_scan_headers(self, iterator=None):
+        self.reset()
         if iterator is None:
             iterator = iter(self._source)
         precursor_scan = None
@@ -403,6 +449,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 raise Exception("This object is not able to handle MS levels higher than 2")
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
+        self.reset()
 
     def get_scan_header_by_id(self, scan_id):
         """Retrieve the scan object for the specified scan id. If the
@@ -429,10 +476,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
     def _index_file_name(self):
         return ExtendedScanIndex.index_file_name(self.source_file)
 
-    def build_extended_index(self):
+    def build_extended_index(self, header_only=True):
         self.reset()
         indexer = ExtendedScanIndex()
-        for bunch in self.iter_scan_headers():
+        iterator = self
+        if header_only:
+            iterator = self.iter_scan_headers()
+        for bunch in iterator:
             indexer.add_scan_bunch(bunch)
         self.reset()
         self.extended_index = indexer
@@ -445,8 +495,14 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     def _make_scan(self, data):
         scan = super(ProcessedMzMLDeserializer, self)._make_scan(data)
+        if scan.precursor_information:
+            scan.precursor_information.default()
         scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
         scan.deconvoluted_peak_set = marshal_deconvoluted_peak_set(data)
+        if scan.id in self.extended_index.ms1_ids:
+            chosen_indices = self.extended_index.ms1_ids[scan.id]['msms_peaks']
+            for ix in chosen_indices:
+                scan.deconvoluted_peak_set[ix].chosen_for_msms = True
         return scan.pack()
 
     def convert_scan_id_to_retention_time(self, scan_id):

@@ -35,5 +35,9 @@ def guess_type(file_path):
 
 
 def MSFileLoader(file_path, *args, **kwargs):
+    """Factory function to create an object that reads scans from
+    any supported data file format. Provides both iterative and
+    random access.
+    """
     reader_type = guess_type(file_path)
     return reader_type(file_path, *args, **kwargs)

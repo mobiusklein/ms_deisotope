@@ -1,8 +1,8 @@
 import numpy as np
 from pyteomics import mzml
 from .common import (
-    PrecursorInformation, ScanIterator, ScanDataSource, ChargeNotProvided,
-    ScanBunch, ActivationInformation)
+    PrecursorInformation, ScanIterator, ScanDataSource, RandomAccessScanSource,
+    ChargeNotProvided, ScanBunch, ActivationInformation)
 from weakref import WeakValueDictionary
 from lxml.etree import XMLSyntaxError
 
@@ -99,8 +99,17 @@ def _find_section(source, section):
     return value
 
 
-class MzMLLoader(MzMLDataInterface, ScanIterator):
+class MzMLLoader(MzMLDataInterface, ScanIterator, RandomAccessScanSource):
+    """Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
+    random access.
 
+    Attributes
+    ----------
+    source_file: str
+        Path to file to read from.
+    source: pyteomics.mzml.MzML
+        Underlying scan data source
+    """
     __data_interface__ = MzMLDataInterface
 
     def __init__(self, source_file, use_index=True):

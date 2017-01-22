@@ -90,7 +90,16 @@ class MzXMLDataInterface(ScanDataSource):
 
 
 class MzXMLLoader(MzXMLDataInterface, ScanIterator):
+    """Reads scans from mzXML files. Provides both iterative and
+    random access.
 
+    Attributes
+    ----------
+    source_file: str
+        Path to file to read from.
+    source: pyteomics.mzxml.MzXML
+        Underlying scan data source
+    """
     __data_interface__ = MzXMLDataInterface
 
     def __init__(self, source_file, use_index=True):

@@ -190,7 +190,6 @@ class ScanProcessor(Base):
         return prec_peaks
 
     def pick_product_scan_peaks(self, product_scan):
-        # logger.info("Picking Product Scan Peaks: %r", product_scan)
         if product_scan.is_profile:
             peak_mode = 'profile'
         else:
@@ -242,13 +241,11 @@ class ScanProcessor(Base):
         product_scans: list of Scan
             As Parameter
         """
-        prec_peaks = None
+        prec_peaks = self.pick_precursor_scan_peaks(precursor_scan)
         priorities = []
 
         for scan in product_scans:
             precursor_ion = scan.precursor_information
-            if prec_peaks is None:
-                prec_peaks = self.pick_precursor_scan_peaks(precursor_scan)
             peak, err = prec_peaks.get_nearest_peak(precursor_ion.mz)
             precursor_ion.peak = peak
             target = PriorityTarget(peak, precursor_ion, self.trust_charge_hint)
@@ -259,8 +256,6 @@ class ScanProcessor(Base):
                         precursor_scan.id))
             else:
                 priorities.append(target)
-        if prec_peaks is None:
-            prec_peaks = self.pick_precursor_scan_peaks(precursor_scan)
 
         return precursor_scan, priorities, product_scans
 
@@ -473,7 +468,7 @@ def merge_interval_set(intervals, minimum_overlap_size=0.3):
     for interval in intervals:
         for i, candidate in enumerate(merged_intervals):
             if overlaps_2d(interval, candidate) and interval[0].overlap_size(
-                    candidate[0]) > (interval[0].end - interva[0].start * minimum_overlap_size):
+                    candidate[0]) > (interval[0].end - interval[0].start * minimum_overlap_size):
                 merged_intervals[i] = combine_intervals(candidate, interval)
                 break
         else:

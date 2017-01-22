@@ -1102,7 +1102,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         from growing out of control and wasting time storing impractical fits. Any fit added to
         the graph will have to pass :attr:`scorer.select` as well, so weak fits will never be added,
         regardless of how many fits are allowed to be inserted.
-    
+
         Parameters
         ----------
         peak : FittedPeak
@@ -1112,9 +1112,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
-            The number of steps to search to the left of `peak`. Defaults to 3
+            The number of steps to search to the left of `peak`. Defaults to 1
         right_search_limit : int, optional
-            The number of steps to search to the right of `peak`. Defaults to 3
+            The number of steps to search to the right of `peak`. Defaults to 0
         use_charge_state_hint : bool, optional
             Whether or not to try to estimate the upper limit of the charge states to consider
             using :meth:`_update_charge_bounds_with_prediction`. Defaults to False
@@ -1125,7 +1125,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
-        
+
         Returns
         -------
         int
@@ -1177,9 +1177,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
-            The number of steps to search to the left of `peak`. Defaults to 3
+            The number of steps to search to the left of `peak`. Defaults to 1
         right_search_limit : int, optional
-            The number of steps to search to the right of `peak`. Defaults to 3
+            The number of steps to search to the right of `peak`. Defaults to 0
         use_charge_state_hint : bool, optional
             Whether or not to try to estimate the upper limit of the charge states to consider
             using :meth:`_update_charge_bounds_with_prediction`. Defaults to False
@@ -1210,7 +1210,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         extract the best disjoint isotopic pattern fits in each envelope graph. This in turn
         produces one or more :class:`DeconvolutedPeak` instances from each disjoint fit,
         which are processed and added to the results set.
-        
+
         Parameters
         ----------
         error_tolerance : float, optional
@@ -1222,6 +1222,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         """
         disjoint_envelopes = self.peak_dependency_network.find_non_overlapping_intervals()
         i = 0
+        seen = dict()
         for cluster in disjoint_envelopes:
             disjoint_best_fits = cluster.disjoint_best_fits()
             for fit in disjoint_best_fits:
@@ -1229,6 +1230,14 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 rep_eid = drop_placeholders(eid)
                 if len(rep_eid) == 0:
                     continue
+                for peak in rep_eid:
+                    # This seems to happen when the first peak is
+                    # chosen for MS/MS
+                    if peak.index in seen and peak.peak_count != 0:
+                        print("%r was reused in fit %r and %r" % (
+                            peak, fit, seen[peak.index]))
+                else:
+                    seen[peak.index] = fit
                 total_abundance = sum(p.intensity for p in rep_eid)
                 monoisotopic_mass = neutral_mass(
                     eid[0].mz, charge, charge_carrier)
@@ -1291,7 +1300,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         self._explore_local(
             peak, error_tolerance=error_tolerance, charge_range=charge_range,
             use_charge_state_hint=use_charge_state_hint, left_search_limit=left_search_limit,
-            right_search_limit=right_search_limit, charge_carrier=charge_carrier, truncate_after=truncate_after)
+            right_search_limit=right_search_limit, charge_carrier=charge_carrier,
+            truncate_after=truncate_after)
         result = NetworkedTargetedDeconvolutionResult(self, peak)
         self._priority_map[peak] = result
         return result
@@ -1303,7 +1313,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         """Completely deconvolute the spectrum.
 
         For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`
-        followed by :meth:`select_best_disjoint_subgraphs` to populate the resulting :class:`DeconvolutedPeakSet`
+        followed by :meth:`select_best_disjoint_subgraphs` to populate the resulting
+        :class:`DeconvolutedPeakSet`
 
         Parameters
         ----------
@@ -1333,6 +1344,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         -------
         DeconvolutedPeakSet
         """
+        if not self.use_subtraction:
+            iterations = 1
         for i in range(iterations):
             self.peak_dependency_network.reset()
             self.populate_graph(
@@ -1341,7 +1354,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier,
                 truncate_after=truncate_after)
             self.postprocess_fits(
-                fit_postprocessor=fit_postprocessor, charge_range=charge_range, charge_carrier=charge_carrier,
+                fit_postprocessor=fit_postprocessor,
+                charge_range=charge_range,
+                charge_carrier=charge_carrier,
                 error_tolerance=error_tolerance)
             self.select_best_disjoint_subgraphs(
                 error_tolerance, charge_carrier)
@@ -1727,7 +1742,8 @@ def deconvolute_peaks(peaklist, deconvoluter_type=AveraginePeakDependenceGraphDe
         if not isinstance(p, FittedPeak):
             p = decon.peaklist.has_peak(p, error_tolerance)
         priority_result = decon.targeted_deconvolution(
-            p, error_tolerance=error_tolerance, charge_range=hinted_charge_range,
+            p, error_tolerance=error_tolerance,
+            charge_range=hinted_charge_range,
             use_charge_state_hint=use_charge_state_hint_for_priorities,
             left_search_limit=left_search_limit_for_priorities,
             right_search_limit=right_search_limit_for_priorities,

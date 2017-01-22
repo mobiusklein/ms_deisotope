@@ -43,13 +43,13 @@ class ScanDataSource(object):
     @abc.abstractmethod
     def _scan_arrays(self, scan):
         """Returns raw data arrays for m/z and intensity
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         mz: np.array
@@ -65,13 +65,13 @@ class ScanDataSource(object):
         if any, that this scan was derived form.
 
         Returns `None` if this scan has no precursor ion
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         PrecursorInformation
@@ -84,13 +84,13 @@ class ScanDataSource(object):
         were stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         str
@@ -102,13 +102,13 @@ class ScanDataSource(object):
         """Returns the scan's id string, a unique
         identifier for this scan in the context of
         the data file it is recordered in
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         str
@@ -124,13 +124,13 @@ class ScanDataSource(object):
         If the original format does not natively include
         an index value, this value may be computed from
         the byte offset index.
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         int
@@ -143,13 +143,13 @@ class ScanDataSource(object):
         used to produce this scan. 1 refers to a survey scan
         of unfragmented ions, 2 refers to a tandem scan derived
         from an ms level 1 ion, and so on.
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         int
@@ -160,13 +160,13 @@ class ScanDataSource(object):
     def _scan_time(self, scan):
         """Returns the time in minutes from the start of data
         acquisition to when this scan was acquired.
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         float
@@ -238,10 +238,6 @@ class ScanIterator(ScanDataSource):
     def next(self):
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def get_scan_by_id(self, scan_id):
-        raise NotImplementedError()
-
     def _make_scan(self, data):
         return Scan(data, self)
 
@@ -250,6 +246,22 @@ class ScanIterator(ScanDataSource):
 
     def __iter__(self):
         return self
+
+
+@add_metaclass(abc.ABCMeta)
+class RandomAccessScanSource(ScanDataSource):
+
+    @abc.abstractmethod
+    def get_scan_by_id(self, scan_id):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_scan_by_time(self, time):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_scan_by_index(self, index):
+        raise NotImplementedError()
 
 
 class DetachedAccessError(Exception):
