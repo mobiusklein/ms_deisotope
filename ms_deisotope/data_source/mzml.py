@@ -120,7 +120,7 @@ class MzMLLoader(MzMLDataInterface, ScanIterator, RandomAccessScanSource):
         self._use_index = use_index
 
     def __reduce__(self):
-        return MzMLLoader, (self.source_file, self._use_index)
+        return self.__class__, (self.source_file, self._use_index)
 
     def file_description(self):
         return _find_section(self._source, "fileDescription")
@@ -131,6 +131,9 @@ class MzMLLoader(MzMLDataInterface, ScanIterator, RandomAccessScanSource):
     def data_processing(self):
         return _find_section(self._source, "dataProcessingList")
 
+    def samples(self):
+        return _find_section(self._source, "sampleList")
+
     @property
     def index(self):
         return self._source._offset_index
@@ -138,6 +141,9 @@ class MzMLLoader(MzMLDataInterface, ScanIterator, RandomAccessScanSource):
     @property
     def source(self):
         return self._source
+
+    def close(self):
+        self._source.close()
 
     def reset(self):
         self._source.reset()
@@ -147,8 +153,8 @@ class MzMLLoader(MzMLDataInterface, ScanIterator, RandomAccessScanSource):
     def _make_iterator(self, iterator=None):
         self._producer = self._scan_group_iterator(iterator)
 
-    def _validate(self, scan_dict):
-        return "m/z array" in scan_dict
+    def _validate(self, scan):
+        return "m/z array" in scan._data
 
     def _scan_group_iterator(self, iterator=None):
         if iterator is None:
@@ -161,9 +167,9 @@ class MzMLLoader(MzMLDataInterface, ScanIterator, RandomAccessScanSource):
         _make_scan = self._make_scan
 
         for scan in iterator:
-            if not self._validate(scan):
-                continue
             packed = _make_scan(scan)
+            if not self._validate(packed):
+                continue
             self._scan_cache[packed.id] = packed
             if scan['ms level'] == 2:
                 if current_level < 2:
@@ -225,7 +231,7 @@ class MzMLLoader(MzMLDataInterface, ScanIterator, RandomAccessScanSource):
             mid = (hi + lo) / 2
             sid = scan_ids[mid]
             scan = self.get_scan_by_id(sid)
-            if not self._validate(scan._data):
+            if not self._validate(scan):
                 sid = scan_ids[mid - 1]
                 scan = self.get_scan_by_id(sid)
 

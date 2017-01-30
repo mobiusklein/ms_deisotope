@@ -1,18 +1,33 @@
 import os
 import json
 from collections import OrderedDict
+from uuid import uuid4
 
 import numpy as np
 
 from ms_peak_picker import PeakIndex, PeakSet
-from psims.mzml import writer
+
+try:
+    from psims.mzml import writer
+except ImportError:
+    print("MzMLWriter not available.")
+    writer = None
 
 from .common import ScanSerializerBase, ScanDeserializerBase
 from .text_utils import (envelopes_to_array, decode_envelopes)
 from ms_deisotope import peak_set
+from ms_deisotope.utils import Base
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.data_source.common import PrecursorInformation, ScanBunch
 from ms_deisotope.data_source.mzml import MzMLLoader
+
+
+class SampleRun(Base):
+    def __init__(self, name, uuid, completed=True, sample_type=None):
+        self.name = name
+        self.uuid = uuid
+        self.sample_type = sample_type
+        self.completed = completed
 
 
 def _base_peak_from_descriptors(descriptors):
@@ -51,14 +66,18 @@ def describe_spectrum(peak_list):
 
 
 class ExtendedScanIndex(object):
-    def __init__(self, ms1_ids=None, msn_ids=None):
+    SCHEMA_VERSION = "1.0"
+
+    def __init__(self, ms1_ids=None, msn_ids=None, schema_version=None):
+        if schema_version is None:
+            schema_version = self.SCHEMA_VERSION
         if ms1_ids is None:
             ms1_ids = {}
         if msn_ids is None:
             msn_ids = {}
         self.ms1_ids = OrderedDict(ms1_ids)
         self.msn_ids = OrderedDict(msn_ids)
-        self.count = 0
+        self.schema_version = schema_version
 
     def _package_precursor_information(self, product):
         precursor_information = product.precursor_information
@@ -69,7 +88,8 @@ class ExtendedScanIndex(object):
                 "intensity": precursor_information.extracted_intensity,
                 "charge": precursor_information.extracted_charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
-                "product_scan_id": product.id
+                "product_scan_id": product.id,
+                "scan_time": product.scan_time
             }
         else:
             package = {
@@ -79,7 +99,8 @@ class ExtendedScanIndex(object):
                 "intensity": precursor_information.intensity,
                 "charge": precursor_information.charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
-                "product_scan_id": product.id
+                "product_scan_id": product.id,
+                "scan_time": product.scan_time
             }
         return package
 
@@ -100,7 +121,8 @@ class ExtendedScanIndex(object):
     def serialize(self, handle):
         mapping = {
             "ms1_ids": list(self.ms1_ids.items()),
-            "msn_ids": list(self.msn_ids.items())
+            "msn_ids": list(self.msn_ids.items()),
+            "schema_version": self.schema_version,
         }
         json.dump(mapping, handle)
 
@@ -138,9 +160,19 @@ class MzMLScanSerializer(ScanSerializerBase):
         self.source_file_list = []
         self.data_processing_list = []
         self.instrument_configuration_list = []
+        self.sample_list = []
 
         self.total_ion_chromatogram_tracker = OrderedDict()
         self.base_peak_chromatogram_tracker = OrderedDict()
+
+        self.sample_run = SampleRun(name=sample_name, uuid=str(uuid4()))
+
+        self.add_sample({
+            "name": sample_name,
+            "id": "sample_1",
+            "params": [
+                {"name": "SampleRun-UUID", "value": self.sample_run.uuid},
+            ]})
 
         self.indexer = None
         if build_extra_index:
@@ -161,6 +193,9 @@ class MzMLScanSerializer(ScanSerializerBase):
     def add_instrument_configuration(self, instrument_description):
         self.instrument_configuration_list.append(instrument_description)
 
+    def add_sample(self, sample):
+        self.sample_list.append(sample)
+
     def _create_file_description(self):
         self.writer.file_description(self.file_contents_list, self.source_file_list)
 
@@ -169,6 +204,9 @@ class MzMLScanSerializer(ScanSerializerBase):
             "id": "ms_deisotope_1",
             "name": "ms_deisotope"
         }])
+
+    def _create_sample_list(self):
+        self.writer.sample_list(self.sample_list)
 
     def _build_processing_method(self, order=1, picked_peaks=True, smoothing=True, baseline_reduction=True):
         if self.deconvoluted:
@@ -213,10 +251,14 @@ class MzMLScanSerializer(ScanSerializerBase):
         self._create_software_list()
         self._create_instrument_configuration()
         self._create_data_processing_list()
+        self._create_sample_list()
 
-        self._run_tag = self.writer.run(id=self.sample_name)
+        self._run_tag = self.writer.run(
+            id=self.sample_name,
+            sample='sample_1')
         self._run_tag.__enter__()
-        self._spectrum_list_tag = self.writer.spectrum_list(count=self.n_spectra)
+        self._spectrum_list_tag = self.writer.spectrum_list(
+            count=self.n_spectra)
         self._spectrum_list_tag.__enter__()
 
     def _pack_activation(self, activation_information):
@@ -271,9 +313,9 @@ class MzMLScanSerializer(ScanSerializerBase):
             score_array = [
                 peak.score for peak in scan.deconvoluted_peak_set
             ]
-            extra_arrays.append((score_array, "deconvolution score array"))
+            extra_arrays.append(("deconvolution score array", score_array))
             envelope_array = envelopes_to_array([peak.envelope for peak in scan.deconvoluted_peak_set])
-            extra_arrays.append((envelope_array, "isotopic envelopes array"))
+            extra_arrays.append(("isotopic envelopes array", envelope_array))
         return extra_arrays
 
     def save_scan_bunch(self, bunch, **kwargs):
@@ -380,6 +422,9 @@ class MzMLScanSerializer(ScanSerializerBase):
             except IOError:
                 pass
 
+    def format(self):
+        self.writer.format()
+
 
 def marshal_deconvoluted_peak_set(scan_dict):
     envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
@@ -404,18 +449,61 @@ def marshal_deconvoluted_peak_set(scan_dict):
 
 
 class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
+    """Extends :class:`.MzMLLoader` to support deserializing preprocessed data
+    and to take advantage of additional indexing information.
+
+    Attributes
+    ----------
+    extended_index : ExtendedIndex
+        Holds the additional indexing information
+        that may have been generated with the data
+        file being accessed.
+    """
     def __init__(self, source_file, use_index=True):
         MzMLLoader.__init__(self, source_file, use_index=use_index)
         self.extended_index = ExtendedScanIndex()
+        self._scan_id_to_rt = dict()
+        self._sample_run = None
         if self._use_index:
             try:
                 if os.path.exists(self._index_file_name):
-                    self.extended_index = ExtendedScanIndex.deserialize(
-                        open(self._index_file_name))
+                    self.read_index()
             except IOError:
                 pass
             except ValueError:
                 pass
+            if self.extended_index:
+                for key in self.extended_index.ms1_ids:
+                    self._scan_id_to_rt[key] = self.extended_index.ms1_ids[key]['scan_time']
+                for key in self.extended_index.msn_ids:
+                    self._scan_id_to_rt[key] = self.extended_index.msn_ids[key]['scan_time']
+
+    def read_index(self):
+        with open(self._index_file_name) as handle:
+            self.extended_index = ExtendedScanIndex.deserialize(handle)
+
+    def _make_sample_run(self):
+        samples = self.samples()
+        sample = samples['sample'][0]
+        return SampleRun(name=sample['name'], uuid=sample['SampleRun-UUID'])
+
+    @property
+    def sample_run(self):
+        if self._sample_run is None:
+            self._sample_run = self._make_sample_run()
+        return self._sample_run
+
+    def _validate(self, scan):
+        return bool(scan.deconvoluted_peak_set)
+
+    def get_index_information_by_scan_id(self, scan_id):
+        try:
+            try:
+                return self.extended_index.msn_ids[scan_id]
+            except KeyError:
+                return self.extended_index.ms1_ids[scan_id]
+        except:
+            return {}
 
     def iter_scan_headers(self, iterator=None):
         self.reset()
@@ -425,10 +513,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         product_scans = []
 
         _make_scan = super(ProcessedMzMLDeserializer, self)._make_scan
+        _validate = super(ProcessedMzMLDeserializer, self)._validate
 
         current_level = 1
         for scan in iterator:
-            if not self._validate(scan):
+            if not _validate(scan):
                 continue
             packed = _make_scan(scan)
             if scan['ms level'] == 2:
@@ -506,8 +595,12 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         return scan.pack()
 
     def convert_scan_id_to_retention_time(self, scan_id):
-        header = self.get_scan_header_by_id(scan_id)
-        return header.scan_time
+        try:
+            time = self._scan_id_to_rt[scan_id]
+            return time
+        except KeyError:
+            header = self.get_scan_header_by_id(scan_id)
+            return header.scan_time
 
     # LC-MS/MS Database API
 

@@ -133,6 +133,9 @@ class MzXMLLoader(MzXMLDataInterface, ScanIterator):
     def source(self):
         return self._source
 
+    def close(self):
+        self._source.close()
+
     def reset(self):
         self._make_iterator(None)
         self._scan_cache = WeakValueDictionary()
@@ -141,8 +144,8 @@ class MzXMLLoader(MzXMLDataInterface, ScanIterator):
     def _make_iterator(self, iterator=None):
         self._producer = self._scan_group_iterator(iterator)
 
-    def _validate(self, scan_dict):
-        return "m/z array" in scan_dict
+    def _validate(self, scan):
+        return "m/z array" in scan._data
 
     def _scan_group_iterator(self, iterator=None):
         if iterator is None:
@@ -155,9 +158,9 @@ class MzXMLLoader(MzXMLDataInterface, ScanIterator):
         _make_scan = self._make_scan
 
         for scan in iterator:
-            if not self._validate(scan):
-                continue
             packed = _make_scan(scan)
+            if not self._validate(packed):
+                continue
             self._scan_cache[packed.id] = packed
             if packed.ms_level == 2:
                 if current_level < 2:
@@ -219,7 +222,7 @@ class MzXMLLoader(MzXMLDataInterface, ScanIterator):
             mid = (hi + lo) / 2
             sid = scan_ids[mid]
             scan = self.get_scan_by_id(sid)
-            if not self._validate(scan._data):
+            if not self._validate(scan):
                 sid = scan_ids[mid - 1]
                 scan = self.get_scan_by_id(sid)
 

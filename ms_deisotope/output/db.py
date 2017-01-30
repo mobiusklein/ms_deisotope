@@ -1,10 +1,10 @@
 from uuid import uuid4
 import os
+
 from sqlalchemy import create_engine, select, func, event
 from sqlalchemy.orm import sessionmaker, scoped_session, validates, deferred
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.engine import Connectable
-from sqlalchemy.pool import QueuePool
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
@@ -26,7 +26,7 @@ from ms_deisotope.averagine import (
 from ms_deisotope.data_source.common import (
     ProcessedScan, PrecursorInformation as MemoryPrecursorInformation, ScanBunch)
 
-from .common import ScanSerializerBase, ScanDeserializerBase
+from ms_deisotope.output.common import ScanSerializerBase, ScanDeserializerBase
 
 
 def Mass(index=True):
@@ -580,10 +580,11 @@ class SQLiteConnectionRecipe(ConnectionRecipe):
         try:
             dbapi_connection.execute("PRAGMA page_size = 5120;")
             dbapi_connection.execute("PRAGMA cache_size = 12000;")
+            dbapi_connection.execute("PRAGMA temp_store = 3;")
             dbapi_connection.execute("PRAGMA foreign_keys = ON;")
             if not int(os.environ.get("NOWAL", '0')):
                 dbapi_connection.execute("PRAGMA journal_mode = WAL;")
-            dbapi_connection.execute("PRAGMA wal_autocheckpoint = 100;")
+                dbapi_connection.execute("PRAGMA wal_autocheckpoint = 100;")
             dbapi_connection.execute("PRAGMA journal_size_limit = 1000000;")
             pass
         except Exception as e:
@@ -610,6 +611,11 @@ class DatabaseBoundOperation(object):
         self._sessionmaker = scoped_session(
             sessionmaker(bind=self.engine, autoflush=False))
         self._session = None
+
+    def bridge(self, other):
+        self.engine = other.engine
+        self._sessionmaker = other._sessionmaker
+        self._session = other._session
 
     def _configure_connection(self, connection):
         eng = configure_connection(connection, create_tables=True)

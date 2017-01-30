@@ -504,6 +504,8 @@ class ScanIntervalTree(object):
         ]
         intervals = sorted([[i.start, i.end] for i in intervals])
         out = []
+        if len(intervals) == 0:
+            return []
         last = intervals[0]
         for interval in intervals[1:]:
             if interval[0] < last[1]:
