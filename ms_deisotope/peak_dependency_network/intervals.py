@@ -1,10 +1,38 @@
 
 
 class SpanningMixin(object):
+    """Provides methods for checking whether an entity
+    which has a defined start and end point over a single
+    dimension contains or overlaps with another entity in
+    that same dimension.
+    """
     def __contains__(self, i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : Number
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
         return self.start <= i <= self.end
 
     def overlaps(self, interval):
+        """Tests whether another spanning entity with
+        a defined start and end point overlaps with
+        this spanning entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin
+
+        Returns
+        -------
+        bool
+        """
         cond = ((self.start <= interval.start and self.end >= interval.start) or (
             self.start >= interval.start and self.end <= interval.end) or (
             self.start >= interval.start and self.end >= interval.end and self.start <= interval.end) or (
@@ -23,13 +51,51 @@ class SpanningMixin(object):
             return self.start - interval.end
 
     def is_contained_in_interval(self, interval):
+        """Tests whether this spanning entity is
+        completely contained inside the other entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin
+
+        Returns
+        -------
+        bool
+        """
         return self.start >= interval.start and self.end <= interval.end
 
     def contains_interval(self, interval):
+        """Tests whether the other spanning entity is
+        completely contained inside this entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin
+
+        Returns
+        -------
+        bool
+        """
         return self.start <= interval.start and self.end >= interval.end
 
 
 class Interval(SpanningMixin):
+    """A generic wrapper around data associated
+    with a particular interval over a single dimension
+
+    Attributes
+    ----------
+    data : dict
+        A holder of arbitrary extra data not associated
+        with any single member contained in this interval
+    end : Number
+        The end point of the interval described
+    members : list
+        A list of arbitrary objects which are associated with this
+        interval.
+    start : Number
+        The start point of the interval described
+    """
     def __init__(self, start, end, members=None, **kwargs):
         if members is None:
             members = []
@@ -52,6 +118,40 @@ class Interval(SpanningMixin):
 
 
 class IntervalTreeNode(object):
+    """A single node in an Interval Tree. The
+    root node of an interval tree can be treated
+    as the tree itself.
+
+    Attributes
+    ----------
+    center : Number
+        The center point of this node's collection
+    contained : list
+        The list of Interval-like objects which
+        were aggregated under this node. This collection
+        of intervals all span this node's center.
+    end : Number
+        The end point of this node's collection or it's
+        rightmost child's end point, whichever is larger
+    left : IntervalTreeNode
+        The left child node of this node. May be `None`
+        if this node is a leaf node. Contains all
+        intervals whose end point is less than this
+        node's center
+    level : int
+        Depth in the tree
+    parent : IntervalTree
+        This node's parent node. May be None if this
+        node is the root node.
+    right : IntervalTree
+        The right child node of this node. May be `None`
+        if this node is a leaf node. Contains all
+        intervals whose start point is greater than this
+        node's center
+    start : Number
+        The start point of this node's collection or it's
+        leftmost child's start point, whichever is smaller
+    """
     def __init__(self, center, left, contained, right, level=0, parent=None):
         self.center = center
         self.left = left
@@ -78,6 +178,19 @@ class IntervalTreeNode(object):
             self.start = self.end = center
 
     def node_contains_point(self, x):
+        """Returns the first node whose interval
+        contains the point `x`. Returns `None`
+        if no node is found.
+
+        Parameters
+        ----------
+        x : Number
+            The query point
+
+        Returns
+        -------
+        IntervalTreeNode
+        """
         if x < self.start:
             if self.left is not None:
                 return self.left.node_contains_point(x)
@@ -90,6 +203,20 @@ class IntervalTreeNode(object):
             return self
 
     def contains_point(self, x):
+        """Returns the list of contained intervals for all
+        nodes which contain the point `x`.
+
+        Parameters
+        ----------
+        x : Number
+            The query point
+
+        Returns
+        -------
+        list
+            A list of objects which span `x` from all spanning
+            nodes' `contained` list.
+        """
         inner = [
             i for i in self.contained
             if i.start <= x <= i.end
@@ -110,6 +237,22 @@ class IntervalTreeNode(object):
         return result
 
     def overlaps(self, start, end):
+        """Returns the list of all contained intervals which
+        overlap with the interval described by `start` and `end`
+
+        Parameters
+        ----------
+        start : Number
+            The start of the query interval
+        end : Number
+            The end of the query interval
+
+        Returns
+        -------
+        list
+            A list of all objects which overlap the argument interval
+            from all spanning nodes' `contained` list.
+        """
         result = []
         if (start < self.start and end >= self.end):
             if self.left is not None:
@@ -182,6 +325,20 @@ class IntervalTreeNode(object):
 
 
 def iterative_build_interval_tree(cls, intervals):
+    """Builds an IntervalTreeNode hierarchy from `intervals`. This
+    iterative method is preferable to avoid recursion limits.
+
+    Parameters
+    ----------
+    intervals : Iterable of Intervals
+        The set of Interval-like objects to use to construct
+        the Interval Tree
+
+    Returns
+    -------
+    IntervalTreeNode
+        The root of the constructed Interval Tree
+    """
     stack = []
     root = cls(0, None, [], None, -1)
 

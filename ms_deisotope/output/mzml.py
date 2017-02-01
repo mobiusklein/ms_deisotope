@@ -174,6 +174,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 {"name": "SampleRun-UUID", "value": self.sample_run.uuid},
             ]})
 
+        self.chromatogram_queue = []
+
         self.indexer = None
         if build_extra_index:
             self.indexer = ExtendedScanIndex()
@@ -197,7 +199,8 @@ class MzMLScanSerializer(ScanSerializerBase):
         self.sample_list.append(sample)
 
     def _create_file_description(self):
-        self.writer.file_description(self.file_contents_list, self.source_file_list)
+        self.writer.file_description(
+            self.file_contents_list, self.source_file_list)
 
     def _create_software_list(self):
         self.writer.software_list([{
@@ -208,7 +211,8 @@ class MzMLScanSerializer(ScanSerializerBase):
     def _create_sample_list(self):
         self.writer.sample_list(self.sample_list)
 
-    def _build_processing_method(self, order=1, picked_peaks=True, smoothing=True, baseline_reduction=True):
+    def _build_processing_method(self, order=1, picked_peaks=True, smoothing=True,
+                                 baseline_reduction=True):
         if self.deconvoluted:
             params = [
                 "deisotoping",
@@ -394,21 +398,31 @@ class MzMLScanSerializer(ScanSerializerBase):
             chromatogram_type=chromatogram_type, compression=self.compression,
             params=params)
 
-    def write_default_chromatograms(self):
-        self._chromatogram_list_tag = self.writer.chromatogram_list(count=2)
+    def _make_default_chromatograms(self):
+        d = dict(
+            chromatogram=self.total_ion_chromatogram_tracker,
+            chromatogram_type='total ion current chromatogram',
+            id='TIC')
+        self.chromatogram_queue.append(d)
+        d = dict(
+            chromatogram=self.base_peak_chromatogram_tracker,
+            chromatogram_type="basepeak chromatogram",
+            id='BPC')
+        self.chromatogram_queue.append(d)
+
+    def write_chromatograms(self):
+        self._chromatogram_list_tag = self.writer.chromatogram_list(
+            count=len(self.chromatogram_queue))
         with self._chromatogram_list_tag:
-            self.save_chromatogram(
-                self.total_ion_chromatogram_tracker,
-                chromatogram_type='total ion current chromatogram',
-                id='TIC')
-            self.save_chromatogram(
-                self.base_peak_chromatogram_tracker,
-                chromatogram_type="basepeak chromatogram",
-                id='BPC')
+            for chromatogram in self.chromatogram_queue:
+                self.save_chromatogram(
+                    chromatogram.pop("chromatogram"),
+                    **chromatogram)
 
     def complete(self):
         self._spectrum_list_tag.__exit__(None, None, None)
-        self.write_default_chromatograms()
+        self._make_default_chromatograms()
+        self.write_chromatograms()
         self._run_tag.__exit__(None, None, None)
         self.writer.__exit__(None, None, None)
         if self.indexer is not None:
