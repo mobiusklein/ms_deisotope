@@ -86,10 +86,11 @@ class Constant(object):
 
 
 class DeconvolutionProcessResult(object):
-    def __init__(self, deconvoluter, peak_set, priorities):
+    def __init__(self, deconvoluter, peak_set, priorities, errors=None):
         self.deconvoluter = deconvoluter
         self.peak_set = peak_set
         self.priorities = priorities
+        self.errors = errors
 
     def __getitem__(self, i):
         if i == 0:

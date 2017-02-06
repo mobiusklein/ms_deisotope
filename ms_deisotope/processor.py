@@ -273,9 +273,15 @@ class ScanProcessor(Base):
             ms1_deconvolution_args['charge_range'] = tuple(
                 polarity * abs(c) for c in ms1_deconvolution_args['charge_range'])
 
-        dec_peaks, priority_results = deconvolute_peaks(
+        decon_result = deconvolute_peaks(
             precursor_scan.peak_set, priority_list=priorities,
             **ms1_deconvolution_args)
+
+        dec_peaks, priority_results = decon_result
+
+        if decon_result.errors:
+            logger.error("Errors occurred during deconvolution of %s, %r" % (
+                precursor_scan.scan_id, decon_result.errors))
 
         for pr in priority_results:
             if pr is None:

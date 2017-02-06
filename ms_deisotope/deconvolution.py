@@ -5,7 +5,7 @@ from .averagine import (
     AveragineCache, peptide, glycopeptide, glycan, neutral_mass, isotopic_variants,
     isotopic_shift, PROTON, shift_isotopic_pattern)
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSolution, DeconvolutedPeakSet
-from .scoring import IsotopicFitRecord, penalized_msdeconv, distinct_pattern_fitter
+from .scoring import IsotopicFitRecord, penalized_msdeconv
 from .utils import range, Base, TrivialTargetedDeconvolutionResult, DeconvolutionProcessResult
 from .envelope_statistics import a_to_a2_ratio, average_mz, most_abundant_mz
 from .peak_dependency_network import PeakDependenceGraph, NetworkedTargetedDeconvolutionResult
@@ -1759,14 +1759,17 @@ def deconvolute_peaks(peaklist, deconvoluter_type=AveraginePeakDependenceGraphDe
         right_search_limit=right_search_limit, charge_carrier=charge_carrier, truncate_after=truncate_after)
 
     acc = []
+    errors = []
     for pr in priority_list_results:
         try:
             result = pr.get()
-        except ValueError:
+        except ValueError as e:
             result = None
+            errors.append(e)
             logger.info("Could not extract a solution for %r", pr.query_peak, exc_info=True)
         acc.append(result)
 
     priority_list_results = acc
 
-    return DeconvolutionProcessResult(decon, deconvoluted_peaks, priority_list_results)
+    return DeconvolutionProcessResult(
+        decon, deconvoluted_peaks, priority_list_results, errors)

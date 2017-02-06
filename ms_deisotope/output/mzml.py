@@ -403,12 +403,15 @@ class MzMLScanSerializer(ScanSerializerBase):
             chromatogram=self.total_ion_chromatogram_tracker,
             chromatogram_type='total ion current chromatogram',
             id='TIC')
-        self.chromatogram_queue.append(d)
+        if len(self.total_ion_chromatogram_tracker) > 0:
+            self.chromatogram_queue.append(d)
+
         d = dict(
             chromatogram=self.base_peak_chromatogram_tracker,
             chromatogram_type="basepeak chromatogram",
             id='BPC')
-        self.chromatogram_queue.append(d)
+        if len(self.base_peak_chromatogram_tracker) > 0:
+            self.chromatogram_queue.append(d)
 
     def write_chromatograms(self):
         self._chromatogram_list_tag = self.writer.chromatogram_list(
