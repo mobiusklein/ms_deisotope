@@ -281,7 +281,7 @@ class ScanProcessor(Base):
 
         if decon_result.errors:
             logger.error("Errors occurred during deconvolution of %s, %r" % (
-                precursor_scan.scan_id, decon_result.errors))
+                precursor_scan.id, decon_result.errors))
 
         for pr in priority_results:
             if pr is None:

@@ -568,7 +568,7 @@ class PrecursorInformation(object):
         self.product_scan_id = product_scan_id
 
     def __repr__(self):
-        return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%d/%d, scan_id=%r)" % (
+        return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
             self.mz,
             mass_charge_ratio(self.extracted_neutral_mass, self.extracted_charge if self.extracted_charge != 0 else 1)
             if self.extracted_neutral_mass != 0. else 0.,

@@ -162,6 +162,8 @@ class MzMLScanSerializer(ScanSerializerBase):
         self.instrument_configuration_list = []
         self.sample_list = []
 
+        self.processing_parameters = []
+
         self.total_ion_chromatogram_tracker = OrderedDict()
         self.base_peak_chromatogram_tracker = OrderedDict()
 
@@ -192,6 +194,9 @@ class MzMLScanSerializer(ScanSerializerBase):
     def add_data_processing(self, data_processing_description):
         self.data_processing_list.append(data_processing_description)
 
+    def add_processing_parameter(self, name, value):
+        self.processing_parameters.append({"name": name, "value": value})
+
     def add_instrument_configuration(self, instrument_description):
         self.instrument_configuration_list.append(instrument_description)
 
@@ -212,7 +217,7 @@ class MzMLScanSerializer(ScanSerializerBase):
         self.writer.sample_list(self.sample_list)
 
     def _build_processing_method(self, order=1, picked_peaks=True, smoothing=True,
-                                 baseline_reduction=True):
+                                 baseline_reduction=True, additional_parameters=tuple()):
         if self.deconvoluted:
             params = [
                 "deisotoping",
@@ -230,6 +235,8 @@ class MzMLScanSerializer(ScanSerializerBase):
             params.append("baseline reduction")
         params.append("Conversion to mzML")
 
+        params.extend(additional_parameters)
+
         mapping = {
             "software_reference": "ms_deisotope_1",
             "order": order,
@@ -241,7 +248,8 @@ class MzMLScanSerializer(ScanSerializerBase):
         n = len(self.data_processing_list) - 1
         entry = {
             "id": "ms_deisotope_processing_1",
-            "processing_methods": [self._build_processing_method(n)]
+            "processing_methods": [self._build_processing_method(
+                n, additional_parameters=self.processing_parameters)]
         }
         self.add_data_processing(entry)
         self.writer.data_processing_list(self.data_processing_list)
