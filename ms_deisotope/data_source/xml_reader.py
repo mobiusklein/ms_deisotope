@@ -81,7 +81,7 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
 
     def next(self):
         try:
-            return self._producer.next()
+            return next(self._producer)
         except XMLSyntaxError:
             raise StopIteration(
                 "This iterator may need to be reset by calling `reset` to continue using it after"
@@ -117,8 +117,9 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         lo = 0
         hi = len(scan_ids)
         while hi != lo:
-            mid = (hi + lo) / 2
+            mid = (hi + lo) // 2
             sid = scan_ids[mid]
+            sid = sid.decode('utf-8')
             scan = self.get_scan_by_id(sid)
             if not self._validate(scan):
                 sid = scan_ids[mid - 1]
@@ -139,7 +140,10 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
     def get_scan_by_index(self, index):
         if not self._use_index:
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
-        return self.get_scan_by_id(tuple(self.index)[index])
+        index_keys = tuple(self.index)
+        id_bytes = index_keys[index]
+        id_str = id_bytes.decode("utf-8")
+        return self.get_scan_by_id(id_str)
 
     def _locate_ms1_scan(self, scan):
         while scan.ms_level != 1:

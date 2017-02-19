@@ -29,7 +29,7 @@ class Averagine(object):
             scaled[elem] = round(count * scale)
 
         scaled_mass = calculate_mass(scaled)
-        delta_hydrogen = int(neutral - scaled_mass)
+        delta_hydrogen = round(scaled_mass - neutral)
         H = scaled["H"]
         if H > delta_hydrogen:
             scaled["H"] = H - delta_hydrogen

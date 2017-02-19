@@ -32,12 +32,15 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         scan = next(reader)
         self.assertEqual(scan.index, 0)
 
+        reader.close()
+
     def test_index(self):
         reader = self.reader
         bunch = next(reader)
         self.assertEqual(bunch.precursor.index, 0)
         for i, scan in enumerate(bunch.products, 1):
             self.assertEqual(scan.index, i)
+        reader.close()
 
     def test_ms_level(self):
         reader = self.reader
@@ -45,11 +48,13 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         self.assertEqual(bunch.precursor.ms_level, 1)
         for i, scan in enumerate(bunch.products, 1):
             self.assertEqual(scan.ms_level, 2)
+        reader.close()
 
     def test_polarity(self):
         reader = self.reader
         bunch = next(reader)
         self.assertEqual(bunch.precursor.polarity, 1)
+        reader.close()
 
     def test_activation(self):
         reader = self.reader
@@ -58,6 +63,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         for product in bunch.products:
             self.assertNotEqual(product.activation, None)
             self.assertEqual(product.activation.method, "beam-type collision-induced dissociation")
+        reader.close()
 
     def test_precursor(self):
         reader = self.reader
@@ -66,18 +72,21 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         for product in bunch.products:
             self.assertNotEqual(product.precursor_information, None)
             self.assertEqual(product.precursor_information.precursor, bunch.precursor)
+        reader.close()
 
     def test_pick_peaks(self):
         reader = self.reader
         bunch = next(reader)
         scan = bunch.precursor.pick_peaks()
         self.assertEqual(len(scan.peak_set), 2107)
+        reader.close()
 
     def test_pack(self):
         reader = self.reader
         bunch = next(reader)
         bunch.precursor.pick_peaks()
         self.assertEqual(bunch.precursor.pack().title, bunch.precursor.title)
+        reader.close()
 
     def test_get_scan_by_id(self):
         reader = self.reader
@@ -91,6 +100,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
 
         self.assertEqual(product.precursor_information.precursor_scan_id, scan_ids[0])
         self.assertIs(precursor, reader.get_scan_by_id(scan_ids[0]))
+        reader.close()
 
     def test_get_scan_by_index(self):
         reader = self.reader
@@ -98,6 +108,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         precursor = reader.get_scan_by_index(0)
         self.assertEqual(precursor.index, 0)
         self.assertEqual(precursor.id, scan_ids[0])
+        reader.close()
 
     def test_get_scan_by_time(self):
         reader = self.reader
@@ -106,6 +117,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
 
         product = reader.get_scan_by_time(22.132753)
         self.assertEqual(product.index, 1)
+        reader.close()
 
 
 
