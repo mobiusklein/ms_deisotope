@@ -7,7 +7,7 @@ from .data_source.mzml import MzMLLoader
 from .data_source.infer_type import MSFileLoader
 from .data_source.common import ScanBunch
 from .utils import Base
-from .peak_dependency_network import Interval, IntervalTreeNode
+from .peak_dependency_network import Interval, IntervalTreeNode, NoIsotopicClustersError
 
 PyteomicsMzMLLoader = MzMLLoader
 
@@ -135,6 +135,8 @@ class ScanProcessor(Base):
     trust_charge_hint : bool
         Whether or not to trust the charge provided by the data source when determining
         the charge state of precursor isotopic patterns. Defaults to `True`
+    terminate_on_error: bool
+        Whether or not  to stop processing on an error. Defaults to `True`
     """
 
     def __init__(self, data_source, ms1_peak_picking_args=None,
@@ -143,7 +145,8 @@ class ScanProcessor(Base):
                  pick_only_tandem_envelopes=False, precursor_selection_window=1.5,
                  trust_charge_hint=True,
                  loader_type=None,
-                 envelope_selector=None):
+                 envelope_selector=None,
+                 terminate_on_error=True):
         if loader_type is None:
             loader_type = MSFileLoader
 
@@ -162,6 +165,7 @@ class ScanProcessor(Base):
 
         self._signal_source = self.loader_type(data_source)
         self.envelope_selector = envelope_selector
+        self.terminate_on_error = terminate_on_error
 
     @property
     def reader(self):
@@ -272,10 +276,15 @@ class ScanProcessor(Base):
             polarity = precursor_scan.polarity
             ms1_deconvolution_args['charge_range'] = tuple(
                 polarity * abs(c) for c in ms1_deconvolution_args['charge_range'])
-
-        decon_result = deconvolute_peaks(
-            precursor_scan.peak_set, priority_list=priorities,
-            **ms1_deconvolution_args)
+        try:
+            decon_result = deconvolute_peaks(
+                precursor_scan.peak_set, priority_list=priorities,
+                **ms1_deconvolution_args)
+        except NoIsotopicClustersError as e:
+            logger.info("No isotopic clusters found in %r" % precursor_scan.id)
+            e.scan_id = precursor_scan.id
+            if self.terminate_on_error:
+                raise e
 
         dec_peaks, priority_results = decon_result
 
@@ -347,7 +356,14 @@ class ScanProcessor(Base):
             deconargs["charge_range"] = [
                 polarity * abs(c) for c in deconargs["charge_range"]]
 
-        dec_peaks, _ = deconvolute_peaks(product_scan.peak_set, **deconargs)
+        try:
+            dec_peaks, _ = deconvolute_peaks(product_scan.peak_set, **deconargs)
+        except NoIsotopicClustersError as e:
+            logger.info("No Isotopic Clusters found in %r" % product_scan.id)
+            e.scan_id = product_scan.id
+            if self.terminate_on_error:
+                raise e
+
         product_scan.deconvoluted_peak_set = dec_peaks
         return dec_peaks
 

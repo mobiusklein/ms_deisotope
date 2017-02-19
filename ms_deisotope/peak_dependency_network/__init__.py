@@ -2,7 +2,7 @@ from . import peak_network, intervals, subgraph, utils
 
 from .peak_network import (
     PeakNode, DependenceCluster, PeakDependenceGraph,
-    NetworkedTargetedDeconvolutionResult)
+    NetworkedTargetedDeconvolutionResult, NoIsotopicClustersError)
 
 from .subgraph import (
     ConnectedSubgraph, FitNode,

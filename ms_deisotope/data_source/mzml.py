@@ -7,22 +7,6 @@ from weakref import WeakValueDictionary
 from .xml_reader import XMLReaderBase
 
 
-def _yield_from_index(scan_source, start=None):
-    offset_provider = scan_source._offset_index.offsets
-    keys = offset_provider.keys()
-    if start is not None:
-        if isinstance(start, basestring):
-            start = keys.index(start)
-        elif isinstance(start, int):
-            start = start
-        else:
-            raise TypeError("Cannot start from object %r" % start)
-    else:
-        start = 0
-    for key in keys[start:]:
-        yield scan_source.get_by_id(key)
-
-
 class MzMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the
     :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.

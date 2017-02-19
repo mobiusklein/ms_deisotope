@@ -316,11 +316,11 @@ class IntervalTreeNode(object):
                     except AttributeError:
                         result = self.right == other.right
                     if not result:
-                        print self.right, "r!=", other.right
+                        print(self.right, "r!=", other.right)
                 else:
-                    print self.left, "l!=", other.left
+                    print(self.left, "l!=", other.left)
             else:
-                print self, "!=", other
+                print(self, "!=", other)
             return result
 
 

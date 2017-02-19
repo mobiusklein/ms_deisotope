@@ -492,7 +492,7 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
         cdef:
             double score, penalty
         score = self.msdeconv._evaluate(peaklist, observed, expected, mass_error_tolerance)
-        penalty = self.penalizer._evaluate(peaklist, observed, expected)
+        penalty = abs(self.penalizer._evaluate(peaklist, observed, expected))
         return score * ((1 - penalty * self.penalty_factor))
 
 

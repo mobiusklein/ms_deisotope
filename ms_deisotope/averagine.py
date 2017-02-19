@@ -81,8 +81,8 @@ def add_compositions(a, b):
 try:
     _Averagine = Averagine
     from ms_deisotope._c.averagine import Averagine
-except ImportError, e:
-    print e
+except ImportError as e:
+    print(e)
 
 
 peptide = Averagine({"C": 4.9384, "H": 7.7583, "N": 1.3577, "O": 1.4773, "S": 0.0417})

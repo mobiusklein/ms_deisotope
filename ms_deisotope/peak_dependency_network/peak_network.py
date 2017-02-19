@@ -198,9 +198,9 @@ class PeakDependenceGraph(object):
         if self._interval_tree is None:
             self._interval_tree = IntervalTreeNode.build(self.clusters)
             if self._interval_tree is None:
-                raise ValueError(
+                raise NoIsotopicClustersError(
                     "Could not build intervals for peak retrieval with %d clusters" % len(
-                        self.clusters))
+                        self.clusters), self)
         return self._interval_tree
 
     def _deep_fuzzy_solution_for(self, peak, shift=0.5):
@@ -417,3 +417,10 @@ class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
     def get(self):
         self._get_solution()
         return self.solution_peak
+
+
+class NoIsotopicClustersError(ValueError):
+    def __init__(self, msg, graph=None, scan_id=None):
+        ValueError.__init__(self, msg)
+        self.graph = graph
+        self.scan_id = scan_id

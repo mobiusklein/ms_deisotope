@@ -351,7 +351,7 @@ class PenalizedMSDeconVFitter(IsotopicFitterBase):
     def evaluate(self, peaklist, observed, expected, mass_error_tolerance=0.02, **kwargs):
         score = self.msdeconv.evaluate(
             observed, expected, mass_error_tolerance)
-        penalty = self.penalizer.evaluate(observed, expected)
+        penalty = abs(self.penalizer.evaluate(observed, expected))
         return score * (1 - penalty * self.penalty_factor)
 
 
@@ -426,12 +426,13 @@ try:
     _ScaledGTestFitter = ScaledGTestFitter
     _PenalizedMSDeconVFitter = PenalizedMSDeconVFitter
     _DistinctPatternFitter = DistinctPatternFitter
+
     from ._c.scoring import (
         IsotopicFitRecord, LeastSquaresFitter, MSDeconVFitter,
         ScaledGTestFitter, PenalizedMSDeconVFitter, DistinctPatternFitter,
         ScaledPenalizedMSDeconvFitter)
-except ImportError, e:
-    print e
+except ImportError as e:
+    print(e)
     _c = False
 
 msdeconv = MSDeconVFitter()

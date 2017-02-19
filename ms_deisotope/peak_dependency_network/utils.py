@@ -62,7 +62,7 @@ class GeneratorQueue(object):
                     self.load_next_generator()
                     value = self.get_next_value()
                 except IndexError:
-                    print "Terminating with size", len(self.queue)
+                    print("Terminating with size", len(self.queue))
                     raise StopIteration()
         return value
 
@@ -76,7 +76,7 @@ class GeneratorQueue(object):
     def __iter__(self):
         while True:
             yield self.next()
-        print "Terminating with size", len(self.queue)
+        print("Terminating with size", len(self.queue))
 
     def __len__(self):
         return len(self.queue)
