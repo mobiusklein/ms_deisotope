@@ -6,7 +6,6 @@ from lxml.etree import XMLSyntaxError
 
 
 class XMLReaderBase(RandomAccessScanSource, ScanIterator):
-
     @property
     def index(self):
         return self._source._offset_index
@@ -60,11 +59,11 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
             if not self._validate(packed):
                 continue
             self._scan_cache[packed.id] = packed
-            if scan['ms level'] == 2:
+            if packed.ms_level == 2:
                 if current_level < 2:
                     current_level = 2
                 product_scans.append(packed)
-            elif scan['ms level'] == 1:
+            elif packed.ms_level == 1:
                 if current_level > 1:
                     precursor_scan.product_scans = list(product_scans)
                     yield ScanBunch(precursor_scan, product_scans)
@@ -108,9 +107,12 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         try:
             return self._scan_cache[scan_id]
         except KeyError:
-            packed = self._make_scan(self._source.get_by_id(scan_id))
+            packed = self._make_scan(self._get_scan_by_id_raw(scan_id))
             self._scan_cache[packed.id] = packed
             return packed
+
+    def _get_scan_by_id_raw(self, scan_id):
+        return self._source.get_by_id(scan_id)
 
     def get_scan_by_time(self, time):
         scan_ids = tuple(self.index)

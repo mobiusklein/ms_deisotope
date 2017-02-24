@@ -1080,6 +1080,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         self.peak_dependency_network = PeakDependenceGraph(
             self.peaklist, maximize=self.scorer.is_maximizing())
         self.max_missed_peaks = max_missed_peaks
+        self.fit_postprocessor = kwargs.pop("fit_postprocessor", None)
         self._priority_map = {}
 
     @property
@@ -1200,9 +1201,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier,
                 truncate_after=truncate_after)
 
-    def postprocess_fits(self, fit_postprocessor=None, error_tolerance=2e-5, charge_range=(1, 8),
+    def postprocess_fits(self, error_tolerance=2e-5, charge_range=(1, 8),
                          charge_carrier=PROTON, *args, **kwargs):
-        if fit_postprocessor is None:
+        if self.fit_postprocessor is None:
             return
 
     def select_best_disjoint_subgraphs(self, error_tolerance=2e-5, charge_carrier=PROTON):
@@ -1309,7 +1310,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8),
                     use_charge_state_hint=False, left_search_limit=1,
                     right_search_limit=0, iterations=1, charge_carrier=PROTON,
-                    truncate_after=0.8, fit_postprocessor=None):
+                    truncate_after=0.8):
         """Completely deconvolute the spectrum.
 
         For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`
@@ -1354,12 +1355,12 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier,
                 truncate_after=truncate_after)
             self.postprocess_fits(
-                fit_postprocessor=fit_postprocessor,
                 charge_range=charge_range,
                 charge_carrier=charge_carrier,
                 error_tolerance=error_tolerance)
             self.select_best_disjoint_subgraphs(
                 error_tolerance, charge_carrier)
+            self._slice_cache.clear()
 
         if self.merge_isobaric_peaks:
             self._deconvoluted_peaks = self._merge_peaks(
@@ -1666,6 +1667,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
             self.populate_graph(error_tolerance, charge_range, charge_carrier=charge_carrier,
                                 truncate_after=truncate_after, mass_shift=mass_shift)
             self.select_best_disjoint_subgraphs(error_tolerance)
+            self._slice_cache.clear()
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
 
 

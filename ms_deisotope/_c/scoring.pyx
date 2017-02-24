@@ -18,7 +18,7 @@ cdef bint isclose(double x, double y, double rtol=1.e-5, double atol=1.e-8):
     return abs(x-y) <= (atol + rtol * abs(y))
 
 
-@cython.freelist(500)
+@cython.freelist(50000)
 cdef class IsotopicFitRecord(object):
     """Describes a single isotopic pattern fit, comparing how well an
     experimentally observed sequence of peaks matches a theoretical isotopic

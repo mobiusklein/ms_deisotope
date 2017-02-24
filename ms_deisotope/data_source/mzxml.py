@@ -98,6 +98,9 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase):
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index)
 
+    def _get_scan_by_id_raw(self, scan_id):
+        return self._source.get_by_id(scan_id, "num")
+
     def _build_scan_index_lookup(self):
         if not self._use_index:
             raise ValueError("Must index the entire file before sequential indices may computed.")
