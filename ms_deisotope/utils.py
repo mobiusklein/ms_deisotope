@@ -1,5 +1,5 @@
 import operator
-
+import random
 
 try:
     from matplotlib import pyplot as plt
@@ -13,6 +13,14 @@ try:
     range = xrange
 except:
     range = range
+
+
+try:  # pragma: no cover
+    i128 = long
+    basestring = basestring
+except:  # pragma: no cover
+    i128 = int
+    basestring = (bytes, str)
 
 
 # From six
@@ -198,31 +206,6 @@ def dict_proxy(attribute):
         return cls
     return wrap
 
-
-class PaddedBuffer(object):
-    def __init__(self, content, start='<pad>', end="</pad>"):
-        self.content = content
-        self.start = start
-        self.end = end
-        self.position = 0
-        self.diff = 0
-
-    def read(self, n):
-        if self.position < len(self.start):
-            out = "".join([self.start, self.content.read(n - len(self.start))])
-            self.position += n
-            return out
-        else:
-            out = self.content.read(n)
-            if len(out) < n:
-                diff = n - len(out)
-                if self.diff == 0:
-                    self.diff = diff
-                    self.position += n
-                    return "".join([out, self.end[:diff]])
-                else:
-                    self.position += n
-                    return self.end[self.diff:diff]
-            else:
-                self.position += n
-                return out
+def uid(n=128):
+    int_ = random.getrandbits(n)
+    return int_

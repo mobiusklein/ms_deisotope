@@ -1,0 +1,275 @@
+from .lcms_feature import LCMSFeature
+
+
+class LCMSFeatureForest(object):
+    """An an algorithm for aggregating features from peaks of close mass
+    weighted by intensity.
+
+    This algorithm assumes that mass accuracy is correlated with intensity, so
+    the most intense peaks should most accurately reflect their true neutral mass.
+    The expected input is a list of (scan id, peak) pairs. This list is sorted by
+    descending peak intensity. For each pair, using binary search, locate the nearest
+    existing feature in :attr:`features`. If the nearest feature is within
+    :attr:`error_tolerance` ppm of the peak's neutral mass, add this peak to that
+    feature, otherwise create a new feature containing this peak and insert
+    it into :attr:`features` while preserving the overall sortedness. This algorithm
+    is carried out by :meth:`aggregate_unmatched_peaks`
+
+    This process may produce features with large gaps in them, which
+    may or may not be acceptable. To break gapped features into separate
+    entities, the :class:`LCMSFeatureFilter` type has a method :meth:`split_sparse`.
+
+    Attributes
+    ----------
+    features : list of LCMSFeature
+        A list of growing LCMSFeature objects, ordered by neutral mass
+    count : int
+        The number of peaks accumulated
+    error_tolerance : float
+        The mass error tolerance between peaks and possible features (in ppm)
+    """
+    def __init__(self, features=None, error_tolerance=1e-5):
+        if features is None:
+            features = []
+        self.features = sorted(features, key=lambda x: x.mz)
+        self.error_tolerance = error_tolerance
+        self.count = 0
+
+    def __len__(self):
+        return len(self.features)
+
+    def __iter__(self):
+        return iter(self.features)
+
+    def __getitem__(self, i):
+        if isinstance(i, (int, slice)):
+            return self.features[i]
+        else:
+            return [self.features[j] for j in i]
+
+    def search(self, mz, error_tolerance=None):
+        if error_tolerance is None:
+            error_tolerance = self.error_tolerance
+        i = binary_search(self.features, mz, error_tolerance)
+        if i is None:
+            return None
+        match = self[i]
+        return match
+
+    def find_all(self, mz, error_tolerance=None):
+        if error_tolerance is None:
+            error_tolerance = self.error_tolerance
+        lo, hi = search_sweep(self.features, mz, error_tolerance)
+        return self[lo:hi]
+
+    def find_insertion_point(self, peak):
+        index, matched = binary_search_with_flag(
+            self.features, peak.mz, self.error_tolerance)
+        return index, matched
+
+    def find_minimizing_index(self, peak, indices):
+        best_index = None
+        best_error = float('inf')
+        for index_case in indices:
+            feature = self[index_case]
+            err = abs(feature.mz - peak.mz) / peak.mz
+            if err < best_error:
+                best_index = index_case
+                best_error = err
+        return best_index
+
+    def handle_peak(self, peak, scan_time):
+        if len(self) == 0:
+            index = [0]
+            matched = False
+        else:
+            index, matched = self.find_insertion_point(peak)
+        if matched:
+            feature = self.features[self.find_minimizing_index(peak, index)]
+            most_abundant_member = feature.most_abundant_member
+            feature.insert(peak, scan_time)
+            if peak.intensity < most_abundant_member:
+                feature.retain_most_abundant_member()
+        else:
+            feature = LCMSFeature()
+            feature.created_at = "forest"
+            feature.insert(peak, scan_time)
+            self.insert_feature(feature, index)
+        self.count += 1
+
+    def insert_feature(self, feature, index):
+        if index[0] != 0:
+            self.features.insert(index[0] + 1, feature)
+        else:
+            if len(self) == 0:
+                new_index = index[0]
+            else:
+                x = self.features[index[0]]
+                if x.mz < feature.mz:
+                    new_index = index[0] + 1
+                else:
+                    new_index = index[0]
+            self.features.insert(new_index, feature)
+
+    def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500.):
+        for scan in scans:
+            for peak in scan.peak_set:
+                if peak.mz < minimum_mz or peak.intensity < minimum_intensity:
+                    continue
+                self.handle_peak(peak, scan.scan_time)
+        self.features = smooth_overlaps(self.features)
+
+
+def smooth_overlaps(feature_list, error_tolerance=1e-5):
+    feature_list = sorted(feature_list, key=lambda x: x.mz)
+    out = []
+    last = feature_list[0]
+    i = 1
+    while i < len(feature_list):
+        current = feature_list[i]
+        mass_error = abs((last.mz - current.mz) / current.mz)
+        if mass_error <= error_tolerance:
+            if last.overlaps_in_time(current):
+                last = last.merge(current)
+                last.created_at = "smooth_overlaps"
+            else:
+                out.append(last)
+                last = current
+        else:
+            out.append(last)
+            last = current
+        i += 1
+    out.append(last)
+    return out
+
+
+def binary_search_with_flag(array, mz, error_tolerance=1e-5):
+        lo = 0
+        n = hi = len(array)
+        while hi != lo:
+            mid = (hi + lo) / 2
+            x = array[mid]
+            err = (x.mz - mz) / mz
+            if abs(err) <= error_tolerance:
+                i = mid - 1
+                # Begin Sweep forward
+                while i > 0:
+                    x = array[i]
+                    err = (x.mz - mz) / mz
+                    if abs(err) <= error_tolerance:
+                        i -= 1
+                        continue
+                    else:
+                        break
+                low_end = i
+                i = mid + 1
+
+                # Begin Sweep backward
+                while i < n:
+                    x = array[i]
+                    err = (x.mz - mz) / mz
+                    if abs(err) <= error_tolerance:
+                        i += 1
+                        continue
+                    else:
+                        break
+                high_end = i
+                return list(range(low_end, high_end)), True
+            elif (hi - lo) == 1:
+                return [mid], False
+            elif err > 0:
+                hi = mid
+            elif err < 0:
+                lo = mid
+        return 0, False
+
+
+def binary_search(array, mz, error_tolerance=1e-5):
+    """Binary search an ordered array of objects with :attr:`mz`
+    using a PPM error tolerance of `error_toler
+
+    Parameters
+    ----------
+    array : list
+        An list of objects, sorted over :attr:`mz` in increasing order
+    mz : float
+        The mz to search for
+    error_tolerance : float, optional
+        The PPM error tolerance to use when deciding whether a match has been found
+
+    Returns
+    -------
+    int:
+        The index in `array` of the best match
+    bool:
+        Whether or not a match was actually found, used to
+        signal behavior to the caller.
+    """
+    lo = 0
+    n = hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) / 2
+        x = array[mid]
+        err = (x.mz - mz) / mz
+        if abs(err) <= error_tolerance:
+            best_index = mid
+            best_error = err
+            i = mid - 1
+            while i >= 0:
+                x = array[i]
+                err = abs((x.mz - mz) / mz)
+                if err < best_error:
+                    best_error = err
+                    best_index = i
+                i -= 1
+
+            i = mid + 1
+            while i < n:
+                x = array[i]
+                err = abs((x.mz - mz) / mz)
+                if err < best_error:
+                    best_error = err
+                    best_index = i
+                i += 1
+            return best_index
+        elif (hi - lo) == 1:
+            return None
+        elif err > 0:
+            hi = mid
+        elif err < 0:
+            lo = mid
+    return 0
+
+
+def search_sweep(array, mz, error_tolerance=1e-5):
+    lo = 0
+    n = hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) / 2
+        x = array[mid]
+        err = (x.mz - mz) / mz
+        if abs(err) <= error_tolerance:
+            i = mid - 1
+            while i >= 0:
+                x = array[i]
+                err = abs((x.mz - mz) / mz)
+                if err > error_tolerance:
+                    break
+                i -= 1
+            start = i + 1
+            i = mid + 1
+            while i < n:
+                x = array[i]
+                err = abs((x.mz - mz) / mz)
+                if err > error_tolerance:
+                    break
+                i += 1
+            end = i
+            return (start, end)
+        elif (hi - lo) == 1:
+            return None
+        elif err > 0:
+            hi = mid
+        elif err < 0:
+            lo = mid
+    return 0
