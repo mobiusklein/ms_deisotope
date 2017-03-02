@@ -350,8 +350,8 @@ class PenalizedMSDeconVFitter(IsotopicFitterBase):
 
     def evaluate(self, peaklist, observed, expected, mass_error_tolerance=0.02, **kwargs):
         score = self.msdeconv.evaluate(
-            observed, expected, mass_error_tolerance)
-        penalty = abs(self.penalizer.evaluate(observed, expected))
+            peaklist, observed, expected, mass_error_tolerance)
+        penalty = abs(self.penalizer.evaluate(peaklist, observed, expected))
         return score * (1 - penalty * self.penalty_factor)
 
 

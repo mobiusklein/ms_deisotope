@@ -50,7 +50,7 @@ def make_rt_tree(intervals):
 
 class ScanIntervalTree(object):
     @classmethod
-    def build(cls, scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
+    def build(cls, scan_iterator, time_radius=3., mz_lower=2., mz_higher=3.):
         intervals = extract_intervals(scan_iterator, time_radius=time_radius, mz_lower=mz_lower, mz_higher=mz_higher)
         # merged_intervals = merge_interval_set(intervals)
         merged_intervals = intervals

@@ -65,6 +65,12 @@ class ExtendedScanIndex(object):
         }
         json.dump(mapping, handle)
 
+    def merge(self, other):
+        dup = ExtendedScanIndex(self.ms1_ids, self.msn_ids)
+        dup.ms1_ids.update(other.ms1_ids)
+        dup.msn_ids.update(other.msn_ids)
+        return dup
+
     @staticmethod
     def index_file_name(name):
         return name + '-idx.json'

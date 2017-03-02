@@ -209,6 +209,29 @@ class LCMSFeature(object):
         rt, intensity = self.as_arrays()
         return rt[np.argmax(intensity)]
 
+    def __iter__(self):
+        return iter(self.nodes)
+
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        else:
+            if abs(self.start_time - other.start_time) > 1e-4:
+                return False
+            elif abs(self.end_time - other.end_time) > 1e-4:
+                return False
+            else:
+                for a, b in zip(self, other):
+                    if a != b:
+                        return False
+                return True
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __hash__(self):
+        return hash((self.mz, self.start_time, self.end_time))
+
 
 class LCMSFeatureTreeList(object):
 
@@ -392,12 +415,14 @@ class LCMSFeatureTreeNode(object):
 class FeatureSetIterator(object):
     def __init__(self, features, time_points=None):
         self.features = features
-        self.start_time = max([f.start_time for f in features])
-        self.end_time = min([f.end_time for f in features])
+        self.start_time = max([f.start_time for f in features if f is not None])
+        self.end_time = min([f.end_time for f in features if f is not None])
         self.offset = 0
         if time_points is None:
             time_points = set()
             for feature in features:
+                if feature is None:
+                    continue
                 rts = np.array(feature.retention_times)
                 time_points.update(rts[(rts >= self.start_time) & (rts <= self.end_time)])
             time_points = sorted(time_points)
@@ -407,9 +432,12 @@ class FeatureSetIterator(object):
         time = self.time_points[offset]
         peaks = []
         for feature in self.features:
-            node, ix = feature.nodes.find_time(time)
-            if node is not None:
-                peaks.append(node.members[0])
+            if feature is not None:
+                node, ix = feature.nodes.find_time(time)
+                if node is not None:
+                    peaks.append(node.members[0])
+                else:
+                    peaks.append(None)
             else:
                 peaks.append(None)
         return peaks

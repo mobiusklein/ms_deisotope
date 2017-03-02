@@ -247,6 +247,9 @@ class ScanIterator(ScanDataSource):
     def __iter__(self):
         return self
 
+    def reset(self):
+        raise NotImplementedError()
+
 
 @add_metaclass(abc.ABCMeta)
 class RandomAccessScanSource(ScanDataSource):
@@ -261,6 +264,10 @@ class RandomAccessScanSource(ScanDataSource):
 
     @abc.abstractmethod
     def get_scan_by_index(self, index):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True):
         raise NotImplementedError()
 
 

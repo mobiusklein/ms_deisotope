@@ -59,8 +59,12 @@ class LCMSFeatureForest(object):
     def find_all(self, mz, error_tolerance=None):
         if error_tolerance is None:
             error_tolerance = self.error_tolerance
-        lo, hi = search_sweep(self.features, mz, error_tolerance)
-        return self[lo:hi]
+        bounds = search_sweep(self.features, mz, error_tolerance)
+        if bounds is not None:
+            lo, hi = bounds
+            return self[lo:hi]
+        else:
+            return []
 
     def find_insertion_point(self, peak):
         index, matched = binary_search_with_flag(
