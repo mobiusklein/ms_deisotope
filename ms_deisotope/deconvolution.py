@@ -1237,8 +1237,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                     if peak.index in seen and peak.peak_count != 0:
                         print("%r was reused in fit %r and %r" % (
                             peak, fit, seen[peak.index]))
-                else:
-                    seen[peak.index] = fit
+                    else:
+                        seen[peak.index] = fit
                 total_abundance = sum(p.intensity for p in rep_eid)
                 monoisotopic_mass = neutral_mass(
                     eid[0].mz, charge, charge_carrier)

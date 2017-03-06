@@ -137,13 +137,16 @@ cdef class FitSelectorBase(object):
         return self.__class__, (self.minimum_score,)
 
     cpdef IsotopicFitRecord best(self, object results):
-        return NotImplemented
+        raise NotImplementedError()
 
     def __call__(self, *args, **kwargs):
         return self.best(*args, **kwargs)
 
     cpdef bint reject(self, IsotopicFitRecord result):
-        return NotImplemented
+        raise NotImplementedError()
+
+    cpdef bint reject_score(self, double score):
+        raise NotImplementedError()
 
     cpdef bint is_maximizing(self):
         return False
@@ -183,6 +186,9 @@ cdef class MinimizeFitSelector(FitSelectorBase):
         bool
         """
         return fit.score > self.minimum_score
+
+    cpdef bint reject_score(self, double score):
+        return score > self.minimum_score
 
     cpdef bint is_maximizing(self):
         """Returns that this is *not* a maximizing selector
@@ -226,6 +232,9 @@ cdef class MaximizeFitSelector(FitSelectorBase):
         """
         return fit.score < self.minimum_score
 
+    cpdef bint reject_score(self, double score):
+        return score < self.minimum_score
+
     cpdef bint is_maximizing(self):
         """Returns that this *is* a maximizing selector
 
@@ -261,6 +270,9 @@ cdef class IsotopicFitterBase(object):
 
     cpdef bint reject(self, IsotopicFitRecord fit):
         return self.select.reject(fit)
+
+    cpdef bint reject_score(self, double score):
+        return self.select.reject_score(score)
 
     cpdef bint is_maximizing(self):
         return self.select.is_maximizing()
@@ -455,6 +467,9 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
     cdef double score_peak(self, FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
         return score_peak(obs, theo, mass_error_tolerance, minimum_signal_to_noise)
 
+    def evaluate(self, PeakIndex peaklist, list observed, list expected, double mass_error_tolerance=0.02):
+        return self._evaluate(peaklist, observed, expected, mass_error_tolerance)
+
     cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected, double mass_error_tolerance=0.02):
         cdef:
             size_t i, n
@@ -487,6 +502,9 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
 
     def __setstate__(self, state):
         self.select, self.msdeconv, self.penalizer, self.penalty_factor = state
+
+    def evaluate(self, PeakIndex peaklist, list observed, list expected, double mass_error_tolerance=0.02):
+        return self._evaluate(peaklist, observed, expected, mass_error_tolerance)
 
     cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected, double mass_error_tolerance=0.02):
         cdef:
@@ -655,6 +673,9 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
         for i in range(len(theoretical)):
             peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical, i)
             peak.intensity *= factor
+
+    def evaluate(self, PeakIndex peaklist, list observed, list expected, double mass_error_tolerance=0.02):
+        return self._evaluate(peaklist, observed, expected, mass_error_tolerance)
 
     cpdef double _evaluate(self, PeakIndex peaklist, list experimental, list theoretical, double mass_error_tolerance=0.02):
         cdef:

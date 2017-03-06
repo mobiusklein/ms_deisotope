@@ -91,14 +91,14 @@ def layout_layers(envelopes, overlap_fn=peak_overlap, maximize=True):
 
 
 class GreedySubgraphSelection(object):
-    def __init__(self, subgraph, maximize=True):
+    def __init__(self, subgraph, maximize=True, overlap_fn=peak_overlap):
         self.intervals = list(subgraph)
         self._layers = [[]]
         self.maximize = maximize
-        self._build_layers()
+        self._build_layers(overlap_fn=overlap_fn)
 
-    def _build_layers(self):
-        self._layers = layout_layers(self.intervals, maximize=self.maximize)
+    def _build_layers(self, overlap_fn):
+        self._layers = layout_layers(self.intervals, overlap_fn=overlap_fn, maximize=self.maximize)
 
     def _select_best_subset(self):
         return self._layers[0]
@@ -107,8 +107,8 @@ class GreedySubgraphSelection(object):
         return self._select_best_subset()
 
     @classmethod
-    def solve(cls, nodes, maximize=True):
-        solver = cls(nodes, maximize=maximize)
+    def solve(cls, nodes, maximize=True, overlap_fn=peak_overlap):
+        solver = cls(nodes, maximize=maximize, overlap_fn=overlap_fn)
         solution = solver.select()
         return solution
 

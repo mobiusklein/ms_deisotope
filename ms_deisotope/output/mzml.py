@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import numpy as np
 
-from ms_peak_picker import PeakIndex, PeakSet
+from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
 try:
     from psims.mzml import writer
@@ -403,6 +403,21 @@ def marshal_deconvoluted_peak_set(scan_dict):
     return peaks
 
 
+def marshal_peak_set(scan_dict):
+    mz_array = scan_dict['m/z array']
+    intensity_array = scan_dict['intensity array']
+    n = len(scan_dict['m/z array'])
+    peaks = []
+    for i in range(n):
+        peak = FittedPeak(
+            mz_array[i], intensity_array[i], 1, i, i,
+            0, intensity_array[i], 0, 0)
+        peaks.append(peak)
+    peak_set = PeakSet(peaks)
+    peak_set.reindex()
+    return PeakIndex(np.array([]), np.array([]), peak_set)
+
+
 class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
     """Extends :class:`.MzMLLoader` to support deserializing preprocessed data
     and to take advantage of additional indexing information.
@@ -449,7 +464,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         return self._sample_run
 
     def _validate(self, scan):
-        return bool(scan.deconvoluted_peak_set)
+        return bool(scan.deconvoluted_peak_set) or bool(scan.peak_set)
 
     def get_index_information_by_scan_id(self, scan_id):
         try:
@@ -472,9 +487,9 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
         current_level = 1
         for scan in iterator:
-            if not _validate(scan):
-                continue
             packed = _make_scan(scan)
+            if not _validate(packed):
+                continue
             if scan['ms level'] == 2:
                 if current_level < 2:
                     current_level = 2
@@ -541,12 +556,16 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         scan = super(ProcessedMzMLDeserializer, self)._make_scan(data)
         if scan.precursor_information:
             scan.precursor_information.default()
-        scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-        scan.deconvoluted_peak_set = marshal_deconvoluted_peak_set(data)
-        if scan.id in self.extended_index.ms1_ids:
-            chosen_indices = self.extended_index.ms1_ids[scan.id]['msms_peaks']
-            for ix in chosen_indices:
-                scan.deconvoluted_peak_set[ix].chosen_for_msms = True
+        if "isotopic envelopes array" in data:
+            scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
+            scan.deconvoluted_peak_set = marshal_deconvoluted_peak_set(data)
+            if scan.id in self.extended_index.ms1_ids:
+                chosen_indices = self.extended_index.ms1_ids[scan.id]['msms_peaks']
+                for ix in chosen_indices:
+                    scan.deconvoluted_peak_set[ix].chosen_for_msms = True
+        else:
+            scan.peak_set = marshal_peak_set(data)
+            scan.deconvoluted_peak_set = None
         return scan.pack()
 
     def convert_scan_id_to_retention_time(self, scan_id):

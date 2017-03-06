@@ -640,7 +640,11 @@ class ProcessedScan(object):
         return self.deconvoluted_peak_set[index]
 
     def __repr__(self):
-        return "ProcessedScan(id=%s, ms_level=%d, %d peaks)" % (self.id, self.ms_level, len(self.deconvoluted_peak_set))
+        if self.deconvoluted_peak_set is not None:
+            peaks = self.deconvoluted_peak_set
+        else:
+            peaks = self.peak_set
+        return "ProcessedScan(id=%s, ms_level=%d, %d peaks)" % (self.id, self.ms_level, len(peaks))
 
 
 class ActivationInformation(object):

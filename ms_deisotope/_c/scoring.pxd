@@ -28,6 +28,7 @@ cdef class FitSelectorBase(object):
 
     cpdef IsotopicFitRecord best(self, object results)
     cpdef bint reject(self, IsotopicFitRecord result)
+    cpdef bint reject_score(self, double score)
     cpdef bint is_maximizing(self)
 
 
@@ -37,6 +38,7 @@ cdef class IsotopicFitterBase(object):
 
     cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected)
     cpdef bint reject(self, IsotopicFitRecord fit)
+    cpdef bint reject_score(self, double score)
     cpdef bint is_maximizing(self)
 
     cpdef IsotopicFitterBase _configure(self, DeconvoluterBase deconvoluter, dict kwargs)

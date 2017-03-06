@@ -29,7 +29,15 @@ try:
         Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
         Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()])
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=["ms_deisotope/_c/feature_map/lcms_feature.pyx"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=["ms_deisotope/_c/feature_map/feature_processor.pyx"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+        Extension(name='ms_deisotope._c.feature_map.feature_map', sources=["ms_deisotope/_c/feature_map/feature_map.pyx"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
+        Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=["ms_deisotope/_c/feature_map/feature_fit.pyx"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
     ])
 except ImportError:
     extensions = ([
@@ -40,7 +48,15 @@ except ImportError:
         Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
         Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()])
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=["ms_deisotope/_c/feature_map/lcms_feature.c"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=["ms_deisotope/_c/feature_map/feature_processor.c"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+        Extension(name='ms_deisotope._c.feature_map.feature_map', sources=["ms_deisotope/_c/feature_map/feature_map.c"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+        Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=["ms_deisotope/_c/feature_map/feature_fit.c"],
+                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
     ])
 
 from distutils.command.build_ext import build_ext

@@ -1,7 +1,68 @@
 from .lcms_feature import LCMSFeature
 
 
-class LCMSFeatureForest(object):
+class LCMSFeatureMap(object):
+
+    def __init__(self, features):
+        self.features = sorted(features, key=lambda x: x.mz)
+
+    def __len__(self):
+        return len(self.features)
+
+    def __iter__(self):
+        return iter(self.features)
+
+    def __getitem__(self, i):
+        if isinstance(i, (int, slice)):
+            return self.features[i]
+        else:
+            return [self.features[j] for j in i]
+
+    def search(self, mz, error_tolerance=2e-5):
+        i = binary_search(self.features, mz, error_tolerance)
+        if i is None:
+            return None
+        match = self[i]
+        return match
+
+    def find_all(self, mz, error_tolerance=2e-5):
+        bounds = search_sweep(self.features, mz, error_tolerance)
+        if bounds is not None:
+            lo, hi = bounds
+            return self[lo:hi]
+        else:
+            return []
+
+    def index_range(self, lo, hi, error_tolerance=2e-5):
+        return (
+            binary_search_with_flag(
+                self.features, lo, error_tolerance)[0][0],
+            binary_search_with_flag(
+                self.features, hi, error_tolerance)[0][0])
+
+    def between(self, lo, hi, error_tolerance):
+        lo_ix = binary_search_with_flag(
+            self.features, lo, error_tolerance)[0][0]
+        hi_ix = binary_search_with_flag(
+            self.features, hi, error_tolerance)[0][0]
+        if self[lo_ix].mz < lo:
+            lo_ix += 1
+        if self[hi_ix] > hi:
+            hi_ix -= 1
+        if hi_ix < 0:
+            hi_ix = 0
+        if lo_ix > len(self):
+            lo_ix = len(self) - 1
+        return self[lo_ix:hi_ix]
+
+
+try:
+    from ms_deisotope._c.feature_map.feature_map import LCMSFeatureMap
+except ImportError:
+    pass
+
+
+class LCMSFeatureForest(LCMSFeatureMap):
     """An an algorithm for aggregating features from peaks of close mass
     weighted by intensity.
 
@@ -34,37 +95,6 @@ class LCMSFeatureForest(object):
         self.features = sorted(features, key=lambda x: x.mz)
         self.error_tolerance = error_tolerance
         self.count = 0
-
-    def __len__(self):
-        return len(self.features)
-
-    def __iter__(self):
-        return iter(self.features)
-
-    def __getitem__(self, i):
-        if isinstance(i, (int, slice)):
-            return self.features[i]
-        else:
-            return [self.features[j] for j in i]
-
-    def search(self, mz, error_tolerance=None):
-        if error_tolerance is None:
-            error_tolerance = self.error_tolerance
-        i = binary_search(self.features, mz, error_tolerance)
-        if i is None:
-            return None
-        match = self[i]
-        return match
-
-    def find_all(self, mz, error_tolerance=None):
-        if error_tolerance is None:
-            error_tolerance = self.error_tolerance
-        bounds = search_sweep(self.features, mz, error_tolerance)
-        if bounds is not None:
-            lo, hi = bounds
-            return self[lo:hi]
-        else:
-            return []
 
     def find_insertion_point(self, peak):
         index, matched = binary_search_with_flag(
@@ -277,3 +307,190 @@ def search_sweep(array, mz, error_tolerance=1e-5):
         elif err < 0:
             lo = mid
     return 0
+
+
+def binary_search_with_flag_neutral(array, neutral_mass, error_tolerance=1e-5):
+        lo = 0
+        n = hi = len(array)
+        while hi != lo:
+            mid = (hi + lo) / 2
+            x = array[mid]
+            err = (x.neutral_mass - neutral_mass) / neutral_mass
+            if abs(err) <= error_tolerance:
+                i = mid - 1
+                # Begin Sweep forward
+                while i > 0:
+                    x = array[i]
+                    err = (x.neutral_mass - neutral_mass) / neutral_mass
+                    if abs(err) <= error_tolerance:
+                        i -= 1
+                        continue
+                    else:
+                        break
+                low_end = i
+                i = mid + 1
+
+                # Begin Sweep backward
+                while i < n:
+                    x = array[i]
+                    err = (x.neutral_mass - neutral_mass) / neutral_mass
+                    if abs(err) <= error_tolerance:
+                        i += 1
+                        continue
+                    else:
+                        break
+                high_end = i
+                return list(range(low_end, high_end)), True
+            elif (hi - lo) == 1:
+                return [mid], False
+            elif err > 0:
+                hi = mid
+            elif err < 0:
+                lo = mid
+        return 0, False
+
+
+def binary_search_neutral(array, neutral_mass, error_tolerance=1e-5):
+    """Binary search an ordered array of objects with :attr:`neutral_mass`
+    using a PPM error tolerance of `error_toler
+
+    Parameters
+    ----------
+    array : list
+        An list of objects, sorted over :attr:`neutral_mass` in increasing order
+    neutral_mass : float
+        The neutral_mass to search for
+    error_tolerance : float, optional
+        The PPM error tolerance to use when deciding whether a match has been found
+
+    Returns
+    -------
+    int:
+        The index in `array` of the best match
+    bool:
+        Whether or not a match was actually found, used to
+        signal behavior to the caller.
+    """
+    lo = 0
+    n = hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) / 2
+        x = array[mid]
+        err = (x.neutral_mass - neutral_mass) / neutral_mass
+        if abs(err) <= error_tolerance:
+            best_index = mid
+            best_error = err
+            i = mid - 1
+            while i >= 0:
+                x = array[i]
+                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
+                if err < best_error:
+                    best_error = err
+                    best_index = i
+                i -= 1
+
+            i = mid + 1
+            while i < n:
+                x = array[i]
+                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
+                if err < best_error:
+                    best_error = err
+                    best_index = i
+                i += 1
+            return best_index
+        elif (hi - lo) == 1:
+            return None
+        elif err > 0:
+            hi = mid
+        elif err < 0:
+            lo = mid
+    return 0
+
+
+def search_sweep_neutral(array, neutral_mass, error_tolerance=1e-5):
+    lo = 0
+    n = hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) / 2
+        x = array[mid]
+        err = (x.neutral_mass - neutral_mass) / neutral_mass
+        if abs(err) <= error_tolerance:
+            i = mid - 1
+            while i >= 0:
+                x = array[i]
+                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
+                if err > error_tolerance:
+                    break
+                i -= 1
+            start = i + 1
+            i = mid + 1
+            while i < n:
+                x = array[i]
+                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
+                if err > error_tolerance:
+                    break
+                i += 1
+            end = i
+            return (start, end)
+        elif (hi - lo) == 1:
+            return None
+        elif err > 0:
+            hi = mid
+        elif err < 0:
+            lo = mid
+    return 0
+
+
+class DeconvolutedLCMSFeatureMap(object):
+
+    def __init__(self, features):
+        self.features = sorted(features, key=lambda x: x.neutral_mass)
+
+    def __len__(self):
+        return len(self.features)
+
+    def __iter__(self):
+        return iter(self.features)
+
+    def __getitem__(self, i):
+        if isinstance(i, (int, slice)):
+            return self.features[i]
+        else:
+            return [self.features[j] for j in i]
+
+    def search(self, mz, error_tolerance=2e-5):
+        i = binary_search_neutral(self.features, mz, error_tolerance)
+        if i is None:
+            return None
+        match = self[i]
+        return match
+
+    def find_all(self, mz, error_tolerance=2e-5):
+        bounds = search_sweep_neutral(self.features, mz, error_tolerance)
+        if bounds is not None:
+            lo, hi = bounds
+            return self[lo:hi]
+        else:
+            return []
+
+    def index_range(self, lo, hi, error_tolerance=2e-5):
+        return (
+            binary_search_with_flag_neutral(
+                self.features, lo, error_tolerance)[0][0],
+            binary_search_with_flag_neutral(
+                self.features, hi, error_tolerance)[0][0])
+
+    def between(self, lo, hi, error_tolerance):
+        lo_ix = binary_search_with_flag_neutral(
+            self.features, lo, error_tolerance)[0][0]
+        hi_ix = binary_search_with_flag_neutral(
+            self.features, hi, error_tolerance)[0][0]
+        if self[lo_ix].mz < lo:
+            lo_ix += 1
+        if self[hi_ix] > hi:
+            hi_ix -= 1
+        if hi_ix < 0:
+            hi_ix = 0
+        if lo_ix > len(self):
+            lo_ix = len(self) - 1
+        return self[lo_ix:hi_ix]

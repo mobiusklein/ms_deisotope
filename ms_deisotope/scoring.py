@@ -109,13 +109,16 @@ class FitSelectorBase(Base):
         self.minimum_score = minimum_score
 
     def best(self, results):
-        return NotImplemented
+        raise NotImplementedError()
 
     def __call__(self, *args, **kwargs):
         return self.best(*args, **kwargs)
 
     def reject(self, result):
-        return NotImplemented
+        raise NotImplementedError()
+
+    def reject_score(self, score):
+        raise NotImplementedError()
 
     def is_maximizing(self):
         return False
@@ -152,6 +155,9 @@ class MinimizeFitSelector(FitSelectorBase):
         bool
         """
         return fit.score > self.minimum_score
+
+    def reject_score(self, score):
+        return score > self.minimum_score
 
     def is_maximizing(self):
         """Returns that this is *not* a maximizing selector
@@ -194,6 +200,9 @@ class MaximizeFitSelector(FitSelectorBase):
         bool
         """
         return fit.score < self.minimum_score
+
+    def reject_score(self, score):
+        return score < self.minimum_score
 
     def is_maximizing(self):
         """Returns that this *is* a maximizing selector
