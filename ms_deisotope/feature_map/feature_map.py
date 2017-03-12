@@ -4,6 +4,7 @@ from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope import DeconvolutedPeakSet
 from ms_peak_picker import PeakSet
 
+
 class LCMSFeatureMap(object):
 
     def __init__(self, features):

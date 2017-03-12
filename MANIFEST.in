@@ -1,8 +1,8 @@
-recursive-include ms_peak_picker *.pyx
-recursive-include ms_peak_picker *.pxd
-recursive-include ms_peak_picker *.c
-recursive-include ms_peak_picker *.h
+recursive-include ms_deisotope *.pyx
+recursive-include ms_deisotope *.pxd
+recursive-include ms_deisotope *.c
+recursive-include ms_deisotope *.h
 
-recursive-exclude ms_peak_picker *.pyd
+recursive-exclude ms_deisotope *.pyd
 
 include README.rst
