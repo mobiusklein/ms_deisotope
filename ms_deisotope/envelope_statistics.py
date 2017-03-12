@@ -35,4 +35,7 @@ def average_signal_to_noise(envelope):
 
 
 def weighted_average(values, weights):
+    # We need to traverse weights twice, therefore convert it to a list
+    # as a generator (i.e. py3's map) would always have sum(weights) == 0
+    weights = list(weights)
     return sum(v * w for v, w in zip(values, weights)) / float(sum(weights))
