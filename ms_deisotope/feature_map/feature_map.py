@@ -1,5 +1,8 @@
+from collections import defaultdict
 from .lcms_feature import LCMSFeature
-
+from ms_deisotope.data_source.common import ProcessedScan
+from ms_deisotope import DeconvolutedPeakSet
+from ms_peak_picker import PeakSet
 
 class LCMSFeatureMap(object):
 
@@ -505,3 +508,31 @@ class DeconvolutedLCMSFeatureMap(object):
         if lo_ix > len(self):
             lo_ix = len(self) - 1
         return self[lo_ix:hi_ix]
+
+
+def convert_map_to_scan_peak_list(feature_map, peak_loader, time_precision=4, deconvoluted=True):
+    metadata_map = {}
+    scan_accumulator = defaultdict(list)
+    for scan_id, metadata in peak_loader.extended_index.ms1_ids.items():
+        metadata_map[round(metadata["scan_time"], time_precision)] = metadata
+    for feature in feature_map:
+        for node in feature:
+            scan_accumulator[round(node.retention_time, time_precision)].extend(node.members)
+
+    packed = []
+    for key, peaks in sorted(scan_accumulator.items(), key=lambda x: x[0]):
+        template = peak_loader.get_scan_by_time(key)
+        if deconvoluted:
+            peak_set = PeakSet([])
+            deconvoluted_peak_set = DeconvolutedPeakSet(peaks)
+        else:
+            peak_set = PeakSet(peaks)
+            deconvoluted_peak_set = DeconvolutedPeakSet([])
+        peak_set.reindex()
+        deconvoluted_peak_set.reindex()
+        scan = ProcessedScan(
+            template.id, template.title, None, template.ms_level, template.scan_time,
+            template.index, peak_set, deconvoluted_peak_set, template.polarity,
+            None)
+        packed.append(scan)
+    return packed

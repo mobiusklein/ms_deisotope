@@ -102,6 +102,9 @@ class Constant(object):
     def __nonzero__(self):
         return self.is_true
 
+    def __bool__(self):
+        return self.is_true
+
 
 class DeconvolutionProcessResult(object):
     def __init__(self, deconvoluter, peak_set, priorities, errors=None):
@@ -215,6 +218,7 @@ def dict_proxy(attribute):
 
         return cls
     return wrap
+
 
 def uid(n=128):
     int_ = random.getrandbits(n)

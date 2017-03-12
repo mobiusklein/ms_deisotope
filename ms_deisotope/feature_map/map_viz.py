@@ -3,7 +3,7 @@ from matplotlib import patches as mpatches
 import numpy as np
 
 
-from .profile_transform import sliding_mean, interpolate
+from .profile_transform import sliding_mean, sliding_median, gaussian_smooth, interpolate
 
 
 Ellipse = mpatches.Ellipse
@@ -79,6 +79,19 @@ def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=0.025, **kwargs):
     return ax
 
 
+def smooth_leveled(xs, ys, level=0):
+    if level == 0:
+        return ys
+    elif level == 1:
+        return sliding_mean(ys)
+    elif level == 2:
+        return sliding_mean(sliding_median(ys))
+    elif level == 3:
+        return gaussian_smooth(xs, ys, 0.05)
+    else:
+        return gaussian_smooth(xs, ys, level)
+
+
 def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size=10,
                   axis_label_font_size=20, axis_font_size=16):
     if ax is None:
@@ -91,7 +104,7 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
         rt, heights = profile.as_arrays()
 
         if smooth:
-            heights = sliding_mean(heights)
+            heights = smooth_leveled(rt, heights, smooth)
         if interp:
             rt, heights = interpolate(rt, heights)
 
@@ -120,7 +133,6 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
     ax.set_xlim(minimum_ident_time - 0.02,
                 maximum_ident_time + 0.02)
     ax.set_ylim(0, maximum_intensity * 1.1)
-    print(maximum_intensity * 1.1)
     ax.legend(bbox_to_anchor=(1.7, 1.), ncol=2, fontsize=10)
     ax.axes.spines['right'].set_visible(False)
     ax.axes.spines['top'].set_visible(False)

@@ -36,8 +36,30 @@ def interpolate(xs, ys, n=200):
     return new_xs, new_ys
 
 
-def sliding_mean(ys):
+cdef object sliding_mean(cnp.ndarray[double, ndim=1, mode='c'] ys):
     return (np.concatenate((ys[1:], [0])) + ys + np.concatenate(([0], ys[:-1]))) / 3
+
+
+cdef object sliding_median(cnp.ndarray[double, ndim=1, mode='c'] ys):
+    cdef:
+        cnp.ndarray[double, ndim=1, mode='c'] arr
+        size_t i, n
+        double value
+    arr = np.zeros_like(ys)
+    n = len(ys)
+    for i in range(n):
+        if i == 0:
+            value = np.median(np.concatenate(([0], ys[:2]),))
+        elif i == n - 1:
+            value = np.median(np.concatenate(([0], ys[n - 2:]),))
+        else:
+            value = np.median(ys[i - 1:i + 2])
+        arr[i] = value
+    return arr
+
+
+cdef object smoother(cnp.ndarray[double, ndim=1, mode='c'] ys):
+    return sliding_mean((ys))
 
 
 cdef size_t binsearch(cnp.ndarray[double, ndim=1, mode='c'] array, double value):
@@ -76,7 +98,7 @@ cpdef object gaussian_smooth(cnp.ndarray[double, ndim=1, mode='c'] x,
     for i in range(n):
         low_edge = binsearch(x, x[i] - width)
         high_edge = binsearch(x, x[i] + width)
-        if high_edge - 1 == low_edge:
+        if high_edge - 1 == low_edge or high_edge == low_edge:
             smoothed[i] = y[i]
             continue
         x_slice = x[low_edge:high_edge]
@@ -233,8 +255,8 @@ cdef class ProfileSplitter(object):
         if len(xs) > 200:
             xs, ys = interpolate(xs, ys)
 
-        ys = sliding_mean(ys)
-        # ys = gaussian_smooth(xs, ys)
+        if smooth:
+            ys = smoother(ys)
 
         maxima_indices, minima_indices = self._extreme_indices(ys)
         candidates = []

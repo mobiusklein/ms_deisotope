@@ -402,7 +402,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
 
             next_signal_magnitude = sum(f.total_signal for f in self.feature_map)
             total_signal_ratio = (last_signal_magnitude - next_signal_magnitude) / next_signal_magnitude
-            printer("Signal Ratio: %0.4f (%0.3e, %0.3e)" % (
+            printer("Signal Ratio: %0.3e (%0.3e, %0.3e)" % (
                 total_signal_ratio, last_signal_magnitude, next_signal_magnitude))
             if total_signal_ratio < convergence:
                 break

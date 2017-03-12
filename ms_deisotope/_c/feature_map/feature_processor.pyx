@@ -221,23 +221,6 @@ cdef int has_no_valid_features(list features):
     return cnt == n
 
 
-cdef double overlap_size(LCMSFeature self, LCMSFeature other):
-    cdef:
-        double self_start, self_end, other_start, other_end
-    self_start = self.get_start_time()
-    self_end = self.get_end_time()
-    other_start = other.get_start_time()
-    other_end = other.get_end_time()
-    if self_start < other_start < self_end and self_start < other_end < self_end:
-        return other_end - other_start
-    elif other_start < self_start < other_end and other_start < self_end < other_end:
-        return self_end - self_start
-    if self_end >= other_start:
-        return self_end - other_start
-    elif self_start >= other_end:
-        return self_start - other_end
-
-
 cdef class LCMSFeatureProcessorBase(object):
     cdef:
         public LCMSFeatureMap feature_map

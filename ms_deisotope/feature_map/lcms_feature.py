@@ -6,7 +6,6 @@ from ms_deisotope.utils import uid
 
 class LCMSFeature(object):
     created_at = "new"
-    composition = None
 
     def __init__(self, nodes=None, adducts=None, used_as_adduct=None, feature_id=None):
         if nodes is None:

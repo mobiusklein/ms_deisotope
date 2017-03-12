@@ -104,6 +104,24 @@ def sliding_mean(ys):
     return (np.concatenate((ys[1:], [0])) + ys + np.concatenate(([0], ys[:-1]))) / 3
 
 
+def sliding_median(ys):
+    arr = np.zeros_like(ys)
+    n = len(ys)
+    for i in range(n):
+        if i == 0:
+            value = np.median(np.concatenate(([0], ys[:2]),))
+        elif i == n - 1:
+            value = np.median(np.concatenate(([0], ys[n - 2:]),))
+        else:
+            value = np.median(ys[i - 1:i + 2])
+        arr[i] = value
+    return arr
+
+
+def smoother(ys):
+    return sliding_mean((ys))
+
+
 class ProfileSplitter(object):
     def __init__(self, profile):
         self.profile = profile
@@ -150,7 +168,8 @@ class ProfileSplitter(object):
         if len(xs) > 200:
             xs, ys = interpolate(xs, ys)
 
-        ys = sliding_mean(ys)
+        if smooth:
+            ys = smoother(ys)
 
         maxima_indices, minima_indices = self._extreme_indices(ys)
         candidates = []
@@ -225,7 +244,7 @@ def gaussian_smooth(x, y, width=0.05):
     for i in range(n):
         low_edge = binsearch(x, x[i] - width)
         high_edge = binsearch(x, x[i] + width)
-        if high_edge - 1 == low_edge:
+        if high_edge - 1 == low_edge or high_edge == low_edge:
             smoothed[i] = y[i]
             continue
         x_slice = x[low_edge:high_edge]
@@ -233,7 +252,10 @@ def gaussian_smooth(x, y, width=0.05):
         center = np.mean(x_slice)
         spread = np.var(x_slice)
         weights = gauss(x_slice, center, spread)
-        smoothed[i] = ((y_slice * weights).sum() / weights.sum())
+        val = ((y_slice * weights).sum() / weights.sum())
+        if np.isnan(val):
+            raise ValueError("NaN")
+        smoothed[i] = val
     return smoothed
 
 

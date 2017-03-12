@@ -178,3 +178,6 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         iterator = self._yield_from_index(self._source, scan_id)
         self.make_iterator(iterator)
         return self
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.source_file!r})".format(self=self)
