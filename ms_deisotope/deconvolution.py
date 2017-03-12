@@ -1146,7 +1146,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         results = hold
 
         n = len(results)
-        stop = max(min(n / 2, 100), 10)
+        stop = max(min(n // 2, 100), 10)
         if n == 0:
             return 0
 
