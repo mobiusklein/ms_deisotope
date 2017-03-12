@@ -46,6 +46,46 @@ cdef double sum_intensity(list peaklist):
     return total
 
 
+@cython.freelist(1000000)
+cdef class peak_charge_pair(object):
+    cdef:
+        public FittedPeak peak
+        public int charge
+        public long _hash
+
+    def __init__(self, peak, charge):
+        self.peak = peak
+        self.charge = charge
+        self._hash = hash(self.peak.mz)
+
+    def __hash__(self):
+        return self._hash
+
+    def __richcmp__(self, peak_charge_pair other, int code):
+        if code == 2:
+            return (
+                self.charge == other.charge) and (self.peak == other.peak)
+        elif code == 3:
+            return (
+                self.charge != other.charge) and (self.peak != other.peak)
+
+    def __getitem__(self, i):
+        if i == 0:
+            return self.peak
+        if i == 1:
+            return self.charge
+        else:
+            raise IndexError(i)
+
+    def __iter__(self):
+        yield self.peak
+        yield self.charge
+
+    def __repr__(self):
+        return "peak_charge_pair(%r, %d)" % (self.peak, self.charge)
+
+
+
 cdef class DeconvoluterBase(object):
 
     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
@@ -74,7 +114,7 @@ cdef class DeconvoluterBase(object):
     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
         peak = self.peaklist._has_peak(mz, error_tolerance)
         if peak is None or peak.intensity < self.minimum_intensity:
-            return FittedPeak(mz, 1.0, 0, 0, 0, 0, 0)
+            return FittedPeak._create(mz, 1, 1, 0, 0, 0, 1, 0, 0)
         return peak
 
     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=2e-5):
@@ -185,7 +225,7 @@ cdef class DeconvoluterBase(object):
         for i in range(n):
             forward = peaklist_slice.getitem(i)
             prev_peak_mz = forward.mz - (shift * step)
-            dummy_peak = FittedPeak(prev_peak_mz, 1.0, 0, 0, 0, 0, 0)
+            dummy_peak = FittedPeak._create(prev_peak_mz, 1, 1, 0, 0, 0, 1, 0, 0)
             candidates.append((dummy_peak, charge))
         return candidates
 
@@ -251,7 +291,7 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
         score = self.scorer._evaluate(self.peaklist, eid, tid)
-        return IsotopicFitRecord(peak, score, charge, tid, eid)
+        return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
                                     double truncate_after=0.95):
@@ -302,8 +342,8 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
         tid = averagine.isotopic_cluster(peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after)
         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer(self.peaklist, eid, tid)
-        return IsotopicFitRecord(peak, score, charge, tid, eid)
+        score = self.scorer._evaluate(self.peaklist, eid, tid)
+        return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
                                     double truncate_after=0.95):

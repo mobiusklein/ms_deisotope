@@ -1,3 +1,7 @@
+# cython: embedsignature =True
+
+cimport cython
+
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice
 
@@ -110,6 +114,7 @@ cpdef tuple binary_search_with_flag(list array, double mz, double error_toleranc
     return 0, False
 
 
+@cython.cdivision(True)
 cdef long binary_search(list array, double mz, double error_tolerance):
     cdef:
         int lo, hi, n, mid, i
@@ -151,13 +156,14 @@ cdef long binary_search(list array, double mz, double error_tolerance):
     return 0
 
 
+@cython.cdivision(True)
 cdef void search_sweep(list array, double mz, double error_tolerance, long* loout, long* hiout):
     cdef:
         int i, n, lo, hi, mid, start, end
         double err
         LCMSFeature x
     lo = 0
-    n = hi = len(array)
+    n = hi = PyList_GET_SIZE(array)
     loout[0] = 0
     hiout[0] = 0
     while hi != lo:
@@ -167,7 +173,7 @@ cdef void search_sweep(list array, double mz, double error_tolerance, long* loou
         if abs(err) <= error_tolerance:
             i = mid - 1
             while i > 0:
-                x = array[i]
+                x = <LCMSFeature>PyList_GET_ITEM(array, i)
                 err = abs((x.get_mz() - mz) / mz)
                 if err > error_tolerance:
                     break
@@ -175,7 +181,7 @@ cdef void search_sweep(list array, double mz, double error_tolerance, long* loou
             start = i + 1
             i = mid + 1
             while i < n:
-                x = array[i]
+                x = <LCMSFeature>PyList_GET_ITEM(array, i)
                 err = abs((x.get_mz() - mz) / mz)
                 if err > error_tolerance:
                     break

@@ -16,6 +16,10 @@ cdef class IsotopicFitRecord(object):
         public int missed_peaks
         public object data
 
+    @staticmethod
+    cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
+                                   object data=*, int missed_peaks=*)
+
     cpdef bint _eq(self, IsotopicFitRecord other)
     cpdef bint _ne(self, IsotopicFitRecord other)
     cpdef bint _lt(self, IsotopicFitRecord other)

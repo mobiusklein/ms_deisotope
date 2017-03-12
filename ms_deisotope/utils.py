@@ -1,5 +1,7 @@
+from __future__ import print_function
 import operator
 import random
+from datetime import datetime
 
 try:
     from matplotlib import pyplot as plt
@@ -21,6 +23,14 @@ try:  # pragma: no cover
 except:  # pragma: no cover
     i128 = int
     basestring = (bytes, str)
+
+
+def printer(message):
+    print(datetime.now().isoformat(' ') + ' ' + str(message))
+
+
+def debug_printer(message):
+    print("DEBUG:" + datetime.now().isoformat(' ') + ' ' + str(message))
 
 
 # From six

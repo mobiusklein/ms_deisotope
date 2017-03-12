@@ -1,5 +1,6 @@
 from collections import namedtuple
 
+from brainpy import neutral_mass as calc_neutral_mass
 from .lcms_feature import (
     LCMSFeature,
     LCMSFeatureTreeNode,
@@ -13,7 +14,10 @@ class map_coord(namedtuple("map_coord", ("mz", 'time'))):
 
 class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
-                 missing_features=0, data=None):
+                 missing_features=0, supporters=None, data=None,
+                 neutral_mass=None):
+        if supporters is None:
+            supporters = []
         self.features = features
         self.theoretical = theoretical
         self.score = score
@@ -21,20 +25,21 @@ class LCMSFeatureSetFit(object):
         self.data = data
         self.missing_features = missing_features
         self.monoisotopic_feature = features[0]
-
-    @property
-    def mz(self):
-        return self.monoisotopic_feature.mz
+        self.supporters = supporters
+        if neutral_mass is None:
+            neutral_mass = neutral_mass(self.monoisotopic_feature.mz, self.charge)
+        self.neutral_mass = neutral_mass
+        self.mz = self.monoisotopic_feature.mz
 
     def clone(self):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.data)
+            self.missing_features, self.supporters, self.data, self.neutral_mass)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.data)
+            self.missing_features, self.supporters, self.data, self.neutral_mass)
 
     def __eq__(self, other):
         val = (self.score == other.score and
@@ -87,12 +92,15 @@ class LCMSFeatureSetFit(object):
 
 
 class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
-    __slots__ = ["_neutral_mass", "charge"]
+    __slots__ = ["_neutral_mass", "charge", "precursor_information"]
 
-    def __init__(self, retention_time=None, members=None):
+    def __init__(self, retention_time=None, members=None, precursor_information=None):
+        if precursor_information is None:
+            precursor_information = []
         self._neutral_mass = 0
         self.charge = 0
         super(DeconvolutedLCMSFeatureTreeNode, self).__init__(retention_time, members)
+        self.precursor_information = precursor_information
 
     def _recalculate(self):
         self._calculate_most_abundant_member()
@@ -110,13 +118,21 @@ class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
 
 class DeconvolutedLCMSFeature(LCMSFeature):
     def __init__(self, nodes=None, charge=None, adducts=None, used_as_adduct=None, score=0.0,
-                 n_features=0):
+                 n_features=0, feature_id=None, supporters=None):
+        if supporters is None:
+            supporters = []
         self.charge = charge
         self.score = score
         self._neutral_mass = None
         self._last_neutral_mass = None
         self.n_features = n_features
-        super(DeconvolutedLCMSFeature, self).__init__(nodes, adducts, used_as_adduct)
+        self.supporters = supporters
+        super(DeconvolutedLCMSFeature, self).__init__(nodes, adducts, used_as_adduct, feature_id=feature_id)
+
+    def clone(self):
+        return DeconvolutedLCMSFeature(
+            self.nodes, self.charge, self.adducts, self.used_as_adduct, self.score,
+            self.n_features, self.feature_id, list(self.supporters))
 
     def _invalidate(self):
         self._last_neutral_mass = self._neutral_mass if self._neutral_mass is not None else 0.
@@ -141,3 +157,12 @@ class DeconvolutedLCMSFeature(LCMSFeature):
             self.__class__.__name__, self.neutral_mass,
             self.charge, self.score,
             self.start_time, self.end_time)
+
+
+try:
+    has_c = True
+    _map_coord = map_coord
+    _LCMSFeatureSetFit = LCMSFeatureSetFit
+    from ms_deisotope._c.feature_map.feature_fit import (LCMSFeatureSetFit, map_coord)
+except ImportError:
+    has_c = False

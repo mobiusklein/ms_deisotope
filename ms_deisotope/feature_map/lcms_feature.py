@@ -1,4 +1,4 @@
-from collections import namedtuple, deque
+from collections import deque
 import numpy as np
 
 from ms_deisotope.utils import uid
@@ -8,13 +8,15 @@ class LCMSFeature(object):
     created_at = "new"
     composition = None
 
-    def __init__(self, nodes=None, adducts=None, used_as_adduct=None):
+    def __init__(self, nodes=None, adducts=None, used_as_adduct=None, feature_id=None):
         if nodes is None:
             nodes = []
         if adducts is None:
             adducts = []
         if used_as_adduct is None:
             used_as_adduct = []
+        if feature_id is None:
+            feature_id = uid()
 
         self.nodes = LCMSFeatureTreeList(nodes)
         self._total_intensity = None
@@ -28,6 +30,7 @@ class LCMSFeature(object):
         self._end_time = None
         self.adducts = adducts
         self.used_as_adduct = used_as_adduct
+        self.feature_id = feature_id
 
     def invalidate(self):
         self._invalidate()
@@ -184,10 +187,11 @@ class LCMSFeature(object):
         self.nodes = LCMSFeatureTreeList(self.nodes[:i])
         self._invalidate()
 
-    def clone(self, cls=None):
+    def clone(self, deep=False, cls=None):
         if cls is None:
             cls = self.__class__
-        c = cls(self.nodes.clone(), list(self.adducts), list(self.used_as_adduct))
+        c = cls(self.nodes.clone(deep=deep), list(self.adducts), list(self.used_as_adduct))
+        c.feature_id = self.feature_id
         c.created_at = self.created_at
         return c
 
@@ -316,8 +320,8 @@ class LCMSFeatureTreeList(object):
     def __iter__(self):
         return iter(self.roots)
 
-    def clone(self):
-        return LCMSFeatureTreeList(node.clone() for node in self)
+    def clone(self, deep=False):
+        return LCMSFeatureTreeList(node.clone(deep=deep) for node in self)
 
     def unspool(self):
         out_queue = []
@@ -351,9 +355,13 @@ class LCMSFeatureTreeNode(object):
         self._recalculate()
         self.node_id = uid()
 
-    def clone(self):
+    def clone(self, deep=False):
+        if deep:
+            peaks = [peak.clone() for peak in self.members]
+        else:
+            peaks = list(self.members)
         node = self.__class__(
-            self.retention_time, list(self.members))
+            self.retention_time, peaks)
         node.node_id = self.node_id
         return node
 
@@ -476,17 +484,6 @@ def extract_time_points(features):
         time_points.update(feature.retention_times)
     time_points = sorted(time_points)
     return time_points
-
-
-def minmax(seq):
-    minimum = float('inf')
-    maximum = 0.0
-    for i in seq:
-        if i < minimum:
-            minimum = i
-        if i > maximum:
-            maximum = i
-    return minimum, maximum
 
 
 def bounding_box(features, time_points=None, start_time=None, end_time=None, n_failures=25):
@@ -636,196 +633,6 @@ def binsearch(array, value):
             lo = mid
 
 
-def peak_indices(x, min_height=0):
-    """Find the index of local maxima.
-
-    Parameters
-    ----------
-    x : np.ndarray
-        Data to find local maxima in
-    min_height : float, optional
-        Minimum peak height
-
-    Returns
-    -------
-    np.ndarray[int]
-        Indices of maxima in x
-
-    References
-    ----------
-    https://github.com/demotu/BMC/blob/master/functions/detect_peaks.py
-    """
-    if x.size < 3:
-        return np.array([], dtype=int)
-    # find indices of all peaks
-    dx = x[1:] - x[:-1]
-    rising_edges = np.where((np.hstack((dx, 0)) <= 0) &
-                            (np.hstack((0, dx)) > 0))[0]
-    falling_edges = np.where((np.hstack((dx, 0)) < 0) &
-                             (np.hstack((0, dx)) >= 0))[0]
-    indices = np.unique(np.hstack((rising_edges, falling_edges)))
-    if indices.size and min_height > 0:
-        indices = indices[x[indices] >= min_height]
-    return indices
-
-
-class ValleyPoint(object):
-    __slots__ = ["first_maximum", "minimum", "second_maximum", "first_maximum_index",
-                 "minimum_index", "second_maximum_index", "total_distance"]
-
-    def __init__(self, first_maximum, minimum, second_maximum, first_maximum_index,
-                 minimum_index, second_maximum_index):
-        self.first_maximum = first_maximum
-        self.minimum = minimum
-        self.second_maximum = second_maximum
-        self.first_maximum_index = first_maximum_index
-        self.minimum_index = minimum_index
-        self.second_maximum_index = second_maximum_index
-        self.total_distance = self.compute_distance()
-
-    def compute_distance(self):
-        return (self.first_maximum - self.minimum) + (self.second_maximum - self.minimum)
-
-    def __repr__(self):
-        return "ValleyPoint(%0.2f, %0.2f, %0.2f, %0.3e)" % (
-            self.first_maximum_index, self.minimum_index, self.second_maximum_index, self.total_distance)
-
-    def split(self, profile):
-        index = profile.nodes.find_time(self.minimum_index)[1]
-        before = LCMSFeature(profile[:index])
-        after = LCMSFeature(profile[index:])
-        return before, after
-
-
-class PeakBoundary(object):
-    def __init__(self, first_minimum, maximum, second_minimum,
-                 first_minimum_index, maximum_index, second_minimum_index):
-        self.first_minimum = first_minimum
-        self.maximum = maximum
-        self.second_minimum = second_minimum
-        self.first_minimum_index = first_minimum_index
-        self.maximum_index = maximum_index
-        self.second_minimum_index = second_minimum_index
-        self.total_distance = self.compute_distance()
-
-    def compute_distance(self):
-        return (self.maximum - self.first_minimum) + (self.maximum - self.second_minimum)
-
-    def __repr__(self):
-        return "PeakBoundary(%0.2f, %0.2f, %0.2f, %0.3e)" % (
-            self.first_minimum_index, self.maximum_index, self.second_minimum_index,
-            self.total_distance)
-
-    def split(self, profile):
-        first_minimum = profile.nodes.find_time(self.first_minimum_index)[1]
-        second_minimum = profile.nodes.find_time(self.second_minimum_index)[1]
-        if first_minimum == 0:
-            first_minimum += 1
-        prefix = profile[:first_minimum]
-        peak = profile[(first_minimum - 1):second_minimum + 1]
-        suffix = profile[second_minimum + 1:]
-        cases = LCMSFeature(prefix), LCMSFeature(peak), LCMSFeature(suffix)
-        return cases
-
-
-def interpolate(profile, n=200):
-    xs, ys = profile.as_arrays()
-    new_xs = np.linspace(xs.min(), xs.max(), n)
-    new_ys = np.interp(new_xs, xs, ys)
-    return new_xs, new_ys
-
-
-class ProfileSplitter(object):
-    def __init__(self, profile):
-        self.profile = profile
-        self.xs, self.ys = profile.as_arrays()
-        self.partition_sites = []
-
-    def _extreme_indices(self, ys):
-        maxima_indices = peak_indices(ys)
-        minima_indices = peak_indices(-ys)
-        return maxima_indices, minima_indices
-
-    def locate_peak_boundaries(self):
-        xs = self.xs
-        ys = self.ys
-        if len(xs) > 200:
-            xs, ys = interpolate(self.profile)
-
-        maxima_indices, minima_indices = self._extreme_indices(ys)
-        candidates = []
-        for i in range(len(minima_indices)):
-            min_i = minima_indices[i]
-            for j in range(i + 1, len(minima_indices)):
-                min_j = minima_indices[j]
-                for k in range(len(maxima_indices)):
-                    max_k = maxima_indices[k]
-                    y_i = ys[min_i]
-                    y_j = ys[min_j]
-                    y_k = ys[max_k]
-                    if min_i < max_k < min_j and (y_k - y_i) > (y_k * 0.01) and (
-                            y_k - y_j) > (y_k * 0.01):
-                        point = PeakBoundary(y_i, y_k, y_j, xs[min_i], xs[max_k], xs[min_j])
-                        candidates.append(point)
-        if candidates:
-            candidates = sorted(candidates, key=lambda x: x.total_distance, reverse=True)
-            best_point = candidates[0]
-            self.partition_sites.append(best_point)
-
-        return candidates
-
-    def locate_vallies(self, scale=0.3):
-        xs = self.xs
-        ys = self.ys
-        if len(xs) > 200:
-            xs, ys = interpolate(self.profile)
-
-        maxima_indices, minima_indices = self._extreme_indices(ys)
-        candidates = []
-
-        for i in range(len(maxima_indices)):
-            max_i = maxima_indices[i]
-            for j in range(i + 1, len(maxima_indices)):
-                max_j = maxima_indices[j]
-                for k in range(len(minima_indices)):
-                    min_k = minima_indices[k]
-                    y_i = ys[max_i]
-                    y_j = ys[max_j]
-                    y_k = ys[min_k]
-                    if max_i < min_k < max_j and (y_i - y_k) > (y_i * scale) and (
-                            y_j - y_k) > (y_j * scale):
-                        point = ValleyPoint(y_i, y_k, y_j, xs[max_i], xs[min_k], xs[max_j])
-                        candidates.append(point)
-        if candidates:
-            candidates = sorted(candidates, key=lambda x: x.total_distance, reverse=True)
-            best_point = candidates[0]
-            self.partition_sites.append(best_point)
-
-        return candidates
-
-    def extract_peak(self, peak_boundary):
-        cases = peak_boundary.split(self.profile)
-        return cases
-
-    def split_valley(self, valley):
-        return valley.split(self.profile)
-
-
-def split_valleys(profiles, scale=0.3, n_levels=2):
-    for i in range(n_levels):
-        out = []
-        for case in profiles:
-            ps = ProfileSplitter(case)
-            vallies = ps.locate_vallies(scale)
-            if vallies:
-                splitter = vallies[0]
-                out.extend(ps.split_valley(splitter))
-            else:
-                out.append(case)
-        profiles = out
-    return profiles
-
-
 try:
     has_c = True
     _LCMSFeatureTreeList = LCMSFeatureTreeList
@@ -842,3 +649,23 @@ try:
     )
 except ImportError:
     has_c = False
+
+
+class NodeFeatureSetIterator(FeatureSetIterator):
+    def get_peaks_for_time(self, time):
+        peaks = []
+        for feature in self.features:
+            if feature is not None:
+                try:
+                    node, ix = feature.nodes.find_time(time)
+                except ValueError:
+                    if not isinstance(feature, EmptyFeature):
+                        raise
+                    node = None
+                if node is not None:
+                    peaks.append(node)
+                else:
+                    peaks.append(None)
+            else:
+                peaks.append(None)
+        return peaks

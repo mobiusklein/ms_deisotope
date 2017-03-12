@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import product
 
 import numpy as np
@@ -10,63 +11,20 @@ from .feature_map import (
 from .lcms_feature import (
     LCMSFeature,
     EmptyFeature,
-    FeatureSetIterator)
+    FeatureSetIterator,
+    NodeFeatureSetIterator)
 from .feature_fit import (
     LCMSFeatureSetFit,
     DeconvolutedLCMSFeatureTreeNode,
     DeconvolutedLCMSFeature)
 from .dependence_network import FeatureDependenceGraph
+from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
 from ms_deisotope.averagine import AveragineCache, PROTON, isotopic_shift, mass_charge_ratio
 from ms_deisotope.deconvolution import (
     charge_range_, DeconvolutedPeak, drop_placeholders,
     neutral_mass, average_mz, a_to_a2_ratio, first_peak,
     most_abundant_mz, mean)
-
-
-def has_previous_peak_at_charge(peak_index, peak, charge=2, step=1, error_tolerance=2e-5):
-    """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
-    charge state `charge`, or return `None` if it is missing.
-
-    Parameters
-    ----------
-    peak_index : ms_peak_picker.PeakIndex
-        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
-    peak : ms_peak_picker.FittedPeak
-        The peak to use as a point of reference
-    charge : int, optional
-        The charge state to interpolate from. Defaults to `2`.
-    step : int, optional
-        The number of peaks along the isotopic pattern to search.
-
-    Returns
-    -------
-    FittedPeak
-    """
-    prev = peak.mz - isotopic_shift(charge) * step
-    return peak_index.has_peak(prev, error_tolerance)
-
-
-def has_successor_peak_at_charge(peak_index, peak, charge=2, step=1, error_tolerance=2e-5):
-    """Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
-    charge state `charge`, or return `None` if it is missing.
-
-    Parameters
-    ----------
-    peak_index : ms_peak_picker.PeakIndex
-        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
-    peak : ms_peak_picker.FittedPeak
-        The peak to use as a point of reference
-    charge : int, optional
-        The charge state to interpolate from. Defaults to `2`.
-    step : int, optional
-        The number of peaks along the isotopic pattern to search.
-
-    Returns
-    -------
-    FittedPeak
-    """
-    nxt = peak.mz + isotopic_shift(charge) * step
-    return peak_index.has_peak(nxt, error_tolerance)
+from ms_deisotope.utils import printer
 
 
 def conform_envelopes(experimental, base_theoretical):
@@ -90,49 +48,33 @@ def conform_envelopes(experimental, base_theoretical):
     return cleaned_eid, tid, n_missing
 
 
-def merge_deconvoluted_features(last, solution):
+def sum_deconvoluted_features(last, solution):
     missing = []
-    feat_iter = FeatureSetIterator([last, solution])
-    for peaks in feat_iter:
-        base = peaks[0]
-        new = peaks[1]
+    feat_iter = NodeFeatureSetIterator([last, solution])
+    for nodes in feat_iter:
+        base = nodes[0]
+        new = nodes[1]
         if base is None:
-            missing.append((new, feat_iter.current_time))
-        if new is not None:
-            base.intensity += new.intensity
+            missing.append(new)
+        elif new is not None:
+            base.members[0].intensity += new.members[0].intensity
+            base.precursor_information.extend(new.precursor_information)
     if missing:
-        for peak, time in missing:
-            last.insert_node(DeconvolutedLCMSFeatureTreeNode(time, [peak]))
+        for node in missing:
+            last.insert_node(DeconvolutedLCMSFeatureTreeNode(
+                node.retention_time, list(node.members), list(node.precursor_information)))
+    # last.supporters.extend(solution.supporters)
     return last
 
 
-class LCMSFeatureProcessor(object):
-    def __init__(self, feature_map, averagine, scorer):
-        self.feature_map = LCMSFeatureMap([f.clone() for f in feature_map])
-        self.averagine = AveragineCache(averagine)
-        self.scorer = scorer
-        self.dependence_network = FeatureDependenceGraph(self.feature_map)
-
-    def find_all_features(self, mz, error_tolerance=2e-5):
-        return self.feature_map.find_all(mz, error_tolerance)
-
-    def conform_envelopes(self, experimental, base_theoretical):
-        return conform_envelopes(experimental, base_theoretical)
-
-    def select_best_disjoint_subgraphs(self, error_tolerance=2e-5, charge_carrier=PROTON):
-        disjoint_envelopes = self.dependence_network.find_non_overlapping_intervals()
-
-        solutions = []
-        for cluster in disjoint_envelopes:
-            disjoint_best_fits = cluster.disjoint_best_fits()
-            for fit in disjoint_best_fits:
-                solutions.append(fit)
-        return solutions
-
+class LCMSFeatureProcessorBase(object):
     def create_theoretical_distribution(self, mz, charge, charge_carrier=PROTON, truncate_after=0.8):
         base_tid = self.averagine.isotopic_cluster(
             mz, charge, truncate_after=truncate_after, charge_carrier=charge_carrier)
         return base_tid
+
+    def find_all_features(self, mz, error_tolerance=2e-5):
+        return self.feature_map.find_all(mz, error_tolerance)
 
     def find_features(self, mz, error_tolerance=2e-5, interval=None):
         f = self.find_all_features(mz, error_tolerance)
@@ -141,6 +83,9 @@ class LCMSFeatureProcessor(object):
         elif interval is not None:
             f = [el for el in f if el.overlaps_in_time(interval)]
         return f
+
+    def conform_envelopes(self, experimental, base_theoretical):
+        return conform_envelopes(experimental, base_theoretical)
 
     def _fit_feature_set(self, mz, error_tolerance, charge, left_search=1, right_search=1,
                          charge_carrier=PROTON, truncate_after=0.8, feature=None):
@@ -163,27 +108,15 @@ class LCMSFeatureProcessor(object):
                 if np.isnan(score):
                     continue
                 scores.append(score)
-            final_score = sum(scores)
+            final_score = sum(scores) / len(scores)
             missing_features = 0
             for f in features:
                 if f is None:
                     missing_features += 1
-            fit = LCMSFeatureSetFit(features, base_tid, final_score, charge, missing_features, )
+            fit = LCMSFeatureSetFit(features, base_tid, final_score, charge, missing_features, data=scores)
             if self.scorer.reject_score(fit.score):
                 continue
             feature_fits.append(fit)
-        return feature_fits
-
-    def fit_theoretical_distribution(self, feature, error_tolerance, charge, left_search=1, right_search=1,
-                                     charge_carrier=PROTON, truncate_after=0.8):
-        base_mz = feature.mz
-        for offset in range(-left_search, right_search + 1):
-            mz = base_mz + isotopic_shift(charge) * offset
-            feature_fits = self._fit_feature_set(
-                mz, error_tolerance, charge, left_search, right_search,
-                charge_carrier, truncate_after, feature)
-            for fit in feature_fits:
-                self.dependence_network.add_fit_dependence(fit)
         return feature_fits
 
     def match_theoretical_isotopic_distribution(self, theoretical_distribution, error_tolerance=2e-5, interval=None):
@@ -206,6 +139,88 @@ class LCMSFeatureProcessor(object):
             p.mz, error_tolerance, interval=interval) for p in theoretical_distribution]
         return experimental_distribution
 
+
+try:
+    from ms_deisotope._c.feature_map.feature_processor import LCMSFeatureProcessorBase
+except ImportError:
+    pass
+
+
+class PrecursorMap(object):
+
+    @classmethod
+    def extract_ms1_scans_with_msn(cls, peak_loader):
+        mapping = defaultdict(list)
+        for msn_id, msn_info in peak_loader.extended_index.msn_ids.items():
+            prec_id = msn_info['precursor_scan_id']
+            mapping[prec_id].append(msn_info)
+        return mapping
+
+    @classmethod
+    def map_precursor_information_to_peaks(cls, peak_loader, error_tolerance=2e-5):
+        index = cls.extract_ms1_scans_with_msn(peak_loader)
+        mapping = dict()
+        missed = []
+        for precursor_id, msn_info_set in index.items():
+            precursor = peak_loader.get_scan_by_id(precursor_id)
+            for msn_info in msn_info_set:
+                peak = precursor.peak_set.has_peak(msn_info['mz'], error_tolerance)
+                if peak is not None:
+                    msn_info['intensity'] = peak.intensity
+                    mapping[precursor.scan_time, peak.index] = msn_info
+                else:
+                    missed.append(msn_info)
+        return mapping, missed
+
+    @classmethod
+    def build(cls, peak_loader, error_tolerance=2e-5):
+        mapping, missed = cls.map_precursor_information_to_peaks(
+            peak_loader, error_tolerance)
+        return cls(mapping, missed)
+
+    def __init__(self, mapping, missed=None):
+        if missed is None:
+            missed = []
+        self.mapping = dict(mapping)
+        self.missed = missed
+
+    def assign_precursors(self, feature):
+        hits = []
+        for node in feature:
+            for peak in node.members:
+                key = (node.retention_time, peak.index)
+                if key in self.mapping:
+                    pinfo = self.mapping.pop(key)
+                    hits.append((node, pinfo))
+        return hits
+
+    def precursor_for_peak(self, time_peak_pair):
+        if time_peak_pair in self.mapping:
+            pinfo = self.mapping.pop(time_peak_pair)
+        else:
+            pinfo = None
+        return pinfo
+
+
+class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
+    def __init__(self, feature_map, averagine, scorer, precursor_map=None):
+        if precursor_map is None:
+            precursor_map = PrecursorMap({})
+        self.feature_map = LCMSFeatureMap([f.clone(deep=True) for f in feature_map])
+        self.averagine = AveragineCache(averagine)
+        self.scorer = scorer
+        self.dependence_network = FeatureDependenceGraph(self.feature_map)
+        self.precursor_map = precursor_map
+        self.orphaned_nodes = []
+
+    def select_best_disjoint_subgraphs(self, disjoint_envelopes):
+        solutions = []
+        for cluster in disjoint_envelopes:
+            disjoint_best_fits = cluster.disjoint_best_fits()
+            for fit in disjoint_best_fits:
+                solutions.append(fit)
+        return solutions
+
     def charge_state_determination(self, feature, error_tolerance, charge_range=(1, 8),
                                    left_search=1, right_search=1, charge_carrier=PROTON,
                                    truncate_after=0.8):
@@ -213,8 +228,24 @@ class LCMSFeatureProcessor(object):
         for charge in charge_range_(*charge_range):
             fits.extend(self.fit_theoretical_distribution(
                 feature, 2e-5, charge, left_search=left_search,
-                right_search=right_search))
+                right_search=right_search, truncate_after=truncate_after))
         return sorted(fits, key=lambda x: x.score, reverse=True)
+
+    def fit_theoretical_distribution(self, feature, error_tolerance, charge, left_search=1, right_search=1,
+                                     charge_carrier=PROTON, truncate_after=0.8):
+        base_mz = feature.mz
+        all_fits = []
+        for offset in range(-left_search, right_search + 1):
+            shift = isotopic_shift(charge) * offset
+            mz = base_mz + shift
+            feature_fits = self._fit_feature_set(
+                mz, error_tolerance, charge, left_search,
+                right_search, charge_carrier, truncate_after,
+                feature)
+            all_fits.extend(feature_fits)
+            for fit in feature_fits:
+                self.dependence_network.add_fit_dependence(fit)
+        return all_fits
 
     def finalize_fit(self, feature_fit, charge_carrier=PROTON, subtract=True):
         nodes = []
@@ -249,7 +280,14 @@ class LCMSFeatureProcessor(object):
                 mz=cleaned_eid[0].mz,
                 area=sum(e.area for e in cleaned_eid))
 
-            node = DeconvolutedLCMSFeatureTreeNode(feat_iter.current_time, [dpeak])
+            time = feat_iter.current_time
+            precursor_info_set = []
+            for peak in rep_eid:
+                pinfo = self.precursor_map.precursor_for_peak((time, peak.index))
+                if pinfo is not None:
+                    precursor_info_set.append(pinfo)
+
+            node = DeconvolutedLCMSFeatureTreeNode(time, [dpeak], precursor_info_set)
             nodes.append(node)
             if subtract:
                 for fpeak, tpeak in zip(cleaned_eid, envelope):
@@ -262,17 +300,19 @@ class LCMSFeatureProcessor(object):
             feature.invalidate()
         if len(nodes) == 0:
             return None
+
         return DeconvolutedLCMSFeature(
             nodes, feature_fit.charge,
-            score=feature_fit.score, n_features=len(feature_fit))
+            score=feature_fit.score, n_features=len(feature_fit),
+            supporters=feature_fit.supporters)
 
     def _merge_isobaric(self, solutions):
-        solutions.sort(key=lambda x: x.neutral_mass)
+        solutions.sort(key=lambda x: (x.neutral_mass, x.charge))
         last = solutions[0]
         out = []
         for solution in solutions[1:]:
             if last.neutral_mass == solution.neutral_mass and last.charge == solution.charge:
-                merge_deconvoluted_features(last, solution)
+                sum_deconvoluted_features(last, solution)
             else:
                 out.append(last)
                 last = solution
@@ -282,38 +322,95 @@ class LCMSFeatureProcessor(object):
     def remove_peaks_below_threshold(self, minimum_intensity):
         out = []
         for feature in self.feature_map:
-            nodes = [node for node in feature if node.total_intensity() > minimum_intensity]
-            if nodes:
-                filtered_feature = LCMSFeature(nodes)
-                out.append(filtered_feature)
+            keep = []
+            for node in feature:
+                if node.total_intensity() > minimum_intensity:
+                    keep.append(node)
+                else:
+                    self.orphaned_nodes.append(node)
+
+            if keep:
+                filtered_feature = LCMSFeature(keep, feature_id=feature.feature_id)
+                out.extend(filtered_feature.split_sparse())
         self.feature_map = LCMSFeatureMap(out)
 
-    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=1,
-                    charge_carrier=PROTON, truncate_after=0.8, iterations=1, minimum_intensity=500):
+    def store_solutions(self, fits, charge_carrier=PROTON):
         solutions = []
-        for j in range(iterations):
-            print("Begin Iteration %d" % (j,))
+        for fit in fits:
+            extracted = extract_fitted_region(fit)
+            solution = self.finalize_fit(extracted, charge_carrier=charge_carrier)
+            if solution is None:
+                continue
+            solutions.append(solution)
+        return solutions
+
+    def build_dependence_network(self):
+        self.dependence_network = FeatureDependenceGraph(self.feature_map)
+
+    def _map_precursors(self, error_tolerance):
+        printer("\tConstructing Precursor Seeds")
+        rt_map = RTMap(self.feature_map)
+        cache = dict()
+        seeds = set()
+
+        for key, pinfo in (self.precursor_map.mapping.items()):
+            time, ix = key
+            try:
+                candidates = cache[time]
+            except KeyError:
+                candidates = rt_map.rt_tree.contains_point(time)
+                cache[time] = candidates
+            mz = pinfo["mz"]
+            hits = [c.members[0] for c in candidates if c.contains_mz(mz, error_tolerance)]
+            seeds.update(hits)
+        return seeds
+
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=1,
+                    charge_carrier=PROTON, truncate_after=0.8, maxiter=10, minimum_intensity=500,
+                    convergence=0.01, relfitter=None):
+        solutions = []
+        last_signal_magnitude = sum(f.total_signal for f in self.feature_map)
+        next_signal_magnitude = 1.0
+        total_signal_ratio = 1.0
+        relations = None
+        generation = None
+        for j in range(maxiter):
+            printer("Begin Iteration %d" % (j,))
+            printer("Total Signal: %0.3e" % (sum(f.total_signal for f in self.feature_map),))
             self.remove_peaks_below_threshold(minimum_intensity)
-            self.dependence_network = FeatureDependenceGraph(self.feature_map)
+            self.build_dependence_network()
+
             i = 0
             n = len(self.feature_map)
+            interval = int(max(n // 5, 1000))
             for feature in sorted(self.feature_map, key=lambda x: x.mz, reverse=True):
                 self.charge_state_determination(
                     feature, error_tolerance, charge_range, left_search, right_search,
                     charge_carrier, truncate_after)
                 i += 1
-                if i % 1000 == 0:
-                    print("\t%0.2f%%" % ((100. * i) / n,))
-            print("\tExtracting Fits")
-            fits = self.select_best_disjoint_subgraphs(error_tolerance, charge_carrier)
-            for fit in fits:
-                extracted = extract_fitted_region(fit)
-                solution = self.finalize_fit(extracted, charge_carrier=charge_carrier)
-                if solution is None:
-                    continue
-                solutions.append(solution)
-            print("\tRemoving Signal Below Threshold")
-        # solutions = self._merge_isobaric(solutions)
+                if i % interval == 0:
+                    printer("\t%0.1f%%" % ((100. * i) / n,))
+            disjoint_feature_clusters = self.dependence_network.find_non_overlapping_intervals()
+            if relfitter is not None:
+                relations = relfitter.fit((d for cluster in disjoint_feature_clusters for d in cluster), solutions)
+            printer("\tExtracting Fits")
+            fits = self.select_best_disjoint_subgraphs(disjoint_feature_clusters)
+            generation = self.store_solutions(fits, charge_carrier=charge_carrier)
+            if relfitter is not None:
+                relfitter.add_history((relations, generation))
+            solutions.extend(generation)
+
+            next_signal_magnitude = sum(f.total_signal for f in self.feature_map)
+            total_signal_ratio = (last_signal_magnitude - next_signal_magnitude) / next_signal_magnitude
+            printer("Signal Ratio: %0.4f (%0.3e, %0.3e)" % (
+                total_signal_ratio, last_signal_magnitude, next_signal_magnitude))
+            if total_signal_ratio < convergence:
+                break
+            else:
+                last_signal_magnitude = next_signal_magnitude
+        else:
+            printer("Failed to converge after %d iterations. (%0.4f)" % (j, total_signal_ratio))
+        solutions = self._merge_isobaric(solutions)
         return DeconvolutedLCMSFeatureMap(solutions)
 
 
@@ -329,15 +426,55 @@ def extract_fitted_region(feature_fit):
         _, end_ix = feature.nodes.find_time(end_time)
         if feature.nodes[end_ix].retention_time < end_time:
             end_ix += 1
-        fitted = LCMSFeature(feature.nodes[start_ix:(end_ix + 1)])
+        fitted = LCMSFeature(feature.nodes[start_ix:(end_ix + 1)], feature_id=feature.feature_id)
         if len(fitted) == 0:
-            fitted_features.append(None)
+            fitted_features.append(EmptyFeature(fitted.mz))
         else:
             fitted_features.append(fitted)
     return LCMSFeatureSetFit(
-        fitted_features, feature_fit.theoretical, feature_fit.score,
-        feature_fit.charge, feature_fit.missing_features,
-        feature_fit.data)
+        fitted_features,
+        feature_fit.theoretical,
+        feature_fit.score,
+        feature_fit.charge,
+        feature_fit.missing_features,
+        supporters=feature_fit.supporters,
+        data=feature_fit.data,
+        neutral_mass=feature_fit.neutral_mass)
+
+
+class RTFeatureNode(Interval):
+    def __init__(self, feature):
+        super(RTFeatureNode, self).__init__(
+            feature.start_time, feature.end_time, [feature], mz=feature.mz)
+        self.mz = feature.mz
+
+    def contains_mz(self, mz, time, error_tolerance=2e-5):
+        return abs((self.mz - mz) / mz) < error_tolerance
+
+
+class RTMap(object):
+    def __init__(self, features):
+        self.rt_tree = IntervalTreeNode.build(map(RTFeatureNode, features))
+
+    def locate_precursor_candidates(self, precursor_info):
+        time = precursor_info.precursor.scan_time
+        candidates = self.rt_tree.contains_point(time)
+        return candidates
+
+    def find_precursor(self, precursor_info, error_tolerance=2e-5):
+        time = precursor_info.precursor.scan_time
+        candidates = self.rt_tree.contains_point(time)
+        matches = []
+        for candidate in candidates:
+            if candidate.contains_mz(precursor_info.mz, time, error_tolerance):
+                matches.append(candidate)
+        return matches
+
+    def find_features_at_time(self, time):
+        hits = self.rt_tree.contains_point(time)
+        return [
+            node.members[0] for node in hits
+        ]
 
 
 try:

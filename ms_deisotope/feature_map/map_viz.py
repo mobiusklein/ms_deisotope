@@ -3,6 +3,9 @@ from matplotlib import patches as mpatches
 import numpy as np
 
 
+from .profile_transform import sliding_mean, interpolate
+
+
 Ellipse = mpatches.Ellipse
 
 
@@ -76,7 +79,8 @@ def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=0.025, **kwargs):
     return ax
 
 
-def draw_profiles(profiles, ax=None, label_font_size=10, axis_label_font_size=20, axis_font_size=16):
+def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size=10,
+                  axis_label_font_size=20, axis_font_size=16):
     if ax is None:
         fig, ax = plt.subplots(1)
     minimum_ident_time = float("inf")
@@ -85,6 +89,11 @@ def draw_profiles(profiles, ax=None, label_font_size=10, axis_label_font_size=20
 
     for profile in profiles:
         rt, heights = profile.as_arrays()
+
+        if smooth:
+            heights = sliding_mean(heights)
+        if interp:
+            rt, heights = interpolate(rt, heights)
 
         maximum_ident_time = max(max(rt), maximum_ident_time)
         minimum_ident_time = min(min(rt), minimum_ident_time)
@@ -105,10 +114,13 @@ def draw_profiles(profiles, ax=None, label_font_size=10, axis_label_font_size=20
         apex = max(heights)
         apex_ind = np.argmax(heights)
         rt_apex = rt[apex_ind]
-        ax.text(rt_apex, apex + min(apex * 1.1, 1200), label, ha='center', fontsize=label_font_size)
+        ax.text(rt_apex, apex + min(apex * (
+            .1), 1200), label,
+            ha='center', fontsize=label_font_size, alpha=0.75)
     ax.set_xlim(minimum_ident_time - 0.02,
                 maximum_ident_time + 0.02)
     ax.set_ylim(0, maximum_intensity * 1.1)
+    print(maximum_intensity * 1.1)
     ax.legend(bbox_to_anchor=(1.7, 1.), ncol=2, fontsize=10)
     ax.axes.spines['right'].set_visible(False)
     ax.axes.spines['top'].set_visible(False)

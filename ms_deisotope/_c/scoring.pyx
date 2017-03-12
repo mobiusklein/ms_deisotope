@@ -47,7 +47,7 @@ cdef class IsotopicFitRecord(object):
     theoretical : list of TheoreticalPeak
         The theoretical isotopic pattern being fitted on the experimental data
     """
-    def __cinit__(self, FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
+    def __init__(self, FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
                   object data=None, int missed_peaks=0):
         self.seed_peak = seed_peak
         self.score = score
@@ -58,8 +58,23 @@ cdef class IsotopicFitRecord(object):
         self.data = data
         self.missed_peaks = missed_peaks
 
+    @staticmethod
+    cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
+                                   object data=None, int missed_peaks=0):
+        cdef IsotopicFitRecord inst
+        inst = IsotopicFitRecord.__new__(IsotopicFitRecord)
+        inst.seed_peak = seed_peak
+        inst.score = score
+        inst.charge = charge
+        inst.theoretical = theoretical
+        inst.experimental = experimental
+        inst.monoisotopic_peak = <FittedPeak>PyList_GetItem(experimental, 0)
+        inst.data = data
+        inst.missed_peaks = missed_peaks
+        return inst
+
     def clone(self):
-        return self.__class__(self.seed_peak, self.score, self.charge, self.theoretical,
+        return IsotopicFitRecord._create(self.seed_peak, self.score, self.charge, self.theoretical,
                               self.experimental, self.data, self.missed_peaks)
 
     def __reduce__(self):

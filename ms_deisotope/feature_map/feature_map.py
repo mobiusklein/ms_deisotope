@@ -151,7 +151,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
                 if peak.mz < minimum_mz or peak.intensity < minimum_intensity:
                     continue
                 self.handle_peak(peak, scan.scan_time)
-        self.features = smooth_overlaps(self.features)
+        self.features = smooth_overlaps(self.features, self.error_tolerance)
 
 
 def smooth_overlaps(feature_list, error_tolerance=1e-5):
@@ -445,6 +445,7 @@ class DeconvolutedLCMSFeatureMap(object):
 
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: x.neutral_mass)
+        self._by_mz = sorted(features, key=lambda x: x.mz)
 
     def __len__(self):
         return len(self.features)
@@ -458,18 +459,28 @@ class DeconvolutedLCMSFeatureMap(object):
         else:
             return [self.features[j] for j in i]
 
-    def search(self, mz, error_tolerance=2e-5):
+    def search(self, mz, error_tolerance=2e-5, use_mz=False):
+        if use_mz:
+            i = binary_search(self._by_mz, mz, error_tolerance)
+            if i is None:
+                return None
+            return self._by_mz[i]
         i = binary_search_neutral(self.features, mz, error_tolerance)
         if i is None:
             return None
         match = self[i]
         return match
 
-    def find_all(self, mz, error_tolerance=2e-5):
-        bounds = search_sweep_neutral(self.features, mz, error_tolerance)
+    def find_all(self, mz, error_tolerance=2e-5, use_mz=False):
+        if use_mz:
+            bounds = search_sweep(self._by_mz, mz, error_tolerance)
+            collection = self._by_mz
+        else:
+            bounds = search_sweep_neutral(self.features, mz, error_tolerance)
+            collection = self
         if bounds is not None:
             lo, hi = bounds
-            return self[lo:hi]
+            return collection[lo:hi]
         else:
             return []
 

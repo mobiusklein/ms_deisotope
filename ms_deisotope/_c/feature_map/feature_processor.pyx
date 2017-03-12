@@ -1,11 +1,24 @@
+# cython: embedsignature=True
+# 
+
 from libc.stdlib cimport malloc, free
 
-from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_Append
+cdef extern from "numpy/npy_math.h":
+    bint npy_isnan(double x)
+
+
+import itertools
+
+from cpython cimport PyObject
+from cpython.iterator cimport PyIter_Next
+from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_Append, PyList_GetItem, PyList_SetItem, PyList_New
+from cpython.tuple cimport PyTuple_GetItem
+from cpython.int cimport PyInt_AsSsize_t
 from ms_peak_picker._c.peak_set cimport FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 from ms_deisotope._c.scoring cimport IsotopicFitterBase
-from ms_deisotope._c.averagine cimport AveragineCache, PROTON
+from ms_deisotope._c.averagine cimport AveragineCache, PROTON, neutral_mass as calc_neutral_mass
 
 from ms_deisotope._c.feature_map.feature_map cimport LCMSFeatureMap
 from ms_deisotope._c.feature_map.feature_fit cimport LCMSFeatureSetFit
@@ -18,43 +31,97 @@ cimport numpy as cnp
 import numpy as np
 
 
-cdef class product_iterator(object):
+cdef class CartesianProductIterator(object):
     cdef:
         public list collections
+        public size_t size
+        int* lengths
+        int* indices
+        public bint done
+        public size_t total_combinations
 
-    def __init__(self, collections):
-        self.collections = list(map(list, collections))
-        self.count = PyList_GET_SIZE(self.collections)
-
-    cpdef list product(self):
+    def __cinit__(self, collections):
         cdef:
-            list result, next_result, new, layer, entry
-            size_t layer_i, layer_n, entry_i, entry_n, value_i, value_n
+            size_t i, n
+            list sublist
 
-        result = [[]]
-        layer_n = self.count
-        for layer_i in range(layer_n):
-            layer = <list>PyList_GET_ITEM(self.collections, layer_i)
-            next_result = []
-            entry_n = PyList_GET_SIZE(result)
-            for entry_i in range(entry_n):
-                entry = <list>PyList_GET_ITEM(result, entry_i)
-                value_n = PyList_GET_SIZE(layer)
-                for value_i in range(value_n):
-                    value = <object>PyList_GET_ITEM(layer, value_i)
-                    new = list(entry)
-                    new.append(value)
-                    next_result.append(new)
-            result = next_result
+        self.collections = list(map(list, collections))
+        self.size = PyList_GET_SIZE(self.collections)
+        self.lengths = <int*>malloc(sizeof(int) * self.size)
+        self.indices = <int*>malloc(sizeof(int) * self.size)
+        self.done = False
+        self.total_combinations = 1
+
+        for i in range(self.size):
+            sublist = <list>PyList_GetItem(self.collections, i)
+            self.lengths[i] = PyList_GET_SIZE(sublist)
+            self.total_combinations *= self.lengths[i]
+            if self.lengths[i] == 0:
+                self.done = True
+            self.indices[i] = 0
+
+    def __dealloc__(self):
+        free(self.lengths)
+        free(self.indices)
+
+    def get_lengths(self):
+        return [self.lengths[i] for i in range(self.size)]
+
+    def get_indices(self):
+        return [self.indices[i] for i in range(self.size)]
+
+    cpdef bint has_more(self):
+        return not self.done
+
+    cpdef list compose_next_value(self):
+        cdef:
+            int i, ix
+            list result, sublist
+            object value
+        if self.done:
+            return None
+        result = []
+        for i in range(self.size):
+            sublist = <list>PyList_GetItem(self.collections, i)
+            ix = self.indices[i]
+            value = <object>PyList_GetItem(sublist, ix)
+            result.append(value)
         return result
 
-cdef list product(collections):
-    cdef product_iterator piter
-    piter = product_iterator(collections)
-    return piter.product()
+    cpdef advance(self):
+        for i in range(self.size - 1, -1, -1):
+            if self.indices[i] == self.lengths[i] - 1:
+                self.indices[i] = 0
+                if i == 0:
+                    self.done = True
+            else:
+                self.indices[i] += 1
+                break
+
+    cpdef list get_next_value(self):
+        cdef list value
+        if self.done:
+            return None
+        else:
+            value = self.compose_next_value()
+            self.advance()
+            return value
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.done:
+            raise StopIteration()
+        value = self.compose_next_value()
+        if value is None:
+            raise StopIteration()
+        else:
+            self.advance()
+        return value
 
 
-cdef tuple _conform_envelopes(list experimental, list base_theoretical):
+cdef tuple _conform_envelopes(list experimental, list base_theoretical, size_t* n_missing_out):
     cdef:
         double total = 0
         size_t n_missing = 0
@@ -70,7 +137,7 @@ cdef tuple _conform_envelopes(list experimental, list base_theoretical):
         fpeak = <FittedPeak>PyList_GET_ITEM(experimental, i)
         if fpeak is None:
             peak = <TheoreticalPeak>PyList_GET_ITEM(base_theoretical, i)
-            fpeak = FittedPeak(peak.mz, 1, 1, -1, -1, 0, 1, 0, 0)
+            fpeak = FittedPeak._create(peak.mz, 1, 1, -1, -1, 0, 1, 0, 0)
             n_missing += 1
         total += fpeak.intensity
         cleaned_eid.append(fpeak)
@@ -82,14 +149,65 @@ cdef tuple _conform_envelopes(list experimental, list base_theoretical):
         peak = tpeak.clone()
         peak.intensity *= total
         tid.append(peak)
-    return cleaned_eid, tid, n_missing
+    n_missing_out[0] = n_missing
+    return cleaned_eid, tid
+
+
+cdef class envelope_conformer:
+    cdef:
+        list experimental
+        list theoretical
+        size_t n_missing
+
+    cdef void acquire(self, list experimental, list theoretical):
+        self.experimental = experimental
+        self.theoretical = theoretical
+        self.n_missing = 0
+
+    cdef void conform(self):
+        cdef:
+            double total = 0
+            size_t n_missing = 0
+            size_t i = 0
+            list cleaned_eid
+            list tid
+            FittedPeak fpeak
+            TheoreticalPeak tpeak, peak
+
+        cleaned_eid = []
+        
+        for i in range(PyList_GET_SIZE(self.experimental)):
+            fpeak = <FittedPeak>PyList_GET_ITEM(self.experimental, i)
+            if fpeak is None:
+                peak = <TheoreticalPeak>PyList_GET_ITEM(self.theoretical, i)
+                fpeak = FittedPeak._create(peak.mz, 1, 1, -1, -1, 0, 1, 0, 0)
+                n_missing += 1
+            total += fpeak.intensity
+            cleaned_eid.append(fpeak)
+            i += 1
+
+        tid = []
+        for i in range(PyList_GET_SIZE(self.theoretical)):
+            tpeak = <TheoreticalPeak>PyList_GET_ITEM(self.theoretical, i)
+            peak = tpeak.clone()
+            peak.intensity *= total
+            tid.append(peak)
+        self.experimental = cleaned_eid
+        self.theoretical = tid
+        self.n_missing = n_missing
 
 
 cpdef tuple conform_envelopes(list experimental, list base_theoretical):
-    return _conform_envelopes(experimental, base_theoretical)
+    cdef:
+        size_t n_missing
+        tuple out
+
+    out = _conform_envelopes(experimental, base_theoretical, &n_missing)
+    out += (n_missing,)
+    return out
 
 
-cdef int validate_feature_set(list features):
+cdef int has_no_valid_features(list features):
     cdef:
         size_t i, n, cnt
         object feature
@@ -100,10 +218,27 @@ cdef int validate_feature_set(list features):
         feature = <object>PyList_GET_ITEM(features, i)
         if feature is None:
             cnt += 1
-    return cnt != n
+    return cnt == n
 
 
-cdef class FeatureProcessorBase(object):
+cdef double overlap_size(LCMSFeature self, LCMSFeature other):
+    cdef:
+        double self_start, self_end, other_start, other_end
+    self_start = self.get_start_time()
+    self_end = self.get_end_time()
+    other_start = other.get_start_time()
+    other_end = other.get_end_time()
+    if self_start < other_start < self_end and self_start < other_end < self_end:
+        return other_end - other_start
+    elif other_start < self_start < other_end and other_start < self_end < other_end:
+        return self_end - self_start
+    if self_end >= other_start:
+        return self_end - other_start
+    elif self_start >= other_end:
+        return self_start - other_end
+
+
+cdef class LCMSFeatureProcessorBase(object):
     cdef:
         public LCMSFeatureMap feature_map
         public IsotopicFitterBase scorer
@@ -120,6 +255,7 @@ cdef class FeatureProcessorBase(object):
     cpdef list find_features(self, double mz, double error_tolerance=2e-5, LCMSFeature interval=None):
         cdef:
             list f, overlapped
+            double search_width, hit_width
             LCMSFeature el
             size_t i, n
         f = self.find_all_features(mz, error_tolerance)
@@ -127,10 +263,16 @@ cdef class FeatureProcessorBase(object):
             f = [None]
         elif interval is not None:
             overlapped = []
-            n = PyList_GET_SIZE(overlapped)
+            n = PyList_GET_SIZE(f)
+            search_width = interval.get_end_time() - interval.get_start_time()
+            if search_width == 0:
+                return [None]
             for i in range(n):
                 el = <LCMSFeature>PyList_GET_ITEM(f, i)
                 if el.overlaps_in_time(interval):
+                    hit_width = el.get_end_time() - el.get_start_time()
+                    if (hit_width / search_width) < 0.05:
+                        continue
                     overlapped.append(el)
             f = overlapped
         return f
@@ -164,46 +306,89 @@ cdef class FeatureProcessorBase(object):
             experimental_distribution.append(found)
         return experimental_distribution
 
-    cpdef list _fit_feature_set(self, mz, error_tolerance, charge, left_search=1, right_search=1,
-                                charge_carrier=PROTON, truncate_after=0.8, feature=None):
+    cdef tuple conform_envelopes(self, list experimental, list base_theoretical):
+        return conform_envelopes(experimental, base_theoretical)
+
+    cdef tuple _conform_envelopes(self, list experimental, list base_theoretical, size_t* n_missing):
+        return _conform_envelopes(experimental, base_theoretical, n_missing)
+
+
+    cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
+                                int right_search=1, double charge_carrier=PROTON, double truncate_after=0.8,
+                                LCMSFeature feature=None):
         cdef:
+            double score, final_score, score_acc, neutral_mass
             list base_tid, feature_groups, feature_fits, features, combn
-            list scores, eid, cleaned_eid, tid, 
-            size_t combn_size, combn_i, n_missing, missing_features
-            double score, final_score
+            list scores, eid, cleaned_eid, tid
+            tuple temp
+            size_t combn_size, combn_i, n_missing, missing_features, counter
             FeatureSetIterator feat_iter
+            LCMSFeature f
+            size_t feat_i, feat_n
+            CartesianProductIterator combn_iter
+            envelope_conformer conformer
 
 
         base_tid = self.create_theoretical_distribution(mz, charge, charge_carrier, truncate_after)
         feature_groups = self.match_theoretical_isotopic_distribution(base_tid, error_tolerance, interval=feature)
         feature_fits = []
 
-        combn = product(feature_groups)
-        combn_size = PyList_GET_SIZE(combn)
+        conformer = envelope_conformer.__new__(envelope_conformer)
 
-        for combn_i in range(combn_size):
-            features = <list>PyList_GET_ITEM(combn, combn_i)
-            if not validate_feature_set(features):
+        combn_iter = CartesianProductIterator(feature_groups)
+        combn_i = 0
+        while combn_iter.has_more():
+            features = combn_iter.get_next_value()
+            if features is None:
+                break
+            combn_i += 1
+            if combn_i % (1000000) == 0:
+                print("\t%d combinations have been considered for m/z %0.3f at charge %d in %s (%0.2f%%)" % (
+                    combn_i, mz, charge, "-" if feature is None else (
+                        "%0.2f-%0.2f" % (feature.start_time, feature.end_time)),
+                    100. * combn_i / combn_iter.total_combinations))
+            if has_no_valid_features(features):
                 continue
             # If the monoisotopic feature wasn't actually observed, create a dummy feature
             # since the monoisotopic feature cannot be None
             if features[0] is None:
                 features = list(features)
                 features[0] = EmptyFeature(mz)
-            feat_iter = FeatureSetIterator(features)
+            feat_iter = FeatureSetIterator._create(features)
             scores = []
-            for eid in feat_iter:
-                cleaned_eid, tid, n_missing = self.conform_envelopes(eid, base_tid)
-                score = self.scorer.evaluate(None, cleaned_eid, tid)
-                if np.isnan(score):
+            counter = 0
+            score_acc = 0
+            while feat_iter.has_more():
+                eid = feat_iter.get_next_value()
+                if eid is None:
                     continue
-                scores.append(score)
-            final_score = sum(scores)
+                counter += 1
+                conformer.acquire(eid, base_tid)
+                conformer.conform()
+                # temp = self._conform_envelopes(eid, base_tid, &n_missing)
+                # cleaned_eid = <list>PyTuple_GetItem(temp, 0)
+                # tid = <list>PyTuple_GetItem(temp, 1)
+                cleaned_eid = conformer.experimental
+                tid = conformer.theoretical
+                n_missing = conformer.n_missing
+
+                score = self.scorer._evaluate(None, cleaned_eid, tid)
+                if npy_isnan(score):
+                    continue
+                score_acc += score
+            final_score = score_acc / counter
             missing_features = 0
-            for f in features:
+            feat_n = PyList_GET_SIZE(features)
+            for feat_i in range(feat_n):
+                f = <LCMSFeature>PyList_GET_ITEM(features, feat_i)
                 if f is None:
                     missing_features += 1
-            fit = LCMSFeatureSetFit(features, base_tid, final_score, charge, missing_features, )
+            f = <LCMSFeature>PyList_GET_ITEM(features, 0)
+            neutral_mass = calc_neutral_mass(
+                    f.get_mz(), charge, charge_carrier)
+            fit = LCMSFeatureSetFit._create(
+                features, base_tid, final_score, charge, missing_features,
+                [], None, neutral_mass)
             if self.scorer.reject_score(fit.score):
                 continue
             feature_fits.append(fit)

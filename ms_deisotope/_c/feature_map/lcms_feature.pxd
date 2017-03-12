@@ -9,6 +9,8 @@ cdef class LCMSFeatureTreeList(object):
     cdef void _invalidate(self)
 
     cpdef tuple find_time(self, double retention_time)
+    cdef LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout)
+    cdef LCMSFeatureTreeNode getitem(self, size_t i)
 
 
 cdef class LCMSFeatureTreeNode(object):
@@ -51,10 +53,13 @@ cdef class LCMSFeature(FeatureBase):
         public object adducts
         public object used_as_adduct
         public object created_at
+        public object feature_id
 
     cpdef bint _eq(self, other)
     cpdef bint _ne(self, other)
     cpdef bint overlaps_in_time(self, FeatureBase interval)
+
+    cdef LCMSFeatureTreeNode getitem(self, size_t i)
 
 
 cdef class EmptyFeature(FeatureBase):
@@ -69,6 +74,12 @@ cdef class FeatureSetIterator(object):
         public double end_time
         public object time_point_queue
         public double last_time_seen
+        public bint done
+
+    @staticmethod
+    cdef FeatureSetIterator _create(list features)
 
     cpdef double get_next_time(self)
     cpdef list get_peaks_for_time(self, double time)
+    cpdef bint has_more(self)
+    cpdef list get_next_value(self)

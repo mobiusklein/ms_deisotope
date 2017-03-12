@@ -1,6 +1,8 @@
+# cython: embedsignature=True
 cimport cython
 
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
+from ms_deisotope._c.averagine cimport neutral_mass as calc_neutral_mass
 
 
 @cython.freelist(1000000)
@@ -24,10 +26,17 @@ cdef class map_coord(object):
     def __reduce__(self):
         return map_coord, (self.mz, self.time,)
 
+    def __repr__(self):
+        return "map_coord(mz=%0.4f, time=%0.4f)" % (self.mz, self.time)
 
+
+@cython.freelist(10000000)
 cdef class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
-                 missing_features=0, data=None):
+                 missing_features=0, supporters=None, data=None,
+                 neutral_mass=None):
+        if supporters is None:
+            supporters = []
         self.features = features
         self.theoretical = theoretical
         self.score = score
@@ -35,20 +44,44 @@ cdef class LCMSFeatureSetFit(object):
         self.data = data
         self.missing_features = missing_features
         self.monoisotopic_feature = features[0]
+        self.supporters = supporters
+        if neutral_mass is None:
+            neutral_mass = calc_neutral_mass(self.monoisotopic_feature.mz, self.charge)
+        self.neutral_mass = neutral_mass
+        self.mz = self.monoisotopic_feature.mz
 
-    @property
-    def mz(self):
-        return self.monoisotopic_feature.mz
+    @staticmethod
+    cdef LCMSFeatureSetFit _create(list features, list theoretical, double score,
+                                   int charge, size_t missing_features, list supporters,
+                                   object data, double neutral_mass):
+        cdef:
+            LCMSFeatureSetFit inst
+        inst = LCMSFeatureSetFit.__new__(LCMSFeatureSetFit)
+        if supporters is None:
+            supporters = []
+        inst.features = features
+        inst.theoretical = theoretical
+        inst.score = score
+        inst.charge = charge
+        inst.data = data
+        inst.missing_features = missing_features
+        inst.monoisotopic_feature = features[0]
+        inst.supporters = supporters
+        if neutral_mass is None:
+            neutral_mass = calc_neutral_mass(inst.monoisotopic_feature.mz, inst.charge)
+        inst.neutral_mass = neutral_mass
+        inst.mz = inst.monoisotopic_feature.mz
+        return inst
 
     def clone(self):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.data)
+            self.missing_features, self.supporters, self.data, self.neutral_mass)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.data)
+            self.missing_features, self.supporters, self.data, self.neutral_mass)
 
     cpdef bint _eq(self, LCMSFeatureSetFit other):
         cdef bint val
