@@ -47,6 +47,8 @@ class Averagine(object):
             result.append(peak)
             if cumsum >= truncate_after:
                 break
+        for peak in result:
+            peak.intensity *= 1. / cumsum
         return shift_isotopic_pattern(mz, result)
 
     def __repr__(self):

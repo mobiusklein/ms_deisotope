@@ -128,7 +128,12 @@ cdef class Averagine(object):
             peak.mz = (peak.mz - base_mz) + mz
             if cumsum >= truncate_after:
                 break
-
+        # Renormalize so the truncated peak list sums to 1.0
+        if truncate_after < 1.0:
+            n = i + 1
+            for i in range(n):
+                peak = <TheoreticalPeak>PyList_GET_ITEM(tid, i)
+                peak.intensity *= 1. / cumsum
         return result
 
     cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):

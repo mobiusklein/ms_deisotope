@@ -159,6 +159,10 @@ cdef class envelope_conformer:
         list theoretical
         size_t n_missing
 
+    @staticmethod
+    cdef envelope_conformer _create():
+        return envelope_conformer.__new__(envelope_conformer)
+
     cdef void acquire(self, list experimental, list theoretical):
         self.experimental = experimental
         self.theoretical = theoretical
@@ -241,9 +245,12 @@ cdef class LCMSFeatureProcessorBase(object):
             double search_width, hit_width
             LCMSFeature el
             size_t i, n
+            bint has_miss
+        has_miss = False
         f = self.find_all_features(mz, error_tolerance)
         if not f:
             f = [None]
+            has_miss = True
         elif interval is not None:
             overlapped = []
             n = PyList_GET_SIZE(f)
@@ -258,6 +265,8 @@ cdef class LCMSFeatureProcessorBase(object):
                         continue
                     overlapped.append(el)
             f = overlapped
+            if PyList_GET_SIZE(f) == 0:
+                f = [None]
         return f
 
     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=2e-5, LCMSFeature interval=None):
@@ -316,7 +325,7 @@ cdef class LCMSFeatureProcessorBase(object):
         feature_groups = self.match_theoretical_isotopic_distribution(base_tid, error_tolerance, interval=feature)
         feature_fits = []
 
-        conformer = envelope_conformer.__new__(envelope_conformer)
+        conformer = envelope_conformer._create()
 
         combn_iter = CartesianProductIterator(feature_groups)
         combn_i = 0
@@ -338,7 +347,6 @@ cdef class LCMSFeatureProcessorBase(object):
                 features = list(features)
                 features[0] = EmptyFeature(mz)
             feat_iter = FeatureSetIterator._create(features)
-            scores = []
             counter = 0
             score_acc = 0
             while feat_iter.has_more():

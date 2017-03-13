@@ -224,12 +224,47 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
     def charge_state_determination(self, feature, error_tolerance, charge_range=(1, 8),
                                    left_search=1, right_search=1, charge_carrier=PROTON,
                                    truncate_after=0.8):
-        fits = []
-        for charge in charge_range_(*charge_range):
-            fits.extend(self.fit_theoretical_distribution(
-                feature, 2e-5, charge, left_search=left_search,
-                right_search=right_search, truncate_after=truncate_after))
+        fits = self.collect_all_fits(
+            feature, error_tolerance, charge_range,
+            left_search, right_search, charge_carrier,
+            truncate_after)
         return sorted(fits, key=lambda x: x.score, reverse=True)
+
+    def collect_all_fits(self, feature, error_tolerance, charge_range=(1, 8),
+                         left_search=1, right_search=1, charge_carrier=PROTON,
+                         truncate_after=0.8):
+        fits = []
+        holdout = None
+        if self.scorer.is_maximizing():
+            best_fit_score = 0
+        else:
+            best_fit_score = float('inf')
+        best_fit_charge = 0
+        for charge in charge_range_(*charge_range):
+            current_fits = self.fit_theoretical_distribution(
+                feature, 2e-5, charge, left_search=left_search,
+                right_search=right_search, truncate_after=truncate_after)
+            if self.scorer.is_maximizing():
+                for fit in current_fits:
+                    if fit.score > best_fit_score:
+                        best_fit_score = fit.score
+                        best_fit_charge = charge
+            else:
+                for fit in current_fits:
+                    if fit.score < best_fit_score:
+                        best_fit_score = fit.score
+                        best_fit_charge = charge
+            if abs(charge) == 1:
+                holdout = current_fits
+            else:
+                for fit in current_fits:
+                    self.dependence_network.add_fit_dependence(fit)
+                    fits.append(fit)
+        if holdout is not None and best_fit_charge == 1:
+            for fit in holdout:
+                self.dependence_network.add_fit_dependence(fit)
+                fits.append(fit)
+        return fits
 
     def fit_theoretical_distribution(self, feature, error_tolerance, charge, left_search=1, right_search=1,
                                      charge_carrier=PROTON, truncate_after=0.8):
@@ -243,8 +278,6 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 right_search, charge_carrier, truncate_after,
                 feature)
             all_fits.extend(feature_fits)
-            for fit in feature_fits:
-                self.dependence_network.add_fit_dependence(fit)
         return all_fits
 
     def finalize_fit(self, feature_fit, charge_carrier=PROTON, subtract=True):
@@ -365,53 +398,102 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             seeds.update(hits)
         return seeds
 
-    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=1,
-                    charge_carrier=PROTON, truncate_after=0.8, maxiter=10, minimum_intensity=500,
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
+                    charge_carrier=PROTON, truncate_after=0.8, maxiter=10, minimum_intensity=100,
                     convergence=0.01, relfitter=None):
-        solutions = []
-        last_signal_magnitude = sum(f.total_signal for f in self.feature_map)
-        next_signal_magnitude = 1.0
-        total_signal_ratio = 1.0
-        relations = None
-        generation = None
-        for j in range(maxiter):
-            printer("Begin Iteration %d" % (j,))
-            printer("Total Signal: %0.3e" % (sum(f.total_signal for f in self.feature_map),))
-            self.remove_peaks_below_threshold(minimum_intensity)
-            self.build_dependence_network()
+        state = FeatureDeconvolutionIterationState(
+            self, error_tolerance, charge_range, left_search, right_search, charge_carrier,
+            truncate_after, maxiter, minimum_intensity, convergence, relfitter)
+        return state.run()
 
-            i = 0
-            n = len(self.feature_map)
-            interval = int(max(n // 5, 1000))
-            for feature in sorted(self.feature_map, key=lambda x: x.mz, reverse=True):
-                self.charge_state_determination(
-                    feature, error_tolerance, charge_range, left_search, right_search,
-                    charge_carrier, truncate_after)
-                i += 1
-                if i % interval == 0:
-                    printer("\t%0.1f%%" % ((100. * i) / n,))
-            disjoint_feature_clusters = self.dependence_network.find_non_overlapping_intervals()
-            if relfitter is not None:
-                relations = relfitter.fit((d for cluster in disjoint_feature_clusters for d in cluster), solutions)
-            printer("\tExtracting Fits")
-            fits = self.select_best_disjoint_subgraphs(disjoint_feature_clusters)
-            generation = self.store_solutions(fits, charge_carrier=charge_carrier)
-            if relfitter is not None:
-                relfitter.add_history((relations, generation))
-            solutions.extend(generation)
 
-            next_signal_magnitude = sum(f.total_signal for f in self.feature_map)
-            total_signal_ratio = (last_signal_magnitude - next_signal_magnitude) / next_signal_magnitude
-            printer("Signal Ratio: %0.3e (%0.3e, %0.3e)" % (
-                total_signal_ratio, last_signal_magnitude, next_signal_magnitude))
-            if total_signal_ratio < convergence:
-                break
-            else:
-                last_signal_magnitude = next_signal_magnitude
+class FeatureDeconvolutionIterationState(object):
+    def __init__(self, processor, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
+                 charge_carrier=PROTON, truncate_after=0.8, maxiter=10, minimum_intensity=100,
+                 convergence=0.01, relfitter=None):
+        self.processor = processor
+        self.last_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
+        self.next_signal_magnitude = 1.0
+        self.total_signal_ratio = 1.0
+        self.generation = None
+        self.relations = None
+        self.fits = None
+        self.solutions = []
+        self.disjoint_feature_clusters = None
+        self.maxiter = maxiter
+        self.iteration_count = 0
+
+        self.error_tolerance = error_tolerance
+        self.charge_range = charge_range
+        self.left_search = left_search
+        self.right_search = right_search
+        self.charge_carrier = charge_carrier
+        self.truncate_after = truncate_after
+        self.minimum_intensity = minimum_intensity
+        self.convergence = convergence
+        self.relfitter = relfitter
+
+    def update_signal_ratio(self):
+        self.next_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
+        self.total_signal_ratio = (self.last_signal_magnitude - self.next_signal_magnitude) / self.next_signal_magnitude
+        printer("Signal Ratio: %0.3e (%0.3e, %0.3e)" % (
+            self.total_signal_ratio, self.last_signal_magnitude, self.next_signal_magnitude))
+        self.last_signal_magnitude = self.next_signal_magnitude
+        return self.total_signal_ratio
+
+    def setup(self):
+        printer("Begin Iteration %d" % (self.iteration_count,))
+        printer("Total Signal: %0.3e" % (sum(f.total_signal for f in self.processor.feature_map),))
+        self.processor.remove_peaks_below_threshold(self.minimum_intensity)
+        self.processor.build_dependence_network()
+
+    def map_fits(self, report_interval=5):
+        i = 0
+        n = len(self.processor.feature_map)
+        interval = int(max(n // report_interval, 1000))
+        for feature in sorted(self.processor.feature_map, key=lambda x: x.mz, reverse=True):
+            self.processor.charge_state_determination(
+                feature, self.error_tolerance, self.charge_range, self.left_search,
+                self.right_search, self.charge_carrier, self.truncate_after)
+            i += 1
+            if i % interval == 0:
+                printer("\t%0.1f%%" % ((100. * i) / n,))
+        self.disjoint_feature_clusters = self.processor.dependence_network.find_non_overlapping_intervals()
+
+        if self.relfitter is not None:
+            self.relations = self.relfitter.fit(
+                (d for cluster in self.processor.disjoint_feature_clusters for d in cluster), self.solutions)
+        printer("\tExtracting Fits")
+        self.fits = self.processor.select_best_disjoint_subgraphs(self.disjoint_feature_clusters)
+
+    def postprocess(self):
+        self.generation = self.processor.store_solutions(self.fits, charge_carrier=self.charge_carrier)
+
+        if self.relfitter is not None:
+            self.relfitter.add_history((self.relations, self.generation))
+        self.solutions.extend(self.generation)
+
+    def step(self, report_interval=5):
+        self.setup()
+
+        self.map_fits(report_interval=report_interval)
+        self.postprocess()
+
+        self.iteration_count += 1
+        self.update_signal_ratio()
+
+        if self.total_signal_ratio < self.convergence:
+            return True
         else:
-            printer("Failed to converge after %d iterations. (%0.4f)" % (j, total_signal_ratio))
-        solutions = self._merge_isobaric(solutions)
-        return DeconvolutedLCMSFeatureMap(solutions)
+            return False
+
+    def run(self):
+        keep_going = True
+        while keep_going:
+            converged = self.step()
+            if converged or self.iteration_count >= self.maxiter:
+                keep_going = False
+        return DeconvolutedLCMSFeatureMap(self.solutions)
 
 
 def extract_fitted_region(feature_fit):
