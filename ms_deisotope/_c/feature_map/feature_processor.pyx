@@ -16,6 +16,11 @@ from cpython.tuple cimport PyTuple_GetItem
 from cpython.int cimport PyInt_AsSsize_t
 from ms_peak_picker._c.peak_set cimport FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
+from brainpy._c.double_vector cimport (
+    DoubleVector as dvec,
+    make_double_vector,
+    free_double_vector,
+    double_vector_append)
 
 from ms_deisotope._c.scoring cimport IsotopicFitterBase
 from ms_deisotope._c.averagine cimport AveragineCache, PROTON, neutral_mass as calc_neutral_mass
@@ -29,6 +34,9 @@ from ms_deisotope._c.feature_map.lcms_feature cimport (
 
 cimport numpy as cnp
 import numpy as np
+
+
+cdef double INF = float('inf')
 
 
 cdef class CartesianProductIterator(object):
@@ -298,12 +306,34 @@ cdef class LCMSFeatureProcessorBase(object):
             experimental_distribution.append(found)
         return experimental_distribution
 
-    cdef tuple conform_envelopes(self, list experimental, list base_theoretical):
+    cpdef tuple conform_envelopes(self, list experimental, list base_theoretical):
         return conform_envelopes(experimental, base_theoretical)
 
     cdef tuple _conform_envelopes(self, list experimental, list base_theoretical, size_t* n_missing):
         return _conform_envelopes(experimental, base_theoretical, n_missing)
 
+    cdef double _find_thresholded_score(self, dvec* scores, double percentage):
+        cdef:
+            size_t i, n, count
+            double maximum, val, threshold, acc
+
+        maximum = -INF
+        count = 0
+        acc = 0
+        n = scores.used
+        for i in range(n):
+            val = scores.v[i]
+            if val > maximum:
+                maximum = val
+        threshold = maximum * percentage
+        for i in range(n):
+            val = scores.v[i]
+            if val > threshold:
+                acc += val
+                count += 1
+        if count == 0:
+            return 0
+        return acc / count
 
     cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
                                 int right_search=1, double charge_carrier=PROTON, double truncate_after=0.8,
@@ -319,6 +349,7 @@ cdef class LCMSFeatureProcessorBase(object):
             size_t feat_i, feat_n
             CartesianProductIterator combn_iter
             envelope_conformer conformer
+            dvec* score_vec
 
 
         base_tid = self.create_theoretical_distribution(mz, charge, charge_carrier, truncate_after)
@@ -349,6 +380,7 @@ cdef class LCMSFeatureProcessorBase(object):
             feat_iter = FeatureSetIterator._create(features)
             counter = 0
             score_acc = 0
+            score_vec = make_double_vector()
             while feat_iter.has_more():
                 eid = feat_iter.get_next_value()
                 if eid is None:
@@ -367,7 +399,11 @@ cdef class LCMSFeatureProcessorBase(object):
                 if npy_isnan(score):
                     continue
                 score_acc += score
-            final_score = score_acc / counter
+                double_vector_append(score_vec, score)
+            # Compute feature score from score_vec
+            print("Starting Vector Size: %d" % score_vec.used)
+            final_score = self._find_thresholded_score(score_vec, 0.1)
+            # final_score = score_acc / counter
             missing_features = 0
             feat_n = PyList_GET_SIZE(features)
             for feat_i in range(feat_n):
@@ -380,6 +416,7 @@ cdef class LCMSFeatureProcessorBase(object):
             fit = LCMSFeatureSetFit._create(
                 features, base_tid, final_score, charge, missing_features,
                 [], None, neutral_mass)
+            free_double_vector(score_vec)
             if self.scorer.reject_score(fit.score):
                 continue
             feature_fits.append(fit)

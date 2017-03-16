@@ -16,12 +16,21 @@ import numpy as np
 cdef double INF = float("inf")
 
 
-cdef class LCMSFeatureTreeList(object):
+cdef class LCMSFeatureTreeList(object):  
     def __init__(self, roots=None):
         if roots is None:
             roots = []
         self.roots = list(roots)
         self._node_id_hash = None
+
+    @staticmethod
+    cdef LCMSFeatureTreeList _create(list roots):
+        cdef:
+            LCMSFeatureTreeList inst
+        inst = LCMSFeatureTreeList.__new__(LCMSFeatureTreeList)
+        inst.roots = list(roots)
+        inst._node_id_hash = None
+        return inst
 
     cdef void _invalidate(self):
         self._node_id_hash = None
@@ -211,7 +220,8 @@ cdef class LCMSFeatureTreeNode(object):
         return self._total_intensity_members()
 
     cpdef bint _eq(self, LCMSFeatureTreeNode other):
-        return self.members == other.members
+        return self.members == other.members and abs(
+            self.retention_time - other.retention_time) < 1e-4
 
     cpdef bint _ne(self, LCMSFeatureTreeNode other):
         return not (self._eq(other))
@@ -538,6 +548,15 @@ cdef class EmptyFeature(FeatureBase):
         self._mz = mz
         self._start_time = 0
         self._end_time = INF
+
+    @staticmethod
+    cdef EmptyFeature _create(double mz):
+        cdef EmptyFeature inst = EmptyFeature.__new__(EmptyFeature)
+        inst._mz = mz
+        inst.nodes = LCMSFeatureTreeList._create([])
+        inst._start_time = 0
+        inst._end_time = INF
+        return inst
 
     @property
     def mz(self):

@@ -420,7 +420,8 @@ class LCMSFeatureTreeNode(object):
         return self._total_intensity_members()
 
     def __eq__(self, other):
-        return self.members == other.members
+        return self.members == other.members and abs(
+            self.retention_time - other.retention_time) < 1e-4
 
     def __ne__(self, other):
         return not (self == other)

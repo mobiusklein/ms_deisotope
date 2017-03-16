@@ -6,6 +6,9 @@ cdef class LCMSFeatureTreeList(object):
         public list roots
         public set _node_id_hash
 
+    @staticmethod
+    cdef LCMSFeatureTreeList _create(list roots)
+
     cdef void _invalidate(self)
 
     cpdef tuple find_time(self, double retention_time)
@@ -63,7 +66,8 @@ cdef class LCMSFeature(FeatureBase):
 
 
 cdef class EmptyFeature(FeatureBase):
-    pass
+    @staticmethod
+    cdef EmptyFeature _create(double mz)
 
 
 cdef class FeatureSetIterator(object):

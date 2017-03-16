@@ -367,11 +367,12 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 out.extend(filtered_feature.split_sparse())
         self.feature_map = LCMSFeatureMap(out)
 
-    def store_solutions(self, fits, charge_carrier=PROTON):
+    def store_solutions(self, fits, charge_carrier=PROTON, subtract=True):
         solutions = []
         for fit in fits:
             extracted = extract_fitted_region(fit)
-            solution = self.finalize_fit(extracted, charge_carrier=charge_carrier)
+            solution = self.finalize_fit(
+                extracted, charge_carrier=charge_carrier, subtract=subtract)
             if solution is None:
                 continue
             solutions.append(solution)
@@ -418,6 +419,7 @@ class FeatureDeconvolutionIterationState(object):
         self.generation = None
         self.relations = None
         self.fits = None
+        self.all_fits = None
         self.solutions = []
         self.disjoint_feature_clusters = None
         self.maxiter = maxiter
@@ -458,26 +460,30 @@ class FeatureDeconvolutionIterationState(object):
             i += 1
             if i % interval == 0:
                 printer("\t%0.1f%%" % ((100. * i) / n,))
+        self.all_fits = list(self.processor.dependence_network.dependencies)
         self.disjoint_feature_clusters = self.processor.dependence_network.find_non_overlapping_intervals()
 
         if self.relfitter is not None:
             self.relations = self.relfitter.fit(
-                (d for cluster in self.processor.disjoint_feature_clusters for d in cluster), self.solutions)
+                (d for cluster in self.processor.disjoint_feature_clusters
+                 for d in cluster), self.solutions)
         printer("\tExtracting Fits")
         self.fits = self.processor.select_best_disjoint_subgraphs(self.disjoint_feature_clusters)
 
-    def postprocess(self):
-        self.generation = self.processor.store_solutions(self.fits, charge_carrier=self.charge_carrier)
+    def postprocess(self, subtract=True):
+        self.generation = self.processor.store_solutions(
+            self.fits, charge_carrier=self.charge_carrier,
+            subtract=subtract)
 
         if self.relfitter is not None:
             self.relfitter.add_history((self.relations, self.generation))
         self.solutions.extend(self.generation)
 
-    def step(self, report_interval=5):
+    def step(self, report_interval=5, subtract=True):
         self.setup()
 
         self.map_fits(report_interval=report_interval)
-        self.postprocess()
+        self.postprocess(subtract=subtract)
 
         self.iteration_count += 1
         self.update_signal_ratio()
