@@ -125,9 +125,19 @@ class DeconvolutedLCMSFeature(LCMSFeature):
         self.score = score
         self._neutral_mass = None
         self._last_neutral_mass = None
+        self._precursor_information = None
         self.n_features = n_features
         self.supporters = supporters
         super(DeconvolutedLCMSFeature, self).__init__(nodes, adducts, used_as_adduct, feature_id=feature_id)
+
+    @property
+    def precursor_information(self):
+        if self._precursor_information is None:
+            pinfo = []
+            for node in self:
+                pinfo.extend(node.precursor_information)
+            self._precursor_information = tuple(pinfo)
+        return self._precursor_information
 
     def clone(self):
         return DeconvolutedLCMSFeature(
@@ -137,6 +147,7 @@ class DeconvolutedLCMSFeature(LCMSFeature):
     def _invalidate(self):
         self._last_neutral_mass = self._neutral_mass if self._neutral_mass is not None else 0.
         self._neutral_mass = None
+        self._precursor_information = None
         super(DeconvolutedLCMSFeature, self)._invalidate()
 
     @property

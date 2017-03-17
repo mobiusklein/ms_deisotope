@@ -376,7 +376,7 @@ cdef class LCMSFeatureProcessorBase(object):
             # since the monoisotopic feature cannot be None
             if features[0] is None:
                 features = list(features)
-                features[0] = EmptyFeature(mz)
+                features[0] = EmptyFeature._create(mz)
             feat_iter = FeatureSetIterator._create(features)
             counter = 0
             score_acc = 0
@@ -388,9 +388,6 @@ cdef class LCMSFeatureProcessorBase(object):
                 counter += 1
                 conformer.acquire(eid, base_tid)
                 conformer.conform()
-                # temp = self._conform_envelopes(eid, base_tid, &n_missing)
-                # cleaned_eid = <list>PyTuple_GetItem(temp, 0)
-                # tid = <list>PyTuple_GetItem(temp, 1)
                 cleaned_eid = conformer.experimental
                 tid = conformer.theoretical
                 n_missing = conformer.n_missing
@@ -401,7 +398,6 @@ cdef class LCMSFeatureProcessorBase(object):
                 score_acc += score
                 double_vector_append(score_vec, score)
             # Compute feature score from score_vec
-            print("Starting Vector Size: %d" % score_vec.used)
             final_score = self._find_thresholded_score(score_vec, 0.1)
             # final_score = score_acc / counter
             missing_features = 0

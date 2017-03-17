@@ -245,6 +245,14 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         else:
             return range(1, self._source.NumSpectra)
 
+    def _single_scan_iterator(self, iterator=None):
+        if iterator is None:
+            iterator = self._make_scan_index_producer()
+        for ix in iterator:
+            packed = self.get_scan_by_id(ix)
+            self._scan_cache[packed._data.scan_number] = packed
+            yield packed
+
     def _scan_group_iterator(self, iterator=None):
         if iterator is None:
             iterator = self._make_scan_index_producer()

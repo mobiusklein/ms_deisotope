@@ -367,6 +367,12 @@ class Scan(object):
 
         self.product_scans = product_scans
 
+    def clone(self):
+        dup = self.__class__(
+            self._data, self.source, self.peak_set, self.deconvoluted_peak_set,
+            self.product_scans)
+        return dup
+
     def _load(self):
         self.arrays
         self.id
@@ -645,6 +651,13 @@ class ProcessedScan(object):
         else:
             peaks = self.peak_set
         return "ProcessedScan(id=%s, ms_level=%d, %d peaks)" % (self.id, self.ms_level, len(peaks))
+
+    def clone(self):
+        dup = ProcessedScan(
+            self.id, self.title, self.precursor_information, self.ms_level,
+            self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
+            self.polarity, self.activation)
+        return dup
 
 
 class ActivationInformation(object):
