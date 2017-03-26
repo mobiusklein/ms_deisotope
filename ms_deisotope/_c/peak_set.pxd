@@ -1,4 +1,5 @@
 from ms_deisotope._c.scoring cimport IsotopicFitRecord
+from ms_peak_picker._c.peak_set cimport PeakBase
 
 
 cdef class _Index:
@@ -17,10 +18,10 @@ cdef class Envelope:
     cdef public tuple pairs
 
 
-cdef class DeconvolutedPeak:
+cdef class DeconvolutedPeak(PeakBase):
     cdef:
         public double neutral_mass
-        public double intensity
+        # public double intensity
         public double signal_to_noise
         public _Index _index
         public double full_width_at_half_max
@@ -29,13 +30,14 @@ cdef class DeconvolutedPeak:
         public double most_abundant_mass
         public double average_mass
         public double score
-        public double area
+        # public double area
         public Envelope envelope
-        public double mz
+        # public double mz
         public IsotopicFitRecord fit
         public bint chosen_for_msms
 
     cpdef bint _eq(self, DeconvolutedPeak other)
+    cpdef DeconvolutedPeak clone(self)
 
 
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):

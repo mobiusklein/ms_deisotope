@@ -118,8 +118,17 @@ def sliding_median(ys):
     return arr
 
 
-def smoother(ys):
-    return sliding_mean((ys))
+def smooth_leveled(xs, ys, level=0):
+    if level == 0:
+        return ys
+    elif level == 1:
+        return sliding_mean(ys)
+    elif level == 2:
+        return sliding_mean(sliding_median(ys))
+    elif level == 3:
+        return gaussian_smooth(xs, ys, 0.05)
+    else:
+        return gaussian_smooth(xs, ys, level)
 
 
 class ProfileSplitter(object):
@@ -133,11 +142,13 @@ class ProfileSplitter(object):
         minima_indices = peak_indices(-ys)
         return maxima_indices, minima_indices
 
-    def locate_peak_boundaries(self):
+    def locate_peak_boundaries(self, smooth=1):
         xs = self.xs
         ys = self.ys
         if len(xs) > 200:
             xs, ys = interpolate(xs, ys)
+        if smooth:
+            ys = smooth_leveled(xs, ys, smooth)
 
         maxima_indices, minima_indices = self._extreme_indices(ys)
         candidates = []
@@ -161,7 +172,7 @@ class ProfileSplitter(object):
 
         return candidates
 
-    def locate_valleys(self, scale=0.3, smooth=True):
+    def locate_valleys(self, scale=0.3, smooth=1):
         xs = self.xs
         ys = self.ys
 
@@ -169,7 +180,7 @@ class ProfileSplitter(object):
             xs, ys = interpolate(xs, ys)
 
         if smooth:
-            ys = smoother(ys)
+            ys = smooth_leveled(xs, ys, smooth)
 
         maxima_indices, minima_indices = self._extreme_indices(ys)
         candidates = []
@@ -257,6 +268,26 @@ def gaussian_smooth(x, y, width=0.05):
             raise ValueError("NaN")
         smoothed[i] = val
     return smoothed
+
+
+def smooth_leveled(xs, ys, level=0):
+    if level == 0:
+        return ys
+    elif level == 1:
+        return sliding_mean(ys)
+    elif level == 2:
+        return sliding_mean(sliding_median(ys))
+    elif level == 3:
+        return gaussian_smooth(xs, ys, 0.05)
+    else:
+        return gaussian_smooth(xs, ys, level)
+
+
+def is_flat(feature, fraction=0.5, smooth=1):
+    xs, ys = feature.as_arrays()
+    ys = smooth_leveled(xs, ys, smooth)
+    apex = ys.max()
+    return apex * fraction < ys[0] and apex * fraction < ys[-1]
 
 
 try:

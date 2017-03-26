@@ -6,12 +6,16 @@ from ms_deisotope.utils import uid
 
 from collections import deque
 
+from libc.stdlib cimport malloc, free
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyList_GetItem
-from ms_peak_picker._c.peak_set cimport FittedPeak
+from ms_peak_picker._c.peak_set cimport FittedPeak, PeakBase
+from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 cimport numpy as np
 import numpy as np
 
+
+cdef object _zeros = np.zeros
 
 cdef double INF = float("inf")
 
@@ -43,14 +47,14 @@ cdef class LCMSFeatureTreeList(object):
         return node, indexout
 
     cdef LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout):
-        if len(self.roots) == 0:
-            raise ValueError()
         cdef:
             int lo, hi
             double rt
             LCMSFeatureTreeNode node
-        lo = 0
         hi = PyList_GET_SIZE(self.roots)
+        if hi == 0:
+            raise ValueError()
+        lo = 0
         while lo != hi:
             i = (lo + hi) / 2
             node = <LCMSFeatureTreeNode>PyList_GET_ITEM(self.roots, i)
@@ -77,15 +81,18 @@ cdef class LCMSFeatureTreeList(object):
             self._build_node_id_hash()
         return self._node_id_hash
 
-    def insert_node(self, node):
+    def insert_node(self, LCMSFeatureTreeNode node):
         self._invalidate()
+        cdef:
+            LCMSFeatureTreeNode root
+            size_t i
         try:
-            root, i = self.find_time(node.retention_time)
+            root = self._find_time(node.retention_time, &i)
             if root is None:
                 if i != 0:
                     self.roots.insert(i + 1, node)
                 else:
-                    slot = self.roots[i]
+                    slot = self.getitem(i)
                     if slot.retention_time < node.retention_time:
                         i += 1
                     self.roots.insert(i, node)
@@ -113,6 +120,9 @@ cdef class LCMSFeatureTreeList(object):
     def __len__(self):
         return PyList_GET_SIZE(self.roots)
 
+    cdef size_t get_size(self):
+        return PyList_GET_SIZE(self.roots)
+
     def __iter__(self):
         return iter(self.roots)
 
@@ -123,8 +133,14 @@ cdef class LCMSFeatureTreeList(object):
         return LCMSFeatureTreeList(node.clone(deep=deep) for node in self)
 
     def unspool(self):
+        cdef:
+            list out_queue, stack
+            LCMSFeatureTreeNode node, root
+            size_t i, n
         out_queue = []
-        for root in self:
+        n = self.get_size()
+        for i in range(n):
+            root = self.getitem(i)
             stack = [root]
             while len(stack) != 0:
                 node = stack.pop()
@@ -140,6 +156,9 @@ cdef class LCMSFeatureTreeList(object):
             len(self), self[0].retention_time, self[-1].retention_time)
 
 
+cdef object _uid = uid
+
+
 cdef class LCMSFeatureTreeNode(object):
     def __init__(self, retention_time, members=None):
         if members is None:
@@ -149,17 +168,25 @@ cdef class LCMSFeatureTreeNode(object):
         self._most_abundant_member = None
         self._mz = 0
         self._recalculate()
-        self.node_id = uid()
+        self.node_id = _uid()
 
     def clone(self, deep=False):
         cdef LCMSFeatureTreeNode node
         cdef list peaks
+        cdef size_t i, n
+        cdef PeakBase peak
         if deep:
-            peaks = [peak.clone() for peak in self.members]
+            peaks = []
+            # peaks = [peak.clone() for peak in self.members]
+            n = self.get_members_size()
+            for i in range(n):
+                peak = self.getitem(i)
+                if peak is not None:
+                    peak = peak.clone()
+                peaks.append(peak)
         else:
             peaks = list(self.members)
-        node = self.__class__(
-            self.retention_time, peaks)
+        node = self.__class__(self.retention_time, peaks)
         node.node_id = self.node_id
         return node
 
@@ -168,19 +195,36 @@ cdef class LCMSFeatureTreeNode(object):
             self.retention_time, list(self.members))
         yield node
 
-    def _recalculate(self):
+    cpdef _recalculate(self):
         self._calculate_most_abundant_member()
         self._mz = self._most_abundant_member.mz
 
-    def _calculate_most_abundant_member(self):
-        if PyList_GET_SIZE(self.members) == 1:
-            self._most_abundant_member = <FittedPeak>PyList_GET_ITEM(self.members, 0)
+    cdef PeakBase _find_most_abundant_member(self):
+        cdef:
+            size_t i, n
+            PeakBase peak, best
+            double best_intensity
+        n = self.get_members_size()
+        best = self.getitem(0)
+        best_intensity = best.intensity
+        for i in range(n):
+            peak = self.getitem(i)
+            if peak.intensity > best_intensity:
+                best = peak
+                best_intensity = best.intensity
+        return best
+
+    cpdef _calculate_most_abundant_member(self):
+        cdef:
+            size_t n
+        n = self.get_members_size()
+        if n == 1:
+            self._most_abundant_member = self.getitem(0)
         else:
-            if PyList_GET_SIZE(self.members) == 0:
+            if n == 0:
                 self._most_abundant_member = None
             else:
-                self._most_abundant_member = max(
-                    self.members, key=lambda x: x.intensity)
+                self._most_abundant_member = self._find_most_abundant_member()
         return
 
     def __getstate__(self):
@@ -193,9 +237,18 @@ cdef class LCMSFeatureTreeNode(object):
     def __reduce__(self):
         return self.__class__, (self.retention_time, []), self.__getstate__()
 
+    cdef inline size_t get_members_size(self):
+        return PyList_GET_SIZE(self.members)
+
     @property
     def mz(self):
-        if self._mz is None:
+        if self._mz == 0:
+            if self._most_abundant_member is not None:
+                self._mz = self._most_abundant_member.mz
+        return self._mz
+
+    cdef double get_mz(self):
+        if self._mz == 0:
             if self._most_abundant_member is not None:
                 self._mz = self._most_abundant_member.mz
         return self._mz
@@ -208,8 +261,14 @@ cdef class LCMSFeatureTreeNode(object):
             self._recalculate()
 
     cpdef double _total_intensity_members(self):
+        cdef:
+            double total
+            size_t n, i
+            PeakBase peak
         total = 0.
-        for peak in self.members:
+        n = self.get_members_size()
+        for i in range(n):
+            peak = self.getitem(i)
             total += peak.intensity
         return total
 
@@ -248,6 +307,12 @@ cdef class LCMSFeatureTreeNode(object):
             self.retention_time, self.peaks[0].mz, "",
             len(self.members))
 
+    cdef inline FittedPeak getpeak(self, size_t i):
+        return <FittedPeak>PyList_GET_ITEM(self.members, i)
+
+    cdef PeakBase getitem(self, size_t i):
+        return <PeakBase>PyList_GET_ITEM(self.members, i)
+
 
 @cython.freelist(10000000)
 cdef class FeatureBase(object):
@@ -263,6 +328,18 @@ cdef class FeatureBase(object):
     cdef double get_end_time(self):
         return INF
 
+    cpdef tuple find_time(self, double retention_time):
+        cdef:
+            size_t indexout
+            LCMSFeatureTreeNode node
+        node = self._find_time(retention_time, &indexout)
+        return node, indexout
+
+    cdef inline LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout):
+        return self.nodes._find_time(retention_time, indexout)
+
+    cdef inline size_t get_size(self):
+        return self.nodes.get_size()
 
 cdef class LCMSFeature(FeatureBase):
     def __init__(self, nodes=None, adducts=None, used_as_adduct=None, feature_id=None):
@@ -275,7 +352,6 @@ cdef class LCMSFeature(FeatureBase):
         if feature_id is None:
             feature_id = uid()
 
-        # self.nodes = LCMSFeatureTreeList(nodes)
         FeatureBase.__init__(self, nodes)
         self._total_intensity = -1
         self._mz = -1
@@ -318,9 +394,15 @@ cdef class LCMSFeature(FeatureBase):
 
     @property
     def total_signal(self):
+        cdef:
+            double total
+            size_t i, n
+            LCMSFeatureTreeNode node
         if self._total_intensity == -1:
             total = 0.
-            for node in self.nodes:
+            n = self.get_size()
+            for i in range(n):
+                node = self.getitem(i)
                 total += node.total_intensity()
             self._total_intensity = total
         return self._total_intensity
@@ -336,17 +418,18 @@ cdef class LCMSFeature(FeatureBase):
     cdef double get_mz(self):
         cdef:
             size_t i, n
+            double best_mz
+            LCMSFeatureTreeNode node
         if self._mz == -1:
             best_mz = 0
             maximum_intensity = -1
-            n = len(self.nodes)
+            n = self.get_size()
             for i in range(n):
                 node = self.getitem(i)
                 intensity = node.max_intensity()
                 if intensity > maximum_intensity:
                     maximum_intensity = intensity
-                    best_mz = node.mz
-            assert (len(self) == 0 or best_mz != 0)
+                    best_mz = node.get_mz()
             self._last_mz = self._mz = best_mz
         return self._mz
 
@@ -356,15 +439,18 @@ cdef class LCMSFeature(FeatureBase):
 
     @property
     def retention_times(self):
+        cdef:
+            size_t i, n
+            LCMSFeatureTreeNode node
+            np.ndarray[double, ndim=1, mode='c'] acc
         if self._retention_times is None:
-            self._retention_times = np.array([node.retention_time for node in self.nodes])
+            n = self.get_size()
+            acc = _zeros(n)
+            for i in range(n):
+                node = self.getitem(i)
+                acc[i] = node.retention_time
+            self._retention_times = acc
         return self._retention_times
-
-    @property
-    def scan_ids(self):
-        if self._scan_ids is None:
-            self._scan_ids = tuple(node.scan_id for node in self.nodes)
-        return self._scan_ids
 
     @property
     def peaks(self):
@@ -398,6 +484,8 @@ cdef class LCMSFeature(FeatureBase):
         cdef:
             double self_start_time, self_end_time
             double other_start_time, other_end_time
+            bint cond
+
         self_start_time = self.get_start_time()
         self_end_time = self.get_end_time()
         other_start_time = interval.get_start_time()
@@ -568,6 +656,9 @@ cdef class EmptyFeature(FeatureBase):
     def __len__(self):
         return 0
 
+    def __getitem__(self, i):
+        raise IndexError()
+
     @property
     def start_time(self):
         return self._start_time
@@ -577,7 +668,10 @@ cdef class EmptyFeature(FeatureBase):
         return self._end_time
 
 
-def binsearch(array, value):
+def binsearch(array, double value):
+    cdef:
+        size_t lo, hi, mid
+        double point
     lo = 0
     hi = len(array)
     while hi != lo:
@@ -594,154 +688,220 @@ def binsearch(array, value):
 
 
 cdef class FeatureSetIterator(object):
-    @staticmethod
-    def extract_time_points(features, start_time, end_time):
-        time_points = set()
-        for feature in features:
-            rts = (feature.retention_times)
-            time_points.update(rts)
-        time_points = sorted(time_points)
-        si = binsearch(time_points, start_time)
-        ei = binsearch(time_points, end_time)
-        time_points = time_points[si:ei + 1]
-        return time_points
-
     def __init__(self, features, start_time=None, end_time=None):
         cdef:
-            size_t i, n
-            FeatureBase feature
-            double time
-        self.features = list(features)
+            size_t n, i
+
+        self.features = features
+        n = PyList_GET_SIZE(self.features)
         self.real_features = []
+        self.index_list = <size_t*>malloc(sizeof(size_t) * n)
         self.start_time = 0
         self.end_time = INF
 
-        n = PyList_GET_SIZE(self.features)
+        if start_time is not None:
+            self.start_time = start_time
+        if end_time is not None:
+            self.end_time = end_time
+
         for i in range(n):
             feature = <FeatureBase>PyList_GET_ITEM(self.features, i)
             if feature is None or isinstance(feature, EmptyFeature):
                 continue
             self.real_features.append(feature)
             time = feature.get_start_time()
-            if self.start_time < time:
+            if (self.start_time < time) and (start_time is None):
                 self.start_time = time
             time = feature.get_end_time()
-            if self.end_time > time:
+            if (self.end_time > time) and (end_time is None):
                 self.end_time = time
+            self.index_list[i] = 0
 
-        self.time_point_queue = deque([self.start_time])
+        self.init_indices()
         self.last_time_seen = -1
-        self.done = False
+    
+    cdef void _initialize(self, list features):
+        cdef:
+            size_t n
+        self.features = features
+        n = PyList_GET_SIZE(self.features)
+        self.real_features = []
+        self.index_list = <size_t*>malloc(sizeof(size_t) * n)
+        self.start_time = 0
+        self.end_time = INF
+        for i in range(n):
+            feature = <FeatureBase>PyList_GET_ITEM(self.features, i)
+            if feature is None or isinstance(feature, EmptyFeature):
+                continue
+            self.real_features.append(feature)
+            time = feature.get_start_time()
+            if (self.start_time < time):
+                self.start_time = time
+            time = feature.get_end_time()
+            if (self.end_time > time):
+                self.end_time = time
+            self.index_list[i] = 0
+        self.init_indices()
+        self.last_time_seen = -1
 
     @staticmethod
     cdef FeatureSetIterator _create(list features):
-        cdef:
-            FeatureSetIterator self
-            size_t i, n
-            FeatureBase feature
-            double time
-
+        cdef FeatureSetIterator self
         self = FeatureSetIterator.__new__(FeatureSetIterator)
-        self.features = list(features)
-        self.real_features = []
-        self.start_time = 0
-        self.end_time = INF
-
-        n = PyList_GET_SIZE(self.features)
-        for i in range(n):
-            feature = <FeatureBase>PyList_GET_ITEM(self.features, i)
-            if feature is None or isinstance(feature, EmptyFeature):
-                continue
-            self.real_features.append(feature)
-            time = feature.get_start_time()
-            if self.start_time < time:
-                self.start_time = time
-            time = feature.get_end_time()
-            if self.end_time > time:
-                self.end_time = time
-
-        self.time_point_queue = deque([self.start_time])
-        self.last_time_seen = -1
-        self.done = False
-
+        self._initialize(features)
         return self
 
+    @staticmethod
+    cdef FeatureSetIterator _create_with_threshold(list features, list theoretical_distribution, double detection_threshold):
+        cdef:
+            FeatureSetIterator self
+            TheoreticalPeak p
+            size_t i
+            bint passed_threshold
+            double start_time, end_time
+        self = FeatureSetIterator.__new__(FeatureSetIterator)
+        self._initialize(features)
+
+        start_time = -INF
+        end_time = INF
+        for i in range(self.get_size()):
+            feature = self.getitem(i)
+            if feature is None or isinstance(feature, EmptyFeature):
+                continue
+            p = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)
+            
+            passed_threshold = p.intensity > detection_threshold
+
+            time = feature.get_start_time()
+            if (start_time < time) and passed_threshold:
+                start_time = time
+            time = feature.get_end_time()
+            if (end_time > time) and passed_threshold:
+                end_time = time
+        if end_time != INF:
+            self.start_time = start_time
+            self.end_time = end_time
+
+        self.init_indices()
+        self.last_time_seen = -1
+        return self
+
+    def __dealloc__(self):
+        free(self.index_list)
+
+    cpdef init_indices(self):
+        cdef:
+            size_t i, ix, n
+            FeatureBase f
+            LCMSFeatureTreeNode node
+        n = self.get_size()
+        for i in range(n):
+            f = self.getitem(i)
+            if f is None:
+                self.index_list[i] = 0
+                continue
+            if f.get_size() > 0:
+                node = f._find_time(self.start_time, &ix)
+            else:
+                ix = 0
+            self.index_list[i] = ix
+    
     cpdef double get_next_time(self):
         cdef:
-            set options
-            list options_uniq
-            object next_time
-            double node_time
-            tuple find_node
-            size_t index
-            size_t i, n
-            LCMSFeature feature
-            LCMSFeatureTreeNode node, skip
-
-        if self.time_point_queue:
-            next_time = self.time_point_queue.popleft()
-            return next_time
+            double time, ix_time
+            size_t i, n, ix
+            FeatureBase f
+        time = INF
+        n = self.get_size()
+        for i in range(n):
+            f = self.getitem(i)
+            if f is None:
+                continue
+            ix = self.index_list[i]
+            if ix < f.get_size():
+                ix_time = f.nodes.getitem(ix).retention_time
+                if ix_time < time and ix_time < self.end_time:
+                    time = ix_time
+        if time == INF:
+            return -1
         else:
-            options = set()
-            n = len(self.real_features)
-            for i in range(n):
-                feature = <LCMSFeature>PyList_GET_ITEM(self.real_features, i)
-                skip = feature.nodes._find_time(self.last_time_seen, &index)
-                try:
-                    node = feature.getitem(index + 1)
-                    node_time = node.retention_time
-                    if node_time >= self.end_time:
-                        continue
-                    options.add(node_time)
-                except IndexError:
-                    continue
-            if len(options) == 0:
-                return -1
-            options_uniq = sorted(options)
-            next_time = options_uniq[0]
-            self.time_point_queue.extend(
-                <object>PyList_GetSlice(options_uniq, 1, PyList_GET_SIZE(options_uniq)))
-            return next_time
+            return time
+    
+    cpdef bint has_more(self):
+        cdef:
+            size_t j, i, n, ix
+            FeatureBase f
+            bint done, at_end_time
+        j = 0
+        n = self.get_size()
+        for i in range(n):
+            f = self.getitem(i)
+            if f is None:
+                j += 1
+                continue
+            ix = self.index_list[i]
+            done = ix >= f.get_size()
+            if not done:
+                at_end_time = f.nodes.getitem(ix).retention_time >= self.end_time
+            else:
+                at_end_time = done
+            if done or at_end_time:
+                j += 1
+        return j != n
+    
+    cdef inline size_t get_size(self):
+        return PyList_GET_SIZE(self.features)
 
-    @property
-    def current_time(self):
-        return self.last_time_seen
+    cdef inline FeatureBase getitem(self, size_t i):
+        return <FeatureBase>PyList_GET_ITEM(self.features, i)
+
+    def get_index_list(self):
+        out = []
+        for i in range(self.get_size()):
+            out.append(self.index_list[i])
+        return out
 
     cpdef list get_peaks_for_time(self, double time):
         cdef:
             list peaks
-            FeatureBase feature
-            size_t i, n, _index
             LCMSFeatureTreeNode node
+            FeatureBase feature
+            size_t i, n, ix
         peaks = []
-        n = PyList_GET_SIZE(self.features)
+        i = 0
+        n = self.get_size()
         for i in range(n):
-            feature = <FeatureBase>PyList_GET_ITEM(self.features, i)
+            feature = self.getitem(i)
             if feature is not None:
-                try:
-                    node = feature.nodes._find_time(time, &_index)
-                except ValueError:
+                if feature.get_size() > 0:
+                    node = feature._find_time(time, &ix)
+                    if ix == self.index_list[i] and self.index_list[i] == 0 and node is None:
+                        pass
+                    elif ix >= self.index_list[i]:
+                        self.index_list[i] += 1
+                else:
                     if not isinstance(feature, EmptyFeature):
-                        raise
+                        raise ValueError("Empty Feature is not of type EmptyFeature")
                     node = None
                 if node is not None:
-                    peaks.append(node.members[0])
+                    peaks.append(
+                        node.getpeak(0))
                 else:
                     peaks.append(None)
             else:
                 peaks.append(None)
         return peaks
 
-    cpdef bint has_more(self):
-        return not self.done
-
+    @property
+    def current_time(self):
+        return self.last_time_seen
+    
     cpdef list get_next_value(self):
         cdef:
             double time
             list peaks
         time = self.get_next_time()
         if time < 0:
-            self.done = True
             return None
         self.last_time_seen = time
         peaks = self.get_peaks_for_time(time)
@@ -754,6 +914,10 @@ cdef class FeatureSetIterator(object):
         if peaks is None:
             raise StopIteration()
         return peaks
-
+    
     def __iter__(self):
         return self
+
+    def __repr__(self):
+        return "FeatureSetIterator(%d/%d, %0.3f-%0.3f)" % (
+            len(self.real_features), len(self.features), self.start_time, self.end_time)

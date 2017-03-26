@@ -1,8 +1,12 @@
 # cython: embedsignature=True
 cimport cython
 
+from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM
+
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
 from ms_deisotope._c.averagine cimport neutral_mass as calc_neutral_mass
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak
+
 
 
 @cython.freelist(1000000)
@@ -34,7 +38,7 @@ cdef class map_coord(object):
 cdef class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
                  missing_features=0, supporters=None, data=None,
-                 neutral_mass=None):
+                 neutral_mass=None, n_points=0):
         if supporters is None:
             supporters = []
         self.features = features
@@ -49,11 +53,12 @@ cdef class LCMSFeatureSetFit(object):
             neutral_mass = calc_neutral_mass(self.monoisotopic_feature.mz, self.charge)
         self.neutral_mass = neutral_mass
         self.mz = self.monoisotopic_feature.mz
+        self.n_points = n_points
 
     @staticmethod
     cdef LCMSFeatureSetFit _create(list features, list theoretical, double score,
                                    int charge, size_t missing_features, list supporters,
-                                   object data, double neutral_mass):
+                                   object data, double neutral_mass, size_t n_points):
         cdef:
             LCMSFeatureSetFit inst
         inst = LCMSFeatureSetFit.__new__(LCMSFeatureSetFit)
@@ -71,17 +76,20 @@ cdef class LCMSFeatureSetFit(object):
             neutral_mass = calc_neutral_mass(inst.monoisotopic_feature.mz, inst.charge)
         inst.neutral_mass = neutral_mass
         inst.mz = inst.monoisotopic_feature.mz
+        inst.n_points = n_points
         return inst
 
     def clone(self):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.supporters, self.data, self.neutral_mass)
+            self.missing_features, self.supporters, self.data,
+            self.neutral_mass, self.n_points)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.supporters, self.data, self.neutral_mass)
+            self.missing_features, self.supporters, self.data, self.neutral_mass,
+            self.n_points)
 
     cpdef bint _eq(self, LCMSFeatureSetFit other):
         cdef bint val
@@ -132,8 +140,9 @@ cdef class LCMSFeatureSetFit(object):
         return len(self)
 
     def __repr__(self):
-        return "LCMSFeatureSetFit(score=%0.5f, charge=%d, size=%d, monoisotopic_mz=%0.5f)" % (
-            self.score, self.charge, len(self), self.monoisotopic_feature.mz)
+        return "LCMSFeatureSetFit(score=%0.5f, charge=%d, size=%d, monoisotopic_mz=%0.5f, %0.2f-%0.2f)" % (
+            self.score, self.charge, len(self), self.monoisotopic_feature.mz,
+            self.start.time, self.end.time)
 
     @property
     def start(self):

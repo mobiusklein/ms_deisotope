@@ -537,3 +537,35 @@ def convert_map_to_scan_peak_list(feature_map, peak_loader, time_precision=4, de
             None)
         packed.append(scan)
     return packed
+
+
+class MZIndex(object):
+    def __init__(self, features):
+        self.features = sorted(features, key=lambda x: x.mz)
+
+    def find_all(self, mz, error_tolerance=2e-5):
+        bounds = search_sweep(self.features, mz, error_tolerance)
+        if bounds is not None:
+            lo, hi = bounds
+            return self[lo:hi]
+        else:
+            return []
+
+    def __getitem__(self, i):
+        return self.features[i]
+
+
+class NeutralMassIndex(object):
+    def __init__(self, features):
+        self.features = sorted(features, key=lambda x: x.neutral_mass)
+
+    def find_all(self, mass, error_tolerance=2e-5):
+        bounds = search_sweep_neutral(self.features, mass, error_tolerance)
+        if bounds is not None:
+            lo, hi = bounds
+            return self[lo:hi]
+        else:
+            return []
+
+    def __getitem__(self, i):
+        return self.features[i]

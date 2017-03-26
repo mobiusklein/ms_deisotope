@@ -1,4 +1,4 @@
-from ms_peak_picker._c.peak_set cimport FittedPeak
+from ms_peak_picker._c.peak_set cimport FittedPeak, PeakBase
 
 
 cdef class LCMSFeatureTreeList(object):
@@ -12,15 +12,17 @@ cdef class LCMSFeatureTreeList(object):
     cdef void _invalidate(self)
 
     cpdef tuple find_time(self, double retention_time)
-    cdef LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout)
-    cdef LCMSFeatureTreeNode getitem(self, size_t i)
+    cdef inline LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout)
+    cdef inline LCMSFeatureTreeNode getitem(self, size_t i)
+
+    cdef inline size_t get_size(self)
 
 
 cdef class LCMSFeatureTreeNode(object):
     cdef:
         public double retention_time
         public list members
-        public FittedPeak _most_abundant_member
+        public PeakBase _most_abundant_member
         public double _mz
         public object node_id
 
@@ -28,8 +30,17 @@ cdef class LCMSFeatureTreeNode(object):
     cpdef double max_intensity(self)
     cpdef double total_intensity(self)
 
+    cdef PeakBase _find_most_abundant_member(self)
+    cpdef _calculate_most_abundant_member(self)
+    cpdef _recalculate(self)
+
     cpdef bint _eq(self, LCMSFeatureTreeNode other)
     cpdef bint _ne(self, LCMSFeatureTreeNode other)
+    cdef inline FittedPeak getpeak(self, size_t i)
+    cdef PeakBase getitem(self, size_t i)
+    cdef inline size_t get_members_size(self)
+
+    cdef double get_mz(self)
 
 
 cdef class FeatureBase(object):
@@ -42,6 +53,10 @@ cdef class FeatureBase(object):
     cdef double get_mz(self)
     cdef double get_start_time(self)
     cdef double get_end_time(self)
+
+    cdef inline size_t get_size(self)
+    cpdef tuple find_time(self, double retention_time)
+    cdef inline LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout)
 
 
 cdef class LCMSFeature(FeatureBase):
@@ -64,7 +79,6 @@ cdef class LCMSFeature(FeatureBase):
 
     cdef LCMSFeatureTreeNode getitem(self, size_t i)
 
-
 cdef class EmptyFeature(FeatureBase):
     @staticmethod
     cdef EmptyFeature _create(double mz)
@@ -76,14 +90,22 @@ cdef class FeatureSetIterator(object):
         public list real_features
         public double start_time
         public double end_time
-        public object time_point_queue
         public double last_time_seen
-        public bint done
+        size_t* index_list
 
-    @staticmethod
-    cdef FeatureSetIterator _create(list features)
+        @staticmethod
+        cdef FeatureSetIterator _create(list features)
 
-    cpdef double get_next_time(self)
-    cpdef list get_peaks_for_time(self, double time)
-    cpdef bint has_more(self)
-    cpdef list get_next_value(self)
+        @staticmethod
+        cdef FeatureSetIterator _create_with_threshold(list features, list theoretical_distribution, double detection_threshold)
+
+        cdef void _initialize(self, list features)
+
+        cpdef init_indices(self)
+        cpdef double get_next_time(self)
+        cpdef bint has_more(self)
+        cpdef list get_peaks_for_time(self, double time)
+        cpdef list get_next_value(self)
+
+        cdef inline size_t get_size(self)
+        cdef inline FeatureBase getitem(self, size_t i)

@@ -190,8 +190,13 @@ cdef class AveragineCache(object):
         if backend is None:
             backend = {}
         self.backend = dict(backend)
-        self.averagine = Averagine(averagine)
+        if isinstance(averagine, AveragineCache):
+            self.averagine = averagine.averagine
+            self.cache_truncation = averagine.cache_truncation
+        else:
+            self.averagine = Averagine(averagine)
         self.cache_truncation = cache_truncation
+        self.enabled = True
 
     def __reduce__(self):
         return self.__class__, self.__getstate__()
@@ -211,20 +216,24 @@ cdef class AveragineCache(object):
             tuple key_tuple
             PyObject* pvalue
             list tid
-        if self.cache_truncation == 0.0:
-            key_mz = mz
+        if self.enabled:
+            if self.cache_truncation == 0.0:
+                key_mz = mz
+            else:
+                key_mz = _round(mz / self.cache_truncation) * self.cache_truncation
+            key_tuple = (key_mz, charge, charge_carrier, truncate_after)
+            pvalue = PyDict_GetItem(self.backend, key_tuple)
+            if pvalue == NULL:
+                tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
+                PyDict_SetItem(self.backend, key_tuple, clone_peak_list(tid))
+                return tid
+            else:
+                tid = <list>pvalue
+                tid = clone_peak_list(tid)
+                slide(mz, tid)
+                return tid
         else:
-            key_mz = _round(mz / self.cache_truncation) * self.cache_truncation
-        key_tuple = (key_mz, charge, charge_carrier)
-        pvalue = PyDict_GetItem(self.backend, key_tuple)
-        if pvalue == NULL:
             tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
-            PyDict_SetItem(self.backend, key_tuple, clone_peak_list(tid))
-            return tid
-        else:
-            tid = <list>pvalue
-            tid = clone_peak_list(tid)
-            slide(mz, tid)
             return tid
 
     cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):

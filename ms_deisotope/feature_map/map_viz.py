@@ -32,11 +32,11 @@ def draw_features(features, ax=None, alpha=0.65, width=0.025, **kwargs):
         ax.add_artist(ell)
 
     ax.set_xlim(
-        min(features, key=lambda x: x.mz).mz,
-        max(features, key=lambda x: x.mz).mz)
+        min(features, key=lambda x: x.mz if x is not None else float('inf')).mz - 1,
+        max(features, key=lambda x: x.mz if x is not None else -float('inf')).mz + 1)
     ax.set_ylim(
-        min(features, key=lambda x: x.start_time).start_time,
-        max(features, key=lambda x: x.end_time).end_time)
+        min(features, key=lambda x: x.start_time if x is not None else float('inf')).start_time - 1,
+        max(features, key=lambda x: x.end_time if x is not None else -float('inf')).end_time + 1)
     return ax
 
 
@@ -71,11 +71,11 @@ def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=0.025, **kwargs):
             ax.add_artist(ell)
 
     ax.set_xlim(
-        min(features, key=lambda x: x.mz).mz - 1,
-        max(features, key=lambda x: x.mz).mz + 1)
+        min(features, key=lambda x: x.mz if x is not None else float('inf')).mz - 1,
+        max(features, key=lambda x: x.mz if x is not None else -float('inf')).mz + 1)
     ax.set_ylim(
-        min(features, key=lambda x: x.start_time).start_time - 1,
-        max(features, key=lambda x: x.end_time).end_time + 1)
+        min(features, key=lambda x: x.start_time if x is not None else float('inf')).start_time - 1,
+        max(features, key=lambda x: x.end_time if x is not None else -float('inf')).end_time + 1)
     return ax
 
 
@@ -101,6 +101,8 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
     maximum_intensity = 0
 
     for profile in profiles:
+        if profile is None:
+            continue
         rt, heights = profile.as_arrays()
 
         if smooth:

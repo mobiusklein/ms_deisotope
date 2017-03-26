@@ -1,10 +1,17 @@
+import random
 from collections import deque
 import numpy as np
 
 from ms_deisotope.utils import uid
 
 
-class LCMSFeature(object):
+class FeatureBase(object):
+
+    def find_time(self, time_point):
+        return self.nodes.find_time(time_point)
+
+
+class LCMSFeature(FeatureBase):
     created_at = "new"
 
     def __init__(self, nodes=None, adducts=None, used_as_adduct=None, feature_id=None):
@@ -91,7 +98,8 @@ class LCMSFeature(object):
     @property
     def retention_times(self):
         if self._retention_times is None:
-            self._retention_times = np.array([node.retention_time for node in self.nodes])
+            self._retention_times = np.array(
+                [node.retention_time for node in self.nodes])
         return self._retention_times
 
     @property
@@ -189,7 +197,8 @@ class LCMSFeature(object):
     def clone(self, deep=False, cls=None):
         if cls is None:
             cls = self.__class__
-        c = cls(self.nodes.clone(deep=deep), list(self.adducts), list(self.used_as_adduct))
+        c = cls(self.nodes.clone(deep=deep), list(
+            self.adducts), list(self.used_as_adduct))
         c.feature_id = self.feature_id
         c.created_at = self.created_at
         return c
@@ -342,7 +351,8 @@ class LCMSFeatureTreeList(object):
 
 class LCMSFeatureTreeNode(object):
 
-    __slots__ = ["retention_time", "members", "_most_abundant_member", "_mz", "node_id"]
+    __slots__ = ["retention_time", "members",
+                 "_most_abundant_member", "_mz", "node_id"]
 
     def __init__(self, retention_time=None, members=None):
         if members is None:
@@ -441,7 +451,8 @@ class LCMSFeatureTreeNode(object):
             len(self.members))
 
 
-class EmptyFeature(object):
+class EmptyFeature(FeatureBase):
+
     def __init__(self, mz):
         self.mz = mz
         self.start_time = 0
@@ -529,92 +540,119 @@ def bounding_box(features, time_points=None, start_time=None, end_time=None, n_f
 
 
 class FeatureSetIterator(object):
-    @staticmethod
-    def extract_time_points(features, start_time, end_time):
-        time_points = set()
-        for feature in features:
-            rts = (feature.retention_times)
-            time_points.update(rts)
-        time_points = sorted(time_points)
-        si = binsearch(time_points, start_time)
-        ei = binsearch(time_points, end_time)
-        time_points = time_points[si:ei + 1]
-        return time_points
 
     def __init__(self, features, start_time=None, end_time=None):
         self.features = features
-        self.real_features = [f for f in features if f is not None and not isinstance(f, EmptyFeature)]
+        self.real_features = [
+            f for f in features if f is not None and not isinstance(f, EmptyFeature)]
         self.start_time = max(
             [f.start_time for f in self.real_features]
         ) if start_time is None else start_time
         self.end_time = min(
             [f.end_time for f in self.real_features]
         ) if end_time is None else end_time
-        self.time_point_queue = deque([self.start_time])
-        self.last_time_seen = None
+
+        self.index_list = [0 for f in self.features]
+        self.init_indices()
+        self.last_seen_time = -1
+
+    def init_indices(self):
+        for i, f in enumerate(self.features):
+            if f is None:
+                self.index_list[i] = 0
+                continue
+            try:
+                node, ix = f.find_time(self.start_time)
+            except ValueError:
+                if not isinstance(f, EmptyFeature):
+                    raise
+                else:
+                    ix = 0
+            self.index_list[i] = ix
 
     def get_next_time(self):
-        if self.time_point_queue:
-            next_time = self.time_point_queue.popleft()
-            return next_time
-        else:
-            options = set()
-            for feature in self.real_features:
-                _, index = feature.nodes.find_time(self.last_time_seen)
-                try:
-                    node = feature[index + 1]
-                    node_time = node.retention_time
-                    if node_time >= self.end_time:
-                        continue
-                    options.add(node_time)
-                except IndexError:
+        time = float('inf')
+        for i, ix in enumerate(self.index_list):
+            try:
+                f = self.features[i]
+                if f is None:
                     continue
-            if len(options) == 0:
-                return None
-            options = sorted(options)
-            next_time = options[0]
-            self.time_point_queue.extend(options[1:])
-            return next_time
+                if ix < len(f):
+                    ix_time = self.features[i][ix].retention_time
+                    if ix_time < time and ix_time < self.end_time:
+                        time = ix_time
+            except IndexError:
+                continue
+        if time == float('inf'):
+            return None
+        else:
+            return time
 
-    @property
-    def current_time(self):
-        return self.last_time_seen
+    def has_more(self):
+        j = 0
+        for i, f in enumerate(self.features):
+            if f is None:
+                j += 1
+                continue
+            ix = self.index_list[i]
+            done = ix >= len(f)
+            if not done:
+                at_end_time = f[ix].retention_time >= self.end_time
+            else:
+                at_end_time = done
+            if done or at_end_time:
+                j += 1
+        return j != len(self.features)
 
     def get_peaks_for_time(self, time):
         peaks = []
+        i = 0
         for feature in self.features:
             if feature is not None:
                 try:
                     node, ix = feature.nodes.find_time(time)
+                    if ix == self.index_list[i] and self.index_list[i] == 0 and node is None:
+                        pass
+                    elif ix >= self.index_list[i]:
+                        self.index_list[i] += 1
                 except ValueError:
                     if not isinstance(feature, EmptyFeature):
                         raise
                     node = None
                 if node is not None:
-                    peaks.append(node.members[0])
+                    peaks.append(
+                        node.members[0])
                 else:
                     peaks.append(None)
             else:
                 peaks.append(None)
+            i += 1
         return peaks
 
-    def __next__(self):
+    @property
+    def current_time(self):
+        return self.last_seen_time
+
+    def get_next_value(self):
         time = self.get_next_time()
         if time is None:
             raise StopIteration()
-        self.last_time_seen = time
+        self.last_seen_time = time
         peaks = self.get_peaks_for_time(time)
         return peaks
 
-    def next(self):
-        return self.__next__()
+    def __next__(self):
+        return self.get_next_value()
 
-    def reset(self):
-        self.time_point_queue = deque([self.start_time])
-        self.last_time_seen = None
+    def next(self):
+        return self.get_next_value()
 
     def __iter__(self):
         return self
+
+    def __repr__(self):
+        return "FeatureSetIterator(%d/%d, %0.3f-%0.3f)" % (
+            len(self.real_features), len(self.features), self.start_time, self.end_time)
 
 
 def binsearch(array, value):
@@ -640,18 +678,21 @@ try:
     _LCMSFeature = LCMSFeature
     _FeatureSetIterator = FeatureSetIterator
     _EmptyFeature = EmptyFeature
+    _FeatureBase = FeatureBase
     from ms_deisotope._c.feature_map.lcms_feature import (
         LCMSFeatureTreeList,
         LCMSFeatureTreeNode,
         LCMSFeature,
         FeatureSetIterator,
         EmptyFeature,
+        FeatureBase
     )
 except ImportError:
     has_c = False
 
 
 class NodeFeatureSetIterator(FeatureSetIterator):
+
     def get_peaks_for_time(self, time):
         peaks = []
         for feature in self.features:
@@ -669,3 +710,54 @@ class NodeFeatureSetIterator(FeatureSetIterator):
             else:
                 peaks.append(None)
         return peaks
+
+
+class RunningWeightedAverage(object):
+
+    def __init__(self, iterable=None):
+        self.accumulator = []
+        self.total_weight = 0
+        self.current_mean = 0
+        self.current_count = 0
+
+        if iterable is not None:
+            self.update(iterable)
+
+    def add(self, peak):
+        self.accumulator.append(peak)
+        agg = (self.total_weight * self.current_mean) + \
+            (peak.mz * peak.intensity)
+        self.total_weight += peak.intensity
+        self.current_mean = agg / self.total_weight
+        self.current_count += 1
+        return self
+
+    def recompute(self):
+        weight = 0
+        total = 0
+        for peak in self.accumulator:
+            weight += peak.intensity
+            total += peak.intensity * peak.mz
+        return total / weight
+
+    def update(self, iterable):
+        for x in iterable:
+            self.add(x)
+        return self
+
+    def _bootstrap(self, n=150, k=40):
+        traces = []
+        for i in range(n):
+            inst = RunningWeightedAverage().update(random.sample(self.accumulator, k))
+            traces.append(inst)
+        center = sum(
+            [t.current_mean * t.total_weight for t in traces
+             ]) / sum([t.total_weight for t in traces])
+        return center
+
+    def bootstrap(self, n=150, k=40):
+        self.center = self._bootstrap(n, k)
+        return self
+
+    def __repr__(self):
+        return "RunningWeightedAverage(%r, %d)" % (self.current_mean, self.current_count)

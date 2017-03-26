@@ -9,7 +9,30 @@ import numpy as np
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
 
 
-cdef object locate_extrema(cnp.ndarray[double, ndim=1] x):
+cpdef object find_immediate_minima(cnp.ndarray[double, ndim=1] x, double scale):
+    cdef:
+        size_t i, n
+        list maxima, minima
+        double val, prev, nxt
+
+    maxima = []
+    minima = []
+    n = x.shape[0]
+    for i in range(1, n - 1):
+        val = x[i]
+        prev = x[i - 1]
+        nxt = x[i + 1]
+        if val > prev * (1 + scale) and val > nxt * (1 + scale):
+            maxima.append(i)
+        elif val < prev * scale and val < nxt * scale:
+            minima.append(i)
+
+    return np.array(maxima, dtype=np.int64), np.array(minima, dtype=np.int64)
+
+
+
+
+cpdef object locate_extrema(cnp.ndarray[double, ndim=1] x):
     cdef:
         size_t i, n
         list maxima, minima
@@ -58,10 +81,6 @@ cdef object sliding_median(cnp.ndarray[double, ndim=1, mode='c'] ys):
     return arr
 
 
-cdef object smoother(cnp.ndarray[double, ndim=1, mode='c'] ys):
-    return sliding_mean((ys))
-
-
 cdef size_t binsearch(cnp.ndarray[double, ndim=1, mode='c'] array, double value):
     cdef:
         size_t lo, hi, mid
@@ -108,6 +127,19 @@ cpdef object gaussian_smooth(cnp.ndarray[double, ndim=1, mode='c'] x,
         weights = gauss(x_slice, center, spread)
         smoothed[i] = ((y_slice * weights).sum() / weights.sum())
     return smoothed
+
+
+cpdef object smooth_leveled(cnp.ndarray[double, ndim=1, mode='c'] xs, cnp.ndarray[double, ndim=1, mode='c'] ys, double level=0):
+    if level == 0:
+        return ys
+    elif level == 1:
+        return sliding_mean(ys)
+    elif level == 2:
+        return sliding_mean(sliding_median(ys))
+    elif level == 3:
+        return gaussian_smooth(xs, ys, 0.05)
+    else:
+        return gaussian_smooth(xs, ys, level)
 
 
 cdef class PeakBoundary(object):
@@ -201,7 +233,7 @@ cdef class ProfileSplitter(object):
         return maxima_indices.astype(np.int64), minima_indices.astype(np.int64)
 
     @cython.boundscheck(False)
-    def locate_peak_boundaries(self):
+    def locate_peak_boundaries(self, double smooth=1):
         cdef:
             cnp.ndarray[double, ndim=1] xs, ys
             cnp.ndarray[cnp.int64_t, ndim=1] maxima_indices, minima_indices
@@ -215,6 +247,8 @@ cdef class ProfileSplitter(object):
         ys = sliding_mean(ys)
         if len(xs) > 200:
             xs, ys = interpolate(xs, ys)
+        if smooth:
+            ys = smooth_leveled(xs, ys, smooth)
 
         maxima_indices, minima_indices = self._extreme_indices(ys)
         candidates = []
@@ -239,7 +273,7 @@ cdef class ProfileSplitter(object):
         return candidates
 
     @cython.boundscheck(False)
-    def locate_valleys(self, double scale=0.3, bint smooth=True):
+    def locate_valleys(self, double scale=0.3, double smooth=1):
         cdef:
             cnp.ndarray[double, ndim=1, mode='c'] xs
             cnp.ndarray[double, ndim=1, mode='c'] ys
@@ -256,7 +290,7 @@ cdef class ProfileSplitter(object):
             xs, ys = interpolate(xs, ys)
 
         if smooth:
-            ys = smoother(ys)
+            ys = smooth_leveled(xs, ys, smooth)
 
         maxima_indices, minima_indices = self._extreme_indices(ys)
         candidates = []

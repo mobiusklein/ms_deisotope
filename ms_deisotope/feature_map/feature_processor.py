@@ -88,7 +88,8 @@ class LCMSFeatureProcessorBase(object):
         return conform_envelopes(experimental, base_theoretical)
 
     def _fit_feature_set(self, mz, error_tolerance, charge, left_search=1, right_search=1,
-                         charge_carrier=PROTON, truncate_after=0.8, feature=None):
+                         charge_carrier=PROTON, truncate_after=0.8, max_missed_peaks=1,
+                         threshold_scale=0.3, feature=None):
         base_tid = self.create_theoretical_distribution(mz, charge, charge_carrier, truncate_after)
         feature_groups = self.match_theoretical_isotopic_distribution(base_tid, error_tolerance, interval=feature)
         feature_fits = []
@@ -141,9 +142,10 @@ class LCMSFeatureProcessorBase(object):
 
 
 try:
+    has_c = True
     from ms_deisotope._c.feature_map.feature_processor import LCMSFeatureProcessorBase
 except ImportError:
-    pass
+    has_c = False
 
 
 class PrecursorMap(object):
@@ -223,16 +225,16 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
 
     def charge_state_determination(self, feature, error_tolerance, charge_range=(1, 8),
                                    left_search=1, right_search=1, charge_carrier=PROTON,
-                                   truncate_after=0.8):
+                                   truncate_after=0.8, max_missed_peaks=1, threshold_scale=0.3):
         fits = self.collect_all_fits(
             feature, error_tolerance, charge_range,
             left_search, right_search, charge_carrier,
-            truncate_after)
+            truncate_after, max_missed_peaks, threshold_scale)
         return sorted(fits, key=lambda x: x.score, reverse=True)
 
     def collect_all_fits(self, feature, error_tolerance, charge_range=(1, 8),
                          left_search=1, right_search=1, charge_carrier=PROTON,
-                         truncate_after=0.8):
+                         truncate_after=0.8, max_missed_peaks=1, threshold_scale=0.3):
         fits = []
         holdout = None
         if self.scorer.is_maximizing():
@@ -243,7 +245,8 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         for charge in charge_range_(*charge_range):
             current_fits = self.fit_theoretical_distribution(
                 feature, 2e-5, charge, left_search=left_search,
-                right_search=right_search, truncate_after=truncate_after)
+                right_search=right_search, truncate_after=truncate_after,
+                max_missed_peaks=max_missed_peaks, threshold_scale=threshold_scale)
             if self.scorer.is_maximizing():
                 for fit in current_fits:
                     if fit.score > best_fit_score:
@@ -267,7 +270,32 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         return fits
 
     def fit_theoretical_distribution(self, feature, error_tolerance, charge, left_search=1, right_search=1,
-                                     charge_carrier=PROTON, truncate_after=0.8):
+                                     charge_carrier=PROTON, truncate_after=0.8, max_missed_peaks=1,
+                                     threshold_scale=0.3):
+        """Fits all theoretical distributions for `feature` with charge state `charge`.
+        
+        Parameters
+        ----------
+        feature : LCMSFeature
+            The feature to use as the seed fit
+        error_tolerance : float
+            Permitted parts-per-million mass accuracy
+        charge : int
+            The charge state to fit at
+        left_search : int, optional
+            Description
+        right_search : int, optional
+            Description
+        charge_carrier : float, optional
+            Mass of the charge carrier
+        truncate_after : float, optional
+            Fraction of the total isotopic pattern to include
+            in the set of theoretical peaks to search for.
+        
+        Returns
+        -------
+        list of LCMSFeatureSetFit
+        """
         base_mz = feature.mz
         all_fits = []
         for offset in range(-left_search, right_search + 1):
@@ -276,13 +304,17 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             feature_fits = self._fit_feature_set(
                 mz, error_tolerance, charge, left_search,
                 right_search, charge_carrier, truncate_after,
+                max_missed_peaks, threshold_scale,
                 feature)
             all_fits.extend(feature_fits)
         return all_fits
 
-    def finalize_fit(self, feature_fit, charge_carrier=PROTON, subtract=True):
+    def finalize_fit(self, feature_fit, charge_carrier=PROTON, subtract=True,
+                     detection_threshold=0.1):
         nodes = []
-        feat_iter = FeatureSetIterator(feature_fit.features)
+        start_time, end_time = find_bounds(feature_fit, detection_threshold)
+        feat_iter = FeatureSetIterator(
+            feature_fit.features, start_time, end_time)
         base_tid = feature_fit.theoretical
         charge = feature_fit.charge
         for eid in feat_iter:
@@ -399,19 +431,29 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             seeds.update(hits)
         return seeds
 
-    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
-                    charge_carrier=PROTON, truncate_after=0.8, maxiter=10, minimum_intensity=100,
-                    convergence=0.01, relfitter=None):
+    def _make_iterator_state(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
+                             charge_carrier=PROTON, truncate_after=0.95, maxiter=10, minimum_intensity=100,
+                             convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None):
         state = FeatureDeconvolutionIterationState(
             self, error_tolerance, charge_range, left_search, right_search, charge_carrier,
-            truncate_after, maxiter, minimum_intensity, convergence, relfitter)
+            truncate_after, maxiter, minimum_intensity, convergence, max_missed_peaks, threshold_scale,
+            relfitter)
+        return state
+
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
+                    charge_carrier=PROTON, truncate_after=0.95, maxiter=10, minimum_intensity=100,
+                    convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None):
+        state = FeatureDeconvolutionIterationState(
+            self, error_tolerance, charge_range, left_search, right_search, charge_carrier,
+            truncate_after, maxiter, minimum_intensity, convergence, max_missed_peaks, threshold_scale,
+            relfitter)
         return state.run()
 
 
 class FeatureDeconvolutionIterationState(object):
     def __init__(self, processor, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
-                 charge_carrier=PROTON, truncate_after=0.8, maxiter=10, minimum_intensity=100,
-                 convergence=0.01, relfitter=None):
+                 charge_carrier=PROTON, truncate_after=0.95, maxiter=10, minimum_intensity=100,
+                 convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None):
         self.processor = processor
         self.last_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
         self.next_signal_magnitude = 1.0
@@ -433,6 +475,8 @@ class FeatureDeconvolutionIterationState(object):
         self.truncate_after = truncate_after
         self.minimum_intensity = minimum_intensity
         self.convergence = convergence
+        self.max_missed_peaks = max_missed_peaks
+        self.threshold_scale = threshold_scale
         self.relfitter = relfitter
 
     def update_signal_ratio(self):
@@ -456,7 +500,8 @@ class FeatureDeconvolutionIterationState(object):
         for feature in sorted(self.processor.feature_map, key=lambda x: x.mz, reverse=True):
             self.processor.charge_state_determination(
                 feature, self.error_tolerance, self.charge_range, self.left_search,
-                self.right_search, self.charge_carrier, self.truncate_after)
+                self.right_search, self.charge_carrier, self.truncate_after,
+                self.max_missed_peaks, self.threshold_scale)
             i += 1
             if i % interval == 0:
                 printer("\t%0.1f%%" % ((100. * i) / n,))
@@ -502,10 +547,24 @@ class FeatureDeconvolutionIterationState(object):
         return DeconvolutedLCMSFeatureMap(self.solutions)
 
 
-def extract_fitted_region(feature_fit):
+def find_bounds(fit, detection_threshold=0.1):
+    start_time = 0
+    end_time = float('inf')
+
+    for f, p in zip(fit, fit.theoretical):
+        if f is None:
+            continue
+        passed_threshold = p.intensity >= detection_threshold
+        if f.start_time > start_time and passed_threshold:
+            start_time = f.start_time
+        if f.end_time < end_time and passed_threshold:
+            end_time = f.end_time
+    return start_time, end_time
+
+
+def extract_fitted_region(feature_fit, detection_threshold=0.1):
     fitted_features = []
-    start_time = max([f.start_time for f in feature_fit if f is not None])
-    end_time = min([f.end_time for f in feature_fit if f is not None])
+    start_time, end_time = find_bounds(feature_fit, detection_threshold)
     for feature in feature_fit:
         if feature is None or isinstance(feature, EmptyFeature):
             fitted_features.append(feature)
@@ -568,6 +627,5 @@ class RTMap(object):
 try:
     has_c = True
     _conform_envelopes = conform_envelopes
-    from ms_deisotope._c.feature_map.feature_processor import conform_envelopes
 except ImportError:
     has_c = False

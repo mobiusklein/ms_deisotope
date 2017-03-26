@@ -69,6 +69,7 @@ cdef class LCMSFeatureMap(object):
             lo_ix = len(self) - 1
         return self[lo_ix:hi_ix]
 
+
 cpdef tuple binary_search_with_flag(list array, double mz, double error_tolerance):
     cdef:
         int n, lo, hi, mid, low_end, high_end

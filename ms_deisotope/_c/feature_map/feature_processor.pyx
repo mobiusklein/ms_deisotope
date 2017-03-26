@@ -6,7 +6,7 @@ from libc.stdlib cimport malloc, free
 cdef extern from "numpy/npy_math.h":
     bint npy_isnan(double x)
 
-
+cimport cython
 import itertools
 
 from cpython cimport PyObject
@@ -335,25 +335,77 @@ cdef class LCMSFeatureProcessorBase(object):
             return 0
         return acc / count
 
-    cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
-                                int right_search=1, double charge_carrier=PROTON, double truncate_after=0.8,
-                                LCMSFeature feature=None):
+    cpdef LCMSFeatureSetFit _fit_single_feature_set(self, list features, list base_tid, double error_tolerance, 
+                                                    int charge, charge_carrier=PROTON, int max_missed_peaks=1,
+                                                    double threshold_scale=0.3):
         cdef:
             double score, final_score, score_acc, neutral_mass
-            list base_tid, feature_groups, feature_fits, features, combn
-            list scores, eid, cleaned_eid, tid
+            envelope_conformer conformer
+            dvec* score_vec
+            FeatureSetIterator feat_iter
+            size_t feat_i, feat_n, n_missing, missing_features, counter
+
+        conformer = envelope_conformer._create()
+        # feat_iter = FeatureSetIterator._create_with_threshold(features, base_tid, 0.1)
+        feat_iter = FeatureSetIterator._create(features)
+        score_acc = 0
+        counter = 0
+        score_vec = make_double_vector()
+        while feat_iter.has_more():
+            eid = feat_iter.get_next_value()
+            if eid is None:
+                continue
+            conformer.acquire(eid, base_tid)
+            conformer.conform()
+            cleaned_eid = conformer.experimental
+            tid = conformer.theoretical
+            n_missing = conformer.n_missing
+            if n_missing > max_missed_peaks:
+                continue
+            score = self.scorer._evaluate(None, cleaned_eid, tid)
+            if npy_isnan(score):
+                continue
+            score_acc += score
+            counter += 1
+            double_vector_append(score_vec, score)
+        # Compute feature score from score_vec
+        final_score = self._find_thresholded_score(score_vec, threshold_scale)
+        missing_features = 0
+        feat_n = PyList_GET_SIZE(features)
+        for feat_i in range(feat_n):
+            f = <LCMSFeature>PyList_GET_ITEM(features, feat_i)
+            if f is None:
+                missing_features += 1
+        f = <LCMSFeature>PyList_GET_ITEM(features, 0)
+        neutral_mass = calc_neutral_mass(
+                f.get_mz(), charge, charge_carrier)
+        fit = LCMSFeatureSetFit._create(
+            features, base_tid, final_score, charge, missing_features,
+            [], None, neutral_mass, counter)
+        free_double_vector(score_vec)
+        return fit
+
+    cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
+                                int right_search=1, double charge_carrier=PROTON, double truncate_after=0.8,
+                                int max_missed_peaks=1, double threshold_scale=0.3, LCMSFeature feature=None):
+        cdef:
+            double score, final_score, score_acc, neutral_mass
+            list base_tid, feature_groups, feature_fits, features
+            list eid, cleaned_eid, tid
             tuple temp
             size_t combn_size, combn_i, n_missing, missing_features, counter
+            size_t feat_i, feat_n
             FeatureSetIterator feat_iter
             LCMSFeature f
-            size_t feat_i, feat_n
             CartesianProductIterator combn_iter
             envelope_conformer conformer
             dvec* score_vec
 
 
-        base_tid = self.create_theoretical_distribution(mz, charge, charge_carrier, truncate_after)
-        feature_groups = self.match_theoretical_isotopic_distribution(base_tid, error_tolerance, interval=feature)
+        base_tid = self.create_theoretical_distribution(
+            mz, charge, charge_carrier, truncate_after)
+        feature_groups = self.match_theoretical_isotopic_distribution(
+            base_tid, error_tolerance, interval=feature)
         feature_fits = []
 
         conformer = envelope_conformer._create()
@@ -377,6 +429,7 @@ cdef class LCMSFeatureProcessorBase(object):
             if features[0] is None:
                 features = list(features)
                 features[0] = EmptyFeature._create(mz)
+            # feat_iter = FeatureSetIterator._create_with_threshold(features, base_tid, 0.1)
             feat_iter = FeatureSetIterator._create(features)
             counter = 0
             score_acc = 0
@@ -391,6 +444,8 @@ cdef class LCMSFeatureProcessorBase(object):
                 cleaned_eid = conformer.experimental
                 tid = conformer.theoretical
                 n_missing = conformer.n_missing
+                if n_missing > max_missed_peaks:
+                    continue
 
                 score = self.scorer._evaluate(None, cleaned_eid, tid)
                 if npy_isnan(score):
@@ -398,8 +453,7 @@ cdef class LCMSFeatureProcessorBase(object):
                 score_acc += score
                 double_vector_append(score_vec, score)
             # Compute feature score from score_vec
-            final_score = self._find_thresholded_score(score_vec, 0.1)
-            # final_score = score_acc / counter
+            final_score = self._find_thresholded_score(score_vec, threshold_scale)
             missing_features = 0
             feat_n = PyList_GET_SIZE(features)
             for feat_i in range(feat_n):
@@ -411,7 +465,7 @@ cdef class LCMSFeatureProcessorBase(object):
                     f.get_mz(), charge, charge_carrier)
             fit = LCMSFeatureSetFit._create(
                 features, base_tid, final_score, charge, missing_features,
-                [], None, neutral_mass)
+                [], None, neutral_mass, counter)
             free_double_vector(score_vec)
             if self.scorer.reject_score(fit.score):
                 continue

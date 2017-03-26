@@ -6,7 +6,7 @@ cimport cython
 from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice, PyTuple_GET_SIZE
 
 from ms_deisotope._c.averagine cimport mass_charge_ratio
-
+from ms_peak_picker._c.peak_set cimport PeakBase
 
 @cython.cdivision
 cdef double ppm_error(double x, double y):
@@ -108,8 +108,8 @@ cdef class Envelope(object):
         return Envelope, (self.pairs,)
 
 
-@cython.freelist(100000)
-cdef class DeconvolutedPeak:
+# @cython.freelist(100000)
+cdef class DeconvolutedPeak(PeakBase):
     """
     Represent a single deconvoluted peak which represents an aggregated isotopic
     pattern collapsed to its monoisotopic peak, with a known charge state
@@ -181,7 +181,7 @@ cdef class DeconvolutedPeak:
     def __hash__(self):
         return hash((self.mz, self.intensity, self.charge))
 
-    def clone(self):
+    cpdef DeconvolutedPeak clone(self):
         return DeconvolutedPeak(self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
                                 self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
                                 self.most_abundant_mass, self.average_mass, self.score,
@@ -229,7 +229,7 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
         self.fit = fit
         super(DeconvolutedPeakSolution, self).__init__(*args, **kwargs)
 
-    def clone(self):
+    cpdef DeconvolutedPeak clone(self):
         return DeconvolutedPeakSolution(
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,

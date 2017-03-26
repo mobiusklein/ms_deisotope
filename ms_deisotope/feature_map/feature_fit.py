@@ -73,8 +73,9 @@ class LCMSFeatureSetFit(object):
         return len(self)
 
     def __repr__(self):
-        return "LCMSFeatureSetFit(score=%0.5f, charge=%d, size=%d, monoisotopic_mz=%0.5f)" % (
-            self.score, self.charge, len(self), self.monoisotopic_feature.mz)
+        return "LCMSFeatureSetFit(score=%0.5f, charge=%d, size=%d, monoisotopic_mz=%0.5f, %0.2f-%0.2f)" % (
+            self.score, self.charge, len(self), self.monoisotopic_feature.mz,
+            self.start.time, self.end.time)
 
     @property
     def start(self):
