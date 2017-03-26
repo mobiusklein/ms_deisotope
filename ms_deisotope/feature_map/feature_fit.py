@@ -111,7 +111,7 @@ class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
 
     @property
     def neutral_mass(self):
-        if self._neutral_mass is None:
+        if self._neutral_mass == 0:
             if self._most_abundant_member is not None:
                 self._neutral_mass = self._most_abundant_member.neutral_mass
         return self._neutral_mass
