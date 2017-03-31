@@ -442,7 +442,7 @@ def search_sweep_neutral(array, neutral_mass, error_tolerance=1e-5):
             hi = mid
         elif err < 0:
             lo = mid
-    return 0
+    return 0, 0
 
 
 class DeconvolutedLCMSFeatureMap(object):

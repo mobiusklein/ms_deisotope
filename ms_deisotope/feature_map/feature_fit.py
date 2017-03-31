@@ -1,11 +1,15 @@
 from collections import namedtuple
 
-from brainpy import neutral_mass as calc_neutral_mass
+import numpy as np
+
+# from brainpy import neutral_mass as calc_neutral_mass
+from ms_peak_picker import FittedPeak
+from ms_deisotope.averagine import glycan
+from ms_deisotope.scoring import g_test_scaled
+from .shape_fitter import AdaptiveMultimodalChromatogramShapeFitter
 from .lcms_feature import (
     LCMSFeature,
-    LCMSFeatureTreeList,
     LCMSFeatureTreeNode,
-    FeatureSetIterator,
     RunningWeightedAverage,
     NodeFeatureSetIterator)
 
@@ -217,6 +221,56 @@ class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
             weight += peak.intensity
             total += peak.intensity * peak.neutral_mass
         return total / weight
+
+
+def envelope_to_peak_list(envelope):
+    return [FittedPeak(e[0], e[1], 0, 0, 0, 0, 0, 0, 0) for e in envelope]
+
+
+def scale_theoretical_isotopic_pattern(eid, tid):
+    total = sum(p.intensity for p in eid)
+    for p in tid:
+        p.intensity *= total
+
+
+def isotopic_consistency(eic, averagine=glycan, truncate_after=0.95):
+    peak_scores = []
+    peak_abundances = []
+    for node in eic:
+        for peak in node.members:
+            eid = envelope_to_peak_list(peak.envelope)
+            tid = averagine.isotopic_cluster(peak.mz, peak.charge, truncate_after=0.95)
+            scale_theoretical_isotopic_pattern(eid, tid)
+            peak_scores.append(g_test_scaled(None, eid, tid))
+            peak_abundances.append(peak.intensity)
+    return max(1 - np.average(peak_scores, weights=peak_abundances), 1e-4)
+
+
+def spacing_fit(eic):
+    times, intensities = eic.as_arrays()
+    last_rt = times[0]
+    last_int = intensities[0]
+    rt_deltas = []
+    intensity_deltas = []
+    for rt, inten in zip(times[1:], intensities[1:]):
+        d_rt = rt - last_rt
+        rt_deltas.append(d_rt)
+        intensity_deltas.append(abs(last_int - inten))
+        last_rt = rt
+        last_int = inten
+    return max(1 - np.average(rt_deltas, weights=intensity_deltas) * 2, 1e-4)
+
+
+def shape_fit(eic, smooth=0.15):
+    return max(1 - AdaptiveMultimodalChromatogramShapeFitter(eic, smooth=smooth).line_test, 1e-4)
+
+
+def profile_qc(eic, smooth=0.15, averagine=glycan, truncate_after=0.95):
+    v = 1.0
+    v *= isotopic_consistency(eic, averagine, truncate_after)
+    v *= spacing_fit(eic)
+    v *= shape_fit(eic, smooth)
+    return v
 
 
 try:

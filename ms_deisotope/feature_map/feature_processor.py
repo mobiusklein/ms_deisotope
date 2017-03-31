@@ -135,6 +135,26 @@ except ImportError:
     has_c = False
 
 
+def count_placeholders(peaks):
+    """Counts the number of placeholder peaks in an iterable
+    of FittedPeaks
+
+    Parameters
+    ----------
+    peaks : Iterable of FittedPeak
+
+    Returns
+    -------
+    int
+        Number of placeholder peaks
+    """
+    i = 0
+    for peak in peaks:
+        if peak.intensity <= 1:
+            i += 1
+    return i
+
+
 class PrecursorMap(object):
 
     @classmethod
@@ -300,17 +320,21 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         return all_fits
 
     def finalize_fit(self, feature_fit, charge_carrier=PROTON, subtract=True,
-                     detection_threshold=0.1):
+                     detection_threshold=0.1, max_missed_peaks=1):
         nodes = []
         start_time, end_time = find_bounds(feature_fit, detection_threshold)
         feat_iter = FeatureSetIterator(
             feature_fit.features, start_time, end_time)
         base_tid = feature_fit.theoretical
         charge = feature_fit.charge
+        abs_charge = abs(charge)
         for eid in feat_iter:
             cleaned_eid, tid, n_missing = conform_envelopes(eid, base_tid)
             rep_eid = drop_placeholders(cleaned_eid)
-            if len(rep_eid) == 0:
+            n_real_peaks = len(rep_eid)
+            n_missing_peaks = len(cleaned_eid) - n_real_peaks
+            if n_real_peaks == 0 or (n_real_peaks == 1 and abs_charge > 1) or \
+               n_missing_peaks > max_missed_peaks:
                 continue
             score = self.scorer.evaluate(None, cleaned_eid, tid)
             is_valid = True
@@ -350,7 +374,16 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 nodes.append(node)
             if subtract:
                 for fpeak, tpeak in zip(cleaned_eid, envelope):
-                    fpeak.intensity -= tpeak[1]
+                    # If a theoretical peak uses up more than 70%
+                    # of the abundance of a single peak, this peak
+                    # should not contribute meaninfully to any other
+                    # fits from now on. Set it's abundance to 1.0 as
+                    # if it were fully used up.
+                    ruin = (fpeak.intensity * 0.7) < tpeak[1]
+                    if ruin:
+                        fpeak.intensity = 1.0
+                    else:
+                        fpeak.intensity -= tpeak[1]
                     if fpeak.intensity < 0:
                         fpeak.intensity = 1.0
         for feature in feature_fit.features:
@@ -407,14 +440,15 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 out.extend(filtered_feature.split_sparse())
         self.feature_map = LCMSFeatureMap(out)
 
-    def store_solutions(self, fits, charge_carrier=PROTON, subtract=True, detection_threshold=0.1):
+    def store_solutions(self, fits, charge_carrier=PROTON, subtract=True, detection_threshold=0.1,
+                        max_missed_peaks=1):
         solutions = []
         for fit in fits:
             extracted = extract_fitted_region(
                 fit, detection_threshold=detection_threshold)
             solution = self.finalize_fit(
                 extracted, charge_carrier=charge_carrier, subtract=subtract,
-                detection_threshold=detection_threshold)
+                detection_threshold=detection_threshold, max_missed_peaks=max_missed_peaks)
             if solution is None:
                 continue
             solutions.append(solution)
@@ -526,13 +560,16 @@ class FeatureDeconvolutionIterationState(object):
             self.relations = self.relfitter.fit(
                 (d for cluster in self.disjoint_feature_clusters
                  for d in cluster), self.solutions)
+            self.relfitter.predict((d for cluster in self.disjoint_feature_clusters
+                                    for d in cluster))
         printer("\tExtracting Fits")
         self.fits = self.processor.select_best_disjoint_subgraphs(self.disjoint_feature_clusters)
 
     def postprocess(self, subtract=True, detection_threshold=0.1):
         self.generation = self.processor.store_solutions(
             self.fits, charge_carrier=self.charge_carrier,
-            subtract=subtract, detection_threshold=detection_threshold)
+            subtract=subtract, detection_threshold=detection_threshold,
+            max_missed_peaks=self.max_missed_peaks)
 
         if self.relfitter is not None:
             self.relfitter.add_history((self.relations, self.generation))

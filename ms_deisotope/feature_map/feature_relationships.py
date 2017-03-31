@@ -45,6 +45,13 @@ class ChargeRelationship(FeatureRelationshipBase):
         else:
             return False
 
+    def find(self, feature, index):
+        hits = index.find_all(feature.neutral_mass, self.error_tolerance)
+        for hit in hits:
+            if self.test(feature, hit):
+                relation = Relation(feature, hit, self)
+                feature.supporters.append(relation)
+
 
 class MassShiftRelationship(FeatureRelationshipBase):
     def __init__(self, mass_shift, error_tolerance=2e-5):
@@ -57,6 +64,13 @@ class MassShiftRelationship(FeatureRelationshipBase):
     def test(self, a, b):
         return ppm_error(
             a.neutral_mass + self.mass_shift, b.neutral_mass) < self.error_tolerance
+
+    def find(self, feature, index):
+        hits = index.find_all(feature.neutral_mass + self.mass_shift, self.error_tolerance)
+        for hit in hits:
+            if self.test(feature, hit):
+                relation = Relation(feature, hit, self)
+                feature.supporters.append(relation)
 
 
 class FittedRelationshipFunction(object):
@@ -92,22 +106,15 @@ class FeatureRelationshipFitter(object):
             return relations
         start_ix = binsearch([f.neutral_mass for f in features], minimum_mass)
         for base in features[start_ix:]:
-            for reference in features[start_ix:]:
-                if base is reference:
-                    continue
-                for feat_rel_rule in self.feature_relations:
-                    if feat_rel_rule.test(base, reference):
-                        relation = Relation(base, reference, feat_rel_rule)
-                        base.supporters.append(relation)
-                        relations.append(relation)
+            for feat_rel_rule in self.feature_relations:
+                feat_rel_rule.find(base, features)
 
-        if past_reference is not None:
+        if past_reference is not None and len(past_reference) > 0:
             past_reference = NeutralMassIndex(past_reference)
             for base in features[start_ix:]:
-                for reference in past_reference:
-                    for feat_rel_rule in self.feature_relations:
-                        if feat_rel_rule.test(base, reference):
-                            relation = Relation(base, reference, feat_rel_rule)
-                            base.supporters.append(relation)
-                            relations.append(relation)
-        return relations
+                for feat_rel_rule in self.feature_relations:
+                    feat_rel_rule.find(base, past_reference)
+
+    def predict(self, features):
+        for feature in features:
+            feature.score *= 1.0 + (len(feature.supporters) * 0.05)
