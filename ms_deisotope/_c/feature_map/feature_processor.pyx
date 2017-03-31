@@ -7,13 +7,8 @@ cdef extern from "numpy/npy_math.h":
     bint npy_isnan(double x)
 
 cimport cython
-import itertools
 
-from cpython cimport PyObject
-from cpython.iterator cimport PyIter_Next
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_Append, PyList_GetItem, PyList_SetItem, PyList_New
-from cpython.tuple cimport PyTuple_GetItem
-from cpython.int cimport PyInt_AsSsize_t
 from ms_peak_picker._c.peak_set cimport FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from brainpy._c.double_vector cimport (
@@ -401,7 +396,6 @@ cdef class LCMSFeatureProcessorBase(object):
             envelope_conformer conformer
             dvec* score_vec
 
-
         base_tid = self.create_theoretical_distribution(
             mz, charge, charge_carrier, truncate_after)
         feature_groups = self.match_theoretical_isotopic_distribution(
@@ -417,7 +411,7 @@ cdef class LCMSFeatureProcessorBase(object):
             if features is None:
                 break
             combn_i += 1
-            if combn_i % (1000000) == 0:
+            if combn_i % (100000) == 0:
                 print("\t%d combinations have been considered for m/z %0.3f at charge %d in %s (%0.2f%%)" % (
                     combn_i, mz, charge, "-" if feature is None else (
                         "%0.2f-%0.2f" % (feature.start_time, feature.end_time)),

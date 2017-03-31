@@ -118,6 +118,48 @@ def sliding_median(ys):
     return arr
 
 
+def gauss(x, mean, variance, scale=2):
+    return 1. / np.sqrt(2 * np.pi * variance) * np.exp(-(x - mean) ** 2 / (2 * variance))
+
+
+def binsearch(array, value):
+    lo = 0
+    hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) / 2
+        point = array[mid]
+        if value == point:
+            return mid
+        elif hi - lo == 1:
+            return mid
+        elif point > value:
+            hi = mid
+        else:
+            lo = mid
+
+
+def gaussian_smooth(x, y, width=0.05):
+    smoothed = np.zeros_like(y)
+
+    n = x.shape[0]
+    for i in range(n):
+        low_edge = binsearch(x, x[i] - width)
+        high_edge = binsearch(x, x[i] + width)
+        if high_edge - 1 == low_edge or high_edge == low_edge:
+            smoothed[i] = y[i]
+            continue
+        x_slice = x[low_edge:high_edge]
+        y_slice = y[low_edge:high_edge]
+        center = np.mean(x_slice)
+        spread = np.var(x_slice)
+        weights = gauss(x_slice, center, spread)
+        val = ((y_slice * weights).sum() / weights.sum())
+        if np.isnan(val):
+            raise ValueError("NaN")
+        smoothed[i] = val
+    return smoothed
+
+
 def smooth_leveled(xs, ys, level=0):
     if level == 0:
         return ys
@@ -228,59 +270,25 @@ def split_valleys(profiles, scale=0.3, n_levels=2):
     return profiles
 
 
-def gauss(x, mean, variance, scale=2):
-    return 1. / np.sqrt(2 * np.pi * variance) * np.exp(-(x - mean) ** 2 / (2 * variance))
-
-
-def binsearch(array, value):
-    lo = 0
-    hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) / 2
-        point = array[mid]
-        if value == point:
-            return mid
-        elif hi - lo == 1:
-            return mid
-        elif point > value:
-            hi = mid
-        else:
-            lo = mid
-
-
-def gaussian_smooth(x, y, width=0.05):
-    smoothed = np.zeros_like(y)
-
-    n = x.shape[0]
-    for i in range(n):
-        low_edge = binsearch(x, x[i] - width)
-        high_edge = binsearch(x, x[i] + width)
-        if high_edge - 1 == low_edge or high_edge == low_edge:
-            smoothed[i] = y[i]
-            continue
-        x_slice = x[low_edge:high_edge]
-        y_slice = y[low_edge:high_edge]
-        center = np.mean(x_slice)
-        spread = np.var(x_slice)
-        weights = gauss(x_slice, center, spread)
-        val = ((y_slice * weights).sum() / weights.sum())
-        if np.isnan(val):
-            raise ValueError("NaN")
-        smoothed[i] = val
-    return smoothed
-
-
-def smooth_leveled(xs, ys, level=0):
-    if level == 0:
-        return ys
-    elif level == 1:
-        return sliding_mean(ys)
-    elif level == 2:
-        return sliding_mean(sliding_median(ys))
-    elif level == 3:
-        return gaussian_smooth(xs, ys, 0.05)
+def exhaustive_split(profiles, scale=0.5, maxiter=100, smooth=.15):
+    hold = []
+    for i in range(maxiter):
+        n = len(profiles) + len(hold)
+        out = []
+        for case in profiles:
+            ps = ProfileSplitter(case)
+            vallies = ps.locate_valleys(scale, smooth=smooth)
+            if vallies:
+                splitter = vallies[0]
+                out.extend(p for p in ps.split_valley(splitter) if len(p) > 0)
+            else:
+                hold.append(case)
+        profiles = out
+        if n == len(profiles) + len(hold):
+            break
     else:
-        return gaussian_smooth(xs, ys, level)
+        print("Did not converge in %d iterations (%d != %d)" % (i, n, len(profiles) + len(hold)))
+    return profiles + hold
 
 
 def is_flat(feature, fraction=0.5, smooth=1):
@@ -290,13 +298,25 @@ def is_flat(feature, fraction=0.5, smooth=1):
     return apex * fraction < ys[0] and apex * fraction < ys[-1]
 
 
+def clean_profiles(features, scale=0.5, maxiter=100, smooth=0.15):
+    features = [c for f in features for c in f.split_sparse(0.25)]
+    features = exhaustive_split(features, scale=scale, smooth=smooth)
+    features = [fe for fe in features if len(fe) > 2 and not is_flat(
+                fe, fraction=0.8, smooth=3)]
+    return features
+
+
 try:
     has_c = True
     _ProfileSplitter = ProfileSplitter
     _ValleyPoint = ValleyPoint
     _split_valleys = split_valleys
+    _smooth_leveled = smooth_leveled
+    _gauss = gauss
+    _gaussian_smooth = gaussian_smooth
 
     from ms_deisotope._c.feature_map.profile_transform import (
-        ProfileSplitter, ValleyPoint, split_valleys)
+        ProfileSplitter, ValleyPoint, split_valleys, gauss,
+        gaussian_smooth)
 except ImportError:
     has_c = False

@@ -1,9 +1,10 @@
+from itertools import cycle
 from matplotlib import pyplot as plt
 from matplotlib import patches as mpatches
 import numpy as np
 
 
-from .profile_transform import sliding_mean, sliding_median, gaussian_smooth, interpolate
+from .profile_transform import sliding_mean, sliding_median, gaussian_smooth, interpolate, smooth_leveled
 
 
 Ellipse = mpatches.Ellipse
@@ -79,26 +80,41 @@ def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=0.025, **kwargs):
     return ax
 
 
-def smooth_leveled(xs, ys, level=0):
-    if level == 0:
-        return ys
-    elif level == 1:
-        return sliding_mean(ys)
-    elif level == 2:
-        return sliding_mean(sliding_median(ys))
-    elif level == 3:
-        return gaussian_smooth(xs, ys, 0.05)
-    else:
-        return gaussian_smooth(xs, ys, level)
+_nice_color_cycle = ([
+    'blue', 'red', 'green', 'pink', 'orange', "grey", "purple",
+    "seagreen", "darkgoldenrod", "darkcyan", "skyblue",
+    "maroon", "darkgreen", "slategrey", "darkslateblue"
+])
+
+
+nice_color_cycle = cycle(_nice_color_cycle)
+
+
+def random_colorizer(profile, *args, **kwargs):
+    return np.random.rand(3.)
+
+
+def nice_colorizer(profile, *args, **kwargs):
+    return next(nice_color_cycle)
+
+
+def labeler(profile, *args, **kwargs):
+    label = "%0.4f" % profile.mz
+    if hasattr(profile, 'charge'):
+        label += ", %d" % profile.charge
+    return label
 
 
 def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size=10,
-                  axis_label_font_size=20, axis_font_size=16):
+                  axis_label_font_size=20, axis_font_size=16, label=True,
+                  colorizer=random_colorizer, label_function=labeler):
     if ax is None:
         fig, ax = plt.subplots(1)
     minimum_ident_time = float("inf")
     maximum_ident_time = 0
     maximum_intensity = 0
+
+    _label_apexes = label and (label_function is not None)
 
     for profile in profiles:
         if profile is None:
@@ -113,11 +129,10 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
         maximum_ident_time = max(max(rt), maximum_ident_time)
         minimum_ident_time = min(min(rt), minimum_ident_time)
 
+        label = label_function(profile) if label_function is not None else None
+
         maximum_intensity = max(max(heights), maximum_intensity)
-        label = "%0.4f" % profile.mz
-        if hasattr(profile, 'charge'):
-            label += ", %d" % profile.charge
-        color = np.random.rand(3.)
+        color = colorizer(profile)
         ax.scatter(rt, heights, color=color)
         ax.fill_between(
             rt,
@@ -129,9 +144,10 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
         apex = max(heights)
         apex_ind = np.argmax(heights)
         rt_apex = rt[apex_ind]
-        ax.text(rt_apex, apex + min(apex * (
-            .1), 1200), label,
-            ha='center', fontsize=label_font_size, alpha=0.75)
+        if _label_apexes:
+            ax.text(rt_apex, apex + min(apex * (
+                .1), 1200), label,
+                ha='center', fontsize=label_font_size, alpha=0.75)
     ax.set_xlim(minimum_ident_time - 0.02,
                 maximum_ident_time + 0.02)
     ax.set_ylim(0, maximum_intensity * 1.1)

@@ -59,6 +59,9 @@ class LCMSFeatureMap(object):
             lo_ix = len(self) - 1
         return self[lo_ix:hi_ix]
 
+    def __repr__(self):
+        return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
+
 
 try:
     from ms_deisotope._c.feature_map.feature_map import LCMSFeatureMap
@@ -124,10 +127,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
             index, matched = self.find_insertion_point(peak)
         if matched:
             feature = self.features[self.find_minimizing_index(peak, index)]
-            most_abundant_member = feature.most_abundant_member
             feature.insert(peak, scan_time)
-            if peak.intensity < most_abundant_member:
-                feature.retain_most_abundant_member()
         else:
             feature = LCMSFeature()
             feature.created_at = "forest"
@@ -510,6 +510,9 @@ class DeconvolutedLCMSFeatureMap(object):
             lo_ix = len(self) - 1
         return self[lo_ix:hi_ix]
 
+    def __repr__(self):
+        return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
+
 
 def convert_map_to_scan_peak_list(feature_map, peak_loader, time_precision=4, deconvoluted=True):
     metadata_map = {}
@@ -518,7 +521,7 @@ def convert_map_to_scan_peak_list(feature_map, peak_loader, time_precision=4, de
         metadata_map[round(metadata["scan_time"], time_precision)] = metadata
     for feature in feature_map:
         for node in feature:
-            scan_accumulator[round(node.retention_time, time_precision)].extend(node.members)
+            scan_accumulator[round(node.time, time_precision)].extend(node.members)
 
     packed = []
     for key, peaks in sorted(scan_accumulator.items(), key=lambda x: x[0]):
@@ -539,7 +542,27 @@ def convert_map_to_scan_peak_list(feature_map, peak_loader, time_precision=4, de
     return packed
 
 
-class MZIndex(object):
+class _FeatureIndex(object):
+    def __iter__(self):
+        return iter(self.features)
+
+    def __getitem__(self, i):
+        return self.features[i]
+
+    def __len__(self):
+        return len(self.features)
+
+    def __nonzero__(self):
+        return bool(self.features)
+
+    def __bool__(self):
+        return bool(self.features)
+
+    def __repr__(self):
+        return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
+
+
+class MZIndex(_FeatureIndex):
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: x.mz)
 
@@ -551,11 +574,8 @@ class MZIndex(object):
         else:
             return []
 
-    def __getitem__(self, i):
-        return self.features[i]
 
-
-class NeutralMassIndex(object):
+class NeutralMassIndex(_FeatureIndex):
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: x.neutral_mass)
 
@@ -566,6 +586,3 @@ class NeutralMassIndex(object):
             return self[lo:hi]
         else:
             return []
-
-    def __getitem__(self, i):
-        return self.features[i]

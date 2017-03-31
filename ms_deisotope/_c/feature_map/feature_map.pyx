@@ -69,6 +69,9 @@ cdef class LCMSFeatureMap(object):
             lo_ix = len(self) - 1
         return self[lo_ix:hi_ix]
 
+    def __repr__(self):
+        return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
+
 
 cpdef tuple binary_search_with_flag(list array, double mz, double error_tolerance):
     cdef:

@@ -2,9 +2,10 @@
 
 cimport cython
 
-from ms_deisotope.utils import uid
+from ms_deisotope.utils import uid as _uid
 
 from collections import deque
+from random import sample as _sample
 
 from libc.stdlib cimport malloc, free
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyList_GetItem
@@ -39,14 +40,14 @@ cdef class LCMSFeatureTreeList(object):
     cdef void _invalidate(self):
         self._node_id_hash = None
 
-    cpdef tuple find_time(self, double retention_time):
+    cpdef tuple find_time(self, double time):
         cdef:
             size_t indexout
             LCMSFeatureTreeNode node
-        node = self._find_time(retention_time, &indexout)
+        node = self._find_time(time, &indexout)
         return node, indexout
 
-    cdef LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout):
+    cdef LCMSFeatureTreeNode _find_time(self, double time, size_t* indexout):
         cdef:
             int lo, hi
             double rt
@@ -58,16 +59,16 @@ cdef class LCMSFeatureTreeList(object):
         while lo != hi:
             i = (lo + hi) / 2
             node = <LCMSFeatureTreeNode>PyList_GET_ITEM(self.roots, i)
-            rt = node.retention_time
-            if rt == retention_time:
+            rt = node.time
+            if rt == time:
                 indexout[0] = i
                 return node
             elif (hi - lo) == 1:
                 indexout[0] = i
                 return None
-            elif rt < retention_time:
+            elif rt < time:
                 lo = i
-            elif rt > retention_time:
+            elif rt > time:
                 hi = i
 
     def _build_node_id_hash(self):
@@ -87,13 +88,13 @@ cdef class LCMSFeatureTreeList(object):
             LCMSFeatureTreeNode root
             size_t i
         try:
-            root = self._find_time(node.retention_time, &i)
+            root = self._find_time(node.time, &i)
             if root is None:
                 if i != 0:
                     self.roots.insert(i + 1, node)
                 else:
                     slot = self.getitem(i)
-                    if slot.retention_time < node.retention_time:
+                    if slot.time < node.time:
                         i += 1
                     self.roots.insert(i, node)
             else:
@@ -103,13 +104,13 @@ cdef class LCMSFeatureTreeList(object):
             self.roots.append(node)
             return 0
 
-    def insert(self, retention_time, peaks):
-        node = LCMSFeatureTreeNode(retention_time, peaks)
+    def insert(self, time, peaks):
+        node = LCMSFeatureTreeNode(time, peaks)
         return self.insert_node(node)
 
     def extend(self, iterable):
-        for peaks, retention_time in iterable:
-            self.insert(retention_time, peaks)
+        for peaks, time in iterable:
+            self.insert(time, peaks)
 
     def __getitem__(self, i):
         return self.roots[i]
@@ -153,22 +154,23 @@ cdef class LCMSFeatureTreeList(object):
 
     def __repr__(self):
         return "LCMSFeatureTreeList(%d nodes, %0.2f-%0.2f)" % (
-            len(self), self[0].retention_time, self[-1].retention_time)
+            len(self), self[0].time, self[-1].time)
 
 
-cdef object _uid = uid
+cdef object uid = _uid
+cdef object sample = _sample
 
 
 cdef class LCMSFeatureTreeNode(object):
-    def __init__(self, retention_time, members=None):
+    def __init__(self, time, members=None):
         if members is None:
             members = []
-        self.retention_time = retention_time
+        self.time = time
         self.members = members
         self._most_abundant_member = None
         self._mz = 0
         self._recalculate()
-        self.node_id = _uid()
+        self.node_id = uid()
 
     def clone(self, deep=False):
         cdef LCMSFeatureTreeNode node
@@ -186,13 +188,13 @@ cdef class LCMSFeatureTreeNode(object):
                 peaks.append(peak)
         else:
             peaks = list(self.members)
-        node = self.__class__(self.retention_time, peaks)
+        node = self.__class__(self.time, peaks)
         node.node_id = self.node_id
         return node
 
     def _unspool_strip_children(self):
         node = self.__class__(
-            self.retention_time, list(self.members))
+            self.time, list(self.members))
         yield node
 
     cpdef _recalculate(self):
@@ -228,14 +230,14 @@ cdef class LCMSFeatureTreeNode(object):
         return
 
     def __getstate__(self):
-        return (self.retention_time, self.members, self.node_id)
+        return (self.time, self.members, self.node_id)
 
     def __setstate__(self, state):
-        self.retention_time, self.members, self.node_id = state
+        self.time, self.members, self.node_id = state
         self._recalculate()
 
     def __reduce__(self):
-        return self.__class__, (self.retention_time, []), self.__getstate__()
+        return self.__class__, (self.time, []), self.__getstate__()
 
     cdef inline size_t get_members_size(self):
         return PyList_GET_SIZE(self.members)
@@ -280,7 +282,7 @@ cdef class LCMSFeatureTreeNode(object):
 
     cpdef bint _eq(self, LCMSFeatureTreeNode other):
         return self.members == other.members and abs(
-            self.retention_time - other.retention_time) < 1e-4
+            self.time - other.time) < 1e-4
 
     cpdef bint _ne(self, LCMSFeatureTreeNode other):
         return not (self._eq(other))
@@ -304,7 +306,7 @@ cdef class LCMSFeatureTreeNode(object):
     def __repr__(self):
         return "%s(%f, %0.4f %s|%d)" % (
             self.__class__.__name__,
-            self.retention_time, self.peaks[0].mz, "",
+            self.time, self.peaks[0].mz, "",
             len(self.members))
 
     cdef inline FittedPeak getpeak(self, size_t i):
@@ -328,18 +330,26 @@ cdef class FeatureBase(object):
     cdef double get_end_time(self):
         return INF
 
-    cpdef tuple find_time(self, double retention_time):
+    cpdef tuple find_time(self, double time):
         cdef:
             size_t indexout
             LCMSFeatureTreeNode node
-        node = self._find_time(retention_time, &indexout)
+        node = self._find_time(time, &indexout)
         return node, indexout
 
-    cdef inline LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout):
-        return self.nodes._find_time(retention_time, indexout)
+    cdef inline LCMSFeatureTreeNode _find_time(self, double time, size_t* indexout):
+        return self.nodes._find_time(time, indexout)
 
     cdef inline size_t get_size(self):
         return self.nodes.get_size()
+
+    def __len__(self):
+        # return len(self.nodes)
+        return self.get_size()
+
+    def __iter__(self):
+        return iter(self.nodes)
+
 
 cdef class LCMSFeature(FeatureBase):
     def __init__(self, nodes=None, adducts=None, used_as_adduct=None, feature_id=None):
@@ -356,41 +366,40 @@ cdef class LCMSFeature(FeatureBase):
         self._total_intensity = -1
         self._mz = -1
         self._last_mz = 0.0
-        self._most_abundant_member = 0.0
-        self._retention_times = None
+        self._times = None
         self._peaks = None
-        self._scan_ids = None
         self._start_time = -1
         self._end_time = -1
         self.adducts = adducts
         self.used_as_adduct = used_as_adduct
         self.feature_id = feature_id
+        self._peak_averager = RunningWeightedAverage._create(None)
+        if self.get_size() > 0:
+            self._feed_peak_averager()
 
-    def invalidate(self):
-        self._invalidate()
+    cdef void _feed_peak_averager(self):
+        cdef:
+            size_t i, n
+            LCMSFeatureTreeNode node
+        n = self.get_size()
+        for i in range(n):
+            node = self.getitem(i)
+            self._peak_averager._update(node.members)
 
-    def _invalidate(self):
+    def invalidate(self, reaverage=False):
+        self._invalidate(reaverage)
+
+    cpdef _invalidate(self, bint reaverage=False):
         self._total_intensity = -1
         self._last_mz = self._mz if self._mz != -1 else 0.
         self._mz = -1
-        self._retention_times = None
+        self._times = None
         self._peaks = None
-        self._scan_ids = None
         self._start_time = -1
         self._end_time = -1
-        self._last_most_abundant_member = self._most_abundant_member
-        self._most_abundant_member = None
-
-    @property
-    def most_abundant_member(self):
-        if self._most_abundant_member is None:
-            self._most_abundant_member = max(
-                node.max_intensity() for node in self.nodes)
-        return self._most_abundant_member
-
-    def retain_most_abundant_member(self):
-        self._mz = self._last_mz
-        self._most_abundant_member = self._last_most_abundant_member
+        if reaverage:
+            self._peak_averager = RunningWeightedAverage._create(None)
+            self._feed_peak_averager()
 
     @property
     def total_signal(self):
@@ -418,18 +427,12 @@ cdef class LCMSFeature(FeatureBase):
     cdef double get_mz(self):
         cdef:
             size_t i, n
-            double best_mz
+            double best_mz, temp
             LCMSFeatureTreeNode node
         if self._mz == -1:
-            best_mz = 0
-            maximum_intensity = -1
-            n = self.get_size()
-            for i in range(n):
-                node = self.getitem(i)
-                intensity = node.max_intensity()
-                if intensity > maximum_intensity:
-                    maximum_intensity = intensity
-                    best_mz = node.get_mz()
+            temp = best_mz = self._peak_averager.current_mean
+            if best_mz < 0:
+                raise ValueError("best_mz < 0")
             self._last_mz = self._mz = best_mz
         return self._mz
 
@@ -438,19 +441,19 @@ cdef class LCMSFeature(FeatureBase):
         return self.get_mz()
 
     @property
-    def retention_times(self):
+    def times(self):
         cdef:
             size_t i, n
             LCMSFeatureTreeNode node
             np.ndarray[double, ndim=1, mode='c'] acc
-        if self._retention_times is None:
+        if self._times is None:
             n = self.get_size()
             acc = _zeros(n)
             for i in range(n):
                 node = self.getitem(i)
-                acc[i] = node.retention_time
-            self._retention_times = acc
-        return self._retention_times
+                acc[i] = node.time
+            self._times = acc
+        return self._times
 
     @property
     def peaks(self):
@@ -461,23 +464,26 @@ cdef class LCMSFeature(FeatureBase):
     @property
     def start_time(self):
         if self._start_time == -1:
-            self._start_time = self.nodes[0].retention_time
+            self._start_time = self.nodes[0].time
         return self._start_time
 
     @property
     def end_time(self):
         if self._end_time == -1:
-            self._end_time = self.nodes[-1].retention_time
+            self._end_time = self.nodes[-1].time
         return self._end_time
 
     cdef double get_start_time(self):
         if self._start_time == -1:
-            self._start_time = self.getitem(0).retention_time
+            self._start_time = self.getitem(0).time
         return self._start_time
 
     cdef double get_end_time(self):
+        cdef:
+            size_t n
         if self._end_time == -1:
-            self._end_time = self.nodes[-1].retention_time
+            n = self.get_size()
+            self._end_time = self.getitem(n - 1).time
         return self._end_time
 
     cpdef bint overlaps_in_time(self, FeatureBase interval):
@@ -501,36 +507,36 @@ cdef class LCMSFeature(FeatureBase):
 
     def as_arrays(self):
         rts = np.array(
-            [node.retention_time for node in self.nodes], dtype=np.float64)
+            [node.time for node in self.nodes], dtype=np.float64)
         signal = np.array([node.total_intensity()
                            for node in self.nodes], dtype=np.float64)
         return rts, signal
-
-    def __len__(self):
-        return len(self.nodes)
 
     def __repr__(self):
         return "%s(%0.4f, %0.2f, %0.2f)" % (
             self.__class__.__name__, self.mz, self.start_time, self.end_time)
 
+    def _copy_chunk(self, nodes, *args, **kwargs):
+        x = self.__class__(LCMSFeatureTreeList(nodes))
+        x.used_as_adduct = list(self.used_as_adduct)
+        return x
+
     def split_sparse(self, delta_rt=1.):
         chunks = []
         current_chunk = []
-        last_rt = self.nodes[0].retention_time
+        last_rt = self.nodes[0].time
 
         for node in self.nodes:
-            if (node.retention_time - last_rt) > delta_rt:
-                x = self.__class__(LCMSFeatureTreeList(current_chunk))
-                x.used_as_adduct = list(self.used_as_adduct)
+            if (node.time - last_rt) > delta_rt:
+                x = self._copy_chunk(current_chunk)
 
                 chunks.append(x)
                 current_chunk = []
 
-            last_rt = node.retention_time
+            last_rt = node.time
             current_chunk.append(node)
 
-        x = self.__class__(LCMSFeatureTreeList(current_chunk))
-        x.used_as_adduct = list(self.used_as_adduct)
+        x = self._copy_chunk(current_chunk)
 
         chunks.append(x)
         for chunk in chunks:
@@ -546,14 +552,14 @@ cdef class LCMSFeature(FeatureBase):
 
     def truncate_before(self, time):
         _, i = self.nodes.find_time(time)
-        if self.nodes[i].retention_time < time:
+        if self.nodes[i].time < time:
             i += 1
         self.nodes = LCMSFeatureTreeList(self.nodes[i:])
         self._invalidate()
 
     def truncate_after(self, time):
         _, i = self.nodes.find_time(time)
-        if self.nodes[i].retention_time < time:
+        if self.nodes[i].time < time:
             i += 1
         self.nodes = LCMSFeatureTreeList(self.nodes[:i])
         self._invalidate()
@@ -566,12 +572,14 @@ cdef class LCMSFeature(FeatureBase):
         c.created_at = self.created_at
         return c
 
-    def insert_node(self, node):
+    cpdef insert_node(self, LCMSFeatureTreeNode node):
+        self._peak_averager._update(node.members)
         self.nodes.insert_node(node)
         self._invalidate()
 
-    def insert(self, peak, retention_time):
-        self.nodes.insert(retention_time, [peak])
+    cpdef insert(self, PeakBase peak, double time):
+        self._peak_averager.add(peak)
+        self.nodes.insert(time, [peak])
         self._invalidate()
 
     def merge(self, other):
@@ -586,9 +594,6 @@ cdef class LCMSFeature(FeatureBase):
     def apex_time(self):
         rt, intensity = self.as_arrays()
         return rt[np.argmax(intensity)]
-
-    def __iter__(self):
-        return iter(self.nodes)
 
     cpdef bint _eq(self, other):
         if other is None:
@@ -668,31 +673,12 @@ cdef class EmptyFeature(FeatureBase):
         return self._end_time
 
 
-def binsearch(array, double value):
-    cdef:
-        size_t lo, hi, mid
-        double point
-    lo = 0
-    hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) / 2
-        point = array[mid]
-        if value == point:
-            return mid
-        elif hi - lo == 1:
-            return mid
-        elif point > value:
-            hi = mid
-        else:
-            lo = mid
-
-
 cdef class FeatureSetIterator(object):
     def __init__(self, features, start_time=None, end_time=None):
         cdef:
             size_t n, i
 
-        self.features = features
+        self.features = list(features)
         n = PyList_GET_SIZE(self.features)
         self.real_features = []
         self.index_list = <size_t*>malloc(sizeof(size_t) * n)
@@ -722,13 +708,15 @@ cdef class FeatureSetIterator(object):
     
     cdef void _initialize(self, list features):
         cdef:
-            size_t n
+            size_t i, n
         self.features = features
         n = PyList_GET_SIZE(self.features)
         self.real_features = []
         self.index_list = <size_t*>malloc(sizeof(size_t) * n)
+
         self.start_time = 0
         self.end_time = INF
+
         for i in range(n):
             feature = <FeatureBase>PyList_GET_ITEM(self.features, i)
             if feature is None or isinstance(feature, EmptyFeature):
@@ -741,6 +729,7 @@ cdef class FeatureSetIterator(object):
             if (self.end_time > time):
                 self.end_time = time
             self.index_list[i] = 0
+
         self.init_indices()
         self.last_time_seen = -1
 
@@ -819,7 +808,7 @@ cdef class FeatureSetIterator(object):
                 continue
             ix = self.index_list[i]
             if ix < f.get_size():
-                ix_time = f.nodes.getitem(ix).retention_time
+                ix_time = f.nodes.getitem(ix).time
                 if ix_time < time and ix_time < self.end_time:
                     time = ix_time
         if time == INF:
@@ -842,7 +831,7 @@ cdef class FeatureSetIterator(object):
             ix = self.index_list[i]
             done = ix >= f.get_size()
             if not done:
-                at_end_time = f.nodes.getitem(ix).retention_time >= self.end_time
+                at_end_time = f.nodes.getitem(ix).time >= self.end_time
             else:
                 at_end_time = done
             if done or at_end_time:
@@ -921,3 +910,110 @@ cdef class FeatureSetIterator(object):
     def __repr__(self):
         return "FeatureSetIterator(%d/%d, %0.3f-%0.3f)" % (
             len(self.real_features), len(self.features), self.start_time, self.end_time)
+
+
+cdef class RunningWeightedAverage(object):
+
+    def __cinit__(self, *args, **kwargs):
+        self.accumulator = []
+        self.current_mean = 0
+        self.total_weight = 0
+        self.current_count = 0
+
+    def __init__(self, iterable=None):
+        if iterable is not None:
+            self.update(iterable)
+
+    @staticmethod
+    cdef RunningWeightedAverage _create(list peaks):
+        cdef:
+            RunningWeightedAverage inst
+
+        inst = RunningWeightedAverage.__new__(RunningWeightedAverage)
+        if peaks is None:
+            return inst
+        else:
+            inst._update(peaks)
+            return inst
+
+    @cython.nonecheck(False)
+    @cython.cdivision(True)
+    cpdef add(self, PeakBase peak):
+        if peak.intensity == 0:
+            if self.current_mean == 0 and self.total_weight == 0:
+                self.current_mean = peak.mz
+                self.total_weight = 1
+            else:
+                return
+
+        self.accumulator.append(peak)
+        agg = (self.total_weight * self.current_mean) + \
+            (peak.mz * peak.intensity)
+        self.total_weight += peak.intensity
+        self.current_count += 1
+
+        if self.total_weight != 0:
+            self.current_mean = agg / (self.total_weight)
+        else:
+            print("NaN produced in add()")
+        return self
+
+    cpdef double recompute(self):
+        cdef:
+            size_t i
+            PeakBase peak
+            double weight, total
+        weight = 0
+        total = 0
+        for i in range(self.current_count):
+            peak = <PeakBase>PyList_GET_ITEM(self.accumulator, i)
+            weight += peak.intensity
+            total += peak.intensity * peak.mz
+        return total / weight
+
+    cpdef RunningWeightedAverage update(self, iterable):
+        for x in iterable:
+            self.add(x)
+        return self
+
+    cdef void _update(self, list peaks):
+        cdef:
+            size_t i, n
+            PeakBase p
+        n = PyList_GET_SIZE(peaks)
+        for i in range(n):
+            p = <PeakBase>PyList_GET_ITEM(peaks, i)
+            self.add(p)
+
+    def __repr__(self):
+        return "RunningWeightedAverage(%r, %d)" % (self.current_mean, self.current_count)
+
+    @cython.nonecheck(False)
+    @cython.cdivision(True)
+    cpdef double _bootstrap(self, size_t n=150, size_t k=40):
+        cdef:
+            size_t i
+            size_t tn, ti
+            list traces, sampled_peaks
+            RunningWeightedAverage inst
+            double total_weight, accumulation, center
+        traces = []
+        if self.current_count < k:
+            k = self.current_count
+        for i in range(n):
+            sampled_peaks = sample(self.accumulator, k)
+            inst = RunningWeightedAverage._create(sampled_peaks)
+            traces.append(inst)
+        tn = i + 1
+        total_weight = 0
+        accumulation = 0
+        for ti in range(tn):
+            inst = traces[ti]
+            accumulation += inst.total_weight * inst.current_mean
+            total_weight += inst.total_weight
+        center = accumulation / total_weight
+        return center
+
+    cpdef RunningWeightedAverage bootstrap(self, size_t n=150, size_t k=40):
+        self.current_mean = self._bootstrap(n, k)
+        return self

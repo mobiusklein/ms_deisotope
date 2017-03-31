@@ -48,25 +48,6 @@ def conform_envelopes(experimental, base_theoretical):
     return cleaned_eid, tid, n_missing
 
 
-def sum_deconvoluted_features(last, solution):
-    missing = []
-    feat_iter = NodeFeatureSetIterator([last, solution])
-    for nodes in feat_iter:
-        base = nodes[0]
-        new = nodes[1]
-        if base is None:
-            missing.append(new)
-        elif new is not None:
-            base.members[0].intensity += new.members[0].intensity
-            base.precursor_information.extend(new.precursor_information)
-    if missing:
-        for node in missing:
-            last.insert_node(DeconvolutedLCMSFeatureTreeNode(
-                node.retention_time, list(node.members), list(node.precursor_information)))
-    # last.supporters.extend(solution.supporters)
-    return last
-
-
 class LCMSFeatureProcessorBase(object):
     def create_theoretical_distribution(self, mz, charge, charge_carrier=PROTON, truncate_after=0.8):
         base_tid = self.averagine.isotopic_cluster(
@@ -86,6 +67,12 @@ class LCMSFeatureProcessorBase(object):
 
     def conform_envelopes(self, experimental, base_theoretical):
         return conform_envelopes(experimental, base_theoretical)
+
+    def _find_thresholded_score(self, scores, percentage):
+        scores = np.array(scores)
+        maximum = scores.max()
+        threshold = maximum * percentage
+        return scores[scores > threshold].mean()
 
     def _fit_feature_set(self, mz, error_tolerance, charge, left_search=1, right_search=1,
                          charge_carrier=PROTON, truncate_after=0.8, max_missed_peaks=1,
@@ -109,7 +96,7 @@ class LCMSFeatureProcessorBase(object):
                 if np.isnan(score):
                     continue
                 scores.append(score)
-            final_score = sum(scores) / len(scores)
+            final_score = self._find_thresholded_score(scores, threshold_scale)
             missing_features = 0
             for f in features:
                 if f is None:
@@ -190,7 +177,7 @@ class PrecursorMap(object):
         hits = []
         for node in feature:
             for peak in node.members:
-                key = (node.retention_time, peak.index)
+                key = (node.time, peak.index)
                 if key in self.mapping:
                     pinfo = self.mapping.pop(key)
                     hits.append((node, pinfo))
@@ -205,14 +192,17 @@ class PrecursorMap(object):
 
 
 class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
-    def __init__(self, feature_map, averagine, scorer, precursor_map=None):
+    def __init__(self, feature_map, averagine, scorer, precursor_map=None, minimum_size=3,
+                 maximum_time_gap=0.25):
         if precursor_map is None:
             precursor_map = PrecursorMap({})
         self.feature_map = LCMSFeatureMap([f.clone(deep=True) for f in feature_map])
         self.averagine = AveragineCache(averagine)
         self.scorer = scorer
-        self.dependence_network = FeatureDependenceGraph(self.feature_map)
         self.precursor_map = precursor_map
+        self.minimum_size = minimum_size
+        self.maximum_time_gap = maximum_time_gap
+        self.dependence_network = FeatureDependenceGraph(self.feature_map)
         self.orphaned_nodes = []
 
     def select_best_disjoint_subgraphs(self, disjoint_envelopes):
@@ -273,7 +263,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                                      charge_carrier=PROTON, truncate_after=0.8, max_missed_peaks=1,
                                      threshold_scale=0.3):
         """Fits all theoretical distributions for `feature` with charge state `charge`.
-        
+
         Parameters
         ----------
         feature : LCMSFeature
@@ -291,7 +281,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         truncate_after : float, optional
             Fraction of the total isotopic pattern to include
             in the set of theoretical peaks to search for.
-        
+
         Returns
         -------
         list of LCMSFeatureSetFit
@@ -323,37 +313,41 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             if len(rep_eid) == 0:
                 continue
             score = self.scorer.evaluate(None, cleaned_eid, tid)
+            is_valid = True
+            if np.isnan(score) or score < 0:
+                is_valid = False
             envelope = [(e.mz, min(e.intensity, t.intensity)) for e, t in zip(cleaned_eid, tid)]
-            total_abundance = sum(p[1] for p in envelope)
-            monoisotopic_mass = neutral_mass(
-                cleaned_eid[0].mz, charge, charge_carrier=charge_carrier)
-            reference_peak = first_peak(cleaned_eid)
+            if is_valid:
+                total_abundance = sum(p[1] for p in envelope)
+                monoisotopic_mass = neutral_mass(
+                    cleaned_eid[0].mz, charge, charge_carrier=charge_carrier)
+                reference_peak = first_peak(cleaned_eid)
 
-            dpeak = DeconvolutedPeak(
-                neutral_mass=monoisotopic_mass, intensity=total_abundance,
-                charge=charge,
-                signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
-                index=reference_peak.index,
-                full_width_at_half_max=mean(p.full_width_at_half_max for p in rep_eid),
-                a_to_a2_ratio=a_to_a2_ratio(tid),
-                most_abundant_mass=neutral_mass(
-                    most_abundant_mz(cleaned_eid), charge, charge_carrier=charge_carrier),
-                average_mass=neutral_mass(
-                    average_mz(cleaned_eid), charge, charge_carrier=charge_carrier),
-                score=score,
-                envelope=envelope,
-                mz=cleaned_eid[0].mz,
-                area=sum(e.area for e in cleaned_eid))
+                dpeak = DeconvolutedPeak(
+                    neutral_mass=monoisotopic_mass, intensity=total_abundance,
+                    charge=charge,
+                    signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
+                    index=reference_peak.index,
+                    full_width_at_half_max=mean(p.full_width_at_half_max for p in rep_eid),
+                    a_to_a2_ratio=a_to_a2_ratio(tid),
+                    most_abundant_mass=neutral_mass(
+                        most_abundant_mz(cleaned_eid), charge, charge_carrier=charge_carrier),
+                    average_mass=neutral_mass(
+                        average_mz(cleaned_eid), charge, charge_carrier=charge_carrier),
+                    score=score,
+                    envelope=envelope,
+                    mz=cleaned_eid[0].mz,
+                    area=sum(e.area for e in cleaned_eid))
 
-            time = feat_iter.current_time
-            precursor_info_set = []
-            for peak in rep_eid:
-                pinfo = self.precursor_map.precursor_for_peak((time, peak.index))
-                if pinfo is not None:
-                    precursor_info_set.append(pinfo)
+                time = feat_iter.current_time
+                precursor_info_set = []
+                for peak in rep_eid:
+                    pinfo = self.precursor_map.precursor_for_peak((time, peak.index))
+                    if pinfo is not None:
+                        precursor_info_set.append(pinfo)
 
-            node = DeconvolutedLCMSFeatureTreeNode(time, [dpeak], precursor_info_set)
-            nodes.append(node)
+                node = DeconvolutedLCMSFeatureTreeNode(time, [dpeak], precursor_info_set)
+                nodes.append(node)
             if subtract:
                 for fpeak, tpeak in zip(cleaned_eid, envelope):
                     fpeak.intensity -= tpeak[1]
@@ -363,21 +357,35 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             if feature is None or isinstance(feature, EmptyFeature):
                 continue
             feature.invalidate()
-        if len(nodes) == 0:
+        if len(nodes) < self.minimum_size:
             return None
 
-        return DeconvolutedLCMSFeature(
+        result_feature = DeconvolutedLCMSFeature(
             nodes, feature_fit.charge,
             score=feature_fit.score, n_features=len(feature_fit),
             supporters=feature_fit.supporters)
 
+        return result_feature
+
+    def _clean_solutions(self, solutions):
+        out = []
+        for solution in solutions:
+            parts = solution.split_sparse(self.maximum_time_gap)
+            for part in parts:
+                if len(part) < self.minimum_size:
+                    continue
+                out.append(part)
+        return out
+
     def _merge_isobaric(self, solutions):
+        if len(solutions) == 0:
+            return []
         solutions.sort(key=lambda x: (x.neutral_mass, x.charge))
         last = solutions[0]
         out = []
         for solution in solutions[1:]:
             if last.neutral_mass == solution.neutral_mass and last.charge == solution.charge:
-                sum_deconvoluted_features(last, solution)
+                last.sum(solution)
             else:
                 out.append(last)
                 last = solution
@@ -399,12 +407,14 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 out.extend(filtered_feature.split_sparse())
         self.feature_map = LCMSFeatureMap(out)
 
-    def store_solutions(self, fits, charge_carrier=PROTON, subtract=True):
+    def store_solutions(self, fits, charge_carrier=PROTON, subtract=True, detection_threshold=0.1):
         solutions = []
         for fit in fits:
-            extracted = extract_fitted_region(fit)
+            extracted = extract_fitted_region(
+                fit, detection_threshold=detection_threshold)
             solution = self.finalize_fit(
-                extracted, charge_carrier=charge_carrier, subtract=subtract)
+                extracted, charge_carrier=charge_carrier, subtract=subtract,
+                detection_threshold=detection_threshold)
             if solution is None:
                 continue
             solutions.append(solution)
@@ -433,27 +443,30 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
 
     def _make_iterator_state(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
                              charge_carrier=PROTON, truncate_after=0.95, maxiter=10, minimum_intensity=100,
-                             convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None):
+                             convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None,
+                             detection_threshold=0.1):
         state = FeatureDeconvolutionIterationState(
             self, error_tolerance, charge_range, left_search, right_search, charge_carrier,
             truncate_after, maxiter, minimum_intensity, convergence, max_missed_peaks, threshold_scale,
-            relfitter)
+            relfitter, detection_threshold)
         return state
 
     def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
                     charge_carrier=PROTON, truncate_after=0.95, maxiter=10, minimum_intensity=100,
-                    convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None):
+                    convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None,
+                    detection_threshold=0.1):
         state = FeatureDeconvolutionIterationState(
             self, error_tolerance, charge_range, left_search, right_search, charge_carrier,
             truncate_after, maxiter, minimum_intensity, convergence, max_missed_peaks, threshold_scale,
-            relfitter)
+            relfitter, detection_threshold)
         return state.run()
 
 
 class FeatureDeconvolutionIterationState(object):
     def __init__(self, processor, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
                  charge_carrier=PROTON, truncate_after=0.95, maxiter=10, minimum_intensity=100,
-                 convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None):
+                 convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None,
+                 detection_threshold=0.1):
         self.processor = processor
         self.last_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
         self.next_signal_magnitude = 1.0
@@ -478,6 +491,7 @@ class FeatureDeconvolutionIterationState(object):
         self.max_missed_peaks = max_missed_peaks
         self.threshold_scale = threshold_scale
         self.relfitter = relfitter
+        self.detection_threshold = detection_threshold
 
     def update_signal_ratio(self):
         self.next_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
@@ -510,15 +524,15 @@ class FeatureDeconvolutionIterationState(object):
 
         if self.relfitter is not None:
             self.relations = self.relfitter.fit(
-                (d for cluster in self.processor.disjoint_feature_clusters
+                (d for cluster in self.disjoint_feature_clusters
                  for d in cluster), self.solutions)
         printer("\tExtracting Fits")
         self.fits = self.processor.select_best_disjoint_subgraphs(self.disjoint_feature_clusters)
 
-    def postprocess(self, subtract=True):
+    def postprocess(self, subtract=True, detection_threshold=0.1):
         self.generation = self.processor.store_solutions(
             self.fits, charge_carrier=self.charge_carrier,
-            subtract=subtract)
+            subtract=subtract, detection_threshold=detection_threshold)
 
         if self.relfitter is not None:
             self.relfitter.add_history((self.relations, self.generation))
@@ -528,7 +542,8 @@ class FeatureDeconvolutionIterationState(object):
         self.setup()
 
         self.map_fits(report_interval=report_interval)
-        self.postprocess(subtract=subtract)
+        self.postprocess(
+            subtract=subtract, detection_threshold=self.detection_threshold)
 
         self.iteration_count += 1
         self.update_signal_ratio()
@@ -544,6 +559,7 @@ class FeatureDeconvolutionIterationState(object):
             converged = self.step()
             if converged or self.iteration_count >= self.maxiter:
                 keep_going = False
+        self.solutions = self.processor._clean_solutions(self.solutions)
         return DeconvolutedLCMSFeatureMap(self.solutions)
 
 
@@ -571,14 +587,14 @@ def extract_fitted_region(feature_fit, detection_threshold=0.1):
             continue
         _, start_ix = feature.nodes.find_time(start_time)
         _, end_ix = feature.nodes.find_time(end_time)
-        if feature.nodes[end_ix].retention_time < end_time:
+        if feature.nodes[end_ix].time < end_time:
             end_ix += 1
         fitted = LCMSFeature(feature.nodes[start_ix:(end_ix + 1)], feature_id=feature.feature_id)
         if len(fitted) == 0:
             fitted_features.append(EmptyFeature(fitted.mz))
         else:
             fitted_features.append(fitted)
-    return LCMSFeatureSetFit(
+    extract = LCMSFeatureSetFit(
         fitted_features,
         feature_fit.theoretical,
         feature_fit.score,
@@ -587,6 +603,7 @@ def extract_fitted_region(feature_fit, detection_threshold=0.1):
         supporters=feature_fit.supporters,
         data=feature_fit.data,
         neutral_mass=feature_fit.neutral_mass)
+    return extract
 
 
 class RTFeatureNode(Interval):

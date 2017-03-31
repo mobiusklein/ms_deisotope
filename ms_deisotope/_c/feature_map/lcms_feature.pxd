@@ -11,8 +11,8 @@ cdef class LCMSFeatureTreeList(object):
 
     cdef void _invalidate(self)
 
-    cpdef tuple find_time(self, double retention_time)
-    cdef inline LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout)
+    cpdef tuple find_time(self, double time)
+    cdef inline LCMSFeatureTreeNode _find_time(self, double time, size_t* indexout)
     cdef inline LCMSFeatureTreeNode getitem(self, size_t i)
 
     cdef inline size_t get_size(self)
@@ -20,7 +20,7 @@ cdef class LCMSFeatureTreeList(object):
 
 cdef class LCMSFeatureTreeNode(object):
     cdef:
-        public double retention_time
+        public double time
         public list members
         public PeakBase _most_abundant_member
         public double _mz
@@ -55,29 +55,33 @@ cdef class FeatureBase(object):
     cdef double get_end_time(self)
 
     cdef inline size_t get_size(self)
-    cpdef tuple find_time(self, double retention_time)
-    cdef inline LCMSFeatureTreeNode _find_time(self, double retention_time, size_t* indexout)
+    cpdef tuple find_time(self, double time)
+    cdef inline LCMSFeatureTreeNode _find_time(self, double time, size_t* indexout)
 
 
 cdef class LCMSFeature(FeatureBase):
     cdef:
         public double _total_intensity
         public double _last_mz
-        public object _most_abundant_member
-        public object _last_most_abundant_member
-        public object _retention_times
+        public object _times
         public object _peaks
-        public object _scan_ids
         public object adducts
         public object used_as_adduct
         public object created_at
         public object feature_id
+        public RunningWeightedAverage _peak_averager
 
     cpdef bint _eq(self, other)
     cpdef bint _ne(self, other)
     cpdef bint overlaps_in_time(self, FeatureBase interval)
 
     cdef LCMSFeatureTreeNode getitem(self, size_t i)
+    cdef void _feed_peak_averager(self)
+
+    cpdef insert_node(self, LCMSFeatureTreeNode node)
+    cpdef insert(self, PeakBase peak, double time)
+    cpdef _invalidate(self, bint reaverage=*)
+
 
 cdef class EmptyFeature(FeatureBase):
     @staticmethod
@@ -109,3 +113,21 @@ cdef class FeatureSetIterator(object):
 
         cdef inline size_t get_size(self)
         cdef inline FeatureBase getitem(self, size_t i)
+
+
+cdef class RunningWeightedAverage(object):
+    cdef:
+        public list accumulator
+        public double current_mean
+        public size_t current_count
+        public double total_weight
+
+    cpdef add(self, PeakBase peak)
+    cpdef double recompute(self)
+    cpdef RunningWeightedAverage update(self, iterable)
+    cpdef double _bootstrap(self, size_t n=*, size_t k=*)
+    cpdef RunningWeightedAverage bootstrap(self, size_t n=*, size_t k=*)
+
+    @staticmethod
+    cdef RunningWeightedAverage _create(list peaks)
+    cdef void _update(self, list peaks)

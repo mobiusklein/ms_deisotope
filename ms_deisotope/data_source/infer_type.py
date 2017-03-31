@@ -13,13 +13,14 @@ def register_type_guesser(reader_guesser):
 
 try:
     from .thermo_raw import (
-        ThermoRawLoader, infer_reader as check_is_thermo_raw,
+        ThermoRawLoader, infer_reader as _check_is_thermo_raw,
         register_dll as register_thermo_dll)
 
-    register_type_guesser(check_is_thermo_raw)
+    register_type_guesser(_check_is_thermo_raw)
 
 except ImportError:
-    pass
+    def register_thermo_dll(*args, **kwargs):
+        pass
 
 
 @register_type_guesser

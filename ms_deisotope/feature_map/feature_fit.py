@@ -3,8 +3,11 @@ from collections import namedtuple
 from brainpy import neutral_mass as calc_neutral_mass
 from .lcms_feature import (
     LCMSFeature,
+    LCMSFeatureTreeList,
     LCMSFeatureTreeNode,
-    FeatureSetIterator)
+    FeatureSetIterator,
+    RunningWeightedAverage,
+    NodeFeatureSetIterator)
 
 
 class map_coord(namedtuple("map_coord", ("mz", 'time'))):
@@ -95,12 +98,12 @@ class LCMSFeatureSetFit(object):
 class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
     __slots__ = ["_neutral_mass", "charge", "precursor_information"]
 
-    def __init__(self, retention_time=None, members=None, precursor_information=None):
+    def __init__(self, time=None, members=None, precursor_information=None):
         if precursor_information is None:
             precursor_information = []
         self._neutral_mass = 0
         self.charge = 0
-        super(DeconvolutedLCMSFeatureTreeNode, self).__init__(retention_time, members)
+        super(DeconvolutedLCMSFeatureTreeNode, self).__init__(time, members)
         self.precursor_information = precursor_information
 
     def _recalculate(self):
@@ -154,21 +157,66 @@ class DeconvolutedLCMSFeature(LCMSFeature):
     @property
     def neutral_mass(self):
         if self._neutral_mass is None:
-            best_neutral_mass = 0
-            maximum_intensity = 0
+            avger = DeconvolutedRunningWeightedAverage()
             for node in self.nodes:
-                intensity = node.max_intensity()
-                if intensity > maximum_intensity:
-                    maximum_intensity = intensity
-                    best_neutral_mass = node.neutral_mass
-            self._last_neutral_mass = self._neutral_mass = best_neutral_mass
+                avger.update(node.members)
+            self._neutral_mass = self._last_neutral_mass = avger.current_mean
         return self._neutral_mass
+
+    def _copy_chunk(self, nodes, *args, **kwargs):
+        x = self.__class__(
+            nodes, self.charge, list(self.adducts), list(self.used_as_adduct),
+            self.score, self.n_features, None, list(self.supporters))
+        return x
+
+    def sum(self, other):
+        missing = []
+        feat_iter = NodeFeatureSetIterator([self, other])
+        for nodes in feat_iter:
+            base = nodes[0]
+            new = nodes[1]
+            if base is None:
+                missing.append(new)
+            elif new is not None:
+                base.members[0].intensity += new.members[0].intensity
+                base.precursor_information.extend(new.precursor_information)
+        if missing:
+            for node in missing:
+                self.insert_node(DeconvolutedLCMSFeatureTreeNode(
+                    node.time, list(node.members), list(node.precursor_information)))
+        self.supporters.extend(other.supporters)
+        return self
 
     def __repr__(self):
         return "%s(%0.4f, %d, %0.2f, %0.2f, %0.2f)" % (
             self.__class__.__name__, self.neutral_mass,
             self.charge, self.score,
             self.start_time, self.end_time)
+
+
+class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
+    def add(self, peak):
+        if peak.intensity == 0:
+            if self.current_mean == 0 and self.total_weight == 0:
+                self.current_mean = peak.neutral_mass
+                self.total_weight = 1
+            else:
+                return
+        self.accumulator.append(peak)
+        agg = (self.total_weight * self.current_mean) + \
+            (peak.neutral_mass * peak.intensity)
+        self.total_weight += peak.intensity
+        self.current_mean = agg / self.total_weight
+        self.current_count += 1
+        return self
+
+    def recompute(self):
+        weight = 0
+        total = 0
+        for peak in self.accumulator:
+            weight += peak.intensity
+            total += peak.intensity * peak.neutral_mass
+        return total / weight
 
 
 try:

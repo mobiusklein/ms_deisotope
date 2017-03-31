@@ -1,4 +1,5 @@
 from ms_deisotope.utils import Base
+from ms_deisotope.feature_map.feature_map import NeutralMassIndex
 
 
 def ppm_error(x, y):
@@ -24,6 +25,9 @@ def binsearch(array, value):
 class FeatureRelationshipBase(object):
     def __repr__(self):
         return "{self.__class__.__name__}()".format(self=self)
+
+    def __hash__(self):
+        return hash(repr(self))
 
 
 class ChargeRelationship(FeatureRelationshipBase):
@@ -83,10 +87,10 @@ class FeatureRelationshipFitter(object):
 
     def fit(self, features, past_reference=None, minimum_mass=500):
         relations = []
-        features = sorted(features, key=lambda x: x.neutral_mass)
+        features = NeutralMassIndex(features)
         if len(features) == 0:
             return relations
-        start_ix = binsearch([f.neutral_mass for f in features], 500.)
+        start_ix = binsearch([f.neutral_mass for f in features], minimum_mass)
         for base in features[start_ix:]:
             for reference in features[start_ix:]:
                 if base is reference:
@@ -98,6 +102,7 @@ class FeatureRelationshipFitter(object):
                         relations.append(relation)
 
         if past_reference is not None:
+            past_reference = NeutralMassIndex(past_reference)
             for base in features[start_ix:]:
                 for reference in past_reference:
                     for feat_rel_rule in self.feature_relations:

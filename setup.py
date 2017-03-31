@@ -30,17 +30,22 @@ try:
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
         Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=["ms_deisotope/_c/feature_map/lcms_feature.pyx"],
+        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
+                  "ms_deisotope/_c/feature_map/lcms_feature.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=["ms_deisotope/_c/feature_map/feature_processor.pyx"],
+        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
+                  "ms_deisotope/_c/feature_map/feature_processor.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_map', sources=["ms_deisotope/_c/feature_map/feature_map.pyx"],
+        Extension(name='ms_deisotope._c.feature_map.feature_map', sources=[
+                  "ms_deisotope/_c/feature_map/feature_map.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=["ms_deisotope/_c/feature_map/feature_fit.pyx"],
+        Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=[
+                  "ms_deisotope/_c/feature_map/feature_fit.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=["ms_deisotope/_c/feature_map/profile_transform.pyx"],
+        Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
+                  "ms_deisotope/_c/feature_map/profile_transform.pyx"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
-    ])
+    ], compiler_directives={'embedsignature': True})
 except ImportError:
     extensions = ([
         Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],
@@ -51,15 +56,18 @@ except ImportError:
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
         Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=["ms_deisotope/_c/feature_map/lcms_feature.c"],
+        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
+                  "ms_deisotope/_c/feature_map/lcms_feature.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=["ms_deisotope/_c/feature_map/feature_processor.c"],
+        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
+                  "ms_deisotope/_c/feature_map/feature_processor.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
         Extension(name='ms_deisotope._c.feature_map.feature_map', sources=["ms_deisotope/_c/feature_map/feature_map.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
         Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=["ms_deisotope/_c/feature_map/feature_fit.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=["ms_deisotope/_c/feature_map/profile_transform.c"],
+        Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
+                  "ms_deisotope/_c/feature_map/profile_transform.c"],
                   include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
     ])
 

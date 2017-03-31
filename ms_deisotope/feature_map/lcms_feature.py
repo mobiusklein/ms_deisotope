@@ -6,6 +6,8 @@ from ms_deisotope.utils import uid
 
 
 class FeatureBase(object):
+    def __init__(self, nodes):
+        self.nodes = LCMSFeatureTreeList(nodes)
 
     def find_time(self, time_point):
         return self.nodes.find_time(time_point)
@@ -24,45 +26,41 @@ class LCMSFeature(FeatureBase):
         if feature_id is None:
             feature_id = uid()
 
-        self.nodes = LCMSFeatureTreeList(nodes)
+        FeatureBase.__init__(self, nodes)
         self._total_intensity = None
         self._mz = None
         self._last_mz = 0.0
-        self._most_abundant_member = 0.0
-        self._retention_times = None
+        self._times = None
         self._peaks = None
-        self._scan_ids = None
         self._start_time = None
         self._end_time = None
         self.adducts = adducts
         self.used_as_adduct = used_as_adduct
         self.feature_id = feature_id
+        self._peak_averager = RunningWeightedAverage()
+        if len(self) > 0:
+            self._feed_peak_averager()
 
-    def invalidate(self):
-        self._invalidate()
+    def _feed_peak_averager(self):
+        for node in self:
+            self._peak_averager.update(node.members)
 
-    def _invalidate(self):
+    def invalidate(self, reaverage=False):
+        self._invalidate(reaverage)
+
+    def _invalidate(self, reaverage=False):
         self._total_intensity = None
         self._last_mz = self._mz if self._mz is not None else 0.
         self._mz = None
-        self._retention_times = None
+        self._times = None
         self._peaks = None
-        self._scan_ids = None
         self._start_time = None
         self._end_time = None
-        self._last_most_abundant_member = self._most_abundant_member
-        self._most_abundant_member = None
 
-    @property
-    def most_abundant_member(self):
-        if self._most_abundant_member is None:
-            self._most_abundant_member = max(
-                node.max_intensity() for node in self.nodes)
-        return self._most_abundant_member
-
-    def retain_most_abundant_member(self):
-        self._mz = self._last_mz
-        self._most_abundant_member = self._last_most_abundant_member
+        if reaverage:
+            self._peak_averager = RunningWeightedAverage()
+            if len(self) > 0:
+                self._feed_peak_averager()
 
     @property
     def total_signal(self):
@@ -84,29 +82,16 @@ class LCMSFeature(FeatureBase):
     @property
     def mz(self):
         if self._mz is None:
-            best_mz = 0
-            maximum_intensity = -1
-            for node in self.nodes:
-                intensity = node.max_intensity()
-                if intensity > maximum_intensity:
-                    maximum_intensity = intensity
-                    best_mz = node.mz
-            assert (len(self) == 0 or best_mz != 0)
+            best_mz = self._peak_averager.current_mean
             self._last_mz = self._mz = best_mz
         return self._mz
 
     @property
-    def retention_times(self):
-        if self._retention_times is None:
-            self._retention_times = np.array(
-                [node.retention_time for node in self.nodes])
-        return self._retention_times
-
-    @property
-    def scan_ids(self):
-        if self._scan_ids is None:
-            self._scan_ids = tuple(node.scan_id for node in self.nodes)
-        return self._scan_ids
+    def times(self):
+        if self._times is None:
+            self._times = np.array(
+                [node.time for node in self.nodes])
+        return self._times
 
     @property
     def peaks(self):
@@ -117,13 +102,13 @@ class LCMSFeature(FeatureBase):
     @property
     def start_time(self):
         if self._start_time is None:
-            self._start_time = self.nodes[0].retention_time
+            self._start_time = self.nodes[0].time
         return self._start_time
 
     @property
     def end_time(self):
         if self._end_time is None:
-            self._end_time = self.nodes[-1].retention_time
+            self._end_time = self.nodes[-1].time
         return self._end_time
 
     def overlaps_in_time(self, interval):
@@ -137,7 +122,7 @@ class LCMSFeature(FeatureBase):
 
     def as_arrays(self):
         rts = np.array(
-            [node.retention_time for node in self.nodes], dtype=np.float64)
+            [node.time for node in self.nodes], dtype=np.float64)
         signal = np.array([node.total_intensity()
                            for node in self.nodes], dtype=np.float64)
         return rts, signal
@@ -149,24 +134,27 @@ class LCMSFeature(FeatureBase):
         return "%s(%0.4f, %0.2f, %0.2f)" % (
             self.__class__.__name__, self.mz, self.start_time, self.end_time)
 
+    def _copy_chunk(self, nodes, *args, **kwargs):
+        x = self.__class__(LCMSFeatureTreeList(nodes))
+        x.used_as_adduct = list(self.used_as_adduct)
+        return x
+
     def split_sparse(self, delta_rt=1.):
         chunks = []
         current_chunk = []
-        last_rt = self.nodes[0].retention_time
+        last_rt = self.nodes[0].time
 
         for node in self.nodes:
-            if (node.retention_time - last_rt) > delta_rt:
-                x = self.__class__(LCMSFeatureTreeList(current_chunk))
-                x.used_as_adduct = list(self.used_as_adduct)
+            if (node.time - last_rt) > delta_rt:
+                x = self._copy_chunk(current_chunk)
 
                 chunks.append(x)
                 current_chunk = []
 
-            last_rt = node.retention_time
+            last_rt = node.time
             current_chunk.append(node)
 
-        x = self.__class__(LCMSFeatureTreeList(current_chunk))
-        x.used_as_adduct = list(self.used_as_adduct)
+        x = self._copy_chunk(current_chunk)
 
         chunks.append(x)
         for chunk in chunks:
@@ -182,14 +170,14 @@ class LCMSFeature(FeatureBase):
 
     def truncate_before(self, time):
         _, i = self.nodes.find_time(time)
-        if self.nodes[i].retention_time < time:
+        if self.nodes[i].time < time:
             i += 1
         self.nodes = LCMSFeatureTreeList(self.nodes[i:])
         self._invalidate()
 
     def truncate_after(self, time):
         _, i = self.nodes.find_time(time)
-        if self.nodes[i].retention_time < time:
+        if self.nodes[i].time < time:
             i += 1
         self.nodes = LCMSFeatureTreeList(self.nodes[:i])
         self._invalidate()
@@ -204,11 +192,13 @@ class LCMSFeature(FeatureBase):
         return c
 
     def insert_node(self, node):
+        self._peak_averager.update(node.members)
         self.nodes.insert_node(node)
         self._invalidate()
 
-    def insert(self, peak, retention_time):
-        self.nodes.insert(retention_time, [peak])
+    def insert(self, peak, time):
+        self._peak_averager.add(peak)
+        self.nodes.insert(time, [peak])
         self._invalidate()
 
     def merge(self, other):
@@ -264,7 +254,7 @@ class LCMSFeatureTreeList(object):
     def _invalidate(self):
         self._node_id_hash = None
 
-    def find_time(self, retention_time):
+    def find_time(self, time):
         if len(self.roots) == 0:
             raise ValueError()
         lo = 0
@@ -272,13 +262,13 @@ class LCMSFeatureTreeList(object):
         while lo != hi:
             i = (lo + hi) / 2
             node = self.roots[i]
-            if node.retention_time == retention_time:
+            if node.time == time:
                 return node, i
             elif (hi - lo) == 1:
                 return None, i
-            elif node.retention_time < retention_time:
+            elif node.time < time:
                 lo = i
-            elif node.retention_time > retention_time:
+            elif node.time > time:
                 hi = i
 
     def _build_node_id_hash(self):
@@ -295,13 +285,13 @@ class LCMSFeatureTreeList(object):
     def insert_node(self, node):
         self._invalidate()
         try:
-            root, i = self.find_time(node.retention_time)
+            root, i = self.find_time(node.time)
             if root is None:
                 if i != 0:
                     self.roots.insert(i + 1, node)
                 else:
                     slot = self.roots[i]
-                    if slot.retention_time < node.retention_time:
+                    if slot.time < node.time:
                         i += 1
                     self.roots.insert(i, node)
             else:
@@ -311,13 +301,13 @@ class LCMSFeatureTreeList(object):
             self.roots.append(node)
             return 0
 
-    def insert(self, retention_time, peaks):
-        node = LCMSFeatureTreeNode(retention_time, peaks)
+    def insert(self, time, peaks):
+        node = LCMSFeatureTreeNode(time, peaks)
         return self.insert_node(node)
 
     def extend(self, iterable):
-        for peaks, retention_time in iterable:
-            self.insert(retention_time, peaks)
+        for peaks, time in iterable:
+            self.insert(time, peaks)
 
     def __getitem__(self, i):
         return self.roots[i]
@@ -346,18 +336,18 @@ class LCMSFeatureTreeList(object):
 
     def __repr__(self):
         return "LCMSFeatureTreeList(%d nodes, %0.2f-%0.2f)" % (
-            len(self), self[0].retention_time, self[-1].retention_time)
+            len(self), self[0].time, self[-1].time)
 
 
 class LCMSFeatureTreeNode(object):
 
-    __slots__ = ["retention_time", "members",
+    __slots__ = ["time", "members",
                  "_most_abundant_member", "_mz", "node_id"]
 
-    def __init__(self, retention_time=None, members=None):
+    def __init__(self, time=None, members=None):
         if members is None:
             members = []
-        self.retention_time = retention_time
+        self.time = time
         self.members = members
         self._most_abundant_member = None
         self._mz = 0
@@ -370,13 +360,13 @@ class LCMSFeatureTreeNode(object):
         else:
             peaks = list(self.members)
         node = self.__class__(
-            self.retention_time, peaks)
+            self.time, peaks)
         node.node_id = self.node_id
         return node
 
     def _unspool_strip_children(self):
         node = self.__class__(
-            self.retention_time, list(self.members))
+            self.time, list(self.members))
         yield node
 
     def _calculate_most_abundant_member(self):
@@ -394,14 +384,14 @@ class LCMSFeatureTreeNode(object):
         self._mz = self._most_abundant_member.mz
 
     def __getstate__(self):
-        return (self.retention_time, self.members, self.node_id)
+        return (self.time, self.members, self.node_id)
 
     def __setstate__(self, state):
-        self.retention_time, self.members, self.node_id = state
+        self.time, self.members, self.node_id = state
         self._recalculate()
 
     def __reduce__(self):
-        return self.__class__, (self.retention_time, []), self.__getstate__()
+        return self.__class__, (self.time, []), self.__getstate__()
 
     @property
     def mz(self):
@@ -431,7 +421,7 @@ class LCMSFeatureTreeNode(object):
 
     def __eq__(self, other):
         return self.members == other.members and abs(
-            self.retention_time - other.retention_time) < 1e-4
+            self.time - other.time) < 1e-4
 
     def __ne__(self, other):
         return not (self == other)
@@ -447,23 +437,23 @@ class LCMSFeatureTreeNode(object):
     def __repr__(self):
         return "%s(%f, %0.4f %s|%d)" % (
             self.__class__.__name__,
-            self.retention_time, self.peaks[0].mz, "",
+            self.time, self.peaks[0].mz, "",
             len(self.members))
 
 
 class EmptyFeature(FeatureBase):
 
     def __init__(self, mz):
+        FeatureBase.__init__(self, [])
         self.mz = mz
         self.start_time = 0
         self.end_time = float('inf')
-        self.nodes = LCMSFeatureTreeList([])
 
     def __len__(self):
         return 0
 
     @property
-    def retention_times(self):
+    def times(self):
         return np.array([])
 
     def __iter__(self):
@@ -471,72 +461,6 @@ class EmptyFeature(FeatureBase):
 
     def __repr__(self):
         return "EmptyFeature(%f)" % (self.mz,)
-
-
-def extrapolate_time_points(features):
-    start_time = max([f.start_time for f in features if f is not None])
-    end_time = min([f.end_time for f in features if f is not None])
-
-    time_points = set()
-    for feature in features:
-        if feature is None:
-            continue
-        rts = np.array(feature.retention_times)
-        time_points.update(rts[(rts >= start_time) & (rts <= end_time)])
-    time_points = sorted(time_points)
-    return time_points
-
-
-def extract_time_points(features):
-    time_points = set()
-    for feature in features:
-        if feature is None:
-            continue
-        time_points.update(feature.retention_times)
-    time_points = sorted(time_points)
-    return time_points
-
-
-def bounding_box(features, time_points=None, start_time=None, end_time=None, n_failures=25):
-    if time_points is None:
-        time_points = extract_time_points(features)
-    n = len(features)
-    if n <= 2:
-        threshold = 1.0
-    else:
-        threshold = 0.33
-    start_time = None
-    end_time = None
-    j = 0
-    if start_time is None:
-        offset_start = 0
-    else:
-        offset_start = binsearch(time_points, start_time)
-    if end_time is None:
-        offset_end = len(time_points)
-    else:
-        offset_end = binsearch(time_points, end_time)
-    for time in time_points[offset_start:offset_end]:
-        i = 0
-        for feature in features:
-            if feature is None:
-                i += 1.
-                continue
-            if feature.nodes.find_time(time)[0] is not None:
-                i += 1.0
-        if (i / n) >= threshold:
-            j = 0
-            if start_time is None:
-                start_time = time
-        else:
-            if start_time is not None:
-                j += 1
-                if j > n_failures:
-                    end_time = time
-                    break
-    if end_time is None:
-        end_time = time
-    return start_time, end_time
 
 
 class FeatureSetIterator(object):
@@ -578,7 +502,7 @@ class FeatureSetIterator(object):
                 if f is None:
                     continue
                 if ix < len(f):
-                    ix_time = self.features[i][ix].retention_time
+                    ix_time = self.features[i][ix].time
                     if ix_time < time and ix_time < self.end_time:
                         time = ix_time
             except IndexError:
@@ -597,7 +521,7 @@ class FeatureSetIterator(object):
             ix = self.index_list[i]
             done = ix >= len(f)
             if not done:
-                at_end_time = f[ix].retention_time >= self.end_time
+                at_end_time = f[ix].time >= self.end_time
             else:
                 at_end_time = done
             if done or at_end_time:
@@ -655,22 +579,6 @@ class FeatureSetIterator(object):
             len(self.real_features), len(self.features), self.start_time, self.end_time)
 
 
-def binsearch(array, value):
-    lo = 0
-    hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) / 2
-        point = array[mid]
-        if value == point:
-            return mid
-        elif hi - lo == 1:
-            return mid
-        elif point > value:
-            hi = mid
-        else:
-            lo = mid
-
-
 try:
     has_c = True
     _LCMSFeatureTreeList = LCMSFeatureTreeList
@@ -712,6 +620,12 @@ class NodeFeatureSetIterator(FeatureSetIterator):
         return peaks
 
 
+def iterpeaks(feature):
+    for node in feature:
+        for peak in node.members:
+            yield peak
+
+
 class RunningWeightedAverage(object):
 
     def __init__(self, iterable=None):
@@ -724,6 +638,12 @@ class RunningWeightedAverage(object):
             self.update(iterable)
 
     def add(self, peak):
+        if peak.intensity == 0:
+            if self.current_mean == 0 and self.total_weight == 0:
+                self.current_mean = peak.mz
+                self.total_weight = 1
+            else:
+                return
         self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             (peak.mz * peak.intensity)
@@ -747,8 +667,10 @@ class RunningWeightedAverage(object):
 
     def _bootstrap(self, n=150, k=40):
         traces = []
+        if len(self.accumulator) < k:
+            k = len(self.accumulator)
         for i in range(n):
-            inst = RunningWeightedAverage().update(random.sample(self.accumulator, k))
+            inst = RunningWeightedAverage(random.sample(self.accumulator, k))
             traces.append(inst)
         center = sum(
             [t.current_mean * t.total_weight for t in traces
@@ -756,7 +678,7 @@ class RunningWeightedAverage(object):
         return center
 
     def bootstrap(self, n=150, k=40):
-        self.center = self._bootstrap(n, k)
+        self.current_mean = self._bootstrap(n, k)
         return self
 
     def __repr__(self):
