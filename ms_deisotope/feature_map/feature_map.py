@@ -495,20 +495,35 @@ class DeconvolutedLCMSFeatureMap(object):
             binary_search_with_flag_neutral(
                 self.features, hi, error_tolerance)[0][0])
 
-    def between(self, lo, hi, error_tolerance):
-        lo_ix = binary_search_with_flag_neutral(
-            self.features, lo, error_tolerance)[0][0]
-        hi_ix = binary_search_with_flag_neutral(
-            self.features, hi, error_tolerance)[0][0]
-        if self[lo_ix].mz < lo:
-            lo_ix += 1
-        if self[hi_ix] > hi:
-            hi_ix -= 1
-        if hi_ix < 0:
-            hi_ix = 0
-        if lo_ix > len(self):
-            lo_ix = len(self) - 1
-        return self[lo_ix:hi_ix]
+    def between(self, lo, hi, error_tolerance=2e-5, use_mz=False):
+        if use_mz:
+            lo_ix = binary_search_with_flag(
+                self._by_mz, lo, error_tolerance)[0][0]
+            hi_ix = binary_search_with_flag(
+                self._by_mz, hi, error_tolerance)[0][0]
+            if self._by_mz[lo_ix].mz < lo:
+                lo_ix += 1
+            if self._by_mz[hi_ix].mz > hi:
+                hi_ix -= 1
+            if hi_ix < 0:
+                hi_ix = 0
+            if lo_ix > len(self):
+                lo_ix = len(self) - 1
+            return self._by_mz[lo_ix:hi_ix]
+        else:
+            lo_ix = binary_search_with_flag_neutral(
+                self.features, lo, error_tolerance)[0][0]
+            hi_ix = binary_search_with_flag_neutral(
+                self.features, hi, error_tolerance)[0][0]
+            if self[lo_ix].neutral_mass < lo:
+                lo_ix += 1
+            if self[hi_ix].neutral_mass > hi:
+                hi_ix -= 1
+            if hi_ix < 0:
+                hi_ix = 0
+            if lo_ix > len(self):
+                lo_ix = len(self) - 1
+            return self[lo_ix:hi_ix]
 
     def __repr__(self):
         return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))

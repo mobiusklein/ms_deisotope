@@ -14,6 +14,15 @@ def is_valid(feature):
 
 
 class FeatureNode(object):
+    """Holds all the information about a single `LCMSFeature` instance
+    and all the `LCMSFeatureFit` instances that depend upon it.
+    
+    Attributes
+    ----------
+    feature : LCMSFeature
+    links : dict
+        Mapping from feature fit to score
+    """
     def __init__(self, feature, links=None):
         if links is None:
             links = {}
@@ -63,7 +72,7 @@ class DependenceCluster(SpanningMixin):
             dependencies = sorted(dependencies, key=lambda x: x.score, reverse=maximize)
         self.parent = parent
         self.dependencies = dependencies
-        self.rank = 0
+        self.best_fit = None
         self.maximize = maximize
         self._reset()
 
@@ -74,12 +83,12 @@ class DependenceCluster(SpanningMixin):
 
     def add(self, fit):
         """
-        Adds a new IsotopicFitRecord to this cluster, and ensures the sorted
+        Adds a new LCMSFeatureSetFit to this cluster, and ensures the sorted
         property still holds
 
         Parameters
         ----------
-        fit : IsotopicFitRecord
+        fit : LCMSFeatureSetFit
             The fit being added to the record
 
         """
@@ -97,8 +106,8 @@ class DependenceCluster(SpanningMixin):
 
         Returns
         -------
-        name : IsotopicFitRecord
-            The best scoring IsotopicFitRecord in this cluster
+        name : LCMSFeatureSetFit
+            The best scoring LCMSFeatureSetFit in this cluster
         """
         return self.dependencies[0]
 
@@ -108,7 +117,7 @@ class DependenceCluster(SpanningMixin):
 
         Returns
         -------
-        list of IsotopicFitRecord
+        list of LCMSFeatureSetFit
         """
         fit_sets = tuple(self.disjoint_subset())
         best_fits = fit_sets
@@ -152,6 +161,9 @@ class DependenceCluster(SpanningMixin):
     def __repr__(self):
         return "DependenceCluster(dependencies=[%s], start=%r, end=%r)" % (
             '\n'.join(map(str, self.dependencies[:10])), self.start, self.end)
+
+    def __getitem__(self, i):
+        return self.dependencies[i]
 
 
 class FeatureSetFitNode(SpanningMixin):
@@ -447,14 +459,14 @@ class FeatureDependenceGraph(object):
         nodes_for_cache = {}
 
         for node in self.nodes.values():
-            # This peak is depended upon by each fit in `dependencies`
+            # This feature is depended upon by each fit in `dependencies`
             dependencies = set(node.links.keys())
 
             if len(dependencies) == 0:
                 continue
 
-            # These fits also depend upon these other peaks, and those peaks are depended upon
-            # for other fits in turn, which depend upon the assignment of this peak.
+            # These fits also depend upon these other features, and those features are depended upon
+            # for other fits in turn, which depend upon the assignment of this feature.
             for dep in list(dependencies):
                 for node in self.nodes_for(dep, nodes_for_cache):
                     dependencies |= clusters[node]

@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 import numpy as np
 from scipy.optimize import leastsq
@@ -107,6 +107,42 @@ class BiGaussianModel(PeakShapeModelBase):
         return center, apex, sigma, sigma
 
 
+class FittedPeakShape(object):
+    def __init__(self, params, shape_model):
+        self.params = params
+        self.shape_model = shape_model
+
+    def keys(self):
+        return self.params.keys()
+
+    def values(self):
+        return self.params.values()
+
+    def items(self):
+        return self.params.items()
+
+    def __iter__(self):
+        return iter(self.params)
+
+    def shape(self, xs):
+        return self.shape_model.shape(xs, **self.params)
+
+    def __getitem__(self, key):
+        return self.params[key]
+
+    def __repr__(self):
+        return "Fitted{self.shape_model.__class__.__name__}({params})".format(
+            self=self, params=", ".join("%s=%0.3f" % (k, v) for k, v in self.params.items()))
+
+    @property
+    def center(self):
+        return self['center']
+
+    @property
+    def amplitude(self):
+        return self['amplitude']
+
+
 class ChromatogramShapeFitterBase(object):
     def __init__(self, chromatogram, smooth=DEFAULT_SMOOTH, fitter=PenalizedSkewedGaussianModel()):
         self.chromatogram = chromatogram
@@ -173,7 +209,7 @@ class ChromatogramShapeFitter(ChromatogramShapeFitterBase):
 
     @property
     def fit_parameters(self):
-        return self.params_dict
+        return [self.params_dict]
 
     def __repr__(self):
         return "ChromatogramShapeFitter(%s, %0.4f)" % (self.chromatogram, self.line_test)
@@ -200,7 +236,7 @@ class ChromatogramShapeFitter(ChromatogramShapeFitterBase):
                       params, (xs, ys))
         params = fit[0]
         self.params = params
-        self.params_dict = self.shape_fitter.params_to_dict(params)
+        self.params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
 
     def iterfits(self):
         yield self.compute_fitted()
@@ -281,7 +317,7 @@ class MultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
         fit = leastsq(self.shape_fitter.fit,
                       params_dict.values(), (xs, ys))
         params = fit[0]
-        params_dict = self.shape_fitter.params_to_dict(params)
+        params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
         self.params_list.append(params)
         self.params_dict_list.append(params_dict)
 
@@ -344,7 +380,7 @@ class AdaptiveMultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
 
     @property
     def fit_parameters(self):
-        return self.best_fit.fit_parameters
+        return self.params_dict_list
 
     def compute_fitted(self):
         return self.best_fit.compute_fitted()
@@ -463,7 +499,7 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
 
     def set_up_peak_fit(self, xs, ys):
         params = self.shape_fitter.guess(xs, ys)
-        params_dict = self.shape_fitter.params_to_dict(params)
+        params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
         if len(params) > len(xs):
             self.params_list.append(params)
             self.params_dict_list.append(params_dict)
@@ -472,7 +508,7 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
         fit = leastsq(self.shape_fitter.fit,
                       params_dict.values(), (xs, ys))
         params = fit[0]
-        params_dict = self.shape_fitter.params_to_dict(params)
+        params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
         self.params_list.append(params)
         self.params_dict_list.append(params_dict)
 
@@ -496,3 +532,152 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
     def iterfits(self):
         for segment, params_dict in zip(self.build_partitions(), self.params_dict_list):
             yield self.shape_fitter.shape(segment[0], **params_dict)
+
+
+class CentroidFit(object):
+    def __init__(self, center, weight, fits=None):
+        if fits is None:
+            fits = []
+        self.center = center
+        self.weight = weight
+        self.fits = fits
+
+    def __repr__(self):
+        return "CentroidFit(%f, %0.3e, %d)" % (self.center, self.weight, len(self.fits))
+
+    def add(self, fit_params):
+        self.fits.append(fit_params)
+        self.center, self.weight = self.reweight_center()
+
+    def reweight_center(self):
+        center_acc = 0
+        weight_acc = 0
+        for fit in self.fits:
+            center_acc = fit['center'] * fit['amplitude']
+            weight_acc = fit['amplitude']
+        return center_acc / weight_acc, weight_acc
+
+    @classmethod
+    def fromparams(cls, params):
+        center = params['center']
+        weight = params['amplitude']
+        return cls(center, weight, [params])
+
+
+class ProfileSet(object):
+    def __init__(self, features):
+        self.features = list(features)
+        self.fits = list(map(AdaptiveMultimodalChromatogramShapeFitter, self.features))
+        self.baselines = self.compute_baselines()
+        self.binned_fits = self.overlap_apexes()
+
+    def compute_baselines(self):
+        baselines = []
+        for fit in self.fits:
+            baselines.append(fit.ys[fit.ys < fit.ys.mean()].mean())
+        return baselines
+
+    def overlap_apexes(self, error_tolerance=2e-3):
+        centroid_fits = []
+        for fit in self.fits:
+            centroid_fits.extend(fit.params_dict_list)
+
+        centroid_fits.sort(key=lambda x: x['center'])
+
+        binned_fits = []
+        last_fit = CentroidFit.fromparams(centroid_fits[0])
+        for fit in centroid_fits[1:]:
+            if abs((last_fit.center - fit['center']) / fit['center']) < error_tolerance:
+                last_fit.add(fit)
+            else:
+                binned_fits.append(last_fit)
+                last_fit = CentroidFit.fromparams(fit)
+        binned_fits.append(last_fit)
+        binned_fits.sort(key=lambda x: x.weight, reverse=True)
+        return binned_fits
+
+    @staticmethod
+    def find_right_intersect(vec, target_val, start_index=0):
+        nearest_index = start_index
+        next_index = start_index
+
+        size = len(vec) - 1
+        if next_index == size:
+            return size
+
+        next_val = vec[next_index]
+        best_distance = np.abs(next_val - target_val)
+        while (next_index < size):
+            next_index += 1
+            next_val = vec[next_index]
+            dist = np.fabs(next_val - target_val)
+            if dist < best_distance:
+                best_distance = dist
+                nearest_index = next_index
+            if next_index == size or next_val < target_val:
+                break
+        return nearest_index
+
+    @staticmethod
+    def find_left_intersect(vec, target_val, start_index=0):
+        nearest_index = start_index
+        next_index = start_index
+
+        size = len(vec) - 1
+        if next_index == size:
+            return size
+
+        next_val = vec[next_index]
+        best_distance = np.abs(next_val - target_val)
+        while (next_index > 0):
+            next_index -= 1
+            next_val = vec[next_index]
+            dist = np.fabs(next_val - target_val)
+            if dist < best_distance:
+                best_distance = dist
+                nearest_index = next_index
+            if next_index == size or next_val < target_val:
+                break
+        return nearest_index
+
+    def find_intersects(self, fit_bin=0):
+        starts = []
+        ends = []
+        bin_fit = self.binned_fits[fit_bin]
+        for i, feat_fit in enumerate(self.fits):
+            baseline = self.baselines[i]
+            xs = feat_fit.xs
+            ys = feat_fit.compute_fitted()
+            center_ix = search.get_nearest(xs, bin_fit.center, 0)
+            left_ix = self.find_left_intersect(ys, baseline, center_ix)
+            right_ix = self.find_right_intersect(ys, baseline, center_ix)
+            starts.append(xs[left_ix])
+            ends.append(xs[right_ix])
+        return starts, ends
+
+    def find_bounds(self, fit_bin=0):
+        starts, ends = self.find_intersects(fit_bin)
+        start_acc = 0
+        end_acc = 0
+        weight = 0
+        for i, f in enumerate(self.features):
+            start_acc += starts[i] * f.intensity
+            end_acc += ends[i] * f.intensity
+            weight += f.intensity
+        return start_acc / weight, end_acc / weight
+
+    def split(self, fit_bin=0):
+        start, end = self.find_bounds(fit_bin)
+        before = []
+        apex = []
+        after = []
+        for feat in self.features:
+            before_part, rest = feat.split_at(start)
+            if len(before_part) > 0:
+                before.append(before_part)
+            apex_part, after_part = rest.split_at(end)
+            if len(apex_part) > 0:
+                apex.append(apex_part)
+            if len(after_part) > 0:
+                after.append(after_part)
+        return before, apex, after

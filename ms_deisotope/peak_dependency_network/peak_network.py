@@ -163,6 +163,9 @@ class DependenceCluster(SpanningMixin):
         return "DependenceCluster(dependencies=[%s], start=%0.4f, end=%0.4f)" % (
             '\n'.join(map(str, self.dependencies[:10])), self.start, self.end)
 
+    def __getitem__(self, i):
+        return self.dependencies[i]
+
 
 class PeakDependenceGraph(object):
     def __init__(self, peaklist, nodes=None, dependencies=None, max_missed_peaks=1,

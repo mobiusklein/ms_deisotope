@@ -237,9 +237,15 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                                    left_search=1, right_search=1, charge_carrier=PROTON,
                                    truncate_after=0.8, max_missed_peaks=1, threshold_scale=0.3):
         fits = self.collect_all_fits(
-            feature, error_tolerance, charge_range,
-            left_search, right_search, charge_carrier,
-            truncate_after, max_missed_peaks, threshold_scale)
+            feature,
+            error_tolerance=error_tolerance,
+            charge_range=charge_range,
+            left_search=left_search,
+            right_search=right_search,
+            charge_carrier=charge_carrier,
+            truncate_after=truncate_after,
+            max_missed_peaks=max_missed_peaks,
+            threshold_scale=threshold_scale)
         return sorted(fits, key=lambda x: x.score, reverse=True)
 
     def collect_all_fits(self, feature, error_tolerance, charge_range=(1, 8),
@@ -254,9 +260,15 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         best_fit_charge = 0
         for charge in charge_range_(*charge_range):
             current_fits = self.fit_theoretical_distribution(
-                feature, 2e-5, charge, left_search=left_search,
-                right_search=right_search, truncate_after=truncate_after,
-                max_missed_peaks=max_missed_peaks, threshold_scale=threshold_scale)
+                feature,
+                error_tolerance=error_tolerance,
+                charge=charge,
+                left_search=left_search,
+                right_search=right_search,
+                charge_carrier=charge_carrier,
+                truncate_after=truncate_after,
+                max_missed_peaks=max_missed_peaks,
+                threshold_scale=threshold_scale)
             if self.scorer.is_maximizing():
                 for fit in current_fits:
                     if fit.score > best_fit_score:
@@ -312,10 +324,16 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             shift = isotopic_shift(charge) * offset
             mz = base_mz + shift
             feature_fits = self._fit_feature_set(
-                mz, error_tolerance, charge, left_search,
-                right_search, charge_carrier, truncate_after,
-                max_missed_peaks, threshold_scale,
-                feature)
+                mz,
+                error_tolerance=error_tolerance,
+                charge=charge,
+                left_search=left_search,
+                right_search=right_search,
+                charge_carrier=charge_carrier,
+                truncate_after=truncate_after,
+                max_missed_peaks=max_missed_peaks,
+                threshold_scale=threshold_scale,
+                feature=feature)
             all_fits.extend(feature_fits)
         return all_fits
 
@@ -547,9 +565,15 @@ class FeatureDeconvolutionIterationState(object):
         interval = int(max(n // report_interval, 1000))
         for feature in sorted(self.processor.feature_map, key=lambda x: x.mz, reverse=True):
             self.processor.charge_state_determination(
-                feature, self.error_tolerance, self.charge_range, self.left_search,
-                self.right_search, self.charge_carrier, self.truncate_after,
-                self.max_missed_peaks, self.threshold_scale)
+                feature,
+                error_tolerance=self.error_tolerance,
+                charge_range=self.charge_range,
+                left_search=self.left_search,
+                right_search=self.right_search,
+                charge_carrier=self.charge_carrier,
+                truncate_after=self.truncate_after,
+                max_missed_peaks=self.max_missed_peaks,
+                threshold_scale=self.threshold_scale)
             i += 1
             if i % interval == 0:
                 printer("\t%0.1f%%" % ((100. * i) / n,))

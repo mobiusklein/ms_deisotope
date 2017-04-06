@@ -147,13 +147,6 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         id_str = id_bytes.decode("utf-8")
         return self.get_scan_by_id(id_str)
 
-    def _locate_ms1_scan(self, scan):
-        while scan.ms_level != 1:
-            if scan.index <= 0:
-                raise IndexError("Cannot search backwards with a scan index <= 0 (%r)" % scan.index)
-            scan = self.get_scan_by_index(scan.index - 1)
-        return scan
-
     def _yield_from_index(self, scan_source, start):
         raise NotImplementedError()
 

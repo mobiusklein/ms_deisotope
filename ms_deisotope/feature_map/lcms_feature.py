@@ -139,6 +139,12 @@ class LCMSFeature(FeatureBase):
         x.used_as_adduct = list(self.used_as_adduct)
         return x
 
+    def split_at(self, time):
+        _, i = self.nodes.find_time(time)
+        if self.nodes[i].time < time:
+            i += 1
+        return LCMSFeature(self.nodes[:i]), LCMSFeature(self.nodes[i:])
+
     def split_sparse(self, delta_rt=1.):
         chunks = []
         current_chunk = []

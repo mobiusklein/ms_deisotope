@@ -80,7 +80,7 @@ class ThermoRawDataInterface(ScanDataSource):
             scan.scan_number)
 
     def _polarity(self, scan):
-        return +1
+        return 0
 
     def _scan_title(self, scan):
         return "scan=%d" % scan.scan_number
@@ -153,6 +153,8 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
         self._index = self._pack_index()
+        self._first_scan_time = self.get_scan_by_index(0).scan_time
+        self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
 
     @property
     def index(self):
@@ -195,6 +197,10 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
             return scan
 
     def get_scan_by_time(self, time):
+        if time < self._first_scan_time:
+            time = self._first_scan_time
+        elif time > self._last_scan_time:
+            time = self._last_scan_time
         scan_number = self._source.ScanNumFromRT(time)
         try:
             return self._scan_cache[scan_number]

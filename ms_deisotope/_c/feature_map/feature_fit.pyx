@@ -7,6 +7,9 @@ from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
 from ms_deisotope._c.averagine cimport neutral_mass as calc_neutral_mass
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 
+cimport numpy as np
+import np
+
 
 
 @cython.freelist(1000000)
@@ -38,7 +41,7 @@ cdef class map_coord(object):
 cdef class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
                  missing_features=0, supporters=None, data=None,
-                 neutral_mass=None, n_points=0):
+                 neutral_mass=None, n_points=0, scores=np.array([], dtype=np.float64)):
         if supporters is None:
             supporters = []
         self.features = features
@@ -54,11 +57,13 @@ cdef class LCMSFeatureSetFit(object):
         self.neutral_mass = neutral_mass
         self.mz = self.monoisotopic_feature.mz
         self.n_points = n_points
+        self.scores = scores
 
     @staticmethod
     cdef LCMSFeatureSetFit _create(list features, list theoretical, double score,
                                    int charge, size_t missing_features, list supporters,
-                                   object data, double neutral_mass, size_t n_points):
+                                   object data, double neutral_mass, size_t n_points,
+                                   np.ndarray scores):
         cdef:
             LCMSFeatureSetFit inst
         inst = LCMSFeatureSetFit.__new__(LCMSFeatureSetFit)
@@ -77,19 +82,20 @@ cdef class LCMSFeatureSetFit(object):
         inst.neutral_mass = neutral_mass
         inst.mz = inst.monoisotopic_feature.mz
         inst.n_points = n_points
+        inst.scores = scores
         return inst
 
     def clone(self):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
             self.missing_features, self.supporters, self.data,
-            self.neutral_mass, self.n_points)
+            self.neutral_mass, self.n_points, self.scores)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
             self.missing_features, self.supporters, self.data, self.neutral_mass,
-            self.n_points)
+            self.n_points, self.scores)
 
     cpdef bint _eq(self, LCMSFeatureSetFit other):
         cdef bint val

@@ -270,6 +270,12 @@ class RandomAccessScanSource(ScanDataSource):
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True):
         raise NotImplementedError()
 
+    def _locate_ms1_scan(self, scan):
+        while scan.ms_level != 1:
+            if scan.index <= 0:
+                raise IndexError("Cannot search backwards with a scan index <= 0 (%r)" % scan.index)
+            scan = self.get_scan_by_index(scan.index - 1)
+        return scan
 
 class DetachedAccessError(Exception):
     pass

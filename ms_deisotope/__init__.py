@@ -1,4 +1,4 @@
-from .averagine import Averagine, peptide, glycan, glycopeptide
+from .averagine import Averagine, peptide, glycan, glycopeptide, heparin
 from .deconvolution import (
     AveragineDeconvoluter, CompositionListDeconvoluter,
     AveraginePeakDependenceGraphDeconvoluter, CompositionListPeakDependenceGraphDeconvoluter)
@@ -9,7 +9,7 @@ from .data_source import MzMLLoader, MzXMLLoader, MSFileLoader
 
 
 __all__ = [
-    "Averagine", 'peptide', 'glycan', 'glycopeptide',
+    "Averagine", 'peptide', 'glycan', 'glycopeptide', 'heparin',
     "AveragineDeconvoluter", "CompositionListDeconvoluter",
     "AveraginePeakDependenceGraphDeconvoluter", "CompositionListPeakDependenceGraphDeconvoluter",
     "MSDeconVFitter", "PenalizedMSDeconVFitter", "DistinctPatternFitter", "IsotopicFitRecord",

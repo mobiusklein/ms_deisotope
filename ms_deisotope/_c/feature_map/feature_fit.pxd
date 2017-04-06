@@ -1,6 +1,9 @@
 from ms_deisotope._c.feature_map.lcms_feature cimport FeatureBase, LCMSFeatureTreeNode
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 
+cimport numpy as np
+import numpy as np
+
 cdef class map_coord:
     cdef:
         public double mz
@@ -20,6 +23,7 @@ cdef class LCMSFeatureSetFit(object):
         public size_t missing_features
         public size_t n_points
         public FeatureBase monoisotopic_feature
+        public np.ndarray scores
 
     cpdef bint _eq(self, LCMSFeatureSetFit other)
     cpdef bint _ne(self, LCMSFeatureSetFit other)
@@ -30,4 +34,5 @@ cdef class LCMSFeatureSetFit(object):
     @staticmethod
     cdef LCMSFeatureSetFit _create(list features, list theoretical, double score,
                                    int charge, size_t missing_features, list supporters,
-                                   object data, double neutral_mass, size_t n_points)
+                                   object data, double neutral_mass, size_t n_points,
+                                   np.ndarray scores)

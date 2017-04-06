@@ -15,7 +15,8 @@ from brainpy._c.double_vector cimport (
     DoubleVector as dvec,
     make_double_vector,
     free_double_vector,
-    double_vector_append)
+    double_vector_append,
+    double_vector_to_list)
 
 from ms_deisotope._c.scoring cimport IsotopicFitterBase
 from ms_deisotope._c.averagine cimport AveragineCache, PROTON, neutral_mass as calc_neutral_mass
@@ -337,6 +338,7 @@ cdef class LCMSFeatureProcessorBase(object):
             double score, final_score, score_acc, neutral_mass
             envelope_conformer conformer
             dvec* score_vec
+            cnp.ndarray[double] scores_array
             FeatureSetIterator feat_iter
             size_t feat_i, feat_n, n_missing, missing_features, counter
 
@@ -374,9 +376,10 @@ cdef class LCMSFeatureProcessorBase(object):
         f = <LCMSFeature>PyList_GET_ITEM(features, 0)
         neutral_mass = calc_neutral_mass(
                 f.get_mz(), charge, charge_carrier)
+        scores_array = np.array(double_vector_to_list(score_vec))
         fit = LCMSFeatureSetFit._create(
             features, base_tid, final_score, charge, missing_features,
-            [], None, neutral_mass, counter)
+            [], None, neutral_mass, counter, scores_array)
         free_double_vector(score_vec)
         return fit
 
@@ -387,6 +390,7 @@ cdef class LCMSFeatureProcessorBase(object):
             double score, final_score, score_acc, neutral_mass
             list base_tid, feature_groups, feature_fits, features
             list eid, cleaned_eid, tid
+            cnp.ndarray[double] scores_array
             tuple temp
             size_t combn_size, combn_i, n_missing, missing_features, counter
             size_t feat_i, feat_n
@@ -457,9 +461,10 @@ cdef class LCMSFeatureProcessorBase(object):
             f = <LCMSFeature>PyList_GET_ITEM(features, 0)
             neutral_mass = calc_neutral_mass(
                     f.get_mz(), charge, charge_carrier)
+            scores_array = np.array(double_vector_to_list(score_vec))
             fit = LCMSFeatureSetFit._create(
                 features, base_tid, final_score, charge, missing_features,
-                [], None, neutral_mass, counter)
+                [], None, neutral_mass, counter, scores_array)
             free_double_vector(score_vec)
             if self.scorer.reject_score(fit.score):
                 continue
