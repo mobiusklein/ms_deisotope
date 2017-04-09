@@ -488,5 +488,11 @@ class FeatureDependenceGraph(object):
         self.clusters = clusters
         return clusters
 
+    def __iter__(self):
+        return iter(self.clusters)
+
+    def __getitem__(self, i):
+        return self.clusters[i]
+
     def __repr__(self):
         return "%s(%s, %d)" % (self.__class__.__name__, self.feature_map, len(self.dependencies))

@@ -5,7 +5,7 @@ from .common import (
 
 try:
     range = xrange
-except:
+except NameError:
     pass
 
 

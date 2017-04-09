@@ -22,7 +22,7 @@ class map_coord(namedtuple("map_coord", ("mz", 'time'))):
 class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
                  missing_features=0, supporters=None, data=None,
-                 neutral_mass=None):
+                 neutral_mass=None, scores=None):
         if supporters is None:
             supporters = []
         self.features = features
@@ -37,16 +37,19 @@ class LCMSFeatureSetFit(object):
             neutral_mass = neutral_mass(self.monoisotopic_feature.mz, self.charge)
         self.neutral_mass = neutral_mass
         self.mz = self.monoisotopic_feature.mz
+        self.scores = scores
 
     def clone(self):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.supporters, self.data, self.neutral_mass)
+            self.missing_features, self.supporters, self.data, self.neutral_mass,
+            self.scores)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.supporters, self.data, self.neutral_mass)
+            self.missing_features, self.supporters, self.data, self.neutral_mass,
+            self.scores)
 
     def __eq__(self, other):
         val = (self.score == other.score and

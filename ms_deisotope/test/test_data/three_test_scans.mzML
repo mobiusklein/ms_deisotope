@@ -11,7 +11,7 @@
         <cvParam cvRef="MS" accession="MS:1000580" name="MSn spectrum" value=""/>
       </fileContent>
       <sourceFileList count="2">
-        <sourceFile id="three_test_scans.mzML" name="three_test_scans.mzML" location="file:///C:\Users\test">
+        <sourceFile id="RAW1" name="three_test_scans.mzML" location="file:///C:\Users\test">
           <cvParam cvRef="MS" accession="MS:1000569" name="SHA-1" value="a2a091b82f27676da87a6c7d17cc90d2d90b8fbf"/>
         </sourceFile>
       </sourceFileList>

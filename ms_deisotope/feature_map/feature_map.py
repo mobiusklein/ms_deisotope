@@ -149,10 +149,10 @@ class LCMSFeatureForest(LCMSFeatureMap):
                     new_index = index[0]
             self.features.insert(new_index, feature)
 
-    def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500.):
+    def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf')):
         for scan in scans:
             for peak in scan.peak_set:
-                if peak.mz < minimum_mz or peak.intensity < minimum_intensity:
+                if peak.mz < minimum_mz or peak.mz > maximum_mz or peak.intensity < minimum_intensity:
                     continue
                 self.handle_peak(peak, scan.scan_time)
         self.features = smooth_overlaps(self.features, self.error_tolerance)
@@ -182,44 +182,44 @@ def smooth_overlaps(feature_list, error_tolerance=1e-5):
 
 
 def binary_search_with_flag(array, mz, error_tolerance=1e-5):
-        lo = 0
-        n = hi = len(array)
-        while hi != lo:
-            mid = (hi + lo) / 2
-            x = array[mid]
-            err = (x.mz - mz) / mz
-            if abs(err) <= error_tolerance:
-                i = mid - 1
-                # Begin Sweep forward
-                while i > 0:
-                    x = array[i]
-                    err = (x.mz - mz) / mz
-                    if abs(err) <= error_tolerance:
-                        i -= 1
-                        continue
-                    else:
-                        break
-                low_end = i
-                i = mid + 1
+    lo = 0
+    n = hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) / 2
+        x = array[mid]
+        err = (x.mz - mz) / mz
+        if abs(err) <= error_tolerance:
+            i = mid - 1
+            # Begin Sweep forward
+            while i > 0:
+                x = array[i]
+                err = (x.mz - mz) / mz
+                if abs(err) <= error_tolerance:
+                    i -= 1
+                    continue
+                else:
+                    break
+            low_end = i
+            i = mid + 1
 
-                # Begin Sweep backward
-                while i < n:
-                    x = array[i]
-                    err = (x.mz - mz) / mz
-                    if abs(err) <= error_tolerance:
-                        i += 1
-                        continue
-                    else:
-                        break
-                high_end = i
-                return list(range(low_end, high_end)), True
-            elif (hi - lo) == 1:
-                return [mid], False
-            elif err > 0:
-                hi = mid
-            elif err < 0:
-                lo = mid
-        return 0, False
+            # Begin Sweep backward
+            while i < n:
+                x = array[i]
+                err = (x.mz - mz) / mz
+                if abs(err) <= error_tolerance:
+                    i += 1
+                    continue
+                else:
+                    break
+            high_end = i
+            return list(range(low_end, high_end)), True
+        elif (hi - lo) == 1:
+            return [mid], False
+        elif err > 0:
+            hi = mid
+        elif err < 0:
+            lo = mid
+    return 0, False
 
 
 def binary_search(array, mz, error_tolerance=1e-5):
@@ -239,9 +239,6 @@ def binary_search(array, mz, error_tolerance=1e-5):
     -------
     int:
         The index in `array` of the best match
-    bool:
-        Whether or not a match was actually found, used to
-        signal behavior to the caller.
     """
     lo = 0
     n = hi = len(array)
@@ -371,9 +368,6 @@ def binary_search_neutral(array, neutral_mass, error_tolerance=1e-5):
     -------
     int:
         The index in `array` of the best match
-    bool:
-        Whether or not a match was actually found, used to
-        signal behavior to the caller.
     """
     lo = 0
     n = hi = len(array)

@@ -277,6 +277,7 @@ class RandomAccessScanSource(ScanDataSource):
             scan = self.get_scan_by_index(scan.index - 1)
         return scan
 
+
 class DetachedAccessError(Exception):
     pass
 

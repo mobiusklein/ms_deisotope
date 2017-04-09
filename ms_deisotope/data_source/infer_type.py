@@ -18,7 +18,7 @@ try:
 
     register_type_guesser(_check_is_thermo_raw)
 
-except ImportError:
+except ImportError:  # pragma: no cover
     def register_thermo_dll(*args, **kwargs):
         pass
 

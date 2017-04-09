@@ -113,7 +113,7 @@ class GreedySubgraphSelection(object):
         return solution
 
 
-class ExhaustiveDisjointSolutionSelection(object):
+class ExhaustiveDisjointSolutionSelection(object):  # pragma: no cover
     shard_size = 7
 
     def __init__(self, active_set, remaining_components, solutions=None, parent=None, score=None):

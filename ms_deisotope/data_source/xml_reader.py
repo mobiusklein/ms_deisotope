@@ -126,6 +126,9 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
             if not self._validate(scan):
                 sid = scan_ids[mid - 1]
                 scan = self.get_scan_by_id(sid)
+                if not self._validate(scan):
+                    sid = scan_ids[mid - 2]
+                    scan = self.get_scan_by_id(sid)
 
             scan_time = scan.scan_time
             if scan_time == time:

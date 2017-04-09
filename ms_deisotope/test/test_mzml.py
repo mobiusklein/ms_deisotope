@@ -2,6 +2,7 @@ import unittest
 
 from ms_deisotope.data_source import MzMLLoader
 from ms_deisotope.test.common import datafile
+from ms_deisotope.data_source import infer_type
 
 scan_ids = [
     "controllerType=0 controllerNumber=1 scan=10014",
@@ -15,7 +16,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
 
     @property
     def reader(self):
-        return MzMLLoader(self.path)
+        return infer_type.MSFileLoader(self.path)
 
     def test_iteration(self):
         reader = self.reader

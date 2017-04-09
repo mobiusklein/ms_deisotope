@@ -28,11 +28,28 @@ from ms_deisotope._c.feature_map.lcms_feature cimport (
     FeatureSetIterator,
     EmptyFeature)
 
-cimport numpy as cnp
+cimport numpy as np
 import numpy as np
 
 
+cdef object zeros = np.zeros
+
+
 cdef double INF = float('inf')
+
+
+cdef object double_vector_to_ndarray(dvec* vec):
+    cdef:
+        np.ndarray[double, ndim=1, mode='c'] out
+        np.npy_intp shape[1]
+        size_t i, n
+
+    n = shape[0] = vec.used
+    # out = np.PyArray_SimpleNew(1, shape, np.NPY_DOUBLE)
+    out = zeros(shape[0])
+    for i in range(n):
+        out[i] = vec.v[i]
+    return out
 
 
 cdef class CartesianProductIterator(object):
@@ -332,13 +349,13 @@ cdef class LCMSFeatureProcessorBase(object):
         return acc / count
 
     cpdef LCMSFeatureSetFit _fit_single_feature_set(self, list features, list base_tid, double error_tolerance, 
-                                                    int charge, charge_carrier=PROTON, int max_missed_peaks=1,
+                                                    int charge, double charge_carrier=PROTON, int max_missed_peaks=1,
                                                     double threshold_scale=0.3):
         cdef:
             double score, final_score, score_acc, neutral_mass
             envelope_conformer conformer
             dvec* score_vec
-            cnp.ndarray[double] scores_array
+            np.ndarray scores_array
             FeatureSetIterator feat_iter
             size_t feat_i, feat_n, n_missing, missing_features, counter
 
@@ -376,7 +393,7 @@ cdef class LCMSFeatureProcessorBase(object):
         f = <LCMSFeature>PyList_GET_ITEM(features, 0)
         neutral_mass = calc_neutral_mass(
                 f.get_mz(), charge, charge_carrier)
-        scores_array = np.array(double_vector_to_list(score_vec))
+        scores_array = double_vector_to_ndarray(score_vec)
         fit = LCMSFeatureSetFit._create(
             features, base_tid, final_score, charge, missing_features,
             [], None, neutral_mass, counter, scores_array)
@@ -390,7 +407,7 @@ cdef class LCMSFeatureProcessorBase(object):
             double score, final_score, score_acc, neutral_mass
             list base_tid, feature_groups, feature_fits, features
             list eid, cleaned_eid, tid
-            cnp.ndarray[double] scores_array
+            np.ndarray scores_array
             tuple temp
             size_t combn_size, combn_i, n_missing, missing_features, counter
             size_t feat_i, feat_n
@@ -461,7 +478,7 @@ cdef class LCMSFeatureProcessorBase(object):
             f = <LCMSFeature>PyList_GET_ITEM(features, 0)
             neutral_mass = calc_neutral_mass(
                     f.get_mz(), charge, charge_carrier)
-            scores_array = np.array(double_vector_to_list(score_vec))
+            scores_array = double_vector_to_ndarray(score_vec)
             fit = LCMSFeatureSetFit._create(
                 features, base_tid, final_score, charge, missing_features,
                 [], None, neutral_mass, counter, scores_array)

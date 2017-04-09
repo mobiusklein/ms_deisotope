@@ -179,7 +179,6 @@ cdef class LCMSFeatureTreeNode(object):
         cdef PeakBase peak
         if deep:
             peaks = []
-            # peaks = [peak.clone() for peak in self.members]
             n = self.get_members_size()
             for i in range(n):
                 peak = self.getitem(i)

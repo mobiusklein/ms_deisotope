@@ -424,6 +424,9 @@ class ScanProcessor(Base):
         """
         return self.next()
 
+    def __iter__(self):
+        return self
+
     def pack_next(self):
         """As :meth:`next`, except instead of producing :class:`ScanBunch` of
         :class:`Scan` instances, instead it uses :class:`ProcessedScan` to strip away

@@ -400,6 +400,12 @@ class PeakDependenceGraph(object):
         self.clusters = clusters
         return clusters
 
+    def __iter__(self):
+        return iter(self.clusters)
+
+    def __getitem__(self, i):
+        return self.clusters[i]
+
     def __repr__(self):
         return "PeakDependenceNetwork(%s, %d)" % (self.peaklist, len(self.dependencies))
 

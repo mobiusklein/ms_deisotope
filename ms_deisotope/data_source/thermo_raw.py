@@ -1,3 +1,4 @@
+import re
 from weakref import WeakValueDictionary
 from collections import OrderedDict
 
@@ -40,8 +41,54 @@ except ImportError as e:
 
 try:
     range = xrange
-except:
+except NameError:
     pass
+
+
+analyzer_pat = re.compile(r"(?P<mass_analyzer_type>ITMS|TQMS|SQMS|TOFMS|FTMS|SECTOR)")
+polarity_pat = re.compile(r"(?P<polarity>[\+\-])")
+point_type_pat = re.compile(r"(?P<point_type>[CP])")
+ionization_pat = re.compile(r"(?P<ionization_type>EI|CI|FAB|APCI|ESI|APCI|NSI|TSP|FD|MALDI|GD)")
+scan_type_pat = re.compile(r"(?P<scan_type>FULL|SIM|SRM|CRM|Z|Q1MS|Q3MS)")
+
+
+class FilterLine(str):
+    def __init__(self, value):
+        self.data = filter_line_parser(self)
+
+    def get(self, key):
+        return self.data.get(key)
+
+
+def filter_line_parser(line):
+    line = line.upper()
+    words = line.split(" ")
+    values = dict()
+    i = 0
+    try:
+        word = words[i]
+        i += 1
+        analyzer_info = analyzer_pat.search(word)
+        if analyzer_info is not None:
+            values['analyzer'] = analyzer_info.group(0)
+            word = words[i]
+            i += 1
+        polarity_info = polarity_pat.search(word)
+        if polarity_info is not None:
+            polarity_sigil = polarity_info.group(0)
+            if polarity_sigil == "+":
+                polarity = 1
+            elif polarity_sigil == "-":
+                polarity = -1
+            else:
+                polarity = 0
+            values["polarity"] = polarity
+            word = words[i]
+            i += 1
+
+        return values
+    except IndexError:
+        return values
 
 
 _id_template = "controllerType=0 controllerNumber=1 scan="
@@ -50,6 +97,7 @@ _id_template = "controllerType=0 controllerNumber=1 scan="
 class ThermoRawScanPtr(Base):
     def __init__(self, scan_number):
         self.scan_number = scan_number
+        self.filter_line = None
 
 
 def _make_id(scan_number):
@@ -80,7 +128,13 @@ class ThermoRawDataInterface(ScanDataSource):
             scan.scan_number)
 
     def _polarity(self, scan):
-        return 0
+        filter_line = self._filter_line(scan)
+        return filter_line.data['polarity']
+
+    def _filter_line(self, scan):
+        if scan.filter_line is None:
+            scan.filter_line = FilterLine(self._source.GetFilterForScanNum(scan.scan_number))
+        return scan.filter_line
 
     def _scan_title(self, scan):
         return "scan=%d" % scan.scan_number
