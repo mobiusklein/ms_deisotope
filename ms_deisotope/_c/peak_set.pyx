@@ -181,7 +181,7 @@ cdef class DeconvolutedPeak(PeakBase):
     def __hash__(self):
         return hash((self.mz, self.intensity, self.charge))
 
-    cpdef DeconvolutedPeak clone(self):
+    cpdef PeakBase clone(self):
         return DeconvolutedPeak(self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
                                 self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
                                 self.most_abundant_mass, self.average_mass, self.score,
@@ -229,7 +229,7 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
         self.fit = fit
         super(DeconvolutedPeakSolution, self).__init__(*args, **kwargs)
 
-    cpdef DeconvolutedPeak clone(self):
+    cpdef PeakBase clone(self):
         return DeconvolutedPeakSolution(
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,

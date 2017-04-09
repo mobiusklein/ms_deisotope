@@ -9,7 +9,7 @@ from ms_deisotope.deconvolution import (
     AveraginePeakDependenceGraphDeconvoluter)
 from ms_deisotope.scoring import PenalizedMSDeconVFitter
 from brainpy import neutral_mass
-from .test_scan import make_profile, points, fwhm
+from ms_deisotope.test.test_scan import make_profile, points, fwhm
 
 
 class TestDeconvolution(unittest.TestCase):

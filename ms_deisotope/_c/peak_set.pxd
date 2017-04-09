@@ -37,7 +37,7 @@ cdef class DeconvolutedPeak(PeakBase):
         public bint chosen_for_msms
 
     cpdef bint _eq(self, DeconvolutedPeak other)
-    cpdef DeconvolutedPeak clone(self)
+    # cpdef PeakBase clone(self)
 
 
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):

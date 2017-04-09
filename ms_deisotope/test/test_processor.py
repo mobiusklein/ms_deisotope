@@ -4,7 +4,7 @@ from ms_deisotope import processor
 from ms_deisotope.averagine import glycopeptide
 from ms_deisotope.scoring import PenalizedMSDeconVFitter
 
-from .common import datafile
+from ms_deisotope.test.common import datafile
 
 
 class TestScanProcessor(unittest.TestCase):
@@ -19,3 +19,7 @@ class TestScanProcessor(unittest.TestCase):
             self.assertIsNotNone(scan_bunch)
             self.assertIsNotNone(scan_bunch.precursor)
             self.assertIsNotNone(scan_bunch.products)
+
+
+if __name__ == '__main__':
+    unittest.main()

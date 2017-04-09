@@ -142,7 +142,7 @@ def status_msgs(*msgs):
 def run_setup(include_cext=True):
     setup(
         name='ms_deisotope',
-        version='0.0.1',
+        version='0.0.2',
         packages=find_packages(),
         author=', '.join(["Joshua Klein"]),
         author_email=["jaklein@bu.edu"],
