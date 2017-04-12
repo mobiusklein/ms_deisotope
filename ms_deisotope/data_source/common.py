@@ -8,7 +8,7 @@ from ..utils import Constant, add_metaclass
 ScanBunch = namedtuple("ScanBunch", ["precursor", "products"])
 
 
-def _repr_pretty_(scan_bunch, p, cycle):
+def _repr_pretty_(scan_bunch, p, cycle):  # pragma: no cover
     if cycle:
         p.text("ScanBunch(...)")
         return

@@ -18,16 +18,20 @@ class MzXMLDataInterface(ScanDataSource):
             return np.array([]), np.array([])
 
     def _precursor_information(self, scan):
-        pinfo_dict = scan['precursorMz'][0]
-        precursor_scan_id = pinfo_dict['precursorScanNum']
-        pinfo = PrecursorInformation(
-            mz=float(pinfo_dict['precursorMz']),
-            intensity=float(pinfo_dict.get('precursorIntensity', 0.0)),
-            charge=int(pinfo_dict.get('precursorCharge')) if pinfo_dict.get('precursorCharge') else ChargeNotProvided,
-            precursor_scan_id=precursor_scan_id,
-            source=self,
-            product_scan_id=self._scan_id(scan))
-        return pinfo
+        try:
+            pinfo_dict = scan['precursorMz'][0]
+            precursor_scan_id = pinfo_dict['precursorScanNum']
+            pinfo = PrecursorInformation(
+                mz=float(pinfo_dict['precursorMz']),
+                intensity=float(pinfo_dict.get('precursorIntensity', 0.0)),
+                charge=int(pinfo_dict.get('precursorCharge')) if pinfo_dict.get(
+                    'precursorCharge') else ChargeNotProvided,
+                precursor_scan_id=precursor_scan_id,
+                source=self,
+                product_scan_id=self._scan_id(scan))
+            return pinfo
+        except KeyError:
+            return None
 
     def _scan_title(self, scan):
         return self._scan_id(scan)

@@ -237,6 +237,23 @@ class ThermoRawfile(object):
                 2: 'ScanTypeZoom',
                 3: 'ScanTypeSRM'}
 
+    @staticmethod
+    def create_com_object():
+        try:
+            log.debug("obj = CreateObject('MSFileReader.XRawfile')")
+            obj = CreateObject('MSFileReader.XRawfile')
+        except Exception as e:
+            log.debug(e)
+            try:
+                log.debug("obj = CreateObject('XRawfile.XRawfile')")
+                obj = CreateObject('XRawfile.XRawfile')
+            except Exception as e:
+                log.debug(e)
+                raise ImportError(
+                    'Please install the appropriate Thermo MSFileReader\
+                     version depending of your Python version (32bits or 64bits)')
+        return obj
+
     def __init__(self, filename, **kwargs):
         self.filename = os.path.abspath(filename)
         self.filename = os.path.normpath(self.filename)

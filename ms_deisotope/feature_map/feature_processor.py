@@ -11,15 +11,15 @@ from .feature_map import (
 from .lcms_feature import (
     LCMSFeature,
     EmptyFeature,
-    FeatureSetIterator,
-    NodeFeatureSetIterator)
+    FeatureSetIterator)
 from .feature_fit import (
     LCMSFeatureSetFit,
     DeconvolutedLCMSFeatureTreeNode,
     DeconvolutedLCMSFeature)
 from .dependence_network import FeatureDependenceGraph
+from .profile_transform import binsearch
 from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
-from ms_deisotope.averagine import AveragineCache, PROTON, isotopic_shift, mass_charge_ratio
+from ms_deisotope.averagine import AveragineCache, PROTON, isotopic_shift
 from ms_deisotope.deconvolution import (
     charge_range_, DeconvolutedPeak, drop_placeholders,
     neutral_mass, average_mz, a_to_a2_ratio, first_peak,
@@ -27,7 +27,7 @@ from ms_deisotope.deconvolution import (
 from ms_deisotope.utils import printer
 
 
-def conform_envelopes(experimental, base_theoretical):
+def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abundance=0.01):
     total = 0
     n_missing = 0
     i = 0
@@ -35,7 +35,8 @@ def conform_envelopes(experimental, base_theoretical):
     for peak in experimental:
         if peak is None:
             peak = FittedPeak(base_theoretical[i].mz, 1, 1, -1, -1, 0, 1, 0, 0)
-            n_missing += 1
+            if base_theoretical[i].intensity > minimum_theoretical_abundance:
+                n_missing += 1
         total += peak.intensity
         cleaned_eid.append(peak)
         i += 1
@@ -74,7 +75,7 @@ class LCMSFeatureProcessorBase(object):
         threshold = maximum * percentage
         return scores[scores > threshold].mean()
 
-    def _fit_feature_set(self, mz, error_tolerance, charge, left_search=1, right_search=1,
+    def _fit_feature_set(self, mz, error_tolerance, charge,
                          charge_carrier=PROTON, truncate_after=0.8, max_missed_peaks=1,
                          threshold_scale=0.3, feature=None):
         base_tid = self.create_theoretical_distribution(mz, charge, charge_carrier, truncate_after)
@@ -90,18 +91,28 @@ class LCMSFeatureProcessorBase(object):
                 features[0] = EmptyFeature(mz)
             feat_iter = FeatureSetIterator(features)
             scores = []
+            times = []
+            counter = 0
             for eid in feat_iter:
                 cleaned_eid, tid, n_missing = self.conform_envelopes(eid, base_tid)
+                if n_missing > max_missed_peaks:
+                    continue
                 score = self.scorer.evaluate(None, cleaned_eid, tid)
                 if np.isnan(score):
                     continue
                 scores.append(score)
+                times.append(feat_iter.current_time)
+                counter += 1
             final_score = self._find_thresholded_score(scores, threshold_scale)
             missing_features = 0
             for f in features:
                 if f is None:
                     missing_features += 1
-            fit = LCMSFeatureSetFit(features, base_tid, final_score, charge, missing_features, data=scores)
+            fit = LCMSFeatureSetFit(
+                features, base_tid, final_score, charge, missing_features,
+                neutral_mass=neutral_mass(features[0].mz, charge, charge_carrier),
+                missing_features=missing_features,
+                scores=scores, times=times)
             if self.scorer.reject_score(fit.score):
                 continue
             feature_fits.append(fit)
@@ -135,6 +146,27 @@ except ImportError:
     has_c = False
 
 
+def test_fit_features(self, features, charge, charge_carrier=PROTON, truncate_after=0.8, max_missed_peaks=1,
+                      threshold_scale=0.3):
+    base_tid = self.create_theoretical_distribution(features[0].mz, charge, charge_carrier, truncate_after)
+    feat_iter = FeatureSetIterator(features)
+    scores = []
+    times = []
+    counter = 0
+    for eid in feat_iter:
+        cleaned_eid, tid, n_missing = self.conform_envelopes(eid, base_tid)
+        if n_missing > max_missed_peaks:
+            continue
+        score = self.scorer.evaluate(None, cleaned_eid, tid)
+        if np.isnan(score):
+            continue
+        scores.append(score)
+        times.append(feat_iter.current_time)
+        counter += 1
+
+    return np.array(scores), np.array(times)
+
+
 def count_placeholders(peaks):
     """Counts the number of placeholder peaks in an iterable
     of FittedPeaks
@@ -153,6 +185,23 @@ def count_placeholders(peaks):
         if peak.intensity <= 1:
             i += 1
     return i
+
+
+def test_finalize(self, feature_fit, charge_carrier=PROTON, detection_threshold=0.1,
+                  max_missed_peaks=1):
+    start_time, end_time = find_bounds(feature_fit, detection_threshold)
+    feat_iter = FeatureSetIterator(
+        feature_fit.features, start_time, end_time)
+    base_tid = feature_fit.theoretical
+    charge = feature_fit.charge
+    abs_charge = abs(charge)
+    for eid in feat_iter:
+        cleaned_eid, tid, n_missing = conform_envelopes(eid, base_tid)
+        rep_eid = drop_placeholders(cleaned_eid)
+        n_real_peaks = len(rep_eid)
+        invalid = n_real_peaks == 0 or (n_real_peaks == 1 and abs_charge > 1) or n_missing > max_missed_peaks
+        score = self.scorer.evaluate(None, cleaned_eid, tid)
+        yield feat_iter.current_time, score, n_missing, invalid
 
 
 class PrecursorMap(object):
@@ -350,9 +399,8 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             cleaned_eid, tid, n_missing = conform_envelopes(eid, base_tid)
             rep_eid = drop_placeholders(cleaned_eid)
             n_real_peaks = len(rep_eid)
-            n_missing_peaks = len(cleaned_eid) - n_real_peaks
             if n_real_peaks == 0 or (n_real_peaks == 1 and abs_charge > 1) or \
-               n_missing_peaks > max_missed_peaks:
+               n_missing > max_missed_peaks:
                 continue
             score = self.scorer.evaluate(None, cleaned_eid, tid)
             is_valid = True
@@ -544,6 +592,7 @@ class FeatureDeconvolutionIterationState(object):
         self.threshold_scale = threshold_scale
         self.relfitter = relfitter
         self.detection_threshold = detection_threshold
+        self.debug = False
 
     def update_signal_ratio(self):
         self.next_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
@@ -564,7 +613,7 @@ class FeatureDeconvolutionIterationState(object):
         n = len(self.processor.feature_map)
         interval = int(max(n // report_interval, 1000))
         for feature in sorted(self.processor.feature_map, key=lambda x: x.mz, reverse=True):
-            self.processor.charge_state_determination(
+            fits = self.processor.charge_state_determination(
                 feature,
                 error_tolerance=self.error_tolerance,
                 charge_range=self.charge_range,
@@ -574,6 +623,8 @@ class FeatureDeconvolutionIterationState(object):
                 truncate_after=self.truncate_after,
                 max_missed_peaks=self.max_missed_peaks,
                 threshold_scale=self.threshold_scale)
+            if self.debug:
+                print(feature, fits)
             i += 1
             if i % interval == 0:
                 printer("\t%0.1f%%" % ((100. * i) / n,))
@@ -614,17 +665,20 @@ class FeatureDeconvolutionIterationState(object):
         else:
             return False
 
-    def run(self):
+    def run(self, callback=None):
         keep_going = True
+        is_callable_callback = callable(callback)
         while keep_going:
             converged = self.step()
+            if is_callable_callback:
+                callback(self)
             if converged or self.iteration_count >= self.maxiter:
                 keep_going = False
         self.solutions = self.processor._clean_solutions(self.solutions)
         return DeconvolutedLCMSFeatureMap(self.solutions)
 
 
-def find_bounds(fit, detection_threshold=0.1):
+def find_bounds(fit, detection_threshold=0.1, find_separation=True):
     start_time = 0
     end_time = float('inf')
 
@@ -636,6 +690,27 @@ def find_bounds(fit, detection_threshold=0.1):
             start_time = f.start_time
         if f.end_time < end_time and passed_threshold:
             end_time = f.end_time
+
+    if fit.n_points > 0 and find_separation:
+        last_score = float('inf')
+        begin_i = 0
+        end_i = len(fit.scores) - 1
+        for i, score in enumerate(fit.scores):
+            if score > 0 and last_score < 0:
+                begin_i = i
+            elif score < 0 and last_score > 0:
+                end_i = i
+            last_score = score
+
+        if end_i < begin_i:
+            end_i = len(fit.scores) - 1
+
+        if start_time < fit.times[begin_i] and begin_i != 0:
+            start_time = fit.times[begin_i]
+
+        if end_i > fit.times[end_i]:
+            end_time = fit.times[end_i]
+
     return start_time, end_time
 
 
@@ -655,6 +730,8 @@ def extract_fitted_region(feature_fit, detection_threshold=0.1):
             fitted_features.append(EmptyFeature(fitted.mz))
         else:
             fitted_features.append(fitted)
+    start_ix = binsearch(feature_fit.times, start_time)
+    end_ix = binsearch(feature_fit.times, end_time)
     extract = LCMSFeatureSetFit(
         fitted_features,
         feature_fit.theoretical,
@@ -663,7 +740,9 @@ def extract_fitted_region(feature_fit, detection_threshold=0.1):
         feature_fit.missing_features,
         supporters=feature_fit.supporters,
         data=feature_fit.data,
-        neutral_mass=feature_fit.neutral_mass)
+        neutral_mass=feature_fit.neutral_mass,
+        scores=feature_fit.scores[start_ix:end_ix + 1],
+        times=feature_fit.times[start_ix:end_ix + 1])
     return extract
 
 

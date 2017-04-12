@@ -889,6 +889,9 @@ cdef class FeatureSetIterator(object):
     def current_time(self):
         return self.last_time_seen
     
+    cpdef double get_current_time(self):
+        return self.last_time_seen
+
     cpdef list get_next_value(self):
         cdef:
             double time

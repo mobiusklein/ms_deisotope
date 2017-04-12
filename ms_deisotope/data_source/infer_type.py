@@ -51,7 +51,7 @@ def guess_type(file_path):
         try:
             reader_type = guesser(file_path)
             return reader_type
-        except (ValueError, IOError):
+        except (ValueError, IOError, ImportError):
             continue
     raise ValueError("Cannot determine ScanLoader type")
 

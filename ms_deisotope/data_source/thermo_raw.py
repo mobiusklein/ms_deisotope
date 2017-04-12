@@ -1,6 +1,9 @@
+# pragma: no cover
 import re
 from weakref import WeakValueDictionary
 from collections import OrderedDict
+
+import logging
 
 import numpy as np
 
@@ -12,19 +15,33 @@ from ms_deisotope.utils import Base
 
 
 try:
-    from ms_deisotope.data_source._vendor.MSFileReader import ThermoRawfile as _ThermoRawFileAPI, register_dll
+    from ms_deisotope.data_source._vendor.MSFileReader import (
+        ThermoRawfile as _ThermoRawFileAPI, register_dll,
+        log as _api_logger)
+
+    comtypes_logger = logging.getLogger("comtypes")
+    comtypes_logger.setLevel("INFO")
+    _api_logger.setLevel("INFO")
 
     def is_thermo_raw_file(path):
         try:
             _ThermoRawFileAPI(path)
             return True
-        except (WindowsError, IOError):
+        except (WindowsError, IOError, ImportError):
             return False
 
     def infer_reader(path):
         if is_thermo_raw_file(path):
             return ThermoRawLoader
         raise ValueError("Not Thermo Raw File")
+
+    def determine_if_available():
+        try:
+            _ThermoRawFileAPI.create_com_object()
+            return True
+        except ImportError:
+            return False
+
 
 except ImportError as e:
     message = e.message
@@ -36,6 +53,10 @@ except ImportError as e:
         raise ValueError(message)
 
     def register_dll(paths):
+        print("no-op: %s" % (message,))
+        return False
+
+    def determine_if_available():
         print("no-op: %s" % (message,))
         return False
 

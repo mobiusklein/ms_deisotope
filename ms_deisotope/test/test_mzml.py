@@ -31,6 +31,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         reader.make_iterator(grouped=False)
 
         scan = next(reader)
+        scan._load()
         self.assertEqual(scan.index, 0)
 
         reader.close()

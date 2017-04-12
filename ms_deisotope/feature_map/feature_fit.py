@@ -22,9 +22,13 @@ class map_coord(namedtuple("map_coord", ("mz", 'time'))):
 class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
                  missing_features=0, supporters=None, data=None,
-                 neutral_mass=None, scores=None):
+                 neutral_mass=None, scores=None, times=None):
         if supporters is None:
             supporters = []
+        if scores is None:
+            scores = np.array([])
+        if times is None:
+            times = np.array([])
         self.features = features
         self.theoretical = theoretical
         self.score = score
@@ -38,18 +42,19 @@ class LCMSFeatureSetFit(object):
         self.neutral_mass = neutral_mass
         self.mz = self.monoisotopic_feature.mz
         self.scores = scores
+        self.times = times
 
     def clone(self):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
-            self.missing_features, self.supporters, self.data, self.neutral_mass,
-            self.scores)
+            self.missing_features, self.supporters, self.data,
+            self.neutral_mass, self.n_points, self.scores, self.times)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
             self.missing_features, self.supporters, self.data, self.neutral_mass,
-            self.scores)
+            self.n_points, self.scores, self.times)
 
     def __eq__(self, other):
         val = (self.score == other.score and
@@ -281,5 +286,6 @@ try:
     _map_coord = map_coord
     _LCMSFeatureSetFit = LCMSFeatureSetFit
     from ms_deisotope._c.feature_map.feature_fit import (LCMSFeatureSetFit, map_coord)
-except ImportError:
+except ImportError as e:
+    print(e)
     has_c = False

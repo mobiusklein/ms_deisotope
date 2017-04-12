@@ -30,8 +30,6 @@ cpdef object find_immediate_minima(cnp.ndarray[double, ndim=1] x, double scale):
     return np.array(maxima, dtype=np.int64), np.array(minima, dtype=np.int64)
 
 
-
-
 cpdef object locate_extrema(cnp.ndarray[double, ndim=1] x):
     cdef:
         size_t i, n
@@ -81,7 +79,7 @@ cdef object sliding_median(cnp.ndarray[double, ndim=1, mode='c'] ys):
     return arr
 
 
-cdef size_t binsearch(cnp.ndarray[double, ndim=1, mode='c'] array, double value):
+cpdef size_t binsearch(cnp.ndarray[double, ndim=1, mode='c'] array, double value):
     cdef:
         size_t lo, hi, mid
         double point
@@ -218,7 +216,7 @@ cdef class ValleyPoint(object):
 
 cdef class ProfileSplitter(object):
     cdef:
-        public LCMSFeature profile
+        public object profile
         public list partition_sites
         public cnp.ndarray xs
         public cnp.ndarray ys

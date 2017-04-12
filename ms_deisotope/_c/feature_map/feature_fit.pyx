@@ -8,7 +8,9 @@ from ms_deisotope._c.averagine cimport neutral_mass as calc_neutral_mass
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 
 cimport numpy as np
-import np
+import numpy as np
+
+np.import_array()
 
 
 
@@ -41,9 +43,14 @@ cdef class map_coord(object):
 cdef class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
                  missing_features=0, supporters=None, data=None,
-                 neutral_mass=None, n_points=0, scores=np.array([], dtype=np.float64)):
+                 neutral_mass=None, n_points=0,
+                 scores=None, times=None):
         if supporters is None:
             supporters = []
+        if scores is None:
+            scores = np.array([], dtype=np.float64)
+        if times is None:
+            times = np.array([], dtype=np.float64)
         self.features = features
         self.theoretical = theoretical
         self.score = score
@@ -58,17 +65,23 @@ cdef class LCMSFeatureSetFit(object):
         self.mz = self.monoisotopic_feature.mz
         self.n_points = n_points
         self.scores = scores
+        self.times = times
 
     @staticmethod
     cdef LCMSFeatureSetFit _create(list features, list theoretical, double score,
                                    int charge, size_t missing_features, list supporters,
                                    object data, double neutral_mass, size_t n_points,
-                                   np.ndarray scores):
+                                   np.ndarray scores, np.ndarray times):
         cdef:
             LCMSFeatureSetFit inst
         inst = LCMSFeatureSetFit.__new__(LCMSFeatureSetFit)
         if supporters is None:
             supporters = []
+        if scores is None:
+            scores = np.array([], dtype=np.float64)
+        if times is None:
+            times = np.array([], dtype=np.float64)
+
         inst.features = features
         inst.theoretical = theoretical
         inst.score = score
@@ -83,19 +96,20 @@ cdef class LCMSFeatureSetFit(object):
         inst.mz = inst.monoisotopic_feature.mz
         inst.n_points = n_points
         inst.scores = scores
+        inst.times = times
         return inst
 
     def clone(self):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
             self.missing_features, self.supporters, self.data,
-            self.neutral_mass, self.n_points, self.scores)
+            self.neutral_mass, self.n_points, self.scores, self.times)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
             self.missing_features, self.supporters, self.data, self.neutral_mass,
-            self.n_points, self.scores)
+            self.n_points, self.scores, self.times)
 
     cpdef bint _eq(self, LCMSFeatureSetFit other):
         cdef bint val

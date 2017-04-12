@@ -107,6 +107,7 @@ cdef class FeatureSetIterator(object):
 
         cpdef init_indices(self)
         cpdef double get_next_time(self)
+        cpdef double get_current_time(self)
         cpdef bint has_more(self)
         cpdef list get_peaks_for_time(self, double time)
         cpdef list get_next_value(self)

@@ -142,36 +142,20 @@ cdef class CartesianProductIterator(object):
         return value
 
 
-cdef tuple _conform_envelopes(list experimental, list base_theoretical, size_t* n_missing_out):
+cdef tuple _conform_envelopes(list experimental, list base_theoretical, size_t* n_missing_out,
+                              double minimum_theoretical_abundance=0.01):
     cdef:
-        double total = 0
-        size_t n_missing = 0
-        size_t i = 0
-        list cleaned_eid
-        list tid
-        FittedPeak fpeak
-        TheoreticalPeak tpeak, peak
+        envelope_conformer conformer
+        list cleaned_eid, tid
 
-    cleaned_eid = []
-    
-    for i in range(PyList_GET_SIZE(experimental)):
-        fpeak = <FittedPeak>PyList_GET_ITEM(experimental, i)
-        if fpeak is None:
-            peak = <TheoreticalPeak>PyList_GET_ITEM(base_theoretical, i)
-            fpeak = FittedPeak._create(peak.mz, 1, 1, -1, -1, 0, 1, 0, 0)
-            n_missing += 1
-        total += fpeak.intensity
-        cleaned_eid.append(fpeak)
-        i += 1
+    conformer = envelope_conformer._create()
+    conformer.acquire(experimental, base_theoretical)
+    conformer.conform(minimum_theoretical_abundance)
 
-    tid = []
-    for i in range(PyList_GET_SIZE(base_theoretical)):
-        tpeak = <TheoreticalPeak>PyList_GET_ITEM(base_theoretical, i)
-        peak = tpeak.clone()
-        peak.intensity *= total
-        tid.append(peak)
-    n_missing_out[0] = n_missing
-    return cleaned_eid, tid
+    cleaned_eid = conformer.experimental
+    tid = conformer.theoretical
+    n_missing_out[0] = conformer.n_missing
+    return (cleaned_eid, tid)
 
 
 cdef class envelope_conformer:
@@ -189,7 +173,7 @@ cdef class envelope_conformer:
         self.theoretical = theoretical
         self.n_missing = 0
 
-    cdef void conform(self):
+    cdef void conform(self, double minimum_theoretical_abundance=0.01):
         cdef:
             double total = 0
             size_t n_missing = 0
@@ -206,7 +190,8 @@ cdef class envelope_conformer:
             if fpeak is None:
                 peak = <TheoreticalPeak>PyList_GET_ITEM(self.theoretical, i)
                 fpeak = FittedPeak._create(peak.mz, 1, 1, -1, -1, 0, 1, 0, 0)
-                n_missing += 1
+                if peak.intensity > minimum_theoretical_abundance:
+                    n_missing += 1
             total += fpeak.intensity
             cleaned_eid.append(fpeak)
             i += 1
@@ -222,12 +207,13 @@ cdef class envelope_conformer:
         self.n_missing = n_missing
 
 
-cpdef tuple conform_envelopes(list experimental, list base_theoretical):
+cpdef tuple conform_envelopes(list experimental, list base_theoretical,
+                              double minimum_theoretical_abundance=0.01):
     cdef:
         size_t n_missing
         tuple out
 
-    out = _conform_envelopes(experimental, base_theoretical, &n_missing)
+    out = _conform_envelopes(experimental, base_theoretical, &n_missing, minimum_theoretical_abundance)
     out += (n_missing,)
     return out
 
@@ -355,7 +341,8 @@ cdef class LCMSFeatureProcessorBase(object):
             double score, final_score, score_acc, neutral_mass
             envelope_conformer conformer
             dvec* score_vec
-            np.ndarray scores_array
+            dvec* time_vec
+            np.ndarray scores_array, times_array
             FeatureSetIterator feat_iter
             size_t feat_i, feat_n, n_missing, missing_features, counter
 
@@ -365,6 +352,7 @@ cdef class LCMSFeatureProcessorBase(object):
         score_acc = 0
         counter = 0
         score_vec = make_double_vector()
+        time_vec = make_double_vector()
         while feat_iter.has_more():
             eid = feat_iter.get_next_value()
             if eid is None:
@@ -382,6 +370,7 @@ cdef class LCMSFeatureProcessorBase(object):
             score_acc += score
             counter += 1
             double_vector_append(score_vec, score)
+            double_vector_append(time_vec, feat_iter.get_current_time())
         # Compute feature score from score_vec
         final_score = self._find_thresholded_score(score_vec, threshold_scale)
         missing_features = 0
@@ -394,10 +383,12 @@ cdef class LCMSFeatureProcessorBase(object):
         neutral_mass = calc_neutral_mass(
                 f.get_mz(), charge, charge_carrier)
         scores_array = double_vector_to_ndarray(score_vec)
+        times_array = double_vector_to_ndarray(time_vec)
         fit = LCMSFeatureSetFit._create(
             features, base_tid, final_score, charge, missing_features,
-            [], None, neutral_mass, counter, scores_array)
+            [], None, neutral_mass, counter, scores_array, times_array)
         free_double_vector(score_vec)
+        free_double_vector(time_vec)
         return fit
 
     cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
@@ -407,7 +398,7 @@ cdef class LCMSFeatureProcessorBase(object):
             double score, final_score, score_acc, neutral_mass
             list base_tid, feature_groups, feature_fits, features
             list eid, cleaned_eid, tid
-            np.ndarray scores_array
+            np.ndarray scores_array, times_array
             tuple temp
             size_t combn_size, combn_i, n_missing, missing_features, counter
             size_t feat_i, feat_n
@@ -416,6 +407,7 @@ cdef class LCMSFeatureProcessorBase(object):
             CartesianProductIterator combn_iter
             envelope_conformer conformer
             dvec* score_vec
+            dvec* time_vec
 
         base_tid = self.create_theoretical_distribution(
             mz, charge, charge_carrier, truncate_after)
@@ -448,7 +440,10 @@ cdef class LCMSFeatureProcessorBase(object):
             feat_iter = FeatureSetIterator._create(features)
             counter = 0
             score_acc = 0
+
             score_vec = make_double_vector()
+            time_vec = make_double_vector()
+
             while feat_iter.has_more():
                 eid = feat_iter.get_next_value()
                 if eid is None:
@@ -467,8 +462,11 @@ cdef class LCMSFeatureProcessorBase(object):
                     continue
                 score_acc += score
                 double_vector_append(score_vec, score)
+                double_vector_append(time_vec, feat_iter.get_current_time())
+
             # Compute feature score from score_vec
-            final_score = self._find_thresholded_score(score_vec, threshold_scale)
+            final_score = self._find_thresholded_score(
+                score_vec, threshold_scale)
             missing_features = 0
             feat_n = PyList_GET_SIZE(features)
             for feat_i in range(feat_n):
@@ -479,10 +477,17 @@ cdef class LCMSFeatureProcessorBase(object):
             neutral_mass = calc_neutral_mass(
                     f.get_mz(), charge, charge_carrier)
             scores_array = double_vector_to_ndarray(score_vec)
+            times_array = double_vector_to_ndarray(time_vec)
             fit = LCMSFeatureSetFit._create(
-                features, base_tid, final_score, charge, missing_features,
-                [], None, neutral_mass, counter, scores_array)
+                features, base_tid,
+                final_score, charge,
+                missing_features, [],
+                None, neutral_mass,
+                counter, scores_array,
+                times_array)
+
             free_double_vector(score_vec)
+            free_double_vector(time_vec)
             if self.scorer.reject_score(fit.score):
                 continue
             feature_fits.append(fit)
