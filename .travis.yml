@@ -8,11 +8,10 @@ python:
 cache: pip
 # command to install dependencies
 install:
-  - pip install -U setuptools
+  - pip install --upgrade pip setuptools wheel
   - pip install cython
   - pip install git+https://github.com/mobiusklein/brainpy.git
-  - pip install numpy
-  - pip install scipy
+  - pip install --only-binary=numpy,scipy numpy scipy
   - pip install git+https://github.com/mobiusklein/ms_peak_picker.git
   - pip install -e .
   # - pip install -r requirements.txt
