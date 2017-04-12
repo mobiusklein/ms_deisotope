@@ -53,7 +53,7 @@ else:
 
 try:
     WindowsError
-except:
+except NameError:
     raise ImportError("Platform Not Supported")
 
 try:

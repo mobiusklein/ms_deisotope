@@ -44,7 +44,7 @@ try:
 
 
 except ImportError as e:
-    message = e.message
+    message = str(e)
 
     def is_thermo_raw_file(path):
         return False
