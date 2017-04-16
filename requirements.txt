@@ -2,3 +2,4 @@ pyteomics
 lxml
 numpy
 scipy
+brain-isotopic-distribution

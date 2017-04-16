@@ -7,17 +7,17 @@ try:
     import numpy
 except ImportError:
     print("Installation requires `numpy`")
-    raise
+    sys.exit(-1)
 try:
     import brainpy
 except ImportError:
-    print("Installation requires `brainpy`")
-    raise
+    print("Installation requires `brainpy`, install with `python -m pip install brain-isotopic-distribution`")
+    sys.exit(-1)
 try:
     import ms_peak_picker
 except ImportError:
     print("Installation requires `ms_peak_picker`")
-    raise
+    sys.exit(-1)
 
 try:
     from Cython.Build import cythonize
@@ -127,6 +127,7 @@ class ve_build_ext(build_ext):
                 raise BuildFailed()
             raise
 
+
 cmdclass = {}
 
 cmdclass['build_ext'] = ve_build_ext
@@ -137,6 +138,15 @@ def status_msgs(*msgs):
     for msg in msgs:
         print(msg)
     print('*' * 75)
+
+
+install_requires = [
+    "numpy",
+    # "ms_peak_picker",
+    "brain-isotopic-distribution",
+    "pyteomics",
+    "lxml",
+]
 
 
 def run_setup(include_cext=True):
@@ -153,6 +163,7 @@ def run_setup(include_cext=True):
                 'Intended Audience :: Science/Research',
                 'License :: OSI Approved :: BSD License',
                 'Topic :: Scientific/Engineering :: Bio-Informatics'],
+        install_requires=install_requires,
         zip_safe=False)
 
 
