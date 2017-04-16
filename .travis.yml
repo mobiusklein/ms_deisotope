@@ -11,7 +11,7 @@ install:
   - pip install --upgrade pip setuptools wheel
   - pip install cython
   # - pip install git+https://github.com/mobiusklein/brainpy.git
-  - pip install lxml pyteomics
+  - pip install lxml pyteomics braini-isotopic-distribution
   - pip install --only-binary=numpy,scipy numpy scipy
   - pip install git+https://github.com/mobiusklein/ms_peak_picker.git
   - pip install -e .
