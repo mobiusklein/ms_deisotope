@@ -32,6 +32,9 @@ cimport numpy as np
 import numpy as np
 
 
+np.import_array()
+
+
 cdef object zeros = np.zeros
 
 
@@ -143,7 +146,7 @@ cdef class CartesianProductIterator(object):
 
 
 cdef tuple _conform_envelopes(list experimental, list base_theoretical, size_t* n_missing_out,
-                              double minimum_theoretical_abundance=0.01):
+                              double minimum_theoretical_abundance=0.05):
     cdef:
         envelope_conformer conformer
         list cleaned_eid, tid
@@ -173,7 +176,7 @@ cdef class envelope_conformer:
         self.theoretical = theoretical
         self.n_missing = 0
 
-    cdef void conform(self, double minimum_theoretical_abundance=0.01):
+    cdef void conform(self, double minimum_theoretical_abundance=0.05):
         cdef:
             double total = 0
             size_t n_missing = 0
@@ -238,10 +241,31 @@ cdef class LCMSFeatureProcessorBase(object):
         public IsotopicFitterBase scorer
         public AveragineCache averagine
 
-    cpdef list create_theoretical_distribution(self, double mz, int charge, double charge_carrier=PROTON, double truncate_after=0.8):
+    cpdef list create_theoretical_distribution(self, double mz, int charge, double charge_carrier=PROTON, double truncate_after=0.8,
+                                               double ignore_below=0.05):
+        cdef:
+            list base_tid
+            list kept_tid
+            double total
+            TheoreticalPeak tp
+            size_t i, n
         base_tid = self.averagine.isotopic_cluster(
             mz, charge, truncate_after=truncate_after, charge_carrier=charge_carrier)
-        return base_tid
+        n = PyList_GET_SIZE(base_tid)
+        total = 0
+        kept_tid = []
+        for i in range(n):
+            tp = <TheoreticalPeak>PyList_GET_ITEM(base_tid, i)
+            if (tp.intensity < ignore_below) and (i > 1):
+                pass
+            else:
+                PyList_Append(kept_tid, tp)
+                total += tp.intensity
+        n = PyList_GET_SIZE(kept_tid)
+        for i in range(n):
+            tp = <TheoreticalPeak>PyList_GET_ITEM(kept_tid, i)
+            tp.intensity /= total
+        return kept_tid
 
     cpdef list find_all_features(self, double mz, double error_tolerance=2e-5):
         return self.feature_map._find_all(mz, error_tolerance)

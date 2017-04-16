@@ -34,7 +34,7 @@ def bisect_at_start(clusters, mz):
             lo = mid
 
 
-class GeneratorQueue(object):
+class GeneratorQueue(object):  # pragma: no cover
     sentinel = object()
 
     def __init__(self, queue=None):
@@ -87,7 +87,7 @@ class GeneratorQueue(object):
             try:
                 self._peek = self.get_next_value()
             except StopIteration:
-                self._peel = self.sentinel
+                self._peek = self.sentinel
         return self._peek
 
     def hasnext(self):

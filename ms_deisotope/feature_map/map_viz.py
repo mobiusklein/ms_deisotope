@@ -1,6 +1,6 @@
 from itertools import cycle
 from matplotlib import pyplot as plt
-from matplotlib import patches as mpatches
+from matplotlib import patches as mpatches, colors as mcolors
 import numpy as np
 
 
@@ -91,7 +91,7 @@ nice_color_cycle = cycle(_nice_color_cycle)
 
 
 def random_colorizer(profile, *args, **kwargs):
-    return np.random.rand(3.)
+    return mcolors.rgb2hex(np.random.rand(3.))
 
 
 def nice_colorizer(profile, *args, **kwargs):

@@ -317,6 +317,6 @@ try:
 
     from ms_deisotope._c.feature_map.profile_transform import (
         ProfileSplitter, ValleyPoint, split_valleys, gauss,
-        gaussian_smooth)
+        gaussian_smooth, smooth_leveled)
 except ImportError:
     has_c = False

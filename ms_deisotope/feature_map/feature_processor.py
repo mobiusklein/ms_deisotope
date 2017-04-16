@@ -17,7 +17,7 @@ from .feature_fit import (
     DeconvolutedLCMSFeatureTreeNode,
     DeconvolutedLCMSFeature)
 from .dependence_network import FeatureDependenceGraph
-from .profile_transform import binsearch
+from .profile_transform import binsearch, smooth_leveled
 from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
 from ms_deisotope.averagine import AveragineCache, PROTON, isotopic_shift
 from ms_deisotope.deconvolution import (
@@ -27,7 +27,7 @@ from ms_deisotope.deconvolution import (
 from ms_deisotope.utils import printer
 
 
-def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abundance=0.01):
+def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abundance=0.05):
     total = 0
     n_missing = 0
     i = 0
@@ -50,10 +50,21 @@ def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abunda
 
 
 class LCMSFeatureProcessorBase(object):
-    def create_theoretical_distribution(self, mz, charge, charge_carrier=PROTON, truncate_after=0.8):
+    def create_theoretical_distribution(self, mz, charge, charge_carrier=PROTON, truncate_after=0.8,
+                                        ignore_below=0.05):
         base_tid = self.averagine.isotopic_cluster(
             mz, charge, truncate_after=truncate_after, charge_carrier=charge_carrier)
-        return base_tid
+        total = 0
+        kept_tid = []
+        for i, p in enumerate(base_tid):
+            if p.intensity < ignore_below and i > 1:
+                continue
+            else:
+                total += p.intensity
+                kept_tid.append(p)
+        for p in kept_tid:
+            p.intensity /= total
+        return kept_tid
 
     def find_all_features(self, mz, error_tolerance=2e-5):
         return self.feature_map.find_all(mz, error_tolerance)
@@ -695,21 +706,22 @@ def find_bounds(fit, detection_threshold=0.1, find_separation=True):
         last_score = float('inf')
         begin_i = 0
         end_i = len(fit.scores) - 1
-        for i, score in enumerate(fit.scores):
+        smoothed_scores = smooth_leveled(fit.times, fit.scores, 3)
+        for i, score in enumerate(smoothed_scores):
             if score > 0 and last_score < 0:
                 begin_i = i
             elif score < 0 and last_score > 0:
                 end_i = i
             last_score = score
-
+            pass
         if end_i < begin_i:
             end_i = len(fit.scores) - 1
 
         if start_time < fit.times[begin_i] and begin_i != 0:
             start_time = fit.times[begin_i]
 
-        if end_i > fit.times[end_i]:
-            end_time = fit.times[end_i]
+        # if end_time > fit.times[end_i]:
+        #     end_time = fit.times[end_i]
 
     return start_time, end_time
 

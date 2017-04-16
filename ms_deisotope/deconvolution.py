@@ -209,7 +209,7 @@ class DeconvoluterBase(Base):
         """
         peak = self.peaklist.has_peak(mz, error_tolerance)
         if peak is None or peak.intensity < self.minimum_intensity:
-            return FittedPeak(mz, 1.0, 0, 0, 0, 0, 0)
+            return FittedPeak(mz, 1.0, 1.0, -1, 0, 0, 0)
         return peak
 
     def between(self, m1, m2):
@@ -364,7 +364,7 @@ class DeconvoluterBase(Base):
         candidates = []
         for forward in peaklist_slice:
             prev_peak_mz = forward.mz - (shift * step)
-            dummy_peak = FittedPeak(prev_peak_mz, 1.0, 0, 0, 0, 0, 0)
+            dummy_peak = FittedPeak(prev_peak_mz, 1.0, 1.0, -1, 0, 0, 0)
             candidates.append((dummy_peak, charge))
         return candidates
 
@@ -1223,7 +1223,6 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         """
         disjoint_envelopes = self.peak_dependency_network.find_non_overlapping_intervals()
         i = 0
-        seen = dict()
         for cluster in disjoint_envelopes:
             disjoint_best_fits = cluster.disjoint_best_fits()
             for fit in disjoint_best_fits:
@@ -1231,14 +1230,6 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 rep_eid = drop_placeholders(eid)
                 if len(rep_eid) == 0:
                     continue
-                for peak in rep_eid:
-                    # This seems to happen when the first peak is
-                    # chosen for MS/MS
-                    if peak.index in seen and peak.peak_count != 0:
-                        print("%r was reused in fit %r and %r" % (
-                            peak, fit, seen[peak.index]))
-                    else:
-                        seen[peak.index] = fit
                 total_abundance = sum(p.intensity for p in rep_eid)
                 monoisotopic_mass = neutral_mass(
                     eid[0].mz, charge, charge_carrier)

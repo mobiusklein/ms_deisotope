@@ -85,6 +85,12 @@ cdef class peak_charge_pair(object):
         return "peak_charge_pair(%r, %d)" % (self.peak, self.charge)
 
 
+cdef FittedPeak make_placeholder_peak(double mz):
+    cdef FittedPeak peak = FittedPeak._create(
+        mz, intensity=1.0, signal_to_noise=1.0, peak_count=-1, index=0, full_width_at_half_max=0.0,
+        area=1.0, left_width=0.0, right_width=0.0)
+    return peak
+
 
 cdef class DeconvoluterBase(object):
 
@@ -114,7 +120,8 @@ cdef class DeconvoluterBase(object):
     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
         peak = self.peaklist._has_peak(mz, error_tolerance)
         if peak is None or peak.intensity < self.minimum_intensity:
-            return FittedPeak._create(mz, 1, 1, 0, 0, 0, 1, 0, 0)
+            # return FittedPeak._create(mz, 1, 1, 0, 0, 0, 1, 0, 0)
+            return make_placeholder_peak(mz)
         return peak
 
     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=2e-5):
@@ -225,7 +232,8 @@ cdef class DeconvoluterBase(object):
         for i in range(n):
             forward = peaklist_slice.getitem(i)
             prev_peak_mz = forward.mz - (shift * step)
-            dummy_peak = FittedPeak._create(prev_peak_mz, 1, 1, 0, 0, 0, 1, 0, 0)
+            # dummy_peak = FittedPeak._create(prev_peak_mz, 1, 1, 0, 0, 0, 1, 0, 0)
+            dummy_peak = make_placeholder_peak(prev_peak_mz)
             candidates.append((dummy_peak, charge))
         return candidates
 

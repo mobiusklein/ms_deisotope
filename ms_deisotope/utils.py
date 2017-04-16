@@ -2,6 +2,7 @@ from __future__ import print_function
 import operator
 import random
 from datetime import datetime
+import os
 
 try:
     from matplotlib import pyplot as plt
@@ -13,14 +14,14 @@ except ImportError:
 
 try:
     range = xrange
-except:
+except NameError:
     range = range
 
 
 try:  # pragma: no cover
     i128 = long
     basestring = basestring
-except:  # pragma: no cover
+except NameError:  # pragma: no cover
     i128 = int
     basestring = (bytes, str)
 

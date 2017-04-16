@@ -284,13 +284,13 @@ class PeakDependenceGraph(object):
 
     def nodes_for(self, fit_record, cache=None):
         if cache is None:
-            return [self.nodes[p.index] for p in fit_record.experimental if p.index != 0]
+            return [self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
         else:
             try:
                 return cache[fit_record]
             except KeyError:
                 cache[fit_record] = value = [
-                    self.nodes[p.index] for p in fit_record.experimental if p.index != 0]
+                    self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
                 return value
 
     def drop_fit_dependence(self, fit_record):
@@ -304,7 +304,7 @@ class PeakDependenceGraph(object):
         peaks = set()
         for fit in self.dependencies:
             for peak in fit.experimental:
-                if peak.index == 0:
+                if peak.peak_count < 0:
                     continue
                 peaks.add(self.nodes[peak.index])
         return peaks
@@ -320,7 +320,7 @@ class PeakDependenceGraph(object):
 
         for dep in self.dependencies:
             mono_peak = dep.monoisotopic_peak
-            if mono_peak.index == 0:
+            if mono_peak.peak_count < 0:
                 continue
             mono_peak_node = self.nodes[mono_peak.index]
             suppress = False

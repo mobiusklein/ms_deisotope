@@ -31,7 +31,7 @@ import time
 import logging
 try:
     log = logging.getLogger(os.path.basename(__file__))
-except:
+except Exception:
     log = None
 
 from collections import namedtuple

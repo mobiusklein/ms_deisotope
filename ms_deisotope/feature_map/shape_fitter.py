@@ -7,7 +7,7 @@ from scipy.special import erf
 
 from ms_peak_picker import search
 
-from .profile_transform import smooth_leveled
+from .profile_transform import smooth_leveled, ValleyPoint, PeakBoundary, ProfileSplitter
 
 
 DEFAULT_SMOOTH = 3
@@ -413,22 +413,22 @@ class AdaptiveMultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
         return "AdaptiveMultimodalChromatogramShapeFitter(%s, %0.4f)" % (self.chromatogram, self.line_test)
 
 
-class SplittingPoint(object):
-    __slots__ = ["first_maximum", "minimum", "second_maximum", "minimum_index", "total_distance"]
+# class SplittingPoint(object):
+#     __slots__ = ["first_maximum", "minimum", "second_maximum", "minimum_index", "total_distance"]
 
-    def __init__(self, first_maximum, minimum, second_maximum, minimum_index):
-        self.first_maximum = first_maximum
-        self.minimum = minimum
-        self.second_maximum = second_maximum
-        self.minimum_index = minimum_index
-        self.total_distance = self.compute_distance()
+#     def __init__(self, first_maximum, minimum, second_maximum, minimum_index):
+#         self.first_maximum = first_maximum
+#         self.minimum = minimum
+#         self.second_maximum = second_maximum
+#         self.minimum_index = minimum_index
+#         self.total_distance = self.compute_distance()
 
-    def compute_distance(self):
-        return (self.first_maximum - self.minimum) + (self.second_maximum - self.minimum)
+#     def compute_distance(self):
+#         return (self.first_maximum - self.minimum) + (self.second_maximum - self.minimum)
 
-    def __repr__(self):
-        return "SplittingPoint(%0.4f, %0.4f, %0.4f, %0.2f, %0.3e)" % (
-            self.first_maximum, self.minimum, self.second_maximum, self.minimum_index, self.total_distance)
+#     def __repr__(self):
+#         return "SplittingPoint(%0.4f, %0.4f, %0.4f, %0.2f, %0.3e)" % (
+#             self.first_maximum, self.minimum, self.second_maximum, self.minimum_index, self.total_distance)
 
 
 class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
@@ -475,7 +475,7 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
                     y_k = ys[min_k]
                     if max_i < min_k < max_j and (y_i - y_k) > (y_i * 0.01) and (
                             y_j - y_k) > (y_j * 0.01):
-                        point = SplittingPoint(y_i, y_k, y_j, xs[min_k])
+                        point = ValleyPoint(y_i, y_k, y_j, xs[min_k])
                         candidates.append(point)
         if candidates:
             best_point = max(candidates, key=lambda x: x.total_distance)
