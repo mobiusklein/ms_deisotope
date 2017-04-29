@@ -461,25 +461,30 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
         if ys is None:
             ys = self.ys
 
-        maxima_indices, minima_indices = self._extreme_indices(ys)
-        candidates = []
-
-        for i in range(len(maxima_indices)):
-            max_i = maxima_indices[i]
-            for j in range(i + 1, len(maxima_indices)):
-                max_j = maxima_indices[j]
-                for k in range(len(minima_indices)):
-                    min_k = minima_indices[k]
-                    y_i = ys[max_i]
-                    y_j = ys[max_j]
-                    y_k = ys[min_k]
-                    if max_i < min_k < max_j and (y_i - y_k) > (y_i * 0.01) and (
-                            y_j - y_k) > (y_j * 0.01):
-                        point = ValleyPoint(y_i, y_k, y_j, xs[min_k])
-                        candidates.append(point)
+        splitter = ProfileSplitter((xs, ys))
+        candidates = splitter.locate_valleys(scale=0.01, smooth=self.smooth, interpolate_past=2000)
         if candidates:
-            best_point = max(candidates, key=lambda x: x.total_distance)
+            best_point = candidates[0]
             self.partition_sites.append(best_point)
+        # maxima_indices, minima_indices = self._extreme_indices(ys)
+        # candidates = []
+
+        # for i in range(len(maxima_indices)):
+        #     max_i = maxima_indices[i]
+        #     for j in range(i + 1, len(maxima_indices)):
+        #         max_j = maxima_indices[j]
+        #         for k in range(len(minima_indices)):
+        #             min_k = minima_indices[k]
+        #             y_i = ys[max_i]
+        #             y_j = ys[max_j]
+        #             y_k = ys[min_k]
+        #             if max_i < min_k < max_j and (y_i - y_k) > (y_i * 0.01) and (
+        #                     y_j - y_k) > (y_j * 0.01):
+        #                 point = ValleyPoint(y_i, y_k, y_j, xs[min_k])
+        #                 candidates.append(point)
+        # if candidates:
+        #     best_point = max(candidates, key=lambda x: x.total_distance)
+        #     self.partition_sites.append(best_point)
 
         return candidates
 

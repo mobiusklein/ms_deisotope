@@ -250,8 +250,8 @@ class ThermoRawfile(object):
             except Exception as e:
                 log.debug(e)
                 raise ImportError(
-                    'Please install the appropriate Thermo MSFileReader\
-                     version depending of your Python version (32bits or 64bits)')
+                    ('Please install the appropriate Thermo MSFileReader'
+                     'version depending of your Python version (32bits or 64bits)\n%r') % e)
         return obj
 
     def __init__(self, filename, **kwargs):
@@ -262,19 +262,7 @@ class ThermoRawfile(object):
         if not DLL_IS_LOADED:
             register_dll()
 
-        try:
-            log.debug("obj = CreateObject('MSFileReader.XRawfile')")
-            obj = CreateObject('MSFileReader.XRawfile')
-        except Exception as e:
-            log.debug(e)
-            try:
-                log.debug("obj = CreateObject('XRawfile.XRawfile')")
-                obj = CreateObject('XRawfile.XRawfile')
-            except Exception as e:
-                log.debug(e)
-                raise ImportError(
-                    'Please install the appropriate Thermo MSFileReader\
-                     version depending of your Python version (32bits or 64bits)')
+        obj = self.create_com_object()
 
         self.source = obj
 

@@ -2,14 +2,17 @@
 # 
 
 cimport cython
-cimport numpy as cnp
+cimport numpy as np
 import numpy as np
 
 
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
 
 
-cpdef object find_immediate_minima(cnp.ndarray[double, ndim=1] x, double scale):
+np.import_array()
+
+
+cpdef object find_immediate_minima(np.ndarray[double, ndim=1] x, double scale):
     cdef:
         size_t i, n
         list maxima, minima
@@ -30,7 +33,7 @@ cpdef object find_immediate_minima(cnp.ndarray[double, ndim=1] x, double scale):
     return np.array(maxima, dtype=np.int64), np.array(minima, dtype=np.int64)
 
 
-cpdef object locate_extrema(cnp.ndarray[double, ndim=1] x):
+cpdef object locate_extrema(np.ndarray[double, ndim=1] x):
     cdef:
         size_t i, n
         list maxima, minima
@@ -57,13 +60,13 @@ def interpolate(xs, ys, n=200):
     return new_xs, new_ys
 
 
-cdef object sliding_mean(cnp.ndarray[double, ndim=1, mode='c'] ys):
+cdef object sliding_mean(np.ndarray[double, ndim=1, mode='c'] ys):
     return (np.concatenate((ys[1:], [0])) + ys + np.concatenate(([0], ys[:-1]))) / 3
 
 
-cdef object sliding_median(cnp.ndarray[double, ndim=1, mode='c'] ys):
+cdef object sliding_median(np.ndarray[double, ndim=1, mode='c'] ys):
     cdef:
-        cnp.ndarray[double, ndim=1, mode='c'] arr
+        np.ndarray[double, ndim=1, mode='c'] arr
         size_t i, n
         double value
     arr = np.zeros_like(ys)
@@ -79,7 +82,7 @@ cdef object sliding_median(cnp.ndarray[double, ndim=1, mode='c'] ys):
     return arr
 
 
-cpdef size_t binsearch(cnp.ndarray[double, ndim=1, mode='c'] array, double value):
+cpdef size_t binsearch(np.ndarray[double, ndim=1, mode='c'] array, double value):
     cdef:
         size_t lo, hi, mid
         double point
@@ -98,14 +101,16 @@ cpdef size_t binsearch(cnp.ndarray[double, ndim=1, mode='c'] array, double value
             lo = mid
 
 
-cdef object gauss(cnp.ndarray[double, ndim=1, mode='c'] x, double mean, double variance, double scale=2.0):
+cdef np.ndarray[double, ndim=1, mode='c'] gauss(np.ndarray[double, ndim=1, mode='c'] x,
+                                                double mean, double variance, double scale=2.0):
     return 1. / np.sqrt(2 * np.pi * variance) * np.exp(-(x - mean) ** 2 / (scale * variance))
 
 
-cpdef object gaussian_smooth(cnp.ndarray[double, ndim=1, mode='c'] x,
-                             cnp.ndarray[double, ndim=1, mode='c'] y, double width=0.05):
+cpdef np.ndarray[double, ndim=1, mode='c'] gaussian_smooth(
+        np.ndarray[double, ndim=1, mode='c'] x,
+        np.ndarray[double, ndim=1, mode='c'] y, double width=0.05):
     cdef:
-        cnp.ndarray[double, ndim=1, mode='c'] smoothed, x_slice, y_slice, weights
+        np.ndarray[double, ndim=1, mode='c'] smoothed, x_slice, y_slice, weights
         size_t i, n, low_edge, high_edge
         double center, spread
 
@@ -127,7 +132,9 @@ cpdef object gaussian_smooth(cnp.ndarray[double, ndim=1, mode='c'] x,
     return smoothed
 
 
-cpdef object smooth_leveled(cnp.ndarray[double, ndim=1, mode='c'] xs, cnp.ndarray[double, ndim=1, mode='c'] ys, double level=0):
+cpdef np.ndarray[double, ndim=1, mode='c'] smooth_leveled(
+        np.ndarray[double, ndim=1, mode='c'] xs,
+        np.ndarray[double, ndim=1, mode='c'] ys, double level=0):
     if level == 0:
         return ys
     elif level == 1:
@@ -218,23 +225,32 @@ cdef class ProfileSplitter(object):
     cdef:
         public object profile
         public list partition_sites
-        public cnp.ndarray xs
-        public cnp.ndarray ys
+        public np.ndarray xs
+        public np.ndarray ys
 
     def __init__(self, profile):
-        self.profile = profile
-        self.xs, self.ys = profile.as_arrays()
+        if isinstance(profile, LCMSFeature):
+            self.profile = profile
+            self.xs, self.ys = profile.as_arrays()
+        else:
+            self.xs, self.ys = profile
+            self.profile = None
         self.partition_sites = []
 
     def _extreme_indices(self, ys):
         maxima_indices, minima_indices = locate_extrema(ys)
         return maxima_indices.astype(np.int64), minima_indices.astype(np.int64)
 
+    cpdef object interpolate(self, xs, ys, int n=200):
+        new_xs = np.linspace(xs.min(), xs.max(), n)
+        new_ys = np.interp(new_xs, xs, ys)
+        return new_xs, new_ys
+
     @cython.boundscheck(False)
-    def locate_peak_boundaries(self, double smooth=1):
+    def locate_peak_boundaries(self, double smooth=1, int interpolate_past=200):
         cdef:
-            cnp.ndarray[double, ndim=1] xs, ys
-            cnp.ndarray[cnp.int64_t, ndim=1] maxima_indices, minima_indices
+            np.ndarray[double, ndim=1] xs, ys
+            np.ndarray[np.int64_t, ndim=1] maxima_indices, minima_indices
             list candidates
             size_t i, j, k, max_i, max_j, min_k
             double y_i, y_j, y_k
@@ -243,8 +259,8 @@ cdef class ProfileSplitter(object):
         xs = self.xs
         ys = self.ys
         ys = sliding_mean(ys)
-        if len(xs) > 200:
-            xs, ys = interpolate(xs, ys)
+        if len(xs) > interpolate_past:
+            xs, ys = self.interpolate(xs, ys, interpolate_past)
         if smooth:
             ys = smooth_leveled(xs, ys, smooth)
 
@@ -271,12 +287,12 @@ cdef class ProfileSplitter(object):
         return candidates
 
     @cython.boundscheck(False)
-    def locate_valleys(self, double scale=0.3, double smooth=1):
+    def locate_valleys(self, double scale=0.3, double smooth=1, int interpolate_past=200):
         cdef:
-            cnp.ndarray[double, ndim=1, mode='c'] xs
-            cnp.ndarray[double, ndim=1, mode='c'] ys
-            cnp.ndarray[cnp.int64_t, ndim=1, mode='c'] maxima_indices
-            cnp.ndarray[cnp.int64_t, ndim=1, mode='c'] minima_indices
+            np.ndarray[double, ndim=1, mode='c'] xs
+            np.ndarray[double, ndim=1, mode='c'] ys
+            np.ndarray[np.int64_t, ndim=1, mode='c'] maxima_indices
+            np.ndarray[np.int64_t, ndim=1, mode='c'] minima_indices
             list candidates
             size_t i, j, k, max_i, max_j, min_k, n_maxima, n_minima
             double y_i, y_j, y_k
@@ -284,8 +300,9 @@ cdef class ProfileSplitter(object):
 
         xs = self.xs
         ys = self.ys
-        if len(xs) > 200:
-            xs, ys = interpolate(xs, ys)
+        
+        if len(xs) > interpolate_past:
+            xs, ys = self.interpolate(xs, ys, interpolate_past)
 
         if smooth:
             ys = smooth_leveled(xs, ys, smooth)
@@ -316,11 +333,17 @@ cdef class ProfileSplitter(object):
         return candidates
 
     def extract_peak(self, peak_boundary):
-        cases = peak_boundary.split(self.profile)
+        if self.profile is not None:
+            cases = peak_boundary.split(self.profile)
+        else:
+            cases = None
         return cases
 
     def split_valley(self, valley):
-        return valley.split(self.profile)
+        if self.profile is not None:
+            return valley.split(self.profile)
+        else:
+            return None
 
 
 def split_valleys(profiles, scale=0.3, n_levels=2):

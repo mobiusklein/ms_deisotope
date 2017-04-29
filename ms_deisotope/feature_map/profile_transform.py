@@ -184,11 +184,16 @@ class ProfileSplitter(object):
         minima_indices = peak_indices(-ys)
         return maxima_indices, minima_indices
 
-    def locate_peak_boundaries(self, smooth=1):
+    def interpolate(self, xs, ys, n=200):
+        new_xs = np.linspace(xs.min(), xs.max(), n)
+        new_ys = np.interp(new_xs, xs, ys)
+        return new_xs, new_ys
+
+    def locate_peak_boundaries(self, smooth=1, interpolate_past=200):
         xs = self.xs
         ys = self.ys
-        if len(xs) > 200:
-            xs, ys = interpolate(xs, ys)
+        if len(xs) > interpolate_past:
+            xs, ys = self.interpolate(xs, ys, interpolate_past)
         if smooth:
             ys = smooth_leveled(xs, ys, smooth)
 
@@ -214,12 +219,12 @@ class ProfileSplitter(object):
 
         return candidates
 
-    def locate_valleys(self, scale=0.3, smooth=1):
+    def locate_valleys(self, scale=0.3, smooth=1, interpolate_past=200):
         xs = self.xs
         ys = self.ys
 
-        if len(xs) > 200:
-            xs, ys = interpolate(xs, ys)
+        if len(xs) > interpolate_past:
+            xs, ys = self.interpolate(xs, ys, interpolate_past)
 
         if smooth:
             ys = smooth_leveled(xs, ys, smooth)

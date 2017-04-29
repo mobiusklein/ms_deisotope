@@ -10,7 +10,7 @@ cimport cython
 
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_Append, PyList_GetItem, PyList_SetItem, PyList_New
 from ms_peak_picker._c.peak_set cimport FittedPeak
-from brainpy._c.isotopic_distribution cimport TheoreticalPeak
+from brainpy._c.isotopic_distribution cimport TheoreticalPeak, _isotopic_variants
 from brainpy._c.double_vector cimport (
     DoubleVector as dvec,
     make_double_vector,
@@ -371,7 +371,6 @@ cdef class LCMSFeatureProcessorBase(object):
             size_t feat_i, feat_n, n_missing, missing_features, counter
 
         conformer = envelope_conformer._create()
-        # feat_iter = FeatureSetIterator._create_with_threshold(features, base_tid, 0.1)
         feat_iter = FeatureSetIterator._create(features)
         score_acc = 0
         counter = 0
@@ -415,12 +414,13 @@ cdef class LCMSFeatureProcessorBase(object):
         free_double_vector(time_vec)
         return fit
 
-    cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
-                                int right_search=1, double charge_carrier=PROTON, double truncate_after=0.8,
-                                int max_missed_peaks=1, double threshold_scale=0.3, LCMSFeature feature=None):
+    cdef list _fit_theoretical_distribution_on_features(self, double mz, double error_tolerance, int charge,
+                                                        list base_tid, double charge_carrier=PROTON,
+                                                        double truncate_after=0.8, int max_missed_peaks=1,
+                                                        double threshold_scale=0.3, LCMSFeature feature=None):
         cdef:
             double score, final_score, score_acc, neutral_mass
-            list base_tid, feature_groups, feature_fits, features
+            list feature_groups, feature_fits, features
             list eid, cleaned_eid, tid
             np.ndarray scores_array, times_array
             tuple temp
@@ -433,8 +433,6 @@ cdef class LCMSFeatureProcessorBase(object):
             dvec* score_vec
             dvec* time_vec
 
-        base_tid = self.create_theoretical_distribution(
-            mz, charge, charge_carrier, truncate_after)
         feature_groups = self.match_theoretical_isotopic_distribution(
             base_tid, error_tolerance, interval=feature)
         feature_fits = []
@@ -515,4 +513,61 @@ cdef class LCMSFeatureProcessorBase(object):
             if self.scorer.reject_score(fit.score):
                 continue
             feature_fits.append(fit)
+        return feature_fits
+
+    cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
+                                int right_search=1, double charge_carrier=PROTON, double truncate_after=0.8,
+                                int max_missed_peaks=1, double threshold_scale=0.3, LCMSFeature feature=None):
+        cdef:
+            list base_tid, feature_fits
+        base_tid = self.create_theoretical_distribution(
+            mz, charge, charge_carrier, truncate_after)
+        feature_fits = self._fit_theoretical_distribution_on_features(
+            mz, error_tolerance, charge, base_tid,
+            charge_carrier, truncate_after, max_missed_peaks, threshold_scale,
+            feature)
+        return feature_fits
+
+    cpdef list _fit_composition(self, dict composition, double error_tolerance, int charge, double charge_carrier=PROTON,
+                                double truncate_after=0.8, double ignore_below=0.05, int max_missed_peaks=1,
+                                double threshold_scale=0.3, LCMSFeature feature=None):
+        cdef:
+            list base_tid, kept_tid, feature_fits
+            double total, cumsum, mz
+            TheoreticalPeak tp
+            size_t i, n
+
+        # Can't refactor shared components with `create_theoretical_isotopic_distribution` because
+        # this needs to include its own truncate-after component as well as ignore-under
+        base_tid = _isotopic_variants(composition, npeaks=None, charge=charge, charge_carrier=charge_carrier)
+        n = PyList_GET_SIZE(base_tid)
+        total = 0
+        cumsum = 0
+        kept_tid = []
+        for i in range(n):
+            tp = <TheoreticalPeak>PyList_GET_ITEM(base_tid, i)
+            cumsum += tp.intensity
+            if (tp.intensity < ignore_below) and (i > 1):
+                pass
+            else:
+                PyList_Append(kept_tid, tp)
+                total += tp.intensity
+            if cumsum >= truncate_after:
+                break
+
+        n = PyList_GET_SIZE(kept_tid)
+        for i in range(n):
+            tp = <TheoreticalPeak>PyList_GET_ITEM(kept_tid, i)
+            tp.intensity /= total
+
+        if n == 0:
+            return []
+
+        tp = <TheoreticalPeak>PyList_GET_ITEM(kept_tid, 0)
+        mz = tp.mz
+
+        feature_fits = self._fit_theoretical_distribution_on_features(
+            mz, error_tolerance, charge, kept_tid,
+            charge_carrier, truncate_after, max_missed_peaks, threshold_scale,
+            feature)
         return feature_fits

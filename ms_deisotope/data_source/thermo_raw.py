@@ -1,5 +1,6 @@
 # pragma: no cover
 import re
+
 from weakref import WeakValueDictionary
 from collections import OrderedDict
 

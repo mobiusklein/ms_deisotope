@@ -4,13 +4,15 @@ from matplotlib import patches as mpatches, colors as mcolors
 import numpy as np
 
 
-from .profile_transform import sliding_mean, sliding_median, gaussian_smooth, interpolate, smooth_leveled
+from .profile_transform import interpolate, smooth_leveled
 
 
 Ellipse = mpatches.Ellipse
+FancyBboxPatch = mpatches.FancyBboxPatch
+Rectangle = mpatches.Rectangle
 
 
-def draw_features(features, ax=None, alpha=0.65, width=0.025, **kwargs):
+def draw_features(features, ax=None, alpha=0.65, width=2e-5, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(1)
 
@@ -22,8 +24,13 @@ def draw_features(features, ax=None, alpha=0.65, width=0.025, **kwargs):
             continue
         center = (feat.end_time + feat.start_time) / 2.
         height = feat.end_time - feat.start_time
+
+        center_mz = feat.mz
+        mz_width = center_mz * width
+
         ellipses.append(
-            Ellipse((feat.mz, center), width=width, height=height, angle=0))
+            FancyBboxPatch((feat.mz - mz_width / 4., center - height / 2.), width=mz_width / 2., height=height,
+                           boxstyle=mpatches.BoxStyle.Round(pad=mz_width / 2.)))
 
     for ell in ellipses:
         ell.set_alpha(alpha)
@@ -41,7 +48,7 @@ def draw_features(features, ax=None, alpha=0.65, width=0.025, **kwargs):
     return ax
 
 
-def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=0.025, **kwargs):
+def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=2e-5, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(1)
 
@@ -57,8 +64,14 @@ def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=0.025, **kwargs):
                 continue
             center = (feat.end_time + feat.start_time) / 2.
             height = feat.end_time - feat.start_time
+
+            center_mz = feat.mz
+            mz_width = center_mz * width
+
             ellipses.append(
-                Ellipse((feat.mz, center), width=width, height=height, angle=0))
+                FancyBboxPatch((feat.mz - mz_width / 4., center - height / 2.),
+                               width=mz_width / 2., height=height,
+                               boxstyle=mpatches.BoxStyle.Round(pad=mz_width / 2.)))
             features.append(feat)
         ellipse_sets.append(ellipses)
 

@@ -309,8 +309,9 @@ class DeconvoluterBase(Base):
         for peak in isotopic_cluster:
             match = self.peaklist.has_peak(peak.mz, error_tolerance)
             if match is not None:
+                existing = match.intensity
                 match.intensity -= peak.intensity
-                if match.intensity < 0:
+                if (match.intensity < 0) or (peak.intensity > (existing * 0.7)):
                     match.intensity = 1.
 
     def _merge_peaks(self, peak_list):

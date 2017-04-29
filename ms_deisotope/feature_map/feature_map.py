@@ -44,7 +44,7 @@ class LCMSFeatureMap(object):
             binary_search_with_flag(
                 self.features, hi, error_tolerance)[0][0])
 
-    def between(self, lo, hi, error_tolerance):
+    def between(self, lo, hi, error_tolerance=2e-5):
         lo_ix = binary_search_with_flag(
             self.features, lo, error_tolerance)[0][0]
         hi_ix = binary_search_with_flag(

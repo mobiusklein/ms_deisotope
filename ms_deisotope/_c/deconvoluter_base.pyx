@@ -161,14 +161,16 @@ cdef class DeconvoluterBase(object):
     cpdef subtraction(self, list isotopic_cluster, double error_tolerance=2e-5):
         cdef:
             size_t i
+            double existing
             TheoreticalPeak peak
             FittedPeak match
         for i in range(PyList_GET_SIZE(isotopic_cluster)):
             peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
             match = self.peaklist._has_peak(peak.mz, error_tolerance)
             if match is not None:
+                existing = match.intensity
                 match.intensity -= peak.intensity
-                if match.intensity < 0:
+                if (match.intensity < 0) or (peak.intensity > (existing * 0.7)):
                     match.intensity = 1.
 
     def _merge_peaks(self, peak_list):
@@ -290,19 +292,21 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
             minimum_intensity, *args, **kwargs)
 
     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge,
-                                                         double charge_carrier=PROTON, double truncate_after=0.95):
+                                                         double charge_carrier=PROTON, double truncate_after=0.95,
+                                                         double ignore_below=0):
         cdef:
             list tid, eid
             double score
         tid = self.averagine.isotopic_cluster(
-            peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after)
+            peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after,
+            ignore_below=ignore_below)
         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
         score = self.scorer._evaluate(self.peaklist, eid, tid)
         return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
-                                    double truncate_after=0.95):
+                                    double truncate_after=0.95, double ignore_below=0):
         cdef:
             list results
             tuple peak_charge
@@ -323,7 +327,8 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
 
             fit = self.fit_theoretical_distribution(
                      peak, error_tolerance, charge,
-                     charge_carrier, truncate_after=truncate_after)
+                     charge_carrier, truncate_after=truncate_after,
+                     ignore_below=ignore_below)
             fit.missed_peaks = count_missed_peaks(fit.experimental)
             if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
                 continue
@@ -343,18 +348,20 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
 
     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge,
                                                          AveragineCache  averagine, double charge_carrier=PROTON,
-                                                         double truncate_after=0.95):
+                                                         double truncate_after=0.95, double ignore_below=0):
         cdef:
             list tid, eid
             double score
-        tid = averagine.isotopic_cluster(peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after)
+        tid = averagine.isotopic_cluster(
+            peak.mz, charge, charge_carrier=charge_carrier,
+            truncate_after=truncate_after, ignore_below=ignore_below)
         eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
         score = self.scorer._evaluate(self.peaklist, eid, tid)
         return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
-                                    double truncate_after=0.95):
+                                    double truncate_after=0.95, double ignore_below=0):
         cdef:
             list results
             tuple peak_charge
@@ -371,7 +378,7 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                 averagine = <AveragineCache>PyList_GET_ITEM(self.averagine, j)
                 fit = self.fit_theoretical_distribution(
                     peak, error_tolerance, charge, averagine, charge_carrier,
-                    truncate_after=truncate_after)
+                    truncate_after=truncate_after, ignore_below=ignore_below)
                 fit.missed_peaks = count_missed_peaks(fit.experimental)
                 fit.data = averagine
                 if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:

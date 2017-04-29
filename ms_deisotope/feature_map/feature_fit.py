@@ -160,11 +160,11 @@ class DeconvolutedLCMSFeature(LCMSFeature):
             self.nodes, self.charge, self.adducts, self.used_as_adduct, self.score,
             self.n_features, self.feature_id, list(self.supporters))
 
-    def _invalidate(self):
+    def _invalidate(self, reaverage=False):
         self._last_neutral_mass = self._neutral_mass if self._neutral_mass is not None else 0.
         self._neutral_mass = None
         self._precursor_information = None
-        super(DeconvolutedLCMSFeature, self)._invalidate()
+        super(DeconvolutedLCMSFeature, self)._invalidate(reaverage)
 
     @property
     def neutral_mass(self):
@@ -247,9 +247,9 @@ def isotopic_consistency(eic, averagine=glycan, truncate_after=0.95):
     for node in eic:
         for peak in node.members:
             eid = envelope_to_peak_list(peak.envelope)
-            tid = averagine.isotopic_cluster(peak.mz, peak.charge, truncate_after=0.95)
+            tid = averagine.isotopic_cluster(peak.mz, peak.charge, truncate_after=truncate_after)
             scale_theoretical_isotopic_pattern(eid, tid)
-            peak_scores.append(g_test_scaled(None, eid, tid))
+            peak_scores.append(abs(g_test_scaled(None, eid, tid)))
             peak_abundances.append(peak.intensity)
     return max(1 - np.average(peak_scores, weights=peak_abundances), 1e-4)
 

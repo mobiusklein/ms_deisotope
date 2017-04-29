@@ -140,4 +140,4 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase):
             yield scan_source.get_by_id(key)
 
 
-PyteomicsMzMLLoader = MzMLLoader
+# PyteomicsMzMLLoader = MzMLLoader

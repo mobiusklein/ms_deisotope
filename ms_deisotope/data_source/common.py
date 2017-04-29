@@ -283,6 +283,10 @@ class DetachedAccessError(Exception):
 
 
 class DataAccessProxy(object):
+    def __init__(self, source):
+        self.source = None
+        self.attach(source)
+
     def attach(self, source):
         self.source = source
 
@@ -701,3 +705,21 @@ dissociation_methods = {
 
 
 ActivationInformation.dissociation_methods = dissociation_methods
+
+
+class IteratorFacadeBase(DataAccessProxy, ScanIterator):
+    def __init__(self, source, **kwargs):
+        DataAccessProxy.__init__(self, source)
+        self._producer = None
+
+    def make_iterator(self, iterator=None, grouped=True):
+        if grouped:
+            self._producer = self.source._scan_group_iterator(iterator)
+        else:
+            self._producer = self.source._single_scan_iterator(iterator)
+
+    def _transform(self, scan_bunch):
+        return scan_bunch
+
+    def next(self):
+        return self._transform(next(self._producer))

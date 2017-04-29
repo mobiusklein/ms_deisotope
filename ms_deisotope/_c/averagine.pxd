@@ -12,8 +12,8 @@ cdef class Averagine(object):
         public dict base_composition
     
     cpdef dict scale(self, double mz, int charge=*, double charge_carrier=*)
-    cpdef list isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*)
-    cdef list _isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*)
+    cpdef list isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
+    cdef list _isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
 
 
 cdef class AveragineCache(object):
@@ -23,8 +23,8 @@ cdef class AveragineCache(object):
         public double cache_truncation
         public bint enabled
     
-    cdef list has_mz_charge_pair(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*)
-    cpdef list isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*)
+    cdef list has_mz_charge_pair(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
+    cpdef list isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
 
 
 cpdef double isotopic_shift(int charge=*)

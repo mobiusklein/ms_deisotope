@@ -58,7 +58,7 @@ def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None)
     pool = multiprocessing.Pool(n_processes)
     scan_ranges = partition_work(n_items, n_chunks, start_scan)
     feeder = ((reader, scan_range[0], scan_range[1]) for scan_range in scan_ranges)
-    return list(pool.map(task, feeder))
+    return list(pool.imap_unordered(task, feeder))
 
 
 def merge_indices(indices):

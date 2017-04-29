@@ -33,9 +33,11 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
         public AveragineCache averagine
 
     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge,
-                                                         double charge_carrier=*, double truncate_after=*)
+                                                         double charge_carrier=*, double truncate_after=*,
+                                                         double ignore_below=*)
 
-    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=*, double truncate_after=*)
+    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=*, double truncate_after=*,
+                                    double ignore_below=*)
 
 
 cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
@@ -43,8 +45,10 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
         public list averagines
 
     cpdef IsotopicFitRecord fit_theoretical_distribution(self, FittedPeak peak, double error_tolerance, int charge,
-                                                         AveragineCache  averagine, double charge_carrier=*, double truncate_after=*)
-    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=*, double truncate_after=*)
+                                                         AveragineCache  averagine, double charge_carrier=*, double truncate_after=*,
+                                                         double ignore_below=*)
+    cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=*, double truncate_after=*,
+                                    double ignore_below=*)
 
 
 cdef bint has_multiple_real_peaks(list peaklist)

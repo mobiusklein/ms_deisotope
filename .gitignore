@@ -1,3 +1,10 @@
 *.c
 *.pyc
 *.pyd
+ms_deisotope/_c/**/*.html
+.coverage
+.noseids
+/*sublime-*
+/test_reports
+*egg-info
+.cache

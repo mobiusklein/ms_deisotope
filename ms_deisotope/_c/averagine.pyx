@@ -3,7 +3,7 @@
 cimport cython
 from cpython cimport PyObject
 from cpython.float cimport PyFloat_AsDouble
-from cpython.list cimport PyList_New, PyList_GET_ITEM, PyList_SET_ITEM, PyList_GET_SIZE
+from cpython.list cimport PyList_New, PyList_GET_ITEM, PyList_SET_ITEM, PyList_GET_SIZE, PyList_Append
 from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 
 from libc.math cimport floor
@@ -108,11 +108,12 @@ cdef class Averagine(object):
 
         return scaled
 
-    cdef list _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
+    cdef list _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+                                double ignore_below=0.0):
         cdef:
             dict composition
-            list result, tid
-            double cumsum, base_mz
+            list result, tid, kept_tid
+            double cumsum, base_mz, total
             TheoreticalPeak peak
             size_t i, n
         composition = self.scale(mz, charge, charge_carrier)
@@ -134,12 +135,30 @@ cdef class Averagine(object):
             for i in range(n):
                 peak = <TheoreticalPeak>PyList_GET_ITEM(tid, i)
                 peak.intensity *= 1. / cumsum
+
+        if ignore_below > 0:
+            total = 0.0
+            kept_tid = []
+            for i in range(n):
+                peak = <TheoreticalPeak>PyList_GET_ITEM(result, i)
+                if (peak.intensity < ignore_below) and (i > 1):
+                    pass
+                else:
+                    PyList_Append(kept_tid, peak)
+                    total += peak.intensity
+            n = PyList_GET_SIZE(kept_tid)
+            for i in range(n):
+                peak = <TheoreticalPeak>PyList_GET_ITEM(kept_tid, i)
+                peak.intensity /= total
+            result = kept_tid
+
         return result
 
-    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
+    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+                                double ignore_below=0.0):
         cdef:
             list out
-        out = self._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
+        out = self._isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
         return out
 
     def __getitem__(self, key):
@@ -210,7 +229,8 @@ cdef class AveragineCache(object):
         self.store = dict(store)
         self.cache_truncation = trunc
 
-    cdef list has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
+    cdef list has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+                                 double ignore_below=0.0):
         cdef:
             double key_mz
             tuple key_tuple
@@ -236,8 +256,9 @@ cdef class AveragineCache(object):
             tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
             return tid
 
-    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95):
-        return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after)
+    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+                                double ignore_below=0.0):
+        return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after, ignore_below)
 
     def __getitem__(self, key):
         return self.averagine[key]

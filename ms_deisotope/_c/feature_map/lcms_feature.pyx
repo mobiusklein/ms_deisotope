@@ -16,6 +16,9 @@ cimport numpy as np
 import numpy as np
 
 
+np.import_array()
+
+
 cdef object _zeros = np.zeros
 
 cdef double INF = float("inf")
