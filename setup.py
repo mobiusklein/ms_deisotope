@@ -7,22 +7,6 @@ from distutils.command.build_ext import build_ext
 from distutils.errors import (CCompilerError, DistutilsExecError,
                               DistutilsPlatformError)
 
-# try:
-#     import numpy
-# except ImportError:
-#     print("Installation requires `numpy`")
-#     sys.exit(-1)
-# try:
-#     import brainpy
-# except ImportError:
-#     print("Installation requires `brainpy`, install with `python -m pip install brain-isotopic-distribution`")
-#     sys.exit(-1)
-# try:
-#     import ms_peak_picker
-# except ImportError:
-#     print("Installation requires `ms_peak_picker`")
-#     sys.exit(-1)
-
 
 def make_extensions():
     is_ci = bool(os.getenv("CI", ""))
