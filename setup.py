@@ -48,7 +48,8 @@ def make_extensions():
         }
         macros = []
         if is_ci:
-            cython_directives['linetracer'] = True
+            print("CI Detected, Building With Diagnostics")
+            cython_directives['linetrace'] = True
             macros.append(("CYTHON_TRACE", '1'))
         extensions = cythonize([
             Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.pyx"],
