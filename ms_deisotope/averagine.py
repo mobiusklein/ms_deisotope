@@ -38,7 +38,7 @@ class Averagine(object):
 
         return scaled
 
-    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95):
+    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
         composition = self.scale(mz, charge, charge_carrier)
         cumsum = 0
         result = []
@@ -49,7 +49,21 @@ class Averagine(object):
                 break
         for peak in result:
             peak.intensity *= 1. / cumsum
-        return shift_isotopic_pattern(mz, result)
+        result = shift_isotopic_pattern(mz, result)
+
+        if ignore_below > 0:
+            total = 0
+            kept_tid = []
+            for i, p in enumerate(result):
+                if p.intensity < ignore_below and i > 1:
+                    continue
+                else:
+                    total += p.intensity
+                    kept_tid.append(p)
+            for p in kept_tid:
+                p.intensity /= total
+            result = kept_tid
+        return result
 
     def __repr__(self):
         return "Averagine(%r)" % self.base_composition
@@ -110,15 +124,17 @@ class AveragineCache(object):
         self.averagine = Averagine(averagine)
         self.cache_truncation = cache_truncation
 
-    def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95):
+    def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
         if self.cache_truncation == 0.0:
             key_mz = mz
         else:
             key_mz = round(mz / self.cache_truncation) * self.cache_truncation
         if (key_mz, charge, charge_carrier) in self.backend:
-            return shift_isotopic_pattern(mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])
+            return shift_isotopic_pattern(
+                mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])
         else:
-            tid = self.averagine.isotopic_cluster(mz, charge, charge_carrier, truncate_after)
+            tid = self.averagine.isotopic_cluster(
+                mz, charge, charge_carrier, truncate_after, ignore_below)
             self.backend[key_mz, charge, charge_carrier] = [p.clone() for p in tid]
             return tid
 

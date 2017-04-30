@@ -3,77 +3,109 @@ import traceback
 import os
 from setuptools import setup, Extension, find_packages
 
-try:
-    import numpy
-except ImportError:
-    print("Installation requires `numpy`")
-    sys.exit(-1)
-try:
-    import brainpy
-except ImportError:
-    print("Installation requires `brainpy`, install with `python -m pip install brain-isotopic-distribution`")
-    sys.exit(-1)
-try:
-    import ms_peak_picker
-except ImportError:
-    print("Installation requires `ms_peak_picker`")
-    sys.exit(-1)
-
-try:
-    from Cython.Build import cythonize
-    extensions = cythonize([
-        Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.pyx"],
-                  include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-        Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.pyx"],
-                  include_dirs=[brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
-                  "ms_deisotope/_c/feature_map/lcms_feature.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
-                  "ms_deisotope/_c/feature_map/feature_processor.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_map', sources=[
-                  "ms_deisotope/_c/feature_map/feature_map.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=[
-                  "ms_deisotope/_c/feature_map/feature_fit.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
-                  "ms_deisotope/_c/feature_map/profile_transform.pyx"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
-    ], compiler_directives={'embedsignature': True})
-except ImportError:
-    extensions = ([
-        Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],
-                  include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-        Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.c"],
-                  include_dirs=[brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
-                  "ms_deisotope/_c/feature_map/lcms_feature.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
-                  "ms_deisotope/_c/feature_map/feature_processor.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_map', sources=["ms_deisotope/_c/feature_map/feature_map.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=["ms_deisotope/_c/feature_map/feature_fit.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
-        Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
-                  "ms_deisotope/_c/feature_map/profile_transform.c"],
-                  include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
-    ])
-
 from distutils.command.build_ext import build_ext
 from distutils.errors import (CCompilerError, DistutilsExecError,
                               DistutilsPlatformError)
+
+# try:
+#     import numpy
+# except ImportError:
+#     print("Installation requires `numpy`")
+#     sys.exit(-1)
+# try:
+#     import brainpy
+# except ImportError:
+#     print("Installation requires `brainpy`, install with `python -m pip install brain-isotopic-distribution`")
+#     sys.exit(-1)
+# try:
+#     import ms_peak_picker
+# except ImportError:
+#     print("Installation requires `ms_peak_picker`")
+#     sys.exit(-1)
+
+
+def make_extensions():
+    is_ci = bool(os.getenv("CI", ""))
+    try:
+        import numpy
+    except ImportError:
+        print("Installation requires `numpy`")
+        raise
+    try:
+        import brainpy
+    except ImportError:
+        print("Installation requires `brainpy`, install with `python -m pip install brain-isotopic-distribution`")
+        raise
+    try:
+        import ms_peak_picker
+    except ImportError:
+        print("Installation requires `ms_peak_picker`")
+        raise
+    try:
+        from Cython.Build import cythonize
+        cython_directives = {
+            'embedsignature': True
+        }
+        macros = []
+        if is_ci:
+            cython_directives['linetracer'] = True
+            macros.append(("CYTHON_TRACE", '1'))
+        extensions = cythonize([
+            Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.pyx"],
+                      include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.pyx"],
+                      include_dirs=[brainpy.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
+                      "ms_deisotope/_c/feature_map/lcms_feature.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()],
+                      define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
+                      "ms_deisotope/_c/feature_map/feature_processor.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
+                      define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.feature_map', sources=[
+                      "ms_deisotope/_c/feature_map/feature_map.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
+                      define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=[
+                      "ms_deisotope/_c/feature_map/feature_fit.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
+                      define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
+                      "ms_deisotope/_c/feature_map/profile_transform.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
+                      define_macros=macros)
+        ], compiler_directives={'embedsignature': True})
+    except ImportError:
+        extensions = ([
+            Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],
+                      include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.c"],
+                      include_dirs=[brainpy.get_include()]),
+            Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+            Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
+                      "ms_deisotope/_c/feature_map/lcms_feature.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
+                      "ms_deisotope/_c/feature_map/feature_processor.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.feature_map', sources=["ms_deisotope/_c/feature_map/feature_map.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=["ms_deisotope/_c/feature_map/feature_fit.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
+                      "ms_deisotope/_c/feature_map/profile_transform.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()])
+        ])
+    return extensions
+
 
 ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError)
 if sys.platform == 'win32':
@@ -156,7 +188,7 @@ def run_setup(include_cext=True):
         packages=find_packages(),
         author=', '.join(["Joshua Klein"]),
         author_email=["jaklein@bu.edu"],
-        ext_modules=extensions if include_cext else None,
+        ext_modules=make_extensions() if include_cext else None,
         cmdclass=cmdclass,
         classifiers=[
                 'Development Status :: 3 - Alpha',

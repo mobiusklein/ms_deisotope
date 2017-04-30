@@ -431,7 +431,8 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             use_subtraction, scale_method, merge_isobaric_peaks,
             minimum_intensity, *args, **kwargs)
 
-    def fit_theoretical_distribution(self, peak, error_tolerance, charge, charge_carrier=PROTON, truncate_after=0.8):
+    def fit_theoretical_distribution(self, peak, error_tolerance, charge, charge_carrier=PROTON, truncate_after=0.8,
+                                     ignore_below=0.0):
         """Fit an isotopic pattern seeded at `peak` at `charge` charge.
 
         Generates a theoretical isotopic pattern using :attr:`averagine`, calls
@@ -457,7 +458,7 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
         """
         tid = self.averagine.isotopic_cluster(
             peak.mz, charge, charge_carrier=charge_carrier,
-            truncate_after=truncate_after)
+            truncate_after=truncate_after, ignore_below=ignore_below)
         eid = self.match_theoretical_isotopic_distribution(
             tid, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
