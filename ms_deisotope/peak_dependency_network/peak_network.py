@@ -62,6 +62,9 @@ class DependenceCluster(SpanningMixin):
         The smallest mz of all elements of this cluster
     end: float
         The largest mz of all elements of this cluster
+    maximize: bool
+        Whether the objective is to maximize or minimize the
+        isotopic fit score
     """
 
     def __init__(self, parent=None, dependencies=None, maximize=True):

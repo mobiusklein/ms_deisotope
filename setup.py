@@ -82,7 +82,7 @@ def make_extensions():
                       "ms_deisotope/_c/feature_map/feature_processor.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.feature_map', sources=["ms_deisotope/_c/feature_map/feature_map.c"],
-                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]), 
             Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=["ms_deisotope/_c/feature_map/feature_fit.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[

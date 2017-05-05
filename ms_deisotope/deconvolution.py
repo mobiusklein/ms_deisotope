@@ -465,7 +465,8 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
         score = self.scorer(self.peaklist, eid, tid)
         return IsotopicFitRecord(peak, score, charge, tid, eid)
 
-    def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON, truncate_after=0.8):
+    def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON, truncate_after=0.8,
+                              ignore_below=0.0):
         """Given a set of candidate monoisotopic peaks and charge states, and a PPM error tolerance,
         fit each putative isotopic pattern.
 
@@ -493,7 +494,8 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             if peak.mz < 1:
                 continue
             fit = self.fit_theoretical_distribution(
-                peak, error_tolerance, charge, charge_carrier, truncate_after)
+                peak, error_tolerance, charge, charge_carrier, truncate_after,
+                ignore_below)
             fit.missed_peaks = count_placeholders(fit.experimental)
             if len(drop_placeholders(fit.experimental)) == 1 and fit.charge > 1:
                 continue
