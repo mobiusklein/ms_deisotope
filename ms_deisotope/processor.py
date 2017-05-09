@@ -3,7 +3,6 @@ import logging
 from ms_peak_picker import pick_peaks
 
 from .deconvolution import deconvolute_peaks
-from .data_source.mzml import MzMLLoader
 from .data_source.infer_type import MSFileLoader
 from .data_source.common import ScanBunch
 from .utils import Base
@@ -111,7 +110,7 @@ class ScanProcessor(Base):
         default loader. Used to populate :attr:`reader`
     loader_type : callable
         A callable, which when passed `data_source` returns an instance of :class:`ScanIterator`.
-        By default, this is :class:`MzMLLoader`. Used to populate :attr:`reader`
+        By default, this is :class:`MSFileLoader`. Used to populate :attr:`reader`
     reader: ScanIterator
         Any object implementing the :class:`ScanIterator` interface, produced by calling
         :attr:`loader_type` on :attr:`data_source`.

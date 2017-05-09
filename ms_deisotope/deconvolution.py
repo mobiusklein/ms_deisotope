@@ -19,6 +19,9 @@ info = logger.info
 debug = logger.debug
 
 
+TRUNCATE_AFTER = 0.95
+
+
 def mean(numbers):
     n = 0.
     total = 0
@@ -637,7 +640,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
     def _fit_all_charge_states(self, peak, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=3,
                                right_search_limit=3, use_charge_state_hint=False,
                                recalculate_starting_peak=True, charge_carrier=PROTON,
-                               truncate_after=0.8):
+                               truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Carry out the fitting process for `peak`.
 
         This method calls :meth:`_get_all_peak_charge_pairs` to collect all hypothetical solutions
@@ -685,12 +688,13 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             use_charge_state_hint=use_charge_state_hint, recalculate_starting_peak=True)
 
         results = self._fit_peaks_at_charges(
-            target_peaks, error_tolerance, charge_carrier=charge_carrier, truncate_after=truncate_after)
+            target_peaks, error_tolerance, charge_carrier=charge_carrier, truncate_after=truncate_after,
+            ignore_below=ignore_below)
         return (results)
 
     def charge_state_determination(self, peak, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=3,
                                    right_search_limit=3, use_charge_state_hint=False, charge_carrier=PROTON,
-                                   truncate_after=0.8):
+                                   truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Determine the optimal isotopic fit for `peak`, extracting it's charge state and monoisotopic peak.
 
         This method invokes :meth:`_fit_all_charge_states`, and then uses :attr:`scorer`'s `select` method to
@@ -727,7 +731,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         results = self._fit_all_charge_states(
             peak, error_tolerance=error_tolerance, charge_range=charge_range, left_search_limit=left_search_limit,
             right_search_limit=right_search_limit, use_charge_state_hint=use_charge_state_hint,
-            charge_carrier=charge_carrier, truncate_after=truncate_after)
+            charge_carrier=charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
 
         if self.verbose:
             info("Fits for %r" % peak)
@@ -741,7 +745,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             return None
 
     def deconvolute_peak(self, peak, error_tolerance=2e-5, charge_range=(1, 8), use_charge_state_hint=False,
-                         left_search_limit=3, right_search_limit=3, charge_carrier=PROTON, truncate_after=0.8):
+                         left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
+                         truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Perform a deconvolution for `peak`, generating a new :class:`ms_deisotope.peak_set.DeconvolutedPeak` instance
         corresponding to the optimal solution.
 
@@ -782,7 +787,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             peak, error_tolerance=error_tolerance,
             charge_range=charge_range, use_charge_state_hint=use_charge_state_hint,
             left_search_limit=left_search_limit, right_search_limit=right_search_limit,
-            charge_carrier=charge_carrier, truncate_after=truncate_after)
+            charge_carrier=charge_carrier, truncate_after=truncate_after,
+            ignore_below=ignore_below)
         if fit is None:
             return
         score, charge, eid, tid = fit
@@ -813,7 +819,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         return dpeak
 
     def targeted_deconvolution(self, peak, error_tolerance=2e-5, charge_range=(1, 8), use_charge_state_hint=False,
-                               left_search_limit=3, right_search_limit=3, charge_carrier=PROTON, truncate_after=0.8):
+                               left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
+                               truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
         and that it should be deconvoluted, and return a handle to retrieve the results with.
 
@@ -852,14 +859,16 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         dpeak = self.deconvolute_peak(
             peak, error_tolerance=error_tolerance, charge_range=charge_range,
             use_charge_state_hint=use_charge_state_hint, left_search_limit=left_search_limit,
-            right_search_limit=right_search_limit, charge_carrier=charge_carrier, truncate_after=truncate_after)
+            right_search_limit=right_search_limit, charge_carrier=charge_carrier,
+            truncate_after=truncate_after, ignore_below=ignore_below)
         result = TrivialTargetedDeconvolutionResult(self, dpeak, peak)
         return result
 
     def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8),
                     order_chooser=operator.attrgetter('index'),
                     use_charge_state_hint=False, left_search_limit=3,
-                    right_search_limit=3, charge_carrier=PROTON, truncate_after=0.8):
+                    right_search_limit=3, charge_carrier=PROTON,
+                    truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Completely deconvolute the spectrum.
 
         Visit each peak in the order chosen by `order_chooser`, and call :meth:`deconvolute_peak`
@@ -902,7 +911,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             self.deconvolute_peak(
                 peak, error_tolerance=error_tolerance, charge_range=charge_range,
                 use_charge_state_hint=use_charge_state_hint, left_search_limit=left_search_limit,
-                right_search_limit=right_search_limit, charge_carrier=charge_carrier, truncate_after=truncate_after)
+                right_search_limit=right_search_limit, charge_carrier=charge_carrier,
+                truncate_after=truncate_after, ignore_below=ignore_below)
             i += 1
 
         if self.merge_isobaric_peaks:
@@ -967,7 +977,7 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
 class MultiAveragineDeconvoluterBase(DeconvoluterBase):
 
     def fit_theoretical_distribution(self, peak, error_tolerance, charge, averagine, charge_carrier=PROTON,
-                                     truncate_after=0.8):
+                                     truncate_after=TRUNCATE_AFTER):
         tid = averagine.isotopic_cluster(
             peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after)
         eid = self.match_theoretical_isotopic_distribution(
@@ -976,7 +986,8 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
         score = self.scorer(self.peaklist, eid, tid)
         return IsotopicFitRecord(peak, score, charge, tid, eid)
 
-    def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON, truncate_after=0.8):
+    def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON,
+                              truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         results = []
         for peak, charge in peak_charge_set:
             for averagine in self.averagine:
@@ -984,7 +995,7 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                     continue
                 fit = self.fit_theoretical_distribution(
                     peak, error_tolerance, charge, averagine, charge_carrier=charge_carrier,
-                    truncate_after=truncate_after)
+                    truncate_after=truncate_after, ignore_below=ignore_below)
                 fit.missed_peaks = count_placeholders(fit.experimental)
                 fit.data = averagine
                 if len(drop_placeholders(fit.experimental)) == 1 and fit.charge > 1:
@@ -1097,7 +1108,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
     def _explore_local(self, peak, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, use_charge_state_hint=False, charge_carrier=PROTON,
-                       truncate_after=0.8):
+                       truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Given a peak, explore the local neighborhood for candidate isotopic fits and add each
         fit above a threshold to the peak dependence graph.
 
@@ -1138,8 +1149,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         """
         results = self._fit_all_charge_states(
             peak, error_tolerance=error_tolerance, charge_range=charge_range, left_search_limit=left_search_limit,
-            right_search_limit=right_search_limit,
-            use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier, truncate_after=truncate_after)
+            right_search_limit=right_search_limit, use_charge_state_hint=use_charge_state_hint,
+            charge_carrier=charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
 
         hold = set()
         for fit in results:
@@ -1170,7 +1181,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
     def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, use_charge_state_hint=False, charge_carrier=PROTON,
-                       truncate_after=0.8):
+                       truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Visit each experimental peak and execute :meth:`_explore_local` on it with the provided
         parameters, populating the peak dependence graph with all viable candidates.
 
@@ -1203,7 +1214,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 peak, error_tolerance=error_tolerance, charge_range=charge_range,
                 left_search_limit=left_search_limit, right_search_limit=right_search_limit,
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier,
-                truncate_after=truncate_after)
+                truncate_after=truncate_after, ignore_below=ignore_below)
 
     def postprocess_fits(self, error_tolerance=2e-5, charge_range=(1, 8),
                          charge_carrier=PROTON, *args, **kwargs):
@@ -1262,7 +1273,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                     self.subtraction(tid, error_tolerance)
 
     def targeted_deconvolution(self, peak, error_tolerance=2e-5, charge_range=(1, 8), use_charge_state_hint=False,
-                               left_search_limit=3, right_search_limit=3, charge_carrier=PROTON, truncate_after=0.8):
+                               left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
+                               truncate_after=TRUNCATE_AFTER, ignore_below=0.0):
         """Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
         and that it should be deconvoluted, and return a handle to retrieve the results with.
 
@@ -1297,15 +1309,15 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             peak, error_tolerance=error_tolerance, charge_range=charge_range,
             use_charge_state_hint=use_charge_state_hint, left_search_limit=left_search_limit,
             right_search_limit=right_search_limit, charge_carrier=charge_carrier,
-            truncate_after=truncate_after)
+            truncate_after=truncate_after, ignore_below=ignore_below)
         result = NetworkedTargetedDeconvolutionResult(self, peak)
         self._priority_map[peak] = result
         return result
 
     def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8),
                     use_charge_state_hint=False, left_search_limit=1,
-                    right_search_limit=0, iterations=1, charge_carrier=PROTON,
-                    truncate_after=0.8):
+                    right_search_limit=0, iterations=5, charge_carrier=PROTON,
+                    truncate_after=TRUNCATE_AFTER, ignore_below=0.0, convergence=0.01):
         """Completely deconvolute the spectrum.
 
         For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`
@@ -1335,6 +1347,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
             to be truncated, excluding trailing peaks which do not contribute substantially to
             the overall shape of the isotopic pattern.
+        ignore_below : float, optional
+            The minimum relative abundance to consider a peak in a theoretical isotopic
+            pattern
 
         Returns
         -------
@@ -1342,20 +1357,26 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         """
         if not self.use_subtraction:
             iterations = 1
+
+        begin_signal = sum([p.intensity for p in self.peaklist])
         for i in range(iterations):
             self.peak_dependency_network.reset()
             self.populate_graph(
                 error_tolerance=error_tolerance, charge_range=charge_range,
                 left_search_limit=left_search_limit, right_search_limit=right_search_limit,
                 use_charge_state_hint=use_charge_state_hint, charge_carrier=charge_carrier,
-                truncate_after=truncate_after)
+                truncate_after=truncate_after, ignore_below=ignore_below)
             self.postprocess_fits(
                 charge_range=charge_range,
                 charge_carrier=charge_carrier,
                 error_tolerance=error_tolerance)
-            self.select_best_disjoint_subgraphs(
-                error_tolerance, charge_carrier)
+            self.select_best_disjoint_subgraphs(error_tolerance, charge_carrier)
             self._slice_cache.clear()
+            end_signal = sum([p.intensity for p in self.peaklist])
+
+            if (begin_signal - end_signal) / end_signal < convergence:
+                break
+            begin_signal = end_signal
 
         if self.merge_isobaric_peaks:
             self._deconvoluted_peaks = self._merge_peaks(
@@ -1387,7 +1408,7 @@ class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, 
 class CompositionListDeconvoluterBase(object):
     """A mixin class to provide common features for deconvoluters which process spectra
     using a list of targeted compositions.
-    
+
     Attributes
     ----------
     composition_list : Sequence of Mapping
@@ -1397,10 +1418,10 @@ class CompositionListDeconvoluterBase(object):
     def __init__(self, composition_list):
         self.composition_list = composition_list
 
-    def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=0.8,
+    def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=TRUNCATE_AFTER,
                                               mass_shift=None, charge_carrier=PROTON):
         """Generate a theoretical isotopic pattern for `compos
-        
+
         Parameters
         ----------
         composition : Mapping
@@ -1418,7 +1439,7 @@ class CompositionListDeconvoluterBase(object):
         charge_carrier : float, optional
             The mass of the charge carrier, or more specifically, the moiety which is added for
             each incremental change in charge state. Defaults to `PROTON`
-        
+
         Returns
         -------
         list of TheoreticalPeak
@@ -1435,8 +1456,12 @@ class CompositionListDeconvoluterBase(object):
             shift_isotopic_pattern(mass_shift / abs(charge), result)
         return result
 
+    def recalibrate_theoretical_mz(self, theoretical_distribution, experimental_mz):
+        shift_isotopic_pattern(experimental_mz, theoretical_distribution)
+        return theoretical_distribution
+
     def fit_composition_at_charge(self, composition, charge, error_tolerance=2e-5, charge_carrier=PROTON,
-                                  truncate_after=0.8, mass_shift=None):
+                                  truncate_after=TRUNCATE_AFTER, mass_shift=None):
         """Produce an isotopic fit for `composition` at `charge` against the experimental peak set.
 
         This method requires that the instance also possess a method named `match_theoretical_isotopic_distribution`
@@ -1468,6 +1493,9 @@ class CompositionListDeconvoluterBase(object):
         """
         tid = self.generate_theoretical_isotopic_cluster(composition, charge=charge, truncate_after=truncate_after,
                                                          charge_carrier=charge_carrier, mass_shift=mass_shift)
+        monoisotopic_peak = self.peaklist.has_peak(tid[0].mz, error_tolerance)
+        if monoisotopic_peak is not None:
+            tid = self.recalibrate_theoretical_mz(tid, monoisotopic_peak.mz)
         eid = self.match_theoretical_isotopic_distribution(
             tid, error_tolerance)
 
@@ -1483,7 +1511,7 @@ class CompositionListDeconvoluterBase(object):
         return fit
 
     def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8), charge_carrier=PROTON,
-                                truncate_after=0.8, mass_shift=None):
+                                truncate_after=TRUNCATE_AFTER, mass_shift=None):
         """For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
         and if the fit is satisfactory, add it to the results set.
 
@@ -1562,7 +1590,7 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase, DeconvoluterB
             self,
             use_subtraction=use_subtraction, scale_method=scale_method, merge_isobaric_peaks=True)
 
-    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), charge_carrier=PROTON, truncate_after=0.8,
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
                     mass_shift=None, **kwargs):
         for composition in self.composition_list:
             self.deconvolute_composition(composition, error_tolerance=error_tolerance,
@@ -1596,7 +1624,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
     def _save_peak_solution(self, solution):
         self._deconvoluted_peaks.append(solution)
 
-    def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=0.8,
+    def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER,
                                 charge_carrier=PROTON, mass_shift=None):
         for charge in charge_range_(*charge_range):
             fit = self.fit_composition_at_charge(
@@ -1610,7 +1638,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
             if not self.scorer.reject(fit):
                 self.peak_dependency_network.add_fit_dependence(fit)
 
-    def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=0.8, charge_carrier=PROTON,
+    def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON,
                        mass_shift=None):
         for composition in self.composition_list:
             self.deconvolute_composition(composition, error_tolerance, charge_range,
@@ -1656,13 +1684,20 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
 
-    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), iterations=1, truncate_after=0.8,
-                    charge_carrier=PROTON, mass_shift=None, **kwargs):
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), iterations=5, truncate_after=TRUNCATE_AFTER,
+                    charge_carrier=PROTON, mass_shift=None, convergence=0.01, **kwargs):
+        if not self.use_subtraction:
+            iterations = 1
+        begin_signal = sum([p.intensity for p in self.peaklist])
         for i in range(iterations):
             self.populate_graph(error_tolerance, charge_range, charge_carrier=charge_carrier,
                                 truncate_after=truncate_after, mass_shift=mass_shift)
             self.select_best_disjoint_subgraphs(error_tolerance)
             self._slice_cache.clear()
+            end_signal = sum([p.intensity for p in self.peaklist])
+            if (begin_signal - end_signal) / end_signal < convergence:
+                break
+            begin_signal = end_signal
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
 
 
@@ -1672,8 +1707,9 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
         AveraginePeakDependenceGraphDeconvoluter.__init__(self, peaklist, *args, **kwargs)
         CompositionListDeconvoluterBase.__init__(self, composition_list)
 
-    def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=0.8,
-                                charge_carrier=PROTON, mass_shift=None):
+    def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8),
+                                truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON,
+                                mass_shift=None):
         for charge in charge_range_(*charge_range):
             fit = self.fit_composition_at_charge(
                 composition, charge, error_tolerance, charge_carrier=charge_carrier,
@@ -1689,7 +1725,7 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
 
     def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, use_charge_state_hint=False, charge_carrier=PROTON,
-                       truncate_after=0.8, mass_shift=None):
+                       truncate_after=TRUNCATE_AFTER, mass_shift=None):
         for composition in self.composition_list:
             self.deconvolute_composition(
                 composition, error_tolerance, charge_range=charge_range,
@@ -1708,11 +1744,12 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(
             isotopic_cluster, error_tolerance)
 
 
-def deconvolute_peaks(peaklist, deconvoluter_type=AveraginePeakDependenceGraphDeconvoluter,
+def deconvolute_peaks(peaklist,
                       decon_config=None, charge_range=(1, 8), error_tolerance=2e-5, priority_list=None,
                       use_charge_state_hint_for_priorities=False, left_search_limit=3, right_search_limit=3,
                       left_search_limit_for_priorities=None, right_search_limit_for_priorities=None,
-                      verbose_priorities=False, verbose=False, charge_carrier=PROTON, truncate_after=0.8, **kwargs):
+                      verbose_priorities=False, verbose=False, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                      deconvoluter_type=AveraginePeakDependenceGraphDeconvoluter, **kwargs):
     if priority_list is None:
         priority_list = []
     if left_search_limit_for_priorities is None:

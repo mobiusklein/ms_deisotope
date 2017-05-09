@@ -18,6 +18,15 @@ class ExtendedScanIndex(object):
         self.msn_ids = OrderedDict(msn_ids)
         self.schema_version = schema_version
 
+    def get_scan_dict(self, key):
+        try:
+            return self.ms1_ids[key]
+        except KeyError:
+            return self.msn_ids[key]
+
+    def __getitem__(self, key):
+        return self.get_scan_dict(key)
+
     def _package_precursor_information(self, product):
         precursor_information = product.precursor_information
         if precursor_information.extracted_neutral_mass != 0:

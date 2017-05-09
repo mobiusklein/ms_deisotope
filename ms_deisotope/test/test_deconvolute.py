@@ -31,10 +31,10 @@ class TestDeconvolution(unittest.TestCase):
         self.assertIsNotNone(scan.peak_set)
         algorithm_type = AveragineDeconvoluter
         deconresult = deconvolute_peaks(
-            scan.peak_set, algorithm_type, {
+            scan.peak_set, {
                 "averagine": peptide,
                 "scorer": PenalizedMSDeconVFitter(5., 1.)
-            })
+            }, deconvoluter_type=algorithm_type)
         dpeaks = deconresult.peak_set
         for point in points:
             peak = dpeaks.has_peak(neutral_mass(point[0], point[1]))
@@ -46,10 +46,10 @@ class TestDeconvolution(unittest.TestCase):
         self.assertIsNotNone(scan.peak_set)
         algorithm_type = AveraginePeakDependenceGraphDeconvoluter
         deconresult = deconvolute_peaks(
-            scan.peak_set, algorithm_type, {
+            scan.peak_set, {
                 "averagine": peptide,
                 "scorer": PenalizedMSDeconVFitter(5., 1.)
-            })
+            }, deconvoluter_type=algorithm_type)
         dpeaks = deconresult.peak_set
         deconvoluter = deconresult.deconvoluter
         for point in points:

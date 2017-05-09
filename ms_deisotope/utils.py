@@ -2,7 +2,6 @@ from __future__ import print_function
 import operator
 import random
 from datetime import datetime
-import os
 
 try:
     from matplotlib import pyplot as plt

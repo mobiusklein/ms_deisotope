@@ -661,7 +661,15 @@ class ProcessedScan(object):
             peaks = self.deconvoluted_peak_set
         else:
             peaks = self.peak_set
-        return "ProcessedScan(id=%s, ms_level=%d, %d peaks)" % (self.id, self.ms_level, len(peaks))
+
+        pinfo = self.precursor_information
+        if pinfo:
+            pinfo_string = ", %s" % pinfo
+        else:
+            pinfo_string = ""
+
+        return "ProcessedScan(id=%s, ms_level=%d, %d peaks%s)" % (
+            self.id, self.ms_level, len(peaks), pinfo_string)
 
     def clone(self):
         dup = ProcessedScan(
