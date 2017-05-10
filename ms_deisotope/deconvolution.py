@@ -1350,6 +1350,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         ignore_below : float, optional
             The minimum relative abundance to consider a peak in a theoretical isotopic
             pattern
+        convergence : float, optional
+            The threshold of the below which after the `(sum(intensity_before) - sum(
+            intensity_after)) / sum(intensity_after)` 
 
         Returns
         -------
@@ -1372,7 +1375,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 error_tolerance=error_tolerance)
             self.select_best_disjoint_subgraphs(error_tolerance, charge_carrier)
             self._slice_cache.clear()
-            end_signal = sum([p.intensity for p in self.peaklist])
+            end_signal = sum([p.intensity for p in self.peaklist]) + 1
 
             if (begin_signal - end_signal) / end_signal < convergence:
                 break
@@ -1590,8 +1593,8 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase, DeconvoluterB
             self,
             use_subtraction=use_subtraction, scale_method=scale_method, merge_isobaric_peaks=True)
 
-    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
-                    mass_shift=None, **kwargs):
+    def deconvolute(self, error_tolerance=2e-5, charge_range=(1, 8), charge_carrier=PROTON,
+                    truncate_after=TRUNCATE_AFTER, mass_shift=None, **kwargs):
         for composition in self.composition_list:
             self.deconvolute_composition(composition, error_tolerance=error_tolerance,
                                          charge_range=charge_range, charge_carrier=charge_carrier,
@@ -1624,8 +1627,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
     def _save_peak_solution(self, solution):
         self._deconvoluted_peaks.append(solution)
 
-    def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER,
-                                charge_carrier=PROTON, mass_shift=None):
+    def deconvolute_composition(self, composition, error_tolerance=2e-5, charge_range=(1, 8),
+                                truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, mass_shift=None):
         for charge in charge_range_(*charge_range):
             fit = self.fit_composition_at_charge(
                 composition, charge, error_tolerance, charge_carrier=charge_carrier,
@@ -1638,8 +1641,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
             if not self.scorer.reject(fit):
                 self.peak_dependency_network.add_fit_dependence(fit)
 
-    def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON,
-                       mass_shift=None):
+    def populate_graph(self, error_tolerance=2e-5, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER,
+                       charge_carrier=PROTON, mass_shift=None):
         for composition in self.composition_list:
             self.deconvolute_composition(composition, error_tolerance, charge_range,
                                          truncate_after=truncate_after, charge_carrier=charge_carrier,
@@ -1694,7 +1697,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                                 truncate_after=truncate_after, mass_shift=mass_shift)
             self.select_best_disjoint_subgraphs(error_tolerance)
             self._slice_cache.clear()
-            end_signal = sum([p.intensity for p in self.peaklist])
+            end_signal = sum([p.intensity for p in self.peaklist]) + 1
             if (begin_signal - end_signal) / end_signal < convergence:
                 break
             begin_signal = end_signal
