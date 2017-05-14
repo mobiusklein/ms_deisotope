@@ -51,7 +51,7 @@ def make_averagine_suite(averagine_class, tid_class):
 
         def __repr__(self):
             r = super(TestAveragine, self).__repr__()
-            "%s (%s, %s)" % (r, averagine_class, tid_class)
+            return "%s (%s, %s)" % (r, averagine_class, tid_class)
 
     return TestAveragine
 
