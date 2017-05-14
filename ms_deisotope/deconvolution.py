@@ -1690,8 +1690,9 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
 
-    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), iterations=5, truncate_after=TRUNCATE_AFTER,
-                    charge_carrier=PROTON, mass_shift=None, convergence=0.01, **kwargs):
+    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), iterations=5,
+                    truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, mass_shift=None,
+                    convergence=0.01, **kwargs):
         if not self.use_subtraction:
             iterations = 1
         begin_signal = sum([p.intensity for p in self.peaklist])

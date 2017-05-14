@@ -14,6 +14,75 @@ def shift_isotopic_pattern(mz, cluster):
     return cluster
 
 
+class TheoreticalIsotopicPattern(object):
+    def __init__(self, base_tid, truncated_tid=None):
+        if truncated_tid is None:
+            truncated_tid = base_tid
+        self.base_tid = base_tid
+        self.truncated_tid = truncated_tid
+
+    def __getitem__(self, i):
+        return self.truncated_tid[i]
+
+    def __iter__(self):
+        return iter(self.truncated_tid)
+
+    def __len__(self):
+        return len(self.truncated_tid)
+
+    def get(self, i):
+        return self.truncated_tid[i]
+
+    def clone(self):
+        return self.__class__([p.clone() for p in self.base_tid],
+                              [p.clone() for p in self.truncated_tid])
+
+    @property
+    def monoisotopic_mz(self):
+        return self.base_tid[0].mz
+
+    def shift(self, mz):
+        first_peak = self.base_tid[0]
+        for peak in self.base_tid[1:]:
+            delta = peak.mz - first_peak.mz
+            peak.mz = mz + delta
+        first_peak.mz = mz
+        return self
+
+    def truncate_after(self, truncate_after=0.0):
+        cumsum = 0
+        result = []
+        for peak in self.base_tid:
+            cumsum += peak.intensity
+            result.append(peak)
+            if cumsum >= truncate_after:
+                break
+        for peak in result:
+            peak.intensity *= 1. / cumsum
+        self.truncated_tid = result
+        return self
+
+    def ignore_below(self, ignore_below=0.0):
+        total = 0
+        kept_tid = []
+        for i, p in enumerate(self.truncated_tid):
+            if p.intensity < ignore_below and i > 1:
+                continue
+            else:
+                total += p.intensity
+                kept_tid.append(p.clone())
+        for p in kept_tid:
+            p.intensity /= total
+        self.truncated_tid = kept_tid
+        return self
+
+    def __repr__(self):
+        return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
+            self.base_tid[0].mz,
+            self.base_tid[0].charge,
+            ', '.join("%0.3f" % p.intensity for p in self.base_tid))
+
+
 @dict_proxy("base_composition")
 class Averagine(object):
     def __init__(self, base_composition):
@@ -50,20 +119,10 @@ class Averagine(object):
         for peak in result:
             peak.intensity *= 1. / cumsum
         result = shift_isotopic_pattern(mz, result)
-
+        result = TheoreticalIsotopicPattern(result)
         if ignore_below > 0:
-            total = 0
-            kept_tid = []
-            for i, p in enumerate(result):
-                if p.intensity < ignore_below and i > 1:
-                    continue
-                else:
-                    total += p.intensity
-                    kept_tid.append(p)
-            for p in kept_tid:
-                p.intensity /= total
-            result = kept_tid
-        return result
+            result.ignore_below(ignore_below)
+        return result.truncated_tid
 
     def __repr__(self):
         return "Averagine(%r)" % self.base_composition
@@ -96,6 +155,8 @@ def add_compositions(a, b):
 
 try:
     _Averagine = Averagine
+    _TheoreticalIsotopicPattern = TheoreticalIsotopicPattern
+    # from ms_deisotope._c.averagine import Averagine, TheoreticalIsotopicPattern
     from ms_deisotope._c.averagine import Averagine
 except ImportError as e:
     print(e)

@@ -3,7 +3,8 @@ import unittest
 from ms_deisotope.averagine import (
     peptide, calculate_mass, average_compositions,
     _Averagine, Averagine, add_compositions,
-    AveragineCache, _AveragineCache)
+    AveragineCache, _AveragineCache, TheoreticalIsotopicPattern,
+    _TheoreticalIsotopicPattern)
 
 
 tid1 = [
@@ -23,7 +24,7 @@ tid2 = [
 composition = peptide.base_composition
 
 
-def make_averagine_suite(averagine_class):
+def make_averagine_suite(averagine_class, tid_class):
     _peptide = averagine_class(composition)
 
     class TestAveragine(unittest.TestCase):
@@ -40,13 +41,25 @@ def make_averagine_suite(averagine_class):
                 self.assertAlmostEqual(peak.intensity, match[1], 3)
                 self.assertEqual(peak.charge, match[2])
 
+        def test_truncate_after(self):
+            tid = _peptide.isotopic_cluster(1000, 1, truncate_after=0.95)
+            inst = tid_class(_peptide.isotopic_cluster(1000, 1, truncate_after=1.0)).truncate_after(0.95)
+
+            for i, p in enumerate(inst):
+                self.assertAlmostEqual(tid[i].mz, p.mz, 3)
+                self.assertAlmostEqual(tid[i].intensity, p.intensity)
+
+        def __repr__(self):
+            r = super(TestAveragine, self).__repr__()
+            "%s (%s, %s)" % (r, averagine_class, tid_class)
+
     return TestAveragine
 
 
-TestPurePythonAveragine = make_averagine_suite(_Averagine)
-TestAveragine = make_averagine_suite(Averagine)
-TestAveragineCache = make_averagine_suite(AveragineCache)
-TestPurePythonAveragineCache = make_averagine_suite(_AveragineCache)
+TestPurePythonAveragine = make_averagine_suite(_Averagine, _TheoreticalIsotopicPattern)
+TestAveragine = make_averagine_suite(Averagine, TheoreticalIsotopicPattern)
+TestAveragineCache = make_averagine_suite(AveragineCache, TheoreticalIsotopicPattern)
+TestPurePythonAveragineCache = make_averagine_suite(_AveragineCache, _TheoreticalIsotopicPattern)
 
 
 class TestSupportMethods(unittest.TestCase):
