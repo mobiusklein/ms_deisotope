@@ -13,8 +13,8 @@ cdef class Averagine(object):
         public dict base_composition
     
     cpdef dict scale(self, double mz, int charge=*, double charge_carrier=*)
-    cpdef list isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
-    cdef list _isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
+    cpdef TheoreticalIsotopicPattern isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
+    cdef TheoreticalIsotopicPattern _isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
 
 
 cdef class TheoreticalIsotopicPattern(object):
@@ -26,6 +26,8 @@ cdef class TheoreticalIsotopicPattern(object):
     cdef TheoreticalIsotopicPattern _create(list base_tid, list truncated_tid=*)
 
     cpdef TheoreticalIsotopicPattern clone(self)
+
+    cpdef bint _eq(self, object other)
 
     cpdef TheoreticalIsotopicPattern ignore_below(self, double ignore_below=*)
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=*)
@@ -50,8 +52,8 @@ cdef class AveragineCache(object):
         public double cache_truncation
         public bint enabled
     
-    cdef list has_mz_charge_pair(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
-    cpdef list isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
+    cdef TheoreticalIsotopicPattern has_mz_charge_pair(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
+    cpdef TheoreticalIsotopicPattern isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
 
 
 cpdef double isotopic_shift(int charge=*)

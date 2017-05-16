@@ -44,10 +44,10 @@ cdef class IsotopicFitRecord(object):
     seed_peak : FittedPeak
         The peak that was used to initiate the fit. This may be unused
         if not using an Averagine method
-    theoretical : list of TheoreticalPeak
+    theoretical : TheoreticalIsotopicPattern
         The theoretical isotopic pattern being fitted on the experimental data
     """
-    def __init__(self, FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
+    def __init__(self, FittedPeak seed_peak, double score, int charge, TheoreticalIsotopicPattern theoretical, list experimental,
                   object data=None, int missed_peaks=0):
         self.seed_peak = seed_peak
         self.score = score
@@ -59,8 +59,8 @@ cdef class IsotopicFitRecord(object):
         self.missed_peaks = missed_peaks
 
     @staticmethod
-    cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
-                                   object data=None, int missed_peaks=0):
+    cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, TheoreticalIsotopicPattern theoretical,
+                                   list experimental, object data=None, int missed_peaks=0):
         cdef IsotopicFitRecord inst
         inst = IsotopicFitRecord.__new__(IsotopicFitRecord)
         inst.seed_peak = seed_peak

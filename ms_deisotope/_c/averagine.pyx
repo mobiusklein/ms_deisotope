@@ -110,7 +110,7 @@ cdef class Averagine(object):
 
         return scaled
 
-    cdef list _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+    cdef TheoreticalIsotopicPattern _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
                                 double ignore_below=0.0):
         cdef:
             dict composition
@@ -128,12 +128,12 @@ cdef class Averagine(object):
         if ignore_below > 0:
             isotopic_pattern.ignore_below(ignore_below)
 
-        return isotopic_pattern.get_processed_peaks()
+        return isotopic_pattern
 
-    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+    cpdef TheoreticalIsotopicPattern isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
                                 double ignore_below=0.0):
         cdef:
-            list out
+            TheoreticalIsotopicPattern out
         out = self._isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
         return out
 
@@ -374,6 +374,32 @@ cdef class TheoreticalIsotopicPattern(object):
             self.base_tid[0].charge,
             ', '.join("%0.3f" % p.intensity for p in self.base_tid))
 
+    cpdef bint _eq(self, object other):
+        cdef:
+            list peaklist
+            TheoreticalIsotopicPattern other_typed
+        if isinstance(other, list):
+            peaklist = other
+        elif isinstance(other, TheoreticalIsotopicPattern):
+            peaklist = other.truncated_tid
+        else:
+            raise TypeError(type(other))
+        return self.get_processed_peaks() == peaklist
+
+    def __richcmp__(self, object other, int code):
+        if other is None:
+            if code == 3:
+                return True
+            else:
+                return False
+
+        if code == 2:
+            return self._eq(other)
+        elif code == 3:
+            return not (self._eq(other))
+        else:
+            return NotImplemented
+
 
 cdef class AveragineCache(object):
 
@@ -401,35 +427,38 @@ cdef class AveragineCache(object):
         self.store = dict(store)
         self.cache_truncation = trunc
 
-    cdef list has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+    @cython.cdivision
+    cdef TheoreticalIsotopicPattern has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
                                  double ignore_below=0.0):
         cdef:
             double key_mz
-            tuple key_tuple
+            tuple cache_key
             PyObject* pvalue
-            list tid
+            TheoreticalIsotopicPattern tid
         if self.enabled:
             if self.cache_truncation == 0.0:
                 key_mz = mz
             else:
                 key_mz = _round(mz / self.cache_truncation) * self.cache_truncation
-            key_tuple = (key_mz, charge, charge_carrier, truncate_after)
-            pvalue = PyDict_GetItem(self.backend, key_tuple)
+
+            cache_key = (key_mz, charge, charge_carrier, truncate_after)
+            pvalue = PyDict_GetItem(self.backend, cache_key)
             if pvalue == NULL:
                 tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
-                PyDict_SetItem(self.backend, key_tuple, clone_peak_list(tid))
+                PyDict_SetItem(self.backend, cache_key, tid.clone())
                 return tid
             else:
-                tid = <list>pvalue
-                tid = clone_peak_list(tid)
-                slide(mz, tid)
+                tid = <TheoreticalIsotopicPattern>pvalue
+                tid = tid.clone()
+                tid.shift(mz)
                 return tid
         else:
             tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
             return tid
 
-    cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
-                                double ignore_below=0.0):
+    cpdef TheoreticalIsotopicPattern isotopic_cluster(
+                                self, double mz, int charge=1, double charge_carrier=PROTON,
+                                double truncate_after=0.95, double ignore_below=0.0):
         return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after, ignore_below)
 
     def __getitem__(self, key):

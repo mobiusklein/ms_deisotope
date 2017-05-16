@@ -565,8 +565,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         low = min(charge_range, key=abs)
         return (low, upper_charge_limit)
 
-    def _get_all_peak_charge_pairs(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=3,
-                                   right_search_limit=3, use_charge_state_hint=False,
+    def _get_all_peak_charge_pairs(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
+                                   left_search_limit=3, right_search_limit=3, use_charge_state_hint=False,
                                    recalculate_starting_peak=True):
         """Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using
         the provided search parameters.
@@ -695,9 +695,10 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             ignore_below=ignore_below)
         return (results)
 
-    def charge_state_determination(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=3,
-                                   right_search_limit=3, use_charge_state_hint=False, charge_carrier=PROTON,
-                                   truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+    def charge_state_determination(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
+                                   left_search_limit=3, right_search_limit=3, use_charge_state_hint=False,
+                                   charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                                   ignore_below=IGNORE_BELOW):
         """Determine the optimal isotopic fit for `peak`, extracting it's charge state and monoisotopic peak.
 
         This method invokes :meth:`_fit_all_charge_states`, and then uses :attr:`scorer`'s `select` method to
@@ -821,9 +822,10 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             self.subtraction(tid, error_tolerance)
         return dpeak
 
-    def targeted_deconvolution(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), use_charge_state_hint=False,
-                               left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
-                               truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+    def targeted_deconvolution(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
+                               use_charge_state_hint=False, left_search_limit=3, right_search_limit=3,
+                               charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                               ignore_below=IGNORE_BELOW):
         """Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
         and that it should be deconvoluted, and return a handle to retrieve the results with.
 

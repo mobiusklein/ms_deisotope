@@ -9,7 +9,8 @@ from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 from ms_deisotope._c.scoring cimport IsotopicFitterBase, IsotopicFitRecord
-from ms_deisotope._c.averagine cimport AveragineCache, isotopic_shift, PROTON
+from ms_deisotope._c.averagine cimport (AveragineCache, isotopic_shift, PROTON,
+                                        TheoreticalIsotopicPattern)
 
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE
 from cpython.tuple cimport PyTuple_GET_ITEM
@@ -120,7 +121,6 @@ cdef class DeconvoluterBase(object):
     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
         peak = self.peaklist._has_peak(mz, error_tolerance)
         if peak is None or peak.intensity < self.minimum_intensity:
-            # return FittedPeak._create(mz, 1, 1, 0, 0, 0, 1, 0, 0)
             return make_placeholder_peak(mz)
         return peak
 
@@ -139,33 +139,22 @@ cdef class DeconvoluterBase(object):
 
         return experimental_distribution
 
-    cpdef scale_theoretical_distribution(self, list theoretical_distribution, list experimental_distribution):
+    cpdef scale_theoretical_distribution(self, TheoreticalIsotopicPattern theoretical_distribution,
+                                         list experimental_distribution):
         cdef:
             size_t i
             TheoreticalPeak peak
             double total_abundance
+        return theoretical_distribution.scale(experimental_distribution, self.scale_method)    
 
-        if self.scale_method == 'sum':
-            total_abundance = sum_intensity(experimental_distribution)
-            for i in range(PyList_GET_SIZE(theoretical_distribution)):
-                peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)            
-                peak.intensity *= total_abundance
-            return theoretical_distribution
-        # elif self.scale_method == 'max':
-        #     i, peak = max(enumerate(theoretical_distribution), key=lambda x: x[1].intensity)
-        #     scale_factor = experimental_distribution[i].intensity / peak.intensity
-        #     for peak in theoretical_distribution:
-        #         peak.intensity *= scale_factor
-        #     return theoretical_distribution
-
-    cpdef subtraction(self, list isotopic_cluster, double error_tolerance=2e-5):
+    cpdef subtraction(self, TheoreticalIsotopicPattern isotopic_cluster, double error_tolerance=2e-5):
         cdef:
             size_t i
             double existing
             TheoreticalPeak peak
             FittedPeak match
-        for i in range(PyList_GET_SIZE(isotopic_cluster)):
-            peak = <TheoreticalPeak>PyList_GET_ITEM(isotopic_cluster, i)
+        for i in range(isotopic_cluster.get_size()):
+            peak = isotopic_cluster.get(i)
             match = self.peaklist._has_peak(peak.mz, error_tolerance)
             if match is not None:
                 existing = match.intensity
@@ -295,14 +284,15 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
                                                          double charge_carrier=PROTON, double truncate_after=0.95,
                                                          double ignore_below=0):
         cdef:
-            list tid, eid
+            list eid
+            TheoreticalIsotopicPattern tid
             double score
         tid = self.averagine.isotopic_cluster(
             peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after,
             ignore_below=ignore_below)
-        eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
+        eid = self.match_theoretical_isotopic_distribution(tid.get_processed_peaks(), error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer._evaluate(self.peaklist, eid, tid)
+        score = self.scorer._evaluate(self.peaklist, eid, tid.get_processed_peaks())
         return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
@@ -350,14 +340,15 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                                                          AveragineCache  averagine, double charge_carrier=PROTON,
                                                          double truncate_after=0.95, double ignore_below=0):
         cdef:
-            list tid, eid
+            list eid
+            TheoreticalIsotopicPattern tid
             double score
         tid = averagine.isotopic_cluster(
             peak.mz, charge, charge_carrier=charge_carrier,
             truncate_after=truncate_after, ignore_below=ignore_below)
-        eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance=error_tolerance)
+        eid = self.match_theoretical_isotopic_distribution(tid.get_processed_peaks(), error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer._evaluate(self.peaklist, eid, tid)
+        score = self.scorer._evaluate(self.peaklist, eid, tid.get_processed_peaks())
         return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,

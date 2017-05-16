@@ -1,5 +1,6 @@
 from ms_deisotope._c.feature_map.lcms_feature cimport FeatureBase, LCMSFeatureTreeNode
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
+from ms_deisotope._c.averagine cimport TheoreticalIsotopicPattern
 
 cimport numpy as np
 import numpy as np
@@ -13,7 +14,7 @@ cdef class map_coord:
 cdef class LCMSFeatureSetFit(object):
     cdef:
         public list features
-        public list theoretical
+        public TheoreticalIsotopicPattern theoretical
         public list supporters
         public double score
         public double mz
@@ -33,7 +34,7 @@ cdef class LCMSFeatureSetFit(object):
 
 
     @staticmethod
-    cdef LCMSFeatureSetFit _create(list features, list theoretical, double score,
-                                   int charge, size_t missing_features, list supporters,
-                                   object data, double neutral_mass, size_t n_points,
-                                   np.ndarray scores, np.ndarray times)
+    cdef LCMSFeatureSetFit _create(list features, TheoreticalIsotopicPattern theoretical,
+                                   double score, int charge, size_t missing_features,
+                                   list supporters, object data, double neutral_mass,
+                                   size_t n_points, np.ndarray scores, np.ndarray times)

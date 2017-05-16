@@ -24,7 +24,7 @@ tid2 = [
 composition = peptide.base_composition
 
 
-def make_averagine_suite(averagine_class, tid_class):
+def make_averagine_suite(averagine_class):
     _peptide = averagine_class(composition)
 
     class TestAveragine(unittest.TestCase):
@@ -43,7 +43,7 @@ def make_averagine_suite(averagine_class, tid_class):
 
         def test_truncate_after(self):
             tid = _peptide.isotopic_cluster(1000, 1, truncate_after=0.95)
-            inst = tid_class(_peptide.isotopic_cluster(1000, 1, truncate_after=1.0)).truncate_after(0.95)
+            inst = _peptide.isotopic_cluster(1000, 1, truncate_after=1.0).truncate_after(0.95)
 
             for i, p in enumerate(inst):
                 self.assertAlmostEqual(tid[i].mz, p.mz, 3)
@@ -51,15 +51,15 @@ def make_averagine_suite(averagine_class, tid_class):
 
         def __repr__(self):
             r = super(TestAveragine, self).__repr__()
-            return "%s (%s, %s)" % (r, averagine_class, tid_class)
+            return "%s (%s, %s)" % (r, averagine_class)
 
     return TestAveragine
 
 
-TestPurePythonAveragine = make_averagine_suite(_Averagine, _TheoreticalIsotopicPattern)
-TestAveragine = make_averagine_suite(Averagine, TheoreticalIsotopicPattern)
-TestAveragineCache = make_averagine_suite(AveragineCache, TheoreticalIsotopicPattern)
-TestPurePythonAveragineCache = make_averagine_suite(_AveragineCache, _TheoreticalIsotopicPattern)
+TestPurePythonAveragine = make_averagine_suite(_Averagine)
+TestAveragine = make_averagine_suite(Averagine)
+TestAveragineCache = make_averagine_suite(AveragineCache)
+TestPurePythonAveragineCache = make_averagine_suite(_AveragineCache)
 
 
 class TestSupportMethods(unittest.TestCase):

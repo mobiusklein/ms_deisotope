@@ -3,7 +3,7 @@ from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 from ms_peak_picker._c.peak_index cimport PeakIndex
 
 from ms_deisotope._c.deconvoluter_base cimport DeconvoluterBase
-
+from ms_deisotope._c.averagine cimport TheoreticalIsotopicPattern
 
 cdef class IsotopicFitRecord(object):
     cdef:
@@ -11,14 +11,14 @@ cdef class IsotopicFitRecord(object):
         public double score
         public int charge
         public list experimental
-        public list theoretical
+        public TheoreticalIsotopicPattern theoretical
         public FittedPeak monoisotopic_peak
         public int missed_peaks
         public object data
 
     @staticmethod
-    cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, list theoretical, list experimental,
-                                   object data=*, int missed_peaks=*)
+    cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, TheoreticalIsotopicPattern theoretical,
+                                   list experimental, object data=*, int missed_peaks=*)
 
     cpdef bint _eq(self, IsotopicFitRecord other)
     cpdef bint _ne(self, IsotopicFitRecord other)

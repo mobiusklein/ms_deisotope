@@ -139,7 +139,7 @@ class Averagine(object):
             tid.truncate_after(truncate_after)
         if ignore_below > 0:
             tid.ignore_below(ignore_below)
-        return tid.truncated_tid
+        return tid
 
     def __repr__(self):
         return "Averagine(%r)" % self.base_composition
@@ -211,12 +211,13 @@ class AveragineCache(object):
         else:
             key_mz = round(mz / self.cache_truncation) * self.cache_truncation
         if (key_mz, charge, charge_carrier) in self.backend:
-            return shift_isotopic_pattern(
-                mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])
+            # return shift_isotopic_pattern(
+            #     mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])
+            return self.backend[key_mz, charge, charge_carrier].clone().shift(mz)
         else:
             tid = self.averagine.isotopic_cluster(
                 mz, charge, charge_carrier, truncate_after, ignore_below)
-            self.backend[key_mz, charge, charge_carrier] = [p.clone() for p in tid]
+            self.backend[key_mz, charge, charge_carrier] = tid.clone()
             return tid
 
     isotopic_cluster = has_mz_charge_pair

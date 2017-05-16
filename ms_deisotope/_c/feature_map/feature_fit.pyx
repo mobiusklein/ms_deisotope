@@ -4,7 +4,8 @@ cimport cython
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM
 
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
-from ms_deisotope._c.averagine cimport neutral_mass as calc_neutral_mass
+from ms_deisotope._c.averagine cimport (
+    neutral_mass as calc_neutral_mass, TheoreticalIsotopicPattern)
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 
 cimport numpy as np
@@ -68,10 +69,10 @@ cdef class LCMSFeatureSetFit(object):
         self.times = times
 
     @staticmethod
-    cdef LCMSFeatureSetFit _create(list features, list theoretical, double score,
-                                   int charge, size_t missing_features, list supporters,
-                                   object data, double neutral_mass, size_t n_points,
-                                   np.ndarray scores, np.ndarray times):
+    cdef LCMSFeatureSetFit _create(list features, TheoreticalIsotopicPattern theoretical,
+                                   double score, int charge, size_t missing_features,
+                                   list supporters, object data, double neutral_mass,
+                                   size_t n_points, np.ndarray scores, np.ndarray times):
         cdef:
             LCMSFeatureSetFit inst
         inst = LCMSFeatureSetFit.__new__(LCMSFeatureSetFit)

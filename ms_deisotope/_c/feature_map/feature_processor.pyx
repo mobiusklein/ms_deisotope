@@ -19,7 +19,9 @@ from brainpy._c.double_vector cimport (
     double_vector_to_list)
 
 from ms_deisotope._c.scoring cimport IsotopicFitterBase
-from ms_deisotope._c.averagine cimport AveragineCache, PROTON, neutral_mass as calc_neutral_mass
+from ms_deisotope._c.averagine cimport (
+    AveragineCache, PROTON, neutral_mass as calc_neutral_mass,
+    TheoreticalIsotopicPattern)
 
 from ms_deisotope._c.feature_map.feature_map cimport LCMSFeatureMap
 from ms_deisotope._c.feature_map.feature_fit cimport LCMSFeatureSetFit
@@ -244,28 +246,11 @@ cdef class LCMSFeatureProcessorBase(object):
     cpdef list create_theoretical_distribution(self, double mz, int charge, double charge_carrier=PROTON, double truncate_after=0.8,
                                                double ignore_below=0.05):
         cdef:
-            list base_tid
-            list kept_tid
-            double total
-            TheoreticalPeak tp
-            size_t i, n
+            TheoreticalIsotopicPattern base_tid
         base_tid = self.averagine.isotopic_cluster(
-            mz, charge, truncate_after=truncate_after, charge_carrier=charge_carrier)
-        n = PyList_GET_SIZE(base_tid)
-        total = 0
-        kept_tid = []
-        for i in range(n):
-            tp = <TheoreticalPeak>PyList_GET_ITEM(base_tid, i)
-            if (tp.intensity < ignore_below) and (i > 1):
-                pass
-            else:
-                PyList_Append(kept_tid, tp)
-                total += tp.intensity
-        n = PyList_GET_SIZE(kept_tid)
-        for i in range(n):
-            tp = <TheoreticalPeak>PyList_GET_ITEM(kept_tid, i)
-            tp.intensity /= total
-        return kept_tid
+            mz, charge, truncate_after=truncate_after, ignore_below=ignore_below,
+            charge_carrier=charge_carrier)        
+        return base_tid
 
     cpdef list find_all_features(self, double mz, double error_tolerance=2e-5):
         return self.feature_map._find_all(mz, error_tolerance)
@@ -415,7 +400,8 @@ cdef class LCMSFeatureProcessorBase(object):
         return fit
 
     cdef list _fit_theoretical_distribution_on_features(self, double mz, double error_tolerance, int charge,
-                                                        list base_tid, double charge_carrier=PROTON,
+                                                        TheoreticalIsotopicPattern base_tid,
+                                                        double charge_carrier=PROTON,
                                                         double truncate_after=0.8, int max_missed_peaks=1,
                                                         double threshold_scale=0.3, LCMSFeature feature=None):
         cdef:
@@ -434,7 +420,7 @@ cdef class LCMSFeatureProcessorBase(object):
             dvec* time_vec
 
         feature_groups = self.match_theoretical_isotopic_distribution(
-            base_tid, error_tolerance, interval=feature)
+            base_tid.truncated_tid, error_tolerance, interval=feature)
         feature_fits = []
 
         conformer = envelope_conformer._create()
@@ -471,7 +457,7 @@ cdef class LCMSFeatureProcessorBase(object):
                 if eid is None:
                     continue
                 counter += 1
-                conformer.acquire(eid, base_tid)
+                conformer.acquire(eid, base_tid.truncated_tid)
                 conformer.conform()
                 cleaned_eid = conformer.experimental
                 tid = conformer.theoretical
@@ -519,7 +505,8 @@ cdef class LCMSFeatureProcessorBase(object):
                                 int right_search=1, double charge_carrier=PROTON, double truncate_after=0.8,
                                 int max_missed_peaks=1, double threshold_scale=0.3, LCMSFeature feature=None):
         cdef:
-            list base_tid, feature_fits
+            list feature_fits
+            TheoreticalIsotopicPattern base_tid
         base_tid = self.create_theoretical_distribution(
             mz, charge, charge_carrier, truncate_after)
         feature_fits = self._fit_theoretical_distribution_on_features(
