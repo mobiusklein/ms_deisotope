@@ -37,10 +37,18 @@ class TestScanMachinery(unittest.TestCase):
         mz, intensity = make_profile(points, fwhm)
         scan = common.Scan(
             {
+                "id": "spam",
+                "index": 0,
+                "ms level": 1,
                 "m/z array": mz,
                 "intensity array": intensity,
                 "profile spectrum": "",
                 "positive scan": "",
+                "scanList": {
+                    "scan": [
+                        {"scan start time": 0}
+                    ]
+                }
             },
             mzml.MzMLDataInterface())
         return scan

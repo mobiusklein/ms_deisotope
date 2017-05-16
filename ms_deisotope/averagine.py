@@ -124,20 +124,22 @@ class Averagine(object):
 
     def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
         composition = self.scale(mz, charge, charge_carrier)
-        cumsum = 0
-        result = []
-        for peak in isotopic_variants(composition, charge=charge):
-            cumsum += peak.intensity
-            result.append(peak)
-            if cumsum >= truncate_after:
-                break
-        for peak in result:
-            peak.intensity *= 1. / cumsum
-        result = shift_isotopic_pattern(mz, result)
-        result = TheoreticalIsotopicPattern(result)
+        tid = TheoreticalIsotopicPattern(isotopic_variants(composition, charge=charge))
+        # cumsum = 0
+        # result = []
+        # for peak in isotopic_variants(composition, charge=charge):
+        #     cumsum += peak.intensity
+        #     result.append(peak)
+        #     if cumsum >= truncate_after:
+        #         break
+        # for peak in result:
+        #     peak.intensity *= 1. / cumsum
+        tid.shift(mz, True)
+        if truncate_after < 1.0:
+            tid.truncate_after(truncate_after)
         if ignore_below > 0:
-            result.ignore_below(ignore_below)
-        return result.truncated_tid
+            tid.ignore_below(ignore_below)
+        return tid.truncated_tid
 
     def __repr__(self):
         return "Averagine(%r)" % self.base_composition
