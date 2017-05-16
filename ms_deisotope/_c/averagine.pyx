@@ -14,6 +14,8 @@ from brainpy._c.isotopic_distribution cimport _isotopic_variants
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from brainpy._speedup cimport calculate_mass
 
+from ms_peak_picker._c.peak_set cimport FittedPeak
+
 
 cdef double PROTON
 PROTON = _PROTON
@@ -115,44 +117,54 @@ cdef class Averagine(object):
             list result, tid, kept_tid
             double cumsum, base_mz, total
             TheoreticalPeak peak
+            TheoreticalIsotopicPattern isotopic_pattern
             size_t i, n
         composition = self.scale(mz, charge, charge_carrier)
-        cumsum = 0
-        result = []
         tid = _isotopic_variants(composition, npeaks=None, charge=charge, charge_carrier=PROTON)
-        n = PyList_GET_SIZE(tid)
-        base_mz = (<TheoreticalPeak>PyList_GET_ITEM(tid, 0)).mz
-        for i in range(n):
-            peak = <TheoreticalPeak>PyList_GET_ITEM(tid, i)
-            cumsum += peak.intensity
-            result.append(peak)
-            peak.mz = (peak.mz - base_mz) + mz
-            if cumsum >= truncate_after:
-                break
+        isotopic_pattern = TheoreticalIsotopicPattern._create(tid)
+
+        # cumsum = 0
+        # result = []
+
+        # n = PyList_GET_SIZE(tid)
+        # base_mz = (<TheoreticalPeak>PyList_GET_ITEM(tid, 0)).mz
+        # for i in range(n):
+        #     peak = <TheoreticalPeak>PyList_GET_ITEM(tid, i)
+        #     cumsum += peak.intensity
+        #     result.append(peak)
+        #     # peak.mz = (peak.mz - base_mz) + mz
+        #     if cumsum >= truncate_after:
+        #         break
         # Renormalize so the truncated peak list sums to 1.0
+        # if truncate_after < 1.0:
+        #     n = i + 1
+        #     for i in range(n):
+        #         peak = <TheoreticalPeak>PyList_GET_ITEM(tid, i)
+        #         peak.intensity *= 1. / cumsum
+
         if truncate_after < 1.0:
-            n = i + 1
-            for i in range(n):
-                peak = <TheoreticalPeak>PyList_GET_ITEM(tid, i)
-                peak.intensity *= 1. / cumsum
+            isotopic_pattern.truncate_after(truncate_after)
 
         if ignore_below > 0:
-            total = 0.0
-            kept_tid = []
-            for i in range(n):
-                peak = <TheoreticalPeak>PyList_GET_ITEM(result, i)
-                if (peak.intensity < ignore_below) and (i > 1):
-                    pass
-                else:
-                    PyList_Append(kept_tid, peak)
-                    total += peak.intensity
-            n = PyList_GET_SIZE(kept_tid)
-            for i in range(n):
-                peak = <TheoreticalPeak>PyList_GET_ITEM(kept_tid, i)
-                peak.intensity /= total
-            result = kept_tid
+            isotopic_pattern.ignore_below(ignore_below)
 
-        return result
+            # total = 0.0
+            # kept_tid = []
+            # for i in range(n):
+            #     peak = <TheoreticalPeak>PyList_GET_ITEM(result, i)
+            #     if (peak.intensity < ignore_below) and (i > 1):
+            #         pass
+            #     else:
+            #         PyList_Append(kept_tid, peak)
+            #         total += peak.intensity
+            # n = PyList_GET_SIZE(kept_tid)
+            # for i in range(n):
+            #     peak = <TheoreticalPeak>PyList_GET_ITEM(kept_tid, i)
+            #     peak.intensity /= total
+            # result = kept_tid
+
+        # return result
+        return isotopic_pattern.get_processed_peaks()
 
     cpdef list isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
                                 double ignore_below=0.0):
@@ -202,6 +214,19 @@ cdef list clone_peak_list(list peaklist):
     return result
 
 
+cdef double sum_intensity(list peaklist):
+    cdef:
+        size_t i
+        double total
+        FittedPeak peak
+    total = 0
+    for i in range(PyList_GET_SIZE(peaklist)):
+        peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
+        total += peak.intensity
+    return total
+
+
+@cython.freelist(1000000)
 cdef class TheoreticalIsotopicPattern(object):
 
     @staticmethod
@@ -263,6 +288,9 @@ cdef class TheoreticalIsotopicPattern(object):
 
     def __reduce__(self):
         return self.__class__, (self.base_tid, self.truncated_tid)
+
+    cdef list get_processed_peaks(self):
+        return self.truncated_tid
 
     cdef double get_monoisotopic_mz(self):
         cdef TheoreticalPeak p
@@ -348,12 +376,39 @@ cdef class TheoreticalIsotopicPattern(object):
             peak.intensity *= normalizer
         return self
 
+    @cython.cdivision
+    cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method="sum"):
+        cdef:
+            size_t i, j
+            TheoreticalPeak peak
+            double total_abundance, maximum, scale_factor
+
+        if method == "sum":
+            total_abundance = sum_intensity(experimental_distribution)
+            for i in range(self.get_size()):
+                peak = self.get(i)
+                peak.intensity *= total_abundance
+        elif method == "max":
+            i = 0
+            maximum = 0
+            for j in range(self.get_size()):
+                peak = self.get(j)
+                if peak.intensity > maximum:
+                    maximum = peak.intensity
+                    j = i
+            scale_factor = (<FittedPeak>PyList_GET_ITEM(
+                experimental_distribution, i)).intensity / maximum
+            for j in range(self.get_size()):
+                peak = self.get(j)
+                peak.intensity *= scale_factor
+
+        return self
+
     def __repr__(self):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
             self.base_tid[0].mz,
             self.base_tid[0].charge,
             ', '.join("%0.3f" % p.intensity for p in self.base_tid))
-
 
 
 cdef class AveragineCache(object):

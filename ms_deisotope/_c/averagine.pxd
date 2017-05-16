@@ -30,6 +30,7 @@ cdef class TheoreticalIsotopicPattern(object):
     cpdef TheoreticalIsotopicPattern ignore_below(self, double ignore_below=*)
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=*)
     cpdef TheoreticalIsotopicPattern shift(self, double mz, bint truncated=*)
+    cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method=*)
 
     cdef inline TheoreticalPeak get(self, ssize_t i)
     cdef inline TheoreticalPeak get_base(self, ssize_t i)
@@ -38,6 +39,7 @@ cdef class TheoreticalIsotopicPattern(object):
     cdef size_t get_base_size(self)
 
     cdef double get_monoisotopic_mz(self)
+    cdef list get_processed_peaks(self)
 
 
 

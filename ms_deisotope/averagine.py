@@ -76,6 +76,21 @@ class TheoreticalIsotopicPattern(object):
         self.truncated_tid = kept_tid
         return self
 
+    def scale(self, experimental_distribution, method='sum'):
+        if method == 'sum':
+            total_abundance = sum(
+                p.intensity for p in experimental_distribution)
+            for peak in self:
+                peak.intensity *= total_abundance
+        elif method == 'max':
+            i, peak = max(enumerate(self),
+                          key=lambda x: x[1].intensity)
+            scale_factor = experimental_distribution[
+                i].intensity / peak.intensity
+            for peak in self:
+                peak.intensity *= scale_factor
+        return self
+
     def __repr__(self):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
             self.base_tid[0].mz,
