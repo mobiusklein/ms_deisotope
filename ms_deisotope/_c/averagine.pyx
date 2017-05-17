@@ -290,7 +290,7 @@ cdef class TheoreticalIsotopicPattern(object):
             p.intensity /= total
         return self
 
-    cpdef TheoreticalIsotopicPattern shift(self, double mz, bint truncated=False):
+    cpdef TheoreticalIsotopicPattern shift(self, double mz, bint truncated=True):
         cdef:
             TheoreticalPeak first_peak, peak
             size_t i, n
@@ -454,7 +454,7 @@ cdef class AveragineCache(object):
             else:
                 tid = <TheoreticalIsotopicPattern>pvalue
                 tid = tid.clone()
-                tid.shift(mz)
+                tid.shift(mz, True)
                 return tid
         else:
             tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
