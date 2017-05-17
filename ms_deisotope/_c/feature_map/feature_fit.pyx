@@ -60,10 +60,10 @@ cdef class LCMSFeatureSetFit(object):
         self.missing_features = missing_features
         self.monoisotopic_feature = features[0]
         self.supporters = supporters
+        self.mz = self.theoretical.get_monoisotopic_mz()
         if neutral_mass is None:
-            neutral_mass = calc_neutral_mass(self.monoisotopic_feature.mz, self.charge)
+            neutral_mass = calc_neutral_mass(self.mz, self.charge)
         self.neutral_mass = neutral_mass
-        self.mz = self.monoisotopic_feature.mz
         self.n_points = n_points
         self.scores = scores
         self.times = times
@@ -91,10 +91,10 @@ cdef class LCMSFeatureSetFit(object):
         inst.missing_features = missing_features
         inst.monoisotopic_feature = features[0]
         inst.supporters = supporters
+        inst.mz = theoretical.get_monoisotopic_mz()
         if neutral_mass is None:
-            neutral_mass = calc_neutral_mass(inst.monoisotopic_feature.mz, inst.charge)
+            neutral_mass = calc_neutral_mass(inst.mz, inst.charge)
         inst.neutral_mass = neutral_mass
-        inst.mz = inst.monoisotopic_feature.mz
         inst.n_points = n_points
         inst.scores = scores
         inst.times = times

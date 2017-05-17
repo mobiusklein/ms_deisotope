@@ -407,7 +407,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         charge = feature_fit.charge
         abs_charge = abs(charge)
         for eid in feat_iter:
-            cleaned_eid, tid, n_missing = conform_envelopes(eid, base_tid)
+            cleaned_eid, tid, n_missing = conform_envelopes(eid, base_tid.truncated_tid)
             rep_eid = drop_placeholders(cleaned_eid)
             n_real_peaks = len(rep_eid)
             if n_real_peaks == 0 or (n_real_peaks == 1 and abs_charge > 1) or \
@@ -421,7 +421,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             if is_valid:
                 total_abundance = sum(p[1] for p in envelope)
                 monoisotopic_mass = neutral_mass(
-                    cleaned_eid[0].mz, charge, charge_carrier=charge_carrier)
+                    base_tid.monoisotopic_mz, charge, charge_carrier=charge_carrier)
                 reference_peak = first_peak(cleaned_eid)
 
                 dpeak = DeconvolutedPeak(
@@ -437,7 +437,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                         average_mz(cleaned_eid), charge, charge_carrier=charge_carrier),
                     score=score,
                     envelope=envelope,
-                    mz=cleaned_eid[0].mz,
+                    mz=base_tid.monoisotopic_mz,
                     area=sum(e.area for e in cleaned_eid))
 
                 time = feat_iter.current_time

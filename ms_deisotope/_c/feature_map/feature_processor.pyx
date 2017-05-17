@@ -411,6 +411,7 @@ cdef class LCMSFeatureProcessorBase(object):
             np.ndarray scores_array, times_array
             tuple temp
             size_t combn_size, combn_i, n_missing, missing_features, counter
+            TheoreticalIsotopicPattern snapped_tid
             size_t feat_i, feat_n
             FeatureSetIterator feat_iter
             LCMSFeature f
@@ -444,6 +445,10 @@ cdef class LCMSFeatureProcessorBase(object):
             if features[0] is None:
                 features = list(features)
                 features[0] = EmptyFeature._create(mz)
+                snapped_tid = base_tid.clone().shift(mz, True)
+            else:
+                f = <LCMSFeature>PyList_GET_ITEM(features, 0)
+                snapped_tid = base_tid.clone().shift(f.get_mz(), True)
             # feat_iter = FeatureSetIterator._create_with_threshold(features, base_tid, 0.1)
             feat_iter = FeatureSetIterator._create(features)
             counter = 0
@@ -457,7 +462,7 @@ cdef class LCMSFeatureProcessorBase(object):
                 if eid is None:
                     continue
                 counter += 1
-                conformer.acquire(eid, base_tid.truncated_tid)
+                conformer.acquire(eid, snapped_tid.truncated_tid)
                 conformer.conform()
                 cleaned_eid = conformer.experimental
                 tid = conformer.theoretical
@@ -483,11 +488,11 @@ cdef class LCMSFeatureProcessorBase(object):
                     missing_features += 1
             f = <LCMSFeature>PyList_GET_ITEM(features, 0)
             neutral_mass = calc_neutral_mass(
-                    f.get_mz(), charge, charge_carrier)
+                    snapped_tid.get_monoisotopic_mz(), charge, charge_carrier)
             scores_array = double_vector_to_ndarray(score_vec)
             times_array = double_vector_to_ndarray(time_vec)
             fit = LCMSFeatureSetFit._create(
-                features, base_tid,
+                features, snapped_tid,
                 final_score, charge,
                 missing_features, [],
                 None, neutral_mass,

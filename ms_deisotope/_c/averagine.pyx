@@ -441,6 +441,10 @@ cdef class AveragineCache(object):
             else:
                 key_mz = _round(mz / self.cache_truncation) * self.cache_truncation
 
+            # Attempting to replace this tuple construction (which in turn necessitates packing each
+            # numeric argument as a Python object) with a hand-written extension class that can compute
+            # its own hash value without invoking any Python operations turns out to be just a bit slower
+            # than the bare tuple itself.
             cache_key = (key_mz, charge, charge_carrier, truncate_after)
             pvalue = PyDict_GetItem(self.backend, cache_key)
             if pvalue == NULL:

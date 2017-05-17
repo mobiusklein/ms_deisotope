@@ -37,10 +37,10 @@ class LCMSFeatureSetFit(object):
         self.missing_features = missing_features
         self.monoisotopic_feature = features[0]
         self.supporters = supporters
+        self.mz = theoretical.monoisotopic_mz
         if neutral_mass is None:
-            neutral_mass = neutral_mass(self.monoisotopic_feature.mz, self.charge)
+            neutral_mass = neutral_mass(self.mz, self.charge)
         self.neutral_mass = neutral_mass
-        self.mz = self.monoisotopic_feature.mz
         self.scores = scores
         self.times = times
 
