@@ -1,4 +1,7 @@
-from .averagine import Averagine, peptide, glycan, glycopeptide, heparin
+from .averagine import (
+    Averagine, peptide, glycan, glycopeptide, heparin,
+    permethylated_glycan, mass_charge_ratio, neutral_mass,
+    calculate_mass, isotopic_shift)
 from .deconvolution import (
     AveragineDeconvoluter, CompositionListDeconvoluter,
     AveraginePeakDependenceGraphDeconvoluter, CompositionListPeakDependenceGraphDeconvoluter)
