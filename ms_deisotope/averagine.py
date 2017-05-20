@@ -41,12 +41,20 @@ class TheoreticalIsotopicPattern(object):
     def monoisotopic_mz(self):
         return self.base_tid[0].mz
 
-    def shift(self, mz):
+    def shift(self, mz, truncated=True):
         first_peak = self.base_tid[0]
         for peak in self.base_tid[1:]:
             delta = peak.mz - first_peak.mz
             peak.mz = mz + delta
         first_peak.mz = mz
+
+        if truncated:
+            first_peak = self.truncated_tid[0]
+            for peak in self.truncated_tid[1:]:
+                delta = peak.mz - first_peak.mz
+                peak.mz = mz + delta
+            first_peak.mz = mz
+
         return self
 
     def truncate_after(self, truncate_after=0.0):
@@ -95,7 +103,7 @@ class TheoreticalIsotopicPattern(object):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
             self.base_tid[0].mz,
             self.base_tid[0].charge,
-            ', '.join("%0.3f" % p.intensity for p in self.base_tid))
+            ', '.join("%0.3f" % p.intensity for p in self.truncated_tid))
 
 
 @dict_proxy("base_composition")
@@ -173,11 +181,7 @@ def add_compositions(a, b):
 try:
     _Averagine = Averagine
     _TheoreticalIsotopicPattern = TheoreticalIsotopicPattern
-    try:
-        from ms_deisotope._c.averagine import TheoreticalIsotopicPattern
-    except Exception:
-        pass
-    from ms_deisotope._c.averagine import Averagine
+    from ms_deisotope._c.averagine import Averagine, TheoreticalIsotopicPattern
 except ImportError as e:
     print(e, "averagine")
 

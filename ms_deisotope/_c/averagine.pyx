@@ -372,7 +372,7 @@ cdef class TheoreticalIsotopicPattern(object):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
             self.base_tid[0].mz,
             self.base_tid[0].charge,
-            ', '.join("%0.3f" % p.intensity for p in self.base_tid))
+            ', '.join("%0.3f" % p.intensity for p in self.truncated_tid))
 
     cpdef bint _eq(self, object other):
         cdef:
