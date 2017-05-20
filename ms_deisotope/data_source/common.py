@@ -688,7 +688,9 @@ class ActivationInformation(object):
         self.data = data
 
     def __repr__(self):
-        return "ActivationInformation(%r, %r)%s" % (self.method, self.energy, "" if not self.data else self.data)
+        return "ActivationInformation(%r, %r%s)" % (
+            str(self.method), self.energy,
+            "" if not self.data else ", %r" % self.data)
 
     def __str__(self):
         return str(self.method)
