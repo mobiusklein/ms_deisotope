@@ -471,7 +471,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 return self.extended_index.msn_ids[scan_id]
             except KeyError:
                 return self.extended_index.ms1_ids[scan_id]
-        except:
+        except Exception:
             return {}
 
     def iter_scan_headers(self, iterator=None):
@@ -527,8 +527,12 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         try:
             return self._scan_cache[scan_id]
         except KeyError:
-            packed = super(ProcessedMzMLDeserializer, self)._make_scan(self._source.get_by_id(scan_id))
-            return packed
+            try:
+                packed = super(ProcessedMzMLDeserializer, self)._make_scan(self._source.get_by_id(scan_id))
+                return packed
+            except AttributeError as ae:
+                raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
+                    ae, scan_id))
 
     @property
     def _index_file_name(self):
