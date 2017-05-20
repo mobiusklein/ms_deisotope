@@ -10,7 +10,8 @@ import numpy as np
 
 from ms_deisotope.data_source.common import (
     ScanDataSource, ScanIterator, RandomAccessScanSource,
-    Scan, PrecursorInformation, ScanBunch, ChargeNotProvided)
+    Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
+    ActivationInformation)
 
 from ms_deisotope.utils import Base
 
@@ -72,6 +73,7 @@ polarity_pat = re.compile(r"(?P<polarity>[\+\-])")
 point_type_pat = re.compile(r"(?P<point_type>[CP])")
 ionization_pat = re.compile(r"(?P<ionization_type>EI|CI|FAB|APCI|ESI|APCI|NSI|TSP|FD|MALDI|GD)")
 scan_type_pat = re.compile(r"(?P<scan_type>FULL|SIM|SRM|CRM|Z|Q1MS|Q3MS)")
+activation_pat = re.compile(r"ms(?P<ms_level>\d*)\s(?:(?P<isolation_mz>\d+\.\d*)@(?P<activation_type>[a-z]+)(?P<activation_energy>\d*\.?\d*))?")
 
 
 class FilterLine(str):
@@ -83,10 +85,17 @@ class FilterLine(str):
 
 
 def filter_line_parser(line):
-    line = line.upper()
-    words = line.split(" ")
+    words = line.upper().split(" ")
     values = dict()
     i = 0
+    activation_info = activation_pat.search(line)
+    if activation_info is not None:
+        activation_info = activation_info.groupdict()
+        if activation_info['ms_level'] != "":
+            values["ms_level"] = int(activation_info['ms_level'])
+            values["isolation_mz"] = float(activation_info['isolation_mz'])
+            values["activation_type"] = activation_info['activation_type']
+            values["activation_energy"] = float(activation_info['activation_energy'])
     try:
         word = words[i]
         i += 1
@@ -219,6 +228,11 @@ class ThermoRawDataInterface(ScanDataSource):
         return pinfo
 
     def _activation(self, scan):
+        filter_line = self._filter_line(scan)
+        activation_type = filter_line.get("activation_type")
+        if activation_type is not None:
+            energy = filter_line.get("activation_energy")
+            return ActivationInformation(activation_type, energy)
         return None
 
 
