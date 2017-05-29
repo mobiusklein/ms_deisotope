@@ -4,6 +4,7 @@ from .mzxml import MzXMLLoader
 
 
 guessers = []
+reader_types = [MzMLLoader, MzXMLLoader]
 
 
 def register_type_guesser(reader_guesser):
@@ -16,6 +17,7 @@ try:
         ThermoRawLoader, infer_reader as _check_is_thermo_raw,
         register_dll as register_thermo_dll)
 
+    reader_types.append(ThermoRawLoader)
     register_type_guesser(_check_is_thermo_raw)
 
 except ImportError:  # pragma: no cover
@@ -54,14 +56,6 @@ def guess_type(file_path):
         except (ValueError, IOError, ImportError):
             continue
     raise ValueError("Cannot determine ScanLoader type")
-
-    # try:
-    #     return guess_type_from_path(file_path)
-    # except ValueError:
-    #     try:
-    #         return guess_type_from_file_sniffing(file_path)
-    #     except ValueError:
-    #         raise ValueError("Cannot determine ScanLoader type")
 
 
 def MSFileLoader(file_path, *args, **kwargs):
