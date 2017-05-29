@@ -741,7 +741,6 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             info("Fits for %r" % peak)
             for rec in sorted(results)[-10:]:
                 info(rec)
-
         try:
             result = self.scorer.select(results)
             return result

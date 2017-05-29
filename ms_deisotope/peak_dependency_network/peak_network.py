@@ -188,12 +188,15 @@ class PeakDependenceGraph(object):
         self.clusters = None
         self._interval_tree = None
         self._solution_map = {}
+        self._all_clusters = []
 
     def reset(self):
+        # Keep a record of all clusters from previous iterations
+        self._all_clusters.extend(
+            self.clusters if self.clusters is not None else [])
         self.nodes = dict()
         self.dependencies = set()
         self._interval_tree = None
-        self._solution_map = dict()
         self._populate_initial_graph()
 
     def add_solution(self, key, solution):
@@ -202,7 +205,10 @@ class PeakDependenceGraph(object):
     @property
     def interval_tree(self):
         if self._interval_tree is None:
-            self._interval_tree = IntervalTreeNode.build(self.clusters)
+            # Build tree from both the current set of clusters
+            # and all clusters from previous iterations
+            self._interval_tree = IntervalTreeNode.build(
+                self.clusters + self._all_clusters)
             if self._interval_tree is None:
                 raise NoIsotopicClustersError(
                     "Could not build intervals for peak retrieval with %d clusters" % len(
@@ -239,12 +245,6 @@ class PeakDependenceGraph(object):
     def find_solution_for(self, peak):
         peak_node = self.nodes[peak.index]
         tree = self.interval_tree
-        if tree is None:
-            tree = IntervalTreeNode.build(self.clusters)
-            if tree is None:
-                raise ValueError(
-                    "Could not build intervals for peak retrieval with %d clusters" % len(
-                        self.clusters))
         clusters = tree.contains_point(peak.mz)
         if len(clusters) == 0:
             return self._find_fuzzy_solution_for(peak)
@@ -255,6 +255,7 @@ class PeakDependenceGraph(object):
             acc.extend(fits)
         best_fits = acc
 
+        # Extract only fits that use the query peak
         common = tuple(set(best_fits) & set(peak_node.links))
 
         if len(common) > 1 or len(common) == 0:
@@ -266,6 +267,10 @@ class PeakDependenceGraph(object):
             err = float('inf')
             for j, case in enumerate(best_fits):
                 case_err = abs(case.monoisotopic_peak.mz - peak.mz)
+                if self.maximize:
+                    case_err /= case.score
+                else:
+                    case_err /= (1. / case.score)
                 if case_err < err:
                     i = j
                     err = case_err
