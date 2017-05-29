@@ -13,6 +13,14 @@ from .profile_transform import smooth_leveled, ValleyPoint, PeakBoundary, Profil
 DEFAULT_SMOOTH = 3
 
 
+def linear_regression_residuals(x, y):
+    X = np.vstack((np.ones(len(x)), np.array(x))).T
+    Y = np.array(y)
+    B = np.linalg.inv(X.T.dot(X)).dot(X.T.dot(Y))
+    Yhat = X.dot(B)
+    return (Y - Yhat) ** 2
+
+
 class PeakShapeModelBase(object):
     def __repr__(self):
         return "{self.__class__.__name__}()".format(self=self)
@@ -173,8 +181,10 @@ class ChromatogramShapeFitterBase(object):
     def perform_line_test(self):
         ys = self.ys
         residuals = self.compute_residuals()
-        line_test = (residuals ** 2).sum() / (
-            ((ys - ((ys.max() + ys.min()) / 2.)) ** 2).sum())
+        horizontal_fit_residuals = ys - ((ys.max() + ys.min()) / 2.)
+        line_test = (residuals ** 2).sum() / (horizontal_fit_residuals ** 2).sum()
+        if line_test > 1.0:
+            line_test = 1.0
         self.line_test = line_test
 
     def plot(self, ax=None):
@@ -311,7 +321,10 @@ class MultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
         params_dict = self.shape_fitter.params_to_dict(params)
 
         indices = peak_indices(ys, min_height)
-        center = xs[max(indices, key=lambda x: ys[x])]
+        if len(indices) > 0:
+            center = xs[max(indices, key=lambda x: ys[x])]
+        else:
+            center = xs[len(xs) / 2]
         params_dict['center'] = center
 
         fit = leastsq(self.shape_fitter.fit,
@@ -466,25 +479,6 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
         if candidates:
             best_point = candidates[0]
             self.partition_sites.append(best_point)
-        # maxima_indices, minima_indices = self._extreme_indices(ys)
-        # candidates = []
-
-        # for i in range(len(maxima_indices)):
-        #     max_i = maxima_indices[i]
-        #     for j in range(i + 1, len(maxima_indices)):
-        #         max_j = maxima_indices[j]
-        #         for k in range(len(minima_indices)):
-        #             min_k = minima_indices[k]
-        #             y_i = ys[max_i]
-        #             y_j = ys[max_j]
-        #             y_k = ys[min_k]
-        #             if max_i < min_k < max_j and (y_i - y_k) > (y_i * 0.01) and (
-        #                     y_j - y_k) > (y_j * 0.01):
-        #                 point = ValleyPoint(y_i, y_k, y_j, xs[min_k])
-        #                 candidates.append(point)
-        # if candidates:
-        #     best_point = max(candidates, key=lambda x: x.total_distance)
-        #     self.partition_sites.append(best_point)
 
         return candidates
 
