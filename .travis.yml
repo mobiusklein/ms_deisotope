@@ -10,7 +10,6 @@ cache: pip
 install:
   - pip install --upgrade pip setuptools wheel
   - pip install Cython --install-option="--no-cython-compile"
-  # - pip install git+https://github.com/mobiusklein/brainpy.git
   - pip install lxml pyteomics brain-isotopic-distribution
   - pip install --only-binary=numpy,scipy numpy scipy
   - pip install git+https://github.com/mobiusklein/ms_peak_picker.git
@@ -18,4 +17,4 @@ install:
   - pip install -e .
   # - pip install -r requirements.txt
 # command to run tests
-script: nosetests --with-coverage --cover-package=ms_deisotope
+script: make test
