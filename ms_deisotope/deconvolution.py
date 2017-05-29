@@ -20,7 +20,7 @@ debug = logger.debug
 
 
 TRUNCATE_AFTER = 0.95
-MAX_ITERATION = 1
+MAX_ITERATION = 3
 ERROR_TOLERANCE = 2e-5
 IGNORE_BELOW = 0.01
 
@@ -1692,7 +1692,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
 
-    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), iterations=5,
+    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), iterations=MAX_ITERATION,
                     truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, mass_shift=None,
                     convergence=0.01, **kwargs):
         if not self.use_subtraction:
@@ -1768,7 +1768,7 @@ def deconvolute_peaks(peaklist,
 
     decon_config = decon_config or {}
     decon_config.update(kwargs)
-    decon_config.setdefault("use_subtraction", False)
+    decon_config.setdefault("use_subtraction", True)
     decon = deconvoluter_type(peaklist=peaklist, **decon_config)
 
     if verbose_priorities or verbose:
