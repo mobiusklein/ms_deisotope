@@ -97,7 +97,27 @@ class TheoreticalIsotopicPattern(object):
                 i].intensity / peak.intensity
             for peak in self:
                 peak.intensity *= scale_factor
+        elif method == "meanscale":
+            scales = 0
+            weights = 0
+            total = 0
+            for i in range(len(experimental_distribution)):
+                epeak = experimental_distribution[i]
+                total += epeak.intensity
+                tpeak = self[i]
+                weights += tpeak.intensity
+                scales += epeak.intensity / tpeak.intensity
+            scale_factor = scales / weights
+            delta = (total - scale_factor) / len(self)
+            for peak in self:
+                peak.intensity *= scale_factor
+                peak.intensity += delta
+
         return self
+
+    def _scale_raw(self, scale_factor):
+        for peak in self:
+            peak.intensity *= scale_factor
 
     def __repr__(self):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (

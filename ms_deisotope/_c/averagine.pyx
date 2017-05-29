@@ -343,30 +343,54 @@ cdef class TheoreticalIsotopicPattern(object):
     @cython.cdivision
     cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method="sum"):
         cdef:
-            size_t i, j
+            size_t i, j, n
             TheoreticalPeak peak
+            FittedPeak expeak
             double total_abundance, maximum, scale_factor
+            double weights, scales, delta
 
+        n = self.get_size()
+        if n == 0:
+            raise ValueError("Isotopic Pattern has length 0")
         if method == "sum":
             total_abundance = sum_intensity(experimental_distribution)
-            for i in range(self.get_size()):
+            for i in range(n):
                 peak = self.get(i)
                 peak.intensity *= total_abundance
         elif method == "max":
             i = 0
             maximum = 0
-            for j in range(self.get_size()):
+            for j in range(n):
                 peak = self.get(j)
                 if peak.intensity > maximum:
                     maximum = peak.intensity
                     j = i
             scale_factor = (<FittedPeak>PyList_GET_ITEM(
                 experimental_distribution, i)).intensity / maximum
-            for j in range(self.get_size()):
+            for j in range(n):
                 peak = self.get(j)
                 peak.intensity *= scale_factor
-
+        elif method == "meanscale":
+            scales = 0
+            weights = 0
+            total_abundance = 0
+            for i in range(n):
+                expeak = <FittedPeak>PyList_GET_ITEM(experimental_distribution, i)
+                peak = self.get(i)
+                total_abundance += expeak.intensity
+                scales += expeak.intensity / peak.intensity
+                weights += peak.intensity
+            scale_factor = scales / weights
+            delta = (total_abundance - scale_factor) / n
+            for i in range(n):
+                peak = self.get(i)
+                peak.intensity *= scale_factor
+                peak.intensity += delta
         return self
+
+    def _scale_raw(self, double scale_factor):
+        for peak in self:
+            peak.intensity *= scale_factor
 
     def __repr__(self):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
