@@ -33,7 +33,8 @@ class TestDeconvolution(unittest.TestCase):
         deconresult = deconvolute_peaks(
             scan.peak_set, {
                 "averagine": peptide,
-                "scorer": PenalizedMSDeconVFitter(5., 1.)
+                "scorer": PenalizedMSDeconVFitter(5., 1.),
+                "use_subtraction": False
             }, deconvoluter_type=algorithm_type)
         dpeaks = deconresult.peak_set
         for point in points:
