@@ -73,7 +73,11 @@ polarity_pat = re.compile(r"(?P<polarity>[\+\-])")
 point_type_pat = re.compile(r"(?P<point_type>[CP])")
 ionization_pat = re.compile(r"(?P<ionization_type>EI|CI|FAB|APCI|ESI|APCI|NSI|TSP|FD|MALDI|GD)")
 scan_type_pat = re.compile(r"(?P<scan_type>FULL|SIM|SRM|CRM|Z|Q1MS|Q3MS)")
-activation_pat = re.compile(r"ms(?P<ms_level>\d*)\s(?:(?P<isolation_mz>\d+\.\d*)@(?P<activation_type>[a-z]+)(?P<activation_energy>\d*\.?\d*))?")
+activation_pat = re.compile(
+    r"""ms(?P<ms_level>\d*)\s
+        (?:(?P<isolation_mz>\d+\.\d*)@
+        (?P<activation_type>[a-z]+)
+        (?P<activation_energy>\d*\.?\d*))?""", re.VERBOSE)
 
 
 class FilterLine(str):
