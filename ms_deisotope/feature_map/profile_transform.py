@@ -317,11 +317,10 @@ try:
     _ValleyPoint = ValleyPoint
     _split_valleys = split_valleys
     _smooth_leveled = smooth_leveled
-    _gauss = gauss
     _gaussian_smooth = gaussian_smooth
 
     from ms_deisotope._c.feature_map.profile_transform import (
-        ProfileSplitter, ValleyPoint, split_valleys, gauss,
+        ProfileSplitter, ValleyPoint, split_valleys,
         gaussian_smooth, smooth_leveled)
 except ImportError:
     has_c = False
