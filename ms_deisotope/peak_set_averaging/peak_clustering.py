@@ -2,11 +2,50 @@ import numpy as np
 from ms_peak_picker import FittedPeak, PeakIndex, PeakSet
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 
-from collections import Counter
+from collections import Counter, defaultdict
 
 
 def unspool_peaks(peak_sets):
     return [p for peak_set in peak_sets for p in peak_set]
+
+
+class PeakScanTree(object):
+    def __init__(self, store=None):
+        if store is None:
+            store = dict()
+        self.store = defaultdict(list, store)
+        self._mz = None
+
+    def add(self, peak, scan_id):
+        self.store[scan_id].append(peak)
+        if self._mz is None:
+            self._mz = peak.mz
+
+    def extend(self, tree):
+        for key, peaks in tree.store.items():
+            for peak in peaks:
+                self.add(peak, key)
+
+    def __iter__(self):
+        for peaks in self.store.values():
+            for peak in peaks:
+                yield peak
+
+    @property
+    def mz(self):
+        return self._mz
+
+    def remove_scan(self, scan_id):
+        self.store.pop(scan_id)
+        self._reset()
+
+    def _reset(self):
+        vals = self.store.values()
+        if vals:
+            peak = vals[0][0]
+            self._mz = peak.mz
+        else:
+            self._mz = None
 
 
 class PeakCluster(object):
