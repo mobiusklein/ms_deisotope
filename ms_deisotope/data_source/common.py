@@ -177,13 +177,13 @@ class ScanDataSource(object):
     def _is_profile(self, scan):
         """Returns whether the scan contains profile data (`True`)
         or centroided data (`False`).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         bool
@@ -194,13 +194,13 @@ class ScanDataSource(object):
     def _polarity(self, scan):
         """Returns whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         int
@@ -213,13 +213,13 @@ class ScanDataSource(object):
         produce this scan, if any.
 
         Returns `None` for MS1 scans
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         ActivationInformation
@@ -352,7 +352,7 @@ class Scan(object):
     polarity: int
         If the scan was acquired in positive mode, the value `+1`.  If the scan was acquired in negative
         mode, the value `-1`. May be used to indicating how to calibrate charge state determination methods.
-    activation: object
+    activation: ActivationInformation or None
         If this scan is an MS^n scan, this attribute will contain information about the process
         used to produce it from its parent ion.
     """
@@ -637,8 +637,8 @@ class PrecursorInformation(object):
 
 
 class ProcessedScan(object):
-    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set, deconvoluted_peak_set,
-                 polarity=None, activation=None):
+    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set,
+                 deconvoluted_peak_set, polarity=None, activation=None):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
