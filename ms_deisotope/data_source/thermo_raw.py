@@ -271,6 +271,21 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         self._scan_cache = WeakValueDictionary()
 
     def get_scan_by_id(self, scan_id):
+        """Retrieve the scan object for the specified scan id.
+
+        If the scan object is still bound and in memory somewhere,
+        a reference to that same object will be returned. Otherwise,
+        a new object will be created.
+
+        Parameters
+        ----------
+        scan_id : str
+            The unique scan id value to be retrieved
+
+        Returns
+        -------
+        Scan
+        """
         scan_number = int(str(scan_id).replace(_id_template, ''))
         try:
             return self._scan_cache[scan_number]
@@ -281,6 +296,20 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
             return scan
 
     def get_scan_by_index(self, index):
+        """Retrieve the scan object for the specified scan index.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        index: int
+            The index to get the scan for
+
+        Returns
+        -------
+        Scan
+        """
         scan_number = int(index) + 1
         try:
             return self._scan_cache[scan_number]
@@ -291,6 +320,20 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
             return scan
 
     def get_scan_by_time(self, time):
+        """Retrieve the scan object for the specified scan time.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        time : float
+            The time to get the nearest scan from
+
+        Returns
+        -------
+        Scan
+        """
         if time < self._first_scan_time:
             time = self._first_scan_time
         elif time > self._last_scan_time:
@@ -370,7 +413,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
                     current_level = 2
                 product_scans.append(packed)
             elif packed.ms_level == 1:
-                if current_level > 1:
+                if current_level > 1 and precursor_scan is not None:
                     precursor_scan.product_scans = list(product_scans)
                     yield ScanBunch(precursor_scan, product_scans)
                 else:
