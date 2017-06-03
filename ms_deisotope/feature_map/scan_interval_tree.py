@@ -30,7 +30,8 @@ def merge_interval_set(intervals, minimum_overlap_size=0.3):
     for interval in intervals:
         for i, candidate in enumerate(merged_intervals):
             if overlaps_2d(interval, candidate) and interval[0].overlap_size(
-                    candidate[0]) > (interval[0].end - interval[0].start * minimum_overlap_size):
+                    candidate[0]) > (
+                    interval[0].end - interval[0].start * minimum_overlap_size):
                 merged_intervals[i] = combine_intervals(candidate, interval)
                 break
         else:
@@ -51,10 +52,10 @@ def make_rt_tree(intervals):
 class ScanIntervalTree(object):
     @classmethod
     def build(cls, scan_iterator, time_radius=3., mz_lower=2., mz_higher=3.):
-        intervals = extract_intervals(scan_iterator, time_radius=time_radius, mz_lower=mz_lower, mz_higher=mz_higher)
-        # merged_intervals = merge_interval_set(intervals)
-        merged_intervals = intervals
-        return cls(make_rt_tree(merged_intervals), intervals)
+        intervals = extract_intervals(
+            scan_iterator, time_radius=time_radius,
+            mz_lower=mz_lower, mz_higher=mz_higher)
+        return cls(make_rt_tree(intervals), intervals)
 
     def __init__(self, rt_tree, original_intervals=None):
         self.rt_tree = rt_tree
