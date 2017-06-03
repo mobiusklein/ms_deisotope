@@ -12,12 +12,42 @@ class MzXMLDataInterface(ScanDataSource):
     :class:`ScanDataSource` for mzXML files. Not intended for direct instantiation.
     """
     def _scan_arrays(self, scan):
+        """Returns raw data arrays for m/z and intensity
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        mz: np.array
+            An array of m/z values for this scan
+        intensity: np.array
+            An array of intensity values for this scan
+        """
         try:
             return scan['m/z array'], scan["intensity array"]
         except KeyError:
             return np.array([]), np.array([])
 
     def _precursor_information(self, scan):
+        """Returns information about the precursor ion,
+        if any, that this scan was derived form.
+
+        Returns `None` if this scan has no precursor ion
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        PrecursorInformation
+        """
         try:
             pinfo_dict = scan['precursorMz'][0]
             precursor_scan_id = pinfo_dict['precursorScanNum']
@@ -34,12 +64,59 @@ class MzXMLDataInterface(ScanDataSource):
             return None
 
     def _scan_title(self, scan):
+        """Returns a verbose name for this scan, if one
+        were stored in the file. Usually includes both the
+        scan's id string, as well as information about the
+        original file and format.
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        str
+        """
         return self._scan_id(scan)
 
     def _scan_id(self, scan):
+        """Returns the scan's id string, a unique
+        identifier for this scan in the context of
+        the data file it is recordered in
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        str
+        """
         return scan["num"]
 
     def _scan_index(self, scan):
+        """Returns the base 0 offset from the start
+        of the data file in number of scans to reach
+        this scan.
+
+        If the original format does not natively include
+        an index value, this value may be computed from
+        the byte offset index.
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        int
+        """
         try:
             if self._scan_index_lookup is None:
                 raise ValueError("Index Not Built")
@@ -51,24 +128,95 @@ class MzXMLDataInterface(ScanDataSource):
             return -1
 
     def _ms_level(self, scan):
+        """Returns the degree of exponential fragmentation
+        used to produce this scan.
+
+        1 refers to a survey scan of unfragmented ions, 2
+        refers to a tandem scan derived from an ms level 1
+        ion, and so on.
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        int
+        """
         return int(scan['msLevel'])
 
     def _scan_time(self, scan):
+        """Returns the time in minutes from the start of data
+        acquisition to when this scan was acquired.
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        float
+        """
         try:
             return scan['retentionTime']
         except KeyError:
             return None
 
     def _is_profile(self, scan):
+        """Returns whether the scan contains profile data (`True`)
+        or centroided data (`False`).
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        bool
+        """
         return not bool(int(scan['centroided']))
 
     def _polarity(self, scan):
+        """Returns whether this scan was acquired in positive mode (+1)
+        or negative mode (-1).
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        int
+        """
         if scan['polarity'] == '+':
             return 1
         else:
             return -1
 
     def _activation(self, scan):
+        """Returns information about the activation method used to
+        produce this scan, if any.
+
+        Returns `None` for MS1 scans
+        
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+        
+        Returns
+        -------
+        ActivationInformation
+        """
         try:
             return ActivationInformation(
                 scan['precursorMz'][0]['activationMethod'], scan['collisionEnergy'])
@@ -98,9 +246,6 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase):
         self._scan_index_lookup = None
         if self._use_index:
             self._build_scan_index_lookup()
-
-    def __reduce__(self):
-        return self.__class__, (self.source_file, self._use_index)
 
     def _get_scan_by_id_raw(self, scan_id):
         return self._source.get_by_id(scan_id, "num")
