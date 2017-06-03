@@ -18,6 +18,13 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         self._source.close()
 
     def reset(self):
+        """Reset the object, clearing out any existing
+        state.
+
+        This resets the underlying file iterator, then
+        calls :meth:`make_iterator`, and clears the scan
+        cache.
+        """
         self._source.reset()
         self.make_iterator(None)
         self._scan_cache = WeakValueDictionary()
@@ -90,10 +97,11 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         return self.next()
 
     def get_scan_by_id(self, scan_id):
-        """Retrieve the scan object for the specified scan id. If the
-        scan object is still bound and in memory somewhere, a reference
-        to that same object will be returned. Otherwise, a new object will
-        be created.
+        """Retrieve the scan object for the specified scan id.
+
+        If the scan object is still bound and in memory somewhere,
+        a reference to that same object will be returned. Otherwise,
+        a new object will be created.
 
         Parameters
         ----------
@@ -115,6 +123,20 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         return self._source.get_by_id(scan_id)
 
     def get_scan_by_time(self, time):
+        """Retrieve the scan object for the specified scan time.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        time : float
+            The time to get the nearest scan from
+
+        Returns
+        -------
+        Scan
+        """
         scan_ids = tuple(self.index)
         lo = 0
         hi = len(scan_ids)
@@ -143,6 +165,20 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
 
     def get_scan_by_index(self, index):
+        """Retrieve the scan object for the specified scan index.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        index: int
+            The index to get the scan for
+
+        Returns
+        -------
+        Scan
+        """
         if not self._use_index:
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
         index_keys = tuple(self.index)
@@ -177,3 +213,6 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
 
     def __repr__(self):
         return "{self.__class__.__name__}({self.source_file!r})".format(self=self)
+
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self._use_index)
