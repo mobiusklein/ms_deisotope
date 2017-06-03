@@ -20,9 +20,10 @@ debug = logger.debug
 
 
 TRUNCATE_AFTER = 0.95
-MAX_ITERATION = 3
+MAX_ITERATION = 10
 ERROR_TOLERANCE = 2e-5
 IGNORE_BELOW = 0.01
+CONVERGENCE = 1e-3
 
 
 def mean(numbers):
@@ -1321,7 +1322,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                     use_charge_state_hint=False, left_search_limit=1,
                     right_search_limit=0, iterations=MAX_ITERATION, charge_carrier=PROTON,
-                    truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW, convergence=0.01):
+                    truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW, convergence=CONVERGENCE):
         """Completely deconvolute the spectrum.
 
         For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`
@@ -1693,7 +1694,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
 
     def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), iterations=MAX_ITERATION,
                     truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, mass_shift=None,
-                    convergence=0.01, **kwargs):
+                    convergence=CONVERGENCE, **kwargs):
         if not self.use_subtraction:
             iterations = 1
         begin_signal = sum([p.intensity for p in self.peaklist])
