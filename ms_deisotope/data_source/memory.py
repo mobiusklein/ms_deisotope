@@ -104,9 +104,11 @@ class MemoryScanInterface(ScanDataSource):
 
     def _ms_level(self, scan):
         """Returns the degree of exponential fragmentation
-        used to produce this scan. 1 refers to a survey scan
-        of unfragmented ions, 2 refers to a tandem scan derived
-        from an ms level 1 ion, and so on.
+        used to produce this scan.
+
+        1 refers to a survey scan of unfragmented ions, 2
+        refers to a tandem scan derived from an ms level 1
+        ion, and so on.
 
         Parameters
         ----------
