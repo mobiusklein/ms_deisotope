@@ -219,11 +219,10 @@ cdef class DeconvoluterBase(object):
             next_peak + (next_peak * tolerance))
         candidates = []
 
-        n = peaklist_slice._get_size()
+        n = peaklist_slice.get_size()
         for i in range(n):
             forward = peaklist_slice.getitem(i)
             prev_peak_mz = forward.mz - (shift * step)
-            # dummy_peak = FittedPeak._create(prev_peak_mz, 1, 1, 0, 0, 0, 1, 0, 0)
             dummy_peak = make_placeholder_peak(prev_peak_mz)
             candidates.append((dummy_peak, charge))
         return candidates
@@ -242,7 +241,7 @@ cdef class DeconvoluterBase(object):
             prev_peak - (prev_peak * tolerance),
             prev_peak + (prev_peak * tolerance))
         candidates = []
-        n = peaklist_slice._get_size()
+        n = peaklist_slice.get_size()
         for i in range(n):
             backward = peaklist_slice.getitem(i)
             prev_peak_mz = backward.mz
