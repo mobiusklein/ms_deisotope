@@ -1,7 +1,10 @@
-from matplotlib import font_manager
-from matplotlib import pyplot as plt
-from matplotlib import patches as mpatches
-from matplotlib.textpath import TextPath
+try:
+    from matplotlib import font_manager
+    from matplotlib import pyplot as plt
+    from matplotlib import patches as mpatches
+    from matplotlib.textpath import TextPath
+except (RuntimeError, ImportError):
+    pass
 
 from ms_peak_picker.utils import draw_peaklist
 

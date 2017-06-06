@@ -1,6 +1,9 @@
 from itertools import cycle
-from matplotlib import pyplot as plt
-from matplotlib import patches as mpatches, colors as mcolors
+try:
+    from matplotlib import pyplot as plt
+    from matplotlib import patches as mpatches, colors as mcolors
+except (RuntimeError, ImportError):
+    pass
 import numpy as np
 
 
