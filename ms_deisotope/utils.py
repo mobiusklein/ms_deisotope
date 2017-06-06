@@ -4,11 +4,11 @@ import random
 from datetime import datetime
 
 try:
-    from matplotlib import pyplot as plt
     from ms_peak_picker.utils import draw_peaklist, draw_raw
+    from matplotlib import pyplot as plt
     has_plot = True
 
-except ImportError:
+except (RuntimeError, ImportError):
     has_plot = False
 
 try:
