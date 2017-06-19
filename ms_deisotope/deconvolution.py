@@ -812,7 +812,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             most_abundant_mass=neutral_mass(most_abundant_mz(eid), charge),
             average_mass=neutral_mass(average_mz(eid), charge),
             score=score,
-            envelope=[(p.mz, p.intensity) for p in rep_eid],
+            envelope=[(p.mz, p.intensity) for p in eid],
             mz=tid.monoisotopic_mz,
             fit=fit,
             area=sum(e.area for e in eid))
@@ -1266,7 +1266,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                         most_abundant_mz(eid), charge),
                     average_mass=neutral_mass(average_mz(eid), charge),
                     score=score,
-                    envelope=[(p.mz, p.intensity) for p in rep_eid],
+                    envelope=[(p.mz, p.intensity) for p in eid],
                     mz=tid.monoisotopic_mz, fit=fit,
                     area=sum(e.area for e in eid))
 
@@ -1685,7 +1685,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                         most_abundant_mz(eid), charge),
                     average_mass=neutral_mass(average_mz(eid), charge),
                     score=score,
-                    envelope=[(p.mz, p.intensity) for p in rep_eid],
+                    envelope=[(p.mz, p.intensity) for p in eid],
                     mz=monoisotopic_mz, area=sum(e.area for e in eid))
 
                 self._save_peak_solution(peak)
