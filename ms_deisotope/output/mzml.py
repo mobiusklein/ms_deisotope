@@ -430,13 +430,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
     """
     def __init__(self, source_file, use_index=True):
         MzMLLoader.__init__(self, source_file, use_index=use_index)
-        self.extended_index = ExtendedScanIndex()
+        self.extended_index = None
         self._scan_id_to_rt = dict()
         self._sample_run = None
         if self._use_index:
             try:
-                if os.path.exists(self._index_file_name):
-                    self.read_index()
+                if self.has_index_file():
+                    self.read_index_file()
             except IOError:
                 pass
             except ValueError:
@@ -447,9 +447,12 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 for key in self.extended_index.msn_ids:
                     self._scan_id_to_rt[key] = self.extended_index.msn_ids[key]['scan_time']
 
-    def read_index(self):
+    def read_index_file(self):
         with open(self._index_file_name) as handle:
             self.extended_index = ExtendedScanIndex.deserialize(handle)
+
+    def has_index_file(self):
+        return os.path.exists(self._index_file_name)
 
     def _make_sample_run(self):
         samples = self.samples()
