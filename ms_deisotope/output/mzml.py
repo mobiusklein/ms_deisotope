@@ -600,12 +600,12 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             out.append(pinfo)
         return out
 
-    def ms1_peaks_above(self, threshold=1000.):
+    def ms1_peaks_above(self, mass_threshold=500, intensity_threshold=1000.):
         accumulate = []
         for ms1_id in self.extended_index.ms1_ids:
             scan = self.get_scan_by_id(ms1_id)
             for peak in scan.deconvoluted_peak_set:
-                if peak.intensity < threshold:
+                if peak.intensity < intensity_threshold or peak.neutral_mass < mass_threshold:
                     continue
                 accumulate.append((ms1_id, peak, id(peak)))
         return accumulate
