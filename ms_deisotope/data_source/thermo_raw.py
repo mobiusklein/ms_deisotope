@@ -250,6 +250,9 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         self._first_scan_time = self.get_scan_by_index(0).scan_time
         self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
 
+    def __reduce__(self):
+        return self.__class__, (self.source_file,)
+
     @property
     def index(self):
         return self._index
