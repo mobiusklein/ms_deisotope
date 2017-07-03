@@ -41,11 +41,6 @@ def partition_work(n_items, n_workers, start_index=0):
     return intervals
 
 
-def task(payload):
-    reader, start, end = payload
-    return index_chunk(reader, start, end)
-
-
 class _Indexer(object):
     def __call__(self, payload):
         reader, start, end = payload
