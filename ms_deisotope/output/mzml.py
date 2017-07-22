@@ -12,6 +12,12 @@ except ImportError:
     print("MzMLWriter not available.")
     writer = None
 
+try:
+    WindowsError
+    on_windows = True
+except NameError:
+    on_windows = False
+
 from .common import ScanSerializerBase, ScanDeserializerBase
 from .text_utils import (envelopes_to_array, decode_envelopes)
 from ms_deisotope import peak_set
@@ -377,7 +383,11 @@ class MzMLScanSerializer(ScanSerializerBase):
                 pass
 
     def format(self):
-        self.writer.format()
+        try:
+            self.writer.format()
+        except OSError as e:
+            if on_windows and e.errno == 32:
+                pass
 
 
 def marshal_deconvoluted_peak_set(scan_dict):
@@ -437,19 +447,20 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             try:
                 if self.has_index_file():
                     self.read_index_file()
+                else:
+                    self.build_extended_index()
             except IOError:
                 pass
             except ValueError:
                 pass
-            if self.extended_index:
-                for key in self.extended_index.ms1_ids:
-                    self._scan_id_to_rt[key] = self.extended_index.ms1_ids[key]['scan_time']
-                for key in self.extended_index.msn_ids:
-                    self._scan_id_to_rt[key] = self.extended_index.msn_ids[key]['scan_time']
+            self._build_scan_id_to_rt_cache()
 
     def read_index_file(self):
         with open(self._index_file_name) as handle:
             self.extended_index = ExtendedScanIndex.deserialize(handle)
+
+    marshal_deconvoluted_peak_set = staticmethod(marshal_deconvoluted_peak_set)
+    marshal_peak_set = staticmethod(marshal_peak_set)
 
     def has_index_file(self):
         return os.path.exists(self._index_file_name)
@@ -581,6 +592,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         except KeyError:
             header = self.get_scan_header_by_id(scan_id)
             return header.scan_time
+
+    def _build_scan_id_to_rt_cache(self):
+        if self.extended_index:
+            for key in self.extended_index.ms1_ids:
+                self._scan_id_to_rt[key] = self.extended_index.ms1_ids[key]['scan_time']
+            for key in self.extended_index.msn_ids:
+                self._scan_id_to_rt[key] = self.extended_index.msn_ids[key]['scan_time']
 
     # LC-MS/MS Database API
 
