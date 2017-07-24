@@ -36,6 +36,10 @@ def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
         bin_b[mz] += peak.intensity
         positions.add(mz)
 
+    return cosine_distance(positions, bin_a, bin_b)
+
+
+def cosine_distance(positions, bin_a, bin_b):
     z = 0
     n_a = 0
     n_b = 0
