@@ -201,8 +201,8 @@ cdef class DeconvolutedPeak(PeakBase):
         The average signal-to-noise ratio of the peaks in the isotopic pattern this peak captures
     """
     def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
-                 a_to_a2_ratio=None, most_abundant_mass=None, average_mass=None, score=None,
-                 envelope=None, mz=None, fit=None, chosen_for_msms=False, area=0):
+                 a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0, score=0,
+                 envelope=(), mz=0, fit=None, chosen_for_msms=False, area=0):
         if index is None:
             index = _Index()
         elif index == -1:
