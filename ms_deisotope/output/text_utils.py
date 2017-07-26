@@ -37,14 +37,14 @@ def decode_array(bytestring, compression=COMPRESSION_NONE, dtype=np.float32):
     return array
 
 
-def envelopes_to_array(envelope_list):
+def envelopes_to_array(envelope_list, dtype=np.float32):
     collection = []
     for envelope in envelope_list:
         collection.append(0)
         collection.append(0)
         for pair in envelope:
             collection.extend(pair)
-    return np.array(collection)
+    return np.array(collection, dtype=np.float32)
 
 
 def decode_envelopes(array):
@@ -65,3 +65,11 @@ def decode_envelopes(array):
             current_envelope.append(EnvelopePair(a, b))
     envelope_list.append(Envelope(current_envelope))
     return envelope_list
+
+
+try:
+    has_c = True
+    _decode_envelopes = decode_envelopes
+    from ms_deisotope._c.utils import decode_envelopes
+except ImportError:
+    has_c = False

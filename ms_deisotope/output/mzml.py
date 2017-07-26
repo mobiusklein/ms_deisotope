@@ -647,3 +647,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 if valid:
                     out.append(pinfo)
         return out
+
+
+try:
+    has_c = True
+    _marshal_deconvoluted_peak_set = marshal_deconvoluted_peak_set
+    from ms_deisotope._c.utils import marshal_deconvoluted_peak_set
+except ImportError:
+    has_c = False

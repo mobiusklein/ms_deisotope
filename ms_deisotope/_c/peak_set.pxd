@@ -13,9 +13,23 @@ cdef class EnvelopePair:
         public double mz
         public double intensity
 
+    cpdef bint _eq(self, EnvelopePair other)
+
+    @staticmethod
+    cdef EnvelopePair _create(double mz, double intensity)
+
 
 cdef class Envelope:
     cdef public tuple pairs
+
+    cdef inline size_t get_size(self)
+
+    cdef inline EnvelopePair getitem(self, size_t i)
+
+    cpdef bint _eq(self, Envelope other)
+
+    @staticmethod
+    cdef Envelope _create(tuple pairs)
 
 
 cdef class DeconvolutedPeak(PeakBase):
@@ -37,7 +51,11 @@ cdef class DeconvolutedPeak(PeakBase):
         public bint chosen_for_msms
 
     cpdef bint _eq(self, DeconvolutedPeak other)
-    # cpdef PeakBase clone(self)
+    
+    @staticmethod
+    cdef DeconvolutedPeak _create_simple(
+        double neutral_mass, double intensity, int charge, double score,
+        double mz, Envelope envelope)
 
 
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):

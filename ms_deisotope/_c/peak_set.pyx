@@ -71,6 +71,26 @@ cdef class EnvelopePair:
     def __reduce__(self):
         return EnvelopePair, (self.mz, self.intensity,)
 
+    cpdef bint _eq(self, EnvelopePair other):
+        return (abs(self.mz - other.mz) < 1e-5) and (
+            abs(self.intensity - other.intensity) < 1e-5)
+
+    def __richcmp__(self, other, int code):
+        if code == 2:
+            return self._eq(other)
+        elif code == 3:
+            return not (self._eq(other))
+
+
+    @staticmethod
+    cdef EnvelopePair _create(double mz, double intensity):
+        cdef:
+            EnvelopePair inst
+        inst = EnvelopePair.__new__(EnvelopePair)
+        inst.mz = mz
+        inst.intensity = intensity
+        return inst
+
 
 @cython.freelist(100000)
 cdef class Envelope(object):
@@ -101,11 +121,48 @@ cdef class Envelope(object):
     def __len__(self):
         return len(self.pairs)
 
+    cdef inline size_t get_size(self):
+        return PyTuple_GET_SIZE(self.pairs)
+
+    cdef inline EnvelopePair getitem(self, size_t i):
+        return <EnvelopePair>PyTuple_GetItem(self.pairs, i)
+
+    cpdef bint _eq(self, Envelope other):
+        cdef:
+            size_t i, n
+            EnvelopePair a, b
+
+        n = self.get_size()
+        if n != other.get_size():
+            return False
+
+        i = 0
+        for i in range(n):
+            a = self.getitem(i)
+            b = other.getitem(i)
+            if a != b:
+                return False
+        return True
+
+    def __richcmp__(self, other, int code):
+        if code == 2:
+            return self._eq(other)
+        elif code == 3:
+            return not (self._eq(other))
+
     def clone(self):
         return self.__class__(self)
 
     def __reduce__(self):
         return Envelope, (self.pairs,)
+
+    @staticmethod
+    cdef Envelope _create(tuple pairs):
+        cdef:
+            Envelope inst
+        inst = Envelope.__new__(Envelope)
+        inst.pairs = pairs
+        return inst
 
 
 # @cython.freelist(100000)
@@ -149,7 +206,7 @@ cdef class DeconvolutedPeak(PeakBase):
         if index is None:
             index = _Index()
         elif index == -1:
-            index = _Index(0, 0)            
+            index = _Index(0, 0)
         self.neutral_mass = neutral_mass
         self.intensity = intensity
         self.signal_to_noise = signal_to_noise
@@ -209,6 +266,29 @@ cdef class DeconvolutedPeak(PeakBase):
             "envelope={self.envelope}, full_width_at_half_max={self.full_width_at_half_max}, index={self.index}, "
             "intensity={self.intensity}, most_abundant_mass={self.most_abundant_mass}, mz={self.mz}, "
             "neutral_mass={self.neutral_mass}, score={self.score}, signal_to_noise={self.signal_to_noise})").format(self=self)
+
+    
+    @staticmethod
+    cdef DeconvolutedPeak _create_simple(double neutral_mass, double intensity, int charge,
+                                         double score, double mz, Envelope envelope):
+        cdef:
+            DeconvolutedPeak inst
+        inst = DeconvolutedPeak.__new__(DeconvolutedPeak)
+        inst.neutral_mass = neutral_mass
+        inst.intensity = intensity
+        inst.charge = charge
+        inst.score = score
+        inst.signal_to_noise = score
+        inst.mz = mz
+        inst.envelope = envelope
+        inst.index = _Index(0, 0)
+        inst.full_width_at_half_max = 0
+        inst.a_to_a2_ratio = 0
+        inst.most_abundant_mass = 0
+        inst.average_mass = 0
+        inst.area = 0
+
+        return inst
 
 
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):

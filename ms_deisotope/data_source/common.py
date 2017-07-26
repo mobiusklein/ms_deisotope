@@ -467,6 +467,10 @@ class Scan(object):
         return self._id
 
     @property
+    def scan_id(self):
+        return self.id
+
+    @property
     def index(self):
         if self._index is None:
             self._index = self.source._scan_index(self._data)
