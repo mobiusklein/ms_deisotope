@@ -463,6 +463,9 @@ def gaussian_shape(np.ndarray[np.float64_t, ndim=1] xs, double center,
         size_t i, n
         double xi, t, two_sigma_squared
 
+    if sigma == 0:
+        sigma = 1e-3
+
     two_sigma_squared = (2 * sigma ** 2)
 
     temp = xs * 0
