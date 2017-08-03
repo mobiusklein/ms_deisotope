@@ -8,3 +8,6 @@ ms_deisotope/_c/**/*.html
 /test_reports
 *egg-info
 .cache
+/build/
+/dist/
+/htmlcov/
