@@ -352,9 +352,9 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True):
         if scan_id is not None:
-            scan_number = int(str(scan_id).replace(_id_template, ''))
+            scan_number = int(str(scan_id).replace(_id_template, '')) - 1
         elif index is not None:
-            scan_number = int(index) + 1
+            scan_number = int(index)
         elif rt is not None:
             start_index = self._source.ScanNumFromRT(rt)
             if require_ms1:
@@ -378,7 +378,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
 
     def _make_scan_index_producer(self, start_index=None, start_time=None):
         if start_index is not None:
-            return range(start_index + 1, self._source.NumSpectra)
+            return range(start_index + 1, self._source.NumSpectra + 1)
         elif start_time is not None:
             start_index = self._source.ScanNumFromRT(start_time)
             while start_index != 1:
@@ -387,9 +387,9 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
                     start_index -= 1
                 else:
                     break
-            return range(start_index, self._source.NumSpectra)
+            return range(start_index, self._source.NumSpectra + 1)
         else:
-            return range(1, self._source.NumSpectra)
+            return range(1, self._source.NumSpectra + 1)
 
     def _single_scan_iterator(self, iterator=None):
         if iterator is None:

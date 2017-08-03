@@ -17,6 +17,7 @@ import logging
 logger = logging.getLogger("deconvolution")
 info = logger.info
 debug = logger.debug
+error = logger.error
 
 
 TRUNCATE_AFTER = 0.95
@@ -1809,7 +1810,7 @@ def deconvolute_peaks(peaklist,
         except ValueError as e:
             result = None
             errors.append(e)
-            logger.info("Could not extract a solution for %r", pr.query_peak, exc_info=True)
+            logger.error("Could not extract a solution for %r", pr.query_peak, exc_info=True)
         acc.append(result)
 
     priority_list_results = acc
