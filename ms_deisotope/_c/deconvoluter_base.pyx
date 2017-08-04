@@ -1,4 +1,3 @@
-# cython: profile=True
 # cython: embedsignature=True
 
 
@@ -119,6 +118,9 @@ cdef class DeconvoluterBase(object):
             return region
 
     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
+        return self._has_peak(mz, error_tolerance)
+
+    cdef FittedPeak _has_peak(self, double mz, double error_tolerance):
         peak = self.peaklist._has_peak(mz, error_tolerance)
         if peak is None or peak.intensity < self.minimum_intensity:
             return make_placeholder_peak(mz)
@@ -134,7 +136,7 @@ cdef class DeconvoluterBase(object):
 
         for i in range(PyList_GET_SIZE(theoretical_distribution)):
             theo_peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)
-            experimental_distribution.append(self.has_peak(theo_peak.mz, error_tolerance))
+            experimental_distribution.append(self._has_peak(theo_peak.mz, error_tolerance))
 
 
         return experimental_distribution

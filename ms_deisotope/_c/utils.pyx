@@ -1,3 +1,5 @@
+# cython: embedsignature=True
+
 cimport cython
 from cpython.list cimport PyList_Append, PyList_GET_ITEM
 

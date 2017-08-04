@@ -21,7 +21,10 @@ cdef class DeconvoluterBase(object):
 
     cpdef PeakSet between(self, double m1, double m2)
     cpdef FittedPeak has_peak(self, double mz, double error_tolerance)
+    cdef FittedPeak _has_peak(self, double mz, double error_tolerance)
+
     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=*)
+
     cpdef scale_theoretical_distribution(self, TheoreticalIsotopicPattern theoretical_distribution, list experimental_distribution)
     cpdef subtraction(self, TheoreticalIsotopicPattern isotopic_cluster, double error_tolerance=*)
     cpdef list _find_next_putative_peak(self, double mz, int charge, int step=*, double tolerance=*)

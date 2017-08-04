@@ -25,6 +25,7 @@ MAX_ITERATION = 10
 ERROR_TOLERANCE = 2e-5
 IGNORE_BELOW = 0.01
 CONVERGENCE = 1e-3
+SCALE_METHOD = "sum"
 
 
 def mean(numbers):
@@ -1770,6 +1771,7 @@ def deconvolute_peaks(peaklist,
     decon_config = decon_config or {}
     decon_config.update(kwargs)
     decon_config.setdefault("use_subtraction", True)
+    decon_config.setdefault("scale_method", SCALE_METHOD)
     decon = deconvoluter_type(peaklist=peaklist, **decon_config)
 
     if verbose_priorities or verbose:

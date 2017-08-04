@@ -31,10 +31,10 @@ def make_extensions():
             'embedsignature': True
         }
         macros = []
-        if is_ci:
-            print("CI Detected, Building With Diagnostics")
-            cython_directives['linetrace'] = True
-            macros.append(("CYTHON_TRACE", '1'))
+        # if is_ci:
+        #     print("CI Detected, Building With Diagnostics")
+        #     cython_directives['linetrace'] = True
+        #     macros.append(("CYTHON_TRACE", '1'))
         extensions = cythonize([
             Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
