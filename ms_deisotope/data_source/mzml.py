@@ -158,7 +158,7 @@ class MzMLDataInterface(ScanDataSource):
         try:
             return scan['scanList']['scan'][0]['scan start time']
         except KeyError:
-            return None
+            return 0.0
 
     def _is_profile(self, scan):
         """Returns whether the scan contains profile data (`True`)

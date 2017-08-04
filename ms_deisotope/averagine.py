@@ -105,13 +105,13 @@ class TheoreticalIsotopicPattern(object):
                 epeak = experimental_distribution[i]
                 total += epeak.intensity
                 tpeak = self[i]
-                weights += tpeak.intensity
-                scales += epeak.intensity / tpeak.intensity
+                w = ((tpeak.intensity) * epeak.intensity ** 2)
+                weights += w
+                scales += (epeak.intensity / tpeak.intensity) * w
+
             scale_factor = scales / weights
-            delta = (total - scale_factor) / len(self)
             for peak in self:
                 peak.intensity *= scale_factor
-                peak.intensity += delta
 
         return self
 

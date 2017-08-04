@@ -17,7 +17,11 @@ class TestDeconvolution(unittest.TestCase):
         mz, intensity = make_profile(points, fwhm)
         scan = common.Scan(
             {
+                "id": "test-scan",
+                "index": 0,
                 "m/z array": mz,
+                "ms level": 1,
+                "scan time": 0.0,
                 "intensity array": intensity,
                 "profile spectrum": "",
                 "positive scan": "",

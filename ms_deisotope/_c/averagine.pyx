@@ -347,7 +347,7 @@ cdef class TheoreticalIsotopicPattern(object):
             TheoreticalPeak peak
             FittedPeak expeak
             double total_abundance, maximum, scale_factor
-            double weights, scales, delta
+            double weights, scales, w
 
         n = self.get_size()
         if n == 0:
@@ -378,14 +378,13 @@ cdef class TheoreticalIsotopicPattern(object):
                 expeak = <FittedPeak>PyList_GET_ITEM(experimental_distribution, i)
                 peak = self.get(i)
                 total_abundance += expeak.intensity
-                scales += expeak.intensity / peak.intensity
-                weights += peak.intensity
+                w = (peak.intensity * expeak.intensity ** 2)
+                scales += expeak.intensity / peak.intensity * w
+                weights += w
             scale_factor = scales / weights
-            delta = (total_abundance - scale_factor) / n
             for i in range(n):
                 peak = self.get(i)
                 peak.intensity *= scale_factor
-                peak.intensity += delta
         return self
 
     def _scale_raw(self, double scale_factor):
