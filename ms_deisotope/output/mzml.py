@@ -390,7 +390,7 @@ class MzMLScanSerializer(ScanSerializerBase):
                 pass
 
 
-def marshal_deconvoluted_peak_set(scan_dict):
+def deserialize_deconvoluted_peak_set(scan_dict):
     envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
     peaks = []
     mz_array = scan_dict['m/z array']
@@ -412,7 +412,7 @@ def marshal_deconvoluted_peak_set(scan_dict):
     return peaks
 
 
-def marshal_peak_set(scan_dict):
+def deserialize_peak_set(scan_dict):
     mz_array = scan_dict['m/z array']
     intensity_array = scan_dict['intensity array']
     n = len(scan_dict['m/z array'])
@@ -459,8 +459,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         with open(self._index_file_name) as handle:
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
-    marshal_deconvoluted_peak_set = staticmethod(marshal_deconvoluted_peak_set)
-    marshal_peak_set = staticmethod(marshal_peak_set)
+    deserialize_deconvoluted_peak_set = staticmethod(deserialize_deconvoluted_peak_set)
+    deserialize_peak_set = staticmethod(deserialize_peak_set)
 
     def has_index_file(self):
         return os.path.exists(self._index_file_name)
@@ -575,13 +575,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             scan.precursor_information.default()
         if "isotopic envelopes array" in data:
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-            scan.deconvoluted_peak_set = marshal_deconvoluted_peak_set(data)
+            scan.deconvoluted_peak_set = deserialize_deconvoluted_peak_set(data)
             if scan.id in self.extended_index.ms1_ids:
                 chosen_indices = self.extended_index.ms1_ids[scan.id]['msms_peaks']
                 for ix in chosen_indices:
                     scan.deconvoluted_peak_set[ix].chosen_for_msms = True
         else:
-            scan.peak_set = marshal_peak_set(data)
+            scan.peak_set = deserialize_peak_set(data)
             scan.deconvoluted_peak_set = None
         return scan.pack()
 
@@ -651,7 +651,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
 try:
     has_c = True
-    _marshal_deconvoluted_peak_set = marshal_deconvoluted_peak_set
-    from ms_deisotope._c.utils import marshal_deconvoluted_peak_set
+    _deserialize_deconvoluted_peak_set = deserialize_deconvoluted_peak_set
+    from ms_deisotope._c.utils import deserialize_deconvoluted_peak_set
 except ImportError:
     has_c = False

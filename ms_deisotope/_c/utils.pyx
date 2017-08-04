@@ -46,7 +46,7 @@ cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
 
 
 @cython.boundscheck(False)
-cpdef DeconvolutedPeakSet marshal_deconvoluted_peak_set(dict scan_dict):
+cpdef DeconvolutedPeakSet deserialize_deconvoluted_peak_set(dict scan_dict):
     cdef:
         list envelopes, peaks
         np.ndarray[np.float32_t] mz_array
