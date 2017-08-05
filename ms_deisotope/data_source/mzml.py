@@ -4,7 +4,11 @@ from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation)
 from weakref import WeakValueDictionary
-from .xml_reader import XMLReaderBase
+from .xml_reader import XMLReaderBase, IndexSavingXML
+
+
+class _MzMLParser(mzml.MzML, IndexSavingXML):
+    pass
 
 
 class MzMLDataInterface(ScanDataSource):
@@ -246,9 +250,13 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase):
     """
     __data_interface__ = MzMLDataInterface
 
+    @staticmethod
+    def prebuild_byte_offset_file(path):
+        return _MzMLParser.prebuild_byte_offset_file(path)
+
     def __init__(self, source_file, use_index=True):
         self.source_file = source_file
-        self._source = mzml.MzML(source_file, read_schema=True, iterative=True, use_index=use_index)
+        self._source = _MzMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index

@@ -1,8 +1,13 @@
+import json
+import os
+import tempfile
+
 from weakref import WeakValueDictionary
 from .common import (
     PrecursorInformation, ScanIterator, ScanDataSource, RandomAccessScanSource,
     ChargeNotProvided, ScanBunch, ActivationInformation)
 from lxml.etree import XMLSyntaxError
+from pyteomics import xml
 
 
 class XMLReaderBase(RandomAccessScanSource, ScanIterator):
@@ -216,3 +221,61 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index)
+
+
+def save_byte_index(index, fp):
+    encoded_index = dict()
+    for key, offset in index.items():
+        encoded_index[key.decode("utf8")] = offset
+    json.dump(encoded_index, fp)
+    return fp
+
+
+def load_byte_index(fp):
+    data = json.load(fp)
+    index = xml.ByteEncodingOrderedDict()
+    for key, value in sorted(data.items(), key=lambda x: x[1]):
+        index[key] = value
+    return index
+
+
+class PrebuiltOffsetIndex(xml.FlatTagSpecificXMLByteIndex):
+    def __init__(self, offsets):
+        self.offsets = offsets
+
+
+class IndexSavingXML(xml.IndexedXML):
+
+    _save_byte_index_to_file = staticmethod(save_byte_index)
+    _load_byte_index_from_file = staticmethod(load_byte_index)
+
+    @property
+    def _byte_offset_filename(self):
+        path = self._source.name
+        byte_offset_filename = os.path.splitext(path)[0] + '-byte-offsets.json'
+        return byte_offset_filename
+
+    def _check_has_byte_offset_file(self):
+        path = self._byte_offset_filename
+        return os.path.exists(path)
+
+    def _read_byte_offsets(self):
+        with open(self._byte_offset_filename, 'r') as f:
+            index = PrebuiltOffsetIndex(self._load_byte_index_from_file(f))
+            self._offset_index = index
+
+    def _write_byte_offsets(self):
+        with open(self._byte_offset_filename, 'w') as f:
+            self._save_byte_index_to_file(self._offset_index, f)
+
+    @xml._keepstate
+    def _build_index(self):
+        try:
+            self._read_byte_offsets()
+        except IOError as e:
+            super(IndexSavingXML, self)._build_index()
+
+    @classmethod
+    def prebuild_byte_offset_file(cls, path):
+        inst = cls(path, use_index=True)
+        inst._write_byte_offsets()

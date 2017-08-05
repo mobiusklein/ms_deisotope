@@ -3,8 +3,12 @@ from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanDataSource, ChargeNotProvided,
     ActivationInformation)
-from .xml_reader import XMLReaderBase
+from .xml_reader import XMLReaderBase, IndexSavingXML
 from weakref import WeakValueDictionary
+
+
+class _MzXMLParser(mzxml.MzXML, IndexSavingXML):
+    pass
 
 
 class MzXMLDataInterface(ScanDataSource):
@@ -237,9 +241,13 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase):
     """
     __data_interface__ = MzXMLDataInterface
 
+    @staticmethod
+    def prebuild_byte_offset_file(path):
+        return _MzXMLParser.prebuild_byte_offset_file(path)
+
     def __init__(self, source_file, use_index=True):
         self.source_file = source_file
-        self._source = mzxml.MzXML(source_file, read_schema=True, iterative=True, use_index=use_index)
+        self._source = _MzXMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
