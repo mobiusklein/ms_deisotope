@@ -43,10 +43,13 @@ class PriorityTarget(Base):
         The charge state hint from :attr:`info`
     """
 
-    def __init__(self, peak, info, trust_charge_hint=True):
+    def __init__(self, peak, info, trust_charge_hint=True, precursor_scan_id=None,
+                 product_scan_id=None):
         self.peak = peak
         self.info = info
         self.trust_charge_hint = trust_charge_hint
+        self.precursor_scan_id = precursor_scan_id
+        self.product_scan_id = product_scan_id
 
     def __iter__(self):
         yield self.peak
@@ -250,7 +253,10 @@ class ScanProcessor(Base):
             precursor_ion = scan.precursor_information
             peak, err = prec_peaks.get_nearest_peak(precursor_ion.mz)
             precursor_ion.peak = peak
-            target = PriorityTarget(peak, precursor_ion, self.trust_charge_hint)
+            target = PriorityTarget(
+                peak, precursor_ion, self.trust_charge_hint,
+                scan.precursor_information.precursor_scan_id,
+                scan.precursor_information.product_scan_id)
             if abs(err) > self.precursor_selection_window:
                 logger.info(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
