@@ -43,8 +43,6 @@ try:
             return True
         except ImportError:
             return False
-
-
 except ImportError as e:
     message = str(e)
 
@@ -411,9 +409,13 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         for ix in iterator:
             packed = self.get_scan_by_id(ix)
             self._scan_cache[packed._data.scan_number] = packed
-            if packed.ms_level == 2:
-                if current_level < 2:
-                    current_level = 2
+            if packed.ms_level > 1:
+                # inceasing ms level
+                if current_level < packed.ms_level:
+                    current_level = packed.ms_level
+                # decreasing ms level
+                elif current_level > packed.ms_level:
+                    current_level = packed.ms_level.ms_level
                 product_scans.append(packed)
             elif packed.ms_level == 1:
                 if current_level > 1 and precursor_scan is not None:
