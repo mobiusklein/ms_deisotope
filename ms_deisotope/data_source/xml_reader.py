@@ -71,9 +71,13 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
             if not self._validate(packed):
                 continue
             self._scan_cache[packed.id] = packed
-            if packed.ms_level == 2:
-                if current_level < 2:
-                    current_level = 2
+            if packed.ms_level > 1:
+                # inceasing ms level
+                if current_level < packed.ms_level:
+                    current_level = packed.ms_level
+                # decreasing ms level
+                elif current_level > packed.ms_level:
+                    current_level = packed.ms_level.ms_level
                 product_scans.append(packed)
             elif packed.ms_level == 1:
                 if current_level > 1:
