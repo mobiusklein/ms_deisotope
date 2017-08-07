@@ -5,7 +5,21 @@ from ms_peak_picker import pick_peaks
 from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 
-ScanBunch = namedtuple("ScanBunch", ["precursor", "products"])
+
+class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
+
+    def __new__(cls, *args, **kwargs):
+        inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
+        inst._id_map = {
+            inst.precursor.id: inst.precursor
+        }
+        for scan in inst.products:
+            inst._id_map[scan.id] = scan
+        return inst
+
+    def precursor_for(self, scan):
+        scan_id = scan.precursor_information.precursor_scan_id
+        return self._id_map[scan_id]
 
 
 def _repr_pretty_(scan_bunch, p, cycle):  # pragma: no cover
@@ -493,8 +507,8 @@ class Scan(object):
         return self._activation
 
     def __repr__(self):
-        return "Scan(%r, index=%d, time=%0.4f%s)" % (
-            self.id, self.index, self.scan_time,
+        return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
+            self.id, self.index, self.scan_time, self.ms_level,
             ", " + repr(self.precursor_information) if self.precursor_information else '')
 
     def pick_peaks(self, *args, **kwargs):
