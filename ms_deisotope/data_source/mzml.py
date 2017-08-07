@@ -15,6 +15,10 @@ class MzMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the
     :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.
     """
+
+    def _stray_cvs(self, scan):
+        return scan.get("name", [])
+
     def _scan_arrays(self, scan):
         """Returns raw data arrays for m/z and intensity
 
@@ -57,6 +61,17 @@ class MzMLDataInterface(ScanDataSource):
             precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
         except KeyError:
             precursor_scan_id = None
+            last_index = self._scan_index(scan) - 1
+            current_level = self._ms_level(scan)
+            i = 0
+            while last_index > 0 and i < 100:
+                prev_scan = self.get_scan_by_index(last_index)
+                if prev_scan.ms_level >= current_level:
+                    last_index -= 1
+                else:
+                    precursor_scan_id = self._scan_id(prev_scan)
+                    break
+                i += 1
         pinfo = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),
@@ -178,7 +193,7 @@ class MzMLDataInterface(ScanDataSource):
         -------
         bool
         """
-        return "profile spectrum" in scan
+        return "profile spectrum" in scan or "profile spectrum" in self._stray_cvs(scan)
 
     def _polarity(self, scan):
         """Returns whether this scan was acquired in positive mode (+1)
@@ -194,9 +209,9 @@ class MzMLDataInterface(ScanDataSource):
         -------
         int
         """
-        if "positive scan" in scan:
+        if "positive scan" in scan or "positive scan" in self._stray_cvs(scan):
             return 1
-        elif "negative scan" in scan:
+        elif "negative scan" in scan or "negative scan" in self._stray_cvs(scan):
             return -1
 
     def _activation(self, scan):
