@@ -163,6 +163,35 @@ def drop_placeholders_parallel(peaks, otherpeaks):
     return new_peaks, new_otherpeaks
 
 
+class PeakChargePair(object):
+    def __init__(self, peak, charge):
+        self.peak = peak
+        self.charge = charge
+        self._hash = hash(self.peak.mz)
+
+    def __hash__(self):
+        return self._hash
+
+    def __eq__(self, other):
+        return (self.charge == other.charge) and (self.peak == other.peak)
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __getitem__(self, i):
+        if i == 0:
+            return self.peak
+        if i == 1:
+            return self.charge
+        else:
+            raise IndexError(i)
+
+    def __iter__(self):
+        yield self.peak
+        yield self.charge
+
+
+
 class DeconvoluterBase(Base):
     """Base class for all Deconvoluter types. Provides basic configuration for common operations,
     regardless of implementation. Because these methods form the backbone of all deconvolution algorithms,
@@ -375,6 +404,7 @@ class DeconvoluterBase(Base):
         for forward in peaklist_slice:
             prev_peak_mz = forward.mz - (shift * step)
             dummy_peak = FittedPeak(prev_peak_mz, 1.0, 1.0, -1, 0, 0, 0)
+            # candidates.append(PeakChargePair(dummy_peak, charge))
             candidates.append((dummy_peak, charge))
         return candidates
 
@@ -515,7 +545,7 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
 
 
 try:
-    from ms_deisotope._c.deconvoluter_base import DeconvoluterBase, AveragineDeconvoluterBase
+    from ms_deisotope._c.deconvoluter_base import DeconvoluterBase, AveragineDeconvoluterBase, PeakChargePair
 except ImportError:
     pass
 
@@ -610,6 +640,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             info("Considering charge range %r for %r" %
                  (list(charge_range_(*charge_range)), peak))
         for charge in charge_range_(*charge_range):
+            # target_peaks.add(PeakChargePair(peak, charge))
             target_peaks.add((peak, charge))
 
             # Look Left
@@ -618,6 +649,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
                     self, peak, charge, i)
                 if prev_peak is None:
                     continue
+                # target_peaks.add(PeakChargePair(prev_peak, charge))
                 target_peaks.add((prev_peak, charge))
 
                 if recalculate_starting_peak:
@@ -630,7 +662,9 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
                     self, peak, charge, i)
                 if nxt_peak is None:
                     continue
+                # target_peaks.add(PeakChargePair(nxt_peak, charge))
                 target_peaks.add((nxt_peak, charge))
+
 
                 if recalculate_starting_peak:
                     target_peaks.update(self._find_next_putative_peak(
@@ -1215,7 +1249,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             the overall shape of the isotopic pattern.
         """
         for peak in self.peaklist:
-            if peak in self._priority_map:
+            if peak in self._priority_map or peak.intensity < self.minimum_intensity:
                 continue
             out = self._explore_local(
                 peak, error_tolerance=error_tolerance, charge_range=charge_range,
