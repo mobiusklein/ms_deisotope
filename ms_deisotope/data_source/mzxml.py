@@ -239,7 +239,6 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase):
     source: pyteomics.mzxml.MzXML
         Underlying scan data source
     """
-    __data_interface__ = MzXMLDataInterface
 
     @staticmethod
     def prebuild_byte_offset_file(path):

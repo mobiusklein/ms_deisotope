@@ -252,30 +252,7 @@ def _find_section(source, section):
     return value
 
 
-class MzMLLoader(MzMLDataInterface, XMLReaderBase):
-    """Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
-    random access.
-
-    Attributes
-    ----------
-    source_file: str
-        Path to file to read from.
-    source: pyteomics.mzml.MzML
-        Underlying scan data source
-    """
-    __data_interface__ = MzMLDataInterface
-
-    @staticmethod
-    def prebuild_byte_offset_file(path):
-        return _MzMLParser.prebuild_byte_offset_file(path)
-
-    def __init__(self, source_file, use_index=True):
-        self.source_file = source_file
-        self._source = _MzMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
-        self._producer = self._scan_group_iterator()
-        self._scan_cache = WeakValueDictionary()
-        self._use_index = use_index
-
+class _MzMLMetadataLoader(object):
     def file_description(self):
         return _find_section(self._source, "fileDescription")
 
@@ -287,6 +264,30 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase):
 
     def samples(self):
         return _find_section(self._source, "sampleList")
+
+
+class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
+    """Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
+    random access.
+
+    Attributes
+    ----------
+    source_file: str
+        Path to file to read from.
+    source: pyteomics.mzml.MzML
+        Underlying scan data source
+    """
+
+    @staticmethod
+    def prebuild_byte_offset_file(path):
+        return _MzMLParser.prebuild_byte_offset_file(path)
+
+    def __init__(self, source_file, use_index=True):
+        self.source_file = source_file
+        self._source = _MzMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
+        self._producer = self._scan_group_iterator()
+        self._scan_cache = WeakValueDictionary()
+        self._use_index = use_index
 
     def _validate(self, scan):
         return "m/z array" in scan._data

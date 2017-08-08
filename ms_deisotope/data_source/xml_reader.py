@@ -43,56 +43,8 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
     def _validate(self, scan):
         raise NotImplementedError()
 
-    def _single_scan_iterator(self, iterator=None):
-        if iterator is None:
-            iterator = iter(self._source)
-
-        _make_scan = self._make_scan
-
-        for scan in iterator:
-            packed = _make_scan(scan)
-            if not self._validate(packed):
-                continue
-            self._scan_cache[packed.id] = packed
-            yield packed
-
-    def _scan_group_iterator(self, iterator=None):
-        if iterator is None:
-            iterator = iter(self._source)
-        precursor_scan = None
-        product_scans = []
-
-        current_level = 1
-
-        _make_scan = self._make_scan
-
-        for scan in iterator:
-            packed = _make_scan(scan)
-            if not self._validate(packed):
-                continue
-            self._scan_cache[packed.id] = packed
-            if packed.ms_level > 1:
-                # inceasing ms level
-                if current_level < packed.ms_level:
-                    current_level = packed.ms_level
-                # decreasing ms level
-                elif current_level > packed.ms_level:
-                    current_level = packed.ms_level.ms_level
-                product_scans.append(packed)
-            elif packed.ms_level == 1:
-                if current_level > 1:
-                    precursor_scan.product_scans = list(product_scans)
-                    yield ScanBunch(precursor_scan, product_scans)
-                else:
-                    if precursor_scan is not None:
-                        precursor_scan.product_scans = list(product_scans)
-                        yield ScanBunch(precursor_scan, product_scans)
-                precursor_scan = packed
-                product_scans = []
-            else:
-                raise Exception("This object is not able to handle MS levels higher than 2")
-        if precursor_scan is not None:
-            yield ScanBunch(precursor_scan, product_scans)
+    def _make_default_iterator(self):
+        return iter(self._source)
 
     def next(self):
         try:

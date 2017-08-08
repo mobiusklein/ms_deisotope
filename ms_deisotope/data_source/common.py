@@ -264,6 +264,66 @@ class ScanIterator(ScanDataSource):
     def reset(self):
         raise NotImplementedError()
 
+    def _make_default_iterator(self):
+        raise NotImplementedError()
+
+    def make_iterator(self, iterator=None, grouped=True):
+        if grouped:
+            self._producer = self._scan_group_iterator(iterator)
+        else:
+            self._producer = self._single_scan_iterator(iterator)
+
+    def _single_scan_iterator(self, iterator=None):
+        if iterator is None:
+            iterator = self._make_default_iterator()
+
+        _make_scan = self._make_scan
+
+        for scan in iterator:
+            packed = _make_scan(scan)
+            if not self._validate(packed):
+                continue
+            self._scan_cache[packed.id] = packed
+            yield packed
+
+    def _scan_group_iterator(self, iterator=None):
+        if iterator is None:
+            iterator = self._make_default_iterator()
+        precursor_scan = None
+        product_scans = []
+
+        current_level = 1
+
+        _make_scan = self._make_scan
+
+        for scan in iterator:
+            packed = _make_scan(scan)
+            if not self._validate(packed):
+                continue
+            self._scan_cache[packed.id] = packed
+            if packed.ms_level > 1:
+                # inceasing ms level
+                if current_level < packed.ms_level:
+                    current_level = packed.ms_level
+                # decreasing ms level
+                elif current_level > packed.ms_level:
+                    current_level = packed.ms_level.ms_level
+                product_scans.append(packed)
+            elif packed.ms_level == 1:
+                if current_level > 1:
+                    precursor_scan.product_scans = list(product_scans)
+                    yield ScanBunch(precursor_scan, product_scans)
+                else:
+                    if precursor_scan is not None:
+                        precursor_scan.product_scans = list(product_scans)
+                        yield ScanBunch(precursor_scan, product_scans)
+                precursor_scan = packed
+                product_scans = []
+            else:
+                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
+        if precursor_scan is not None:
+            yield ScanBunch(precursor_scan, product_scans)
+
 
 @add_metaclass(abc.ABCMeta)
 class RandomAccessScanSource(ScanDataSource):
@@ -667,6 +727,10 @@ class ProcessedScan(object):
         self.deconvoluted_peak_set = deconvoluted_peak_set
         self.polarity = polarity
         self.activation = activation
+
+    @property
+    def scan_id(self):
+        return self.id
 
     def __iter__(self):
         return iter(self.deconvoluted_peak_set)

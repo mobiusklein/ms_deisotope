@@ -368,11 +368,11 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
                 start_index=scan_number))
         return self
 
-    def make_iterator(self, iterator=None, grouped=True):
-        if grouped:
-            self._producer = self._scan_group_iterator(iterator)
-        else:
-            self._producer = self._single_scan_iterator(iterator)
+    # def make_iterator(self, iterator=None, grouped=True):
+    #     if grouped:
+    #         self._producer = self._scan_group_iterator(iterator)
+    #     else:
+    #         self._producer = self._single_scan_iterator(iterator)
 
     def _make_scan_index_producer(self, start_index=None, start_time=None):
         if start_index is not None:

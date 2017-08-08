@@ -205,7 +205,14 @@ class MemoryScanLoader(MemoryScanInterface, ScanIterator, RandomAccessScanSource
         scans = tuple(scans)
         try:
             scan = scans[0]
-            if isinstance(scan, Scan):
+            if isinstance(scan, ScanBunch):
+                def generate():
+                    for bunch in scans:
+                        yield bunch.precursor
+                        for product in bunch.products:
+                            yield product
+                return cls.build(generate())
+            elif isinstance(scan, Scan):
                 scans = tuple(s.pack() for s in scans)
             else:
                 scans = tuple(s.clone() for s in scans)
@@ -247,48 +254,8 @@ class MemoryScanLoader(MemoryScanInterface, ScanIterator, RandomAccessScanSource
         else:
             return range(0, len(self._scans))
 
-    def make_iterator(self, iterator=None, grouped=True):
-        if grouped:
-            self._producer = self._scan_group_iterator(iterator)
-        else:
-            self._producer = self._single_scan_iterator(iterator)
-
-    def _single_scan_iterator(self, iterator=None):
-        if iterator is None:
-            iterator = self._make_scan_index_producer()
-        for ix in iterator:
-            packed = self.get_scan_by_index(ix)
-            yield packed
-
-    def _scan_group_iterator(self, iterator=None):
-        if iterator is None:
-            iterator = self._make_scan_index_producer()
-
-        precursor_scan = None
-        product_scans = []
-
-        current_level = 1
-
-        for ix in iterator:
-            packed = self.get_scan_by_index(ix)
-            if packed.ms_level == 2:
-                if current_level < 2:
-                    current_level = 2
-                product_scans.append(packed)
-            elif packed.ms_level == 1:
-                if current_level > 1:
-                    precursor_scan.product_scans = list(product_scans)
-                    yield ScanBunch(precursor_scan, product_scans)
-                else:
-                    if precursor_scan is not None:
-                        precursor_scan.product_scans = list(product_scans)
-                        yield ScanBunch(precursor_scan, product_scans)
-                precursor_scan = packed
-                product_scans = []
-            else:
-                raise Exception("This object is not able to handle MS levels higher than 2")
-        if precursor_scan is not None:
-            yield ScanBunch(precursor_scan, product_scans)
+    def _make_default_iterator(self):
+        return self._make_scan_index_producer()
 
     def next(self):
         return next(self._producer)
