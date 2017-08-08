@@ -163,35 +163,6 @@ def drop_placeholders_parallel(peaks, otherpeaks):
     return new_peaks, new_otherpeaks
 
 
-class PeakChargePair(object):
-    def __init__(self, peak, charge):
-        self.peak = peak
-        self.charge = charge
-        self._hash = hash(self.peak.mz)
-
-    def __hash__(self):
-        return self._hash
-
-    def __eq__(self, other):
-        return (self.charge == other.charge) and (self.peak == other.peak)
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __getitem__(self, i):
-        if i == 0:
-            return self.peak
-        if i == 1:
-            return self.charge
-        else:
-            raise IndexError(i)
-
-    def __iter__(self):
-        yield self.peak
-        yield self.charge
-
-
-
 class DeconvoluterBase(Base):
     """Base class for all Deconvoluter types. Provides basic configuration for common operations,
     regardless of implementation. Because these methods form the backbone of all deconvolution algorithms,
@@ -404,7 +375,6 @@ class DeconvoluterBase(Base):
         for forward in peaklist_slice:
             prev_peak_mz = forward.mz - (shift * step)
             dummy_peak = FittedPeak(prev_peak_mz, 1.0, 1.0, -1, 0, 0, 0)
-            # candidates.append(PeakChargePair(dummy_peak, charge))
             candidates.append((dummy_peak, charge))
         return candidates
 
@@ -545,7 +515,7 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
 
 
 try:
-    from ms_deisotope._c.deconvoluter_base import DeconvoluterBase, AveragineDeconvoluterBase, PeakChargePair
+    from ms_deisotope._c.deconvoluter_base import DeconvoluterBase, AveragineDeconvoluterBase
 except ImportError:
     pass
 
@@ -640,7 +610,6 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             info("Considering charge range %r for %r" %
                  (list(charge_range_(*charge_range)), peak))
         for charge in charge_range_(*charge_range):
-            # target_peaks.add(PeakChargePair(peak, charge))
             target_peaks.add((peak, charge))
 
             # Look Left
@@ -649,7 +618,6 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
                     self, peak, charge, i)
                 if prev_peak is None:
                     continue
-                # target_peaks.add(PeakChargePair(prev_peak, charge))
                 target_peaks.add((prev_peak, charge))
 
                 if recalculate_starting_peak:
@@ -662,7 +630,6 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
                     self, peak, charge, i)
                 if nxt_peak is None:
                     continue
-                # target_peaks.add(PeakChargePair(nxt_peak, charge))
                 target_peaks.add((nxt_peak, charge))
 
 
@@ -961,6 +928,14 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
                 self._deconvoluted_peaks)
 
         return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
+
+
+try:
+    from ms_deisotope._c.deconvoluter_base import (
+        _get_all_peak_charge_pairs as _c_get_all_peak_charge_pairs)
+    ExhaustivePeakSearchDeconvoluterBase._get_all_peak_charge_pairs = _c_get_all_peak_charge_pairs
+except ImportError as e:
+    pass
 
 
 class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDeconvoluterBase):

@@ -1,3 +1,5 @@
+cimport cython
+
 from ms_peak_picker._c.peak_index cimport PeakIndex
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
@@ -55,3 +57,9 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
 
 
 cdef bint has_multiple_real_peaks(list peaklist)
+
+
+cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, double error_tolerance=*,
+                                 object charge_range=*,
+                                 int left_search_limit=*, int right_search_limit=*, bint use_charge_state_hint=*,
+                                 bint recalculate_starting_peak=*)

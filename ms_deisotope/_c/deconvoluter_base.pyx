@@ -1,7 +1,7 @@
 # cython: embedsignature=True
 
-
 cimport cython
+from libc.stdlib cimport malloc, free
 
 from ms_peak_picker._c.peak_index cimport PeakIndex
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
@@ -19,6 +19,9 @@ from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
 from cpython.object cimport PyObject
 
 import operator
+
+
+cdef double ERROR_TOLERANCE = 2e-5
 
 
 cdef size_t count_missed_peaks(list peaklist):
@@ -44,45 +47,6 @@ cdef double sum_intensity(list peaklist):
         peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
         total += peak.intensity
     return total
-
-
-@cython.freelist(1000000)
-cdef class peak_charge_pair(object):
-    cdef:
-        public FittedPeak peak
-        public int charge
-        public long _hash
-
-    def __init__(self, peak, charge):
-        self.peak = peak
-        self.charge = charge
-        self._hash = hash(self.peak.mz)
-
-    def __hash__(self):
-        return self._hash
-
-    def __richcmp__(self, peak_charge_pair other, int code):
-        if code == 2:
-            return (
-                self.charge == other.charge) and (self.peak == other.peak)
-        elif code == 3:
-            return (
-                self.charge != other.charge) and (self.peak != other.peak)
-
-    def __getitem__(self, i):
-        if i == 0:
-            return self.peak
-        if i == 1:
-            return self.charge
-        else:
-            raise IndexError(i)
-
-    def __iter__(self):
-        yield self.peak
-        yield self.charge
-
-    def __repr__(self):
-        return "peak_charge_pair(%r, %d)" % (self.peak, self.charge)
 
 
 cdef FittedPeak make_placeholder_peak(double mz):
@@ -380,3 +344,212 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                 results.append(fit)
 
         return set(results)
+
+
+cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge=2, int step=1, double error_tolerance=2e-5):
+    """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
+    charge state `charge`, or return `None` if it is missing.
+
+    Parameters
+    ----------
+    peak_index : ms_peak_picker.PeakIndex
+        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
+    peak : ms_peak_picker.FittedPeak
+        The peak to use as a point of reference
+    charge : int, optional
+        The charge state to interpolate from. Defaults to `2`.
+    step : int, optional
+        The number of peaks along the isotopic pattern to search.
+
+    Returns
+    -------
+    FittedPeak
+    """
+    prev = peak.mz - isotopic_shift(charge) * step
+    return peak_index.has_peak(prev, error_tolerance)
+
+
+cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge=2, int step=1, double error_tolerance=2e-5):
+    """Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
+    charge state `charge`, or return `None` if it is missing.
+
+    Parameters
+    ----------
+    peak_index : ms_peak_picker.PeakIndex
+        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
+    peak : ms_peak_picker.FittedPeak
+        The peak to use as a point of reference
+    charge : int, optional
+        The charge state to interpolate from. Defaults to `2`.
+    step : int, optional
+        The number of peaks along the isotopic pattern to search.
+
+    Returns
+    -------
+    FittedPeak
+    """
+    nxt = peak.mz + isotopic_shift(charge) * step
+    return peak_index.has_peak(nxt, error_tolerance)
+
+
+cdef class ChargeIterator(object):
+    cdef:
+        public int lower
+        public int upper
+        public int sign
+        int* values
+        public size_t size
+        public size_t index
+
+    def __init__(self, int lo, int hi):
+        self.set_bounds(lo, hi)
+        self.make_sequence()
+
+    def __dealloc__(self):
+        free(self.values)
+
+
+    @staticmethod
+    cdef ChargeIterator _create(int lo, int hi):
+        cdef:
+            ChargeIterator inst
+        inst = ChargeIterator.__new__(ChargeIterator)
+        inst.set_bounds(lo, hi)
+        inst.make_sequence()
+        return inst
+
+    @staticmethod
+    cdef ChargeIterator _from_tuple(tuple charge_range):
+        cdef:
+            ChargeIterator inst
+            int a, b
+
+        a = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 0))
+        b = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 1))
+        return ChargeIterator._create(a, b)
+
+    cdef void set_bounds(self, int lo, int hi):
+        cdef:
+            int abs_lo, abs_hi
+        self.sign = -1 if lo < 0 else 1
+        abs_lo, abs_hi = abs(lo), abs(hi)
+        if abs_lo < abs_hi:
+            self.lower = abs_lo
+            self.upper = abs_hi
+        else:
+            self.lower = abs_hi
+            self.upper = abs_lo
+        self.size = self.upper
+
+    cdef void make_sequence(self):
+        cdef:
+            int v
+            size_t i, n
+        self.index = 0
+        n = self.get_size()
+        if n == 0:
+            return
+        self.values = <int*>malloc(sizeof(int) * n)
+
+        for i in range(n):
+            self.values[i] = (self.upper - i) * self.sign
+
+    cpdef bint has_more(self):
+        return self.index < self.get_size()
+
+    cpdef int get_next_value(self):
+        cdef:
+            int value
+        value = self.values[self.index]
+        self.index += 1
+        return value
+
+    cdef size_t get_size(self):
+        return self.size
+
+
+@cython.binding(True)
+cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, double error_tolerance=ERROR_TOLERANCE,
+                                 object charge_range=(1, 8),
+                                 int left_search_limit=3, int right_search_limit=3, bint use_charge_state_hint=False,
+                                 bint recalculate_starting_peak=True):
+        """Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using
+        the provided search parameters.
+
+        The search is performed using :func:`has_previous_peak_at_charge`, :func:`has_successor_peak_at_charge`,
+        :meth:`_find_previous_putative_peak`, and :meth:`_find_next_putative_peak`.
+
+        Parameters
+        ----------
+        peak : FittedPeak
+            The peak to start the search from
+        error_tolerance : float, optional
+            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+        charge_range : tuple, optional
+            The range of charge states to consider. Defaults to (1, 8)
+        left_search_limit : int, optional
+            The number of steps to search to the left of `peak`. Defaults to 3
+        right_search_limit : int, optional
+            The number of steps to search to the right of `peak`. Defaults to 3
+        use_charge_state_hint : bool, optional
+            Whether or not to try to estimate the upper limit of the charge states to consider
+            using :meth:`_update_charge_bounds_with_prediction`. Defaults to False
+        recalculate_starting_peak : bool, optional
+            Whether or not to re-calculate the putative starting peak m/z based upon nearby
+            peaks close to where isotopic peaks for `peak` should be. Defaults to True
+
+        Returns
+        -------
+        set
+            The set of all unique candidate (monoisotopic peak, charge state)
+        """
+        cdef:
+            ChargeIterator charge_iterator
+            int charge
+            size_t i
+            set target_peaks
+            FittedPeak prev_peak, nxt_peak
+
+        if use_charge_state_hint:
+            charge_range = self._update_charge_bounds_with_prediction(
+                peak, charge_range)
+
+        charge_iterator = ChargeIterator._from_tuple(tuple(charge_range))
+
+        target_peaks = set()
+
+        while charge_iterator.has_more():
+            charge = charge_iterator.get_next_value()
+            target_peaks.add((peak, charge))
+
+            # Look Left
+            for i in range(1, left_search_limit):
+                prev_peak = has_previous_peak_at_charge(
+                    self, peak, charge, i)
+                if prev_peak is None:
+                    continue
+                target_peaks.add((prev_peak, charge))
+
+                if recalculate_starting_peak:
+                    target_peaks.update(self._find_previous_putative_peak(
+                        peak.mz, charge, i, 2 * error_tolerance))
+
+            # Look Right
+            for i in range(1, right_search_limit):
+                nxt_peak = has_successor_peak_at_charge(
+                    self, peak, charge, i)
+                if nxt_peak is None:
+                    continue
+                target_peaks.add((nxt_peak, charge))
+
+
+                if recalculate_starting_peak:
+                    target_peaks.update(self._find_next_putative_peak(
+                        peak.mz, charge, i, 2 * error_tolerance))
+
+            if recalculate_starting_peak:
+                for i in range(min(left_search_limit, 2)):
+                    target_peaks.update(self._find_next_putative_peak(
+                        peak.mz, charge, step=i, tolerance=2 * error_tolerance))
+
+        return target_peaks
