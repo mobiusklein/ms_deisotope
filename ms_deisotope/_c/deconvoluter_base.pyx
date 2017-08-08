@@ -7,6 +7,7 @@ from ms_peak_picker._c.peak_index cimport PeakIndex
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
+from ms_deisotope.constants import ERROR_TOLERANCE as _ERROR_TOLERANCE
 from ms_deisotope._c.scoring cimport IsotopicFitterBase, IsotopicFitRecord
 from ms_deisotope._c.averagine cimport (AveragineCache, isotopic_shift, PROTON,
                                         TheoreticalIsotopicPattern)
@@ -21,7 +22,7 @@ from cpython.object cimport PyObject
 import operator
 
 
-cdef double ERROR_TOLERANCE = 2e-5
+cdef double ERROR_TOLERANCE = _ERROR_TOLERANCE
 
 
 cdef size_t count_missed_peaks(list peaklist):

@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import operator
+import logging
+
+from ms_peak_picker import FittedPeak
 
 from .averagine import (
     AveragineCache, peptide, glycopeptide, glycan, neutral_mass, isotopic_variants,
@@ -9,23 +12,18 @@ from .scoring import IsotopicFitRecord, penalized_msdeconv
 from .utils import range, Base, TrivialTargetedDeconvolutionResult, DeconvolutionProcessResult
 from .envelope_statistics import a_to_a2_ratio, average_mz, most_abundant_mz
 from .peak_dependency_network import PeakDependenceGraph, NetworkedTargetedDeconvolutionResult
-
-from ms_peak_picker import FittedPeak
-
-import logging
+from .constants import (
+    TRUNCATE_AFTER,
+    MAX_ITERATION,
+    ERROR_TOLERANCE,
+    IGNORE_BELOW,
+    CONVERGENCE,
+    SCALE_METHOD)
 
 logger = logging.getLogger("deconvolution")
 info = logger.info
 debug = logger.debug
 error = logger.error
-
-
-TRUNCATE_AFTER = 0.95
-MAX_ITERATION = 10
-ERROR_TOLERANCE = 2e-5
-IGNORE_BELOW = 0.01
-CONVERGENCE = 1e-3
-SCALE_METHOD = "sum"
 
 
 def mean(numbers):

@@ -2,6 +2,8 @@
 plugins = Cython.Coverage
 omit = 
     */_vendor/*
+    */feature_map/*
+    */peak_set_averaging/*
 
 [report]
 # Regexes for lines to exclude from consideration
