@@ -173,29 +173,32 @@ class MzXMLDataInterface(ScanDataSource):
     def _is_profile(self, scan):
         """Returns whether the scan contains profile data (`True`)
         or centroided data (`False`).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         bool
         """
-        return not bool(int(scan['centroided']))
+        try:
+            return not bool(int(scan['centroided']))
+        except KeyError:
+            return True
 
     def _polarity(self, scan):
         """Returns whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         int
@@ -210,13 +213,13 @@ class MzXMLDataInterface(ScanDataSource):
         produce this scan, if any.
 
         Returns `None` for MS1 scans
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         ActivationInformation
