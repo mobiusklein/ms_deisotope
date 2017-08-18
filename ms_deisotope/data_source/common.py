@@ -341,7 +341,7 @@ class RandomAccessScanSource(ScanDataSource):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
         raise NotImplementedError()
 
     def _locate_ms1_scan(self, scan):

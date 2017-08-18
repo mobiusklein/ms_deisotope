@@ -150,7 +150,7 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
     def _yield_from_index(self, scan_source, start):
         raise NotImplementedError()
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
         if scan_id is None:
             if rt is not None:
                 scan = self.get_scan_by_time(rt)
@@ -169,7 +169,7 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
             scan_id = scan.id
 
         iterator = self._yield_from_index(self._source, scan_id)
-        self.make_iterator(iterator)
+        self.make_iterator(iterator, grouped=grouped)
         return self
 
     def __repr__(self):
