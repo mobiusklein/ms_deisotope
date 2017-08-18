@@ -176,7 +176,7 @@ class Averagine(object):
         return self.base_composition == other.base_composition
 
     def __hash__(self):
-        return hash(self.base_composition.items())
+        return hash(frozenset(self.base_composition.items()))
 
 
 def average_compositions(compositions):
