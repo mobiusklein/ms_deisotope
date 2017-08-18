@@ -62,6 +62,8 @@ class ScanIntervalTree(object):
         self.original_intervals = original_intervals
 
     def get_mz_intervals_for_rt(self, rt_point):
+        if self.rt_tree is None:
+            return [[0, float('inf')]]
         intervals = [
             i.members[0] for i in self.rt_tree.contains_point(rt_point)
         ]
