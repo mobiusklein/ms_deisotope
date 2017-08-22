@@ -1,7 +1,7 @@
 from collections import namedtuple
 import abc
 
-from ms_peak_picker import pick_peaks
+from ms_peak_picker import pick_peaks, reprofile
 from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 
@@ -606,6 +606,11 @@ class Scan(object):
             self.deconvoluted_peak_set,
             self.polarity,
             self.activation)
+
+    def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
+        if self.peak_set is None:
+            raise ValueError("Cannot reprofile a scan that has not been centroided")
+        return reprofile(self.peak_set, max_fwhm, dx, model_cls)
 
 
 class PrecursorInformation(object):
