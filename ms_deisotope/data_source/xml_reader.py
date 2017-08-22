@@ -1,11 +1,9 @@
 import json
 import os
-import tempfile
 
 from weakref import WeakValueDictionary
 from .common import (
-    PrecursorInformation, ScanIterator, ScanDataSource, RandomAccessScanSource,
-    ChargeNotProvided, ScanBunch, ActivationInformation)
+    ScanIterator, RandomAccessScanSource)
 from lxml.etree import XMLSyntaxError
 from pyteomics import xml
 
@@ -155,7 +153,15 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
             if rt is not None:
                 scan = self.get_scan_by_time(rt)
             elif index is not None:
-                scan = self.get_scan_by_index(index)
+                try:
+                    scan = self.get_scan_by_index(index)
+                except IndexError:
+                    if index > len(self.index):
+                        index = len(self.index) - 1
+                    else:
+                        index = 0
+                    scan = self.get_scan_by_index(index)
+
             else:
                 raise ValueError("Must provide a scan locator, one of (scan_id, rt, index)")
 
@@ -228,7 +234,7 @@ class IndexSavingXML(xml.IndexedXML):
     def _build_index(self):
         try:
             self._read_byte_offsets()
-        except IOError as e:
+        except IOError:
             super(IndexSavingXML, self)._build_index()
 
     @classmethod
