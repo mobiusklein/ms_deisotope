@@ -7,7 +7,6 @@ from .deconvolution import deconvolute_peaks
 from .data_source.infer_type import MSFileLoader
 from .data_source.common import ScanBunch
 from .utils import Base, LRUDict
-from .feature_map import ScanIntervalTree
 from .peak_dependency_network import NoIsotopicClustersError
 
 logger = logging.getLogger("deconvolution_scan_processor")
