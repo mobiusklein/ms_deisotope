@@ -630,7 +630,6 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
                     continue
                 target_peaks.add((nxt_peak, charge))
 
-
                 if recalculate_starting_peak:
                     target_peaks.update(self._find_next_putative_peak(
                         peak.mz, charge, i, 2 * error_tolerance))

@@ -1,11 +1,12 @@
 import logging
 
-from ms_peak_picker import pick_peaks
+from ms_peak_picker import (
+    pick_peaks, reprofile, average_signal)
 
 from .deconvolution import deconvolute_peaks
 from .data_source.infer_type import MSFileLoader
 from .data_source.common import ScanBunch
-from .utils import Base
+from .utils import Base, LRUDict
 from .feature_map import ScanIntervalTree
 from .peak_dependency_network import NoIsotopicClustersError
 
@@ -147,7 +148,8 @@ class ScanProcessor(Base):
                  trust_charge_hint=True,
                  loader_type=None,
                  envelope_selector=None,
-                 terminate_on_error=True):
+                 terminate_on_error=True,
+                 ms1_averaging=0):
         if loader_type is None:
             loader_type = MSFileLoader
 
@@ -161,6 +163,7 @@ class ScanProcessor(Base):
         self.pick_only_tandem_envelopes = pick_only_tandem_envelopes
         self.precursor_selection_window = precursor_selection_window
         self.trust_charge_hint = trust_charge_hint
+        self.ms1_averaging = int(ms1_averaging) if ms1_averaging else 0
 
         self.loader_type = loader_type
 
@@ -168,12 +171,47 @@ class ScanProcessor(Base):
         self.envelope_selector = envelope_selector
         self.terminate_on_error = terminate_on_error
 
+        self._ms1_index_cache = LRUDict(maxsize=self.ms1_averaging * 2 + 2)
+
     @property
     def reader(self):
         return self._signal_source
 
-    def pick_precursor_scan_peaks(self, precursor_scan):
-        logger.info("Picking Precursor Scan Peaks: %r", precursor_scan)
+    def _get_envelopes(self, precursor_scan):
+        """Get the m/z intervals to pick peaks from for the
+        given MS1 scan
+
+        Parameters
+        ----------
+        precursor_scan: Scan
+
+        Returns
+        -------
+        list or None
+        """
+        if not self.pick_only_tandem_envelopes and self.envelope_selector is None:
+            return None
+        elif self.envelope_selector is None:
+            chosen_envelopes = [s.precursor_information for s in precursor_scan.product_scans]
+            chosen_envelopes = sorted([(p.mz - 5, p.mz + 10) for p in chosen_envelopes])
+        else:
+            chosen_envelopes = self.envelope_selector(precursor_scan)
+        return chosen_envelopes
+
+    def _pick_precursor_scan_peaks(self, precursor_scan, chosen_envelopes=None):
+        """Pick peaks from the given precursor scan
+
+        Parameters
+        ----------
+        precursor_scan: Scan
+            Scan to pick peaks from
+        chosen_envelopes: list, optional
+            list of m/z intervals to pick peaks for
+
+        Returns
+        -------
+        PeakSet
+        """
         if precursor_scan.is_profile:
             peak_mode = 'profile'
         else:
@@ -182,15 +220,137 @@ class ScanProcessor(Base):
         if not self.pick_only_tandem_envelopes and self.envelope_selector is None:
             prec_peaks = pick_peaks(prec_mz, prec_intensity, peak_mode=peak_mode, **self.ms1_peak_picking_args)
         else:
-            if self.envelope_selector is None:
-                chosen_envelopes = [s.precursor_information for s in precursor_scan.product_scans]
-                chosen_envelopes = sorted([(p.mz - 5, p.mz + 10) for p in chosen_envelopes])
-            else:
-                chosen_envelopes = self.envelope_selector(precursor_scan)
+            if chosen_envelopes is None:
+                chosen_envelopes = self._get_envelopes(precursor_scan)
             prec_peaks = pick_peaks(prec_mz, prec_intensity, peak_mode=peak_mode,
                                     target_envelopes=chosen_envelopes,
                                     **self.ms1_peak_picking_args)
+        return prec_peaks
 
+    def _get_previous_ms1(self, starting_index):
+        """Get the MS1 scan that preceeds starting_index
+
+        Parameters
+        ----------
+        starting_index : int
+            The scan index to start the search from
+
+        Returns
+        -------
+        Scan
+        """
+        try:
+            return self._ms1_index_cache[(starting_index, -1)]
+        except KeyError:
+            scan = self._signal_source.find_previous_ms1(starting_index)
+            self._ms1_index_cache[(starting_index, -1)] = scan
+            return scan
+
+    def _get_next_ms1(self, starting_index):
+        """Find the next MS1 scan that follows after starting_index
+
+        Parameters
+        ----------
+        starting_index : int
+            The index to star the search from
+
+        Returns
+        -------
+        Scan
+        """
+        try:
+            return self._ms1_index_cache[(starting_index, 1)]
+        except KeyError:
+            scan = self._signal_source.find_next_ms1(starting_index)
+            self._ms1_index_cache[(starting_index, 1)] = scan
+            return scan
+
+    def _average_ms1(self, precursor_scan):
+        """Average signal from :attr:`self.ms1_averaging` scans from
+        before and after ``precursor_scan`` and pick peaks from the
+        averaged arrays.
+
+        Parameters
+        ----------
+        precursor_scan: Scan
+            The scan to use as a point of reference
+
+        Returns
+        -------
+        PeakSet
+        """
+        chosen_envelopes = self._get_envelopes(precursor_scan)
+        before = []
+        starting_index = precursor_scan.index
+        for i in range(self.ms1_averaging):
+            prev_ms1 = self._get_previous_ms1(starting_index)
+            if prev_ms1 is not None:
+                before.append(prev_ms1)
+                starting_index = prev_ms1.index
+            else:
+                break
+        after = []
+        starting_index = precursor_scan.index
+        for i in range(self.ms1_averaging):
+            try:
+                next_ms1 = self._get_next_ms1(starting_index)
+            except ValueError:
+                break
+            if next_ms1 is not None:
+                after.append(next_ms1)
+                starting_index = next_ms1.index
+            else:
+                break
+        # if we've reached the end of the file, the after list
+        # may not be populated. If it's empty, we don't need to
+        # reset the iterator, otherwise, we need to ensure that
+        # the underlying file iterator will start from the next
+        # ms1 scan.
+        #
+        # This is because pyteomics's parsers will close the file
+        # after exausting their iterator.
+        if after:
+            self.start_from_scan(scan_id=after[0].id)
+        array_data = []
+        for scan in before:
+            if scan.is_profile:
+                array_data.append(scan.arrays)
+            else:
+                _peaks = self._pick_precursor_scan_peaks(scan, chosen_envelopes)
+                array_data.append(reprofile(_peaks))
+        array_data.append(precursor_scan.arrays)
+        for scan in after:
+            if scan.is_profile:
+                array_data.append(scan.arrays)
+            else:
+                _peaks = self._pick_precursor_scan_peaks(scan, chosen_envelopes)
+                array_data.append(reprofile(_peaks))
+        averaged_mz, averaged_intensity = average_signal(array_data)
+        prec_peaks = pick_peaks(averaged_mz, averaged_intensity,
+                                target_envelopes=chosen_envelopes,
+                                **self.ms1_peak_picking_args)
+        return prec_peaks
+
+    def pick_precursor_scan_peaks(self, precursor_scan):
+        """Picks peaks for the given ``precursor_scan`` using the
+        appropriate strategy.
+
+        If :attr:`ms1_averaging` > 0, then the signal averaging strategy
+        is used, otherwise peaks are picked directly.
+
+        Parameters
+        ----------
+        precursor_scan: Scan
+
+        Returns
+        -------
+        PeakSet
+        """
+        logger.info("Picking Precursor Scan Peaks: %r", precursor_scan)
+        if self.ms1_averaging > 0:
+            prec_peaks = self._average_ms1(precursor_scan)
+        else:
+            prec_peaks = self._pick_precursor_scan_peaks(precursor_scan)
         precursor_scan.peak_set = prec_peaks
         return prec_peaks
 

@@ -2,6 +2,7 @@ from __future__ import print_function
 import operator
 import random
 from datetime import datetime
+from collections import OrderedDict
 
 try:
     from ms_peak_picker.utils import draw_peaklist, draw_raw
@@ -10,6 +11,8 @@ try:
 
 except (RuntimeError, ImportError):
     has_plot = False
+
+from six import add_metaclass
 
 try:
     range = xrange
@@ -31,23 +34,6 @@ def printer(message):
 
 def debug_printer(message):
     print("DEBUG:" + datetime.now().isoformat(' ') + ' ' + str(message))
-
-
-# From six
-def add_metaclass(metaclass):
-    """Class decorator for creating a class with a metaclass."""
-    def wrapper(cls):
-        orig_vars = cls.__dict__.copy()
-        slots = orig_vars.get('__slots__')
-        if slots is not None:
-            if isinstance(slots, str):
-                slots = [slots]
-            for slots_var in slots:
-                orig_vars.pop(slots_var)
-        orig_vars.pop('__dict__', None)
-        orig_vars.pop('__weakref__', None)
-        return metaclass(cls.__name__, cls.__bases__, orig_vars)
-    return wrapper
 
 
 def simple_repr(self):  # pragma: no cover
@@ -223,3 +209,56 @@ def dict_proxy(attribute):
 def uid(n=128):
     int_ = random.getrandbits(n)
     return int_
+
+
+class LRUDict(object):
+    def __init__(self, *args, **kwargs):
+        maxsize = kwargs.pop("maxsize", 24)
+        self.store = OrderedDict()
+        self.maxsize = maxsize
+        self.purge()
+
+    def __len__(self):
+        return len(self.store)
+
+    def popitem(self, last=True):
+        return self.store.popitem(last=last)
+
+    def pop(self, key, default=None):
+        return self.store.pop(key, default)
+
+    def purge(self):
+        overflow = max(0, len(self) - self.maxsize)
+        for _ in range(overflow):
+            self.popitem(last=False)
+
+    def __repr__(self):
+        return "LRUDict(%r)" % (dict(self.store),)
+
+    def __contains__(self, key):
+        return key in self.store
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def keys(self):
+        return self.store.keys()
+
+    def values(self):
+        return self.store.values()
+
+    def items(self):
+        return self.store.items()
+
+    def __getitem__(self, key):
+        value = self.store[key]
+        self._mark_used(key)
+        return value
+
+    def __setitem__(self, key, value):
+        self.store[key] = value
+        self.purge()
+
+    def _mark_used(self, key):
+        value = self.store.pop(key, None)
+        self.store[key] = value

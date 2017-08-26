@@ -80,7 +80,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         reader = self.reader
         bunch = next(reader)
         scan = bunch.precursor.pick_peaks()
-        self.assertEqual(len(scan.peak_set), 2107)
+        self.assertEqual(len(scan.peak_set), 2108)
         reader.close()
 
     def test_pack(self):

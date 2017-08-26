@@ -1,5 +1,6 @@
-from collections import namedtuple
 import abc
+
+from collections import namedtuple
 
 from ms_peak_picker import pick_peaks, reprofile
 from ..averagine import neutral_mass, mass_charge_ratio
@@ -350,6 +351,31 @@ class RandomAccessScanSource(ScanDataSource):
                 raise IndexError("Cannot search backwards with a scan index <= 0 (%r)" % scan.index)
             scan = self.get_scan_by_index(scan.index - 1)
         return scan
+
+    def find_previous_ms1(self, start_index):
+        index = start_index - 1
+        while index >= 0:
+            try:
+                scan = self.get_scan_by_index(index)
+                if scan.ms_level == 1:
+                    return scan
+                index -= 1
+            except IndexError:
+                return None
+        return None
+
+    def find_next_ms1(self, start_index):
+        index = start_index + 1
+        n = len(self.index)
+        while index < n:
+            try:
+                scan = self.get_scan_by_index(index)
+                if scan.ms_level == 1:
+                    return scan
+                index += 1
+            except IndexError:
+                return None
+        return None
 
 
 class DetachedAccessError(Exception):

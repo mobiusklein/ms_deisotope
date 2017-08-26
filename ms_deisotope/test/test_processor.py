@@ -20,6 +20,16 @@ class TestScanProcessor(unittest.TestCase):
             self.assertIsNotNone(scan_bunch.precursor)
             self.assertIsNotNone(scan_bunch.products)
 
+    def test_averaging_processor(self):
+        proc = processor.ScanProcessor(self.mzml_path, ms1_deconvolution_args={
+            "averagine": glycopeptide,
+            "scorer": PenalizedMSDeconVFitter(5., 2.)
+        }, ms1_averaging=1)
+        for scan_bunch in iter(proc):
+            self.assertIsNotNone(scan_bunch)
+            self.assertIsNotNone(scan_bunch.precursor)
+            self.assertIsNotNone(scan_bunch.products)
+
 
 if __name__ == '__main__':
     unittest.main()

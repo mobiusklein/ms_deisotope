@@ -186,6 +186,20 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
 
 
 def save_byte_index(index, fp):
+    """Write the byte offset index to the provided
+    file
+
+    Parameters
+    ----------
+    index : ByteEncodingOrderedDict
+        The byte offset index to be saved
+    fp : file
+        The file to write the index to
+
+    Returns
+    -------
+    file
+    """
     encoded_index = dict()
     for key, offset in index.items():
         encoded_index[key.decode("utf8")] = offset
@@ -194,6 +208,17 @@ def save_byte_index(index, fp):
 
 
 def load_byte_index(fp):
+    """Read a byte offset index from a file
+
+    Parameters
+    ----------
+    fp : file
+        The file to read the index from
+
+    Returns
+    -------
+    ByteEncodingOrderedDict
+    """
     data = json.load(fp)
     index = xml.ByteEncodingOrderedDict()
     for key, value in sorted(data.items(), key=lambda x: x[1]):
@@ -202,11 +227,23 @@ def load_byte_index(fp):
 
 
 class PrebuiltOffsetIndex(xml.FlatTagSpecificXMLByteIndex):
+    """An Offset Index class which just holds offsets
+    and performs no extra scanning effort.
+
+    Attributes
+    ----------
+    offsets : ByteEncodingOrderedDict
+    """
+
     def __init__(self, offsets):
         self.offsets = offsets
 
 
 class IndexSavingXML(xml.IndexedXML):
+    """An extension to the IndexedXML type which
+    adds facilities to read and write the byte offset
+    index externally.
+    """
 
     _save_byte_index_to_file = staticmethod(save_byte_index)
     _load_byte_index_from_file = staticmethod(load_byte_index)
