@@ -46,28 +46,34 @@ def _total_intensity_from_descriptors(descriptors):
 
 def describe_spectrum(peak_list):
     descriptors = []
-    base_peak = max(peak_list, key=lambda x: x.intensity)
+    try:
+        base_peak = max(peak_list, key=lambda x: x.intensity)
+    except ValueError:
+        base_peak = None
     descriptors.append({
         "name": "base peak m/z",
-        "value": base_peak.mz,
+        "value": base_peak.mz if base_peak else 0
     })
     descriptors.append({
         "name": "base peak intensity",
-        "value": base_peak.intensity
+        "value": base_peak.intensity if base_peak else 0
     })
     descriptors.append({
         "name": "total ion current",
         "value": sum(p.intensity for p in peak_list)
     })
     peaks_mz_order = sorted(peak_list, key=lambda x: x.mz)
-    descriptors.append({
-        "name": "lowest observed m/z",
-        "value": peaks_mz_order[0].mz
-    })
-    descriptors.append({
-        "name": "highest observed m/z",
-        "value": peaks_mz_order[-1].mz
-    })
+    try:
+        descriptors.append({
+            "name": "lowest observed m/z",
+            "value": peaks_mz_order[0].mz
+        })
+        descriptors.append({
+            "name": "highest observed m/z",
+            "value": peaks_mz_order[-1].mz
+        })
+    except IndexError:
+        pass
     return descriptors
 
 
@@ -306,8 +312,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 product_peaks = prod.deconvoluted_peak_set
             else:
                 product_peaks = prod.peak_set
-            if len(product_peaks) == 0:
-                continue
+            # if len(product_peaks) == 0:
+            #     continue
             descriptors = describe_spectrum(product_peaks)
 
             self.total_ion_chromatogram_tracker[
