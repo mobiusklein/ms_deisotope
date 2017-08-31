@@ -1,5 +1,5 @@
 import abc
-
+import warnings
 from collections import namedtuple
 
 from ms_peak_picker import pick_peaks, reprofile
@@ -39,6 +39,7 @@ def _repr_pretty_(scan_bunch, p, cycle):  # pragma: no cover
 ScanBunch._repr_pretty_ = _repr_pretty_
 
 
+DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
 ChargeNotProvided = Constant("ChargeNotProvided")
 IsolationWindowNotProvided = Constant("IsolationWindowNotProvided")
 
@@ -723,13 +724,23 @@ class PrecursorInformation(object):
         self.extracted_peak = peak
 
     def default(self):
-        self.extracted_neutral_mass = self.neutral_mass
-        self.extracted_charge = int(self.charge)
-        self.extracted_intensity = self.intensity
-        self.defaulted = True
+        if self.charge == ChargeNotProvided:
+            warnings.warn("A precursor has been defaulted with an unknown charge state.")
+            self.extracted_charge = ChargeNotProvided
+            self.extracted_neutral_mass = neutral_mass(self.mz, DEFAULT_CHARGE_WHEN_NOT_RESOLVED)
+            self.extracted_intensity = self.intensity
+            self.defaulted = True
+        else:
+            self.extracted_charge = int(self.charge)
+            self.extracted_neutral_mass = self.neutral_mass
+            self.extracted_intensity = self.intensity
+            self.defaulted = True
 
     @property
     def neutral_mass(self):
+        if self.charge == ChargeNotProvided:
+            warnings.warn("A precursor with an unknown charge state was used to compute a neutral mass.")
+            return neutral_mass(self.mz, DEFAULT_CHARGE_WHEN_NOT_RESOLVED)
         return neutral_mass(self.mz, self.charge)
 
     @property
