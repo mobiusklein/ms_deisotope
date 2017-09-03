@@ -300,9 +300,10 @@ least_squares = LeastSquaresFitter()
 
 class MSDeconVFitter(IsotopicFitterBase):
 
-    def __init__(self, minimum_score=10):
+    def __init__(self, minimum_score=10, mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector()
         self.select.minimum_score = minimum_score
+        self.mass_error_tolerance = mass_error_tolerance
 
     def calculate_minimum_signal_to_noise(self, observed):
         snr = 0
@@ -341,25 +342,24 @@ class MSDeconVFitter(IsotopicFitterBase):
         score = np.sqrt(theo.intensity) * mass_accuracy * abundance_diff
         return score
 
-    def evaluate(self, peaklist, observed, expected, mass_error_tolerance=0.02, **kwargs):
+    def evaluate(self, peaklist, observed, expected, **kwargs):
         score = 0
         for obs, theo in zip(observed, expected):
-            inc = self.score_peak(obs, theo, mass_error_tolerance, 1)
+            inc = self.score_peak(obs, theo, self.mass_error_tolerance, 1)
             score += inc
         return score
 
 
 class PenalizedMSDeconVFitter(IsotopicFitterBase):
 
-    def __init__(self, minimum_score=10, penalty_factor=1.):
+    def __init__(self, minimum_score=10, penalty_factor=1., mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector(minimum_score)
-        self.msdeconv = MSDeconVFitter()
+        self.msdeconv = MSDeconVFitter(mass_error_tolerance=mass_error_tolerance)
         self.penalizer = ScaledGTestFitter()
         self.penalty_factor = penalty_factor
 
-    def evaluate(self, peaklist, observed, expected, mass_error_tolerance=0.02, **kwargs):
-        score = self.msdeconv.evaluate(
-            peaklist, observed, expected, mass_error_tolerance)
+    def evaluate(self, peaklist, observed, expected, **kwargs):
+        score = self.msdeconv.evaluate(peaklist, observed, expected)
         penalty = abs(self.penalizer.evaluate(peaklist, observed, expected))
         return score * (1 - penalty * self.penalty_factor)
 

@@ -56,6 +56,8 @@ cdef class ScaledGTestFitter(IsotopicFitterBase):
     pass
 
 cdef class MSDeconVFitter(IsotopicFitterBase):
+    cdef public double mass_error_tolerance
+
     cdef double score_peak(self, FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=*, double minimum_signal_to_noise=*) nogil
 
 
