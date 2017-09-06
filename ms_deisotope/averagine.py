@@ -211,6 +211,7 @@ glycopeptide = Averagine({"C": 10.93, "H": 15.75, "N": 1.6577, "O": 6.4773, "S":
 glycan = Averagine({'C': 7.0, 'H': 11.8333, 'N': 0.5, 'O': 5.16666})
 permethylated_glycan = Averagine({'C': 12.0, 'H': 21.8333, 'N': 0.5, 'O': 5.16666})
 heparin = Averagine({'H': 10.5, 'C': 6, 'S': 0.5, 'O': 5.5, 'N': 0.5})
+heparan_sulfate = Averagine({'H': 10.667, 'C': 6.0, 'S': 1.333, 'O': 9.0, 'N': 0.667})
 
 
 _neutron_shift = calculate_mass({"C[13]": 1}) - calculate_mass({"C[12]": 1})

@@ -492,6 +492,7 @@ class Scan(object):
         self.ms_level
         self.scan_time
         self.index
+        self.polarity
         self.precursor_information
 
     def __getitem__(self, key):
@@ -606,7 +607,7 @@ class Scan(object):
         ----------
         *args :
             Passed along to :func:`ms_peak_picker.pick_peaks`
-        **kwargs : TYPE
+        **kwargs :
             Passed along to :func:`ms_peak_picker.pick_peaks`
 
         Returns

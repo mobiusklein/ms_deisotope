@@ -18,18 +18,23 @@ class TextScanSerializerBase(ScanSerializerBase):
             header_dict['precursor_charge'] = prec_info.extracted_charge
             header_dict['precursor_intensity'] = prec_info.extracted_intensity
             header_dict['precursor_scan_id'] = prec_info.precursor_scan_id
+            activation = scan.activation
+            if activation:
+                header_dict['precursor_activation_method'] = activation.method
+                header_dict['precursor_activation_energy'] = activation.energy
         header_dict['scan_time'] = scan.scan_time
         header_dict['id'] = scan.id
         header_dict['title'] = scan.title
         header_dict['ms_level'] = scan.ms_level
+        header_dict['polarity'] = scan.polarity
+        header_dict['index'] = scan.index
         return header_dict
 
     def format_peak_vectors(self, scan):
-        mz = [p.mz for p in scan.deconvoluted_peak_set]
         neutral_mass = [p.neutral_mass for p in scan.deconvoluted_peak_set]
         intensity = [p.intensity for p in scan.deconvoluted_peak_set]
         charge = [p.charge for p in scan.deconvoluted_peak_set]
-        return (mz, neutral_mass, intensity, charge)
+        return (neutral_mass, intensity, charge)
 
     def prepare_scan_data(self, scan):
         header_dict = self.construct_header(scan)

@@ -327,12 +327,17 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             int charge
             list peak_charge_list
         results = []
-        n_averagine = len(self.averagine)
-        for peak, charge in peak_charge_set:
+        n_averagine = PyList_GET_SIZE(self.averagines)
+        peak_charge_list = list(peak_charge_set)
+        for i in range(PyList_GET_SIZE(peak_charge_list)):
+            peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)
+            peak = <FittedPeak>PyTuple_GET_ITEM(peak_charge, 0)
+            charge = PyInt_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
+
             if peak.mz < 1:
                 continue
             for j in range(n_averagine):
-                averagine = <AveragineCache>PyList_GET_ITEM(self.averagine, j)
+                averagine = <AveragineCache>PyList_GET_ITEM(self.averagines, j)
                 fit = self.fit_theoretical_distribution(
                     peak, error_tolerance, charge, averagine, charge_carrier,
                     truncate_after=truncate_after, ignore_below=ignore_below)
@@ -342,6 +347,9 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                     continue
                 if self.scorer.reject(fit):
                     continue
+                # should we track the best fit for each hypothetical peak charge pair
+                # and only add the best one to the result set? This would save time
+                # later.
                 results.append(fit)
 
         return set(results)

@@ -227,10 +227,10 @@ cdef class TheoreticalIsotopicPattern(object):
     cdef inline TheoreticalPeak get_base(self, ssize_t i):
         return <TheoreticalPeak>PyList_GET_ITEM(self.base_tid, i)
 
-    cdef size_t get_size(self):
+    cdef inline size_t get_size(self):
         return PyList_GET_SIZE(self.truncated_tid)
 
-    cdef size_t get_base_size(self):
+    cdef inline size_t get_base_size(self):
         return PyList_GET_SIZE(self.base_tid)
 
     cpdef TheoreticalIsotopicPattern clone(self):
@@ -253,10 +253,10 @@ cdef class TheoreticalIsotopicPattern(object):
     def __reduce__(self):
         return self.__class__, (self.base_tid, self.truncated_tid)
 
-    cdef list get_processed_peaks(self):
+    cdef inline list get_processed_peaks(self):
         return self.truncated_tid
 
-    cdef double get_monoisotopic_mz(self):
+    cdef inline double get_monoisotopic_mz(self):
         cdef TheoreticalPeak p
         p = <TheoreticalPeak>PyList_GET_ITEM(self.base_tid, 0)
         return p.mz

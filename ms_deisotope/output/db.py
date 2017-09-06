@@ -665,6 +665,10 @@ class DatabaseBoundOperation(object):
     def is_sqlite(self):
         return self.dialect.name == "sqlite"
 
+    def close(self):
+        self.session.remove()
+        self.engine.dispose()
+
 
 class DatabaseScanSerializer(ScanSerializerBase, DatabaseBoundOperation):
 

@@ -1003,7 +1003,7 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                               truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
         results = []
         for peak, charge in peak_charge_set:
-            for averagine in self.averagine:
+            for averagine in self.averagines:
                 if peak.mz < 1:
                     continue
                 fit = self.fit_theoretical_distribution(
@@ -1069,7 +1069,7 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
             AveragineCache(avg, backend=cache_backend()) if not isinstance(
                 avg, AveragineCache) else avg
             for avg in averagine]
-        self.averagine = averagine
+        self.averagines = averagine
         self.verbose = verbose
 
         self._deconvoluted_peaks = []
@@ -1285,7 +1285,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
 
-    def targeted_deconvolution(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), use_charge_state_hint=False,
+    def targeted_deconvolution(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
+                               use_charge_state_hint=False,
                                left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
                                truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
         """Express the intent that this peak's deconvolution solution will be retrieved at a later point in the process
@@ -1365,7 +1366,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             pattern
         convergence : float, optional
             The threshold of the below which after the `(sum(intensity_before) - sum(
-            intensity_after)) / sum(intensity_after)` 
+            intensity_after)) / sum(intensity_after)`
 
         Returns
         -------

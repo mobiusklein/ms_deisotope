@@ -37,11 +37,11 @@ cdef class TheoreticalIsotopicPattern(object):
     cdef inline TheoreticalPeak get(self, ssize_t i)
     cdef inline TheoreticalPeak get_base(self, ssize_t i)
 
-    cdef size_t get_size(self)
-    cdef size_t get_base_size(self)
+    cdef inline size_t get_size(self)
+    cdef inline size_t get_base_size(self)
 
-    cdef double get_monoisotopic_mz(self)
-    cdef list get_processed_peaks(self)
+    cdef inline double get_monoisotopic_mz(self)
+    cdef inline list get_processed_peaks(self)
 
 
 

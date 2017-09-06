@@ -1,6 +1,7 @@
 from .averagine import (
     Averagine, peptide, glycan, glycopeptide, heparin,
-    permethylated_glycan, mass_charge_ratio, neutral_mass,
+    heparan_sulfate, permethylated_glycan,
+    mass_charge_ratio, neutral_mass,
     calculate_mass, isotopic_shift)
 from .deconvolution import (
     AveragineDeconvoluter, CompositionListDeconvoluter,
@@ -12,7 +13,9 @@ from .data_source import MzMLLoader, MzXMLLoader, MSFileLoader
 
 
 __all__ = [
-    "Averagine", 'peptide', 'glycan', 'glycopeptide', 'heparin',
+    "Averagine", 'peptide', 'glycan', 'glycopeptide', 'heparin', "heparan_sulfate",
+    "permethylated_glycan",
+    "mass_charge_ratio", "neutral_mass", "isotopic_shift", "calculate_mass",
     "AveragineDeconvoluter", "CompositionListDeconvoluter",
     "AveraginePeakDependenceGraphDeconvoluter", "CompositionListPeakDependenceGraphDeconvoluter",
     "MSDeconVFitter", "PenalizedMSDeconVFitter", "DistinctPatternFitter", "IsotopicFitRecord",
