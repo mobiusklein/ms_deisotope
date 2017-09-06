@@ -5,7 +5,7 @@ from ms_peak_picker import (
 
 from .deconvolution import deconvolute_peaks
 from .data_source.infer_type import MSFileLoader
-from .data_source.common import ScanBunch
+from .data_source.common import ScanBunch, ChargeNotProvided
 from .utils import Base, LRUDict
 from .peak_dependency_network import NoIsotopicClustersError
 
@@ -81,7 +81,7 @@ class PriorityTarget(Base):
         tuple
             The updated charge range
         """
-        if self.trust_charge_hint:
+        if self.trust_charge_hint and self.info.charge is not ChargeNotProvided:
             return (self.charge, self.charge)
         else:
             return charge_range
@@ -508,8 +508,8 @@ class ScanProcessor(Base):
         top_charge_state = precursor_ion.extracted_charge
         deconargs = dict(self.msn_deconvolution_args)
         charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
-        if top_charge_state is not None and top_charge_state != 0 and abs(
-                top_charge_state) < abs(charge_range[1]):
+        if top_charge_state is not None and top_charge_state is not ChargeNotProvided and\
+           top_charge_state != 0 and abs(top_charge_state) < abs(charge_range[1]):
             charge_range[1] = top_charge_state
 
         deconargs["charge_range"] = charge_range
