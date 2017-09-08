@@ -2,7 +2,9 @@ import numpy as np
 from pyteomics import mzml
 from .common import (
     PrecursorInformation, ScanDataSource,
-    ChargeNotProvided, ActivationInformation)
+    ChargeNotProvided, ActivationInformation,
+    ScanAcquisitionInformation, ScanEventInformation,
+    ScanWindow)
 from weakref import WeakValueDictionary
 from .xml_reader import XMLReaderBase, IndexSavingXML
 
@@ -182,13 +184,13 @@ class MzMLDataInterface(ScanDataSource):
     def _is_profile(self, scan):
         """Returns whether the scan contains profile data (`True`)
         or centroided data (`False`).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         bool
@@ -198,13 +200,13 @@ class MzMLDataInterface(ScanDataSource):
     def _polarity(self, scan):
         """Returns whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         int
@@ -244,6 +246,40 @@ class MzMLDataInterface(ScanDataSource):
             return ActivationInformation(activation, energy, struct)
         except KeyError:
             return None
+
+    def _scan_information(self, scan):
+        scan_info = {}
+        scan_list_struct = scan['scanList']
+        combination = "unknown"
+        if "no combination" in scan_list_struct:
+            combination = "no combination"
+        elif "sum of spectra" in scan_list_struct:
+            combination = "sum of spectra"
+        elif "median of spectra" in scan_list_struct:
+            combination = "median of spectra"
+        elif "mean of spectra" in scan_list_struct:
+            combination = "mean of spectra"
+        scan_info['combination'] = combination
+        scan_info_scan_list = []
+        for scan in scan_list_struct.get("scan", []):
+            struct = {}
+            try:
+                struct['start_time'] = scan['scan start time']
+            except KeyError:
+                struct['start_time'] = 0
+            try:
+                struct['drift_time'] = scan['ion mobility drift time']
+            except KeyError:
+                struct['drift_time'] = 0
+            windows = []
+            for window in scan.get("scanWindowList", {}).get("scanWindow", []):
+                windows.append(ScanWindow(
+                    window['scan window lower limit'],
+                    window['scan window upper limit']))
+            struct['window_list'] = windows
+            scan_info_scan_list.append(ScanEventInformation(**struct))
+        scan_info['scan_list'] = scan_info_scan_list
+        return ScanAcquisitionInformation(**scan_info)
 
 
 def _find_section(source, section):

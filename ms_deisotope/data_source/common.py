@@ -242,6 +242,9 @@ class ScanDataSource(object):
         """
         raise NotImplementedError()
 
+    def _scan_information(self, scan):
+        return ScanAcquisitionInformation("unknown", [])
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
@@ -476,6 +479,7 @@ class Scan(object):
         self._is_profile = None
         self._polarity = None
         self._activation = None
+        self._scan_information = None
 
         self.product_scans = product_scans
 
@@ -494,6 +498,8 @@ class Scan(object):
         self.index
         self.polarity
         self.precursor_information
+        self.activation
+        self.scan_information
 
     def __getitem__(self, key):
         return self._data[key]
@@ -593,6 +599,12 @@ class Scan(object):
         if self._activation is None:
             self._activation = self.source._activation(self._data)
         return self._activation
+
+    @property
+    def scan_information(self):
+        if self._scan_information is None:
+            self._scan_information = self.source._scan_information(self._data)
+        return self._scan_information
 
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
@@ -840,6 +852,32 @@ dissociation_methods = {
 
 
 ActivationInformation.dissociation_methods = dissociation_methods
+
+
+class ScanAcquisitionInformation(object):
+    def __init__(self, combination, scan_list):
+        self.combination = combination
+        self.scan_list = scan_list
+
+    def __repr__(self):
+        return "ScanAcquisitionInformation(combination=%r, scan_list=%r)" % (
+            self.combination, self.scan_list)
+
+
+class ScanEventInformation(object):
+    def __init__(self, start_time, window_list, drift_time=0):
+        self.start_time = start_time
+        self.window_list = window_list or []
+        self.drift_time = drift_time
+
+    def __repr__(self):
+        template = "ScanEventInformation(start_time={}, window_list={}, drift_time={})"
+        form = template.format(self.start_time, self.window_list, self.drift_time)
+        return form
+
+
+class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
+    pass
 
 
 class IteratorFacadeBase(DataAccessProxy, ScanIterator):
