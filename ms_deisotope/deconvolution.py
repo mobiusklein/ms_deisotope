@@ -1053,7 +1053,7 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
         for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
         Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8
     """
-    def __init__(self, peaklist, averagine=None, scorer=penalized_msdeconv,
+    def __init__(self, peaklist, averagines=None, scorer=penalized_msdeconv,
                  use_subtraction=True, scale_method='sum',
                  merge_isobaric_peaks=True, minimum_intensity=5.,
                  verbose=False, *args, **kwargs):
@@ -1063,13 +1063,13 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
         self.scale_method = scale_method
 
         cache_backend = dict
-        if averagine is None:
-            averagine = [peptide, glycopeptide, glycan]
-        averagine = [
+        if averagines is None:
+            averagines = [peptide, glycopeptide, glycan]
+        averagines = [
             AveragineCache(avg, backend=cache_backend()) if not isinstance(
                 avg, AveragineCache) else avg
-            for avg in averagine]
-        self.averagines = averagine
+            for avg in averagines]
+        self.averagines = averagines
         self.verbose = verbose
 
         self._deconvoluted_peaks = []
