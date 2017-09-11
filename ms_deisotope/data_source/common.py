@@ -20,6 +20,9 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
 
     def precursor_for(self, scan):
         scan_id = scan.precursor_information.precursor_scan_id
+        return self.get_scan_by_id(scan_id)
+
+    def get_scan_by_id(self, scan_id):
         return self._id_map[scan_id]
 
 
@@ -364,7 +367,7 @@ class RandomAccessScanSource(ScanDataSource):
                 if scan.ms_level == 1:
                     return scan
                 index -= 1
-            except IndexError:
+            except (IndexError, KeyError):
                 return None
         return None
 
@@ -377,7 +380,7 @@ class RandomAccessScanSource(ScanDataSource):
                 if scan.ms_level == 1:
                     return scan
                 index += 1
-            except IndexError:
+            except (IndexError, KeyError):
                 return None
         return None
 

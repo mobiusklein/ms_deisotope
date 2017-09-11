@@ -317,7 +317,12 @@ class ScanProcessor(Base):
             else:
                 _peaks = self._pick_precursor_scan_peaks(scan, chosen_envelopes)
                 array_data.append(reprofile(_peaks))
-        array_data.append(precursor_scan.arrays)
+        if precursor_scan.is_profile:
+            array_data.append(precursor_scan.arrays)
+        else:
+            _peaks = self._pick_precursor_scan_peaks(precursor_scan, chosen_envelopes)
+            array_data.append(reprofile(_peaks))
+
         for scan in after:
             if scan.is_profile:
                 array_data.append(scan.arrays)

@@ -634,6 +634,12 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 accumulate.append((ms1_id, peak, id(peak)))
         return accumulate
 
+    def ms1_scan_times(self):
+        times = sorted(
+            [bundle['scan_time'] for bundle in
+             self.extended_index.ms1_ids.values()])
+        return np.array(times)
+
     def msms_for(self, neutral_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
         m = neutral_mass
         w = neutral_mass * mass_error_tolerance
