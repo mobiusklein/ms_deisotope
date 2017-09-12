@@ -354,15 +354,16 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         elif index is not None:
             scan_number = int(index)
         elif rt is not None:
-            start_index = self._source.ScanNumFromRT(rt)
-            if require_ms1:
-                while start_index != 0:
-                    scan = self.get_scan_by_index(start_index)
-                    if scan.ms_level > 1:
-                        start_index -= 1
-                    else:
-                        break
-                scan_number = start_index
+            scan_number = self._source.ScanNumFromRT(rt)
+        if require_ms1:
+            start_index = scan_number
+            while start_index != 0:
+                scan = self.get_scan_by_index(start_index)
+                if scan.ms_level > 1:
+                    start_index -= 1
+                else:
+                    break
+            scan_number = start_index
         iterator = self._make_scan_index_producer(start_index=scan_number)
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
