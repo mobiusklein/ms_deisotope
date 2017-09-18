@@ -247,7 +247,11 @@ class MzMLScanSerializer(ScanSerializerBase):
                 "mz": precursor_information.extracted_mz,
                 "intensity": precursor_information.extracted_intensity,
                 "charge": precursor_information.extracted_charge,
-                "scan_id": precursor_information.precursor_scan_id
+                "scan_id": precursor_information.precursor_scan_id,
+                "params": [
+                    {"ms_deisotope:defaulted": precursor_information.defaulted},
+                    {"ms_deisotope:orphan": precursor_information.orphan}
+                ]
             }
         else:
             package = {
