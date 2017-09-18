@@ -245,8 +245,8 @@ class ScanDataSource(object):
         """
         raise NotImplementedError()
 
-    def _scan_information(self, scan):
-        return ScanAcquisitionInformation("unknown", [])
+    def _acquisition_information(self, scan):
+        return None
 
 
 @add_metaclass(abc.ABCMeta)
@@ -483,6 +483,7 @@ class Scan(object):
         self._polarity = None
         self._activation = None
         self._scan_information = None
+        self._acquisition_information = None
 
         self.product_scans = product_scans
 
@@ -604,10 +605,10 @@ class Scan(object):
         return self._activation
 
     @property
-    def scan_information(self):
-        if self._scan_information is None:
-            self._scan_information = self.source._scan_information(self._data)
-        return self._scan_information
+    def acquisition_information(self):
+        if self._acquisition_information is None:
+            self._acquisition_information = self.source._acquisition_information(self._data)
+        return self._acquisition_information
 
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
@@ -648,7 +649,8 @@ class Scan(object):
             self.peak_set.pack(),
             self.deconvoluted_peak_set,
             self.polarity,
-            self.activation)
+            self.activation,
+            self.acquisition_information)
 
     def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
         if self.peak_set is None:
@@ -741,7 +743,7 @@ class PrecursorInformation(object):
         self.extracted_intensity = peak.intensity
         self.extracted_peak = peak
 
-    def default(self):
+    def default(self, orphan=False):
         if self.charge == ChargeNotProvided:
             warnings.warn("A precursor has been defaulted with an unknown charge state.")
             self.extracted_charge = ChargeNotProvided
@@ -753,6 +755,8 @@ class PrecursorInformation(object):
             self.extracted_neutral_mass = self.neutral_mass
             self.extracted_intensity = self.intensity
             self.defaulted = True
+        if orphan:
+            self.orphan = True
 
     @property
     def neutral_mass(self):
@@ -776,7 +780,8 @@ class PrecursorInformation(object):
 
 class ProcessedScan(object):
     def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set,
-                 deconvoluted_peak_set, polarity=None, activation=None):
+                 deconvoluted_peak_set, polarity=None, activation=None,
+                 acquisition_information=None):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
@@ -787,6 +792,7 @@ class ProcessedScan(object):
         self.deconvoluted_peak_set = deconvoluted_peak_set
         self.polarity = polarity
         self.activation = activation
+        self.acquisition_information = acquisition_information
 
     @property
     def scan_id(self):
@@ -817,7 +823,7 @@ class ProcessedScan(object):
         dup = ProcessedScan(
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
-            self.polarity, self.activation)
+            self.polarity, self.activation, self.acquisition_information)
         return dup
 
 
