@@ -484,7 +484,7 @@ class ScanProcessor(Base):
                 logger.info(
                     "Could not find deconvolution for %r (No nearby peak in the priority list)",
                     precursor_information)
-                precursor_information.default()
+                precursor_information.default(orphan=True)
                 continue
 
             peak = priority_results[i]
@@ -493,7 +493,7 @@ class ScanProcessor(Base):
                 logger.info(
                     "Could not find deconvolution for %r (No solution was found for this region)",
                     precursor_information)
-                precursor_information.default()
+                precursor_information.default(orphan=True)
 
                 continue
             elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
