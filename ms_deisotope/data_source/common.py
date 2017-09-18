@@ -727,11 +727,13 @@ class PrecursorInformation(object):
 
     def __getstate__(self):
         return (self.mz, self.intensity, self.charge, self.precursor_scan_id, None, self.extracted_neutral_mass,
-                self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak)
+                self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
+                self.defaulted, self.orphan, self.product_scan_id)
 
     def __setstate__(self, state):
         (self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source, self.extracted_neutral_mass,
-         self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak) = state
+         self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
+         self.defaulted, self.orphan, self.product_scan_id) = state
 
     def extract(self, peak, override_charge=None):
         self.extracted_neutral_mass = peak.neutral_mass
