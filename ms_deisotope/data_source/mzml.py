@@ -42,6 +42,10 @@ class MzMLDataInterface(ScanDataSource):
         except KeyError:
             return np.array([]), np.array([])
 
+    def _get_selected_ion(self, scan):
+        pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
+        return pinfo_dict
+
     def _precursor_information(self, scan):
         """Returns information about the precursor ion,
         if any, that this scan was derived form.
@@ -58,7 +62,7 @@ class MzMLDataInterface(ScanDataSource):
         -------
         PrecursorInformation
         """
-        pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
+        pinfo_dict = self._get_selected_ion(scan)
         try:
             precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
         except KeyError:
@@ -74,6 +78,8 @@ class MzMLDataInterface(ScanDataSource):
                     precursor_scan_id = self._scan_id(prev_scan)
                     break
                 i += 1
+            if not (i < 100):
+                raise ValueError("Could not locate previous MS1 scan")
         pinfo = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),
