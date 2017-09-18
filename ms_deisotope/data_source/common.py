@@ -482,7 +482,6 @@ class Scan(object):
         self._is_profile = None
         self._polarity = None
         self._activation = None
-        self._scan_information = None
         self._acquisition_information = None
 
         self.product_scans = product_scans
@@ -503,7 +502,7 @@ class Scan(object):
         self.polarity
         self.precursor_information
         self.activation
-        self.scan_information
+        self.acquisition_information
 
     def __getitem__(self, key):
         return self._data[key]
