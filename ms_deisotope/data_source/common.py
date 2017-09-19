@@ -635,7 +635,7 @@ class Scan(object):
         else:
             peak_mode = 'centroid'
 
-        kwargs['peak_mode'] = peak_mode
+        kwargs.setdefault('peak_mode', peak_mode)
 
         self.peak_set = pick_peaks(mzs, intensities, *args, **kwargs)
         return self
