@@ -78,8 +78,6 @@ class MzMLDataInterface(ScanDataSource):
                     precursor_scan_id = self._scan_id(prev_scan)
                     break
                 i += 1
-            if not (i < 100):
-                raise ValueError("Could not locate previous MS1 scan")
         pinfo = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),

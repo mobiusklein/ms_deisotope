@@ -54,7 +54,7 @@ class MzXMLDataInterface(ScanDataSource):
         """
         try:
             pinfo_dict = scan['precursorMz'][0]
-            precursor_scan_id = pinfo_dict['precursorScanNum']
+            precursor_scan_id = pinfo_dict.get('precursorScanNum')
             pinfo = PrecursorInformation(
                 mz=float(pinfo_dict['precursorMz']),
                 intensity=float(pinfo_dict.get('precursorIntensity', 0.0)),
