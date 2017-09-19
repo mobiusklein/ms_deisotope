@@ -1,5 +1,6 @@
 # pragma: no cover
 import re
+import os
 
 from weakref import WeakValueDictionary
 from collections import OrderedDict
@@ -170,7 +171,7 @@ class ThermoRawDataInterface(ScanDataSource):
         return scan.filter_line
 
     def _scan_title(self, scan):
-        return "scan=%d" % scan.scan_number
+        return "%s %r" % (self._scan_id(scan), self._filter_line(scan))
 
     def _scan_arrays(self, scan):
         arrays, flags = self._source.GetMassListFromScanNum(
