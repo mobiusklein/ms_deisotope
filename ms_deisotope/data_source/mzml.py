@@ -251,7 +251,7 @@ class MzMLDataInterface(ScanDataSource):
         except KeyError:
             return None
 
-    def _scan_information(self, scan):
+    def _acquisition_information(self, scan):
         scan_info = {}
         scan_list_struct = scan['scanList']
         combination = "unknown"

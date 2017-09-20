@@ -647,6 +647,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
              self.extended_index.ms1_ids.values()])
         return np.array(times)
 
+    def extract_total_ion_current_chromatogram(self):
+        current = []
+        for scan_id in self.extended_index.ms1_ids:
+            header = self.get_scan_header_by_id(scan_id)
+            current.append(header.arrays[1].sum())
+        return np.array(current)
+
     def msms_for(self, neutral_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
         m = neutral_mass
         w = neutral_mass * mass_error_tolerance
