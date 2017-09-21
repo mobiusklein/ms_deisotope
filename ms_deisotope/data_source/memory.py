@@ -239,6 +239,9 @@ class MemoryScanLoader(MemoryScanInterface, ScanIterator, RandomAccessScanSource
     def index(self):
         return self._index
 
+    def _validate(self, scan):
+        return True
+
     def _make_scan_index_producer(self, start_index=None, start_time=None):
         if start_index is not None:
             return range(start_index, len(self._scans))

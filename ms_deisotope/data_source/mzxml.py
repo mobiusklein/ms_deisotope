@@ -203,10 +203,13 @@ class MzXMLDataInterface(ScanDataSource):
         -------
         int
         """
-        if scan['polarity'] == '+':
-            return 1
-        else:
-            return -1
+        try:
+            if scan['polarity'] == '+':
+                return 1
+            else:
+                return -1
+        except KeyError:
+            return None
 
     def _activation(self, scan):
         """Returns information about the activation method used to
