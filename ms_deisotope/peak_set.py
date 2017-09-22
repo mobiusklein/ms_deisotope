@@ -113,10 +113,12 @@ class DeconvolutedPeak(Base):
     ]
 
     def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
-                 a_to_a2_ratio=None, most_abundant_mass=None, average_mass=None, score=None,
-                 envelope=None, mz=None, fit=None, chosen_for_msms=False, area=0):
+                 a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0, score=0,
+                 envelope=None, mz=0, fit=None, chosen_for_msms=False, area=0):
         if index is None:
             index = _Index()
+        if envelope is None:
+            envelope = ()
         self.neutral_mass = neutral_mass
         self.intensity = intensity
         self.signal_to_noise = signal_to_noise
@@ -413,8 +415,8 @@ try:
 
     from ms_deisotope._c.peak_set import (
         Envelope, _Index, DeconvolutedPeak, DeconvolutedPeakSolution,
-        DeconvolutedPeakSetIndexed as DeconvolutedPeakSet
-        # DeconvolutedPeakSet
+        # DeconvolutedPeakSetIndexed as DeconvolutedPeakSet
+        DeconvolutedPeakSet
     )
 
 except ImportError:
