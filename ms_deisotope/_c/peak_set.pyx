@@ -613,7 +613,7 @@ cdef int _binary_search_interval(double* array, double target, double error_tole
                 else:
                     break
                 i += 1
-            start[0] = mid - i
+            start[0] = mid - i + 1
             i = 1
             while (mid + i) < (n - 1):
                 found_mass = array[mid + i]
@@ -871,6 +871,15 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
                 return None
             else:
                 return self.getitem(i)
+
+    def _test_interval(self, double neutral_mass, double tolerance=1e-5):
+        cdef:
+            int status
+            size_t n, start, end
+        n = self._size
+        status = _binary_search_interval(
+            self.neutral_mass_array, neutral_mass, tolerance, n, &start, &end)
+        return status, start, end        
 
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
         cdef:
