@@ -4,9 +4,17 @@ import operator
 
 cimport cython
 from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice, PyTuple_GET_SIZE
+from cpython.list cimport PyList_Append, PyList_AsTuple
+from libc.math cimport fabs
+from libc.stdlib cimport malloc, free
 
 from ms_deisotope._c.averagine cimport mass_charge_ratio
 from ms_peak_picker._c.peak_set cimport PeakBase
+
+cimport numpy as np
+
+np.import_array()
+
 
 @cython.cdivision
 cdef double ppm_error(double x, double y):
@@ -35,7 +43,7 @@ cdef class _Index(object):
     neutral_mass : int
         Index of this object (or its parent), ordered by neutral mass
     """
-    def __init__(self, neutral_mass=None, mz=None):
+    def __init__(self, neutral_mass=0, mz=0):
         self.neutral_mass = neutral_mass
         self.mz = mz
 
@@ -47,6 +55,15 @@ cdef class _Index(object):
 
     def __reduce__(self):
         return _Index, (self.neutral_mass, self.mz)
+
+    @staticmethod
+    cdef _Index _create(size_t neutral_mass, size_t mz):
+        cdef:
+            _Index inst
+        inst = _Index.__new__(_Index)
+        inst.neutral_mass = neutral_mass
+        inst.mz = mz
+        return inst
 
 
 @cython.freelist(1000000)
@@ -165,7 +182,6 @@ cdef class Envelope(object):
         return inst
 
 
-# @cython.freelist(100000)
 cdef class DeconvolutedPeak(PeakBase):
     """
     Represent a single deconvoluted peak which represents an aggregated isotopic
@@ -204,9 +220,9 @@ cdef class DeconvolutedPeak(PeakBase):
                  a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0, score=0,
                  envelope=(), mz=0, fit=None, chosen_for_msms=False, area=0):
         if index is None:
-            index = _Index()
+            index = _Index._create(0, 0)
         elif index == -1:
-            index = _Index(0, 0)
+            index = _Index._create(0, 0)
         self.neutral_mass = neutral_mass
         self.intensity = intensity
         self.signal_to_noise = signal_to_noise
@@ -231,9 +247,9 @@ cdef class DeconvolutedPeak(PeakBase):
             if isinstance(value, _Index):
                 self._index = value
             elif value >= 0:
-                self._index = _Index(value, value)
+                self._index = _Index._create(value, value)
             else:
-                self._index = _Index(0, 0)
+                self._index = _Index._create(0, 0)
 
     def __hash__(self):
         return hash((self.mz, self.intensity, self.charge))
@@ -281,7 +297,7 @@ cdef class DeconvolutedPeak(PeakBase):
         inst.signal_to_noise = score
         inst.mz = mz
         inst.envelope = envelope
-        inst.index = _Index(0, 0)
+        inst.index = _Index._create(0, 0)
         inst.full_width_at_half_max = 0
         inst.a_to_a2_ratio = 0
         inst.most_abundant_mass = 0
@@ -343,6 +359,7 @@ cdef class DeconvolutedPeakSet:
     def __init__(self, peaks):
         self.peaks = tuple(peaks)
         self._mz_ordered = None
+        self.indexed = False
 
     def reindex(self):
         """
@@ -373,18 +390,22 @@ cdef class DeconvolutedPeakSet:
         i = 0
         for i in range(n):
             peak = self.getitem(i)
-            peak._index = _Index(0, 0)
+            peak._index = _Index._create(0, 0)
             peak._index.neutral_mass = i
         i = 0
         for i in range(n):
             peak = <DeconvolutedPeak>PyTuple_GET_ITEM(self._mz_ordered, i)
             peak._index.mz = i
+        self.indexed = True
         return self
 
     def __iter__(self):
         return iter(self.peaks)
 
     def __len__(self):
+        return self.get_size()
+
+    cdef size_t get_size(self):
         return PyTuple_GET_SIZE(self.peaks)
 
     def __repr__(self):
@@ -411,12 +432,14 @@ cdef class DeconvolutedPeakSet:
             return binary_search_neutral_mass(self.peaks, neutral_mass, error_tolerance)
 
     cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
+        if not self.indexed:
+            self.reindex()
         return self._has_peak(neutral_mass, error_tolerance, use_mz)
 
     cdef DeconvolutedPeak getitem(self, size_t i):
         return <DeconvolutedPeak>PyTuple_GET_ITEM(self.peaks, i)
 
-    def all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
+    cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
         cdef:
             double lo, hi, lo_err, hi_err
             int lo_ix, hi_ix
@@ -434,7 +457,7 @@ cdef class DeconvolutedPeakSet:
         if hi_ix != 0 and abs(
                 ppm_error(hi_peak.neutral_mass, neutral_mass)) > tolerance:
             hi_ix -= 1
-        return self[lo_ix:hi_ix]
+        return <tuple>PyTuple_GetSlice(self.peaks, lo_ix, hi_ix)
 
     def get_nearest_peak(self, double neutral_mass):
         cdef:
@@ -503,6 +526,118 @@ cdef DeconvolutedPeak _sweep_solution_neutral_mass(tuple array, double value, si
         return None
     else:
         return array[best_index]
+
+
+@cython.cdivision(True)
+cdef double _ppm_error(double x, double y) nogil:
+    return (x - y) / y
+
+
+cdef int _binary_search(double* array, double target, double error_tolerance, size_t n, size_t* out) nogil:
+    cdef:
+        size_t lo, hi, mid, i, j
+        size_t best_index
+        double err, found_mass
+        double best_error, abs_error
+    
+    lo = 0
+    hi = n
+
+    while hi != lo:
+        mid = (hi + lo) / 2
+        found_mass = array[mid]
+        if fabs(_ppm_error(found_mass, target)) < error_tolerance:
+            best_index = mid
+            best_error = INF
+            i = 0
+            while mid - i >= 0 and i <= mid:
+                found_mass = array[mid - i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid - i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            i = 1
+            while (mid + i) < (n - 1):
+                found_mass = array[mid + i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid + i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            out[0] = best_index
+            if best_error == INF:
+                return 3
+            return 0
+        elif hi - lo == 1:
+            out[0] = 0
+            return 1
+        elif found_mass > target:
+            hi = mid
+        else:
+            lo = mid
+    out[0] = 0
+    return 2
+
+
+cdef int _binary_search_interval(double* array, double target, double error_tolerance, size_t n, size_t* start, size_t* end) nogil:
+    cdef:
+        size_t lo, hi, mid, i, j
+        size_t best_index
+        double err, found_mass
+        double best_error, abs_error
+    
+    lo = 0
+    hi = n
+
+    while hi != lo:
+        mid = (hi + lo) / 2
+        found_mass = array[mid]
+        if fabs(_ppm_error(found_mass, target)) < error_tolerance:
+            best_index = mid
+            best_error = INF
+            i = 0
+            while mid - i >= 0 and i <= mid:
+                found_mass = array[mid - i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid - i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            start[0] = mid - i
+            i = 1
+            while (mid + i) < (n - 1):
+                found_mass = array[mid + i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid + i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            end[0] = mid + i
+            return 0
+        elif hi - lo == 1:
+            start[0] = 0
+            end[0] = 0
+            return 1
+        elif found_mass > target:
+            hi = mid
+        else:
+            lo = mid
+    start[0] = 0
+    end[0] = 0
+    return 2
 
 
 cdef DeconvolutedPeak binary_search_neutral_mass(tuple peak_set, double neutral_mass, double error_tolerance):
@@ -647,20 +782,20 @@ def convert(self):
         self.area)
 
 
-cimport numpy as np
-
-
-def decode_envelopes(_array):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def decode_envelopes(np.ndarray[cython.floating, ndim=1, mode='c'] array):
     cdef:
-        np.ndarray array
         list envelope_list, current_envelope
+        tuple converted
+        Envelope envelope_obj
         size_t i, n
-        object a, b
+        cython.floating a, b
     envelope_list = []
     current_envelope = []
-    array = _array
+
     i = 0
-    n = len(array)
+    n = array.shape[0]
     while i < n:
         a = array[i]
         b = array[i + 1]
@@ -668,9 +803,82 @@ def decode_envelopes(_array):
         if a == 0 and b == 0:
             if current_envelope is not None:
                 if current_envelope:
-                    envelope_list.append(Envelope(current_envelope))
+                    converted = tuple(current_envelope)
+                    envelope_obj = Envelope._create(converted)
+                    envelope_list.append(envelope_obj)
                 current_envelope = []
         else:
-            current_envelope.append(EnvelopePair(a, b))
-    envelope_list.append(Envelope(current_envelope))
+            current_envelope.append(EnvelopePair._create(a, b))
+    converted = tuple(current_envelope)
+    envelope_obj = Envelope._create(converted)
+    envelope_list.append(envelope_obj)
     return envelope_list
+
+
+cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
+    def __init__(self, peaks):
+        self.neutral_mass_array = NULL
+        self.mz_array = NULL
+        super(DeconvolutedPeakSetIndexed, self).__init__(peaks)
+
+    def __dealloc__(self):
+        self._release_buffers()
+
+    def _release_buffers(self):
+        if self.neutral_mass_array != NULL:
+            free(self.neutral_mass_array)
+            self.neutral_mass_array = NULL
+        if self.mz_array != NULL:
+            free(self.mz_array)
+            self.mz_array = NULL
+
+    cdef void _build_index_arrays(self):
+        cdef:
+            size_t i, n
+            DeconvolutedPeak peak
+        n = PyTuple_GET_SIZE(self.peaks)
+        self._size = n
+        self._release_buffers()
+        self.neutral_mass_array = <double*>malloc(sizeof(double) * n)
+        self.mz_array = <double*>malloc(sizeof(double) * n)
+
+        for i in range(n):
+            peak = self.getitem(i)
+            self.neutral_mass_array[i] = peak.neutral_mass
+            self.mz_array[peak._index.mz] = peak.mz
+
+    def _reindex(self):
+        super(DeconvolutedPeakSetIndexed, self)._reindex()
+        self._build_index_arrays()
+        return self
+
+    cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
+        cdef:
+            int status
+            size_t i, n
+            DeconvolutedPeak peak
+
+        n = self._size
+        if use_mz:
+            status = _binary_search(self.mz_array, neutral_mass, error_tolerance, n, &i)
+            if status != 0:
+                return None
+            else:
+                return <DeconvolutedPeak>PyTuple_GET_ITEM(self._mz_ordered, i)
+        else:
+            status = _binary_search(self.neutral_mass_array, neutral_mass, error_tolerance, n, &i)
+            if status != 0:
+                return None
+            else:
+                return self.getitem(i)
+
+    cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
+        cdef:
+            int status
+            size_t n, start, end
+        n = self._size
+        status = _binary_search_interval(
+            self.neutral_mass_array, neutral_mass, tolerance, n, &start, &end)
+        if status != 0:
+            return ()
+        return <tuple>PyTuple_GetSlice(self.peaks, start, end)

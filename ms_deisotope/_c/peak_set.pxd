@@ -7,6 +7,9 @@ cdef class _Index:
         public size_t neutral_mass
         public size_t mz
 
+    @staticmethod
+    cdef _Index _create(size_t neutral_mass, size_t mz)
+
 
 cdef class EnvelopePair:
     cdef:
@@ -62,13 +65,28 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
     cdef:
         public object solution
 
-cdef class DeconvolutedPeakSet:
+cdef class DeconvolutedPeakSet(object):
     cdef:
         public tuple peaks
         public tuple _mz_ordered
+        public bint indexed
 
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)
 
     cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)
 
+    cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=*)
+
+    cdef size_t get_size(self)
+
     cdef DeconvolutedPeak getitem(self, size_t i)
+
+
+cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
+    cdef:
+        double* neutral_mass_array
+        double* mz_array
+        size_t _size
+
+    cdef void _build_index_arrays(self)
+
