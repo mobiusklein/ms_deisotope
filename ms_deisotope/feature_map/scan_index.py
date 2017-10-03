@@ -2,6 +2,7 @@ import json
 from collections import OrderedDict
 
 from ms_deisotope.averagine import neutral_mass
+from ms_deisotope.data_source.common import PrecursorInformation
 
 
 class ExtendedScanIndex(object):
@@ -90,3 +91,30 @@ class ExtendedScanIndex(object):
     def deserialize(cls, handle):
         mapping = json.load(handle)
         return cls(**mapping)
+
+    def get_precursor_information(self, bind=None):
+        out = []
+        for key, info in self.msn_ids.items():
+            mz = info['mz']
+            neutral_mass = info['neutral_mass']
+            charge = info['charge']
+            intensity = info['intensity']
+            precursor_scan_id = info['precursor_scan_id']
+            product_scan_id = info['product_scan_id']
+            pinfo = PrecursorInformation(
+                mz, intensity, charge, precursor_scan_id,
+                bind, neutral_mass, charge, intensity,
+                product_scan_id=product_scan_id)
+            out.append(pinfo)
+        return out
+
+    def find_msms_by_precursor_mass(self, neutral_mass, mass_error_tolerance=1e-5, bind=None):
+        m = neutral_mass
+        w = neutral_mass * mass_error_tolerance
+        lo = m - w
+        hi = m + w
+        out = []
+        for pinfo in self.get_precursor_information(bind):
+            if lo <= pinfo.neutral_mass <= hi:
+                out.append(pinfo)
+        return out
