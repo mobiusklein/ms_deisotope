@@ -1,5 +1,11 @@
 from collections import defaultdict
-from brainpy import calculate_mass, neutral_mass, PROTON, isotopic_variants, mass_charge_ratio
+from brainpy import (
+    calculate_mass, neutral_mass, PROTON,
+    isotopic_variants, mass_charge_ratio)
+
+from brainpy.composition import (
+    parse_formula,
+    SimpleComposition)
 
 from .utils import dict_proxy
 
