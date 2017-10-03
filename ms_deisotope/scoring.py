@@ -427,6 +427,14 @@ def percentile(N, percent):
     return d0 + d1
 
 
+class XCorrFitter(IsotopicFitterBase):
+    def evaluate(self, peaklist, experimental, theoretical):
+        total = 0
+        for e, t in zip(experimental, theoretical):
+            total += e.intensity * t.intensity
+        return total
+
+
 try:
     _c = True
     _IsotopicFitRecord = IsotopicFitRecord
