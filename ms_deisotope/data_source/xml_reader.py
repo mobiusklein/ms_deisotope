@@ -4,6 +4,7 @@ import os
 from weakref import WeakValueDictionary
 from .common import (
     ScanIterator, RandomAccessScanSource)
+from lxml import etree
 from lxml.etree import XMLSyntaxError
 from pyteomics import xml
 
@@ -278,3 +279,16 @@ class IndexSavingXML(xml.IndexedXML):
     def prebuild_byte_offset_file(cls, path):
         inst = cls(path, use_index=True)
         inst._write_byte_offsets()
+
+
+def get_tag_attributes(source, tag_name):
+    g = etree.iterparse(source, ('start', 'end'))
+    for event, tag in g:
+        if event == 'start':
+            if xml._local_name(tag) == tag_name:
+                return tag.attrib
+            else:
+                continue
+        else:
+            tag.clear()
+    return None
