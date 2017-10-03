@@ -5,7 +5,7 @@ from ms_peak_picker import (
 
 from .deconvolution import deconvolute_peaks
 from .data_source.infer_type import MSFileLoader
-from .data_source.common import ScanBunch, ChargeNotProvided
+from .data_source.common import Scan, ScanBunch, ChargeNotProvided
 from .utils import Base, LRUDict
 from .peak_dependency_network import NoIsotopicClustersError
 
@@ -431,6 +431,11 @@ class ScanProcessor(Base):
 
         return precursor_scan, priorities, product_scans
 
+    def _default_all_precursor_information(self, scans):
+        for scan in scans:
+            if scan.ms_level > 1:
+                scan.precursor_information.default(orphan=True)
+
     def deconvolute_precursor_scan(self, precursor_scan, priorities=None):
         if priorities is None:
             priorities = []
@@ -536,7 +541,17 @@ class ScanProcessor(Base):
         return dec_peaks
 
     def _get_next_scans(self):
-        precursor, products = next(self.reader)
+        bunch = next(self.reader)
+        try:
+            precursor, products = bunch
+        except ValueError:
+            if isinstance(bunch, Scan):
+                if bunch.ms_level == 1:
+                    precursor = bunch
+                    products = []
+                else:
+                    precursor = None
+                    products = [bunch]
 
         if self.pick_only_tandem_envelopes:
             while len(products) == 0:
@@ -563,7 +578,10 @@ class ScanProcessor(Base):
             The fully processed version of `products`
         """
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
-        self.deconvolute_precursor_scan(precursor_scan, priorities)
+        if precursor_scan is not None:
+            self.deconvolute_precursor_scan(precursor_scan, priorities)
+        else:
+            self._default_all_precursor_information(product_scans)
 
         for product_scan in product_scans:
             self.pick_product_scan_peaks(product_scan)
@@ -607,7 +625,7 @@ class ScanProcessor(Base):
         """
         precursor, products = self._get_next_scans()
         precursor_scan, product_scans = self.process(precursor, products)
-        return ScanBunch(precursor_scan.pack(), [p.pack() for p in product_scans])
+        return ScanBunch(precursor_scan.pack() if precursor_scan else None, [p.pack() for p in product_scans])
 
     def start_from_scan(self, *args, **kwargs):
         """A wrapper around :meth:`start_from_scan` provided by
