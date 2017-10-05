@@ -486,7 +486,7 @@ class ScanProcessor(Base):
             # This should never happen in the current implementation. If it did, then we forgot
             # to pass the priority list to this function.
             if i is None:
-                logger.info(
+                logger.warning(
                     "Could not find deconvolution for %r (No nearby peak in the priority list)",
                     precursor_information)
                 precursor_information.default(orphan=True)
@@ -495,14 +495,14 @@ class ScanProcessor(Base):
             peak = priority_results[i]
             # If the deconvolution result is None, then we have no answer
             if peak is None:
-                logger.info(
+                logger.warning(
                     "Could not find deconvolution for %r (No solution was found for this region)",
                     precursor_information)
                 precursor_information.default(orphan=True)
 
                 continue
             elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
-                logger.info(
+                logger.warning(
                     "Could not find deconvolution for %r (Unacceptable solution was proposed: %r)",
                     precursor_information, peak)
                 precursor_information.default()
