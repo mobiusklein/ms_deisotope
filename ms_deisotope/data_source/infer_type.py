@@ -25,6 +25,19 @@ except ImportError:  # pragma: no cover
         pass
 
 
+try:
+    from .agilent_d import (
+        AgilentDLoader,
+        infer_reader as _check_is_agilent_d,
+        register_dll_dir as register_agilent_dll_dir)
+
+    reader_types.append(AgilentDLoader)
+    register_type_guesser(_check_is_agilent_d)
+except ImportError:  # pragma: no cover
+    def register_agilent_dll_dir(*args, **kwargs):
+        pass
+
+
 @register_type_guesser
 def guess_type_from_path(file_path):
     ext = os.path.splitext(file_path)[1].lower()
