@@ -29,12 +29,14 @@ cdef size_t count_missed_peaks(list peaklist):
     cdef:
         size_t i
         int n, t
-        FittedPeak peak
+        # FittedPeak peak
+        void* peak
 
     t = n = PyList_GET_SIZE(peaklist)
     for i in range(t):
-        peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
-        if peak.mz > 1 and peak.intensity > 1:
+        # peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
+        peak = PyList_GET_ITEM(peaklist, i)
+        if (<FittedPeak>peak).mz > 1 and (<FittedPeak>peak).intensity > 1:
             n -= 1
     return n
 
@@ -42,11 +44,9 @@ cdef double sum_intensity(list peaklist):
     cdef:
         size_t i
         double total
-        FittedPeak peak
     total = 0
     for i in range(PyList_GET_SIZE(peaklist)):
-        peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
-        total += peak.intensity
+        total += (<FittedPeak>PyList_GET_ITEM(peaklist, i)).intensity
     return total
 
 
@@ -95,13 +95,13 @@ cdef class DeconvoluterBase(object):
         cdef:
             list experimental_distribution
             size_t i
-            TheoreticalPeak theo_peak
+            double mz
 
         experimental_distribution = []
 
         for i in range(PyList_GET_SIZE(theoretical_distribution)):
-            theo_peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)
-            experimental_distribution.append(self._has_peak(theo_peak.mz, error_tolerance))
+            mz = (<TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)).mz
+            experimental_distribution.append(self._has_peak(mz, error_tolerance))
 
 
         return experimental_distribution
