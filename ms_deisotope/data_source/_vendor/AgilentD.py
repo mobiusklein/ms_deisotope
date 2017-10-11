@@ -200,7 +200,7 @@ class _AgilentDDirectory(object):
 
 class AgilentDLoader(AgilentDDataInterface, _AgilentDDirectory, ScanIterator, RandomAccessScanSource):
 
-    def __init__(self, dirpath):
+    def __init__(self, dirpath, **kwargs):
         self.dirpath = dirpath
         self.dirpath = os.path.abspath(self.dirpath)
         self.dirpath = os.path.normpath(self.dirpath)
