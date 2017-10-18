@@ -31,7 +31,7 @@ class SpectrumCluster(object):
         self.scans.append(item)
 
 
-def cluster_scans(scans):
+def cluster_scans(scans, precursor_error_tolerance=1e-5):
     scans = sorted(scans, key=lambda x: sum(p.intensity for p in x.peak_set), reverse=True)
     clusters = []
     for scan in scans:
@@ -39,7 +39,7 @@ def cluster_scans(scans):
         best_similarity = 0.0
         for cluster in clusters:
             if abs(ppm_error(scan.precursor_information.neutral_mass,
-                             cluster[0].precursor_information.neutral_mass)) > 1e-5:
+                             cluster[0].precursor_information.neutral_mass)) > precursor_error_tolerance:
                 continue
             similarity = peak_set_similarity(scan, cluster[0])
             if similarity > best_similarity:

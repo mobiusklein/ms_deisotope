@@ -687,9 +687,12 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             The set of IsotopicFitRecord instances produced
         """
         target_peaks = self._get_all_peak_charge_pairs(
-            peak, error_tolerance=error_tolerance, charge_range=charge_range,
-            left_search_limit=left_search_limit, right_search_limit=right_search_limit,
-            use_charge_state_hint=use_charge_state_hint, recalculate_starting_peak=True)
+            peak, error_tolerance=error_tolerance,
+            charge_range=charge_range,
+            left_search_limit=left_search_limit,
+            right_search_limit=right_search_limit,
+            use_charge_state_hint=use_charge_state_hint,
+            recalculate_starting_peak=recalculate_starting_peak)
 
         results = self._fit_peaks_at_charges(
             target_peaks, error_tolerance, charge_carrier=charge_carrier, truncate_after=truncate_after,

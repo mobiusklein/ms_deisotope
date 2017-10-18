@@ -17,7 +17,20 @@ def make_peak_set_test_suite(peak_set_cls, peak_cls):
             assert ps.has_peak(t) is ps[5000]
 
             for peak in ps.all_peaks_for(t):
-                 assert abs((peak.neutral_mass - t) / t) < 1e-5
+                assert abs((peak.neutral_mass - t) / t) < 1e-5
+
+        def test_missing_interval(self):
+            x = np.arange(1000, 1200, 0.5)
+            y = np.ones_like(x)
+
+            peaks = [peak_cls(x[i], y[i], 1, 1, None, 0) for i in range(len(x))]
+            ps = peak_set_cls(peaks)
+            ps.reindex()
+
+            for xi in np.arange(1000, 1200, 0.01):
+                for p in ps.all_peaks_for(xi):
+                    assert abs((xi - p.neutral_mass) / p.neutral_mass) < 1e-5
+
     return TestDeconvolutedPeakSet
 
 
@@ -38,7 +51,6 @@ try:
 except ImportError:
     from ms_deisotope.peak_set import (
         _DeconvolutedPeak, _DeconvolutedPeakSet)
-
 
     TestPythonDeconvolutedPeakSet = make_peak_set_test_suite(_DeconvolutedPeakSet, _DeconvolutedPeak)
 

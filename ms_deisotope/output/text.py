@@ -18,6 +18,7 @@ class TextScanSerializerBase(ScanSerializerBase):
             header_dict['precursor_charge'] = prec_info.extracted_charge
             header_dict['precursor_intensity'] = prec_info.extracted_intensity
             header_dict['precursor_scan_id'] = prec_info.precursor_scan_id
+            header_dict['defaulted'] = prec_info.defaulted
             activation = scan.activation
             if activation:
                 header_dict['precursor_activation_method'] = activation.method
