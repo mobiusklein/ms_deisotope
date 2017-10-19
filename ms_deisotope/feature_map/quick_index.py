@@ -47,7 +47,9 @@ class _Indexer(object):
         return index_chunk(reader, start, end)
 
 
-def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None):
+def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None, task=None):
+    if task is None or not callable(task):
+        raise ValueError("The task must be callable!")
     if scan_interval is None:
         start_scan = 0
         end_scan = len(reader.index)
@@ -59,7 +61,11 @@ def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None)
     pool = multiprocessing.Pool(n_processes)
     scan_ranges = partition_work(n_items, n_chunks, start_scan)
     feeder = ((reader, scan_range[0], scan_range[1]) for scan_range in scan_ranges)
-    return list(pool.imap_unordered(_Indexer(), feeder))
+    result = list(pool.imap_unordered(task, feeder))
+    pool.close()
+    pool.terminate()
+    pool.join()
+    return result
 
 
 def merge_indices(indices):
@@ -78,7 +84,7 @@ def make_interval_tree(intervals):
 
 def index(reader, n_processes=4, scan_interval=None):
     chunks = run_task_in_chunks(
-        reader, n_processes, scan_interval=scan_interval)
+        reader, n_processes, scan_interval=scan_interval, task=_Indexer())
     indices = [chunk[2] for chunk in chunks]
     intervals = [chunk[3] for chunk in chunks]
     index = merge_indices(indices)
