@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict
 from uuid import uuid4
+import warnings
 
 import numpy as np
 
@@ -389,8 +390,8 @@ class MzMLScanSerializer(ScanSerializerBase):
             try:
                 with open(ExtendedScanIndex.index_file_name(name), 'w') as ixfile:
                     self.indexer.serialize(ixfile)
-            except IOError:
-                pass
+            except IOError as e:
+                warnings.warn("Could not write extended index file due to error %r" % (e,))
 
     def format(self):
         try:
