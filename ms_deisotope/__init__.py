@@ -5,7 +5,9 @@ from .averagine import (
     calculate_mass, isotopic_shift)
 from .deconvolution import (
     AveragineDeconvoluter, CompositionListDeconvoluter,
-    AveraginePeakDependenceGraphDeconvoluter, CompositionListPeakDependenceGraphDeconvoluter)
+    AveraginePeakDependenceGraphDeconvoluter,
+    CompositionListPeakDependenceGraphDeconvoluter,
+    deconvolute_peaks)
 from .scoring import MSDeconVFitter, PenalizedMSDeconVFitter, DistinctPatternFitter, IsotopicFitRecord
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSolution
 from .processor import ScanProcessor
