@@ -51,7 +51,9 @@ class ExtendedScanIndex(object):
                 "charge": precursor_information.charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
                 "product_scan_id": product.id,
-                "scan_time": product.scan_time
+                "scan_time": product.scan_time,
+                "defaulted": precursor_information.defaulted,
+                "orphan": precursor_information.orphan
             }
         return package
 
