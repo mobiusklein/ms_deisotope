@@ -2,7 +2,7 @@ import abc
 import warnings
 from collections import namedtuple
 
-from ms_peak_picker import pick_peaks, reprofile
+from ms_peak_picker import pick_peaks, reprofile, average_signal
 from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 
@@ -655,6 +655,87 @@ class Scan(object):
         if self.peak_set is None:
             raise ValueError("Cannot reprofile a scan that has not been centroided")
         return reprofile(self.peak_set, max_fwhm, dx, model_cls)
+
+    def average(self, index_interval=None, rt_interval=None, dx=0.01):
+        if index_interval is None and rt_interval is None:
+            raise ValueError("One of `index_interval` or `rt_interval` must be provided")
+        if self.ms_level > 1:
+            raise ValueError("Cannot average MSn scans at this time")
+        if not self.source:
+            raise ValueError("Can't average an unbound scan")
+        before = []
+        after = []
+        if index_interval is not None:
+            before = []
+            current_index = self.index
+            for i in range(index_interval):
+                next_scan = self.source.find_previous_ms1(current_index)
+                if next_scan is None:
+                    break
+                before.append(next_scan)
+                current_index = next_scan.index
+            before = before[::-1]
+            after = []
+            current_index = self.index
+            for i in range(index_interval):
+                try:
+                    next_scan = self.source.find_next_ms1(current_index)
+                except ValueError:
+                    break
+                if next_scan is None:
+                    break
+                after.append(next_scan)
+                current_index = next_scan.index
+        elif rt_interval is not None:
+            reference_time = self.scan_time
+            before = []
+            current_index = self.index
+            current_time = self.scan_time
+            while abs(reference_time - current_time) < rt_interval and current_index > 0:
+                next_scan = self.source.find_previous_ms1(current_index)
+                if next_scan is None:
+                    break
+                before.append(next_scan)
+                current_index = next_scan.index
+                current_time = next_scan.scan_time
+
+            before = before[::-1]
+
+            after = []
+            current_index = self.index
+            current_time = self.scan_time
+            while abs(reference_time - current_time) < rt_interval and current_index > 0:
+                try:
+                    next_scan = self.source.find_next_ms1(current_index)
+                except ValueError:
+                    break
+                if next_scan is None:
+                    break
+                after.append(next_scan)
+                current_index = next_scan.index
+                current_time = next_scan.scan_time
+        scans = before + [self] + after
+        arrays = []
+        for scan in scans:
+            if scan.is_profile:
+                arrays.append(scan.arrays)
+            else:
+                arrays.append(scan.reprofile(), dx=dx)
+        new_arrays = average_signal(arrays, dx=dx)
+        indices = [scan.index for scan in scans]
+        return AveragedScan(
+            self._data, self.source, new_arrays,
+            indices, list(self.product_scans))
+
+
+class AveragedScan(Scan):
+    def __init__(self, data, source, array_data, scan_indices, product_scans=None):
+        super(AveragedScan, self).__init__(
+            data, source, peak_set=None,
+            deconvoluted_peak_set=None,
+            product_scans=product_scans)
+        self._arrays = array_data
+        self.scan_indices = scan_indices
 
 
 class PrecursorInformation(object):
