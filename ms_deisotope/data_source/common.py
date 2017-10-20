@@ -664,7 +664,8 @@ class Scan(object):
             self.deconvoluted_peak_set,
             self.polarity,
             self.activation,
-            self.acquisition_information)
+            self.acquisition_information,
+            self.isolation_window)
 
     def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
         if self.peak_set is None:
