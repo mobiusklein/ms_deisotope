@@ -3,7 +3,7 @@ import re
 import os
 
 from weakref import WeakValueDictionary
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import logging
 
@@ -12,7 +12,7 @@ import numpy as np
 from ms_deisotope.data_source.common import (
     ScanDataSource, ScanIterator, RandomAccessScanSource,
     Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
-    ActivationInformation)
+    ActivationInformation, IsolationWindow)
 
 from ms_deisotope.utils import Base
 
@@ -128,6 +128,102 @@ def filter_line_parser(line):
 _id_template = "controllerType=0 controllerNumber=1 scan="
 
 
+class _InstrumentMethod(object):
+    def __init__(self, method_text):
+        self.text = method_text
+        (self.isolation_width_by_segment_and_event,
+         self.isolation_width_by_segment_and_ms_level) = method_parser(self.text)
+
+    def isolation_width_for(self, segment, event=None, ms_level=None):
+        if event is not None:
+            try:
+                width = self.isolation_width_by_segment_and_event[segment][event]
+                return width
+            except KeyError:
+                return 0.0
+        elif ms_level is not None:
+            try:
+                width = self.isolation_width_by_segment_and_ms_level[segment][ms_level]
+                return width
+            except KeyError:
+                return 0.0
+        else:
+            raise ValueError("One of event or ms_level must not be None!")
+
+
+def method_parser(method_text):
+    scan_segment_re = re.compile(r"\s*Segment (\d+) Information\s*")
+    scan_event_re = re.compile(r"\s*(\d+):.*")
+    scan_event_isolation_width_re = re.compile(r"\s*Isolation Width:\s*(\S+)\s*")
+    scan_event_iso_w_re = re.compile(r"\s*MS.*:.*\s+IsoW\s+(\S+)\s*")
+    repeated_event_re = re.compile(r"\s*Scan Event (\d+) repeated for top (\d+)\s*")
+    default_isolation_width_re = re.compile(r"\s*MS(\d+) Isolation Width:\s*(\S+)\s*")
+
+    scan_segment = 1
+    scan_event = 0
+    scan_event_details = False
+    data_dependent_settings = False
+
+    isolation_width_by_segment_and_event = defaultdict(dict)
+    isolation_width_by_segment_and_ms_level = defaultdict(dict)
+
+    for line in method_text.splitlines():
+        match = scan_segment_re.match(line)
+
+        if match:
+            scan_segment = int(match.group(1))
+            continue
+
+        if "Scan Event Details" in line:
+            scan_event_details = True
+            continue
+
+        if scan_event_details:
+            match = scan_event_re.match(line)
+            if match:
+                scan_event = int(match.group(1))
+                continue
+
+            match = scan_event_isolation_width_re.match(line)
+            if match:
+                isolation_width_by_segment_and_event[scan_segment][scan_event] = float(match.group(1))
+                continue
+
+            match = scan_event_iso_w_re.match(line)
+            if match:
+                isolation_width_by_segment_and_event[scan_segment][scan_event] = float(match.group(1))
+                continue
+
+            match = repeated_event_re.match(line)
+            if match:
+                repeated_event = int(match.group(1))
+                repeat_count = int(match.group(2))
+                repeated_width = isolation_width_by_segment_and_event[scan_segment][repeated_event]
+                for i in range(repeated_width + 1, repeat_count + repeated_width):
+                    isolation_width_by_segment_and_event[scan_segment][i] = repeated_width
+                continue
+
+            if not line.strip():
+                scan_event_details = False
+
+        if "Data Dependent Settings" in line:
+            data_dependent_settings = True
+            continue
+
+        if data_dependent_settings:
+            match = default_isolation_width_re.match(line)
+            if match:
+                ms_level = int(match.group(1))
+                width = float(match.group(2))
+                isolation_width_by_segment_and_ms_level[scan_segment][ms_level] = width
+                continue
+
+            if not line.strip():
+                data_dependent_settings = False
+
+    return isolation_width_by_segment_and_event, isolation_width_by_segment_and_ms_level
+
+
 class ThermoRawScanPtr(Base):
     def __init__(self, scan_number):
         self.scan_number = scan_number
@@ -238,6 +334,40 @@ class ThermoRawDataInterface(ScanDataSource):
             return ActivationInformation(activation_type, energy)
         return None
 
+    def _get_scan_segment(self, scan):
+        trailer = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        try:
+            return int(trailer['Scan Segment'])
+        except KeyError:
+            return 1
+
+    def _get_scan_event(self, scan):
+        trailer = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        try:
+            return int(trailer['Scan Event'])
+        except KeyError:
+            return 1
+
+    def _isolation_window(self, scan):
+        ms_level = self._ms_level(scan)
+        if ms_level == 1:
+            return None
+        isolation_width = 0
+        trailer = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        try:
+            isolation_width = trailer['MS%d Isolation Width' % ms_level]
+        except KeyError:
+            segment = self._get_scan_segment(scan)
+            event = self._get_scan_event(scan)
+            isolation_width = self._method.isolation_width_for(segment, event=event)
+            if not isolation_width:
+                isolation_width = self._method.isolation_width_for(segment, ms_level=ms_level)
+        if isolation_width == 0:
+            return None
+        isolation_width /= 2.
+        isolation_mz = self._source.GetPrecursorMassForScanNum(scan.scan_number, ms_level)
+        return IsolationWindow(isolation_width, isolation_mz, isolation_width)
+
 
 class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterator):
     def __init__(self, source_file, **kwargs):
@@ -248,6 +378,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         self._index = self._pack_index()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
         self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
+        self._method = _InstrumentMethod(self._source.GetInstMethod())
 
     def __reduce__(self):
         return self.__class__, (self.source_file,)

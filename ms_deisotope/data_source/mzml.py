@@ -4,7 +4,7 @@ from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
     ScanAcquisitionInformation, ScanEventInformation,
-    ScanWindow)
+    ScanWindow, IsolationWindow)
 from weakref import WeakValueDictionary
 from .xml_reader import XMLReaderBase, IndexSavingXML
 
@@ -250,6 +250,25 @@ class MzMLDataInterface(ScanDataSource):
             return ActivationInformation(activation, energy, struct)
         except KeyError:
             return None
+
+    def _isolation_window(self, scan):
+        try:
+            struct = dict(scan['precursorList']['precursor'][0]['isolationWindow'])
+        except KeyError:
+            return None
+        lower = struct.get("isolation window lower offset")
+        target = struct.get('isolation window target m/z')
+        upper = struct.get("isolation window upper offset")
+        if lower is upper is target is None:
+            upper = struct.get("isolation window upper limit")
+            lower = struct.get("isolation window lower limit")
+            if upper is lower is None:
+                return None
+            else:
+                target = (upper - lower) / 2 + lower
+                upper = upper - target
+                lower = target - lower
+        return IsolationWindow(lower, target, upper)
 
     def _acquisition_information(self, scan):
         scan_info = {}

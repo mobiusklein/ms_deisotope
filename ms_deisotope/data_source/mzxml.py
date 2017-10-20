@@ -2,7 +2,7 @@ import numpy as np
 from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanDataSource, ChargeNotProvided,
-    ActivationInformation)
+    ActivationInformation, IsolationWindow)
 from .xml_reader import XMLReaderBase, IndexSavingXML
 from weakref import WeakValueDictionary
 
@@ -230,6 +230,17 @@ class MzXMLDataInterface(ScanDataSource):
         try:
             return ActivationInformation(
                 scan['precursorMz'][0]['activationMethod'], scan['collisionEnergy'])
+        except KeyError:
+            return None
+
+    def _isolation_window(self, scan):
+        try:
+            pinfo_dict = scan['precursorMz'][0]
+            width = float(pinfo_dict['windowWideness'])
+            target = float(pinfo_dict['precursorMz'])
+            lower = width / 2
+            upper = width / 2
+            return IsolationWindow(lower, target, upper)
         except KeyError:
             return None
 

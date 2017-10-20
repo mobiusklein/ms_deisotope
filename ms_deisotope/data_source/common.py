@@ -248,6 +248,9 @@ class ScanDataSource(object):
     def _acquisition_information(self, scan):
         return None
 
+    def _isolation_window(self, scan):
+        return None
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
@@ -462,6 +465,9 @@ class Scan(object):
     activation: ActivationInformation or None
         If this scan is an MS^n scan, this attribute will contain information about the process
         used to produce it from its parent ion.
+    acquisition_information: ScanAcquisitionInformation or None
+        Describes the type of event that produced this scan, as well as the scanning method
+        used.
     """
     def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None):
         if product_scans is None:
@@ -483,6 +489,7 @@ class Scan(object):
         self._polarity = None
         self._activation = None
         self._acquisition_information = None
+        self._isolation_window = None
 
         self.product_scans = product_scans
 
@@ -604,6 +611,14 @@ class Scan(object):
         return self._activation
 
     @property
+    def isolation_window(self):
+        if self.ms_level < 2:
+            return None
+        if self._isolation_window is None:
+            self._isolation_window = self.source._isolation_window(self._data)
+        return self._isolation_window
+
+    @property
     def acquisition_information(self):
         if self._acquisition_information is None:
             self._acquisition_information = self.source._acquisition_information(self._data)
@@ -714,6 +729,8 @@ class Scan(object):
                 after.append(next_scan)
                 current_index = next_scan.index
                 current_time = next_scan.scan_time
+        else:
+            raise ValueError("One of `index_interval` or `rt_interval` must be provided")
         scans = before + [self] + after
         arrays = []
         for scan in scans:
@@ -861,7 +878,7 @@ class PrecursorInformation(object):
 class ProcessedScan(object):
     def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set,
                  deconvoluted_peak_set, polarity=None, activation=None,
-                 acquisition_information=None):
+                 acquisition_information=None, isolation_window=None):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
@@ -873,6 +890,7 @@ class ProcessedScan(object):
         self.polarity = polarity
         self.activation = activation
         self.acquisition_information = acquisition_information
+        self.isolation_window = isolation_window
 
     @property
     def scan_id(self):
@@ -943,6 +961,10 @@ dissociation_methods = {
 
 
 ActivationInformation.dissociation_methods = dissociation_methods
+
+
+class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
+    pass
 
 
 class ScanAcquisitionInformation(object):
