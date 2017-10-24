@@ -122,6 +122,5 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         reader.close()
 
 
-
 if __name__ == '__main__':
     unittest.main()

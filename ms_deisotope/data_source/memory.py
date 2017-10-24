@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from .common import (
     ScanBunch, ScanIterator, ScanDataSource, RandomAccessScanSource,
-    Scan)
+    Scan, ProcessedScan)
 
 try:
     range = xrange
@@ -79,7 +79,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         str
         """
-        raise NotImplementedError()
+        return self._scan_index_map[scan].id
 
     def _scan_index(self, scan):
         """Returns the base 0 offset from the start
@@ -120,7 +120,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         int
         """
-        raise NotImplementedError()
+        return self._scan_index_map[scan].ms_level
 
     def _scan_time(self, scan):
         """Returns the time in minutes from the start of data
@@ -141,13 +141,13 @@ class MemoryScanInterface(ScanDataSource):
     def _is_profile(self, scan):
         """Returns whether the scan contains profile data (`True`)
         or centroided data (`False`).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         bool
@@ -157,13 +157,13 @@ class MemoryScanInterface(ScanDataSource):
     def _polarity(self, scan):
         """Returns whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         int
@@ -175,13 +175,13 @@ class MemoryScanInterface(ScanDataSource):
         produce this scan, if any.
 
         Returns `None` for MS1 scans
-        
+
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
             usually a `dict`
-        
+
         Returns
         -------
         ActivationInformation
@@ -200,6 +200,10 @@ class MemoryScanLoader(MemoryScanInterface, ScanIterator, RandomAccessScanSource
         self._build_indices()
         self.make_iterator()
 
+    @property
+    def _scan_cache(self):
+        return self._scan_id_map
+
     @classmethod
     def build(cls, scans):
         scans = tuple(scans)
@@ -213,11 +217,19 @@ class MemoryScanLoader(MemoryScanInterface, ScanIterator, RandomAccessScanSource
                             yield product
                 return cls.build(generate())
             elif isinstance(scan, Scan):
-                scans = tuple(s.pack() for s in scans)
-            else:
                 scans = tuple(s.clone() for s in scans)
+            elif isinstance(scan, ProcessedScan):
+                scans = tuple(s.clone() for s in scans)
+            else:
+                raise TypeError("Cannot build an in-memory scan source from {}".format(
+                    type(scan)))
         except IndexError:
             raise ValueError("Must pass a non-empty iterable")
+        # This alters the index of the scan while it may still be bound
+        # to another scan source for attribute lookup. At the time of
+        # writing this is needed to properly check bounds on ScanIterator
+        # methods, but may lead to problems if the index is needed to resolve
+        # other attributes.
         for i, scan in enumerate(scans):
             scan.index = i
         return cls(scans)

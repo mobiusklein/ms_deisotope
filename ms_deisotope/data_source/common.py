@@ -2,9 +2,12 @@ import abc
 import warnings
 from collections import namedtuple
 
-from ms_peak_picker import pick_peaks, reprofile, average_signal
+import numpy as np
+
+from ms_peak_picker import pick_peaks, reprofile, average_signal, scan_filter
 from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
+from ..deconvolution import deconvolute_peaks
 
 
 class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
@@ -468,6 +471,8 @@ class Scan(object):
     acquisition_information: ScanAcquisitionInformation or None
         Describes the type of event that produced this scan, as well as the scanning method
         used.
+    isolation_window: IsolationWindow or None:
+        Describes the range of m/z that were isolated from a parent scan to create this scan
     """
     def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None):
         if product_scans is None:
@@ -495,8 +500,10 @@ class Scan(object):
 
     def clone(self):
         dup = self.__class__(
-            self._data, self.source, self.peak_set, self.deconvoluted_peak_set,
-            self.product_scans)
+            self._data, self.source,
+            self.peak_set.clone() if self.peak_set is not None else None,
+            self.deconvoluted_peak_set.clone() if self.deconvoluted_peak_set is not None else None,
+            [s.clone() for s in self.product_scans])
         return dup
 
     def _load(self):
@@ -510,37 +517,6 @@ class Scan(object):
         self.precursor_information
         self.activation
         self.acquisition_information
-
-    def __getitem__(self, key):
-        return self._data[key]
-
-    def __iter__(self):
-        if self.peak_set is None:
-            return iter([])
-        return iter(self.peak_set)
-
-    def has_peak(self, *args, **kwargs):
-        """A wrapper around :meth:`ms_peak_picker.PeakIndex.has_peak` to query the
-        :class:`ms_peak_picker.FittedPeak` objects picked for this scan. If
-        peaks have not yet been picked (e.g. :meth:`pick_peaks` has not been called)
-        this method will return `None`
-
-        Parameters
-        ----------
-        mz: float
-            The m/z to search for
-        error_tolerance: float
-            The parts per million mass error tolerance to use
-
-        Returns
-        -------
-        ms_peak_picker.FittedPeak or None
-            The peak closest to the query m/z within the error tolerance window, or None if not found
-            or if peaks have not yet been picked
-        """
-        if self.peak_set is None:
-            return None
-        return self.peak_set.has_peak(*args, **kwargs)
 
     @property
     def ms_level(self):
@@ -594,6 +570,10 @@ class Scan(object):
             self._index = self.source._scan_index(self._data)
         return self._index
 
+    @index.setter
+    def index(self, value):
+        self._index = value
+
     @property
     def precursor_information(self):
         if self.ms_level < 2:
@@ -629,6 +609,45 @@ class Scan(object):
             self.id, self.index, self.scan_time, self.ms_level,
             ", " + repr(self.precursor_information) if self.precursor_information else '')
 
+    # peak manipulation
+
+    def __iter__(self):
+        if self.peak_set is None:
+            raise ValueError("Cannot iterate over peaks in a scan that has not been "
+                             "centroided. Call `pick_peaks` first.")
+        return iter(self.peak_set)
+
+    def has_peak(self, *args, **kwargs):
+        """A wrapper around :meth:`ms_peak_picker.PeakIndex.has_peak` to query the
+        :class:`ms_peak_picker.FittedPeak` objects picked for this scan.
+
+        Parameters
+        ----------
+        mz: float
+            The m/z to search for
+        error_tolerance: float
+            The parts per million mass error tolerance to use
+
+        Returns
+        -------
+        ms_peak_picker.FittedPeak or None
+            The peak closest to the query m/z within the error tolerance window, or None if not found
+            or if peaks have not yet been picked
+
+        Raises
+        ------
+        ValueError:
+            If the scan has not yet had peaks picked yet
+
+        See Also
+        --------
+        :meth:`.Scan.pick_peaks`
+        """
+        if self.peak_set is None:
+            raise ValueError("Cannot search for peaks in a scan that has not been "
+                             "centroided. Call `pick_peaks` first.")
+        return self.peak_set.has_peak(*args, **kwargs)
+
     def pick_peaks(self, *args, **kwargs):
         """A wrapper around :func:`ms_peak_picker.pick_peaks` which will populate the
         :attr:`peak_set` attribute of this scan.
@@ -655,24 +674,75 @@ class Scan(object):
         self.peak_set = pick_peaks(mzs, intensities, *args, **kwargs)
         return self
 
+    def deconvolute(self, *args, **kwargs):
+        if self.peak_set is None:
+            raise ValueError("Cannot deconvolute a scan that has not been "
+                             "centroided. Call `pick_peaks` first.")
+        decon_results = deconvolute_peaks(self.peak_set, *args, **kwargs)
+        self.deconvoluted_peak_set = decon_results.peak_set
+        return self
+
     def pack(self):
         precursor_info = self.precursor_information
         return ProcessedScan(
             self.id, self.title, precursor_info,
             self.ms_level, self.scan_time, self.index,
-            self.peak_set.pack(),
+            self.peak_set.pack() if self.peak_set is not None else None,
             self.deconvoluted_peak_set,
             self.polarity,
             self.activation,
             self.acquisition_information,
             self.isolation_window)
 
+    # signal transformation
+
     def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
         if self.peak_set is None:
             raise ValueError("Cannot reprofile a scan that has not been centroided")
-        return reprofile(self.peak_set, max_fwhm, dx, model_cls)
+        arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
+        scan = WrappedScan(self._data, self.source, arrays, list(self.product_scans))
+        return scan
 
-    def average(self, index_interval=None, rt_interval=None, dx=0.01):
+    def denoise(self, scale=5.0, window_length=2.0, region_width=10):
+        mzs, intensities = self.arrays
+        mzs = mzs.astype(float)
+        intensities = intensities.astype(float)
+        transform = scan_filter.FTICRBaselineRemoval(
+            window_length=window_length, scale=scale, region_width=region_width)
+        mzs, intensities = transform(mzs, intensities)
+        return WrappedScan(self._data, self.source,
+                           (mzs, intensities), list(self.product_scans))
+
+    def filter(self, filters=None):
+        mzs, intensities = self.arrays
+        mzs = mzs.astype(float)
+        intensities = intensities.astype(float)
+        mzs, intensities = scan_filter.transform(mzs, intensities, filters=filters)
+        return WrappedScan(self._data, self.source,
+                           (mzs, intensities), list(self.product_scans))
+
+    def _average_with(self, scans, dx=0.01, gaussian_smooth=None):
+        scans = [self] + list(scans)
+        arrays = []
+        for scan in scans:
+            if scan.is_profile:
+                arrays.append(scan.arrays)
+            else:
+                arrays.append(scan.reprofile(), dx=dx)
+        if gaussian_smooth:
+            if gaussian_smooth == 1:
+                gaussian_smooth = 0.025
+            weights = self._compute_smoothing_weights(
+                scans, mean=self.scan_time, sigma=gaussian_smooth)
+        else:
+            weights = None
+        new_arrays = average_signal(arrays, dx=dx, weights=weights)
+        indices = [scan.index for scan in scans]
+        return AveragedScan(
+            self._data, self.source, new_arrays,
+            indices, list(self.product_scans))
+
+    def _get_adjacent_scans(self, index_interval=None, rt_interval=None):
         if index_interval is None and rt_interval is None:
             raise ValueError("One of `index_interval` or `rt_interval` must be provided")
         if self.ms_level > 1:
@@ -732,6 +802,16 @@ class Scan(object):
                 current_time = next_scan.scan_time
         else:
             raise ValueError("One of `index_interval` or `rt_interval` must be provided")
+        return before, after
+
+    def _compute_smoothing_weights(self, scans, mean, sigma=0.025):
+        sigma_sqrd_2 = (2 * sigma ** 2)
+        time_array = np.array([s.scan_time for s in scans])
+        weights = np.exp((-(time_array - mean) ** 2) / sigma_sqrd_2)
+        return weights
+
+    def average(self, index_interval=None, rt_interval=None, dx=0.01, gaussian_smooth=None):
+        before, after = self._get_adjacent_scans(index_interval, rt_interval)
         scans = before + [self] + after
         arrays = []
         for scan in scans:
@@ -739,21 +819,52 @@ class Scan(object):
                 arrays.append(scan.arrays)
             else:
                 arrays.append(scan.reprofile(), dx=dx)
-        new_arrays = average_signal(arrays, dx=dx)
+        if gaussian_smooth:
+            if gaussian_smooth == 1:
+                gaussian_smooth = 0.025
+            weights = self._compute_smoothing_weights(
+                scans, mean=self.scan_time, sigma=gaussian_smooth)
+        else:
+            weights = None
+        new_arrays = average_signal(arrays, dx=dx, weights=weights)
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
             indices, list(self.product_scans))
 
 
-class AveragedScan(Scan):
-    def __init__(self, data, source, array_data, scan_indices, product_scans=None):
-        super(AveragedScan, self).__init__(
+class WrappedScan(Scan):
+    def __init__(self, data, source, array_data, product_scans=None):
+        super(WrappedScan, self).__init__(
             data, source, peak_set=None,
             deconvoluted_peak_set=None,
             product_scans=product_scans)
         self._arrays = array_data
+
+    def clone(self):
+        dup = self.__class__(
+            self._data, self.source, self.arrays,
+            [s.clone() for s in self.product_scans])
+        dup.peak_set = self.peak_set.clone()
+        dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
+        return dup
+
+
+class AveragedScan(WrappedScan):
+    def __init__(self, data, source, array_data, scan_indices, product_scans=None):
+        super(AveragedScan, self).__init__(
+            data, source, array_data,
+            product_scans=product_scans)
         self.scan_indices = scan_indices
+
+    def clone(self):
+        dup = self.__class__(
+            self._data, self.source, self.arrays,
+            self.scan_indices,
+            [s.clone() for s in self.product_scans])
+        dup.peak_set = self.peak_set.clone()
+        dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
+        return dup
 
 
 class PrecursorInformation(object):
@@ -922,7 +1033,8 @@ class ProcessedScan(object):
         dup = ProcessedScan(
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
-            self.polarity, self.activation, self.acquisition_information)
+            self.polarity, self.activation, self.acquisition_information,
+            self.isolation_window)
         return dup
 
 
@@ -965,7 +1077,14 @@ ActivationInformation.dissociation_methods = dissociation_methods
 
 
 class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
-    pass
+
+    @property
+    def lower_bound(self):
+        return self.target - self.lower
+
+    @property
+    def upper_bound(self):
+        return self.target + self.upper
 
 
 class ScanAcquisitionInformation(object):

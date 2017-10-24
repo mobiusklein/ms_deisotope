@@ -268,6 +268,8 @@ class MzMLDataInterface(ScanDataSource):
                 target = (upper - lower) / 2 + lower
                 upper = upper - target
                 lower = target - lower
+        elif lower is upper is None:
+            lower = upper = 0.0
         return IsolationWindow(lower, target, upper)
 
     def _acquisition_information(self, scan):

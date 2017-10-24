@@ -29,7 +29,8 @@ from ms_deisotope.data_source.common import (
     Scan,
     ScanBunch,
     PrecursorInformation,
-    ActivationInformation)
+    ActivationInformation,
+    IsolationWindow)
 
 
 try:
@@ -173,6 +174,15 @@ class AgilentDDataInterface(ScanDataSource):
     def _activation(self, scan):
         record = self._get_scan_record(scan)
         return ActivationInformation('cid', record.CollisionEnergy)
+
+    def _isolation_window(self, scan):
+        if self._ms_level(scan) < 2:
+            return None
+        spectrum_obj = self._get_spectrum_obj(scan)
+        n, ions = spectrum_obj.GetPrecursorIon()
+        if n < 1:
+            return None
+        return IsolationWindow(0, ions[0], 0)
 
 
 class _AgilentDDirectory(object):
