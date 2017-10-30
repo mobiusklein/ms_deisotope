@@ -9,7 +9,7 @@ import numpy as np
 cimport numpy as np
 
 from ms_deisotope._c.peak_set cimport (
-    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSet)
+    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSetIndexed)
 from ms_deisotope._c.averagine cimport neutral_mass
 
 
@@ -48,7 +48,7 @@ cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
 
 
 @cython.boundscheck(False)
-cpdef DeconvolutedPeakSet deserialize_deconvoluted_peak_set(dict scan_dict):
+cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dict):
     cdef:
         list envelopes, peaks
         np.ndarray[np.float32_t] mz_array
@@ -59,7 +59,7 @@ cpdef DeconvolutedPeakSet deserialize_deconvoluted_peak_set(dict scan_dict):
         double mz, peak_neutral_mass
         int charge
         DeconvolutedPeak peak
-        DeconvolutedPeakSet peak_set
+        DeconvolutedPeakSetIndexed peak_set
 
     peaks = []
     envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
@@ -82,6 +82,6 @@ cpdef DeconvolutedPeakSet deserialize_deconvoluted_peak_set(dict scan_dict):
             mz,
             <Envelope>PyList_GET_ITEM(envelopes, i))
         peaks.append(peak)
-    peak_set = DeconvolutedPeakSet(peaks)
+    peak_set = DeconvolutedPeakSetIndexed(peaks)
     peak_set.reindex()
     return peak_set

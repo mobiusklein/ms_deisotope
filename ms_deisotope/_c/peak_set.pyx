@@ -439,6 +439,9 @@ cdef class DeconvolutedPeakSet:
     cdef DeconvolutedPeak getitem(self, size_t i):
         return <DeconvolutedPeak>PyTuple_GET_ITEM(self.peaks, i)
 
+    cdef tuple getslice(self, size_t start, size_t end):
+        return <tuple>PyTuple_GetSlice(self.peaks, start, end)        
+
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
         cdef:
             double lo, hi, lo_err, hi_err
@@ -891,3 +894,12 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         if status != 0:
             return ()
         return <tuple>PyTuple_GetSlice(self.peaks, start, end)
+
+    cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) nogil:
+        cdef:
+            int status
+            size_t n
+        n = self._size
+        status = _binary_search_interval(
+            self.neutral_mass_array, neutral_mass, tolerance, n, start, end)
+        return status

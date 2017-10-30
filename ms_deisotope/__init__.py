@@ -14,6 +14,13 @@ from .processor import ScanProcessor
 from .data_source import MzMLLoader, MzXMLLoader, MSFileLoader
 
 
+def get_include():
+    import os
+    return os.path.join(
+        os.path.dirname(__file__),
+        "_c")
+
+
 __all__ = [
     "Averagine", 'peptide', 'glycan', 'glycopeptide', 'heparin', "heparan_sulfate",
     "permethylated_glycan",

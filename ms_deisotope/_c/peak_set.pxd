@@ -80,6 +80,10 @@ cdef class DeconvolutedPeakSet(object):
     cdef size_t get_size(self)
 
     cdef DeconvolutedPeak getitem(self, size_t i)
+    cdef tuple getslice(self, size_t start, size_t end)
+
+
+cdef int _binary_search_interval(double* array, double target, double error_tolerance, size_t n, size_t* start, size_t* end) nogil
 
 
 cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
@@ -89,4 +93,4 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         size_t _size
 
     cdef void _build_index_arrays(self)
-
+    cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) nogil
