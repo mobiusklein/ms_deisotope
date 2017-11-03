@@ -322,7 +322,7 @@ class ThermoRawDataInterface(ScanDataSource):
             charge = ChargeNotProvided
         pinfo = PrecursorInformation(
             mz, intensity, charge, _make_id(precursor_scan_number),
-            0, 0, 0,
+            source=self,
             product_scan_id=_make_id(scan.scan_number))
         return pinfo
 
