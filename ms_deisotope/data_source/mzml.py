@@ -6,7 +6,7 @@ from .common import (
     ScanAcquisitionInformation, ScanEventInformation,
     ScanWindow, IsolationWindow)
 from weakref import WeakValueDictionary
-from .xml_reader import XMLReaderBase, IndexSavingXML
+from .xml_reader import XMLReaderBase, IndexSavingXML, iterparse_until
 
 
 class _MzMLParser(mzml.MzML, IndexSavingXML):
@@ -314,11 +314,52 @@ def _find_section(source, section):
 
 
 class _MzMLMetadataLoader(object):
+
+    def _collect_reference_groups(self):
+        params = next(iterparse_until(self._source, "referenceableParamGroupList", "run"))
+        self.reset()
+        if params is None:
+            return {}
+        params = self._source._get_info_smart(params)
+        param_groups = params.get("referenceableParamGroup", [])
+        by_id = {
+            g.pop('id'): g for g in param_groups
+        }
+        return by_id
+
     def file_description(self):
         return _find_section(self._source, "fileDescription")
 
     def instrument_configuration(self):
-        return _find_section(self._source, "instrumentConfigurationList")
+        instrument_info_list = _find_section(self._source, "instrumentConfigurationList").get(
+            "instrumentConfiguration", [{}])
+        out = []
+        for instrument_info in instrument_info_list:
+            if "referenceableParamGroupRef" in instrument_info:
+                reference_params = self._collect_reference_groups()
+                for group in instrument_info.pop('referenceableParamGroupRef', []):
+                    param_group = reference_params[group['ref']]
+                    instrument_info.update(param_group)
+            out.append(instrument_info)
+        return out
+
+    def analyzer_type(self, instrument_config=None):
+        if instrument_config is None:
+            config = self.instrument_configuration()
+            if not config:
+                return
+            config = config[0]
+        else:
+            config = instrument_config
+            if not config:
+                return []
+        analyzers = config.get("componentList", {}).get("analyzer", [])
+
+        return analyzers
+
+    def software_list(self):
+        softwares = _find_section(self._source, "softwareList")
+        return softwares
 
     def data_processing(self):
         return _find_section(self._source, "dataProcessingList")

@@ -300,6 +300,19 @@ def get_tag_attributes(source, tag_name):
     return None
 
 
+def iterparse_until(source, target_name, quit_name):
+    g = etree.iterparse(source, ('start', 'end'))
+    for event, tag in g:
+        if event == 'start':
+            if xml._local_name(tag) == quit_name:
+                break
+            else:
+                if xml._local_name(tag) == target_name:
+                    yield tag
+                else:
+                    tag.clear()
+
+
 def test_gzipped(f):
     if isinstance(f, basestring):
         f = io.open(f, 'rb')
