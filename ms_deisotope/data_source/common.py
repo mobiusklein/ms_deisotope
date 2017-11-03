@@ -721,7 +721,7 @@ class Scan(object):
         return WrappedScan(self._data, self.source,
                            (mzs, intensities), list(self.product_scans))
 
-    def _average_with(self, scans, dx=0.01, gaussian_smooth=None):
+    def _average_with(self, scans, dx=0.01, weight_sigma=None):
         scans = [self] + list(scans)
         arrays = []
         for scan in scans:
@@ -729,11 +729,11 @@ class Scan(object):
                 arrays.append(scan.arrays)
             else:
                 arrays.append(scan.reprofile(), dx=dx)
-        if gaussian_smooth:
-            if gaussian_smooth == 1:
-                gaussian_smooth = 0.025
+        if weight_sigma:
+            if weight_sigma == 1:
+                weight_sigma = 0.025
             weights = self._compute_smoothing_weights(
-                scans, mean=self.scan_time, sigma=gaussian_smooth)
+                scans, mean=self.scan_time, sigma=weight_sigma)
         else:
             weights = None
         new_arrays = average_signal(arrays, dx=dx, weights=weights)
@@ -810,7 +810,7 @@ class Scan(object):
         weights = np.exp((-(time_array - mean) ** 2) / sigma_sqrd_2)
         return weights
 
-    def average(self, index_interval=None, rt_interval=None, dx=0.01, gaussian_smooth=None):
+    def average(self, index_interval=None, rt_interval=None, dx=0.01, weight_sigma=None):
         before, after = self._get_adjacent_scans(index_interval, rt_interval)
         scans = before + [self] + after
         arrays = []
@@ -819,11 +819,11 @@ class Scan(object):
                 arrays.append(scan.arrays)
             else:
                 arrays.append(scan.reprofile(), dx=dx)
-        if gaussian_smooth:
-            if gaussian_smooth == 1:
-                gaussian_smooth = 0.025
+        if weight_sigma:
+            if weight_sigma == 1:
+                weight_sigma = 0.025
             weights = self._compute_smoothing_weights(
-                scans, mean=self.scan_time, sigma=gaussian_smooth)
+                scans, mean=self.scan_time, sigma=weight_sigma)
         else:
             weights = None
         new_arrays = average_signal(arrays, dx=dx, weights=weights)
@@ -911,6 +911,15 @@ class PrecursorInformation(object):
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
                  peak=None, extracted_peak=None, defaulted=False, orphan=False,
                  product_scan_id=None):
+        try:
+            charge = int(charge)
+        except Exception:
+            pass
+        try:
+            extracted_charge = int(extracted_charge)
+        except Exception:
+            pass
+
         self.mz = mz
         self.intensity = intensity
         self.charge = charge
