@@ -40,6 +40,8 @@ except ImportError:  # pragma: no cover
 
 @register_type_guesser
 def guess_type_from_path(file_path):
+    if hasattr(file_path, 'name'):
+        file_path = file_path.name
     ext = os.path.splitext(file_path)[1].lower()
     if ext == '.mzml':
         return MzMLLoader
@@ -66,7 +68,7 @@ def guess_type(file_path):
         try:
             reader_type = guesser(file_path)
             return reader_type
-        except (ValueError, IOError, ImportError):
+        except (ValueError, IOError, ImportError, TypeError, AttributeError):
             continue
     raise ValueError("Cannot determine ScanLoader type")
 
