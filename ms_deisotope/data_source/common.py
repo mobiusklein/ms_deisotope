@@ -697,8 +697,10 @@ class Scan(object):
     # signal transformation
 
     def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
-        if self.peak_set is None:
+        if self.peak_set is None and self.is_profile:
             raise ValueError("Cannot reprofile a scan that has not been centroided")
+        elif self.peak_set is None and not self.is_profile:
+            self.pick_peaks()
         arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
         scan = WrappedScan(self._data, self.source, arrays, list(self.product_scans))
         return scan
