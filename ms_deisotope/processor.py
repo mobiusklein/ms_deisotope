@@ -278,58 +278,6 @@ class ScanProcessor(Base):
         -------
         PeakSet
         """
-        # chosen_envelopes = self._get_envelopes(precursor_scan)
-        # before = []
-        # starting_index = precursor_scan.index
-        # for i in range(self.ms1_averaging):
-        #     prev_ms1 = self._get_previous_ms1(starting_index)
-        #     if prev_ms1 is not None:
-        #         before.append(prev_ms1)
-        #         starting_index = prev_ms1.index
-        #     else:
-        #         break
-        # after = []
-        # starting_index = precursor_scan.index
-        # for i in range(self.ms1_averaging):
-        #     try:
-        #         next_ms1 = self._get_next_ms1(starting_index)
-        #     except ValueError:
-        #         break
-        #     if next_ms1 is not None:
-        #         after.append(next_ms1)
-        #         starting_index = next_ms1.index
-        #     else:
-        #         break
-        # # if we've reached the end of the file, the after list
-        # # may not be populated. If it's empty, we don't need to
-        # # reset the iterator, otherwise, we need to ensure that
-        # # the underlying file iterator will start from the next
-        # # ms1 scan.
-        # #
-        # # This is because pyteomics's parsers will close the file
-        # # after exausting their iterator.
-        # if after:
-        #     self.start_from_scan(scan_id=after[0].id)
-        # array_data = []
-        # for scan in before:
-        #     if scan.is_profile:
-        #         array_data.append(scan.arrays)
-        #     else:
-        #         _peaks = self._pick_precursor_scan_peaks(scan, chosen_envelopes)
-        #         array_data.append(reprofile(_peaks))
-        # if precursor_scan.is_profile:
-        #     array_data.append(precursor_scan.arrays)
-        # else:
-        #     _peaks = self._pick_precursor_scan_peaks(precursor_scan, chosen_envelopes)
-        #     array_data.append(reprofile(_peaks))
-
-        # for scan in after:
-        #     if scan.is_profile:
-        #         array_data.append(scan.arrays)
-        #     else:
-        #         _peaks = self._pick_precursor_scan_peaks(scan, chosen_envelopes)
-        #         array_data.append(reprofile(_peaks))
-        # averaged_mz, averaged_intensity = average_signal(array_data)
         new_scan = precursor_scan.average(self.ms1_averaging)
         prec_peaks = pick_peaks(*new_scan.arrays,
                                 target_envelopes=self._get_envelopes(precursor_scan),
