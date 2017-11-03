@@ -730,7 +730,7 @@ class Scan(object):
             if scan.is_profile:
                 arrays.append(scan.arrays)
             else:
-                arrays.append(scan.reprofile(), dx=dx)
+                arrays.append(scan.reprofile(dx=dx).arrays)
         if weight_sigma:
             if weight_sigma == 1:
                 weight_sigma = 0.025
@@ -820,7 +820,7 @@ class Scan(object):
             if scan.is_profile:
                 arrays.append(scan.arrays)
             else:
-                arrays.append(scan.reprofile(), dx=dx)
+                arrays.append(scan.reprofile(dx=dx).arrays)
         if weight_sigma:
             if weight_sigma == 1:
                 weight_sigma = 0.025
