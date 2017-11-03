@@ -1,4 +1,6 @@
 import json
+import io
+import gzip
 import os
 
 from weakref import WeakValueDictionary
@@ -30,6 +32,10 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         cache.
         """
         self._source.reset()
+        try:
+            self.source.seek(0)
+        except (IOError, AttributeError):
+            pass
         self.make_iterator(None)
         self._scan_cache = WeakValueDictionary()
 
@@ -292,3 +298,29 @@ def get_tag_attributes(source, tag_name):
         else:
             tag.clear()
     return None
+
+
+def test_gzipped(f):
+    if isinstance(f, basestring):
+        f = io.open(f, 'rb')
+    current = f.tell()
+    f.seek(0)
+    magic = f.read(2)
+    f.seek(current)
+    return magic != br'\037\213'
+
+
+DEFAULT_BUFFER_SIZE = int(2e6)
+
+
+def get_opener(f, buffer_size=None):
+    if buffer_size is None:
+        buffer_size = DEFAULT_BUFFER_SIZE
+    if not hasattr(f, 'read'):
+        f = io.open(f, 'rb')
+    buffered_reader = io.BufferedReader(f, buffer_size)
+    if test_gzipped(f):
+        handle = gzip.GzipFile(fileobj=buffered_reader, mode='rb')
+    else:
+        handle = buffered_reader
+    return handle
