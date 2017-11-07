@@ -6,11 +6,68 @@ from collections import OrderedDict
 
 try:
     from ms_peak_picker.utils import draw_peaklist, draw_raw
-    from matplotlib import pyplot as plt
+    from matplotlib import pyplot as plt, gridspec
     has_plot = True
+
+    def annotate_scan(scan, products, nperrow=4, ax=None):
+        if ax is None:
+            figure = plt.figure()
+        else:
+            figure = ax.figure
+        n = len(products)
+        gs = gridspec.GridSpec(1 + (n / nperrow), nperrow)
+        ax = figure.add_subplot(gs[0, :])
+        draw_raw(scan.arrays, ax=ax)
+        if scan.peak_set is None:
+            scan.pick_peaks()
+        draw_peaklist(scan.peak_set, ax=ax)
+        if scan.deconvoluted_peak_set:
+            draw_peaklist(scan.deconvoluted_peak_set, ax=ax)
+        ax.set_title(scan.id)
+        k = -1
+        for i in range(n / nperrow):
+            for j in range(nperrow):
+                k += 1
+                product_scan = products[k]
+                ax = figure.add_subplot(gs[i + 1, j])
+                draw_raw(scan.arrays, ax=ax, alpha=0.8)
+                pinfo = product_scan.precursor_information
+                lower, upper = (product_scan.isolation_window.lower_bound - 2,
+                                product_scan.isolation_window.upper_bound + 2)
+                peak = max(scan.peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
+                if pinfo.extracted_charge != 0:
+                    target_mz = pinfo.extracted_mz
+                else:
+                    target_mz = pinfo.mz
+
+                draw_peaklist(scan.peak_set, ax=ax)
+                if scan.deconvoluted_peak_set:
+                    draw_peaklist(
+                        scan.deconvoluted_peak_set.between(
+                            lower - 1.2, upper + 1.2, use_mz=True),
+                        ax=ax, alpha=0.9, color='blue')
+
+                ax.set_ylim(0, peak.intensity * 1.25)
+                ax.set_xlim(lower, upper)
+                ax.vlines(target_mz, 0, pinfo.intensity * 1.5, alpha=0.75, color='red')
+                ax.vlines(product_scan.isolation_window.lower_bound, 0,
+                          pinfo.intensity * 1.5, linestyle='--', alpha=0.5)
+                ax.vlines(product_scan.isolation_window.upper_bound, 0,
+                          pinfo.intensity * 1.5, linestyle='--', alpha=0.5)
+                ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                ax.set_ylabel("")
+                ax.set_xlabel("")
+                ax.set_title("%0.3f @ %d" % (pinfo.mz, pinfo.charge))
+        fig = ax.figure
+        fig.set_figheight(fig.get_figheight() * 2)
+        fig.tight_layout()
+        return ax
 
 except (RuntimeError, ImportError):
     has_plot = False
+
+    def annotate_scan(scan, products, nperrow=4, ax=None):
+        raise ImportError('matplotlib')
 
 from six import add_metaclass
 

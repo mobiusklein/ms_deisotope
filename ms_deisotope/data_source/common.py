@@ -4,10 +4,18 @@ from collections import namedtuple
 
 import numpy as np
 
-from ms_peak_picker import pick_peaks, reprofile, average_signal, scan_filter
+from ms_peak_picker import (
+    pick_peaks, reprofile, average_signal, scan_filter)
+from ms_peak_picker import PeakIndex
 from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 from ..deconvolution import deconvolute_peaks
+
+try:
+    from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors
+    has_plot = True
+except Exception:
+    has_plot = False
 
 
 class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
@@ -27,6 +35,17 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
 
     def get_scan_by_id(self, scan_id):
         return self._id_map[scan_id]
+
+    def annotate_precursors(self, nperrow=4, ax=None):
+        return _annotate_precursors(
+            self.precursor, self.products, nperrow=nperrow, ax=ax)
+
+
+class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
+
+    def plot(self, *args, **kwargs):
+        ax = draw_raw(self, *args, **kwargs)
+        return ax
 
 
 def _repr_pretty_(scan_bunch, p, cycle):  # pragma: no cover
@@ -262,6 +281,9 @@ class ScanIterator(ScanDataSource):
     class to treat the object as an iterator over the underlying
     data file.
     """
+
+    iteration_mode = 'single'
+
     @abc.abstractmethod
     def next(self):
         raise NotImplementedError()
@@ -284,8 +306,10 @@ class ScanIterator(ScanDataSource):
     def make_iterator(self, iterator=None, grouped=True):
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
+            self.iteration_mode = 'group'
         else:
             self._producer = self._single_scan_iterator(iterator)
+            self.iteration_mode = 'single'
 
     def _single_scan_iterator(self, iterator=None):
         if iterator is None:
@@ -545,7 +569,7 @@ class Scan(object):
     @property
     def arrays(self):
         if self._arrays is None:
-            self._arrays = self.source._scan_arrays(self._data)
+            self._arrays = RawDataArrays(*self.source._scan_arrays(self._data))
         return self._arrays
 
     @property
@@ -664,6 +688,9 @@ class Scan(object):
         self
         """
         mzs, intensities = self.arrays
+        if len(mzs) == 0:
+            self.peak_set = PeakIndex(mzs, intensities, [])
+            return self
         if self.is_profile:
             peak_mode = 'profile'
         else:

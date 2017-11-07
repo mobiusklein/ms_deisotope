@@ -1,7 +1,6 @@
 import logging
 
-from ms_peak_picker import (
-    pick_peaks, reprofile, average_signal)
+from ms_peak_picker import pick_peaks
 
 from .deconvolution import deconvolute_peaks
 from .data_source.infer_type import MSFileLoader
@@ -225,44 +224,6 @@ class ScanProcessor(Base):
                                     target_envelopes=chosen_envelopes,
                                     **self.ms1_peak_picking_args)
         return prec_peaks
-
-    def _get_previous_ms1(self, starting_index):
-        """Get the MS1 scan that preceeds starting_index
-
-        Parameters
-        ----------
-        starting_index : int
-            The scan index to start the search from
-
-        Returns
-        -------
-        Scan
-        """
-        try:
-            return self._ms1_index_cache[(starting_index, -1)]
-        except KeyError:
-            scan = self._signal_source.find_previous_ms1(starting_index)
-            self._ms1_index_cache[(starting_index, -1)] = scan
-            return scan
-
-    def _get_next_ms1(self, starting_index):
-        """Find the next MS1 scan that follows after starting_index
-
-        Parameters
-        ----------
-        starting_index : int
-            The index to star the search from
-
-        Returns
-        -------
-        Scan
-        """
-        try:
-            return self._ms1_index_cache[(starting_index, 1)]
-        except KeyError:
-            scan = self._signal_source.find_next_ms1(starting_index)
-            self._ms1_index_cache[(starting_index, 1)] = scan
-            return scan
 
     def _average_ms1(self, precursor_scan):
         """Average signal from :attr:`self.ms1_averaging` scans from

@@ -387,7 +387,7 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def __init__(self, source_file, use_index=True):
         self.source_file = source_file
         self._source = _MzMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
-        self._producer = self._scan_group_iterator()
+        self.make_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
 

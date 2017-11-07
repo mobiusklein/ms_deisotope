@@ -39,12 +39,6 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         self.make_iterator(None)
         self._scan_cache = WeakValueDictionary()
 
-    def make_iterator(self, iterator=None, grouped=True):
-        if grouped:
-            self._producer = self._scan_group_iterator(iterator)
-        else:
-            self._producer = self._single_scan_iterator(iterator)
-
     def _validate(self, scan):
         raise NotImplementedError()
 

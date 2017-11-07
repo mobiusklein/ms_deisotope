@@ -107,7 +107,7 @@ nice_color_cycle = cycle(_nice_color_cycle)
 
 
 def random_colorizer(profile, *args, **kwargs):
-    return mcolors.rgb2hex(np.random.rand(3.))
+    return mcolors.rgb2hex(np.random.rand(3))
 
 
 def nice_colorizer(profile, *args, **kwargs):
