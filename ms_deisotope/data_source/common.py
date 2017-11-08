@@ -729,7 +729,9 @@ class Scan(object):
         elif self.peak_set is None and not self.is_profile:
             self.pick_peaks()
         arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
-        scan = WrappedScan(self._data, self.source, arrays, list(self.product_scans))
+        scan = WrappedScan(
+            self._data, self.source, arrays,
+            list(self.product_scans), is_profile=True)
         return scan
 
     def denoise(self, scale=5.0, window_length=2.0, region_width=10):
@@ -748,7 +750,8 @@ class Scan(object):
         intensities = intensities.astype(float)
         mzs, intensities = scan_filter.transform(mzs, intensities, filters=filters)
         return WrappedScan(self._data, self.source,
-                           (mzs, intensities), list(self.product_scans))
+                           (mzs, intensities), list(self.product_scans),
+                           is_profile=True)
 
     def _average_with(self, scans, dx=0.01, weight_sigma=None):
         scans = [self] + list(scans)
@@ -769,7 +772,7 @@ class Scan(object):
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
-            indices, list(self.product_scans))
+            indices, list(self.product_scans), is_profile=True)
 
     def _get_adjacent_scans(self, index_interval=None, rt_interval=None):
         if index_interval is None and rt_interval is None:
@@ -859,38 +862,59 @@ class Scan(object):
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
-            indices, list(self.product_scans))
+            indices, list(self.product_scans), is_profile=True)
 
 
 class WrappedScan(Scan):
-    def __init__(self, data, source, array_data, product_scans=None):
+    overridable_keys = [
+        "_arrays",
+        "_id",
+        "_title",
+        "_ms_level",
+        "_scan_time",
+        "_precursor_information",
+        "_index",
+        "_is_profile",
+        "_polarity",
+        "_activation",
+        "_acquisition_information",
+        "_isolation_window"
+    ]
+
+    def __init__(self, data, source, array_data, product_scans=None, **overrides):
         super(WrappedScan, self).__init__(
             data, source, peak_set=None,
             deconvoluted_peak_set=None,
             product_scans=product_scans)
         self._arrays = array_data
+        self._overrides = overrides
+        for key, value in overrides.items():
+            if not key.startswith("_"):
+                key = "_" + key
+            if key in self.overridable_keys:
+                setattr(self, key, value)
 
     def clone(self):
         dup = self.__class__(
             self._data, self.source, self.arrays,
-            [s.clone() for s in self.product_scans])
+            [s.clone() for s in self.product_scans], **self._overrides)
         dup.peak_set = self.peak_set.clone()
         dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
         return dup
 
 
 class AveragedScan(WrappedScan):
-    def __init__(self, data, source, array_data, scan_indices, product_scans=None):
+    def __init__(self, data, source, array_data, scan_indices, product_scans=None, **overrides):
         super(AveragedScan, self).__init__(
             data, source, array_data,
-            product_scans=product_scans)
+            product_scans=product_scans, **overrides)
         self.scan_indices = scan_indices
 
     def clone(self):
         dup = self.__class__(
             self._data, self.source, self.arrays,
             self.scan_indices,
-            [s.clone() for s in self.product_scans])
+            [s.clone() for s in self.product_scans], **self._overrides)
         dup.peak_set = self.peak_set.clone()
         dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
         return dup
