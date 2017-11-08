@@ -1,7 +1,7 @@
 import os
 from .mzml import MzMLLoader
 from .mzxml import MzXMLLoader
-
+from .mgf import MGFLoader
 
 guessers = []
 reader_types = [MzMLLoader, MzXMLLoader]
@@ -47,6 +47,8 @@ def guess_type_from_path(file_path):
         return MzMLLoader
     elif ext == '.mzxml':
         return MzXMLLoader
+    elif ext == '.mgf':
+        return MGFLoader
     else:
         raise ValueError("Cannot determine ScanLoader type from file path")
 
@@ -59,6 +61,8 @@ def guess_type_from_file_sniffing(file_path):
             return MzMLLoader
         elif b"mzXML" in header:
             return MzXMLLoader
+        elif b"BEGIN IONS" in header:
+            return MGFLoader
         else:
             raise ValueError("Cannot determine ScanLoader type from header")
 
