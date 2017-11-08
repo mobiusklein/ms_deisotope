@@ -123,9 +123,9 @@ class MGFInterface(ScanDataSource):
         return self._index[self._scan_title(scan)]
 
 
-def chunk_mgf(path, read_size=1000000):
+def chunk_mgf(path, encoding='latin-1', read_size=1000000):
     with open(path, 'rb') as fh:
-        delim = b"BEGIN IONS"
+        delim = "BEGIN IONS".encode(encoding)
         pattern = re.compile(delim)
         buff = fh.read(read_size)
         parts = pattern.split(buff)
@@ -160,26 +160,26 @@ def chunk_mgf(path, read_size=1000000):
         yield delim + tail
 
 
-def index_mgf(path, read_size=1000000):
-    gen = chunk_mgf(path, read_size)
+def index_mgf(path, encoding='latin-1', read_size=1000000):
+    gen = chunk_mgf(path, encoding, read_size)
     i = 0
     index = OrderedDict()
-    pattern = re.compile(b"TITLE=([^\n]+)\n")
+    pattern = re.compile("TITLE=([^\n]+)\n".encode(encoding))
     for chunk in gen:
         match = pattern.search(chunk)
         if match:
             title = match.group(1)
-            index[title] = i
+            index[title.decode(encoding)] = i
         i += len(chunk)
     return index
 
 
 class MGFLoader(MGFInterface, ScanIterator):
 
-    def __init__(self, source_file):
+    def __init__(self, source_file, encoding='latin-1'):
         self.source_file = source_file
-        self._index = index_mgf(source_file)
-        self._source = mgf.read(source_file, read_charges=False, convert_arrays=1)
+        self._index = index_mgf(source_file, encoding=encoding)
+        self._source = mgf.read(source_file, read_charges=False, convert_arrays=1, encoding=encoding)
         self._scan_cache = WeakValueDictionary()
         self.make_iterator()
 
