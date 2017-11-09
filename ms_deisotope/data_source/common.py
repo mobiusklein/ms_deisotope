@@ -1150,6 +1150,14 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     def upper_bound(self):
         return self.target + self.upper
 
+    def __contains__(self, x):
+        return self.lower_bound <= x <= self.upper_bound
+
+    def is_empty(self):
+        if self.lower is None:
+            return self.upper is None
+        return self.lower == self.upper == 0.0
+
 
 class ScanAcquisitionInformation(object):
     def __init__(self, combination, scan_list):

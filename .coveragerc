@@ -4,6 +4,7 @@ omit =
     */_vendor/*
     */feature_map/*
     */peak_set_averaging/*
+    */output/db.py
 
 [report]
 # Regexes for lines to exclude from consideration

@@ -129,7 +129,7 @@ class ScanProcessor(Base):
     pick_only_tandem_envelopes : bool
         Whether or not to process whole MS^1 scans or just the regions around those peaks
         chosen for MS^n
-    precursor_selection_window : float
+    default_precursor_ion_selection_window : float
         Size of the selection window to use when `pick_only_tandem_envelopes` is `True`
         and the information is not available in the scan.
     trust_charge_hint : bool
@@ -142,7 +142,7 @@ class ScanProcessor(Base):
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
-                 pick_only_tandem_envelopes=False, precursor_selection_window=1.5,
+                 pick_only_tandem_envelopes=False, default_precursor_ion_selection_window=1.5,
                  trust_charge_hint=True,
                  loader_type=None,
                  envelope_selector=None,
@@ -159,7 +159,7 @@ class ScanProcessor(Base):
         self.msn_deconvolution_args = msn_deconvolution_args or {}
         self.msn_deconvolution_args.setdefault("charge_range", (1, 8))
         self.pick_only_tandem_envelopes = pick_only_tandem_envelopes
-        self.precursor_selection_window = precursor_selection_window
+        self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
         self.trust_charge_hint = trust_charge_hint
         self.ms1_averaging = int(ms1_averaging) if ms1_averaging else 0
 
@@ -170,6 +170,15 @@ class ScanProcessor(Base):
         self.terminate_on_error = terminate_on_error
 
         self._ms1_index_cache = LRUDict(maxsize=self.ms1_averaging * 2 + 2)
+
+    def _reject_candidate_precursor_peak(self, peak, product_scan):
+        isolation = product_scan.isolation_window
+        if isolation.is_empty():
+            pinfo = product_scan.precursor_information
+            err = peak.mz - pinfo.mz
+            return abs(err) > self.default_precursor_ion_selection_window
+        else:
+            return peak.mz not in isolation
 
     @property
     def reader(self):
@@ -288,7 +297,7 @@ class ScanProcessor(Base):
             peak, err = peaks.get_nearest_peak(precursor_ion.mz)
             precursor_ion.peak = peak
             target = PriorityTarget(peak, precursor_ion, self.trust_charge_hint)
-            if abs(err) > self.precursor_selection_window:
+            if self._reject_candidate_precursor_peak(peak, scan):
                 logger.info(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
                         precursor_ion, scan.title,
@@ -331,7 +340,7 @@ class ScanProcessor(Base):
                 peak, precursor_ion, self.trust_charge_hint,
                 scan.precursor_information.precursor_scan_id,
                 scan.precursor_information.product_scan_id)
-            if abs(err) > self.precursor_selection_window:
+            if self._reject_candidate_precursor_peak(peak, scan):
                 logger.info(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
                         precursor_ion, scan.id,
@@ -364,10 +373,11 @@ class ScanProcessor(Base):
                 precursor_scan.peak_set, priority_list=priorities,
                 **ms1_deconvolution_args)
         except NoIsotopicClustersError as e:
-            logger.info("No isotopic clusters found in %r" % precursor_scan.id)
             e.scan_id = precursor_scan.id
             if self.terminate_on_error:
                 raise e
+            else:
+                logger.warn("No isotopic clusters found in %r" % precursor_scan.id)
 
         dec_peaks, priority_results = decon_result
 

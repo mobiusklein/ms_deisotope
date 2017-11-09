@@ -195,6 +195,10 @@ class MGFLoader(MGFInterface, ScanIterator):
     def source(self):
         return self._source
 
+    @property
+    def index(self):
+        return self._index
+
     def close(self):
         self._source.close()
 
