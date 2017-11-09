@@ -40,7 +40,7 @@ try:
                 else:
                     target_mz = pinfo.mz
 
-                draw_peaklist(scan.peak_set, ax=ax)
+                draw_peaklist(scan.peak_set, ax=ax, alpha=0.5, lw=0.5)
                 if scan.deconvoluted_peak_set:
                     draw_peaklist(
                         scan.deconvoluted_peak_set.between(
@@ -49,15 +49,20 @@ try:
 
                 ax.set_ylim(0, peak.intensity * 1.25)
                 ax.set_xlim(lower, upper)
-                ax.vlines(target_mz, 0, pinfo.intensity * 1.5, alpha=0.75, color='red')
+                upper_intensity = peak.intensity
+                ax.vlines(target_mz, 0, upper_intensity * 1.5, alpha=0.75, color='red')
                 ax.vlines(product_scan.isolation_window.lower_bound, 0,
-                          pinfo.intensity * 1.5, linestyle='--', alpha=0.5)
+                          upper_intensity * 1.5, linestyle='--', alpha=0.5)
                 ax.vlines(product_scan.isolation_window.upper_bound, 0,
-                          pinfo.intensity * 1.5, linestyle='--', alpha=0.5)
+                          upper_intensity * 1.5, linestyle='--', alpha=0.5)
                 ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
                 ax.set_ylabel("")
                 ax.set_xlabel("")
-                ax.set_title("%0.3f @ %d" % (pinfo.mz, pinfo.charge))
+                if pinfo.charge == "ChargeNotProvided":
+                    charge = 0
+                else:
+                    charge = pinfo.charge
+                ax.set_title("%0.3f @ %d" % (target_mz, charge))
         fig = ax.figure
         fig.set_figheight(fig.get_figheight() * 2)
         fig.tight_layout()

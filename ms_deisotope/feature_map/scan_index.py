@@ -2,7 +2,7 @@ import json
 from collections import OrderedDict
 
 from ms_deisotope.averagine import neutral_mass
-from ms_deisotope.data_source.common import PrecursorInformation
+from ms_deisotope.data_source.common import PrecursorInformation, ChargeNotProvided
 
 
 class ExtendedScanIndex(object):
@@ -31,11 +31,14 @@ class ExtendedScanIndex(object):
     def _package_precursor_information(self, product):
         precursor_information = product.precursor_information
         if precursor_information.extracted_neutral_mass != 0:
+            charge = precursor_information.extracted_charge
+            if charge == ChargeNotProvided:
+                charge = 'ChargeNotProvided'
             package = {
                 "neutral_mass": precursor_information.extracted_neutral_mass,
                 "mz": precursor_information.extracted_mz,
                 "intensity": precursor_information.extracted_intensity,
-                "charge": precursor_information.extracted_charge,
+                "charge": charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
                 "product_scan_id": product.id,
                 "scan_time": product.scan_time,
@@ -43,12 +46,14 @@ class ExtendedScanIndex(object):
                 "orphan": precursor_information.orphan
             }
         else:
+            charge = precursor_information.extracted_charge
+            if charge == ChargeNotProvided:
+                charge = 'ChargeNotProvided'
             package = {
-                "neutral_mass": neutral_mass(
-                    precursor_information.mz, precursor_information.charge),
+                "neutral_mass": precursor_information.neutral_mass,
                 "mz": precursor_information.mz,
                 "intensity": precursor_information.intensity,
-                "charge": precursor_information.charge,
+                "charge": charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
                 "product_scan_id": product.id,
                 "scan_time": product.scan_time,

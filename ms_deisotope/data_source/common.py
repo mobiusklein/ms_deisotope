@@ -993,8 +993,7 @@ class PrecursorInformation(object):
     def __repr__(self):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
             self.mz,
-            mass_charge_ratio(self.extracted_neutral_mass, self.extracted_charge if self.extracted_charge != 0 else 1)
-            if self.extracted_neutral_mass != 0. else 0.,
+            self.extracted_mz if self.extracted_neutral_mass != 0. else 0.,
             self.intensity, self.extracted_intensity or 0., self.charge,
             self.extracted_charge or 0., self.precursor_scan_id)
 
@@ -1038,6 +1037,9 @@ class PrecursorInformation(object):
 
     @property
     def extracted_mz(self):
+        if self.extracted_charge == ChargeNotProvided:
+            warnings.warn("A precursor with an unknown charge state was used to compute a m/z.")
+            return mass_charge_ratio(self.mz, DEFAULT_CHARGE_WHEN_NOT_RESOLVED)
         return mass_charge_ratio(self.extracted_neutral_mass, self.extracted_charge)
 
     @property

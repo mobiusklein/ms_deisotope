@@ -1,6 +1,7 @@
 import re
 from weakref import WeakValueDictionary
 from collections import OrderedDict
+import codecs
 
 from pyteomics import mgf
 import numpy as np
@@ -120,12 +121,19 @@ class MGFInterface(ScanDataSource):
         -------
         int
         """
-        return self._index[self._scan_title(scan)]
+        try:
+            return self._index[self._scan_title(scan)]
+        except KeyError:
+            return -1
+
+
+def _remove_bom(bstr):
+    return bstr.replace(codecs.BOM_LE, b'').lstrip(b"\x00")
 
 
 def chunk_mgf(path, encoding='latin-1', read_size=1000000):
     with open(path, 'rb') as fh:
-        delim = "BEGIN IONS".encode(encoding)
+        delim = _remove_bom(u"BEGIN IONS".encode(encoding))
         pattern = re.compile(delim)
         buff = fh.read(read_size)
         parts = pattern.split(buff)
@@ -164,7 +172,7 @@ def index_mgf(path, encoding='latin-1', read_size=1000000):
     gen = chunk_mgf(path, encoding, read_size)
     i = 0
     index = OrderedDict()
-    pattern = re.compile("TITLE=([^\n]+)\n".encode(encoding))
+    pattern = re.compile(_remove_bom(u"TITLE=".encode(encoding)) + b"([^\n]+)\n")
     for chunk in gen:
         match = pattern.search(chunk)
         if match:

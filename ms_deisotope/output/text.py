@@ -2,8 +2,11 @@ from .common import ScanSerializerBase
 
 
 class TextScanSerializerBase(ScanSerializerBase):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, stream):
+        self.stream = stream
+
+    def close(self):
+        self.stream.close()
 
     def save_scan_bunch(self, bunch):
         self.write_scan(*self.prepare_scan_data(bunch.precursor))
@@ -48,7 +51,7 @@ class TextScanSerializerBase(ScanSerializerBase):
 
 class HeaderedDelimitedWriter(TextScanSerializerBase):
     def __init__(self, stream):
-        self.stream = stream
+        super(HeaderedDelimitedWriter, self).__init__(stream)
 
     def write_header(self, header_dict):
         for key, value in header_dict.items():
