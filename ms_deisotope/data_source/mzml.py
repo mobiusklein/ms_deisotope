@@ -6,7 +6,17 @@ from .common import (
     ScanAcquisitionInformation, ScanEventInformation,
     ScanWindow, IsolationWindow)
 from weakref import WeakValueDictionary
-from .xml_reader import XMLReaderBase, IndexSavingXML, iterparse_until
+from .xml_reader import (
+    XMLReaderBase, IndexSavingXML, iterparse_until,
+    get_tag_attributes, _find_section)
+
+try:
+    from psims.controlled_vocabulary import controlled_vocabulary
+    cv_psims = controlled_vocabulary.load_psims()
+    has_psims = True
+except Exception:
+    cv_psims = dict()
+    has_psims = False
 
 
 class _MzMLParser(mzml.MzML, IndexSavingXML):
@@ -306,11 +316,20 @@ class MzMLDataInterface(ScanDataSource):
         scan_info['scan_list'] = scan_info_scan_list
         return ScanAcquisitionInformation(**scan_info)
 
-
-def _find_section(source, section):
-    value = next(source.iterfind(section))
-    source.reset()
-    return value
+    def _instrument_configuration(self, scan):
+        try:
+            scan_list_struct = scan['scanList']
+            reference = None
+            for scan in scan_list_struct.get("scan", []):
+                reference = scan.get("instrumentConfigurationRef")
+                if reference is None:
+                    continue
+            if reference is None:
+                reference = self._run_information['defaultInstrumentConfigurationRef']
+            config = self._instrument_config[reference]
+            return config
+        except KeyError:
+            return None
 
 
 class _MzMLMetadataLoader(object):
@@ -348,12 +367,15 @@ class _MzMLMetadataLoader(object):
             config = self.instrument_configuration()
             if not config:
                 return
-            config = config[0]
+            configs = config
         else:
-            config = instrument_config
+            configs = [instrument_config]
             if not config:
                 return []
-        analyzers = config.get("componentList", {}).get("analyzer", [])
+        analyzers = {}
+        for config in configs:
+            analyzer_for_conf = config.get("componentList", {}).get("analyzer", [])
+            analyzers[config['id']] = analyzer_for_conf
 
         return analyzers
 
@@ -366,6 +388,9 @@ class _MzMLMetadataLoader(object):
 
     def samples(self):
         return _find_section(self._source, "sampleList")
+
+    def _get_run_attributes(self):
+        return get_tag_attributes(self.source, "run")
 
 
 class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
@@ -390,6 +415,11 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         self.make_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
+        self._run_information = self._get_run_attributes()
+        self._instrument_config = {
+            k['id']: k for k in self.instrument_configuration()
+        }
+        self._analyzers = self.analyzer_type()
 
     def _validate(self, scan):
         return "m/z array" in scan._data

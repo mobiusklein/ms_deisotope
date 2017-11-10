@@ -1123,6 +1123,8 @@ CID = Constant("collision-induced dissociation")
 HCD = Constant("beam-type collision-induced dissociation")
 ETD = Constant("electron transfer dissociation")
 ECD = Constant("electron capture dissociation")
+UnkownDissociation = Constant("unknown dissociation")
+
 
 dissociation_methods = {
     "cid": CID,
@@ -1133,7 +1135,9 @@ dissociation_methods = {
     'etd': ETD,
     ETD.name.lower(): ETD,
     "ecd": ECD,
-    ECD.name.lower(): ECD
+    ECD.name.lower(): ECD,
+    "": UnkownDissociation,
+    None: UnkownDissociation
 }
 
 
@@ -1201,3 +1205,33 @@ class IteratorFacadeBase(DataAccessProxy, ScanIterator):
 
     def next(self):
         return self._transform(next(self._producer))
+
+
+TOF = Constant("time-of-flight")
+Quadrupole = Constant("quadrupole")
+Orbitrap = Constant("orbitrap")
+IonTrap = Constant("iontrap")
+FTICR = Constant("fticr")
+UnkownAnalyzer = Constant("unknown-analyzer")
+
+
+analyzer_types = {
+    'tof': TOF,
+    TOF.name: TOF,
+    Quadrupole.name: Quadrupole,
+    Orbitrap.name: Orbitrap,
+    FTICR.name: FTICR,
+    '': UnkownAnalyzer,
+    None: UnkownAnalyzer
+}
+
+
+class InstrumentInformation(object):
+    analyzer_types = analyzer_types
+
+    def __init__(self, analyzers):
+        self.analyzers = list(analyzers)
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.analyzers})".format(
+            self=self)

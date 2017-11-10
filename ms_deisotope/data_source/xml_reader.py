@@ -281,6 +281,13 @@ class IndexSavingXML(xml.IndexedXML):
         inst._write_byte_offsets()
 
 
+@xml._keepstate
+def _find_section(source, section):
+    value = next(source.iterfind(section))
+    return value
+
+
+@xml._keepstate
 def get_tag_attributes(source, tag_name):
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:
@@ -294,6 +301,7 @@ def get_tag_attributes(source, tag_name):
     return None
 
 
+@xml._keepstate
 def iterparse_until(source, target_name, quit_name):
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:

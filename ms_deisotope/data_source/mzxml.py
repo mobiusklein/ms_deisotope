@@ -3,12 +3,27 @@ from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanDataSource, ChargeNotProvided,
     ActivationInformation, IsolationWindow)
-from .xml_reader import XMLReaderBase, IndexSavingXML
+from .xml_reader import (
+    XMLReaderBase, IndexSavingXML, iterparse_until,
+    get_tag_attributes, _find_section)
 from weakref import WeakValueDictionary
 
 
 class _MzXMLParser(mzxml.MzXML, IndexSavingXML):
     pass
+
+
+class _MzXMLMetadataLoader(object):
+    def file_description(self):
+        file_info = map(self.source._get_info_smart, iterparse_until(self.source, "parentFile", "scan"))
+        self.source.reset()
+        return list(file_info)
+
+    def instrument_configuration(self):
+        instrument_configuration = map(self.source._get_info_smart, iterparse_until(
+            self.source, "msInstrument", "scan"))
+        self.source.reset()
+        return instrument_configuration
 
 
 class MzXMLDataInterface(ScanDataSource):
@@ -244,8 +259,14 @@ class MzXMLDataInterface(ScanDataSource):
         except KeyError:
             return None
 
+    def _instrument_configuration(self, scan):
+        try:
+            return self._instrument_config[scan['msInstrumentID']]
+        except KeyError:
+            return None
 
-class MzXMLLoader(MzXMLDataInterface, XMLReaderBase):
+
+class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
     """Reads scans from mzXML files. Provides both iterative and
     random access.
 
@@ -270,6 +291,9 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase):
         self._scan_index_lookup = None
         if self._use_index:
             self._build_scan_index_lookup()
+        self._instrument_config = {
+            k['msInstrumentID']: k for k in self.instrument_configuration()
+        }
 
     def _get_scan_by_id_raw(self, scan_id):
         return self._source.get_by_id(scan_id, "num")
