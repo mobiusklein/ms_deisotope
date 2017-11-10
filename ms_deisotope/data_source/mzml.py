@@ -75,7 +75,7 @@ class MzMLDataInterface(ScanDataSource):
                 if prev_scan.ms_level >= current_level:
                     last_index -= 1
                 else:
-                    precursor_scan_id = self._scan_id(prev_scan)
+                    precursor_scan_id = self._scan_id(prev_scan._data)
                     break
                 i += 1
         pinfo = PrecursorInformation(
