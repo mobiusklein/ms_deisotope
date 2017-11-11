@@ -293,6 +293,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         self._instrument_config = {
             k['msInstrumentID']: k for k in self.instrument_configuration()
         }
+        self.reset()
         self.make_iterator()
 
     def _get_scan_by_id_raw(self, scan_id):
