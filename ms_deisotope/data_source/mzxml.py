@@ -285,7 +285,6 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
     def __init__(self, source_file, use_index=True):
         self.source_file = source_file
         self._source = _MzXMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
-        self.make_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
         self._scan_index_lookup = None
@@ -294,6 +293,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         self._instrument_config = {
             k['msInstrumentID']: k for k in self.instrument_configuration()
         }
+        self.make_iterator()
 
     def _get_scan_by_id_raw(self, scan_id):
         return self._source.get_by_id(scan_id, "num")
