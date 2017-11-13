@@ -2,10 +2,10 @@ import numpy as np
 from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanDataSource, ChargeNotProvided,
-    ActivationInformation, IsolationWindow)
+    ActivationInformation, IsolationWindow,
+    ComponentGroup, component, InstrumentInformation)
 from .xml_reader import (
-    XMLReaderBase, IndexSavingXML, iterparse_until,
-    get_tag_attributes, _find_section)
+    XMLReaderBase, IndexSavingXML, iterparse_until)
 from weakref import WeakValueDictionary
 
 
@@ -23,7 +23,36 @@ class _MzXMLMetadataLoader(object):
         instrument_configuration = map(self.source._get_info_smart, iterparse_until(
             self.source, "msInstrument", "scan"))
         self.source.reset()
+        instrument_configuration = [
+            self._convert_instrument(ic) for ic in instrument_configuration
+        ]
         return instrument_configuration
+
+    def _convert_instrument(self, configuration):
+        try:
+            detector = configuration.get('msDetector', {}).get('value')
+        except AttributeError:
+            detector = None
+        if detector is not None:
+            detector = component(detector)
+        try:
+            ionisation = configuration.get('msIonisation', {}).get('value')
+        except AttributeError:
+            ionisation = None
+        if ionisation is not None:
+            ionisation = component(ionisation)
+        try:
+            analyzer = configuration.get('msMassAnalyzer', {}).get('value')
+        except AttributeError:
+            analyzer = None
+        if analyzer is not None:
+            analyzer = component(analyzer)
+        parts = [
+            ComponentGroup("source", [ionisation], 1),
+            ComponentGroup("analyzer", [analyzer], 2),
+            ComponentGroup("detector", [detector], 3)
+        ]
+        return InstrumentInformation(configuration['msInstrumentID'], parts)
 
 
 class MzXMLDataInterface(ScanDataSource):
@@ -291,7 +320,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         if self._use_index:
             self._build_scan_index_lookup()
         self._instrument_config = {
-            k['msInstrumentID']: k for k in self.instrument_configuration()
+            k.id: k for k in self.instrument_configuration()
         }
         self.reset()
         self.make_iterator()
