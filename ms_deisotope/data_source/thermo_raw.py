@@ -12,7 +12,8 @@ import numpy as np
 from ms_deisotope.data_source.common import (
     ScanDataSource, ScanIterator, RandomAccessScanSource,
     Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
-    ActivationInformation, IsolationWindow)
+    ActivationInformation, IsolationWindow,
+    component, ComponentGroup, InstrumentInformation)
 
 from ms_deisotope.utils import Base
 
@@ -79,6 +80,38 @@ activation_pat = re.compile(
         (?P<activation_energy>\d*\.?\d*))?""", re.VERBOSE)
 
 
+analyzer_map = {
+    'FTMS': component("orbitrap"),
+    "ITMS": component("ion trap"),
+    "SQMS": component("quadrupole"),
+    "TQMS": component("quadrupole"),
+    "TOFMS": component("time-of-flight"),
+    "SECTOR": component("magnetic sector")
+}
+
+
+ionization_map = {
+    "EI": component("electron ionization"),
+    "CI": component("chemical ionization"),
+    "FAB": component("fast atom bombardment ionization"),
+    "ESI": component("electrospray ionization"),
+    "NSI": component("nanoelectrospray"),
+    "APCI": component("atmospheric pressure chemical ionization"),
+    "TSP": component("thermospray ionization"),
+    "FD": component("field desorption"),
+    "MALDI": component("matrix assisted laser desorption ionization"),
+    "GD": component("glow discharge ionization"),
+}
+
+
+inlet_map = {
+    "FAB": component("continuous flow fast atom bombardment"),
+    "ESI": component("electrospray inlet"),
+    "NSI": component("nanospray inlet"),
+    "TSP": component("thermospray inlet"),
+}
+
+
 class FilterLine(str):
     def __init__(self, value):
         self.data = filter_line_parser(self)
@@ -119,6 +152,18 @@ def filter_line_parser(line):
             values["polarity"] = polarity
             word = words[i]
             i += 1
+        if word in "PC":
+            if word == 'P':
+                values['peak_mode'] = 'profile'
+            else:
+                values['peak_mode'] = 'centroid'
+            word = words[i]
+            i += 1
+        ionization_info = ionization_pat.search(word)
+        if ionization_info is not None:
+            values['ionization'] = ionization_info.group(0)
+            word = words[i]
+            i += 1
 
         return values
     except IndexError:
@@ -126,6 +171,55 @@ def filter_line_parser(line):
 
 
 _id_template = "controllerType=0 controllerNumber=1 scan="
+
+
+class _RawFileMetadataLoader(object):
+    def _build_scan_type_index(self):
+        self.make_iterator(grouped=False)
+        index = defaultdict(int)
+        analyzer_counter = 1
+        analyzer_confs = dict()
+        for scan in self:
+            index[scan.ms_level] += 1
+            fline = self._filter_line(scan._data)
+            analyzer = analyzer_map[fline.data['analyzer']]
+            try:
+                analyzer_confs[analyzer]
+            except KeyError:
+                analyzer_confs[analyzer] = analyzer_counter
+                analyzer_counter += 1
+        self.reset()
+        self._scan_type_index = index
+        self._analyzer_to_configuration_index = analyzer_confs
+
+    def _get_instrument_info(self):
+        scan = self.get_scan_by_index(0)
+        filter_line = self._filter_line(scan._data)
+        ionization_label = filter_line.data.get("ionization")
+        try:
+            ionization = ionization_map[ionization_label]
+        except KeyError:
+            ionization = ionization_map['ESI']
+        try:
+            inlet = inlet_map[ionization_label]
+        except KeyError:
+            inlet = None
+
+        source_group = ComponentGroup("source", [], 1)
+        source_group.add(ionization)
+        if inlet is not None:
+            source_group.add(inlet)
+        configs = []
+        for analyzer, counter in sorted(self._analyzer_to_configuration_index.items(), key=lambda x: x[1]):
+            analyzer_group = ComponentGroup('analyzer', [analyzer], 2)
+            configs.append(InstrumentInformation(counter, [source_group, analyzer_group]))
+        self._instrument_config = {
+            c.id: c for c in configs
+        }
+        return configs
+
+    def instrument_configuration(self):
+        return sorted(self._instrument_config.values(), key=lambda x: x.id)
 
 
 class _InstrumentMethod(object):
@@ -368,17 +462,28 @@ class ThermoRawDataInterface(ScanDataSource):
         isolation_mz = self._source.GetPrecursorMassForScanNum(scan.scan_number, ms_level)
         return IsolationWindow(isolation_width, isolation_mz, isolation_width)
 
+    def _instrument_configuration(self, scan):
+        fline = self._filter_line(scan)
+        try:
+            confid = self._analyzer_to_configuration_index[analyzer_map[fline.data.get("analyzer")]]
+            return self._instrument_config[confid]
+        except KeyError:
+            return None
 
-class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterator):
+
+class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterator, _RawFileMetadataLoader):
     def __init__(self, source_file, **kwargs):
         self.source_file = source_file
         self._source = _ThermoRawFileAPI(self.source_file)
-        self._producer = self._scan_group_iterator()
+        self._producer = None
+        self.make_iterator()
         self._scan_cache = WeakValueDictionary()
         self._index = self._pack_index()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
         self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
         self._method = _InstrumentMethod(self._source.GetInstMethod())
+        self._build_scan_type_index()
+        self._get_instrument_info()
 
     def __reduce__(self):
         return self.__class__, (self.source_file,)

@@ -30,7 +30,10 @@ from ms_deisotope.data_source.common import (
     ScanBunch,
     PrecursorInformation,
     ActivationInformation,
-    IsolationWindow)
+    IsolationWindow,
+    InstrumentInformation,
+    ComponentGroup,
+    component)
 
 
 try:
@@ -82,11 +85,78 @@ def register_dll_dir(search_paths=None):
         raise ImportError(msg)
 
 
+device_to_component_group_map = {
+    "QTOF": [
+        ComponentGroup("analyzer", [component("quadrupole")], 2),
+        ComponentGroup("analyzer", [component("quadrupole")], 3),
+        ComponentGroup("analyzer", [component("time-of-flight")], 4)
+    ],
+    "Quadrupole": [
+        ComponentGroup("analyzer", [component("quadrupole")], 2),
+    ],
+    "TandemQuadrupole": [
+        ComponentGroup("analyzer", [component("quadrupole")], 2),
+        ComponentGroup("analyzer", [component("quadrupole")], 3),
+        ComponentGroup("analyzer", [component("quadrupole")], 4)
+    ],
+    "IonTrap": [
+        ComponentGroup("analyzer", [component("iontrap")], 2)
+    ],
+    "TOF": [
+        ComponentGroup("analyzer", [component("time-of-flight")], 2)
+    ]
+
+}
+
+
 polarity_map = {
     1: -1,
     0: 1,
     3: 0,
     2: None
+}
+
+
+ion_mode_map = {
+    0: 'Unspecified',
+    1: 'Mixed',
+    2: 'EI',
+    4: 'CI',
+    8: 'Maldi',
+    16: 'Appi',
+    32: 'Apci',
+    64: 'ESI',
+    128: 'NanoEsi',
+    512: 'MsChip',
+    1024: 'ICP',
+    2048: 'Jetstream'
+}
+
+ionization_map = {
+    "EI": component("electron ionization"),
+    "CI": component("chemical ionization"),
+    "ESI": component("electrospray ionization"),
+    "NanoEsi": component("nanoelectrospray"),
+    "Appi": component('atmospheric pressure photoionization'),
+    "Apci": component("atmospheric pressure chemical ionization"),
+    "Maldi": component("matrix assisted laser desorption ionization"),
+    "MsChip": component("nanoelectrospray"),
+    "ICP": component("plasma desorption ionization"),
+    "Jetstream": component("nanoelectrospray")
+}
+
+
+inlet_map = {
+    "EI": component("direct inlet"),
+    "CI": component("direct inlet"),
+    "Maldi": component("particle beam"),
+    "Appi": component("direct inlet"),
+    "Apci": component("direct inlet"),
+    "Esi": component("electrospray inlet"),
+    "NanoEsi": component("nanospray inlet"),
+    "MsChip": component("nanospray inlet"),
+    "ICP": component("component(inductively coupled plasma"),
+    "JetStream": component("nanospray inlet"),
 }
 
 
@@ -96,6 +166,56 @@ peak_mode_map = {
     'profilepreferred': 2,
     'centroidpreferred': 3
 }
+
+device_type_map = {
+    0: 'Unknown',
+    1: 'Mixed',
+    2: 'Quadrupole',
+    3: 'IsocraticPump',
+    4: 'TOF',
+    5: 'TandemQuadrupole',
+    6: 'QTOF',
+    10: 'FlourescenceDetector',
+    11: 'ThermalConductivityDetector',
+    12: 'RefractiveIndexDetector',
+    13: 'MultiWavelengthDetector',
+    14: 'ElectronCaptureDetector',
+    15: 'VariableWavelengthDetector',
+    16: 'AnalogDigitalConverter',
+    17: 'EvaporativeLightScatteringDetector',
+    18: 'GCDetector',
+    19: 'FlameIonizationDetector',
+    20: 'ALS',
+    21: 'WellPlateSampler',
+    22: 'MicroWellPlateSampler',
+    23: 'DiodeArrayDetector',
+    31: 'CANValves',
+    32: 'QuaternaryPump',
+    33: 'ChipCube',
+    34: 'Nanopump',
+    40: 'ThermostattedColumnCompartment',
+    41: 'CTC',
+    42: 'CapillaryPump',
+    50: 'IonTrap'
+}
+
+
+scan_type_map = {
+    "Unspecified": 0,
+    "All": 7951,
+    "AllMS": 15,
+    "AllMSN": 7936,
+    "Scan": 1,
+    "SelectedIon": 2,
+    "HighResolutionScan": 4,
+    "TotalIon": 8,
+    "MultipleReaction": 256,
+    "ProductIon": 512,
+    "PrecursorIon": 1024,
+    "NeutralLoss": 2048,
+    "NeutralGain": 4096
+}
+
 
 PEAK_MODE = 0
 
@@ -184,6 +304,9 @@ class AgilentDDataInterface(ScanDataSource):
             return None
         return IsolationWindow(0, ions[0], 0)
 
+    def _instrument_configuration(self, scan):
+        return self._instrument_config[1]
+
 
 class _AgilentDDirectory(object):
     @staticmethod
@@ -208,7 +331,41 @@ class _AgilentDDirectory(object):
         return False
 
 
-class AgilentDLoader(AgilentDDataInterface, _AgilentDDirectory, ScanIterator, RandomAccessScanSource):
+class _AgilentDMetadataLoader(object):
+    def _has_ms1_scans(self):
+        return bool(self._scan_types_flags & scan_type_map['Scan'])
+
+    def _has_msn_scans(self):
+        return bool(self._scan_types_flags & scan_type_map['ProductIon'])
+
+    def _get_instrument_info(self):
+        ion_modes_flags = self.source.MSScanFileInformation.IonModes
+        ionization = []
+        for bit, label in ion_mode_map.items():
+            if ion_modes_flags & bit:
+                ionization.append(label)
+        configs = []
+        i = 1
+        for ionizer in ionization:
+            groups = [ComponentGroup("source", [ionization_map[ionizer], inlet_map[ionizer]], 1)]
+            groups.extend(device_to_component_group_map[self.device])
+            config = InstrumentInformation(i, groups)
+            i += 1
+            configs.append(config)
+        self._instrument_config = {
+            c.id: c for c in configs
+        }
+        return configs
+
+    def instrument_configuration(self):
+        return sorted(self._instrument_config.values(), key=lambda x: x.id)
+
+
+_ADM = _AgilentDMetadataLoader
+_ADD = _AgilentDDirectory
+
+
+class AgilentDLoader(AgilentDDataInterface, _ADD, ScanIterator, RandomAccessScanSource, _ADM):
 
     def __init__(self, dirpath, **kwargs):
         self.dirpath = dirpath
@@ -225,10 +382,12 @@ class AgilentDLoader(AgilentDDataInterface, _AgilentDDirectory, ScanIterator, Ra
         self._TIC = self.source.GetTIC()
         self.device = self._TIC.DeviceName
         self._n_spectra = self._TIC.TotalDataPoints
+        self._scan_types_flags = self.source.MSScanFileInformation.ScanTypes
 
         self._producer = self._scan_group_iterator()
         self._scan_cache = WeakValueDictionary()
         self._index = self._pack_index()
+        self._get_instrument_info()
 
     def __reduce__(self):
         return self.__class__, (self.dirpath,)
