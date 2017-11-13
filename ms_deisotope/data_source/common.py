@@ -11,6 +11,8 @@ from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 from ..deconvolution import deconvolute_peaks
 
+from .instrument_components import Component, component, all_components
+
 try:
     from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors
     has_plot = True
@@ -40,28 +42,24 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         return _annotate_precursors(
             self.precursor, self.products, nperrow=nperrow, ax=ax)
 
+    def _repr_pretty_(self, p, cycle):  # pragma: no cover
+        if cycle:
+            p.text("ScanBunch(...)")
+            return
+        p.text("ScanBunch(\n")
+        with p.group(2):
+            with p.group(4, "precursor=\n"):
+                p.pretty(self.precursor)
+            with p.group(4, ",\nproducts=\n"):
+                p.pretty(self.products)
+        p.text(")")
+
 
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
     def plot(self, *args, **kwargs):
         ax = draw_raw(self, *args, **kwargs)
         return ax
-
-
-def _repr_pretty_(scan_bunch, p, cycle):  # pragma: no cover
-    if cycle:
-        p.text("ScanBunch(...)")
-        return
-    p.text("ScanBunch(\n")
-    with p.group(2):
-        with p.group(4, "precursor=\n"):
-            p.pretty(scan_bunch.precursor)
-        with p.group(4, ",\nproducts=\n"):
-            p.pretty(scan_bunch.products)
-    p.text(")")
-
-
-ScanBunch._repr_pretty_ = _repr_pretty_
 
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
@@ -273,6 +271,9 @@ class ScanDataSource(object):
     def _isolation_window(self, scan):
         return None
 
+    def _instrument_configuration(self, scan):
+        return None
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
@@ -385,8 +386,15 @@ class RandomAccessScanSource(ScanDataSource):
     def _locate_ms1_scan(self, scan):
         while scan.ms_level != 1:
             if scan.index <= 0:
-                raise IndexError("Cannot search backwards with a scan index <= 0 (%r)" % scan.index)
+                break
             scan = self.get_scan_by_index(scan.index - 1)
+        if scan.ms_level == 1:
+            return scan
+        while scan.ms_level != 1:
+            try:
+                scan = self.get_scan_by_index(scan.index + 1)
+            except IndexError:
+                raise IndexError("Cannot locate MS1 Scan")
         return scan
 
     def find_previous_ms1(self, start_index):
@@ -519,6 +527,7 @@ class Scan(object):
         self._activation = None
         self._acquisition_information = None
         self._isolation_window = None
+        self._instrument_configuration = None
 
         self.product_scans = product_scans
 
@@ -628,6 +637,13 @@ class Scan(object):
             self._acquisition_information = self.source._acquisition_information(self._data)
         return self._acquisition_information
 
+    @property
+    def instrument_configuration(self):
+        if self._instrument_configuration is None:
+            self._instrument_configuration = self.source._instrument_configuration(
+                self._data)
+        return self._instrument_configuration
+
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
             self.id, self.index, self.scan_time, self.ms_level,
@@ -719,7 +735,8 @@ class Scan(object):
             self.polarity,
             self.activation,
             self.acquisition_information,
-            self.isolation_window)
+            self.isolation_window,
+            self.instrument_configuration)
 
     # signal transformation
 
@@ -878,7 +895,8 @@ class WrappedScan(Scan):
         "_polarity",
         "_activation",
         "_acquisition_information",
-        "_isolation_window"
+        "_isolation_window",
+        "_instrument_configuration"
     ]
 
     def __init__(self, data, source, array_data, product_scans=None, **overrides):
@@ -1054,7 +1072,8 @@ class PrecursorInformation(object):
 class ProcessedScan(object):
     def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set,
                  deconvoluted_peak_set, polarity=None, activation=None,
-                 acquisition_information=None, isolation_window=None):
+                 acquisition_information=None, isolation_window=None,
+                 instrument_configuration=None):
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
@@ -1067,6 +1086,7 @@ class ProcessedScan(object):
         self.activation = activation
         self.acquisition_information = acquisition_information
         self.isolation_window = isolation_window
+        self.instrument_configuration = instrument_configuration
 
     @property
     def scan_id(self):
@@ -1098,7 +1118,7 @@ class ProcessedScan(object):
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
             self.polarity, self.activation, self.acquisition_information,
-            self.isolation_window)
+            self.isolation_window, self.instrument_configuration)
         return dup
 
 
@@ -1207,31 +1227,45 @@ class IteratorFacadeBase(DataAccessProxy, ScanIterator):
         return self._transform(next(self._producer))
 
 
-TOF = Constant("time-of-flight")
-Quadrupole = Constant("quadrupole")
-Orbitrap = Constant("orbitrap")
-IonTrap = Constant("iontrap")
-FTICR = Constant("fticr")
-UnkownAnalyzer = Constant("unknown-analyzer")
+class ComponentGroup(object):
+    def __init__(self, type, members, order):
+        self.type = type
+        self.members = list(members)
+        self.order = int(order)
 
+    def __repr__(self):
+        t = "{s.__class__.__name__}({s.type!r}, {s.members}, order={s.order})"
+        return t.format(s=self)
 
-analyzer_types = {
-    'tof': TOF,
-    TOF.name: TOF,
-    Quadrupole.name: Quadrupole,
-    Orbitrap.name: Orbitrap,
-    FTICR.name: FTICR,
-    '': UnkownAnalyzer,
-    None: UnkownAnalyzer
-}
+    def __getitem__(self, i):
+        return self.members[i]
+
+    def __setitem__(self, i, v):
+        self.members[i] = v
+
+    def add(self, v):
+        self.members.append(v)
+
+    def __len__(self):
+        return len(self.members)
 
 
 class InstrumentInformation(object):
-    analyzer_types = analyzer_types
+    def __init__(self, id, groups):
+        self.id = id
+        self.groups = sorted(groups, key=lambda x: x.order)
+        self.analyzers = []
 
-    def __init__(self, analyzers):
-        self.analyzers = list(analyzers)
+        for group in self.groups:
+            if group.type == 'analyzer':
+                self.analyzers.extend(group)
+
+    def __getitem__(self, i):
+        return self.groups[i]
+
+    def __len__(self):
+        return len(self.grou)
 
     def __repr__(self):
-        return "{self.__class__.__name__}({self.analyzers})".format(
+        return "{self.__class__.__name__}({self.id!r}, {self.groups})".format(
             self=self)
