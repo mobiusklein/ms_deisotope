@@ -124,6 +124,24 @@ class MzMLScanSerializer(ScanSerializerBase):
         if build_extra_index:
             self.indexer = ExtendedScanIndex()
 
+    def add_instrument_configuration(self, configuration):
+        component_list = []
+        for group in configuration.groups:
+            tag = None
+            if group.type == 'source':
+                tag = self.writer.Source
+            elif group.type == 'analyzer':
+                tag = self.writer.Analyzer
+            elif group.type == 'detector':
+                tag = self.writer.Detector
+            else:
+                continue
+            component_list.append(
+                tag(order=group.order, params=[g.name for g in group]))
+        config_element = self.writer.InstrumentConfiguration(
+            configuration.id, component_list)
+        self.instrument_configuration_list.append(config_element)
+
     def add_software(self, software_description):
         self.software_list.append(software_description)
 
@@ -138,9 +156,6 @@ class MzMLScanSerializer(ScanSerializerBase):
 
     def add_processing_parameter(self, name, value):
         self.processing_parameters.append({"name": name, "value": value})
-
-    def add_instrument_configuration(self, instrument_description):
-        self.instrument_configuration_list.append(instrument_description)
 
     def add_sample(self, sample):
         self.sample_list.append(sample)
@@ -239,7 +254,8 @@ class MzMLScanSerializer(ScanSerializerBase):
             params.append(arg)
         return params
 
-    def _pack_precursor_information(self, precursor_information, activation_information=None):
+    def _pack_precursor_information(self, precursor_information, activation_information=None,
+                                    isolation_window=None):
         # If the scan bunch has been fully deconvoluted and it's PrecursorInformation
         # filled in, its extracted fields will be populated and should be used, otherwise
         # use the default read values.
@@ -263,6 +279,12 @@ class MzMLScanSerializer(ScanSerializerBase):
             }
         if activation_information is not None:
             package['activation'] = self._pack_activation(activation_information)
+        if isolation_window is not None:
+            package['isolation_window_args'] = {
+                "lower": isolation_window.lower,
+                "target": isolation_window.target,
+                "upper": isolation_window.upper
+            }
         return package
 
     def _prepare_extra_arrays(self, scan):
@@ -297,6 +319,12 @@ class MzMLScanSerializer(ScanSerializerBase):
 
         descriptors = describe_spectrum(precursor_peaks)
 
+        instrument_config = bunch.precursor.instrument_configuration
+        if instrument_config is None:
+            instrument_config_id = None
+        else:
+            instrument_config_id = instrument_config.id
+
         self.writer.write_spectrum(
             [p.mz for p in precursor_peaks], [p.intensity for p in precursor_peaks], charge_array,
             id=bunch.precursor.id, params=[
@@ -305,7 +333,8 @@ class MzMLScanSerializer(ScanSerializerBase):
             polarity=polarity,
             scan_start_time=bunch.precursor.scan_time,
             compression=self.compression,
-            other_arrays=self._prepare_extra_arrays(bunch.precursor))
+            other_arrays=self._prepare_extra_arrays(bunch.precursor),
+            instrument_configuration_id=instrument_config_id)
 
         self.total_ion_chromatogram_tracker[
             bunch.precursor.scan_time] = _total_intensity_from_descriptors(descriptors)
@@ -317,8 +346,7 @@ class MzMLScanSerializer(ScanSerializerBase):
                 product_peaks = prod.deconvoluted_peak_set
             else:
                 product_peaks = prod.peak_set
-            # if len(product_peaks) == 0:
-            #     continue
+
             descriptors = describe_spectrum(product_peaks)
 
             self.total_ion_chromatogram_tracker[
@@ -331,16 +359,25 @@ class MzMLScanSerializer(ScanSerializerBase):
             else:
                 charge_array = None
 
+            instrument_config = prod.instrument_configuration
+            if instrument_config is None:
+                instrument_config_id = None
+            else:
+                instrument_config_id = instrument_config.id
             self.writer.write_spectrum(
                 [p.mz for p in product_peaks], [p.intensity for p in product_peaks], charge_array,
                 id=prod.id, params=[
                     {"name": "ms level", "value": prod.ms_level},
                     {"name": "MSn spectrum"}] + descriptors,
                 polarity=prod.polarity,
-                scan_start_time=prod.scan_time, precursor_information=self._pack_precursor_information(
-                    prod.precursor_information, prod.activation),
+                scan_start_time=prod.scan_time,
+                precursor_information=self._pack_precursor_information(
+                    prod.precursor_information,
+                    prod.activation,
+                    prod.isolation_window),
                 compression=self.compression,
-                other_arrays=self._prepare_extra_arrays(prod))
+                other_arrays=self._prepare_extra_arrays(prod),
+                instrument_configuration_id=instrument_config_id)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)
@@ -399,6 +436,15 @@ class MzMLScanSerializer(ScanSerializerBase):
         except OSError as e:
             if on_windows and e.errno == 32:
                 pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.complete()
+        if hasattr(self.handle, "close"):
+            self.handle.close()
+        self.format()
 
 
 def deserialize_deconvoluted_peak_set(scan_dict):
