@@ -4,19 +4,12 @@ from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
     ScanAcquisitionInformation, ScanEventInformation,
-    ScanWindow, IsolationWindow)
+    ScanWindow, IsolationWindow,
+    InstrumentInformation, ComponentGroup, component)
 from weakref import WeakValueDictionary
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until,
-    get_tag_attributes, _find_section)
-
-try:
-    from psims.controlled_vocabulary import controlled_vocabulary
-    cv_psims = controlled_vocabulary.load_psims()
-    has_psims = True
-except Exception:
-    cv_psims = dict()
-    has_psims = False
+    get_tag_attributes, _find_section, in_minutes)
 
 
 class _MzMLParser(mzml.MzML, IndexSavingXML):
@@ -191,7 +184,9 @@ class MzMLDataInterface(ScanDataSource):
         float
         """
         try:
-            return scan['scanList']['scan'][0]['scan start time']
+            time = scan['scanList']['scan'][0]['scan start time']
+            time = in_minutes(time)
+            return time
         except KeyError:
             return 0.0
 
@@ -278,8 +273,12 @@ class MzMLDataInterface(ScanDataSource):
                 target = (upper - lower) / 2 + lower
                 upper = upper - target
                 lower = target - lower
-        elif lower is upper is None:
-            lower = upper = 0.0
+        elif target is None:
+            target = self._precursor_information(scan).mz
+        if lower is None:
+            lower = 0.0
+        if upper is None:
+            upper = 0.0
         return IsolationWindow(lower, target, upper)
 
     def _acquisition_information(self, scan):
@@ -349,9 +348,23 @@ class _MzMLMetadataLoader(object):
     def file_description(self):
         return _find_section(self._source, "fileDescription")
 
+    def _convert_component_groups(self, configuration):
+        group_collection = []
+        for category, groups in configuration['componentList'].items():
+            if category == 'count':
+                continue
+            for group in groups:
+                group = group.copy()
+                order = group.pop('order')
+                parts = [component(key) for key in group]
+                group_collection.append(ComponentGroup(category, parts, order))
+        conf_id = configuration['id']
+        config = InstrumentInformation(conf_id, group_collection)
+        return config
+
     def instrument_configuration(self):
         instrument_info_list = _find_section(self._source, "instrumentConfigurationList").get(
-            "instrumentConfiguration", [{}])
+            "instrumentConfiguration", [])
         out = []
         for instrument_info in instrument_info_list:
             if "referenceableParamGroupRef" in instrument_info:
@@ -359,25 +372,8 @@ class _MzMLMetadataLoader(object):
                 for group in instrument_info.pop('referenceableParamGroupRef', []):
                     param_group = reference_params[group['ref']]
                     instrument_info.update(param_group)
-            out.append(instrument_info)
+            out.append(self._convert_component_groups(instrument_info))
         return out
-
-    def analyzer_type(self, instrument_config=None):
-        if instrument_config is None:
-            config = self.instrument_configuration()
-            if not config:
-                return
-            configs = config
-        else:
-            configs = [instrument_config]
-            if not config:
-                return []
-        analyzers = {}
-        for config in configs:
-            analyzer_for_conf = config.get("componentList", {}).get("analyzer", [])
-            analyzers[config['id']] = analyzer_for_conf
-
-        return analyzers
 
     def software_list(self):
         softwares = _find_section(self._source, "softwareList")
@@ -417,9 +413,8 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         self._use_index = use_index
         self._run_information = self._get_run_attributes()
         self._instrument_config = {
-            k['id']: k for k in self.instrument_configuration()
+            k.id: k for k in self.instrument_configuration()
         }
-        self._analyzers = self.analyzer_type()
 
     def _validate(self, scan):
         return "m/z array" in scan._data
