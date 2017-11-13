@@ -9,6 +9,18 @@ from .common import (
 from lxml import etree
 from lxml.etree import XMLSyntaxError
 from pyteomics import xml
+from pyteomics.xml import unitfloat
+
+
+def in_minutes(x):
+    try:
+        unit = x.unit_info
+    except AttributeError:
+        return x
+    if unit == 'second':
+        y = unitfloat(x / 60., 'minute')
+        return y
+    return x
 
 
 class XMLReaderBase(RandomAccessScanSource, ScanIterator):
