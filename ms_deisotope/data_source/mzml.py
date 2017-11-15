@@ -372,7 +372,8 @@ class _MzMLMetadataLoader(object):
                 for group in instrument_info.pop('referenceableParamGroupRef', []):
                     param_group = reference_params[group['ref']]
                     instrument_info.update(param_group)
-            out.append(self._convert_component_groups(instrument_info))
+            if "componentList" in instrument_info:
+                out.append(self._convert_component_groups(instrument_info))
         return out
 
     def software_list(self):
