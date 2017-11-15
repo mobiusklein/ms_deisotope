@@ -350,14 +350,15 @@ class _MzMLMetadataLoader(object):
 
     def _convert_component_groups(self, configuration):
         group_collection = []
-        for category, groups in configuration['componentList'].items():
-            if category == 'count':
-                continue
-            for group in groups:
-                group = group.copy()
-                order = group.pop('order')
-                parts = [component(key) for key in group]
-                group_collection.append(ComponentGroup(category, parts, order))
+        if "componentList" in configuration:
+            for category, groups in configuration['componentList'].items():
+                if category == 'count':
+                    continue
+                for group in groups:
+                    group = group.copy()
+                    order = group.pop('order')
+                    parts = [component(key) for key in group]
+                    group_collection.append(ComponentGroup(category, parts, order))
         conf_id = configuration['id']
         config = InstrumentInformation(conf_id, group_collection)
         return config
