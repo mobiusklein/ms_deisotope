@@ -551,6 +551,21 @@ class Scan(object):
         self.activation
         self.acquisition_information
 
+    def _unload(self):
+        self._arrays = None
+        self._id = None
+        self._title = None
+        self._ms_level = None
+        self._scan_time = None
+        self._precursor_information = None
+        self._index = None
+        self._is_profile = None
+        self._polarity = None
+        self._activation = None
+        self._acquisition_information = None
+        self._isolation_window = None
+        self._instrument_configuration = None
+
     @property
     def ms_level(self):
         if self._ms_level is None:
@@ -736,7 +751,7 @@ class Scan(object):
             self.activation,
             self.acquisition_information,
             self.isolation_window,
-            self.instrument_configuration)
+            self.instrument_configuration, self.product_scans)
 
     # signal transformation
 
@@ -1070,10 +1085,13 @@ class PrecursorInformation(object):
 
 
 class ProcessedScan(object):
-    def __init__(self, id, title, precursor_information, ms_level, scan_time, index, peak_set,
+    def __init__(self, id, title, precursor_information,
+                 ms_level, scan_time, index, peak_set,
                  deconvoluted_peak_set, polarity=None, activation=None,
                  acquisition_information=None, isolation_window=None,
-                 instrument_configuration=None):
+                 instrument_configuration=None, product_scans=None):
+        if product_scans is None:
+            product_scans = []
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
@@ -1087,6 +1105,7 @@ class ProcessedScan(object):
         self.acquisition_information = acquisition_information
         self.isolation_window = isolation_window
         self.instrument_configuration = instrument_configuration
+        self.product_scans = product_scans
 
     @property
     def scan_id(self):
@@ -1118,7 +1137,7 @@ class ProcessedScan(object):
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
             self.polarity, self.activation, self.acquisition_information,
-            self.isolation_window, self.instrument_configuration)
+            self.isolation_window, self.instrument_configuration, list(self.products))
         return dup
 
 
