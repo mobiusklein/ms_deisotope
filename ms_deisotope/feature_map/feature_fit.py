@@ -248,8 +248,8 @@ def isotopic_consistency(eic, averagine=glycan, truncate_after=0.95):
         for peak in node.members:
             eid = envelope_to_peak_list(peak.envelope)
             tid = averagine.isotopic_cluster(peak.mz, peak.charge, truncate_after=truncate_after)
-            scale_theoretical_isotopic_pattern(eid, tid)
-            peak_scores.append(abs(g_test_scaled(None, eid, tid)))
+            tid.scale(eid)
+            peak_scores.append(abs(g_test_scaled(None, eid, tid.truncated_tid)))
             peak_abundances.append(peak.intensity)
     return max(1 - np.average(peak_scores, weights=peak_abundances), 1e-4)
 
