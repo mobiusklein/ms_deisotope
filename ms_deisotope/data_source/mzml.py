@@ -348,7 +348,7 @@ class _MzMLMetadataLoader(object):
     def file_description(self):
         return _find_section(self._source, "fileDescription")
 
-    def _convert_component_groups(self, configuration):
+    def _convert_instrument(self, configuration):
         group_collection = []
         if "componentList" in configuration:
             for category, groups in configuration['componentList'].items():
@@ -373,7 +373,7 @@ class _MzMLMetadataLoader(object):
                 for group in instrument_info.pop('referenceableParamGroupRef', []):
                     param_group = reference_params[group['ref']]
                     instrument_info.update(param_group)
-            out.append(self._convert_component_groups(instrument_info))
+            out.append(self._convert_instrument(instrument_info))
         return out
 
     def software_list(self):
