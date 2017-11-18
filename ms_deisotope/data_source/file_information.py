@@ -1,5 +1,7 @@
 import os
 
+from six import string_types as basestring
+
 
 id_formats = {
     u'native spectrum identifier format': "Describes how the native spectrum identifiers are formated.",
