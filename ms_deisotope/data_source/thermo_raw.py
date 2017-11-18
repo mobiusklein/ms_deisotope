@@ -13,7 +13,8 @@ from ms_deisotope.data_source.common import (
     ScanDataSource, ScanIterator, RandomAccessScanSource,
     Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
     ActivationInformation, IsolationWindow,
-    component, ComponentGroup, InstrumentInformation)
+    component, ComponentGroup, InstrumentInformation,
+    FileInformation, SourceFile)
 
 from ms_deisotope.utils import Base
 
@@ -220,6 +221,17 @@ class _RawFileMetadataLoader(object):
 
     def instrument_configuration(self):
         return sorted(self._instrument_config.values(), key=lambda x: x.id)
+
+    def file_description(self):
+        fi = FileInformation({}, [])
+        fi.add_file(self.source_file)
+        if 1 in self._scan_type_index:
+            fi.add_content("MS1 spectrum")
+        scan_types = sorted(self._scan_type_index, reverse=True)
+        if scan_types:
+            if scan_types[0] > 1:
+                fi.add_content("MSn spectrum")
+        return fi
 
 
 class _InstrumentMethod(object):

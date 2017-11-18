@@ -5,7 +5,8 @@ from .common import (
     ChargeNotProvided, ActivationInformation,
     ScanAcquisitionInformation, ScanEventInformation,
     ScanWindow, IsolationWindow,
-    InstrumentInformation, ComponentGroup, component)
+    InstrumentInformation, ComponentGroup, component,
+    FileInformation, SourceFile)
 from weakref import WeakValueDictionary
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until,
@@ -346,7 +347,15 @@ class _MzMLMetadataLoader(object):
         return by_id
 
     def file_description(self):
-        return _find_section(self._source, "fileDescription")
+        desc = _find_section(self._source, "fileDescription")
+        fi = FileInformation(desc.get("fileContent", {}), [])
+        for sf_data in desc.get('sourceFileList', {}).get("sourceFile", []):
+            fi.add_file(
+                SourceFile(
+                    sf_data.get('name'),
+                    sf_data.get('location'), sf_data.get('id'),
+                    parameters=sf_data))
+        return fi
 
     def _convert_instrument(self, configuration):
         group_collection = []

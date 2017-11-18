@@ -1,5 +1,6 @@
 import abc
 import warnings
+
 from collections import namedtuple
 
 import numpy as np
@@ -12,6 +13,7 @@ from ..utils import Constant, add_metaclass
 from ..deconvolution import deconvolute_peaks
 
 from .instrument_components import Component, component, all_components
+from .file_information import FileInformation, SourceFile
 
 try:
     from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors

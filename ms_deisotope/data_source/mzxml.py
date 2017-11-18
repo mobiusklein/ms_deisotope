@@ -3,7 +3,8 @@ from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanDataSource, ChargeNotProvided,
     ActivationInformation, IsolationWindow,
-    ComponentGroup, component, InstrumentInformation)
+    ComponentGroup, component, InstrumentInformation,
+    FileInformation, SourceFile)
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until)
 from weakref import WeakValueDictionary
@@ -17,7 +18,15 @@ class _MzXMLMetadataLoader(object):
     def file_description(self):
         file_info = map(self.source._get_info_smart, iterparse_until(self.source, "parentFile", "scan"))
         self.source.reset()
-        return list(file_info)
+        file_info = list(file_info)
+        fi = FileInformation({}, [])
+        for parent in file_info:
+            path = parent.get("fileName")
+            if path is None:
+                continue
+            path = path.replace("file:///", '')
+            fi.add_file(path, check=False)
+        return fi
 
     def instrument_configuration(self):
         instrument_configuration = map(self.source._get_info_smart, iterparse_until(

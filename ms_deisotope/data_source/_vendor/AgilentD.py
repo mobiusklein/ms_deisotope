@@ -1,4 +1,5 @@
 import os
+import glob
 import warnings
 import logging
 try:
@@ -33,7 +34,9 @@ from ms_deisotope.data_source.common import (
     IsolationWindow,
     InstrumentInformation,
     ComponentGroup,
-    component)
+    component,
+    FileInformation,
+    SourceFile)
 
 
 try:
@@ -337,6 +340,21 @@ class _AgilentDMetadataLoader(object):
 
     def _has_msn_scans(self):
         return bool(self._scan_types_flags & scan_type_map['ProductIon'])
+
+    def file_description(self):
+        fi = FileInformation(contents={}, source_files=[])
+        if self._has_ms1_scans():
+            fi.add_content("MS1 spectrum")
+        if self._has_msn_scans():
+            fi.add_content("MSn spectrum")
+        basename = os.path.basename
+        dirname = os.path.dirname
+        for source_file in glob.glob(os.path.join(self.dirpath, "AcqData", "*")):
+            sf = SourceFile(
+                basename(source_file), dirname(source_file),
+                None, *("Agilent MassHunter nativeID format", "Agilent MassHunter format"))
+            fi.add_file(sf, check=False)
+        return fi
 
     def _get_instrument_info(self):
         ion_modes_flags = self.source.MSScanFileInformation.IonModes

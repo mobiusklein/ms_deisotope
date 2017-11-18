@@ -4,7 +4,7 @@ from .mzxml import MzXMLLoader
 from .mgf import MGFLoader
 
 guessers = []
-reader_types = [MzMLLoader, MzXMLLoader]
+reader_types = [MzMLLoader, MzXMLLoader, MGFLoader]
 
 
 def register_type_guesser(reader_guesser):
