@@ -148,8 +148,19 @@ class MzMLScanSerializer(ScanSerializerBase):
     def add_file_contents(self, file_contents):
         self.file_contents_list.append(file_contents)
 
-    def add_source_file(self, source_file_description):
-        self.source_file_list.append(source_file_description)
+    def add_source_file(self, source_file):
+        unwrapped = {
+            "name": source_file.name,
+            "location": source_file.location,
+            "id": source_file.id,
+            "params": []
+        }
+        unwrapped['params'].extend(source_file.parameters)
+        if source_file.id_format:
+            unwrapped['params'].append(source_file.id_format)
+        if source_file.file_format:
+            unwrapped['params'].append(source_file.file_format)
+        self.source_file_list.append(unwrapped)
 
     def add_data_processing(self, data_processing_description):
         self.data_processing_list.append(data_processing_description)
