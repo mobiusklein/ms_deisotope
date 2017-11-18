@@ -3,7 +3,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://sashimi.sourceforge.net/schema_revision/mzXML_3.2 http://sashimi.sourceforge.net/schema_revision/mzXML_3.2/mzXML_idx_3.2.xsd">
   <msRun scanCount="4" startTime="PT29.0069S" endTime="PT29.411S">
-    <parentFile fileName="file:///C:\Users\Joshua Klein\programming\deisotope\data\hf_microscans/AGP_tryptic_300ng_3microscans_glycoproteomics_nCE_27-35.raw"
+    <parentFile fileName="file:///C:\Users\data\hf_microscans/AGP_tryptic_300ng_3microscans_glycoproteomics_nCE_27-35.raw"
                 fileType="RAWData"
                 fileSha1="fd37dc7d290e8d166c524fab474166d3b6e10a3f"/>
     <msInstrument msInstrumentID="1">

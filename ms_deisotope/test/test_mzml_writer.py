@@ -19,7 +19,7 @@ class TestMzMLScanSerializer(unittest.TestCase):
             writer = MzMLScanSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
             description = source_reader.file_description()
             wrote_spectrum_type = False
-            for key in description.get("fileContent", []):
+            for key in description.contents:
                 if 'profile spectrum' in key:
                     key = {"centroid spectrum": ''}
                 if 'centroid spectrum' in key:
@@ -28,8 +28,8 @@ class TestMzMLScanSerializer(unittest.TestCase):
                 else:
                     wrote_spectrum_type = True
                 writer.add_file_contents(key)
-            source_file_list_container = description.get('sourceFileList', {'sourceFile': []})
-            for source_file in source_file_list_container.get("sourceFile", []):
+            # source_file_list_container = description.get('sourceFileList', {'sourceFile': []})
+            for source_file in description.source_files:
                 writer.add_source_file(source_file)
 
             instrument_configs = source_reader.instrument_configuration()

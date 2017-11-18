@@ -121,6 +121,21 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         self.assertEqual(product.index, 1)
         reader.close()
 
+    def test_instrument_configuration(self):
+        reader = self.reader
+        bunch = next(reader)
+        precursor = bunch.precursor
+        config = precursor.instrument_configuration
+        self.assertEqual(config.id, "IC1")
+        assert "orbitrap" in config.analyzers
+
+    def test_file_description(self):
+        file_info = self.reader.file_description()
+        assert "MS1 spectrum" in file_info.contents
+        assert "MSn spectrum" in file_info.contents
+        source_file = file_info.source_files[0]
+        assert source_file.name == "three_test_scans.mzML"
+
 
 if __name__ == '__main__':
     unittest.main()

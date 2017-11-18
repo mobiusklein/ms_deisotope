@@ -35,6 +35,11 @@ class TestMzXMLLoaderScanBehavior(unittest.TestCase):
     def test_precursor_info(self):
         self.assertEqual(self.first_scan.precursor_information, None)
 
+    def test_file_description(self):
+        file_info = self.reader.file_description()
+        source_file = file_info.source_files[0]
+        assert source_file.name == "AGP_tryptic_300ng_3microscans_glycoproteomics_nCE_27-35.raw"
+
 
 if __name__ == '__main__':
     unittest.main()
