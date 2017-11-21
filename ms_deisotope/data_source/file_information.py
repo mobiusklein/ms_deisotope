@@ -83,7 +83,63 @@ file_formats = {
 }
 
 
+content_keys = [
+    "data file content",
+    "electromagnetic radiation spectrum",
+    "total ion current chromatogram",
+    "absorption spectrum",
+    "selected reaction monitoring chromatogram",
+    "selected ion monitoring chromatogram",
+    "consecutive reaction monitoring chromatogram",
+    "MSn spectrum",
+    "CRM spectrum",
+    "SIM spectrum",
+    "SRM spectrum",
+    "enhanced multiply charged spectrum",
+    "constant neutral gain spectrum",
+    "constant neutral loss spectrum",
+    "charge inversion mass spectrum",
+    "time-delayed fragmentation spectrum",
+    "emission spectrum",
+    "product ion spectrum",
+    "precursor ion spectrum",
+    "mass spectrum",
+    "basepeak chromatogram",
+    "selected ion current chromatogram",
+    "PDA spectrum",
+    "MS1 spectrum",
+    "absorption chromatogram",
+    "emission chromatogram",
+    "mass chromatogram",
+    "electromagnetic radiation chromatogram",
+    "time-delayed fragmentation spectrum",
+    "MSn spectrum",
+    "CRM spectrum",
+    "SIM spectrum",
+    "SRM spectrum",
+    "e/2 mass spectrum",
+    "constant neutral gain spectrum",
+    "constant neutral loss spectrum",
+    "charge inversion mass spectrum",
+    "product ion spectrum",
+    "precursor ion spectrum",
+    "MS1 spectrum",
+    "enhanced multiply charged spectrum",
+    "total ion current chromatogram",
+    "selected reaction monitoring chromatogram",
+    "selected ion monitoring chromatogram",
+    "consecutive reaction monitoring chromatogram",
+    "basepeak chromatogram",
+    "selected ion current chromatogram",
+    "absorption chromatogram",
+    "emission chromatogram",
+    "time-delayed fragmentation spectrum",
+    "enhanced multiply charged spectrum"
+]
+
+
 class FileInformation(object):
+
     def __init__(self, contents=None, source_files=None):
         if contents is None:
             contents = {}
@@ -97,7 +153,8 @@ class FileInformation(object):
             source = os.path.realpath(source)
             if check:
                 if not os.path.exists(source):
-                    raise ValueError("Source File %r does not exist" % (source,))
+                    raise ValueError(
+                        "Source File %r does not exist" % (source,))
             name = os.path.basename(source)
             location = os.path.dirname(source)
             idfmt, file_fmt = SourceFile.guess_format(source)
@@ -140,6 +197,7 @@ format_parameter_map = {
 
 
 class SourceFile(object):
+
     def __init__(self, name, location, id=None, id_format=None, file_format=None, parameters=None):
         if id is None:
             id = name
@@ -187,8 +245,13 @@ class SourceFile(object):
         return None, None
 
     def __repr__(self):
-        template = "SourceFile(%r, %r, %r, %r, %r)"
+        template = "SourceFile(%r, %r, %r, %r, %r%s)"
+        if self.parameters:
+            tail = ", %r" % self.parameters
+        else:
+            tail = ''
         return template % (
             self.name, self.location,
-            self.id, self.id_format, self.file_format
+            self.id, self.id_format, self.file_format,
+            tail
         )
