@@ -4,7 +4,6 @@ import tempfile
 
 from ms_deisotope.data_source import MzMLLoader
 from ms_deisotope.test.common import datafile
-from ms_deisotope.data_source import infer_type
 
 from ms_deisotope.output.mzml import MzMLScanSerializer, ProcessedMzMLDeserializer
 
@@ -18,20 +17,10 @@ class TestMzMLScanSerializer(unittest.TestCase):
         with open(name, 'wb') as fh:
             writer = MzMLScanSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
             description = source_reader.file_description()
-            wrote_spectrum_type = False
-            for key in description.contents:
-                if 'profile spectrum' in key:
-                    key = {"centroid spectrum": ''}
-                if 'centroid spectrum' in key:
-                    if wrote_spectrum_type:
-                        continue
-                else:
-                    wrote_spectrum_type = True
-                writer.add_file_contents(key)
-            # source_file_list_container = description.get('sourceFileList', {'sourceFile': []})
-            for source_file in description.source_files:
-                writer.add_source_file(source_file)
-
+            writer.add_file_information(description)
+            writer.add_file_contents("profile spectrum")
+            writer.add_file_contents("centroid spectrum")
+            writer.remove_file_contents("profile spectrum")
             instrument_configs = source_reader.instrument_configuration()
             for config in instrument_configs:
                 writer.add_instrument_configuration(config)
@@ -52,6 +41,10 @@ class TestMzMLScanSerializer(unittest.TestCase):
             for an, bn in zip(a.products, b.products):
                 assert an.id == bn.id
                 assert abs(an.precursor_information.neutral_mass - bn.precursor_information.neutral_mass) < 1e-6
+        processed_reader.reset()
+        description = processed_reader.file_description()
+        assert "profile spectrum" not in description.contents
+        assert "centroid spectrum" in description.contents
         processed_reader.close()
         try:
             os.remove(processed_reader.source_file)
