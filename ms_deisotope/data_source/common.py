@@ -921,7 +921,7 @@ class WrappedScan(Scan):
             data, source, peak_set=None,
             deconvoluted_peak_set=None,
             product_scans=product_scans)
-        self._arrays = array_data
+        self._arrays = RawDataArrays(*array_data)
         self._overrides = overrides
         for key, value in overrides.items():
             if not key.startswith("_"):
@@ -1109,6 +1109,15 @@ class ProcessedScan(object):
         self.instrument_configuration = instrument_configuration
         self.product_scans = product_scans
 
+    def clear(self):
+        self.peak_set = None
+        self.deconvoluted_peak_set = None
+        self.activation = None
+        self.acquisition_information = None
+        self.isolation_window = None
+        self.instrument_configuration = None
+        self.product_scans = None
+
     @property
     def scan_id(self):
         return self.id
@@ -1122,8 +1131,10 @@ class ProcessedScan(object):
     def __repr__(self):
         if self.deconvoluted_peak_set is not None:
             peaks = self.deconvoluted_peak_set
-        else:
+        elif self.peak_set is not None:
             peaks = self.peak_set
+        else:
+            peaks = []
 
         pinfo = self.precursor_information
         if pinfo:
