@@ -22,11 +22,12 @@ cdef class Averagine(object):
 @cython.final
 cdef class TheoreticalIsotopicPattern(object):
     cdef:
-        public list base_tid
-        public list truncated_tid
+        public list peaklist
+        public double origin
+        public double offset
 
     @staticmethod
-    cdef TheoreticalIsotopicPattern _create(list base_tid, list truncated_tid=*)
+    cdef TheoreticalIsotopicPattern _create(list peaklist, double origin, double offset)
 
     cpdef TheoreticalIsotopicPattern clone(self)
 
@@ -34,8 +35,7 @@ cdef class TheoreticalIsotopicPattern(object):
 
     cpdef TheoreticalIsotopicPattern ignore_below(self, double ignore_below=*)
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=*)
-    cpdef TheoreticalIsotopicPattern shift(self, double mz, bint truncated=*)
-    cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method=*)
+    cpdef TheoreticalIsotopicPattern shift(self, double mz)
     cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method=*)
 
     @cython.final
@@ -43,14 +43,10 @@ cdef class TheoreticalIsotopicPattern(object):
 
     @cython.final
     cdef inline TheoreticalPeak get(self, ssize_t i)
-    @cython.final
-    cdef inline TheoreticalPeak get_base(self, ssize_t i)
 
     @cython.final
     cdef inline size_t get_size(self)
-    @cython.final
-    cdef inline size_t get_base_size(self)
-
+    
     @cython.final
     cdef inline double get_monoisotopic_mz(self)
     @cython.final

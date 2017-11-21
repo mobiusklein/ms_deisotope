@@ -445,10 +445,10 @@ cdef class LCMSFeatureProcessorBase(object):
             if features[0] is None:
                 features = list(features)
                 features[0] = EmptyFeature._create(mz)
-                snapped_tid = base_tid.clone().shift(mz, True)
+                snapped_tid = base_tid.clone().shift(mz)
             else:
                 f = <LCMSFeature>PyList_GET_ITEM(features, 0)
-                snapped_tid = base_tid.clone().shift(f.get_mz(), True)
+                snapped_tid = base_tid.clone().shift(f.get_mz())
             # feat_iter = FeatureSetIterator._create_with_threshold(features, base_tid, 0.1)
             feat_iter = FeatureSetIterator._create(features)
             counter = 0

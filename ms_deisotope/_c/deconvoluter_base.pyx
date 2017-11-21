@@ -1,4 +1,5 @@
 # cython: embedsignature=True
+# cython: profile=True
 
 cimport cython
 from libc.stdlib cimport malloc, free
@@ -256,10 +257,10 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
         tid = self.averagine.isotopic_cluster(
             peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after,
             ignore_below=ignore_below)
-        eid = self.match_theoretical_isotopic_distribution(tid.truncated_tid, error_tolerance=error_tolerance)
+        eid = self.match_theoretical_isotopic_distribution(tid.peaklist, error_tolerance=error_tolerance)
         # self.scale_theoretical_distribution(tid, eid)
         tid._scale(eid, self.scale_method)
-        score = self.scorer._evaluate(self.peaklist, eid, tid.truncated_tid)
+        score = self.scorer._evaluate(self.peaklist, eid, tid.peaklist)
         return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
@@ -313,9 +314,9 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
         tid = averagine.isotopic_cluster(
             peak.mz, charge, charge_carrier=charge_carrier,
             truncate_after=truncate_after, ignore_below=ignore_below)
-        eid = self.match_theoretical_isotopic_distribution(tid.truncated_tid, error_tolerance=error_tolerance)
+        eid = self.match_theoretical_isotopic_distribution(tid.peaklist, error_tolerance=error_tolerance)
         self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer._evaluate(self.peaklist, eid, tid.truncated_tid)
+        score = self.scorer._evaluate(self.peaklist, eid, tid.peaklist)
         return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,

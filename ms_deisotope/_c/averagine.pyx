@@ -1,4 +1,5 @@
 # cython: embedsignature=True
+# cython: profile=True
 
 cimport cython
 from cpython cimport PyObject
@@ -119,8 +120,10 @@ cdef class Averagine(object):
 
         composition = self.scale(mz, charge, charge_carrier)
         tid = _isotopic_variants(composition, npeaks=None, charge=charge, charge_carrier=PROTON)
-        isotopic_pattern = TheoreticalIsotopicPattern._create(tid)
-        isotopic_pattern.shift(mz, True)
+
+        isotopic_pattern = TheoreticalIsotopicPattern._create(
+            tid, (<TheoreticalPeak>PyList_GET_ITEM(tid, 0)).mz, 0)
+        isotopic_pattern.shift(mz)
 
         if truncate_after < 1.0:
             isotopic_pattern.truncate_after(truncate_after)
@@ -192,77 +195,62 @@ cdef double sum_intensity(list peaklist):
 cdef class TheoreticalIsotopicPattern(object):
 
     @staticmethod
-    cdef TheoreticalIsotopicPattern _create(list base_tid, list truncated_tid=None):
+    cdef TheoreticalIsotopicPattern _create(list peaklist, double origin, double offset):
         cdef:
             TheoreticalIsotopicPattern self
 
         self = TheoreticalIsotopicPattern.__new__(TheoreticalIsotopicPattern)
-        self.base_tid = base_tid
-        if truncated_tid is None:
-            self.truncated_tid = clone_peak_list(base_tid)
-        else:
-            self.truncated_tid = truncated_tid
+        self.peaklist = peaklist
+        self.origin = origin
+        self.offset = offset
         return self
 
-    def __init__(self, base_tid, truncated_tid=None):
-        if truncated_tid is None:
-            truncated_tid = clone_peak_list(base_tid)
-        self.base_tid = base_tid
-        self.truncated_tid = truncated_tid
+    def __init__(self, peaklist, origin, offset=None):
+        self.peaklist = list(peaklist)
+        self.origin = origin
+        if offset is None:
+            offset = self.peaklist[0].mz - origin
+        self.offset = offset
+
 
     def __getitem__(self, i):
-        return self.truncated_tid[i]
+        return self.peaklist[i]
 
     def __iter__(self):
-        return iter(self.truncated_tid)
+        return iter(self.peaklist)
 
     def __len__(self):
         return self.get_size()
 
     @cython.final
     cdef inline TheoreticalPeak get(self, ssize_t i):
-        return <TheoreticalPeak>PyList_GET_ITEM(self.truncated_tid, i)
-
-    @cython.final
-    cdef inline TheoreticalPeak get_base(self, ssize_t i):
-        return <TheoreticalPeak>PyList_GET_ITEM(self.base_tid, i)
+        return <TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)
 
     @cython.final
     cdef inline size_t get_size(self):
-        return PyList_GET_SIZE(self.truncated_tid)
-
-    @cython.final
-    cdef inline size_t get_base_size(self):
-        return PyList_GET_SIZE(self.base_tid)
+        return PyList_GET_SIZE(self.peaklist)
 
     cpdef TheoreticalIsotopicPattern clone(self):
         cdef:
             size_t i, n
             TheoreticalPeak p
-            list base, truncated
-        base = []
-        n = self.get_base_size()
-        for i in range(n):
-            p = self.get_base(i).clone()
-            PyList_Append(base, p)
-        truncated = []
+            list peaklist
+        peaklist = []
         n = self.get_size()
         for i in range(n):
-            p = self.get(i).clone()
-            PyList_Append(truncated, p)
-        return TheoreticalIsotopicPattern._create(base, truncated)
+            p = self.get(i)
+            peaklist.append(TheoreticalPeak._create(p.mz, p.intensity, p.charge))
+        return TheoreticalIsotopicPattern._create(peaklist, self.origin, self.offset)
 
     def __reduce__(self):
-        return self.__class__, (self.base_tid, self.truncated_tid)
+        return self.__class__, (self.peaklist, self.origin, self.offset)
 
     @cython.final
     cdef inline list get_processed_peaks(self):
-        return self.truncated_tid
+        return self.peaklist
 
     cdef inline double get_monoisotopic_mz(self):
-        cdef TheoreticalPeak p
-        p = <TheoreticalPeak>PyList_GET_ITEM(self.base_tid, 0)
-        return p.mz
+        return self.origin
 
     @property
     def monoisotopic_mz(self):
@@ -284,37 +272,28 @@ cdef class TheoreticalIsotopicPattern(object):
                 continue
             else:
                 total += p.intensity
-                p = p.clone()
                 PyList_Append(kept_tid, p)
-        self.truncated_tid = kept_tid
+        self.peaklist = kept_tid
+        self.offset = self.origin - self.get(0).mz
         n = self.get_size()
         for i in range(n):
             p = self.get(i)
             p.intensity /= total
         return self
 
-    cpdef TheoreticalIsotopicPattern shift(self, double mz, bint truncated=True):
+    cpdef TheoreticalIsotopicPattern shift(self, double mz):
         cdef:
-            TheoreticalPeak first_peak, peak
+            TheoreticalPeak peak
             size_t i, n
             double delta
 
-        first_peak = self.get_base(0)
-        n = self.get_base_size()
-        for i in range(1, n):
-            peak = self.get_base(i)
-            delta = peak.mz - first_peak.mz
-            peak.mz = mz + delta
-        first_peak.mz = mz
+        delta = mz - self.origin
+        self.origin = mz
 
-        if truncated:
-            first_peak = self.get(0)
-            n = self.get_size()
-            for i in range(1, n):
-                peak = self.get(i)
-                delta = peak.mz - first_peak.mz
-                peak.mz = mz + delta
-            first_peak.mz = mz
+        n = self.get_size()
+        for i in range(n):
+            peak = self.get(i)
+            peak.mz += delta
         return self
 
     @cython.cdivision
@@ -326,20 +305,18 @@ cdef class TheoreticalIsotopicPattern(object):
             size_t i, n
         cumsum = 0
         result = []
-        n = self.get_base_size()
+        n = self.get_size()
         for i in range(n):
-            peak = self.get_base(i)
+            peak = self.get(i)
             cumsum += peak.intensity
             PyList_Append(result, peak)
             if cumsum >= truncate_after:
                 break
-
-        self.truncated_tid = result
-
-        n = self.get_base_size()
+        self.peaklist = result
+        n = self.get_size()
         normalizer = 1. / cumsum
         for i in range(n):
-            peak = self.get_base(i)
+            peak = self.get(i)
             peak.intensity *= normalizer
         return self
 
@@ -358,7 +335,7 @@ cdef class TheoreticalIsotopicPattern(object):
 
         n = self.get_size()
         if n == 0:
-            raise ValueError("Isotopic Pattern has length 0")
+            raise ValueError("Isotopic Pattern has length 0 (%f, %r)" % (self.origin, self.peaklist))
         if method == "sum":
             total_abundance = sum_intensity(experimental_distribution)
             for i in range(n):
@@ -400,9 +377,9 @@ cdef class TheoreticalIsotopicPattern(object):
 
     def __repr__(self):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
-            self.base_tid[0].mz,
-            self.base_tid[0].charge,
-            ', '.join("%0.3f" % p.intensity for p in self.truncated_tid))
+            self.monoisotopic_mz,
+            self.peaklist[0].charge,
+            ', '.join("%0.3f" % p.intensity for p in self.peaklist))
 
     cpdef bint _eq(self, object other):
         cdef:
@@ -411,7 +388,7 @@ cdef class TheoreticalIsotopicPattern(object):
         if isinstance(other, list):
             peaklist = other
         elif isinstance(other, TheoreticalIsotopicPattern):
-            peaklist = other.truncated_tid
+            peaklist = other.peaklist
         else:
             raise TypeError(type(other))
         return self.get_processed_peaks() == peaklist
@@ -484,7 +461,7 @@ cdef class AveragineCache(object):
             else:
                 tid = <TheoreticalIsotopicPattern>pvalue
                 tid = tid.clone()
-                tid.shift(mz, True)
+                tid.shift(mz)
                 return tid
         else:
             tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
