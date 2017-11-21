@@ -15,7 +15,10 @@ try:
         else:
             figure = ax.figure
         n = len(products)
-        gs = gridspec.GridSpec(1 + (n / nperrow), nperrow)
+        if n > 0:
+            gs = gridspec.GridSpec(1 + max((n / nperrow), 1), nperrow)
+        else:
+            gs = gridspec.GridSpec(1 + (n / nperrow), nperrow)
         ax = figure.add_subplot(gs[0, :])
         if scan.is_profile:
             draw_raw(scan.arrays, ax=ax)
@@ -26,10 +29,13 @@ try:
             draw_peaklist(scan.deconvoluted_peak_set, ax=ax, lw=0.5, alpha=0.75)
         ax.set_title(scan.id)
         k = -1
-        for i in range(n / nperrow):
+        for i in range((n / nperrow) + 1):
             for j in range(nperrow):
                 k += 1
-                product_scan = products[k]
+                try:
+                    product_scan = products[k]
+                except IndexError:
+                    break
                 ax = figure.add_subplot(gs[i + 1, j])
                 if scan.is_profile:
                     draw_raw(scan.arrays, ax=ax, alpha=0.8)
