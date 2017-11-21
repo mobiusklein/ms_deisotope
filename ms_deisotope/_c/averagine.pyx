@@ -41,7 +41,7 @@ cdef void slide(double mz, list peaklist):
         TheoreticalPeak peak, first_peak
         double delta
 
-    n = len(peaklist) - 1
+    n = PyList_GET_SIZE(peaklist) - 1
 
     first_peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, 0) 
     for i in range(n):
@@ -173,8 +173,7 @@ cdef list clone_peak_list(list peaklist):
 
     result = []
     for i in range(PyList_GET_SIZE(peaklist)):
-        peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, i)
-        result.append(peak.clone())
+        result.append((<TheoreticalPeak>PyList_GET_ITEM(peaklist, i)).clone())
     return result
 
 
@@ -185,8 +184,7 @@ cdef double sum_intensity(list peaklist):
         FittedPeak peak
     total = 0
     for i in range(PyList_GET_SIZE(peaklist)):
-        peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
-        total += peak.intensity
+        total += (<FittedPeak>PyList_GET_ITEM(peaklist, i)).intensity
     return total
 
 
@@ -221,15 +219,19 @@ cdef class TheoreticalIsotopicPattern(object):
     def __len__(self):
         return self.get_size()
 
+    @cython.final
     cdef inline TheoreticalPeak get(self, ssize_t i):
         return <TheoreticalPeak>PyList_GET_ITEM(self.truncated_tid, i)
 
+    @cython.final
     cdef inline TheoreticalPeak get_base(self, ssize_t i):
         return <TheoreticalPeak>PyList_GET_ITEM(self.base_tid, i)
 
+    @cython.final
     cdef inline size_t get_size(self):
         return PyList_GET_SIZE(self.truncated_tid)
 
+    @cython.final
     cdef inline size_t get_base_size(self):
         return PyList_GET_SIZE(self.base_tid)
 
@@ -253,6 +255,7 @@ cdef class TheoreticalIsotopicPattern(object):
     def __reduce__(self):
         return self.__class__, (self.base_tid, self.truncated_tid)
 
+    @cython.final
     cdef inline list get_processed_peaks(self):
         return self.truncated_tid
 
@@ -340,8 +343,12 @@ cdef class TheoreticalIsotopicPattern(object):
             peak.intensity *= normalizer
         return self
 
-    @cython.cdivision
     cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method="sum"):
+        return self._scale(experimental_distribution, method)
+
+    @cython.final
+    @cython.cdivision
+    cdef inline TheoreticalIsotopicPattern _scale(self, list experimental_distribution, str method="sum"):
         cdef:
             size_t i, j, n
             TheoreticalPeak peak

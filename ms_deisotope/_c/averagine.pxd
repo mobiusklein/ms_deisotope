@@ -1,3 +1,5 @@
+cimport cython
+
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 cdef double PROTON
@@ -17,6 +19,7 @@ cdef class Averagine(object):
     cdef TheoreticalIsotopicPattern _isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
 
 
+@cython.final
 cdef class TheoreticalIsotopicPattern(object):
     cdef:
         public list base_tid
@@ -33,14 +36,24 @@ cdef class TheoreticalIsotopicPattern(object):
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=*)
     cpdef TheoreticalIsotopicPattern shift(self, double mz, bint truncated=*)
     cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method=*)
+    cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method=*)
 
+    @cython.final
+    cdef inline TheoreticalIsotopicPattern _scale(self, list experimental_distribution, str method=*)
+
+    @cython.final
     cdef inline TheoreticalPeak get(self, ssize_t i)
+    @cython.final
     cdef inline TheoreticalPeak get_base(self, ssize_t i)
 
+    @cython.final
     cdef inline size_t get_size(self)
+    @cython.final
     cdef inline size_t get_base_size(self)
 
+    @cython.final
     cdef inline double get_monoisotopic_mz(self)
+    @cython.final
     cdef inline list get_processed_peaks(self)
 
 
