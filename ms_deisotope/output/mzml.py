@@ -5,6 +5,8 @@ import warnings
 
 import numpy as np
 
+from six import string_types as basestring
+
 from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
 try:
@@ -145,8 +147,31 @@ class MzMLScanSerializer(ScanSerializerBase):
     def add_software(self, software_description):
         self.software_list.append(software_description)
 
+    def add_file_information(self, file_information):
+        for key, value in file_information.contents.items():
+            if value is None:
+                value = ''
+            self.add_file_contents({key: value})
+        for source_file in file_information.source_files:
+            self.add_source_file(source_file)
+
     def add_file_contents(self, file_contents):
         self.file_contents_list.append(file_contents)
+
+    def remove_file_contents(self, name):
+        for i, content in enumerate(self.file_contents_list):
+            if isinstance(content, dict):
+                if 'name' in content:
+                    content = content['name']
+                elif len(content) == 1:
+                    content = list(content.keys())[0]
+                else:
+                    continue
+            if content == name:
+                break
+        else:
+            raise KeyError(name)
+        self.file_contents_list.pop(i)
 
     def add_source_file(self, source_file):
         unwrapped = {
