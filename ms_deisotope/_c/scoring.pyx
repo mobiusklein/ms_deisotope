@@ -460,14 +460,14 @@ cdef double score_peak(FittedPeak obs, TheoreticalPeak theo, double mass_error_t
     if mass_error <= mass_error_tolerance:
         mass_accuracy = 1 - mass_error / mass_error_tolerance
     else:
-        mass_accuracy = 0
+        return 0.
 
     if obs.intensity < theo.intensity and (((theo.intensity - obs.intensity) / obs.intensity) <= 1):
         abundance_diff = 1 - ((theo.intensity - obs.intensity) / obs.intensity)
     elif obs.intensity >= theo.intensity and (((obs.intensity - theo.intensity) / obs.intensity) <= 1):
         abundance_diff = sqrt(1 - ((obs.intensity - theo.intensity) / obs.intensity))
     else:
-        abundance_diff = 0.
+        return 0.
     score = sqrt(theo.intensity) * mass_accuracy * abundance_diff
     return score
 
