@@ -337,7 +337,10 @@ class ThermoRawScanPtr(Base):
 
 
 def _make_id(scan_number):
-    return "%s%d" % (_id_template, (scan_number))
+    try:
+        return "%s%d" % (_id_template, (scan_number))
+    except TypeError:
+        return None
 
 
 def _parse_id(scan_id):
@@ -412,7 +415,7 @@ class ThermoRawDataInterface(ScanDataSource):
             last_index = self._scan_index(scan) - 1
             current_level = self._ms_level(scan)
             i = 0
-            while last_index > 0 and i < 100:
+            while last_index >= 0 and i < 100:
                 prev_scan = self.get_scan_by_index(last_index)
                 if prev_scan.ms_level >= current_level:
                     last_index -= 1
