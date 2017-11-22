@@ -1,5 +1,4 @@
 # cython: embedsignature=True
-# cython: profile=True
 
 cimport cython
 from cpython cimport PyObject
@@ -296,6 +295,22 @@ cdef class TheoreticalIsotopicPattern(object):
             peak.mz += delta
         return self
 
+    cdef TheoreticalIsotopicPattern clone_shift(self, double mz):
+        cdef:
+            size_t i, n
+            TheoreticalPeak p
+            list peaklist
+            double delta
+
+        delta = mz - self.origin
+        peaklist = []
+        n = self.get_size()
+        for i in range(n):
+            p = self.get(i)
+            peaklist.append(TheoreticalPeak._create(p.mz + delta, p.intensity, p.charge))
+        return TheoreticalIsotopicPattern._create(peaklist, mz, self.offset)
+
+
     @cython.cdivision
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=0.95):
         cdef:
@@ -460,8 +475,7 @@ cdef class AveragineCache(object):
                 return tid
             else:
                 tid = <TheoreticalIsotopicPattern>pvalue
-                tid = tid.clone()
-                tid.shift(mz)
+                tid = tid.clone_shift(mz)
                 return tid
         else:
             tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)

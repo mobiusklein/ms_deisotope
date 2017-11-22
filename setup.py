@@ -28,7 +28,8 @@ def make_extensions():
     try:
         from Cython.Build import cythonize
         cython_directives = {
-            'embedsignature': True
+            'embedsignature': True,
+            "profile": False
         }
         macros = []
         # if is_ci:
@@ -66,7 +67,7 @@ def make_extensions():
                       define_macros=macros),
             Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-        ], compiler_directives={'embedsignature': True})
+        ], compiler_directives=cython_directives)
     except ImportError:
         extensions = ([
             Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],

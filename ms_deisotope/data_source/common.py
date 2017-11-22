@@ -1220,20 +1220,36 @@ class ScanAcquisitionInformation(object):
         self.combination = combination
         self.scan_list = scan_list
 
+    def __getitem__(self, i):
+        return self.scan_list[i]
+
+    def __iter__(self):
+        return iter(self.scan_list)
+
+    def __len__(self):
+        return len(self.scan_list)
+
     def __repr__(self):
         return "ScanAcquisitionInformation(combination=%r, scan_list=%r)" % (
             self.combination, self.scan_list)
 
 
 class ScanEventInformation(object):
-    def __init__(self, start_time, window_list, drift_time=0):
+    def __init__(self, start_time, window_list, drift_time=None):
         self.start_time = start_time
         self.window_list = window_list or []
         self.drift_time = drift_time
 
+    def has_ion_mobility(self):
+        return self.drift_time is not None
+
     def __repr__(self):
-        template = "ScanEventInformation(start_time={}, window_list={}, drift_time={})"
-        form = template.format(self.start_time, self.window_list, self.drift_time)
+        template = "ScanEventInformation(start_time={}, window_list={}{})"
+        if self.has_ion_mobility():
+            tail = ", drift_time={}".format(self.drift_time)
+        else:
+            tail = ''
+        form = template.format(self.start_time, self.window_list, tail)
         return form
 
 

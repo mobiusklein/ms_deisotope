@@ -1,5 +1,4 @@
 # cython: embedsignature=True
-# cython: profile=True
 
 cimport cython
 from libc.stdlib cimport malloc, free
@@ -418,7 +417,6 @@ cdef class ChargeIterator(object):
 
     def __dealloc__(self):
         free(self.values)
-
 
     @staticmethod
     cdef ChargeIterator _create(int lo, int hi):

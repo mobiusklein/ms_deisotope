@@ -26,7 +26,7 @@ from .text_utils import (envelopes_to_array, decode_envelopes)
 from ms_deisotope import peak_set
 from ms_deisotope.utils import Base
 from ms_deisotope.averagine import neutral_mass
-from ms_deisotope.data_source.common import PrecursorInformation, ScanBunch
+from ms_deisotope.data_source.common import PrecursorInformation, ScanBunch, ChargeNotProvided
 from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.feature_map import ExtendedScanIndex
 
@@ -313,6 +313,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 "charge": precursor_information.charge,
                 "scan_id": precursor_information.precursor_scan_id
             }
+        if package['charge'] == ChargeNotProvided:
+            package["charge"] = None
         if activation_information is not None:
             package['activation'] = self._pack_activation(activation_information)
         if isolation_window is not None:
@@ -361,6 +363,8 @@ class MzMLScanSerializer(ScanSerializerBase):
         else:
             instrument_config_id = instrument_config.id
 
+        scan_parameters = self.extract_scan_event_parameters(bunch.precursor)
+
         self.writer.write_spectrum(
             [p.mz for p in precursor_peaks], [p.intensity for p in precursor_peaks], charge_array,
             id=bunch.precursor.id, params=[
@@ -370,7 +374,8 @@ class MzMLScanSerializer(ScanSerializerBase):
             scan_start_time=bunch.precursor.scan_time,
             compression=self.compression,
             other_arrays=self._prepare_extra_arrays(bunch.precursor),
-            instrument_configuration_id=instrument_config_id)
+            instrument_configuration_id=instrument_config_id,
+            scan_params=scan_parameters)
 
         self.total_ion_chromatogram_tracker[
             bunch.precursor.scan_time] = _total_intensity_from_descriptors(descriptors)
@@ -400,6 +405,8 @@ class MzMLScanSerializer(ScanSerializerBase):
                 instrument_config_id = None
             else:
                 instrument_config_id = instrument_config.id
+
+            scan_parameters = self.extract_scan_event_parameters(prod)
             self.writer.write_spectrum(
                 [p.mz for p in product_peaks], [p.intensity for p in product_peaks], charge_array,
                 id=prod.id, params=[
@@ -413,10 +420,26 @@ class MzMLScanSerializer(ScanSerializerBase):
                     prod.isolation_window),
                 compression=self.compression,
                 other_arrays=self._prepare_extra_arrays(prod),
-                instrument_configuration_id=instrument_config_id)
+                instrument_configuration_id=instrument_config_id,
+                scan_params=scan_parameters)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)
+
+    def extract_scan_event_parameters(self, scan):
+        scan_parameters = []
+        acquisition_info = scan.acquisition_information
+        if acquisition_info is not None and len(acquisition_info) > 0:
+            scan_event = acquisition_info[0]
+            if scan_event.has_ion_mobility():
+                scan_parameters.append({
+                    "name": "ion mobility drift time",
+                    "value": scan_event.drift_time,
+                    "unit_name": "millisecond",
+                    'unit_cv_ref': "UO",
+                    "unit_accession": 'UO:0000028'
+                })
+        return scan_parameters
 
     def save_chromatogram(self, chromatogram_dict, chromatogram_type, params=None, **kwargs):
         time_array, intensity_array = zip(*chromatogram_dict.items())

@@ -42,6 +42,9 @@ cdef class TheoreticalIsotopicPattern(object):
     cdef inline TheoreticalIsotopicPattern _scale(self, list experimental_distribution, str method=*)
 
     @cython.final
+    cdef inline TheoreticalIsotopicPattern clone_shift(self, double mz)
+
+    @cython.final
     cdef inline TheoreticalPeak get(self, ssize_t i)
 
     @cython.final
