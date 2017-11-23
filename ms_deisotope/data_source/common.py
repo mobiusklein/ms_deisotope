@@ -7,7 +7,7 @@ import numpy as np
 
 from ms_peak_picker import (
     pick_peaks, reprofile, average_signal, scan_filter)
-from ms_peak_picker import PeakIndex
+from ms_peak_picker import PeakIndex, PeakSet
 from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 from ..deconvolution import deconvolute_peaks
@@ -722,7 +722,7 @@ class Scan(object):
         """
         mzs, intensities = self.arrays
         if len(mzs) == 0:
-            self.peak_set = PeakIndex(mzs, intensities, [])
+            self.peak_set = PeakIndex(mzs, intensities, PeakSet([]))
             return self
         if self.is_profile:
             peak_mode = 'profile'
@@ -1241,7 +1241,7 @@ class ScanEventInformation(object):
         self.drift_time = drift_time
 
     def has_ion_mobility(self):
-        return self.drift_time is not None
+        return self.drift_time is not None and self.drift_time > 0
 
     def __repr__(self):
         template = "ScanEventInformation(start_time={}, window_list={}{})"
