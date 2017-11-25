@@ -1,3 +1,8 @@
+
+from ms_deisotope.averagine import neutral_mass
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
+from ms_deisotope.data_source.mgf import MGFLoader, mgf as pymgf
+
 from .text import HeaderedDelimitedWriter
 
 
@@ -40,3 +45,29 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self.write_header(scan_header)
         self.write_vectors(data_vectors)
         self.stream.write('END IONS\n')
+
+
+class ProcessedMGFDeserializer(MGFLoader):
+    def _create_parser(self):
+        return pymgf.read(self.source_file, read_charges=True,
+                          convert_arrays=1, encoding=self.encoding)
+
+    def _build_peaks(self, scan):
+        mz_array = scan['m/z array']
+        intensity_array = scan["intensity array"]
+        charge_array = scan['charge array']
+        peaks = []
+        for i in range(len(mz_array)):
+            peak = DeconvolutedPeak(
+                neutral_mass(mz_array[i], charge_array[i]), intensity_array[i], charge_array[i],
+                intensity_array[i], i)
+            peaks.append(peak)
+        peak_set = DeconvolutedPeakSet(peaks)
+        peak_set.reindex()
+        return peak_set
+
+    def _make_scan(self, scan):
+        scan = super(ProcessedMGFDeserializer, self)._make_scan(scan)
+        scan.peak_set = None
+        scan.deconvoluted_peak_set = self._build_peaks(scan)
+        return scan.pack()
