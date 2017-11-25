@@ -1,6 +1,13 @@
 import os
+import hashlib
+import warnings
 
 from six import string_types as basestring
+
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = OSError
 
 
 id_formats = {
@@ -255,3 +262,33 @@ class SourceFile(object):
             self.id, self.id_format, self.file_format,
             tail
         )
+
+    def _compute_checksum(self, hash_type='sha1', buffer_size=2**16):
+        hasher = hashlib.new(hash_type)
+        buffer_size = int(buffer_size)
+        with open(self.path, 'rb') as fh:
+            content_buffer = fh.read(buffer_size)
+            while content_buffer:
+                hasher.update(content_buffer)
+                content_buffer = fh.read(buffer_size)
+        return hasher.hexdigest()
+
+    def add_checksum(self, hash_type='sha1'):
+        checksum = self._compute_checksum(hash_type)
+        if hash_type == 'sha1':
+            self.parameters['SHA-1'] = checksum
+        elif hash_type == "md5":
+            self.parameters['MD5'] = checksum
+
+    def validate_checksum(self):
+        if not os.path.exists(self.path):
+            FileNotFoundError("%s not found" % (self.path,))
+        if 'SHA-1' in self.parameters:
+            checksum = self._compute_checksum('sha1')
+            return self.parameters['SHA-1'] == checksum
+        elif 'MD5' in self.parameters:
+            checksum = self._compute_checksum("md5")
+            return self.parameters['MD5'] == checksum
+        else:
+            warnings.warn("%r did not have a reference checksum. Could not validate" % (self,))
+            return True
