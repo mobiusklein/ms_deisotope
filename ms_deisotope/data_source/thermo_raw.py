@@ -225,6 +225,8 @@ class _RawFileMetadataLoader(object):
     def file_description(self):
         fi = FileInformation({}, [])
         fi.add_file(self.source_file)
+        sf = fi.source_files[0]
+        sf.add_checksum("sha1")
         if 1 in self._scan_type_index:
             fi.add_content("MS1 spectrum")
         scan_types = sorted(self._scan_type_index, reverse=True)
