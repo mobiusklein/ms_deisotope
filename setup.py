@@ -174,9 +174,19 @@ install_requires = [
 
 
 def run_setup(include_cext=True):
+    with open("ms_deisotope/version.py") as version_file:
+        version = None
+        for line in version_file.readlines():
+            if "version = " in line:
+                version = line.split(" = ")[1].replace("\"", "").strip()
+                print("Version is: %r" % (version,))
+                break
+        else:
+            print("Cannot determine version")
+
     setup(
         name='ms_deisotope',
-        version='0.0.2',
+        version=version,
         packages=find_packages(),
         author=', '.join(["Joshua Klein"]),
         author_email=["jaklein@bu.edu"],
