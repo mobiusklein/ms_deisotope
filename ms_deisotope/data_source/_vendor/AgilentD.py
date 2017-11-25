@@ -353,6 +353,7 @@ class _AgilentDMetadataLoader(object):
             sf = SourceFile(
                 basename(source_file), dirname(source_file),
                 None, *("Agilent MassHunter nativeID format", "Agilent MassHunter format"))
+            sf.add_checksum("sha1")
             fi.add_file(sf, check=False)
         return fi
 
