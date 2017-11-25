@@ -193,10 +193,10 @@ def run_setup(include_cext=True):
         ext_modules=make_extensions() if include_cext else None,
         cmdclass=cmdclass,
         classifiers=[
-                'Development Status :: 3 - Alpha',
-                'Intended Audience :: Science/Research',
-                'License :: OSI Approved :: BSD License',
-                'Topic :: Scientific/Engineering :: Bio-Informatics'],
+            'Development Status :: 3 - Alpha',
+            'Intended Audience :: Science/Research',
+            'License :: OSI Approved :: BSD License',
+            'Topic :: Scientific/Engineering :: Bio-Informatics'],
         install_requires=install_requires,
         zip_safe=False)
 
