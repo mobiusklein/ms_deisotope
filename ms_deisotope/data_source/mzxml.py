@@ -2,7 +2,8 @@ import numpy as np
 from pyteomics import mzxml
 from .common import (
     PrecursorInformation, ScanDataSource, ChargeNotProvided,
-    ActivationInformation, IsolationWindow,
+    ActivationInformation, IsolationWindow, ScanAcquisitionInformation,
+    ScanEventInformation, ScanWindow,
     ComponentGroup, component, InstrumentInformation,
     FileInformation, SourceFile)
 from .xml_reader import (
@@ -302,6 +303,14 @@ class MzXMLDataInterface(ScanDataSource):
             return self._instrument_config[scan['msInstrumentID']]
         except KeyError:
             return None
+
+    def _acquisition_information(self, scan):
+        scan_event = ScanEventInformation(
+            scan['retentionTime'],
+            window_list=[
+                ScanWindow(scan.get("lowMz"), scan.get("highMz"))
+            ])
+        return ScanAcquisitionInformation("no combination", [scan_event])
 
 
 class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
