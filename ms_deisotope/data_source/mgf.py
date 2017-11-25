@@ -186,13 +186,22 @@ class MGFLoader(MGFInterface, ScanIterator):
 
     def __init__(self, source_file, encoding='latin-1'):
         self.source_file = source_file
-        try:
-            self._index = index_mgf(source_file, encoding=encoding)
-        except TypeError:
-            self._index = OrderedDict()
-        self._source = mgf.read(source_file, read_charges=False, convert_arrays=1, encoding=encoding)
+        self.encoding = encoding
+        self._index = self._index_file()
+        self._source = self._create_parser()
         self._scan_cache = WeakValueDictionary()
         self.make_iterator()
+
+    def _create_parser(self):
+        return mgf.read(self.source_file, read_charges=False,
+                        convert_arrays=1, encoding=self.encoding)
+
+    def _index_file(self):
+        try:
+            index = index_mgf(self.source_file, encoding=self.encoding)
+        except TypeError:
+            index = OrderedDict()
+        return index
 
     @property
     def source(self):
