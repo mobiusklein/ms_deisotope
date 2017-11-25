@@ -162,10 +162,7 @@ class FileInformation(object):
                 if not os.path.exists(source):
                     raise ValueError(
                         "Source File %r does not exist" % (source,))
-            name = os.path.basename(source)
-            location = os.path.dirname(source)
-            idfmt, file_fmt = SourceFile.guess_format(source)
-            source = SourceFile(name, location, name, idfmt, file_fmt)
+            source = SourceFile.from_path(source)
         self.source_files.append(source)
 
     def add_content(self, key, value=None):
@@ -205,6 +202,32 @@ format_parameter_map = {
 
 class SourceFile(object):
 
+    _checksum_translation_map = {
+        'sha1': 'sha1',
+        'SHA-1': 'sha1',
+        'md5': 'md5',
+        'MD5': 'md5'
+    }
+
+    @classmethod
+    def _resolve_checksum_hash_type(cls, hash_type):
+        try:
+            return cls._checksum_translation_map[hash_type]
+        except KeyError:
+            try:
+                return cls._checksum_translation_map[hash_type.lower().replace("-", '')]
+            except KeyError:
+                raise KeyError(hash_type)
+
+    @classmethod
+    def from_path(cls, path):
+        path = os.path.realpath(path)
+        name = os.path.basename(path)
+        location = os.path.dirname(path)
+        idfmt, file_fmt = cls.guess_format(path)
+        source = cls(name, location, name, idfmt, file_fmt)
+        return source
+
     def __init__(self, name, location, id=None, id_format=None, file_format=None, parameters=None):
         if id is None:
             id = name
@@ -237,6 +260,9 @@ class SourceFile(object):
     def path(self):
         return os.path.join(self.location, self.name)
 
+    def is_resolvable(self):
+        return os.path.exists(self.path)
+
     @staticmethod
     def guess_format(path):
         if not os.path.exists(path):
@@ -244,6 +270,26 @@ class SourceFile(object):
         if os.path.isdir(path):
             if os.path.exists(os.path.join(path, 'AcqData')):
                 return format_parameter_map['agilent d']
+
+        parts = os.path.splitext(path)
+        if len(parts) > 1:
+            ext = parts[1]
+            if ext.lower() == '.mzml':
+                fmt = "mzML format"
+                id_fmt = "no nativeID format"
+                hit = False
+                with open(path, 'rb') as fh:
+                    from .xml_reader import iterparse_until
+                    for sf_tag in iterparse_until(fh, 'sourceFile', 'run'):
+                        for param in sf_tag.getchildren():
+                            if "nativeID" in param.attrib['name']:
+                                id_fmt = param.attrib['name']
+                                hit = True
+                                break
+                        if hit:
+                            break
+                return id_fmt, fmt
+
         with open(path, 'rb') as fh:
             lead_bytes = fh.read(100)
             decoded = lead_bytes.decode("utf-16")[1:9]
@@ -273,8 +319,13 @@ class SourceFile(object):
                 content_buffer = fh.read(buffer_size)
         return hasher.hexdigest()
 
+    def checksum(self, hash_type='sha1'):
+        hash_type = self._resolve_checksum_hash_type(hash_type)
+        return self._compute_checksum(hash_type)
+
     def add_checksum(self, hash_type='sha1'):
-        checksum = self._compute_checksum(hash_type)
+        hash_type = self._resolve_checksum_hash_type(hash_type)
+        checksum = self.checksum(hash_type)
         if hash_type == 'sha1':
             self.parameters['SHA-1'] = checksum
         elif hash_type == "md5":
@@ -284,11 +335,39 @@ class SourceFile(object):
         if not os.path.exists(self.path):
             FileNotFoundError("%s not found" % (self.path,))
         if 'SHA-1' in self.parameters:
-            checksum = self._compute_checksum('sha1')
+            checksum = self.checksum('sha1')
             return self.parameters['SHA-1'] == checksum
         elif 'MD5' in self.parameters:
-            checksum = self._compute_checksum("md5")
+            checksum = self.checksum("md5")
             return self.parameters['MD5'] == checksum
         else:
             warnings.warn("%r did not have a reference checksum. Could not validate" % (self,))
             return True
+
+    def has_checksum(self, hash_type=None):
+        if hash_type is None:
+            return ("SHA-1" in self.parameters) or ("MD5" in self.parameters)
+        elif self._resolve_checksum_hash_type(hash_type) == 'sha1':
+            return ("SHA-1" in self.parameters)
+        elif self._resolve_checksum_hash_type(hash_type) == 'md5':
+            return "MD5" in self.parameters
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self.path == other.path:
+            if self.is_resolvable() and other.is_resolvable():
+                return self.checksum() == other.checksum()
+            else:
+                if self.is_resolvable():
+                    for hash_type in ['SHA-1', 'MD5']:
+                        if other.has_checksum(hash_type):
+                            return self.checksum(hash_type) == other.parameters[hash_type]
+                elif other.is_resolvable():
+                    for hash_type in ['SHA-1', 'MD5']:
+                        if self.has_checksum(hash_type):
+                            return other.checksum(hash_type) == self.parameters[hash_type]
+        return False
+
+    def __ne__(self, other):
+        return not self == other
