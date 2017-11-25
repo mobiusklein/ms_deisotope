@@ -3,6 +3,8 @@ import operator
 import random
 from datetime import datetime
 from collections import OrderedDict
+from six import add_metaclass
+
 
 try:
     from ms_peak_picker.utils import draw_peaklist, draw_raw
@@ -84,8 +86,6 @@ except (RuntimeError, ImportError):
 
     def annotate_scan(scan, products, nperrow=4, ax=None):
         raise ImportError('matplotlib')
-
-from six import add_metaclass
 
 try:
     range = xrange
