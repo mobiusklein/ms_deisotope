@@ -24,7 +24,10 @@ def get_nearest_index(query_mz, peak_list):
 
 
 class PriorityTarget(Base):
-    """Represent a targeted deconvolution's parameters and constraints.
+    """Represent a targeted envelope deconvolution's parameters and constraints.
+
+    This class is used to tell :func:`ms_deisotope.deconvolution.deconvolute_peaks`
+    that the solution produced by this peak should be preferentially extracted.
 
     Attributes
     ----------
@@ -92,16 +95,16 @@ class PriorityTarget(Base):
 
 class ScanProcessor(Base):
     """Orchestrates the deconvolution of a `ScanIterator` scan by scan. This process will
-    apply different rules for MS^1 scans and MS^n scans. This type itself is an Iterator,
+    apply different rules for MS1 scans and MSn scans. This type itself is an Iterator,
     consuming (raw) mass spectral data and producing deisotoped and charge deconvolved spectra.
 
     The algorithms used for each task are independent and can be specified in the appropriate
-    attribute dictionary, however there is information sharing between each MS^1 scan and its
-    MS^n scans as the precursor monoisotopic mass is recalibrated according to the MS^1 processing
+    attribute dictionary, however there is information sharing between each MS1 scan and its
+    MSn scans as the precursor monoisotopic mass is recalibrated according to the MS1 processing
     arguments, and the selected charge state is used to limit the charge range used in the matching
-    MS^n scan. These are described by :class:`PriorityTarget` objects.
+    MSn scan. These are described by :class:`PriorityTarget` objects.
 
-    At the moment, MS^n assumes only MS^2. Until MS^3 data become available for testing, this limit
+    At the moment, MSn assumes only MS2. Until MS3 data become available for testing, this limit
     will remain.
 
     Attributes
@@ -117,24 +120,27 @@ class ScanProcessor(Base):
         Any object implementing the :class:`ScanIterator` interface, produced by calling
         :attr:`loader_type` on :attr:`data_source`.
     ms1_deconvolution_args : dict
-        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MS^1
+        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MS1
         scans.
     ms1_peak_picking_args : dict
-        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS^1 scans.
+        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS1 scans.
     msn_deconvolution_args : dict
-        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MS^n
+        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MSn
         scans.
     msn_peak_picking_args : dict
-        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS^n scans.
+        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MSn scans.
     pick_only_tandem_envelopes : bool
-        Whether or not to process whole MS^1 scans or just the regions around those peaks
-        chosen for MS^n
+        Whether or not to process whole MS1 scans or just the regions around those peaks
+        chosen for MSn
     default_precursor_ion_selection_window : float
         Size of the selection window to use when `pick_only_tandem_envelopes` is `True`
         and the information is not available in the scan.
     trust_charge_hint : bool
         Whether or not to trust the charge provided by the data source when determining
         the charge state of precursor isotopic patterns. Defaults to `True`
+    respect_isolation_window: bool
+        Whether to use the bounds of the isolation window to reject a monoisotopic peak
+        solution
     terminate_on_error: bool
         Whether or not  to stop processing on an error. Defaults to `True`
     """
@@ -147,7 +153,8 @@ class ScanProcessor(Base):
                  loader_type=None,
                  envelope_selector=None,
                  terminate_on_error=True,
-                 ms1_averaging=0):
+                 ms1_averaging=0,
+                 respect_isolation_window=True):
         if loader_type is None:
             loader_type = MSFileLoader
 
@@ -159,7 +166,10 @@ class ScanProcessor(Base):
         self.msn_deconvolution_args = msn_deconvolution_args or {}
         self.msn_deconvolution_args.setdefault("charge_range", (1, 8))
         self.pick_only_tandem_envelopes = pick_only_tandem_envelopes
+
         self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
+        self.respect_isolation_window = respect_isolation_window
+
         self.trust_charge_hint = trust_charge_hint
         self.ms1_averaging = int(ms1_averaging) if ms1_averaging else 0
 
@@ -173,12 +183,12 @@ class ScanProcessor(Base):
 
     def _reject_candidate_precursor_peak(self, peak, product_scan):
         isolation = product_scan.isolation_window
-        if isolation.is_empty():
+        if isolation is None or isolation.is_empty():
             pinfo = product_scan.precursor_information
             err = peak.mz - pinfo.mz
             return abs(err) > self.default_precursor_ion_selection_window
         else:
-            return peak.mz not in isolation
+            return peak.mz not in isolation and self.respect_isolation_window
 
     @property
     def reader(self):
@@ -308,16 +318,16 @@ class ScanProcessor(Base):
 
     def process_scan_group(self, precursor_scan, product_scans):
         """Performs the initial extraction of information relating
-        `precursor_scan` to `product_scans` and picks peaks for `precursor_scan`.
+        `precursor_scan` to `product_scans` and picks peaks for ``precursor_scan``.
         Called by :meth:`process`. May be used separately if doing the process step
         by step.
 
         Parameters
         ----------
         precursor_scan : Scan
-            An MS^1 Scan
+            An MS1 Scan
         product_scans : list of Scan
-            A list of MS^n Scans related to `precursor_scan`
+            A list of MSn Scans related to `precursor_scan`
 
         Returns
         -------
@@ -486,9 +496,9 @@ class ScanProcessor(Base):
         Parameters
         ----------
         precursor : Scan
-            An MS^1 Scan
+            An MS1 Scan
         products : list of Scan
-            A list of MS^n Scans related to `precursor`
+            A list of MSn Scans related to `precursor`
 
         Returns
         -------
