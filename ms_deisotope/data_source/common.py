@@ -1263,9 +1263,18 @@ class ScanEventInformation(object):
         form = template.format(self.start_time, self.window_list, tail)
         return form
 
+    def total_scan_window(self):
+        low = float('inf')
+        high = 0
+        for window in self:
+            low = min(low, window.lower)
+            high = max(high, window.upper)
+        return ScanWindow(low, high)
+
 
 class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
-    pass
+    def __contains__(self, i):
+        return self.lower <= i <= self.upper
 
 
 class IteratorFacadeBase(DataAccessProxy, ScanIterator):
