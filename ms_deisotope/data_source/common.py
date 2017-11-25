@@ -66,7 +66,6 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
 ChargeNotProvided = Constant("ChargeNotProvided")
-IsolationWindowNotProvided = Constant("IsolationWindowNotProvided")
 
 
 @add_metaclass(abc.ABCMeta)
@@ -568,6 +567,9 @@ class Scan(object):
         self._isolation_window = None
         self._instrument_configuration = None
 
+    def clear(self):
+        self._unload()
+
     @property
     def ms_level(self):
         if self._ms_level is None:
@@ -778,7 +780,7 @@ class Scan(object):
         return WrappedScan(self._data, self.source,
                            (mzs, intensities), list(self.product_scans))
 
-    def filter(self, filters=None):
+    def transform(self, filters=None):
         mzs, intensities = self.arrays
         mzs = mzs.astype(float)
         intensities = intensities.astype(float)
@@ -1242,6 +1244,15 @@ class ScanEventInformation(object):
 
     def has_ion_mobility(self):
         return self.drift_time is not None and self.drift_time > 0
+
+    def __getitem__(self, i):
+        return self.window_list[i]
+
+    def __iter__(self):
+        return iter(self.window_list)
+
+    def __len__(self):
+        return len(self.window_list)
 
     def __repr__(self):
         template = "ScanEventInformation(start_time={}, window_list={}{})"
