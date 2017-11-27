@@ -367,6 +367,10 @@ class SourceFile(object):
                     for hash_type in ['SHA-1', 'MD5']:
                         if self.has_checksum(hash_type):
                             return other.checksum(hash_type) == self.parameters[hash_type]
+                else:
+                    for hash_type in ['SHA-1', 'MD5']:
+                        if self.has_checksum(hash_type) and other.has_checksum(hash_type):
+                            return other.parameters[hash_type] == self.parameters[hash_type]
         return False
 
     def __ne__(self, other):
