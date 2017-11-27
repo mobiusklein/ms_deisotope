@@ -454,7 +454,25 @@ class DataAccessProxy(object):
         return self.source.get_scan_by_id(scan_id)
 
 
-class Scan(object):
+class ScanBase(object):
+
+    def has_ion_mobility(self):
+        acq = self.acquisition_information
+        if acq is None:
+            return False
+        scan_event = acq[0]
+        return scan_event.has_ion_mobility()
+
+    @property
+    def drift_time(self):
+        acq = self.acquisition_information
+        if acq is None:
+            return None
+        scan_event = acq[0]
+        return scan_event.drift_time
+
+
+class Scan(ScanBase):
     """Container for mass spectral data and associated descriptive information.
 
     A :class:`Scan` object is a generic object intended to be created by any `ScanDataSource` and describes
@@ -1088,7 +1106,7 @@ class PrecursorInformation(object):
         return self.source.get_scan_by_id(self.product_scan_id)
 
 
-class ProcessedScan(object):
+class ProcessedScan(ScanBase):
     def __init__(self, id, title, precursor_information,
                  ms_level, scan_time, index, peak_set,
                  deconvoluted_peak_set, polarity=None, activation=None,

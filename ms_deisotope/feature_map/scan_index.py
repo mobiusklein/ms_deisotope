@@ -6,7 +6,7 @@ from ms_deisotope.data_source.common import PrecursorInformation, ChargeNotProvi
 
 
 class ExtendedScanIndex(object):
-    SCHEMA_VERSION = "1.0"
+    SCHEMA_VERSION = "1.1"
 
     def __init__(self, ms1_ids=None, msn_ids=None, schema_version=None):
         if schema_version is None:
@@ -45,6 +45,8 @@ class ExtendedScanIndex(object):
                 "defaulted": precursor_information.defaulted,
                 "orphan": precursor_information.orphan
             }
+            if product.has_ion_mobility():
+                package['drift_time'] = product.drift_time
         else:
             charge = precursor_information.extracted_charge
             if charge == ChargeNotProvided:
@@ -60,10 +62,12 @@ class ExtendedScanIndex(object):
                 "defaulted": precursor_information.defaulted,
                 "orphan": precursor_information.orphan
             }
+            if product.has_ion_mobility():
+                package['drift_time'] = product.drift_time
         return package
 
     def add_scan_bunch(self, bunch):
-        self.ms1_ids[bunch.precursor.id] = {
+        package = {
             "scan_time": bunch.precursor.scan_time,
             "product_scan_ids": [
                 product.id for product in bunch.products
@@ -73,6 +77,9 @@ class ExtendedScanIndex(object):
                 if p.chosen_for_msms
             ] if bunch.precursor.deconvoluted_peak_set is not None else [],
         }
+        if bunch.precursor.has_ion_mobility():
+            package['drift_time'] = bunch.precursor.drift_time
+        self.ms1_ids[bunch.precursor.id] = package
         for product in bunch.products:
             self.msn_ids[product.id] = self._package_precursor_information(product)
 
