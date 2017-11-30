@@ -3,8 +3,7 @@
 cimport cython
 from libc.stdlib cimport malloc, free
 
-from ms_peak_picker._c.peak_index cimport PeakIndex
-from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
+from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak, PeakSetIndexed
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 from ms_deisotope.constants import ERROR_TOLERANCE as _ERROR_TOLERANCE
@@ -39,15 +38,6 @@ cdef size_t count_missed_peaks(list peaklist):
         if (<FittedPeak>peak).mz > 1 and (<FittedPeak>peak).intensity > 1:
             n -= 1
     return n
-
-cdef double sum_intensity(list peaklist):
-    cdef:
-        size_t i
-        double total
-    total = 0
-    for i in range(PyList_GET_SIZE(peaklist)):
-        total += (<FittedPeak>PyList_GET_ITEM(peaklist, i)).intensity
-    return total
 
 
 cdef FittedPeak make_placeholder_peak(double mz):
@@ -356,7 +346,7 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
         return set(results)
 
 
-cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge=2, int step=1, double error_tolerance=2e-5):
+cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge, int step, double error_tolerance):
     """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
@@ -379,7 +369,7 @@ cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_index, FittedP
     return peak_index.has_peak(prev, error_tolerance)
 
 
-cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge=2, int step=1, double error_tolerance=2e-5):
+cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge, int step, double error_tolerance):
     """Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
@@ -402,6 +392,7 @@ cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_index, Fitted
     return peak_index.has_peak(nxt, error_tolerance)
 
 
+@cython.final
 cdef class ChargeIterator(object):
     cdef:
         public int lower
@@ -479,9 +470,8 @@ cdef class ChargeIterator(object):
 
 @cython.binding(True)
 cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, double error_tolerance=ERROR_TOLERANCE,
-                                 object charge_range=(1, 8),
-                                 int left_search_limit=3, int right_search_limit=3, bint use_charge_state_hint=False,
-                                 bint recalculate_starting_peak=True):
+                                     object charge_range=(1, 8), int left_search_limit=3, int right_search_limit=3,
+                                     bint recalculate_starting_peak=True):
         """Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using
         the provided search parameters.
 
@@ -500,9 +490,6 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
             The number of steps to search to the left of `peak`. Defaults to 3
         right_search_limit : int, optional
             The number of steps to search to the right of `peak`. Defaults to 3
-        use_charge_state_hint : bool, optional
-            Whether or not to try to estimate the upper limit of the charge states to consider
-            using :meth:`_update_charge_bounds_with_prediction`. Defaults to False
         recalculate_starting_peak : bool, optional
             Whether or not to re-calculate the putative starting peak m/z based upon nearby
             peaks close to where isotopic peaks for `peak` should be. Defaults to True
@@ -519,10 +506,6 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
             set target_peaks
             FittedPeak prev_peak, nxt_peak
 
-        if use_charge_state_hint:
-            charge_range = self._update_charge_bounds_with_prediction(
-                peak, charge_range)
-
         charge_iterator = ChargeIterator._from_tuple(tuple(charge_range))
 
         target_peaks = set()
@@ -534,7 +517,7 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
             # Look Left
             for i in range(1, left_search_limit):
                 prev_peak = has_previous_peak_at_charge(
-                    self, peak, charge, i)
+                    self, peak, charge, i, error_tolerance)
                 if prev_peak is None:
                     continue
                 target_peaks.add((prev_peak, charge))
@@ -546,7 +529,7 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
             # Look Right
             for i in range(1, right_search_limit):
                 nxt_peak = has_successor_peak_at_charge(
-                    self, peak, charge, i)
+                    self, peak, charge, i, error_tolerance)
                 if nxt_peak is None:
                     continue
                 target_peaks.add((nxt_peak, charge))

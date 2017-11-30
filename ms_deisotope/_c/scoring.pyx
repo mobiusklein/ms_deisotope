@@ -274,10 +274,10 @@ cdef class IsotopicFitterBase(object):
     def __setstate__(self, state):
         self.select, = state
 
-    def evaluate(self, PeakIndex peaklist, list observed, list expected, **kwargs):
+    def evaluate(self, PeakSet peaklist, list observed, list expected, **kwargs):
         return self._evaluate(peaklist, observed, expected)
 
-    cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected):
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         return 0
 
     def __call__(self, *args, **kwargs):
@@ -350,7 +350,7 @@ cdef double* normalize_intensity_fitted(list peaklist, double* out, double total
 
 cdef class ScaledGTestFitter(IsotopicFitterBase):
     @cython.cdivision
-    cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected):
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         cdef:
             double total_observed
             double total_expected
@@ -416,7 +416,7 @@ cdef double max_intensity_fitted(list peaklist):
 cdef class LeastSquaresFitter(IsotopicFitterBase):
     
     @cython.cdivision
-    cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected):
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         cdef:
             double exp_max, theo_max, sum_of_squared_errors, sum_of_squared_theoreticals
             double normed_theo, normed_expr
@@ -483,7 +483,7 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
     cdef double score_peak(self, FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
         return score_peak(obs, theo, mass_error_tolerance, minimum_signal_to_noise)
 
-    def evaluate(self, PeakIndex peaklist, list observed, list expected):
+    def evaluate(self, PeakSet peaklist, list observed, list expected):
         return self._evaluate(peaklist, observed, expected)
 
     def __reduce__(self):
@@ -495,7 +495,7 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
     def __setstate__(self, state):
         self.select, self.mass_error_tolerance = state
 
-    cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected):
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         cdef:
             size_t i, n
             FittedPeak obs
@@ -528,10 +528,10 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
     def __setstate__(self, state):
         self.select, self.msdeconv, self.penalizer, self.penalty_factor = state
 
-    def evaluate(self, PeakIndex peaklist, list observed, list expected):
+    def evaluate(self, PeakSet peaklist, list observed, list expected):
         return self._evaluate(peaklist, observed, expected)
 
-    cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected):
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         cdef:
             double score, penalty
         score = self.msdeconv._evaluate(peaklist, observed, expected)
@@ -554,12 +554,12 @@ cdef class FunctionScorer(IsotopicFitterBase):
     def __reduce__(self):
         return self.__class__, (None,), self.__getstate__()
 
-    cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected):
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         return self.function(observed, expected)
 
 
 cdef class InterferenceDetection(object):
-    def __init__(self, PeakIndex peaklist):
+    def __init__(self, PeakSet peaklist):
         self.peaklist = peaklist
 
     def __reduce__(self):
@@ -617,7 +617,7 @@ cdef class DistinctPatternFitter(IsotopicFitterBase):
         self.interference_detector = InterferenceDetection(deconvoluter.peaklist)
         return self    
 
-    cpdef double _evaluate(self, PeakIndex peaklist, list experimental, list theoretical):
+    cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
         cdef:
             double score
             double npeaks
@@ -668,7 +668,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
     def penalty_factor(self, value):
         self.scorer.penalty_factor = value
 
-    cpdef double _calculate_scale_factor(self, PeakIndex peaklist):
+    cpdef double _calculate_scale_factor(self, PeakSet peaklist):
         cdef:
             size_t i
             FittedPeak peak
@@ -700,10 +700,10 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
             peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical, i)
             peak.intensity *= factor
 
-    def evaluate(self, PeakIndex peaklist, list observed, list expected):
+    def evaluate(self, PeakSet peaklist, list observed, list expected):
         return self._evaluate(peaklist, observed, expected)
 
-    cpdef double _evaluate(self, PeakIndex peaklist, list experimental, list theoretical):
+    cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
         cdef:
             double score
         if self.scale_factor < 1:

@@ -1,7 +1,6 @@
 cimport cython
 
-from ms_peak_picker._c.peak_index cimport PeakIndex
-from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
+from ms_peak_picker._c.peak_set cimport PeakSet, PeakSetIndexed, FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 from ms_deisotope._c.scoring cimport IsotopicFitterBase, IsotopicFitRecord
@@ -15,7 +14,7 @@ cdef class DeconvoluterBase(object):
         public bint merge_isobaric_peaks
         public double minimum_intensity
 
-        public PeakIndex peaklist
+        public PeakSet peaklist
 
         public IsotopicFitterBase scorer
         public bint verbose
@@ -60,6 +59,6 @@ cdef bint has_multiple_real_peaks(list peaklist)
 
 
 cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, double error_tolerance=*,
-                                 object charge_range=*,
-                                 int left_search_limit=*, int right_search_limit=*, bint use_charge_state_hint=*,
-                                 bint recalculate_starting_peak=*)
+                                     object charge_range=*,
+                                     int left_search_limit=*, int right_search_limit=*,
+                                     bint recalculate_starting_peak=*)

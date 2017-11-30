@@ -1,6 +1,5 @@
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
-from ms_peak_picker._c.peak_index cimport PeakIndex
 
 from ms_deisotope._c.deconvoluter_base cimport DeconvoluterBase
 from ms_deisotope._c.averagine cimport TheoreticalIsotopicPattern
@@ -40,7 +39,7 @@ cdef class IsotopicFitterBase(object):
     cdef:
         public FitSelectorBase select
 
-    cpdef double _evaluate(self, PeakIndex peaklist, list observed, list expected)
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected)
     cpdef bint reject(self, IsotopicFitRecord fit)
     cpdef bint reject_score(self, double score)
     cpdef bint is_maximizing(self)
@@ -74,7 +73,7 @@ cdef class FunctionScorer(IsotopicFitterBase):
 
 
 cdef class InterferenceDetection(object):
-    cdef public PeakIndex peaklist
+    cdef public PeakSet peaklist
 
     cdef double detect_interference(self, list experimental_peaks)
 
@@ -91,6 +90,6 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
         public double scale_factor
         public PenalizedMSDeconVFitter scorer
 
-    cpdef double _calculate_scale_factor(self, PeakIndex peaklist)
+    cpdef double _calculate_scale_factor(self, PeakSet peaklist)
     cdef void scale_fitted_peaks(self, list experimental, double factor)
     cdef void scale_theoretical_peaks(self, list theoretical, double factor)
