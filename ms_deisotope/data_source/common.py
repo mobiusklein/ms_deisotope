@@ -384,6 +384,9 @@ class RandomAccessScanSource(ScanDataSource):
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
         raise NotImplementedError()
 
+    def _scan_cleared(self, scan):
+        pass
+
     def _locate_ms1_scan(self, scan):
         while scan.ms_level != 1:
             if scan.index <= 0:
@@ -586,6 +589,8 @@ class Scan(ScanBase):
         self._instrument_configuration = None
 
     def clear(self):
+        if self.source is not None:
+            self.source._scan_cleared(self)
         self._unload()
 
     @property
