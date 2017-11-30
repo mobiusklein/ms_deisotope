@@ -75,6 +75,7 @@ cdef class DeconvoluterBase(object):
     cpdef FittedPeak has_peak(self, double mz, double error_tolerance):
         return self._has_peak(mz, error_tolerance)
 
+    @cython.final
     cdef FittedPeak _has_peak(self, double mz, double error_tolerance):
         peak = self.peaklist._has_peak(mz, error_tolerance)
         if peak is None or peak.intensity < self.minimum_intensity:
@@ -346,13 +347,13 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
         return set(results)
 
 
-cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge, int step, double error_tolerance):
+cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_collection, FittedPeak peak, int charge, int step, double error_tolerance):
     """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
     Parameters
     ----------
-    peak_index : DeconvoluterBase
+    peak_collection : DeconvoluterBase
         Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference
@@ -366,16 +367,16 @@ cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_index, FittedP
     FittedPeak
     """
     prev = peak.mz - isotopic_shift(charge) * step
-    return peak_index.has_peak(prev, error_tolerance)
+    return peak_collection._has_peak(prev, error_tolerance)
 
 
-cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_index, FittedPeak peak, int charge, int step, double error_tolerance):
+cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_collection, FittedPeak peak, int charge, int step, double error_tolerance):
     """Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
     Parameters
     ----------
-    peak_index : DeconvoluterBase
+    peak_collection : DeconvoluterBase
         Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference
@@ -389,7 +390,7 @@ cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_index, Fitted
     FittedPeak
     """
     nxt = peak.mz + isotopic_shift(charge) * step
-    return peak_index.has_peak(nxt, error_tolerance)
+    return peak_collection._has_peak(nxt, error_tolerance)
 
 
 @cython.final
@@ -505,14 +506,17 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
             size_t i
             set target_peaks
             FittedPeak prev_peak, nxt_peak
+            object add_, update_
 
         charge_iterator = ChargeIterator._from_tuple(tuple(charge_range))
 
         target_peaks = set()
+        add_ = target_peaks.add
+        update_ = target_peaks.update
 
         while charge_iterator.has_more():
             charge = charge_iterator.get_next_value()
-            target_peaks.add((peak, charge))
+            add_((peak, charge))
 
             # Look Left
             for i in range(1, left_search_limit):
@@ -520,10 +524,10 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
                     self, peak, charge, i, error_tolerance)
                 if prev_peak is None:
                     continue
-                target_peaks.add((prev_peak, charge))
+                add_((prev_peak, charge))
 
                 if recalculate_starting_peak:
-                    target_peaks.update(self._find_previous_putative_peak(
+                    update_(self._find_previous_putative_peak(
                         peak.mz, charge, i, 2 * error_tolerance))
 
             # Look Right
@@ -532,16 +536,16 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
                     self, peak, charge, i, error_tolerance)
                 if nxt_peak is None:
                     continue
-                target_peaks.add((nxt_peak, charge))
+                add_((nxt_peak, charge))
 
 
                 if recalculate_starting_peak:
-                    target_peaks.update(self._find_next_putative_peak(
+                    update_(self._find_next_putative_peak(
                         peak.mz, charge, i, 2 * error_tolerance))
 
             if recalculate_starting_peak:
                 for i in range(min(left_search_limit, 2)):
-                    target_peaks.update(self._find_next_putative_peak(
+                    update_(self._find_next_putative_peak(
                         peak.mz, charge, step=i, tolerance=2 * error_tolerance))
 
         return target_peaks
