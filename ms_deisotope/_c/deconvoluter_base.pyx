@@ -256,14 +256,14 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
                                     double truncate_after=0.95, double ignore_below=0):
         cdef:
-            list results
+            set results
             tuple peak_charge
             IsotopicFitRecord fit
             size_t i
 
             int charge
             list peak_charge_list
-        results = []
+        results = set()
         peak_charge_list = list(peak_charge_set)
         for i in range(PyList_GET_SIZE(peak_charge_list)):
             peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)
@@ -282,8 +282,8 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
                 continue
             if self.scorer.reject(fit):
                 continue
-            results.append(fit)
-        return set(results)
+            results.add(fit)
+        return results
 
 
 cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
