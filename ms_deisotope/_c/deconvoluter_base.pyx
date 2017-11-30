@@ -352,7 +352,7 @@ cdef FittedPeak has_previous_peak_at_charge(DeconvoluterBase peak_index, FittedP
 
     Parameters
     ----------
-    peak_index : ms_peak_picker.PeakIndex
+    peak_index : DeconvoluterBase
         Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference
@@ -375,7 +375,7 @@ cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_index, Fitted
 
     Parameters
     ----------
-    peak_index : ms_peak_picker.PeakIndex
+    peak_index : DeconvoluterBase
         Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference

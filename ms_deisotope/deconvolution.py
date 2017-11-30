@@ -49,14 +49,14 @@ def mean(numbers):
     return total / n
 
 
-def has_previous_peak_at_charge(peak_index, peak, charge=2, step=1, error_tolerance=2e-5):
+def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=2e-5):
     """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
     Parameters
     ----------
-    peak_index : ms_peak_picker.PeakIndex
-        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
+    peak_collection : DeconvoluterBase
+        Peak collection to look up peaks in. Calls :meth:`has_peak`
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference
     charge : int, optional
@@ -69,17 +69,17 @@ def has_previous_peak_at_charge(peak_index, peak, charge=2, step=1, error_tolera
     FittedPeak
     """
     prev = peak.mz - isotopic_shift(charge) * step
-    return peak_index.has_peak(prev, error_tolerance)
+    return peak_collection.has_peak(prev, error_tolerance)
 
 
-def has_successor_peak_at_charge(peak_index, peak, charge=2, step=1, error_tolerance=ERROR_TOLERANCE):
+def has_successor_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=ERROR_TOLERANCE):
     """Get the `step`th *succeeding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
     Parameters
     ----------
-    peak_index : ms_peak_picker.PeakIndex
-        Peak collection to look up peaks in. Calls :meth:`has_peak` with default accuracy
+    peak_collection : DeconvoluterBase
+        Peak collection to look up peaks in. Calls :meth:`has_peak`
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference
     charge : int, optional
@@ -92,7 +92,7 @@ def has_successor_peak_at_charge(peak_index, peak, charge=2, step=1, error_toler
     FittedPeak
     """
     nxt = peak.mz + isotopic_shift(charge) * step
-    return peak_index.has_peak(nxt, error_tolerance)
+    return peak_collection.has_peak(nxt, error_tolerance)
 
 
 def first_peak(peaks):
@@ -554,31 +554,6 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
     and `_fit_peaks_at_charges`
 
     """
-    def _update_charge_bounds_with_prediction(self, peak, charge_range):
-        """Update the charge range upper limit in `charge_range` based upon the
-        Fourier-Patterson charge state estimate for `peak`
-
-        Parameters
-        ----------
-        peak : FittedPeak
-            The peak to estimate the charge state for
-        charge_range : tuple
-            The charge state bounds to be updated
-
-        Returns
-        -------
-        tuple
-            The updated charge state bounds
-        """
-        polarity = 1 if min(charge_range) > 0 else -1
-        upper_charge_limit = self.peaklist.predict_charge_state(peak)
-        if abs(upper_charge_limit) <= 1:
-            return charge_range
-        else:
-            upper_charge_limit += (2)
-            upper_charge_limit *= polarity
-        low = min(charge_range, key=abs)
-        return (low, upper_charge_limit)
 
     def _get_all_peak_charge_pairs(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                    left_search_limit=3, right_search_limit=3,
@@ -942,7 +917,7 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
     averagine : ms_deisotope.averagine.AveragineCache
         The averagine model and associated theoretical isotopic pattern cache to use
         to build theoretical isotopic patterns.
-    peaklist : ms_peak_picker.PeakIndex
+    peaklist : ms_peak_picker.PeakSet
         The collection of ms_peak_picker.FittedPeak instances and possible associated
         data to deconvolute.
     scorer : ms_deisotope.scoring.IsotopicFitterBase
@@ -1035,7 +1010,7 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
     averagine : list of ms_deisotope.averagine.AveragineCache
         The averagine models and associated theoretical isotopic pattern caches to use
         to build theoretical isotopic patterns.
-    peaklist : ms_peak_picker.PeakIndex
+    peaklist : ms_peak_picker.PeakSet
         The collection of ms_peak_picker.FittedPeak instances and possible associated
         data to deconvolute.
     scorer : ms_deisotope.scoring.IsotopicFitterBase
