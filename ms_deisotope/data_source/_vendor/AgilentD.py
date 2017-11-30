@@ -2,11 +2,14 @@ import os
 import glob
 import warnings
 import logging
+
+from lxml import etree
+
 try:
     log = logging.getLogger(os.path.basename(__file__))
 except Exception:
     log = None
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from weakref import WeakValueDictionary
 
 try:
@@ -334,6 +337,31 @@ class _AgilentDDirectory(object):
         return False
 
 
+class _AgilentMethod(object):
+    def __init__(self, method_parameters):
+        self.parameters = list(method_parameters)
+
+    def __getitem__(self, i):
+        return self.parameters[i]
+
+    def __len__(self):
+        return len(self.parameters)
+
+    def __iter__(self):
+        return iter(self.parameters)
+
+    def __repr__(self):
+        return "_AgilentMethod(%d)" % (len(self),)
+
+    def search_by_name(self, name):
+        for param in self:
+            try:
+                if param['Name'].lower() == name.lower():
+                    return param
+            except (AttributeError, KeyError):
+                continue
+
+
 class _AgilentDMetadataLoader(object):
     def _has_ms1_scans(self):
         return bool(self._scan_types_flags & scan_type_map['Scan'])
@@ -378,6 +406,32 @@ class _AgilentDMetadataLoader(object):
 
     def instrument_configuration(self):
         return sorted(self._instrument_config.values(), key=lambda x: x.id)
+
+    def _acquisition_method_xml_path(self):
+        return os.path.join(self.dirpath, "AcqData", "AcqMethod.xml")
+
+    def _parse_method_xml(self):
+        try:
+            path = self._acquisition_method_xml_path()
+            tree = etree.parse(path)
+            nsmap = {"ns": "http://tempuri.org/DataFileReport.xsd"}
+            elt = tree.find(".//ns:SCICDevicesXml", namespaces=nsmap)
+            method_xml = etree.fromstring(elt.text)
+        except (IOError, OSError, ValueError, TypeError) as e:
+            print(e)
+            self._method = []
+            return self._method
+        method = list()
+        for section in method_xml.iterfind(".//SectionInfo"):
+            section_dict = {}
+            for child in section:
+                name = child.tag
+                value = child.text
+                section_dict[name] = value
+            method.append(section_dict)
+        method = _AgilentMethod(method)
+        self._method = method
+        return method
 
 
 _ADM = _AgilentDMetadataLoader
