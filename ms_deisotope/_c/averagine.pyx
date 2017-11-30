@@ -110,8 +110,8 @@ cdef class Averagine(object):
 
         return scaled
 
-    cdef TheoreticalIsotopicPattern _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
-                                double ignore_below=0.0):
+    cdef TheoreticalIsotopicPattern _isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON,
+                                                      double truncate_after=0.95, double ignore_below=0.0):
         cdef:
             dict composition
             list tid
@@ -132,8 +132,8 @@ cdef class Averagine(object):
 
         return isotopic_pattern
 
-    cpdef TheoreticalIsotopicPattern isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
-                                double ignore_below=0.0):
+    cpdef TheoreticalIsotopicPattern isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON,
+                                                      double truncate_after=0.95, double ignore_below=0.0):
         cdef:
             TheoreticalIsotopicPattern out
         out = self._isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
