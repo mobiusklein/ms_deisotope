@@ -1,7 +1,8 @@
 import json
+import warnings
+
 from collections import OrderedDict
 
-from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.data_source.common import PrecursorInformation, ChargeNotProvided
 
 
