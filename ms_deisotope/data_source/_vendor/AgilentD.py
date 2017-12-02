@@ -41,7 +41,6 @@ from ms_deisotope.data_source.common import (
     FileInformation,
     SourceFile)
 
-
 try:
     # Load previously built COM wrapper
     from comtypes.gen import (
@@ -261,7 +260,8 @@ class AgilentDDataInterface(ScanDataSource):
 
     def _scan_arrays(self, scan):
         spectrum = self._get_spectrum_obj(scan)
-        return np.array(spectrum.XArray, dtype=float), np.array(spectrum.YArray, dtype=float)
+        return (np.array(spectrum.XArray, dtype=float),
+                np.array(spectrum.YArray, dtype=float))
 
     def _polarity(self, scan):
         record = self._get_scan_record(scan)
