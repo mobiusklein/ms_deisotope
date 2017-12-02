@@ -164,6 +164,18 @@ class Constant(object):
     def __bool__(self):
         return self.is_true
 
+    def __contains__(self, i):
+        return i in self.name
+
+    def __getitem__(self, i):
+        return self.name[i]
+
+    def __iter__(self):
+        return iter(self.name)
+
+    def __len__(self):
+        return len(self.name)
+
 
 class DeconvolutionProcessResult(object):
     def __init__(self, deconvoluter, peak_set, priorities, errors=None):
