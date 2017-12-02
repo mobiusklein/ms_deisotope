@@ -489,7 +489,7 @@ class ThermoRawDataInterface(ScanDataSource):
 
 
 class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterator, _RawFileMetadataLoader):
-    def __init__(self, source_file, **kwargs):
+    def __init__(self, source_file, _loadmetadata=True, **kwargs):
         self.source_file = source_file
         self._source = _ThermoRawFileAPI(self.source_file)
         self._producer = None
@@ -498,12 +498,13 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         self._index = self._pack_index()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
         self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
-        self._method = _InstrumentMethod(self._source.GetInstMethod())
-        self._build_scan_type_index()
-        self._get_instrument_info()
+        if _loadmetadata:
+            self._method = _InstrumentMethod(self._source.GetInstMethod())
+            self._build_scan_type_index()
+            self._get_instrument_info()
 
     def __reduce__(self):
-        return self.__class__, (self.source_file,)
+        return self.__class__, (self.source_file, False)
 
     @property
     def index(self):
@@ -519,7 +520,12 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         return index
 
     def close(self):
-        self._source.Close()
+        if self._source is not None:
+            self._source.Close()
+
+    def __del__(self):
+        self.close()
+        self._source = None
 
     def reset(self):
         self.make_iterator(None)
