@@ -86,7 +86,7 @@ class MzXMLDataInterface(ScanDataSource):
             An array of intensity values for this scan
         """
         try:
-            return scan['m/z array'], scan["intensity array"]
+            return (scan['m/z array'], scan["intensity array"])
         except KeyError:
             return np.array([]), np.array([])
 
