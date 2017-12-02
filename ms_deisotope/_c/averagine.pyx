@@ -408,6 +408,25 @@ cdef class TheoreticalIsotopicPattern(object):
             raise TypeError(type(other))
         return self.get_processed_peaks() == peaklist
 
+    @cython.final
+    cdef bint _eq_inst(self, TheoreticalIsotopicPattern other):
+        cdef:
+            bint val
+            TheoreticalPeak tp1, tp2
+            size_t i, n
+
+        n = self.get_size()
+        val = n == other.get_size()
+        if not val:
+            return val
+        for i in range(n):
+            tp1 = self.get(i)
+            tp2 = other.get(i)
+            val = tp1._eq(tp2)
+            if not val:
+                return val
+        return val
+
     def __richcmp__(self, object other, int code):
         if other is None:
             if code == 3:

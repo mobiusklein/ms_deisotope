@@ -57,6 +57,7 @@ cdef class IsotopicFitRecord(object):
         self.monoisotopic_peak = experimental[0]
         self.data = data
         self.missed_peaks = missed_peaks
+        self._hash = -1
 
     @staticmethod
     cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, TheoreticalIsotopicPattern theoretical,
@@ -71,6 +72,7 @@ cdef class IsotopicFitRecord(object):
         inst.monoisotopic_peak = <FittedPeak>PyList_GetItem(experimental, 0)
         inst.data = data
         inst.missed_peaks = missed_peaks
+        inst._hash = -1
         return inst
 
     def clone(self):
@@ -82,17 +84,37 @@ cdef class IsotopicFitRecord(object):
                                 self.experimental, self.data, self.missed_peaks)
 
     cpdef bint _eq(self, IsotopicFitRecord other):
-        cdef bint val
-        val = (self.score == other.score and
-               self.charge == other.charge and
-               self.experimental == other.experimental and
-               self.theoretical == other.theoretical)
+        cdef:
+            bint val
+            size_t i, n
+            FittedPeak fp1, fp2
+            TheoreticalPeak tp1, tp2
+
+        val = self.score == other.score
+        if not val:
+            return val
+        val = self.charge == other.charge
+        if not val:
+            return val
+        n = PyList_GET_SIZE(self.experimental)
+        val = n == PyList_GET_SIZE(other.experimental)
+        if not val:
+            return val
+        for i in range(n):
+            fp1 = <FittedPeak>PyList_GET_ITEM(self.experimental, i)
+            fp2 = <FittedPeak>PyList_GET_ITEM(other.experimental, i)
+            val = fp1._eq(fp2)
+            if not val:
+                return val
+        val = self.theoretical._eq_inst(other.theoretical)
+        if not val:
+            return val
         if self.data is not None or other.data is not None:
             val = val & (self.data == other.data)
         return val
 
     cpdef bint _ne(self, IsotopicFitRecord other):
-        return not (self == other)
+        return not (self._eq(other))
 
     cpdef bint _lt(self, IsotopicFitRecord other):
         return self.score < other.score
@@ -118,7 +140,9 @@ cdef class IsotopicFitRecord(object):
 
 
     def __hash__(self):
-        return hash((self.monoisotopic_peak.mz, self.charge))
+        if self._hash == -1:
+            self._hash = hash((self.monoisotopic_peak.mz, self.charge))
+        return self._hash
 
     def __iter__(self):
         yield self.score
@@ -354,30 +378,19 @@ cdef class ScaledGTestFitter(IsotopicFitterBase):
         cdef:
             double total_observed
             double total_expected
-            double* normalized_observed
-            double* normalized_expected
             double g_score, obs, theo, log_ratio
             size_t n
         total_observed = sum_intensity_fitted(observed)
         total_expected = sum_intensity_theoretical(expected)
         n = PyList_GET_SIZE(observed)
 
-        normalized_observed = <double*>malloc(sizeof(double) * n)
-        normalize_intensity_fitted(observed, normalized_observed, total_observed)
-
-        normalized_expected = <double*>malloc(sizeof(double) * n)
-        normalize_intensity_theoretical(expected, normalized_expected, total_expected)
-
         g_score = 0.
         for i in range(n):
-            obs = normalized_observed[i]
-            theo = normalized_expected[i]
+            obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_observed
+            theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_expected
 
             log_ratio = log(obs / theo)
             g_score += obs * log_ratio
-
-        free(normalized_observed)
-        free(normalized_expected)
 
         return g_score * 2.
 
@@ -449,7 +462,7 @@ least_squares = LeastSquaresFitter()
 
 
 @cython.cdivision
-cdef double score_peak(FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
+cdef double ms_deconv_score_peak(FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
     cdef:
         double mass_error, abundance_diff
     if obs.signal_to_noise < minimum_signal_to_noise:
@@ -481,7 +494,7 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
 
     @cython.cdivision
     cdef double score_peak(self, FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
-        return score_peak(obs, theo, mass_error_tolerance, minimum_signal_to_noise)
+        return ms_deconv_score_peak(obs, theo, mass_error_tolerance, minimum_signal_to_noise)
 
     def evaluate(self, PeakSet peaklist, list observed, list expected):
         return self._evaluate(peaklist, observed, expected)
@@ -515,28 +528,48 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
 cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
     def __init__(self, minimum_score=10, penalty_factor=1, mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector(minimum_score)
-        self.msdeconv = MSDeconVFitter(mass_error_tolerance=mass_error_tolerance)
-        self.penalizer = ScaledGTestFitter()
         self.penalty_factor = penalty_factor
+        self.mass_error_tolerance = mass_error_tolerance
 
     def __reduce__(self):
         return self.__class__, (0,), self.__getstate__()
 
     def __getstate__(self):
-        return (self.select, self.msdeconv, self.penalizer, self.penalty_factor)
+        return (self.select, self.penalty_factor, self.mass_error_tolerance)
 
     def __setstate__(self, state):
-        self.select, self.msdeconv, self.penalizer, self.penalty_factor = state
+        self.select, self.penalty_factor, self.mass_error_tolerance = state
 
     def evaluate(self, PeakSet peaklist, list observed, list expected):
         return self._evaluate(peaklist, observed, expected)
 
+    @cython.cdivision
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         cdef:
-            double score, penalty
-        score = self.msdeconv._evaluate(peaklist, observed, expected)
-        penalty = abs(self.penalizer._evaluate(peaklist, observed, expected))
-        return score * ((1 - penalty * self.penalty_factor))
+            size_t i, n
+            FittedPeak obs
+            TheoreticalPeak theo
+            double score, total_intensity_observed, total_intensity_expected
+            double penalty, _obs, _theo, log_ratio
+
+        n = PyList_GET_SIZE(observed)
+        score = 0
+        for i in range(n):
+            obs = <FittedPeak>PyList_GET_ITEM(observed, i)
+            theo = <TheoreticalPeak>PyList_GET_ITEM(expected, i)
+            score += ms_deconv_score_peak(obs, theo, self.mass_error_tolerance, 1)
+            total_intensity_observed += obs.intensity
+            total_intensity_expected += theo.intensity
+        penalty = 0
+        for i in range(n):
+            _obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_intensity_observed
+            _theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_intensity_expected
+
+            log_ratio = log(_obs / (_theo))
+            penalty += _obs * log_ratio
+        penalty = abs(2 * penalty)
+        score *= ((1 - penalty * self.penalty_factor))
+        return score
 
 
 cdef class FunctionScorer(IsotopicFitterBase):

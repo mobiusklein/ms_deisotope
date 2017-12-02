@@ -17,6 +17,7 @@ from cpython.int cimport PyInt_AsLong, PyInt_Check
 from cpython.long cimport PyLong_Check
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
 from cpython.object cimport PyObject
+from cpython.set cimport PySet_Add
 
 import operator
 
@@ -134,6 +135,51 @@ cdef class DeconvoluterBase(object):
                 current_peak = peak
         merged_peaks.append(current_peak)
         return merged_peaks
+
+    cdef int _find_next_putative_peak_inplace(self, double mz, int charge, set result, int step=1, double tolerance=2e-5):
+        cdef:
+            double shift, next_peak, prev_peak_mz
+            FittedPeak dummy_peak, forward
+            size_t i
+            size_t start, stop
+
+        shift = isotopic_shift(charge)
+        next_peak = mz + (shift * step)
+        start = 0
+        stop = 0
+        self.peaklist._between_bounds(
+            next_peak - (next_peak * tolerance),
+            next_peak + (next_peak * tolerance),
+            &start, &stop)
+        for i in range(start, stop):
+            forward = self.peaklist.getitem(i)
+            prev_peak_mz = forward.mz - (shift * step)
+            dummy_peak = make_placeholder_peak(prev_peak_mz)
+            PySet_Add(result, (dummy_peak, charge))
+        return stop - start
+
+    cdef int _find_previous_putative_peak_inplace(self, double mz, int charge, set result, int step=1, double tolerance=2e-5):
+        cdef:
+            double shift, prev_peak, prev_peak_mz
+            FittedPeak backward
+            size_t i, n
+            size_t start, stop
+
+        shift = isotopic_shift(charge)
+        prev_peak = mz - (shift)
+        self.peaklist._between_bounds(
+            prev_peak - (prev_peak * tolerance),
+            prev_peak + (prev_peak * tolerance),
+            &start, &stop)
+
+        for i in range(start, stop):
+            backward = self.peaklist.getitem(i)
+            prev_peak_mz = backward.mz
+            if step == 1:
+                self._find_next_putative_peak_inplace(prev_peak_mz, charge, result, 1, tolerance)
+            else:
+                self._find_previous_putative_peak_inplace(prev_peak_mz, charge, result, step - 1, tolerance)
+        return stop - start
 
     cpdef list _find_next_putative_peak(self, double mz, int charge, int step=1, double tolerance=2e-5):
         """
@@ -527,8 +573,10 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
                 add_((prev_peak, charge))
 
                 if recalculate_starting_peak:
-                    update_(self._find_previous_putative_peak(
-                        peak.mz, charge, i, 2 * error_tolerance))
+                    # update_(self._find_previous_putative_peak(
+                    #     peak.mz, charge, i, 2 * error_tolerance))
+                    self._find_previous_putative_peak_inplace(
+                        peak.mz, charge, target_peaks, i, 2 * error_tolerance)
 
             # Look Right
             for i in range(1, right_search_limit):
@@ -540,12 +588,15 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
 
 
                 if recalculate_starting_peak:
-                    update_(self._find_next_putative_peak(
-                        peak.mz, charge, i, 2 * error_tolerance))
+                    # update_(self._find_next_putative_peak(
+                    #     peak.mz, charge, i, 2 * error_tolerance))
+                    self._find_next_putative_peak_inplace(
+                        peak.mz, charge, target_peaks, i, 2 * error_tolerance)
 
             if recalculate_starting_peak:
                 for i in range(min(left_search_limit, 2)):
-                    update_(self._find_next_putative_peak(
-                        peak.mz, charge, step=i, tolerance=2 * error_tolerance))
+                    # update_(self._find_next_putative_peak(
+                    #     peak.mz, charge, step=i, tolerance=2 * error_tolerance))
+                    self._find_next_putative_peak_inplace(peak.mz, charge, target_peaks, step=i, tolerance=2 * error_tolerance)
 
         return target_peaks

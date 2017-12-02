@@ -31,6 +31,9 @@ cdef class DeconvoluterBase(object):
     cpdef list _find_next_putative_peak(self, double mz, int charge, int step=*, double tolerance=*)
     cpdef list _find_previous_putative_peak(self, double mz, int charge, int step=*, double tolerance=*)
 
+    cdef int _find_next_putative_peak_inplace(self, double mz, int charge, set result, int step=*, double tolerance=*)
+    cdef int _find_previous_putative_peak_inplace(self, double mz, int charge, set result, int step=*, double tolerance=*)
+
 
 cdef class AveragineDeconvoluterBase(DeconvoluterBase):
     cdef:

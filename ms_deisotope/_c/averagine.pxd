@@ -33,6 +33,9 @@ cdef class TheoreticalIsotopicPattern(object):
 
     cpdef bint _eq(self, object other)
 
+    @cython.final
+    cdef bint _eq_inst(self, TheoreticalIsotopicPattern other)
+
     cpdef TheoreticalIsotopicPattern ignore_below(self, double ignore_below=*)
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=*)
     cpdef TheoreticalIsotopicPattern shift(self, double mz)

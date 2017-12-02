@@ -14,6 +14,7 @@ cdef class IsotopicFitRecord(object):
         public FittedPeak monoisotopic_peak
         public int missed_peaks
         public object data
+        public long _hash
 
     @staticmethod
     cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, TheoreticalIsotopicPattern theoretical,
@@ -62,8 +63,7 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
 
 cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
     cdef:
-        public MSDeconVFitter msdeconv
-        public ScaledGTestFitter penalizer
+        public double mass_error_tolerance
         public double penalty_factor
 
 
