@@ -253,6 +253,8 @@ class MzMLDataInterface(ScanDataSource):
             else:
                 activation = "unknown dissociation method"
             energy = struct.pop("collision energy", -1)
+            if energy == -1:
+                energy = struct.pop("activation energy", -1)
             return ActivationInformation(activation, energy, struct)
         except KeyError:
             return None
