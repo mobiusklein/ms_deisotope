@@ -1057,6 +1057,9 @@ class PrecursorInformation(object):
             self.intensity, self.extracted_intensity or 0., self.charge,
             self.extracted_charge or 0., self.precursor_scan_id)
 
+    def __reduce__(self):
+        return self.__class__, self.__getstate__()
+
     def __getstate__(self):
         return (self.mz, self.intensity, self.charge, self.precursor_scan_id, None, self.extracted_neutral_mass,
                 self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
