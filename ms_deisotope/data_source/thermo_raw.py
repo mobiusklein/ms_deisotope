@@ -522,10 +522,10 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
     def close(self):
         if self._source is not None:
             self._source.Close()
+            self._source = None
 
     def __del__(self):
         self.close()
-        self._source = None
 
     def reset(self):
         self.make_iterator(None)

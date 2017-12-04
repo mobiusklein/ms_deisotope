@@ -12,8 +12,8 @@ from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 from ..deconvolution import deconvolute_peaks
 
-from .instrument_components import Component, component, all_components
-from .file_information import FileInformation, SourceFile
+from .metadata.instrument_components import Component, component, all_components
+from .metadata.file_information import FileInformation, SourceFile
 
 try:
     from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors

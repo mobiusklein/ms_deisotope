@@ -32,13 +32,20 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
     def source(self):
         return self._source
 
+    @source.setter
+    def source(self, value):
+        self._source = value
+
     def close(self):
-        if self._source is not None:
-            self._source.close()
-        self._source = None
+        if self.source is not None:
+            self.source.close()
+            self.source = None
 
     def __del__(self):
-        self.close()
+        try:
+            self.close()
+        except AttributeError:
+            pass
 
     def reset(self):
         """Reset the object, clearing out any existing
