@@ -1,3 +1,4 @@
+# pragma: no cover
 from ..data_source.common import Scan, ScanBunch, ProcessedScan, PrecursorInformation, ScanIterator
 
 

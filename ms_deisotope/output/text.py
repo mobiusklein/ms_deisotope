@@ -32,6 +32,12 @@ class TextScanSerializerBase(ScanSerializerBase):
         header_dict['ms_level'] = scan.ms_level
         header_dict['polarity'] = scan.polarity
         header_dict['index'] = scan.index
+        instrument_config = scan.instrument_configuration
+        if instrument_config:
+            header_dict['analyzer'] = ';'.join(a.name for a in instrument_config.analyzer)
+        if scan.has_ion_mobility():
+            header_dict['drift_time'] = scan.drift_time
+        header_dict['annotations'] = scan.annotations
         return header_dict
 
     def format_peak_vectors(self, scan):
@@ -68,7 +74,6 @@ class HeaderedDelimitedWriter(TextScanSerializerBase):
                 line.append(str(vectors[j][i]))
             line.append("\n")
             self.stream.write(''.join(line))
-        self.stream.write('\n')
 
     def write_scan(self, scan_header, data_vectors):
         self.write_header(scan_header)

@@ -24,6 +24,9 @@ class MGFSerializer(HeaderedDelimitedWriter):
     def _add_parameter(self, name, value):
         self.stream.write(_format_parameter(name, value))
 
+    def add_parameter(self, name, value):
+        self._add_parameter(name, value)
+
     def save_scan_bunch(self, bunch):
         for scan in bunch.products:
             self.write_scan(*self.prepare_scan_data(scan))
@@ -32,13 +35,13 @@ class MGFSerializer(HeaderedDelimitedWriter):
         pepmass = header_dict['precursor_neutral_mass']
         charge = header_dict['precursor_charge']
         intensity = header_dict['precursor_intensity']
-        self._add_parameter("pepmass", "%f %f" % (pepmass, intensity))
+        self.add_parameter("pepmass", "%f %f" % (pepmass, intensity))
         try:
-            self._add_parameter("charge", "%d%s" % (charge, "+" if header_dict['polarity'] > 0 else '-'))
+            self.add_parameter("charge", "%d%s" % (charge, "+" if header_dict['polarity'] > 0 else '-'))
         except TypeError:
             pass
-        self._add_parameter("title", header_dict['title'])
-        self._add_parameter("rtinseconds", header_dict['scan_time'] * 60.0)
+        self.add_parameter("title", header_dict['title'])
+        self.add_parameter("rtinseconds", header_dict['scan_time'] * 60.0)
 
     def write_scan(self, scan_header, data_vectors):
         self.stream.write('BEGIN IONS\n')
@@ -60,7 +63,7 @@ class ProcessedMGFDeserializer(MGFLoader):
         for i in range(len(mz_array)):
             peak = DeconvolutedPeak(
                 neutral_mass(mz_array[i], charge_array[i]), intensity_array[i], charge_array[i],
-                intensity_array[i], i)
+                intensity_array[i], i, 0)
             peaks.append(peak)
         peak_set = DeconvolutedPeakSet(peaks)
         peak_set.reindex()
@@ -69,5 +72,5 @@ class ProcessedMGFDeserializer(MGFLoader):
     def _make_scan(self, scan):
         scan = super(ProcessedMGFDeserializer, self)._make_scan(scan)
         scan.peak_set = None
-        scan.deconvoluted_peak_set = self._build_peaks(scan)
+        scan.deconvoluted_peak_set = self._build_peaks(scan._data)
         return scan.pack()
