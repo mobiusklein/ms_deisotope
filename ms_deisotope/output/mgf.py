@@ -1,5 +1,5 @@
 
-from ms_deisotope.averagine import neutral_mass
+from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.data_source.mgf import MGFLoader, mgf as pymgf
 
@@ -30,6 +30,13 @@ class MGFSerializer(HeaderedDelimitedWriter):
     def save_scan_bunch(self, bunch):
         for scan in bunch.products:
             self.write_scan(*self.prepare_scan_data(scan))
+
+    def format_peak_vectors(self, scan):
+        (neutral_mass_array, intensity_array, charge_array) = super(
+            MGFSerializer, self).format_peak_vectors(scan)
+        mz_array = [mass_charge_ratio(
+            neutral_mass_array[i], charge_array[i]) for i in range(len(charge_array))]
+        return (mz_array, intensity_array, charge_array)
 
     def write_header(self, header_dict):
         pepmass = header_dict['precursor_neutral_mass']
