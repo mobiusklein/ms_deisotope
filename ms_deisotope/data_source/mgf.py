@@ -83,6 +83,7 @@ class MGFInterface(ScanDataSource):
         neutral_mass, intensity = scan['params']['pepmass']
         charge = scan['params'].get('charge', [ChargeNotProvided])[0]
         if charge != ChargeNotProvided:
+            charge = int(charge)
             mz = mass_charge_ratio(neutral_mass, charge)
         else:
             mz = mass_charge_ratio(neutral_mass, 1)
