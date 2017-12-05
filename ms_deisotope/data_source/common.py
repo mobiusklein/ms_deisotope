@@ -26,9 +26,9 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
 
     def __new__(cls, *args, **kwargs):
         inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
-        inst._id_map = {
-            inst.precursor.id: inst.precursor
-        }
+        inst._id_map = {}
+        if inst.precursor is not None:
+            inst._id_map[inst.precursor.id] = inst.precursor
         for scan in inst.products:
             inst._id_map[scan.id] = scan
         return inst
@@ -274,6 +274,9 @@ class ScanDataSource(object):
 
     def _instrument_configuration(self, scan):
         return None
+
+    def _annotations(self, scan):
+        return dict()
 
 
 @add_metaclass(abc.ABCMeta)
@@ -528,9 +531,11 @@ class Scan(ScanBase):
     isolation_window: IsolationWindow or None:
         Describes the range of m/z that were isolated from a parent scan to create this scan
     """
-    def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None):
+    def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None, annotations=None):
         if product_scans is None:
             product_scans = []
+        if annotations is None:
+            annotations = dict()
         self.source = source
         self.peak_set = peak_set
         self.deconvoluted_peak_set = deconvoluted_peak_set
@@ -551,6 +556,9 @@ class Scan(ScanBase):
         self._isolation_window = None
         self._instrument_configuration = None
 
+        self._annotations = None
+        self._external_annotations = annotations
+
         self.product_scans = product_scans
 
     def clone(self):
@@ -558,7 +566,7 @@ class Scan(ScanBase):
             self._data, self.source,
             self.peak_set.clone() if self.peak_set is not None else None,
             self.deconvoluted_peak_set.clone() if self.deconvoluted_peak_set is not None else None,
-            [s.clone() for s in self.product_scans])
+            [s.clone() for s in self.product_scans], self._external_annotations.copy())
         return dup
 
     def _load(self):
@@ -686,6 +694,13 @@ class Scan(ScanBase):
                 self._data)
         return self._instrument_configuration
 
+    @property
+    def annotations(self):
+        if self._annotations is None:
+            self._annotations = self.source._annotations(self._data)
+            self._annotations.update(self._external_annotations)
+        return self._annotations
+
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
             self.id, self.index, self.scan_time, self.ms_level,
@@ -778,7 +793,9 @@ class Scan(ScanBase):
             self.activation,
             self.acquisition_information,
             self.isolation_window,
-            self.instrument_configuration, self.product_scans)
+            self.instrument_configuration,
+            self.product_scans,
+            self.annotations)
 
     # signal transformation
 
@@ -790,7 +807,8 @@ class Scan(ScanBase):
         arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
         scan = WrappedScan(
             self._data, self.source, arrays,
-            list(self.product_scans), is_profile=True)
+            list(self.product_scans), is_profile=True,
+            annotations=self._external_annotations)
         return scan
 
     def denoise(self, scale=5.0, window_length=2.0, region_width=10):
@@ -801,7 +819,8 @@ class Scan(ScanBase):
             window_length=window_length, scale=scale, region_width=region_width)
         mzs, intensities = transform(mzs, intensities)
         return WrappedScan(self._data, self.source,
-                           (mzs, intensities), list(self.product_scans))
+                           (mzs, intensities), list(self.product_scans),
+                           annotations=self._external_annotations)
 
     def transform(self, filters=None):
         mzs, intensities = self.arrays
@@ -810,7 +829,8 @@ class Scan(ScanBase):
         mzs, intensities = scan_filter.transform(mzs, intensities, filters=filters)
         return WrappedScan(self._data, self.source,
                            (mzs, intensities), list(self.product_scans),
-                           is_profile=True)
+                           is_profile=True,
+                           annotations=self._external_annotations)
 
     def _average_with(self, scans, dx=0.01, weight_sigma=None):
         scans = [self] + list(scans)
@@ -831,7 +851,8 @@ class Scan(ScanBase):
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
-            indices, list(self.product_scans), is_profile=True)
+            indices, list(self.product_scans), is_profile=True,
+            annotations=self._external_annotations)
 
     def _get_adjacent_scans(self, index_interval=None, rt_interval=None):
         if index_interval is None and rt_interval is None:
@@ -921,7 +942,8 @@ class Scan(ScanBase):
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
-            indices, list(self.product_scans), is_profile=True)
+            indices, list(self.product_scans), is_profile=True,
+            annotations=self._external_annotations)
 
 
 class WrappedScan(Scan):
@@ -941,10 +963,11 @@ class WrappedScan(Scan):
         "_instrument_configuration"
     ]
 
-    def __init__(self, data, source, array_data, product_scans=None, **overrides):
+    def __init__(self, data, source, array_data, product_scans=None, annotations=None, **overrides):
         super(WrappedScan, self).__init__(
             data, source, peak_set=None,
             deconvoluted_peak_set=None,
+            annotations=annotations,
             product_scans=product_scans)
         self._arrays = RawDataArrays(*array_data)
         self._overrides = overrides
@@ -957,24 +980,28 @@ class WrappedScan(Scan):
     def clone(self):
         dup = self.__class__(
             self._data, self.source, self.arrays,
-            [s.clone() for s in self.product_scans], **self._overrides)
+            [s.clone() for s in self.product_scans],
+            annotations=self._external_annotations,
+            **self._overrides)
         dup.peak_set = self.peak_set.clone()
         dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
         return dup
 
 
 class AveragedScan(WrappedScan):
-    def __init__(self, data, source, array_data, scan_indices, product_scans=None, **overrides):
+    def __init__(self, data, source, array_data, scan_indices, product_scans=None, annotations=None, **overrides):
         super(AveragedScan, self).__init__(
             data, source, array_data,
-            product_scans=product_scans, **overrides)
+            product_scans=product_scans, annotations=annotations, **overrides)
         self.scan_indices = scan_indices
 
     def clone(self):
         dup = self.__class__(
             self._data, self.source, self.arrays,
             self.scan_indices,
-            [s.clone() for s in self.product_scans], **self._overrides)
+            [s.clone() for s in self.product_scans],
+            annotations=self._external_annotations,
+            **self._overrides)
         dup.peak_set = self.peak_set.clone()
         dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
         return dup
@@ -1119,9 +1146,12 @@ class ProcessedScan(ScanBase):
                  ms_level, scan_time, index, peak_set,
                  deconvoluted_peak_set, polarity=None, activation=None,
                  acquisition_information=None, isolation_window=None,
-                 instrument_configuration=None, product_scans=None):
+                 instrument_configuration=None, product_scans=None,
+                 annotations=None):
         if product_scans is None:
             product_scans = []
+        if annotations is None:
+            annotations = {}
         self.id = id
         self.title = title
         self.precursor_information = precursor_information
@@ -1136,6 +1166,7 @@ class ProcessedScan(ScanBase):
         self.isolation_window = isolation_window
         self.instrument_configuration = instrument_configuration
         self.product_scans = product_scans
+        self.annotations = annotations
 
     def clear(self):
         self.peak_set = None
@@ -1178,7 +1209,8 @@ class ProcessedScan(ScanBase):
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
             self.polarity, self.activation, self.acquisition_information,
-            self.isolation_window, self.instrument_configuration, list(self.products))
+            self.isolation_window, self.instrument_configuration,
+            list(self.product_scans), self.annotations.copy())
         return dup
 
 

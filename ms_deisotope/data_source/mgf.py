@@ -6,6 +6,8 @@ import codecs
 from pyteomics import mgf
 import numpy as np
 
+from ms_deisotope import mass_charge_ratio
+
 from .common import (
     Scan, RandomAccessScanSource, PrecursorInformation,
     ScanDataSource, ScanIterator, ChargeNotProvided)
@@ -78,8 +80,12 @@ class MGFInterface(ScanDataSource):
         return False
 
     def _precursor_information(self, scan):
-        mz, intensity = scan['params']['pepmass']
+        neutral_mass, intensity = scan['params']['pepmass']
         charge = scan['params'].get('charge', [ChargeNotProvided])[0]
+        if charge != ChargeNotProvided:
+            mz = mass_charge_ratio(neutral_mass, charge)
+        else:
+            mz = mass_charge_ratio(neutral_mass, 1)
         pinfo = PrecursorInformation(
             mz, intensity, charge, source=self,
             product_scan_id=self._scan_id(scan),
@@ -125,6 +131,21 @@ class MGFInterface(ScanDataSource):
             return self._index[self._scan_title(scan)]
         except KeyError:
             return -1
+
+    def _annotations(self, scan):
+        annots = dict()
+        params = scan['params']
+        for key, value in params.items():
+            if key in ("pepmass", "charge"):
+                continue
+            else:
+                try:
+                    value = float(value)
+                except ValueError:
+                    if value == 'None':
+                        value = None
+            annots[key] = value
+        return annots
 
 
 def _remove_bom(bstr):

@@ -333,6 +333,19 @@ class MzMLDataInterface(ScanDataSource):
         except KeyError:
             return None
 
+    def _annotations(self, scan):
+        annot = dict()
+        annot['base peak intensity'] = scan.get('base peak intensity')
+        annot['base peak m/z'] = scan.get('base peak m/z')
+        annot['lowest observed m/z'] = scan.get('lowest observed m/z')
+        annot['highest observed m/z'] = scan.get('highest observed m/z')
+        try:
+            annot['filter string'] = scan['scanList']['scan'][0].get('filter string')
+        except KeyError:
+            annot['filter string'] = None
+        annot['total ion current'] = scan.get('total ion current')
+        return annot
+
 
 class _MzMLMetadataLoader(object):
 
