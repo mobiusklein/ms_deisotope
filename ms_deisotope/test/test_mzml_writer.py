@@ -2,6 +2,7 @@ import unittest
 import os
 import tempfile
 
+import ms_deisotope
 from ms_deisotope.data_source import MzMLLoader
 from ms_deisotope.test.common import datafile
 
@@ -45,6 +46,11 @@ class TestMzMLScanSerializer(unittest.TestCase):
         description = processed_reader.file_description()
         assert "profile spectrum" not in description.contents
         assert "centroid spectrum" in description.contents
+
+        index = processed_reader.extended_index
+        pinfo = index.find_msms_by_precursor_mass(ms_deisotope.neutral_mass(562.7397, 2))
+        assert len(pinfo) > 0
+
         processed_reader.close()
         try:
             os.remove(processed_reader.source_file)
