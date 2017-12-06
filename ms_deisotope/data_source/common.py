@@ -477,6 +477,12 @@ class ScanBase(object):
         scan_event = acq[0]
         return scan_event.drift_time
 
+    def copy(self):
+        return self.clone()
+
+    def __copy__(self):
+        return self.clone()
+
 
 class Scan(ScanBase):
     """Container for mass spectral data and associated descriptive information.
