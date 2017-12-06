@@ -1205,7 +1205,7 @@ class ProcessedScan(ScanBase):
             self.id, self.ms_level, len(peaks), pinfo_string)
 
     def clone(self):
-        dup = ProcessedScan(
+        dup = self.__class__(
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
             self.polarity, self.activation, self.acquisition_information,
