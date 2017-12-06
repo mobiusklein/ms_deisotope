@@ -289,3 +289,48 @@ def component(name):
         return all_components_by_name[name]
     except KeyError:
         return Component(name, name, name, [name])
+
+
+class ComponentGroup(object):
+    def __init__(self, type, members, order):
+        self.type = type
+        self.members = list(members)
+        self.order = int(order)
+
+    def __repr__(self):
+        t = "{s.__class__.__name__}({s.type!r}, {s.members}, order={s.order})"
+        return t.format(s=self)
+
+    def __getitem__(self, i):
+        return self.members[i]
+
+    def __setitem__(self, i, v):
+        self.members[i] = v
+
+    def add(self, v):
+        self.members.append(v)
+
+    def __len__(self):
+        return len(self.members)
+
+
+class InstrumentInformation(object):
+    def __init__(self, id, groups):
+        self.id = id
+        self.groups = sorted(groups, key=lambda x: x.order)
+        self.analyzers = []
+
+        for group in self.groups:
+            if group.type == 'analyzer':
+                self.analyzers.extend(group)
+
+    def __getitem__(self, i):
+        return self.groups[i]
+
+    def __len__(self):
+        return len(self.grou)
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.id!r}, {self.groups})".format(
+            self=self)
+

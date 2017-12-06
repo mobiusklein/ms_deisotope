@@ -12,8 +12,16 @@ from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 from ..deconvolution import deconvolute_peaks
 
-from .metadata.instrument_components import Component, component, all_components
+from .metadata.instrument_components import (
+    Component, component, all_components,
+    ComponentGroup, InstrumentInformation)
 from .metadata.file_information import FileInformation, SourceFile
+
+from .metadata.scan_traits import (
+    IsolationWindow,
+    ScanAcquisitionInformation,
+    ScanEventInformation,
+    ScanWindow)
 
 try:
     from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors
@@ -1262,85 +1270,6 @@ dissociation_methods = {
 ActivationInformation.dissociation_methods = dissociation_methods
 
 
-class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
-
-    @property
-    def lower_bound(self):
-        return self.target - self.lower
-
-    @property
-    def upper_bound(self):
-        return self.target + self.upper
-
-    def __contains__(self, x):
-        return self.lower_bound <= x <= self.upper_bound
-
-    def is_empty(self):
-        if self.lower is None:
-            return self.upper is None
-        return self.lower == self.upper == 0.0
-
-
-class ScanAcquisitionInformation(object):
-    def __init__(self, combination, scan_list):
-        self.combination = combination
-        self.scan_list = scan_list
-
-    def __getitem__(self, i):
-        return self.scan_list[i]
-
-    def __iter__(self):
-        return iter(self.scan_list)
-
-    def __len__(self):
-        return len(self.scan_list)
-
-    def __repr__(self):
-        return "ScanAcquisitionInformation(combination=%r, scan_list=%r)" % (
-            self.combination, self.scan_list)
-
-
-class ScanEventInformation(object):
-    def __init__(self, start_time, window_list, drift_time=None):
-        self.start_time = start_time
-        self.window_list = window_list or []
-        self.drift_time = drift_time
-
-    def has_ion_mobility(self):
-        return self.drift_time is not None and self.drift_time > 0
-
-    def __getitem__(self, i):
-        return self.window_list[i]
-
-    def __iter__(self):
-        return iter(self.window_list)
-
-    def __len__(self):
-        return len(self.window_list)
-
-    def __repr__(self):
-        template = "ScanEventInformation(start_time={}, window_list={}{})"
-        if self.has_ion_mobility():
-            tail = ", drift_time={}".format(self.drift_time)
-        else:
-            tail = ''
-        form = template.format(self.start_time, self.window_list, tail)
-        return form
-
-    def total_scan_window(self):
-        low = float('inf')
-        high = 0
-        for window in self:
-            low = min(low, window.lower)
-            high = max(high, window.upper)
-        return ScanWindow(low, high)
-
-
-class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
-    def __contains__(self, i):
-        return self.lower <= i <= self.upper
-
-
 class IteratorFacadeBase(DataAccessProxy, ScanIterator):
     def __init__(self, source, **kwargs):
         DataAccessProxy.__init__(self, source)
@@ -1357,47 +1286,3 @@ class IteratorFacadeBase(DataAccessProxy, ScanIterator):
 
     def next(self):
         return self._transform(next(self._producer))
-
-
-class ComponentGroup(object):
-    def __init__(self, type, members, order):
-        self.type = type
-        self.members = list(members)
-        self.order = int(order)
-
-    def __repr__(self):
-        t = "{s.__class__.__name__}({s.type!r}, {s.members}, order={s.order})"
-        return t.format(s=self)
-
-    def __getitem__(self, i):
-        return self.members[i]
-
-    def __setitem__(self, i, v):
-        self.members[i] = v
-
-    def add(self, v):
-        self.members.append(v)
-
-    def __len__(self):
-        return len(self.members)
-
-
-class InstrumentInformation(object):
-    def __init__(self, id, groups):
-        self.id = id
-        self.groups = sorted(groups, key=lambda x: x.order)
-        self.analyzers = []
-
-        for group in self.groups:
-            if group.type == 'analyzer':
-                self.analyzers.extend(group)
-
-    def __getitem__(self, i):
-        return self.groups[i]
-
-    def __len__(self):
-        return len(self.grou)
-
-    def __repr__(self):
-        return "{self.__class__.__name__}({self.id!r}, {self.groups})".format(
-            self=self)
