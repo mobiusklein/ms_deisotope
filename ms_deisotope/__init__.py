@@ -29,5 +29,6 @@ __all__ = [
     "AveraginePeakDependenceGraphDeconvoluter", "CompositionListPeakDependenceGraphDeconvoluter",
     "MSDeconVFitter", "PenalizedMSDeconVFitter", "DistinctPatternFitter", "IsotopicFitRecord",
     "DeconvolutedPeak", "DeconvolutedPeakSet", "DeconvolutedPeakSolution",
-    "MzMLLoader", "MzXMLLoader", "MSFileLoader", "ScanProcessor"
+    "MzMLLoader", "MzXMLLoader", "MSFileLoader", "ScanProcessor",
+    "deconvolute_peaks"
 ]
