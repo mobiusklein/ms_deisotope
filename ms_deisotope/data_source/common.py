@@ -26,6 +26,11 @@ from .metadata.scan_traits import (
     ScanEventInformation,
     ScanWindow)
 
+from .metadata.activation import (
+    ActivationInformation,
+    dissociation_methods_map as dissociation_methods,
+    HCD, CID, ETD, ECD, UnknownDissociation)
+
 try:
     from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors
     has_plot = True
@@ -1229,48 +1234,6 @@ class ProcessedScan(ScanBase):
             self.isolation_window, self.instrument_configuration,
             list(self.product_scans), self.annotations.copy())
         return dup
-
-
-class ActivationInformation(object):
-    def __init__(self, method, energy, data=None):
-        if data is None:
-            data = dict()
-        self.method = dissociation_methods.get(str(method).lower(), method)
-        self.energy = energy
-        self.data = data
-
-    def __repr__(self):
-        return "ActivationInformation(%r, %r%s)" % (
-            str(self.method), self.energy,
-            "" if not self.data else ", %r" % self.data)
-
-    def __str__(self):
-        return str(self.method)
-
-
-CID = Constant("collision-induced dissociation")
-HCD = Constant("beam-type collision-induced dissociation")
-ETD = Constant("electron transfer dissociation")
-ECD = Constant("electron capture dissociation")
-UnkownDissociation = Constant("unknown dissociation")
-
-
-dissociation_methods = {
-    "cid": CID,
-    'cad': CID,
-    CID.name.lower(): CID,
-    'hcd': HCD,
-    HCD.name.lower(): HCD,
-    'etd': ETD,
-    ETD.name.lower(): ETD,
-    "ecd": ECD,
-    ECD.name.lower(): ECD,
-    "": UnkownDissociation,
-    None: UnkownDissociation
-}
-
-
-ActivationInformation.dissociation_methods = dissociation_methods
 
 
 class IteratorFacadeBase(DataAccessProxy, ScanIterator):

@@ -1,9 +1,10 @@
 from __future__ import print_function
 
-from collections import namedtuple
+
+from .cv import Term, render_list
 
 
-class Component(namedtuple("Component", ("name", "id", "category", "specialization"))):
+class Component(Term):
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -30,47 +31,10 @@ class Component(namedtuple("Component", ("name", "id", "category", "specializati
 def __generate_list_code():
     '''Prints the code to generate these static lists
     '''
-    from psims.controlled_vocabulary.controlled_vocabulary import load_psims
-
-    cv_psims = load_psims()
-
-    def type_path(term):
-        path = []
-        i = 0
-        steps = [term.is_a.comment]
-        while i < len(steps):
-            step = steps[i]
-            i += 1
-            path.append(step)
-            term = cv_psims[step]
-            try:
-                steps.append(term.is_a.comment)
-            except AttributeError:
-                steps.extend(t.comment for t in term.is_a)
-            except KeyError:
-                continue
-        return path
-
-    def render_list(seed, list_name=None):
-        component_type_list = [seed]
-        i = 0
-        if list_name is None:
-            list_name = seed.replace(" ", "_") + 's'
-        print("%s = [" % (list_name,))
-        while i < len(component_type_list):
-            component_type = component_type_list[i]
-            i += 1
-            for term in cv_psims[component_type].children:
-                print("    Component(%r, %r, %r, %r), " % (
-                    term.name, term.id, component_type_list[0], type_path(term)))
-                if term.children:
-                    component_type_list.append(term.name)
-        print("]")
-
-    render_list('ionization type')
-    render_list('detector type')
-    render_list('mass analyzer type', 'analyzer_types')
-    render_list('inlet type')
+    render_list('ionization type', term_cls_name="Component")
+    render_list('detector type', term_cls_name="Component")
+    render_list('mass analyzer type', 'analyzer_types', term_cls_name="Component")
+    render_list('inlet type', term_cls_name="Component")
 
 
 ionization_types = [
