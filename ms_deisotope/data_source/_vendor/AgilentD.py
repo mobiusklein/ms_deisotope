@@ -612,7 +612,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, ScanIterator, RandomAccessScan
                     current_level = packed.ms_level
                 # decreasing ms level
                 elif current_level > packed.ms_level:
-                    current_level = packed.ms_level.ms_level
+                    current_level = packed.ms_level
                 product_scans.append(packed)
             elif packed.ms_level == 1:
                 if current_level > 1 and precursor_scan is not None:
