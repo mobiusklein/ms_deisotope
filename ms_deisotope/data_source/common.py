@@ -6,8 +6,9 @@ from collections import namedtuple
 import numpy as np
 
 from ms_peak_picker import (
-    pick_peaks, reprofile, average_signal, scan_filter)
-from ms_peak_picker import PeakIndex, PeakSet
+    pick_peaks, reprofile, average_signal,
+    scan_filter, PeakIndex, PeakSet)
+
 from ..averagine import neutral_mass, mass_charge_ratio
 from ..utils import Constant, add_metaclass
 from ..deconvolution import deconvolute_peaks
@@ -15,7 +16,9 @@ from ..deconvolution import deconvolute_peaks
 from .metadata.instrument_components import (
     Component, component, all_components,
     ComponentGroup, InstrumentInformation)
-from .metadata.file_information import FileInformation, SourceFile
+
+from .metadata.file_information import (
+    FileInformation, SourceFile)
 
 from .metadata.scan_traits import (
     IsolationWindow,
