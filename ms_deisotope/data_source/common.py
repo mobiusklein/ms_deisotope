@@ -27,7 +27,7 @@ from .metadata.scan_traits import (
     ScanWindow)
 
 from .metadata.activation import (
-    ActivationInformation,
+    ActivationInformation, MultipleActivationInformation,
     dissociation_methods_map as dissociation_methods,
     HCD, CID, ETD, ECD, UnknownDissociation)
 
@@ -366,7 +366,7 @@ class ScanIterator(ScanDataSource):
                     current_level = packed.ms_level
                 # decreasing ms level
                 elif current_level > packed.ms_level:
-                    current_level = packed.ms_level.ms_level
+                    current_level = packed.ms_level
                 product_scans.append(packed)
             elif packed.ms_level == 1:
                 if current_level > 1:
