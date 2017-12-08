@@ -332,6 +332,12 @@ class ScanIterator(ScanDataSource):
             self._producer = self._single_scan_iterator(iterator)
             self.iteration_mode = 'single'
 
+    def _make_cache_key(self, scan):
+        return scan.id
+
+    def _validate(self, scan):
+        return True
+
     def _single_scan_iterator(self, iterator=None):
         if iterator is None:
             iterator = self._make_default_iterator()
@@ -342,7 +348,7 @@ class ScanIterator(ScanDataSource):
             packed = _make_scan(scan)
             if not self._validate(packed):
                 continue
-            self._scan_cache[packed.id] = packed
+            self._scan_cache[self._make_cache_key(packed)] = packed
             yield packed
 
     def _scan_group_iterator(self, iterator=None):
@@ -359,7 +365,7 @@ class ScanIterator(ScanDataSource):
             packed = _make_scan(scan)
             if not self._validate(packed):
                 continue
-            self._scan_cache[packed.id] = packed
+            self._scan_cache[self._make_cache_key(packed)] = packed
             if packed.ms_level > 1:
                 # inceasing ms level
                 if current_level < packed.ms_level:

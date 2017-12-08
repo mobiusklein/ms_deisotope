@@ -6,7 +6,7 @@ from .common import (
     ScanAcquisitionInformation, ScanEventInformation,
     ScanWindow, IsolationWindow,
     InstrumentInformation, ComponentGroup, component,
-    FileInformation, SourceFile)
+    FileInformation, SourceFile, MultipleActivationInformation)
 from weakref import WeakValueDictionary
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until,
@@ -245,17 +245,26 @@ class MzMLDataInterface(ScanDataSource):
         try:
             struct = dict(scan['precursorList']['precursor'][0]['activation'])
             activation = None
+            activation_methods = []
             for key in tuple(struct):
                 if key in ActivationInformation.dissociation_methods:
-                    activation = key
+                    activation_methods.append(key)
                     struct.pop(key)
-                    break
+
+            if activation_methods:
+                activation = activation_methods[0]
+                activation_methods = activation_methods[1:]
             else:
                 activation = "unknown dissociation method"
             energy = struct.pop("collision energy", -1)
             if energy == -1:
                 energy = struct.pop("activation energy", -1)
-            return ActivationInformation(activation, energy, struct)
+
+            if len(activation_methods) == 0:
+                return ActivationInformation(activation, energy, struct)
+            else:
+                return MultipleActivationInformation(
+                    [activation] + activation_methods, [energy], struct)
         except KeyError:
             return None
 

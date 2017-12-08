@@ -271,6 +271,9 @@ class MzMLScanSerializer(ScanSerializerBase):
         params.append({
             "name": str(activation_information.method),
         })
+        if activation_information.is_multiple_dissociation():
+            for method in activation_information.methods[1:]:
+                params.append({"name": str(method)})
         # NOTE: Only correct for CID/HCD spectra with absolute collision energies, but that is all I have
         # to test with.
         params.append({
@@ -278,6 +281,14 @@ class MzMLScanSerializer(ScanSerializerBase):
             "value": activation_information.energy,
             "unitName": "electron volts"
         })
+        if activation_information.is_multiple_dissociation():
+            for energy in activation_information.energies[1:]:
+                params.append({
+                    "name": "collision energy",
+                    "value": energy,
+                    "unitName": "electron volts"
+                })
+
         for key, val in activation_information.data.items():
             arg = {
                 "name": key,

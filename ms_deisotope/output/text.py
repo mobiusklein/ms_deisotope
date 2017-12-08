@@ -26,6 +26,11 @@ class TextScanSerializerBase(ScanSerializerBase):
             if activation:
                 header_dict['precursor_activation_method'] = activation.method
                 header_dict['precursor_activation_energy'] = activation.energy
+                if activation.is_multiple_dissociation():
+                    header_dict['precursor_activation_method'] = ';'.join([str(m) for m in activation.methods])
+                    header_dict['precursor_activation_energy'] = ';'.join([str(m) for m in activation.energies])
+                for key, value in activation.data.items():
+                    header_dict['precursor_activation_' + key.lower()] = value
         header_dict['scan_time'] = scan.scan_time
         header_dict['id'] = scan.id
         header_dict['title'] = scan.title

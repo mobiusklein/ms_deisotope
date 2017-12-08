@@ -44,8 +44,8 @@ class MultipleActivationInformation(ActivationInformation):
         return self.energies[0]
 
     def __repr__(self):
-        return "MultipleActivationInformation(%r, %r%s)" % (
-            str(self.methods), self.energies,
+        return "MultipleActivationInformation(methods=%r, energies=%r%s)" % (
+            list(map(str, self.methods)), self.energies,
             "" if not self.data else ", %r" % self.data)
 
     def __str__(self):
@@ -82,13 +82,19 @@ dissociation_methods = [
          'dissociation method', [u'dissociation method']),
     Term(u'LIFT', u'MS:1002000', 'dissociation method',
          [u'dissociation method']),
+    Term(u'Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)',
+         u'MS:1002631', 'dissociation method', [u'dissociation method']),
     Term(u'electron capture dissociation', u'MS:1000250',
          'dissociation method', [u'dissociation method']),
     Term(u'trap-type collision-induced dissociation', u'MS:1002472',
          'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
     Term(u'beam-type collision-induced dissociation', u'MS:1000422',
          'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
+    Term(u'supplemental collision-induced dissociation', u'MS:1002679',
+         'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
     Term(u'higher energy beam-type collision-induced dissociation', u'MS:1002481', 'dissociation method',
+         [u'beam-type collision-induced dissociation', u'collision-induced dissociation', u'dissociation method']),
+    Term(u'supplemental beam-type collision-induced dissociation', u'MS:1002678', 'dissociation method',
          [u'beam-type collision-induced dissociation', u'collision-induced dissociation', u'dissociation method']),
 ]
 

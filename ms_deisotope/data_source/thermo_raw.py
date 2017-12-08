@@ -14,7 +14,7 @@ from ms_deisotope.data_source.common import (
     Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
     ActivationInformation, IsolationWindow,
     component, ComponentGroup, InstrumentInformation,
-    FileInformation, SourceFile)
+    FileInformation, SourceFile, MultipleActivationInformation)
 
 from ms_deisotope.utils import Base
 
@@ -74,12 +74,14 @@ polarity_pat = re.compile(r"(?P<polarity>[\+\-])")
 point_type_pat = re.compile(r"(?P<point_type>[CP])")
 ionization_pat = re.compile(r"(?P<ionization_type>EI|CI|FAB|APCI|ESI|APCI|NSI|TSP|FD|MALDI|GD)")
 scan_type_pat = re.compile(r"(?P<scan_type>FULL|SIM|SRM|CRM|Z|Q1MS|Q3MS)")
+ms_level_pat = re.compile(r" ms(?P<level>\d*) ")
 activation_pat = re.compile(
-    r"""ms(?P<ms_level>\d*)\s
-        (?:(?P<isolation_mz>\d+\.\d*)@
+    r"""(?:(?P<isolation_mz>\d+\.\d*)@
         (?P<activation_type>[a-z]+)
-        (?P<activation_energy>\d*\.?\d*))?""", re.VERBOSE)
-
+        (?P<activation_energy>\d*\.?\d*))""", re.VERBOSE)
+activation_mode_pat = re.compile(
+    r"""(?P<activation_type>[a-z]+)
+        (?P<activation_energy>\d*\.\d*)""", re.VERBOSE)
 
 analyzer_map = {
     'FTMS': component("orbitrap"),
@@ -125,14 +127,34 @@ def filter_line_parser(line):
     words = line.upper().split(" ")
     values = dict()
     i = 0
-    activation_info = activation_pat.search(line)
-    if activation_info is not None:
-        activation_info = activation_info.groupdict()
-        if activation_info['ms_level'] != "":
-            values["ms_level"] = int(activation_info['ms_level'])
-            values["isolation_mz"] = float(activation_info['isolation_mz'])
-            values["activation_type"] = activation_info['activation_type']
-            values["activation_energy"] = float(activation_info['activation_energy'])
+    values['supplemental_activation'] = " sa " in line
+    ms_level_info = ms_level_pat.search(line)
+    if ms_level_info is not None:
+        ms_level_data = ms_level_info.groupdict()
+        level = ms_level_data.get("level")
+        if level != "":
+            parts = line[ms_level_info.end():].split(" ")
+            tandem_sequence = []
+            for part in parts:
+                activation_info = activation_pat.search(part)
+                if activation_info is not None:
+                    activation_info = activation_info.groupdict()
+                    activation_event = dict()
+                    activation_event["isolation_mz"] = float(activation_info['isolation_mz'])
+                    activation_event["activation_type"] = [activation_info['activation_type']]
+                    activation_event["activation_energy"] = [float(activation_info['activation_energy'])]
+                    if part.count("@") > 1:
+                        act_events = activation_mode_pat.finditer(part)
+                        # discard the first match which we already recorded
+                        next(act_events)
+                        for match in act_events:
+                            act_type, act_energy = match.groups()
+                            act_energy = float(act_energy)
+                            activation_event["activation_type"].append(act_type)
+                            activation_event['activation_energy'].append(act_energy)
+                    tandem_sequence.append(activation_event)
+            values['ms_level'] = int(level)
+            values['tandem_sequence'] = tandem_sequence
     try:
         word = words[i]
         i += 1
@@ -397,7 +419,7 @@ class ThermoRawDataInterface(ScanDataSource):
             mz = pinfo_struct.monoIsoMass
             charge = pinfo_struct.chargeState
             intensity = float(labels.intensity[0])
-            precursor_scan_number = pinfo_struct.scanNumber
+            # precursor_scan_number = pinfo_struct.scanNumber + 1
         else:
             mz = labels.mass[0]
             intensity = float(labels.intensity[0])
@@ -439,10 +461,16 @@ class ThermoRawDataInterface(ScanDataSource):
 
     def _activation(self, scan):
         filter_line = self._filter_line(scan)
-        activation_type = filter_line.get("activation_type")
-        if activation_type is not None:
-            energy = filter_line.get("activation_energy")
-            return ActivationInformation(activation_type, energy)
+        tandem_sequence = filter_line.get("tandem_sequence")
+        if tandem_sequence is not None:
+            activation_event = tandem_sequence[-1]
+            activation_type = activation_event.get("activation_type")
+            if activation_type is not None:
+                energy = activation_event.get("activation_energy")
+                if len(activation_type) == 1:
+                    return ActivationInformation(activation_type[0], energy[0])
+                else:
+                    return MultipleActivationInformation(activation_type, energy)
         return None
 
     def _get_scan_segment(self, scan):
@@ -486,6 +514,13 @@ class ThermoRawDataInterface(ScanDataSource):
             return self._instrument_config[confid]
         except KeyError:
             return None
+
+    def _annotations(self, scan):
+        fline = self._filter_line(scan)
+        annots = {
+            "filter_line": fline,
+        }
+        return annots
 
 
 class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterator, _RawFileMetadataLoader):
@@ -624,7 +659,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
                 else:
                     break
             scan_number = start_index
-        iterator = self._make_scan_index_producer(start_index=scan_number)
+        iterator = self._make_pointer_iterator(start_index=scan_number)
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
         else:
@@ -646,48 +681,16 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
         else:
             return range(1, self._source.NumSpectra + 1)
 
-    def _single_scan_iterator(self, iterator=None):
-        if iterator is None:
-            iterator = self._make_scan_index_producer()
-        for ix in iterator:
-            packed = self.get_scan_by_id(ix)
-            self._scan_cache[packed._data.scan_number] = packed
-            yield packed
+    def _make_pointer_iterator(self, start_index=None, start_time=None):
+        iterator = self._make_scan_index_producer(start_index, start_time)
+        for i in iterator:
+            yield ThermoRawScanPtr(i)
 
-    def _scan_group_iterator(self, iterator=None):
-        if iterator is None:
-            iterator = self._make_scan_index_producer()
+    def _make_default_iterator(self):
+        return self._make_pointer_iterator()
 
-        precursor_scan = None
-        product_scans = []
-
-        current_level = 1
-
-        for ix in iterator:
-            packed = self.get_scan_by_id(ix)
-            self._scan_cache[packed._data.scan_number] = packed
-            if packed.ms_level > 1:
-                # inceasing ms level
-                if current_level < packed.ms_level:
-                    current_level = packed.ms_level
-                # decreasing ms level
-                elif current_level > packed.ms_level:
-                    current_level = packed.ms_level
-                product_scans.append(packed)
-            elif packed.ms_level == 1:
-                if current_level > 1 and precursor_scan is not None:
-                    precursor_scan.product_scans = list(product_scans)
-                    yield ScanBunch(precursor_scan, product_scans)
-                else:
-                    if precursor_scan is not None:
-                        precursor_scan.product_scans = list(product_scans)
-                        yield ScanBunch(precursor_scan, product_scans)
-                precursor_scan = packed
-                product_scans = []
-            else:
-                raise Exception("This object is not able to handle MS levels higher than 2")
-        if precursor_scan is not None:
-            yield ScanBunch(precursor_scan, product_scans)
+    def _make_cache_key(self, scan):
+        return scan._data.scan_number
 
     def next(self):
         return next(self._producer)
