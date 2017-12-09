@@ -518,11 +518,18 @@ class ScanBase(object):
         return self.clone()
 
     def __eq__(self, other):
-        eq = (self.scan_id == other.scan_id) and (
-            abs(self.scan_time - other.scan_time) < 1e-3) and (
-            self.index == other.index) and (
-            self.ms_level == other.ms_level)
-        if not eq:
+        if other is None:
+            return False
+        if not isinstance(other, ScanBase):
+            return False
+        try:
+            eq = (self.scan_id == other.scan_id) and (
+                abs(self.scan_time - other.scan_time) < 1e-3) and (
+                self.index == other.index) and (
+                self.ms_level == other.ms_level)
+            if not eq:
+                return False
+        except AttributeError:
             return False
         try:
             eq = self.arrays == other.arrays
