@@ -21,6 +21,19 @@ class ActivationInformation(object):
     def is_multiple_dissociation(self):
         return False
 
+    def has_supplemental_dissociation(self):
+        return False
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self.is_multiple_dissociation() != other.is_multiple_dissociation():
+            return False
+        return (self.method == other.method) and abs(self.energy - other.energy) < 1e-3
+
+    def __ne__(self, other):
+        return not (self == other)
+
 
 class MultipleActivationInformation(ActivationInformation):
 
@@ -54,52 +67,72 @@ class MultipleActivationInformation(ActivationInformation):
     def is_multiple_dissociation(self):
         return True
 
+    def has_supplemental_dissociation(self):
+        return any([d.is_supplemental() for d in self.methods])
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self.is_multiple_dissociation() != other.is_multiple_dissociation():
+            return False
+        return (self.methods == other.methods) and all(
+            abs(self_energy - other_energy) < 1e-3 for self_energy, other_energy in zip(
+                self.energies, other.energies))
+
+
+class DissociationMethod(Term):
+
+    def is_supplemental(self):
+        return "supplemental" in self.name
+
 
 dissociation_methods = [
-    Term(u'sustained off-resonance irradiation', u'MS:1000282',
-         'dissociation method', [u'dissociation method']),
-    Term(u'post-source decay', u'MS:1000135',
-         'dissociation method', [u'dissociation method']),
-    Term(u'plasma desorption', u'MS:1000134',
-         'dissociation method', [u'dissociation method']),
-    Term(u'surface-induced dissociation', u'MS:1000136',
-         'dissociation method', [u'dissociation method']),
-    Term(u'collision-induced dissociation', u'MS:1000133',
-         'dissociation method', [u'dissociation method']),
-    Term(u'pulsed q dissociation', u'MS:1000599',
-         'dissociation method', [u'dissociation method']),
-    Term(u'electron transfer dissociation', u'MS:1000598',
-         'dissociation method', [u'dissociation method']),
-    Term(u'in-source collision-induced dissociation', u'MS:1001880',
-         'dissociation method', [u'dissociation method']),
-    Term(u'infrared multiphoton dissociation', u'MS:1000262',
-         'dissociation method', [u'dissociation method']),
-    Term(u'blackbody infrared radiative dissociation', u'MS:1000242',
-         'dissociation method', [u'dissociation method']),
-    Term(u'low-energy collision-induced dissociation', u'MS:1000433',
-         'dissociation method', [u'dissociation method']),
-    Term(u'photodissociation', u'MS:1000435',
-         'dissociation method', [u'dissociation method']),
-    Term(u'LIFT', u'MS:1002000', 'dissociation method',
-         [u'dissociation method']),
-    Term(u'Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)',
-         u'MS:1002631', 'dissociation method', [u'dissociation method']),
-    Term(u'electron capture dissociation', u'MS:1000250',
-         'dissociation method', [u'dissociation method']),
-    Term(u'trap-type collision-induced dissociation', u'MS:1002472',
-         'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
-    Term(u'beam-type collision-induced dissociation', u'MS:1000422',
-         'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
-    Term(u'supplemental collision-induced dissociation', u'MS:1002679',
-         'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
-    Term(u'higher energy beam-type collision-induced dissociation', u'MS:1002481', 'dissociation method',
-         [u'beam-type collision-induced dissociation', u'collision-induced dissociation', u'dissociation method']),
-    Term(u'supplemental beam-type collision-induced dissociation', u'MS:1002678', 'dissociation method',
-         [u'beam-type collision-induced dissociation', u'collision-induced dissociation', u'dissociation method']),
+    DissociationMethod(u'sustained off-resonance irradiation', u'MS:1000282',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'post-source decay', u'MS:1000135',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'plasma desorption', u'MS:1000134',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'surface-induced dissociation', u'MS:1000136',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'collision-induced dissociation', u'MS:1000133',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'pulsed q dissociation', u'MS:1000599',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'electron transfer dissociation', u'MS:1000598',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'in-source collision-induced dissociation', u'MS:1001880',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'infrared multiphoton dissociation', u'MS:1000262',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'blackbody infrared radiative dissociation', u'MS:1000242',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'low-energy collision-induced dissociation', u'MS:1000433',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'photodissociation', u'MS:1000435',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'LIFT', u'MS:1002000', 'dissociation method',
+                       [u'dissociation method']),
+    DissociationMethod(u'Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)',
+                       u'MS:1002631', 'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'electron capture dissociation', u'MS:1000250',
+                       'dissociation method', [u'dissociation method']),
+    DissociationMethod(u'trap-type collision-induced dissociation', u'MS:1002472',
+                       'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
+    DissociationMethod(u'beam-type collision-induced dissociation', u'MS:1000422',
+                       'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
+    DissociationMethod(u'supplemental collision-induced dissociation', u'MS:1002679',
+                       'dissociation method', [u'collision-induced dissociation', u'dissociation method']),
+    DissociationMethod(u'higher energy beam-type collision-induced dissociation', u'MS:1002481', 'dissociation method',
+                       [u'beam-type collision-induced dissociation',
+                        u'collision-induced dissociation', u'dissociation method']),
+    DissociationMethod(u'supplemental beam-type collision-induced dissociation', u'MS:1002678', 'dissociation method',
+                       [u'beam-type collision-induced dissociation',
+                        u'collision-induced dissociation', u'dissociation method']),
 ]
 
 
-UnknownDissociation = Term(
+UnknownDissociation = DissociationMethod(
     "unknown dissociation", None, 'dissociation method',
     [u'dissociation method'])
 
@@ -118,6 +151,27 @@ CID = dissociation_methods_map.get("collision-induced dissociation")
 HCD = dissociation_methods_map.get("beam-type collision-induced dissociation")
 ETD = dissociation_methods_map.get("electron transfer dissociation")
 ECD = dissociation_methods_map.get("electron capture dissociation")
+
+supplemental_term_map = {
+    dissociation_methods_map["beam-type collision-induced dissociation"]: dissociation_methods_map[
+        "supplemental beam-type collision-induced dissociation"],
+    dissociation_methods_map["collision-induced dissociation"]: dissociation_methods_map[
+        "supplemental collision-induced dissociation"]
+}
+
+
+supplemental_energy = "supplemental collision energy"
+
+
+energy_terms = set([
+    "collision energy",
+    supplemental_energy,
+    "activation energy",
+    "collision energy ramp start",
+    "collision energy ramp end",
+    "percent collision energy ramp start",
+    "percent collision energy ramp end",
+])
 
 
 dissociation_methods_map.update({

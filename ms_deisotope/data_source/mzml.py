@@ -7,6 +7,8 @@ from .common import (
     ScanWindow, IsolationWindow,
     InstrumentInformation, ComponentGroup, component,
     FileInformation, SourceFile, MultipleActivationInformation)
+from .metadata.activation import (
+    supplemental_energy, energy_terms)
 from weakref import WeakValueDictionary
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until,
@@ -260,11 +262,18 @@ class MzMLDataInterface(ScanDataSource):
             if energy == -1:
                 energy = struct.pop("activation energy", -1)
 
+            supplemental_energy_ = struct.pop(supplemental_energy, -1)
+
+            if supplemental_energy_ != -1:
+                energies = [energy, supplemental_energy_]
+            else:
+                energies = [energy]
+
             if len(activation_methods) == 0:
                 return ActivationInformation(activation, energy, struct)
             else:
                 return MultipleActivationInformation(
-                    [activation] + activation_methods, [energy], struct)
+                    [activation] + activation_methods, energies, struct)
         except KeyError:
             return None
 
