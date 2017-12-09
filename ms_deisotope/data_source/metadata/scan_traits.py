@@ -1,6 +1,10 @@
 from collections import namedtuple
 
 
+def isclose(x, y, atol=1e-3):
+    return abs(x - y) < atol
+
+
 class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
 
     @property
@@ -12,7 +16,10 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
         return self.target + self.upper
 
     def __contains__(self, x):
-        return self.lower_bound <= x <= self.upper_bound
+        return self.spans(x, 0.1)
+
+    def spans(self, x, tolerance=0.1):
+        return (self.lower_bound - tolerance) <= x <= (self.upper_bound + tolerance)
 
     def is_empty(self):
         if self.lower is None:
@@ -21,6 +28,14 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
 
     def __nonzero__(self):
         return not self.is_empty()
+
+    def __eq__(self, other):
+        return isclose(self.lower, other.lower) and isclose(
+            self.upper, other.upper) and isclose(
+            self.target, other.target)
+
+    def __ne__(self, other):
+        return not (self == other)
 
 
 class ScanAcquisitionInformation(object):
@@ -40,6 +55,12 @@ class ScanAcquisitionInformation(object):
     def __repr__(self):
         return "ScanAcquisitionInformation(combination=%r, scan_list=%r)" % (
             self.combination, self.scan_list)
+
+    def __eq__(self, other):
+        return self.combination == other.combination and self.scan_list == other.scan_list
+
+    def __ne__(self, other):
+        return not (self == other)
 
 
 class ScanEventInformation(object):
@@ -69,6 +90,15 @@ class ScanEventInformation(object):
         form = template.format(self.start_time, self.window_list, tail)
         return form
 
+    def __eq__(self, other):
+        eq = isclose(self.start_time, other.start_time) and (
+            self.window_list == other.window_list) and isclose(
+            self.drift_time, other.drift_time)
+        return eq
+
+    def __ne__(self, other):
+        return not (self == other)
+
     def total_scan_window(self):
         low = float('inf')
         high = 0
@@ -89,3 +119,10 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
 
     def __nonzero__(self):
         return not self.is_empty()
+
+    def __eq__(self, other):
+        return isclose(self.lower, other.lower) and isclose(
+            self.upper, other.upper)
+
+    def __ne__(self, other):
+        return not (self == other)

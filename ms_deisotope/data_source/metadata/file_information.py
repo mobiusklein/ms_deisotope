@@ -171,6 +171,10 @@ class FileInformation(object):
         template = "FileInformation(%s, %s)"
         return template % (self.contents, self.source_files)
 
+    def copy(self):
+        return self.__class__(
+            self.contents.copy(), [f.copy() for f in self.source_filesr])
+
 
 format_parameter_map = {
     "thermo raw": ("Thermo nativeID format", "Thermo RAW format"),
@@ -257,7 +261,7 @@ class SourceFile(object):
                 id_fmt = "no nativeID format"
                 hit = False
                 with open(path, 'rb') as fh:
-                    from .xml_reader import iterparse_until
+                    from ..xml_reader import iterparse_until
                     for sf_tag in iterparse_until(fh, 'sourceFile', 'run'):
                         for param in sf_tag.getchildren():
                             if "nativeID" in param.attrib['name']:
@@ -353,3 +357,8 @@ class SourceFile(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def copy(self):
+        return self.__class__(self.name, self.location, self.id,
+                              self.parameters.copy(), self.id_format,
+                              self.file_format)

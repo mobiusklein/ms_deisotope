@@ -79,6 +79,14 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         ax = draw_raw(self, *args, **kwargs)
         return ax
 
+    def __eq__(self, other):
+        return np.allclose(
+            self[0], other[0]) and np.allclose(
+            self[1], other[1])
+
+    def __ne__(self, other):
+        return not (self == other)
+
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
 ChargeNotProvided = Constant("ChargeNotProvided")
@@ -499,11 +507,70 @@ class ScanBase(object):
         scan_event = acq[0]
         return scan_event.drift_time
 
+    @property
+    def scan_id(self):
+        return self.id
+
     def copy(self):
         return self.clone()
 
     def __copy__(self):
         return self.clone()
+
+    def __eq__(self, other):
+        eq = (self.scan_id == other.scan_id) and (
+            abs(self.scan_time - other.scan_time) < 1e-3) and (
+            self.index == other.index) and (
+            self.ms_level == other.ms_level)
+        if not eq:
+            return False
+        try:
+            eq = self.arrays == other.arrays
+            if not eq:
+                return False
+        except AttributeError:
+            # ProcessedScan doesn't have an arrays attribute
+            pass
+        eq = self.peak_set == other.peak_set
+        if not eq:
+            return False
+
+        eq = self.deconvoluted_peak_set == other.deconvoluted_peak_set
+        if not eq:
+            return False
+        eq = self.precursor_information == other.precursor_information
+        if not eq:
+            return False
+        eq = self.isolation_window == other.isolation_window
+        if not eq:
+            return False
+        try:
+            a = self.acquisition_information
+            b = other.acquisition_information
+            if a is not None and b is not None:
+                eq = a == b
+            else:
+                eq = True
+            if not eq:
+                return False
+        except AttributeError:
+            pass
+        try:
+            a = self.activation
+            b = other.activation
+            if a is not None and b is not None:
+                eq = a == b
+            else:
+                eq = True
+            if not eq:
+                return False
+        except AttributeError:
+            pass
+
+        return True
+
+    def __ne__(self, other):
+        return not (self == other)
 
 
 class Scan(ScanBase):
@@ -1124,6 +1191,32 @@ class PrecursorInformation(object):
         (self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source, self.extracted_neutral_mass,
          self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
          self.defaulted, self.orphan, self.product_scan_id) = state
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        eq = self.precursor_scan_id == other.precursor_scan_id
+        if not eq:
+            return False
+        eq = self.product_scan_id == other.product_scan_id
+        if not eq:
+            return False
+        self_fit = self.extracted_neutral_mass != 0
+        other_fit = other.extracted_neutral_mass != 0
+        self_mass = self.extracted_mz if self_fit else self.mz
+        other_mass = other.extracted_mz if other_fit else other.mz
+        eq = np.isclose(self_mass, other_mass)
+        if not eq:
+            return False
+        self_charge = self.extracted_charge if self_fit else self.charge
+        other_charge = other.extracted_charge if other_fit else other.charge
+        eq = self_charge == other_charge
+        if not eq:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not (self == other)
 
     def extract(self, peak, override_charge=None):
         self.extracted_neutral_mass = peak.neutral_mass
