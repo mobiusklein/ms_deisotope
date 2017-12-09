@@ -1,7 +1,6 @@
 # pragma: no cover
 import re
-import os
-
+import warnings
 from weakref import WeakValueDictionary
 from collections import OrderedDict, defaultdict
 
@@ -15,7 +14,7 @@ from ms_deisotope.data_source.common import (
     ActivationInformation, IsolationWindow,
     component, ComponentGroup, InstrumentInformation,
     FileInformation, SourceFile, MultipleActivationInformation)
-
+from .metadata.activation import supplemental_term_map, dissociation_methods_map
 from ms_deisotope.utils import Base
 
 
@@ -416,9 +415,12 @@ class ThermoRawDataInterface(ScanDataSource):
         precursor_scan_number = None
         labels, flags, _ = self._source.GetAllMSOrderData(scan_number)
         if pinfo_struct:
+            # this struct field is unreliable and may fall outside the
+            # isolation window
             mz = pinfo_struct.monoIsoMass
             charge = pinfo_struct.chargeState
             intensity = float(labels.intensity[0])
+            # this struct field is unreliable, and simple to infer
             # precursor_scan_number = pinfo_struct.scanNumber + 1
         else:
             mz = labels.mass[0]
@@ -428,8 +430,17 @@ class ThermoRawDataInterface(ScanDataSource):
             charge = ChargeNotProvided
         trailer = self._source.GetTrailerExtraForScanNum(scan_number)
         _mz = trailer.get('Monoisotopic M/Z', 0.0)
+        # prefer the trailer m/z if available?
         if _mz > 0:
             mz = _mz
+
+        # imitate proteowizard's firmware bug correction
+        isolation_window = self._isolation_window(scan)
+        if (isolation_window.upper + isolation_window.lower) / 2 <= 2.0:
+            if (isolation_window.target - 3.0 > mz) or (isolation_window.target + 2.5 < mz):
+                mz = isolation_window.target
+        elif mz not in isolation_window:
+            mz = isolation_window.target
         _charge = trailer.get('Charge State', 0)
         if _charge != 0:
             charge = _charge
@@ -465,8 +476,12 @@ class ThermoRawDataInterface(ScanDataSource):
         if tandem_sequence is not None:
             activation_event = tandem_sequence[-1]
             activation_type = activation_event.get("activation_type")
+            has_supplemental_activation = filter_line.get("supplemental_activation")
             if activation_type is not None:
                 energy = activation_event.get("activation_energy")
+                if has_supplemental_activation:
+                    activation_type.append(supplemental_term_map[
+                        dissociation_methods_map[activation_type[-1]]])
                 if len(activation_type) == 1:
                     return ActivationInformation(activation_type[0], energy[0])
                 else:
