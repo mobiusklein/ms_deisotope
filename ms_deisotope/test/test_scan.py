@@ -61,6 +61,11 @@ class TestScanMachinery(unittest.TestCase):
         self.assertEqual(len(scan.peak_set), 10)
         self.assertIsNotNone(scan.has_peak(576.5))
 
+    def test_equality(self):
+        scan = self.make_scan()
+        scan2 = self.make_scan()
+        self.assertEqual(scan, scan2)
+
 
 if __name__ == '__main__':
     unittest.main()

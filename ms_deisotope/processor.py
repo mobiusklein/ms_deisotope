@@ -147,14 +147,16 @@ class ScanProcessor(Base):
 
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
-                 ms1_deconvolution_args=None, msn_deconvolution_args=None,
-                 pick_only_tandem_envelopes=False, default_precursor_ion_selection_window=1.5,
+                 ms1_deconvolution_args=None,
+                 msn_deconvolution_args=None,
+                 pick_only_tandem_envelopes=False,
+                 default_precursor_ion_selection_window=1.5,
                  trust_charge_hint=True,
                  loader_type=None,
                  envelope_selector=None,
                  terminate_on_error=True,
                  ms1_averaging=0,
-                 respect_isolation_window=True):
+                 respect_isolation_window=False):
         if loader_type is None:
             loader_type = MSFileLoader
 

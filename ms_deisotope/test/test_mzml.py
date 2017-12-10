@@ -136,6 +136,24 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         source_file = file_info.source_files[0]
         assert source_file.name == "three_test_scans.mzML"
 
+    def test_acquisition_information(self):
+        reader = self.reader
+        bunch = next(reader)
+        precursor = bunch.precursor
+        acquisition = precursor.acquisition_information
+        self.assertTrue(
+            abs(acquisition[0].start_time - precursor.scan_time) < 1e-3)
+        self.assertEqual(len(acquisition), 1)
+        window = acquisition[0].total_scan_window()
+        if window:
+            self.assertIn(precursor.arrays.mz[len(precursor.arrays.mz) // 2], window)
+
+    def test_annotations(self):
+        reader = self.reader
+        bunch = next(reader)
+        precursor = bunch.precursor
+        assert len(precursor.annotations) > 0
+
 
 if __name__ == '__main__':
     unittest.main()
