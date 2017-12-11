@@ -39,7 +39,7 @@ class TextScanSerializerBase(ScanSerializerBase):
         header_dict['index'] = scan.index
         instrument_config = scan.instrument_configuration
         if instrument_config:
-            header_dict['analyzer'] = ';'.join(a.name for a in instrument_config.analyzer)
+            header_dict['analyzers'] = ';'.join(a.name for a in instrument_config.analyzers)
         if scan.has_ion_mobility():
             header_dict['drift_time'] = scan.drift_time
         header_dict['annotations'] = scan.annotations
