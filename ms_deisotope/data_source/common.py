@@ -94,7 +94,10 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return self.__class__(self.mz, self.intensity / d)
 
     def __add__(self, other):
-        return self.__class__(*average_signal([self, other])) * 2
+        if np.allclose(self.mz, other.mz):
+            return self.__class__(self.mz, self.intensity + other.intensity)
+        else:
+            return self.__class__(*average_signal([self, other])) * 2
 
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
