@@ -292,9 +292,8 @@ class InstrumentInformation(object):
         return self.groups[i]
 
     def __len__(self):
-        return len(self.grou)
+        return len(self.groups)
 
     def __repr__(self):
         return "{self.__class__.__name__}({self.id!r}, {self.groups})".format(
             self=self)
-

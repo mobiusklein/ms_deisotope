@@ -87,6 +87,15 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
     def __ne__(self, other):
         return not (self == other)
 
+    def __mul__(self, i):
+        return self.__class__(self.mz, self.intensity * i)
+
+    def __div__(self, d):
+        return self.__class__(self.mz, self.intensity / d)
+
+    def __add__(self, other):
+        return self.__class__(*average_signal([self, other])) * 2
+
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
 ChargeNotProvided = Constant("ChargeNotProvided")
