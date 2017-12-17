@@ -1,6 +1,7 @@
 from __future__ import print_function
 import operator
 import random
+import math
 from datetime import datetime
 from collections import OrderedDict
 from six import add_metaclass
@@ -18,7 +19,7 @@ try:
             figure = ax.figure
         n = len(products)
         if n > 0:
-            gs = gridspec.GridSpec(1 + max((n / nperrow), 1), nperrow)
+            gs = gridspec.GridSpec(1 + max(int(math.ceil(n / float(nperrow))), 1), nperrow)
         else:
             gs = gridspec.GridSpec(1 + (n / nperrow), nperrow)
         ax = figure.add_subplot(gs[0, :])
