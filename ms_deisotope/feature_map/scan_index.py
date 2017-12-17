@@ -27,6 +27,12 @@ class MSRecordBase(Base):
             package[key] = self[key]
         return package
 
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except Exception:
+            return default
+
 
 class MS1Record(MSRecordBase):
     def __init__(self, scan_time=None, product_scan_ids=None, msms_peaks=None, drift_time=None, **kwargs):
