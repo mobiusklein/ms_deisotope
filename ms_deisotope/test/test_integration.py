@@ -11,12 +11,16 @@ from ms_deisotope.scoring import MSDeconVFitter
 
 class TestIntegration(unittest.TestCase):
     def get_scan(self):
-        scan_data = pickle.load(gzip.open(datafile("test_scan.pkl.gz"), 'rb'))
+        scan_data = pickle.load(
+            gzip.open(datafile("test_scan.pkl.gz"), 'rb'),
+            encoding='latin1')
         scan = common.Scan(scan_data, mzml.MzMLDataInterface())
         return scan
 
     def get_reference(self):
-        processed_scan = pickle.load(gzip.open(datafile("test_scan_results.pkl.gz"), 'rb'))
+        processed_scan = pickle.load(
+            gzip.open(datafile("test_scan_results.pkl.gz"), 'rb'),
+            encoding='latin1')
         return processed_scan
 
     def test_scan(self):
