@@ -1,3 +1,5 @@
+import dill
+
 from .averagine import (
     Averagine, peptide, glycan, glycopeptide, heparin,
     heparan_sulfate, permethylated_glycan,
