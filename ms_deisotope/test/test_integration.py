@@ -1,8 +1,6 @@
 import unittest
-import gzip
-import pickle
 
-from ms_deisotope.test.common import datafile
+from ms_deisotope.test.common import datafile, gzload
 
 from ms_deisotope.data_source import common, mzml
 from ms_deisotope.averagine import peptide
@@ -11,16 +9,12 @@ from ms_deisotope.scoring import MSDeconVFitter
 
 class TestIntegration(unittest.TestCase):
     def get_scan(self):
-        scan_data = pickle.load(
-            gzip.open(datafile("test_scan.pkl.gz"), 'rb'),
-            encoding='latin1')
+        scan_data = gzload(datafile("test_scan.pkl.gz"))
         scan = common.Scan(scan_data, mzml.MzMLDataInterface())
         return scan
 
     def get_reference(self):
-        processed_scan = pickle.load(
-            gzip.open(datafile("test_scan_results.pkl.gz"), 'rb'),
-            encoding='latin1')
+        processed_scan = gzload(datafile("test_scan_results.pkl.gz"))
         return processed_scan
 
     def test_scan(self):
@@ -34,20 +28,20 @@ class TestIntegration(unittest.TestCase):
             for ref in peaks:
                 if ref.charge == peak.charge:
                     self.assertTrue(
-                        abs(peak.neutral_mass - ref.neutral_mass) < 1e-3,
+                        abs(peak.neutral_mass - ref.neutral_mass) < 1e-2,
                         peak.neutral_mass - ref.neutral_mass)
                     self.assertTrue(
-                        abs(peak.intensity - ref.intensity) < 1e-3,
+                        abs(peak.intensity - ref.intensity) < 1e-2,
                         peak.intensity - ref.intensity)
                     self.assertTrue(
-                        abs(peak.score - ref.score) < 1e-3,
+                        abs(peak.score - ref.score) < 1e-2,
                         peak.score - ref.score)
                     for at, bt in zip(peak.envelope, ref.envelope):
                         self.assertTrue(
-                            abs(at.mz - bt.mz) < 1e-3,
+                            abs(at.mz - bt.mz) < 1e-2,
                             at.mz - bt.mz)
                         self.assertTrue(
-                            abs(at.intensity - bt.intensity) < 1e-3,
+                            abs(at.intensity - bt.intensity) < 1e-2,
                             at.intensity - bt.intensity)
 
 
