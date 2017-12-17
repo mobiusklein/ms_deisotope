@@ -99,6 +99,28 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         else:
             return self.__class__(*average_signal([self, other])) * 2
 
+    def find_mz(self, mz):
+        n = len(self.mz)
+        lo = 0
+        hi = n
+
+        while hi != lo:
+            mid = (hi + lo) / 2
+            y = self.mz[mid]
+            err = y - mz
+            if hi - lo == 1:
+                return mid
+            elif err > 0:
+                hi = mid
+            else:
+                lo = mid
+        return 0
+
+    def between_mz(self, low, high):
+        i = self.find_mz(low)
+        j = self.find_mz(high) + 1
+        return self.__class__(self.mz[i:j], self.intensity[i:j])
+
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
 ChargeNotProvided = Constant("ChargeNotProvided")
@@ -1090,6 +1112,8 @@ class WrappedScan(Scan):
                 key = "_" + key
             if key in self.overridable_keys:
                 setattr(self, key, value)
+            else:
+                warnings.warn("Cannot override attribute %s" % (key,))
 
     def clone(self):
         dup = self.__class__(

@@ -29,6 +29,9 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     def __nonzero__(self):
         return not self.is_empty()
 
+    def __bool__(self):
+        return self.__nonzero__()
+
     def __eq__(self, other):
         return isclose(self.lower, other.lower) and isclose(
             self.upper, other.upper) and isclose(
@@ -119,6 +122,9 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
 
     def __nonzero__(self):
         return not self.is_empty()
+
+    def __bool__(self):
+        return self.__nonzero__()
 
     def __eq__(self, other):
         return isclose(self.lower, other.lower) and isclose(

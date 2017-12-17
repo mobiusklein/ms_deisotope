@@ -25,6 +25,7 @@ cdef:
     object neutral_mass_getter
     object mz_getter
 
+cdef double epsilon = 1e-3
 
 neutral_mass_getter = operator.attrgetter("neutral_mass")
 mz_getter = operator.attrgetter('mz')
@@ -72,7 +73,7 @@ cdef class EnvelopePair:
     def __init__(self, mz, intensity):
         self.mz = mz
         self.intensity = intensity
-    
+
     def __getitem__(self, i):
         if i == 0:
             return self.mz
@@ -89,8 +90,8 @@ cdef class EnvelopePair:
         return EnvelopePair, (self.mz, self.intensity,)
 
     cpdef bint _eq(self, EnvelopePair other):
-        return (abs(self.mz - other.mz) < 1e-5) and (
-            abs(self.intensity - other.intensity) < 1e-5)
+        return (abs(self.mz - other.mz) < epsilon) and (
+            abs(self.intensity - other.intensity) < epsilon)
 
     def __richcmp__(self, other, int code):
         if code == 2:
@@ -267,8 +268,10 @@ cdef class DeconvolutedPeak(PeakBase):
                                   self.envelope, self.mz, self.fit, self.chosen_for_msms, self.area)
 
     cpdef bint _eq(self, DeconvolutedPeak other):
-        return (abs(self.neutral_mass - other.neutral_mass) < 1e-5) and (
-            abs(self.intensity - other.intensity) < 1e-5)
+        return (abs(self.neutral_mass - other.neutral_mass) < epsilon) and (
+            abs(self.intensity - other.intensity) < epsilon) and (
+            self.charge == other.charge) and (
+            abs(self.score - other.score) < epsilon)
 
     def __richcmp__(self, other, int code):
         if code == 2:
@@ -283,7 +286,7 @@ cdef class DeconvolutedPeak(PeakBase):
             "intensity={self.intensity}, most_abundant_mass={self.most_abundant_mass}, mz={self.mz}, "
             "neutral_mass={self.neutral_mass}, score={self.score}, signal_to_noise={self.signal_to_noise})").format(self=self)
 
-    
+
     @staticmethod
     cdef DeconvolutedPeak _create_simple(double neutral_mass, double intensity, int charge,
                                          double score, double mz, Envelope envelope):
@@ -440,7 +443,7 @@ cdef class DeconvolutedPeakSet:
         return <DeconvolutedPeak>PyTuple_GET_ITEM(self.peaks, i)
 
     cdef tuple getslice(self, size_t start, size_t end):
-        return <tuple>PyTuple_GetSlice(self.peaks, start, end)        
+        return <tuple>PyTuple_GetSlice(self.peaks, start, end)
 
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
         cdef:
@@ -542,7 +545,7 @@ cdef int _binary_search(double* array, double target, double error_tolerance, si
         size_t best_index
         double err, found_mass
         double best_error, abs_error
-    
+
     lo = 0
     hi = n
 
@@ -595,7 +598,7 @@ cdef int _binary_search_interval(double* array, double target, double error_tole
         size_t best_index
         double err, found_mass
         double best_error, abs_error
-    
+
     lo = 0
     hi = n
 
@@ -882,7 +885,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         n = self._size
         status = _binary_search_interval(
             self.neutral_mass_array, neutral_mass, tolerance, n, &start, &end)
-        return status, start, end        
+        return status, start, end
 
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
         cdef:

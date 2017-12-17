@@ -31,7 +31,7 @@ class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
         return term == self.name or term in self.specialization
 
 
-def type_path(term):
+def type_path(term):  # pragma: no cover
     path = []
     i = 0
     steps = [term.is_a.comment]
@@ -49,7 +49,7 @@ def type_path(term):
     return path
 
 
-def render_list(seed, list_name=None, term_cls_name="Term"):
+def render_list(seed, list_name=None, term_cls_name="Term"):  # pragma: no cover
     component_type_list = [seed]
     i = 0
     if list_name is None:
