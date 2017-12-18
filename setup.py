@@ -8,6 +8,23 @@ from distutils.errors import (CCompilerError, DistutilsExecError,
                               DistutilsPlatformError)
 
 
+def has_option(name):
+    try:
+        sys.argv.remove('--%s' % name)
+        return True
+    except ValueError:
+        pass
+    # allow passing all cmd line options also as environment variables
+    env_val = os.getenv(name.upper().replace('-', '_'), 'false').lower()
+    if env_val == "true":
+        return True
+    return False
+
+
+include_diagnostics = has_option("include-diagnostics")
+force_cythonize = has_option("force-cythonize")
+
+
 def make_extensions():
     is_ci = bool(os.getenv("CI", ""))
     try:
@@ -29,13 +46,13 @@ def make_extensions():
         from Cython.Build import cythonize
         cython_directives = {
             'embedsignature': True,
-            "profile": False
+            "profile": include_diagnostics
         }
         macros = []
-        # if is_ci:
-        #     print("CI Detected, Building With Diagnostics")
-        #     cython_directives['linetrace'] = True
-        #     macros.append(("CYTHON_TRACE", '1'))
+        if include_diagnostics:
+            macros.append(("CYTHON_TRACE_NOGIL", "1"))
+        if is_ci and include_diagnostics:
+            cython_directives['linetrace'] = True
         extensions = cythonize([
             Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
@@ -67,7 +84,7 @@ def make_extensions():
                       define_macros=macros),
             Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-        ], compiler_directives=cython_directives)
+        ], compiler_directives=cython_directives, force=force_cythonize)
     except ImportError:
         extensions = ([
             Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],
@@ -104,19 +121,6 @@ if sys.platform == 'win32':
     # 2.6's distutils.msvc9compiler can raise an IOError when failing to
     # find the compiler
     ext_errors += (IOError,)
-
-
-def has_option(name):
-    try:
-        sys.argv.remove('--%s' % name)
-        return True
-    except ValueError:
-        pass
-    # allow passing all cmd line options also as environment variables
-    env_val = os.getenv(name.upper().replace('-', '_'), 'false').lower()
-    if env_val == "true":
-        return True
-    return False
 
 
 class BuildFailed(Exception):
