@@ -383,10 +383,11 @@ class _MzMLMetadataLoader(object):
         desc = _find_section(self._source, "fileDescription")
         fi = FileInformation(desc.get("fileContent", {}), [])
         for sf_data in desc.get('sourceFileList', {}).get("sourceFile", []):
+            sf_data = sf_data.copy()
             fi.add_file(
                 SourceFile(
-                    sf_data.get('name'),
-                    sf_data.get('location'), sf_data.get('id'),
+                    sf_data.pop('name', ''),
+                    sf_data.pop('location', ''), sf_data.pop('id', ''),
                     parameters=sf_data))
         return fi
 
