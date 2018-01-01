@@ -72,6 +72,11 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
                 p.pretty(self.products)
         p.text(")")
 
+    def pack(self):
+        return self.__class__(self.precursor.pack(), [
+            p.pack() for p in self.products
+        ])
+
 
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
