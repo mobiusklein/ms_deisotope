@@ -135,6 +135,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         assert "MSn spectrum" in file_info.contents
         source_file = file_info.source_files[0]
         assert source_file.name == "three_test_scans.mzML"
+        assert "location" not in source_file.parameters
 
     def test_acquisition_information(self):
         reader = self.reader

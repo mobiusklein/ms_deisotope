@@ -46,7 +46,8 @@ class TestMzMLScanSerializer(unittest.TestCase):
         description = processed_reader.file_description()
         assert "profile spectrum" not in description.contents
         assert "centroid spectrum" in description.contents
-
+        sf = description.source_files[0]
+        assert 'location' not in sf.parameters
         index = processed_reader.extended_index
         pinfo = index.find_msms_by_precursor_mass(ms_deisotope.neutral_mass(562.7397, 2))
         assert len(pinfo) > 0

@@ -39,6 +39,7 @@ class TestMzXMLLoaderScanBehavior(unittest.TestCase):
         file_info = self.reader.file_description()
         source_file = file_info.source_files[0]
         assert source_file.name == "AGP_tryptic_300ng_3microscans_glycoproteomics_nCE_27-35.raw"
+        assert "location" not in source_file.parameters
 
 
 if __name__ == '__main__':
