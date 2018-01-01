@@ -219,8 +219,14 @@ class SourceFile(object):
         self.location = location.replace("file:///", '')
         self.id = id
         self.parameters = dict(parameters)
+        self._clean_parameters()
         self.id_format = id_format or self.infer_id_format_from_paramters()
         self.file_format = file_format or self.infer_file_format_from_parameters()
+
+    def _clean_parameters(self):
+        self.parameters.pop("location", None)
+        self.parameters.pop("id", None)
+        self.parameters.pop("name", None)
 
     def infer_id_format_from_paramters(self):
         try:
