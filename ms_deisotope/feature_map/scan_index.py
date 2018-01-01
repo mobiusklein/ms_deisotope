@@ -185,6 +185,8 @@ class ExtendedScanIndex(object):
             mz = info['mz']
             neutral_mass = info['neutral_mass']
             charge = info['charge']
+            if charge == "ChargeNotProvided":
+                charge = ChargeNotProvided
             intensity = info['intensity']
             precursor_scan_id = info['precursor_scan_id']
             product_scan_id = info['product_scan_id']
