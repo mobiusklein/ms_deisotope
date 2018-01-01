@@ -434,11 +434,12 @@ class ScanProcessor(Base):
 
                 continue
             elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
-                logger.warning(
-                    "Could not find deconvolution for %r (Unacceptable solution was proposed: %r)",
-                    precursor_information, peak)
-                precursor_information.default()
-                continue
+                if precursor_information.charge != ChargeNotProvided:
+                    logger.warning(
+                        "Could not find deconvolution for %r (Unacceptable solution was proposed: %r)",
+                        precursor_information, peak)
+                    precursor_information.default()
+                    continue
 
             precursor_information.extract(peak)
         precursor_scan.deconvoluted_peak_set = dec_peaks
