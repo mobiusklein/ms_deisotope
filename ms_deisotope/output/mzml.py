@@ -80,7 +80,7 @@ def describe_spectrum(peak_list):
     return descriptors
 
 
-class MzMLScanSerializer(ScanSerializerBase):
+class MzMLSerializer(ScanSerializerBase):
 
     def __init__(self, handle, n_spectra=2e4, compression=writer.COMPRESSION_ZLIB,
                  deconvoluted=True, sample_name=None, build_extra_index=True):
@@ -517,6 +517,9 @@ class MzMLScanSerializer(ScanSerializerBase):
         self.format()
 
 
+MzMLScanSerializer = MzMLSerializer
+
+
 def deserialize_deconvoluted_peak_set(scan_dict):
     envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
     peaks = []
@@ -739,6 +742,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             mz = info['mz']
             neutral_mass = info['neutral_mass']
             charge = info['charge']
+            if charge == 'ChargeNotProvided':
+                charge = ChargeNotProvided
             intensity = info['intensity']
             precursor_scan_id = info['precursor_scan_id']
             product_scan_id = info['product_scan_id']
