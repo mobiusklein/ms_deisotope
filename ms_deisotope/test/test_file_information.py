@@ -26,7 +26,7 @@ class TestFileMetadata(unittest.TestCase):
         assert not sf.has_checksum()
         sf.add_checksum('sha1')
         assert sf.has_checksum('sha1') and sf.has_checksum()
-        assert sf.parameters["SHA-1"] == "e8609983340e3857ddc4932f186ef0da3c9c97a8"
+        assert sf.parameters["SHA-1"] == sf.checksum("sha1")
         assert sf.validate_checksum()
 
         other = sf.copy()
