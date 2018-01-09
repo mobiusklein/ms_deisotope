@@ -366,5 +366,5 @@ class SourceFile(object):
 
     def copy(self):
         return self.__class__(self.name, self.location, self.id,
-                              self.parameters.copy(), self.id_format,
-                              self.file_format)
+                              self.id_format, self.file_format,
+                              parameters=self.parameters.copy())
