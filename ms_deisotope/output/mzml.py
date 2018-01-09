@@ -9,11 +9,7 @@ from six import string_types as basestring
 
 from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
-try:
-    from psims.mzml import writer
-except ImportError:
-    print("MzMLWriter not available.")
-    writer = None
+from psims.mzml import writer
 
 try:
     WindowsError

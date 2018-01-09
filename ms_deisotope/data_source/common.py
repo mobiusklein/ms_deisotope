@@ -85,9 +85,12 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return ax
 
     def __eq__(self, other):
-        return np.allclose(
-            self[0], other[0]) and np.allclose(
-            self[1], other[1])
+        try:
+            return np.allclose(
+                self[0], other[0]) and np.allclose(
+                self[1], other[1])
+        except ValueError:
+            return False
 
     def __ne__(self, other):
         return not (self == other)

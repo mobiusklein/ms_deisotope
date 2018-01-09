@@ -8,7 +8,7 @@ from .common import (
     IsolationWindow, dissociation_methods,
     ScanAcquisitionInformation, ScanEventInformation,
     ScanDataSource, ScanIterator, ScanBunch,
-    ScanWindow, RandomAccessScanSource)
+    ScanWindow, RandomAccessScanSource, ChargeNotProvided)
 
 __all__ = [
     "MSFileLoader", "MzMLLoader",
@@ -18,5 +18,5 @@ __all__ = [
     "IsolationWindow", "dissociation_methods",
     "ScanAcquisitionInformation", "ScanEventInformation",
     "ScanDataSource", "ScanIterator", "ScanBunch",
-    "ScanWindow", "RandomAccessScanSource"
+    "ScanWindow", "RandomAccessScanSource", "ChargeNotProvided"
 ]

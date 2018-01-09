@@ -4,7 +4,7 @@ from .scan_interval_tree import (
     ScanIntervalTree, extract_intervals, make_rt_tree)
 
 
-def indexing_generator(reader, start, end, index):
+def indexing_iterator(reader, start, end, index):
     for scan_bunch in reader.start_from_scan(index=start):
         if scan_bunch.precursor.index > end:
             break
@@ -14,8 +14,8 @@ def indexing_generator(reader, start, end, index):
 
 def index_chunk(reader, start, end):
     index = ExtendedScanIndex()
-    generator = indexing_generator(reader, start, end, index)
-    intervals = extract_intervals(generator)
+    iterator = indexing_iterator(reader, start, end, index)
+    intervals = extract_intervals(iterator)
     return (start, end, index, intervals)
 
 
@@ -90,3 +90,15 @@ def index(reader, n_processes=4, scan_interval=None):
     index = merge_indices(indices)
     interval_tree = make_interval_tree(intervals)
     return index, interval_tree
+
+
+def multi_index(readers, n_processes=4, scan_interval=None):
+    index_collection = []
+    interval_collection = []
+    for reader in readers:
+        chunks = run_task_in_chunks(
+            reader, n_processes, scan_interval=scan_interval, task=_Indexer())
+        indices = [chunk[2] for chunk in chunks]
+        intervals = [chunk[3] for chunk in chunks]
+        index_collection.append(indices)
+        interval_collection.append(intervals)

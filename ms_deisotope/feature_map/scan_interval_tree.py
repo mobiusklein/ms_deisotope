@@ -1,11 +1,27 @@
+from collections import namedtuple
 from ms_deisotope.peak_dependency_network import Interval, IntervalTreeNode
+
+
+class BoundingBox(namedtuple("BoundingBox", ['mz', 'rt'])):
+    def merge(self, other):
+        min_mz = min(self[0].start, other[0].start)
+        max_mz = max(self[0].end, other[0].end)
+        min_rt = min(self[1].start, other[1].start)
+        max_rt = max(self[1].end, other[1].end)
+        return self.__class__(Interval(min_mz, max_mz), Interval(min_rt, max_rt))
+
+    def overlaps(self, other):
+        return self.mz.overlaps(other.mz) and self.rt.overlaps(other.rt)
+
+    def __add__(self, other):
+        return self.merge(other)
 
 
 def extract_intervals(scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
     intervals = []
     for scan, products in scan_iterator:
         for product in products:
-            intervals.append((
+            intervals.append(BoundingBox(
                 Interval(max(0, product.precursor_information.mz - mz_lower),
                          product.precursor_information.mz + mz_higher),
                 Interval(max(0, product.scan_time - time_radius),
@@ -29,10 +45,9 @@ def merge_interval_set(intervals, minimum_overlap_size=0.3):
     merged_intervals = []
     for interval in intervals:
         for i, candidate in enumerate(merged_intervals):
-            if overlaps_2d(interval, candidate) and interval[0].overlap_size(
-                    candidate[0]) > (
-                    interval[0].end - interval[0].start * minimum_overlap_size):
-                merged_intervals[i] = combine_intervals(candidate, interval)
+            if interval.overlaps(candidate) and interval.mz.overlap_size(candidate.mz) > (
+                    (interval.mz.end - interval.mz.start) * minimum_overlap_size):
+                merged_intervals[i] = interval.merge(candidate)
                 break
         else:
             merged_intervals.append(interval)
