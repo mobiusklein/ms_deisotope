@@ -39,6 +39,7 @@ class TestMzMLScanSerializer(unittest.TestCase):
             assert a.analyzers == b.analyzers
         for a, b in zip(source_reader, processed_reader):
             assert a.precursor.id == b.precursor.id
+            assert (a.precursor.acquisition_information == b.precursor.acquisition_information)
             for an, bn in zip(a.products, b.products):
                 assert an.id == bn.id
                 assert abs(an.precursor_information.neutral_mass - bn.precursor_information.neutral_mass) < 1e-6

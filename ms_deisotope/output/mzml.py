@@ -370,7 +370,7 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             instrument_config_id = instrument_config.id
 
-        scan_parameters = self.extract_scan_event_parameters(bunch.precursor)
+        scan_parameters, scan_window_list = self.extract_scan_event_parameters(bunch.precursor)
 
         self.writer.write_spectrum(
             [p.mz for p in precursor_peaks], [p.intensity for p in precursor_peaks], charge_array,
@@ -382,7 +382,8 @@ class MzMLSerializer(ScanSerializerBase):
             compression=self.compression,
             other_arrays=self._prepare_extra_arrays(bunch.precursor),
             instrument_configuration_id=instrument_config_id,
-            scan_params=scan_parameters)
+            scan_params=scan_parameters,
+            scan_window_list=scan_window_list)
 
         self.total_ion_chromatogram_tracker[
             bunch.precursor.scan_time] = _total_intensity_from_descriptors(descriptors)
@@ -413,7 +414,7 @@ class MzMLSerializer(ScanSerializerBase):
             else:
                 instrument_config_id = instrument_config.id
 
-            scan_parameters = self.extract_scan_event_parameters(prod)
+            scan_parameters, scan_window_list = self.extract_scan_event_parameters(prod)
             self.writer.write_spectrum(
                 [p.mz for p in product_peaks], [p.intensity for p in product_peaks], charge_array,
                 id=prod.id, params=[
@@ -428,13 +429,15 @@ class MzMLSerializer(ScanSerializerBase):
                 compression=self.compression,
                 other_arrays=self._prepare_extra_arrays(prod),
                 instrument_configuration_id=instrument_config_id,
-                scan_params=scan_parameters)
+                scan_params=scan_parameters,
+                scan_window_list=scan_window_list)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)
 
     def extract_scan_event_parameters(self, scan):
         scan_parameters = []
+        scan_window_list = []
         acquisition_info = scan.acquisition_information
         if acquisition_info is not None and len(acquisition_info) > 0:
             scan_event = acquisition_info[0]
@@ -446,7 +449,8 @@ class MzMLSerializer(ScanSerializerBase):
                     'unit_cv_ref': "UO",
                     "unit_accession": 'UO:0000028'
                 })
-        return scan_parameters
+            scan_window_list = list(scan_event)
+        return scan_parameters, scan_window_list
 
     def save_chromatogram(self, chromatogram_dict, chromatogram_type, params=None, **kwargs):
         time_array, intensity_array = zip(*chromatogram_dict.items())
