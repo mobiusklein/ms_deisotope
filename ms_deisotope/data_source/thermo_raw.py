@@ -12,6 +12,7 @@ from ms_deisotope.data_source.common import (
     ScanDataSource, ScanIterator, RandomAccessScanSource,
     Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
     ActivationInformation, IsolationWindow,
+    ScanAcquisitionInformation, ScanEventInformation, ScanWindow,
     component, ComponentGroup, InstrumentInformation,
     FileInformation, SourceFile, MultipleActivationInformation)
 from .metadata.activation import supplemental_term_map, dissociation_methods_map
@@ -81,6 +82,10 @@ activation_pat = re.compile(
 activation_mode_pat = re.compile(
     r"""(?P<activation_type>[a-z]+)
         (?P<activation_energy>\d*\.\d*)""", re.VERBOSE)
+scan_window_pat = re.compile(
+    r"""
+    \[(?P<scan_start>[0-9\.]+)-(?P<scan_end>[0-9\.]+)\]
+    """, re.VERBOSE)
 
 analyzer_map = {
     'FTMS': component("orbitrap"),
@@ -154,6 +159,11 @@ def filter_line_parser(line):
                     tandem_sequence.append(activation_event)
             values['ms_level'] = int(level)
             values['tandem_sequence'] = tandem_sequence
+
+    scan_window_info = scan_window_pat.search(line)
+    if scan_window_info is not None:
+        values['scan_window'] = (float(scan_window_info.group(1)), float(scan_window_info.group(2)))
+
     try:
         word = words[i]
         i += 1
@@ -529,6 +539,15 @@ class ThermoRawDataInterface(ScanDataSource):
             return self._instrument_config[confid]
         except KeyError:
             return None
+
+    def _acquisition_information(self, scan):
+        fline = self._filter_line(scan)
+
+        event = ScanEventInformation(
+            self._scan_time(scan),
+            window_list=[ScanWindow(
+                fline.get("scan_window")[0], fline.get("scan_window")[1])])
+        return ScanAcquisitionInformation("no combination", [event])
 
     def _annotations(self, scan):
         fline = self._filter_line(scan)
