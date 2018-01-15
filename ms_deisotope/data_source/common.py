@@ -948,7 +948,10 @@ class Scan(ScanBase):
             raise ValueError("Cannot reprofile a scan that has not been centroided")
         elif self.peak_set is None and not self.is_profile:
             self.pick_peaks()
-        arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
+        if len(self.peak_set) == 0:
+            arrays = (np.array([], dtype=float), np.array([], dtype=float))
+        else:
+            arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
         scan = WrappedScan(
             self._data, self.source, arrays,
             list(self.product_scans), is_profile=True,
