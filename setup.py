@@ -196,6 +196,11 @@ def run_setup(include_cext=True):
         author_email=["jaklein@bu.edu"],
         ext_modules=make_extensions() if include_cext else None,
         cmdclass=cmdclass,
+        entry_points={
+            'console_scripts': [
+                "ms-index = ms_deisotope.tools.indexing:main"
+            ],
+        },
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Science/Research',
