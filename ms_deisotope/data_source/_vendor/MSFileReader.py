@@ -66,7 +66,7 @@ try:
     # Load previously built COM wrapper
     from comtypes.gen import MSFileReaderLib
     DLL_IS_LOADED = True
-except ImportError:
+except (ImportError, TypeError):
     DLL_IS_LOADED = False
 
 
