@@ -1,5 +1,7 @@
 import os
-from functools import partial
+import math
+
+from collections import Counter
 
 import ms_deisotope
 
@@ -30,11 +32,11 @@ def byte_index(path):
 
 
 @cli.command("metadata-index")
-@click.argument("path")
-def metadata_index(path, type=click.Path(exists=True), processes=4):
+@click.argument("path", type=click.Path(exists=True))
+def metadata_index(path, processes=4):
     reader = ms_deisotope.MSFileLoader(path)
     index, interval_tree = quick_index.index(reader, processes)
-    name = os.path.splitext(path)[0]
+    name = path
     index_file_name = index.index_file_name(name)
     with open(index_file_name, 'w') as fh:
         index.serialize(fh)
@@ -92,4 +94,95 @@ def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3.,
         stream.flush()
 
 
+def _ensure_metadata_index(path):
+    reader = ms_deisotope.MSFileLoader(path)
+    name = path
+    index_file_name = quick_index.ExtendedScanIndex.index_file_name(name)
+    if not os.path.exists(index_file_name):
+        click.secho("Building Index", fg='yellow', err=True)
+        index = quick_index.ExtendedScanIndex()
+        reader.reset()
+        for bunch in reader:
+            index.add_scan_bunch(bunch)
+        reader.reset()
+        with open(index_file_name, 'w') as fh:
+            index.serialize(fh)
+    else:
+        with open(index_file_name, 'rt') as fh:
+            index = quick_index.ExtendedScanIndex.deserialize(fh)
+    return reader, index
+
+
+@cli.command("charge-states")
+@click.argument("path", type=click.Path(exists=True))
+def charge_states(path):
+    reader, index = _ensure_metadata_index(path)
+
+    charges = Counter()
+    for msn_id, msn_info in index.msn_ids.items():
+        charges[msn_info.charge] += 1
+    for charge in sorted(charges, key=abs):
+        click.echo("%d: %d" % (charge, charges[charge]))
+
+
+def binsearch(array, x):
+    n = len(array)
+    lo = 0
+    hi = n
+
+    while hi != lo:
+        mid = (hi + lo) / 2
+        y = array[mid][0]
+        err = y - x
+        if hi - lo == 1:
+            return mid
+        elif err > 0:
+            hi = mid
+        else:
+            lo = mid
+    return
+
+
+@cli.command("precursor-clustering")
+@click.argument("path", type=click.Path(exists=True))
+def precursor_clustering(path, grouping_error=2e-5):
+    reader, index = _ensure_metadata_index(path)
+    points = []
+    for msn_id, msn_info in index.msn_ids.items():
+        points.append((msn_info.neutral_mass, msn_info.intensity))
+    points.sort(key=lambda x: x[1], reverse=1)
+    centroids = []
+    if len(points) == 0:
+        click.secho("No MS/MS detected", fg='yellow', err=True)
+        return
+
+    for point in points:
+        if len(centroids) == 0:
+            centroids.append((point[0], [point]))
+            continue
+        i = binsearch(centroids, point[0])
+        centroid = centroids[i]
+        err = (centroid[0] - point[0]) / point[0]
+        if abs(err) < grouping_error:
+            centroid[1].append(point)
+        else:
+            if err < 0:
+                i += 1
+            centroids.insert(i, (point[0], [point]))
+    acc = 0
+    nt = 0
+    for centroid, obs in centroids:
+        n = len(obs)
+        if n == 1:
+            continue
+        mean = sum(p[0] for p in obs) / n
+        var = sum([(p[0] - mean) ** 2 for p in obs]) / (n - 1)
+        acc += (var * (n - 1))
+        nt += (n - 1)
+    click.echo("MS/MS Precursor Mass Std. Dev.: %f Da" % (math.sqrt(acc / nt),))
+
+
 main = cli.main
+
+if __name__ == '__main__':
+    main()
