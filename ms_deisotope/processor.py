@@ -296,6 +296,11 @@ class ScanProcessor(Base):
             peak_mode = 'centroid'
         product_mz, product_intensity = product_scan.arrays
         peaks = pick_peaks(product_mz, product_intensity, peak_mode=peak_mode, **self.msn_peak_picking_args)
+
+        if peaks is None:
+            raise EmptyScanError(
+                "Could not pick peaks for empty product scan", self)
+
         product_scan.peak_set = peaks
         return peaks
 
@@ -343,6 +348,10 @@ class ScanProcessor(Base):
         """
         prec_peaks = self.pick_precursor_scan_peaks(precursor_scan)
         priorities = []
+
+        if prec_peaks is None:
+            raise EmptyScanError(
+                "Could not pick peaks for empty precursor scan", self)
 
         for scan in product_scans:
             precursor_ion = scan.precursor_information
@@ -574,3 +583,8 @@ class ScanProcessor(Base):
         """
         self.reader.start_from_scan(*args, **kwargs)
         return self
+
+class EmptyScanError(ValueError):
+    def __init__(self, msg, scan_id=None):
+        ValueError.__init__(self, msg)
+        self.scan_id = scan_id
