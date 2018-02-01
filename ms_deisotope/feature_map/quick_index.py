@@ -44,7 +44,14 @@ def partition_work(n_items, n_workers, start_index=0):
 class _Indexer(object):
     def __call__(self, payload):
         reader, start, end = payload
-        return index_chunk(reader, start, end)
+        try:
+            result = index_chunk(reader, start, end)
+        except Exception as e:
+            print(reader, start, end, e)
+            import traceback
+            traceback.print_exc()
+            raise e
+        return result
 
 
 def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None, task=None):

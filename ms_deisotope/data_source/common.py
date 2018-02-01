@@ -1075,9 +1075,11 @@ class Scan(ScanBase):
         arrays = []
         for scan in scans:
             if scan.is_profile:
-                arrays.append(scan.arrays)
+                scan_arrays = scan.arrays
             else:
-                arrays.append(scan.reprofile(dx=dx).arrays)
+                scan_arrays = scan.reprofile(dx=dx).arrays
+            if len(scan_arrays.mz) > 0:
+                arrays.append(scan_arrays)
         if weight_sigma:
             if weight_sigma == 1:
                 weight_sigma = 0.025

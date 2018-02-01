@@ -3,6 +3,9 @@ import glob
 import warnings
 import logging
 
+from collections import deque
+
+from six import string_types as basestring
 from lxml import etree
 
 try:
@@ -39,7 +42,10 @@ from ms_deisotope.data_source.common import (
     ComponentGroup,
     component,
     FileInformation,
-    SourceFile)
+    SourceFile,
+    ScanAcquisitionInformation,
+    ScanEventInformation,
+    ScanWindow)
 
 try:
     # Load previously built COM wrapper
@@ -77,6 +83,8 @@ def _register_dll_dir(search_paths=None):
 def register_dll_dir(search_paths=None):
     if search_paths is None:
         search_paths = []
+    if isinstance(search_paths, basestring):
+        search_paths = [search_paths]
     loaded = _register_dll_dir(search_paths)
     if not loaded:
         log.debug("Could not resolve Agilent-related DLL")
@@ -297,6 +305,25 @@ class AgilentDDataInterface(ScanDataSource):
         intensity, _ = spectrum_obj.GetPrecursorIntensity()
         return PrecursorInformation(mz, intensity, charge, precursor_scan_id, self)
 
+    def _acquisition_information(self, scan):
+        spectrum_obj = self._get_spectrum_obj(scan)
+        try:
+            low = spectrum_obj.MeasuredMassRange.Start
+            high = spectrum_obj.MeasuredMassRange.End
+        except Exception:
+            arrays = self._scan_arrays(scan)
+            mz_array = arrays[0]
+            if len(mz_array) != 0:
+                low = mz_array.min()
+                high = mz_array.max()
+            else:
+                low = high = 0
+        window = ScanWindow(low, high)
+        event = ScanEventInformation(
+            self._scan_time(scan),
+            window_list=[window])
+        return ScanAcquisitionInformation("no combination", [event])
+
     def _activation(self, scan):
         record = self._get_scan_record(scan)
         return ActivationInformation('cid', record.CollisionEnergy)
@@ -377,12 +404,19 @@ class _AgilentDMetadataLoader(object):
             fi.add_content("MSn spectrum")
         basename = os.path.basename
         dirname = os.path.dirname
-        for source_file in glob.glob(os.path.join(self.dirpath, "AcqData", "*")):
-            sf = SourceFile(
-                basename(source_file), dirname(source_file),
-                None, *("Agilent MassHunter nativeID format", "Agilent MassHunter format"))
-            sf.add_checksum("sha1")
-            fi.add_file(sf, check=False)
+        file_queue = deque()
+        file_queue.extend(glob.glob(os.path.join(self.dirpath, "AcqData", "*")))
+        # for source_file in file_queue:
+        while file_queue:
+            source_file = file_queue.popleft()
+            if os.path.isdir(source_file):
+                file_queue.extendleft(glob.glob(os.path.join(source_file, "*")))
+            else:
+                sf = SourceFile(
+                    basename(source_file), dirname(source_file),
+                    None, *("Agilent MassHunter nativeID format", "Agilent MassHunter format"))
+                sf.add_checksum("sha1")
+                fi.add_file(sf, check=False)
         return fi
 
     def _get_instrument_info(self):
