@@ -11,13 +11,46 @@ API
 ---
 
 
+Data Access
+===========
+
+``ms_deisotope`` can read from mzML, mzXML and MGF files directly, using the ``pyteomics`` library.
+On Windows, it can also use ``comtypes`` to access Thermo's MSFileReader.dll to read RAW files and
+Agilent's MassSpecDataReader.dll to read .d directories. Whenever possible, the library provides a
+common interface to all supported formats.
+
+.. code:: python
+
+    from ms_deisotope import MSFileReader
+    from ms_deisotope.data_source import mzxml
+
+    # open a file, selecting the appropriate reader automatically
+    reader = MSFileReader("path/to/data.mzML")
+
+    # or specify the reader type directly
+    reader = mzxml.MzXMLLoader("path/to/data.mzXML")
+
+
+All supported readers provide fast random access for uncompressed files, and support the Iterator
+interface.
+
+.. code:: python
+
+    # jump the iterator to the MS1 scan nearest to 30 minutes into the run
+    reader.start_from_scan(rt=30)
+
+    # read out the next MS1 scans and all associated MSn scans
+    scan_bunch = next(reader)
+    print(scan_bunch.precursor, len(scan_bunch.products))
+
+
 Averagine
 =========
 
 An "Averagine" model is used to describe the composition of an "average amino acid",
 which can then be used to approximate the composition and isotopic abundance of a
 combination of specific amino acids. Given that often the only solution available is
-to guess at the composition of a particular `m/z` because there are too many possible
+to guess at the composition of a particular *m/z* because there are too many possible
 elemental compositions, this is the only tractable solution.
 
 This library supports arbitrary Averagine formulae, but the Senko Averagine is provided

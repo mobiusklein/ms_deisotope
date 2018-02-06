@@ -39,6 +39,17 @@ except Exception:
 
 
 class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
+    """Represents a single MS1 scan and all MSn scans derived from it
+
+    Attributes
+    ----------
+    precursor: Scan
+        A single MS1 scan which may have undergone MSn
+    products: list
+        A list of 0 or more :class:`Scan` objects which were derived
+        from :attr:`precursor` or another element of this list derived
+        from it.
+    """
 
     def __new__(cls, *args, **kwargs):
         inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
@@ -50,8 +61,22 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         return inst
 
     def precursor_for(self, scan):
-        scan_id = scan.precursor_information.precursor_scan_id
-        return self.get_scan_by_id(scan_id)
+        """Find the precursor :class:`Scan` instance
+        for the given scan object
+
+        Parameters
+        ----------
+        scan : Scan
+            The MSn scan to look for the MSn-1 scan for
+
+        Returns
+        -------
+        Scan
+        """
+        if scan.precursor_information is not None:
+            scan_id = scan.precursor_information.precursor_scan_id
+            return self.get_scan_by_id(scan_id)
+        return None
 
     def get_scan_by_id(self, scan_id):
         return self._id_map[scan_id]
@@ -79,6 +104,18 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
 
 
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
+    """Represent the m/z and intensity arrays associated with a raw
+    mass spectrum.
+
+    Supports scaling and summing, as well as low level m/z search
+
+    Attributes
+    ----------
+    mz: np.ndarray
+        The m/z axis of a mass spectrum
+    intensity: np.ndarray
+        The intensity measured at the corresponding m/z of a mass spectrum
+    """
 
     def plot(self, *args, **kwargs):
         ax = draw_raw(self, *args, **kwargs)
@@ -108,6 +145,18 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             return self.__class__(*average_signal([self, other])) * 2
 
     def find_mz(self, mz):
+        """Find the nearest index to the query ``mz``
+
+        Parameters
+        ----------
+        mz : float
+            The m/z value to search for
+
+        Returns
+        -------
+        int
+            The index nearest to the query m/z
+        """
         n = len(self.mz)
         lo = 0
         hi = n
@@ -375,6 +424,17 @@ class ScanIterator(ScanDataSource):
         raise NotImplementedError()
 
     def make_iterator(self, iterator=None, grouped=True):
+        """Configure the iterator's behavior.
+
+        Parameters
+        ----------
+        iterator : Iterator, optional
+            The iterator to manipulate. If missing, the default
+            iterator will be used.
+        grouped : bool, optional
+            Whether the iterator should be grouped and produce scan bunches
+            or single scans. Defaults to True
+        """
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
             self.iteration_mode = 'group'
@@ -535,6 +595,12 @@ class DataAccessProxy(object):
 class ScanBase(object):
 
     def has_ion_mobility(self):
+        '''Check whether this scan has drift time information associated with
+        it.
+
+        If this scan has been aggregated, it will only check the first scan in
+        the aggregate.
+        '''
         acq = self.acquisition_information
         if acq is None:
             return False
@@ -625,10 +691,10 @@ class ScanBase(object):
 class Scan(ScanBase):
     """Container for mass spectral data and associated descriptive information.
 
-    A :class:`Scan` object is a generic object intended to be created by any `ScanDataSource` and describes
+    A :class:`Scan` object is a generic object intended to be created by a :class:`ScanDataSource` and describes
     a mass spectrum at each level of processing (Profile -> Peak Fitted -> Deconvoluted). The raw object
-    provided by the source is wrapped and queried lazily when an attribute is requested, and retrieved
-    using methods specific to that source type.
+    provided by the source is wrapped and queried lazily when an attribute is requested, delegated through
+    :attr:`source`.
 
     Attributes
     ----------
@@ -640,40 +706,46 @@ class Scan(ScanBase):
         Will be `None` if peak picking has not been done.
     product_scans : list
         A list of :class:`Scan` instances which were produced by fragmenting ions from this one.
+        This attribute is not guaranteed to be populated depending upon how the scan is loaded.
     source : ScanDataSource
         The object which produced this scan and which defines the methods for retrieving common
         attributes from the underlying data structures.
     precursor_information: PrecursorInformation or None
         Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
         the precursor scan
-    arrays: list of numpy.ndarray
-        A pair of `numpy.ndarray` objects corresponding to the raw m/z and intensity data points
+    arrays: RawDataArrays
+        A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and intensity data points
     id: str
         The unique identifier for this scan as given by the source
     title: str
         The human-readable display string for this scan as shown in some external software
     ms_level: int
         The degree of fragmentation performed. 1 corresponds to a MS1 or "Survey" scan, 2 corresponds
-        to MS/MS, and so on. If `ms_level` > 1, the scan is considered a "tandem scan" or "MS^n" scan
+        to MS/MS, and so on. If :attr:`ms_level` > 1, the scan is considered a "tandem scan" or "MS^n" scan
     scan_time: float
-        The time the scan was acquired during data acquisition. The unit of time depends upon the source.
-        May be minutes or seconds.
+        The time the scan was acquired during data acquisition. The unit of time will always be minutes.
+    drift_time: float or None
+        The time measured by the ion mobility spectrometer for this scan or frame. This quantity is None
+        if the scan does not have ion mobility information associated with it, which is usually recorded
+        in :attr:`acquisition_information`
     index: int
         The integer number indicating how many scans were acquired prior to this scan.
     is_profile: bool
         Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
         pre-centroided.
     polarity: int
-        If the scan was acquired in positive mode, the value `+1`.  If the scan was acquired in negative
-        mode, the value `-1`. May be used to indicating how to calibrate charge state determination methods.
+        If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
+        mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.
     activation: ActivationInformation or None
         If this scan is an MS^n scan, this attribute will contain information about the process
         used to produce it from its parent ion.
     acquisition_information: ScanAcquisitionInformation or None
         Describes the type of event that produced this scan, as well as the scanning method
         used.
-    isolation_window: IsolationWindow or None:
+    isolation_window: IsolationWindow or None
         Describes the range of m/z that were isolated from a parent scan to create this scan
+    annotations: dict
+        A set of key-value pairs describing the scan not part of the standard interface
     """
     def __init__(self, data, source, peak_set=None, deconvoluted_peak_set=None, product_scans=None, annotations=None):
         if product_scans is None:
@@ -859,7 +931,7 @@ class Scan(ScanBase):
         return iter(self.peak_set)
 
     def has_peak(self, *args, **kwargs):
-        """A wrapper around :meth:`ms_peak_picker.PeakIndex.has_peak` to query the
+        """A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the
         :class:`ms_peak_picker.FittedPeak` objects picked for this scan.
 
         Parameters
@@ -872,8 +944,8 @@ class Scan(ScanBase):
         Returns
         -------
         ms_peak_picker.FittedPeak or None
-            The peak closest to the query m/z within the error tolerance window, or None if not found
-            or if peaks have not yet been picked
+            The peak closest to the query m/z within the error tolerance window or None
+            if there are no peaks satisfying the requirements
 
         Raises
         ------
@@ -902,7 +974,8 @@ class Scan(ScanBase):
 
         Returns
         -------
-        self
+        Scan
+            Returns self
         """
         mzs, intensities = self.arrays
         if len(mzs) == 0:
@@ -919,6 +992,28 @@ class Scan(ScanBase):
         return self
 
     def deconvolute(self, *args, **kwargs):
+        """A wrapper around :func:`ms_deisotope.deconvolution.deconvolute_peaks`.
+
+        The scan must have had its peaks picked before it can be deconvoluted.
+
+        Parameters
+        ----------
+        *args
+            Passed along to :func:`ms_deisotope.deconvolution.deconvolute_peaks`
+        **kwargs
+            Passed along to :func:`ms_deisotope.deconvolution.deconvolute_peaks`
+
+        Returns
+        -------
+        Scan
+            Returns self
+
+        Raises
+        ------
+        ValueError
+            If :attr:`peak_set` is None, a :class:`ValueError` will be raised
+            indicating that a scan must be centroided before it can be deconvoluted
+        """
         if self.peak_set is None:
             raise ValueError("Cannot deconvolute a scan that has not been "
                              "centroided. Call `pick_peaks` first.")
@@ -944,6 +1039,32 @@ class Scan(ScanBase):
     # signal transformation
 
     def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
+        """Use the picked peaks in :attr:`peak_set` to create a new
+        profile mass spectrum using a peak shape model.
+
+        Parameters
+        ----------
+        max_fwhm : float, optional
+            Maximum peak width above which peaks will be ignored
+        dx : float, optional
+            The distance between each new point in m/z space in the
+            reprofiled spectrum
+        model_cls : ms_peak_picker.peak_statistics.PeakShapeModel, optional
+            The peak shape model to use to generate the profile data from
+            the centroided peaks. Defaults a Gaussian model
+
+        Returns
+        -------
+        Scan
+            A shallow copy of this scan with its :attr:`arrays` replaced with
+            the new reprofiled arrays
+
+        Raises
+        ------
+        ValueError
+            A scan that has not been centroided and is already in profile mode
+            must have its peaks picked before it can be reprofiled.
+        """
         if self.peak_set is None and self.is_profile:
             raise ValueError("Cannot reprofile a scan that has not been centroided")
         elif self.peak_set is None and not self.is_profile:
@@ -959,6 +1080,26 @@ class Scan(ScanBase):
         return scan
 
     def denoise(self, scale=5.0, window_length=2.0, region_width=10):
+        """Create a shallow copy of the scan with a noise reduction
+        transformation applied.
+
+        This method uses the scan filter :class:`ms_peak_picker.scan_filter.FTICRBaselineRemoval`
+        which uses the MasSpike noise reduction algorithm.
+
+        Parameters
+        ----------
+        scale : float, optional
+            The multiplier of the local noise window to remove
+        window_length : float, optional
+            The width (in m/z) of each window
+        region_width : int, optional
+            The width (in m/z) of each region of windows
+
+        Returns
+        -------
+        Scan
+            The denoised version of this scan
+        """
         mzs, intensities = self.arrays
         mzs = mzs.astype(float)
         intensities = intensities.astype(float)
@@ -1070,6 +1211,33 @@ class Scan(ScanBase):
         return weights
 
     def average(self, index_interval=None, rt_interval=None, dx=0.01, weight_sigma=None):
+        """Average together multiple scans' raw data arrays to create a composite intensity
+        profile for a common m/z axis.
+
+        Only MS1 scans will be averaged with this method
+
+        Either an absolute number of scans before and after can be specified using
+        ``index_interval`` or a time window may be specified using ``rt_interval``.
+
+        Parameters
+        ----------
+        index_interval : int, optional
+            The number of scans preceding and proceding to average with.
+        rt_interval : float, optional
+            The range of time (in minutes) preceding and proceding to
+            look for other scans to average with.
+        dx : float, optional
+            The distance between each point in the generated common m/z axis.
+        weight_sigma : float, optional
+            When this value is not None, scans are weighted according to a
+            gaussian distribution with a $\sigma$ equal to this value
+
+        Returns
+        -------
+        Scan
+            A shallow copy of this scan with its :attr:`arrays` attribute replaced
+            with the averaged array
+        """
         before, after = self._get_adjacent_scans(index_interval, rt_interval)
         scans = before + [self] + after
         arrays = []

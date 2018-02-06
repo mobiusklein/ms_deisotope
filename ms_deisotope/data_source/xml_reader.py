@@ -174,6 +174,29 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         raise NotImplementedError()
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        ``rt``, or ``index``. Only one may be provided.
+
+        After invoking this method, the iterator this object wraps will be changed to begin
+        yielding scan bunchs (or single scans if ``grouped`` is ``False``).
+
+        This method will trigger several random-access operations, making it prohibitively
+        expensive for normally compressed files.
+
+        Arguments
+        ---------
+        scan_id: str, optional
+            Start from the scan with the specified id.
+        rt: float, optional
+            Start from the scan nearest to specified time (in minutes) in the run. If no
+            exact match is found, the nearest scan time will be found, rounded up.
+        index: int, optional
+            Start from the scan with the specified index.
+        require_ms1: bool, optional
+            Whether the iterator must start from an MS1 scan. True by default.
+        grouped: bool, optional
+            whether the iterator should yield scan bunches or single scans. True by default.
+        '''
         if scan_id is None:
             if rt is not None:
                 scan = self.get_scan_by_time(rt)

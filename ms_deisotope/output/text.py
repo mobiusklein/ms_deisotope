@@ -2,8 +2,9 @@ from .common import ScanSerializerBase
 
 
 class TextScanSerializerBase(ScanSerializerBase):
-    def __init__(self, stream):
+    def __init__(self, stream, deconvoluted=True):
         self.stream = stream
+        self.deconvoluted = deconvoluted
 
     def close(self):
         self.stream.close()
@@ -46,10 +47,15 @@ class TextScanSerializerBase(ScanSerializerBase):
         return header_dict
 
     def format_peak_vectors(self, scan):
-        neutral_mass = [p.neutral_mass for p in scan.deconvoluted_peak_set]
-        intensity = [p.intensity for p in scan.deconvoluted_peak_set]
-        charge = [p.charge for p in scan.deconvoluted_peak_set]
-        return (neutral_mass, intensity, charge)
+        if self.deconvoluted:
+            neutral_mass = [p.neutral_mass for p in scan.deconvoluted_peak_set]
+            intensity = [p.intensity for p in scan.deconvoluted_peak_set]
+            charge = [p.charge for p in scan.deconvoluted_peak_set]
+            return (neutral_mass, intensity, charge)
+        else:
+            mz = [p.mz for p in scan.peak_set]
+            intensity = [p.intensity for p in scan.peak_set]
+            return mz, intensity, None
 
     def prepare_scan_data(self, scan):
         header_dict = self.construct_header(scan)
@@ -61,14 +67,15 @@ class TextScanSerializerBase(ScanSerializerBase):
 
 
 class HeaderedDelimitedWriter(TextScanSerializerBase):
-    def __init__(self, stream):
-        super(HeaderedDelimitedWriter, self).__init__(stream)
+    def __init__(self, stream, deconvoluted=True):
+        super(HeaderedDelimitedWriter, self).__init__(stream, deconvoluted)
 
     def write_header(self, header_dict):
         for key, value in header_dict.items():
             self.stream.write("#%s=%s\n" % (key, value))
 
     def write_vectors(self, vectors):
+        vectors = [v for v in vectors if v is not None]
         if sum(map(len, vectors)) != len(vectors[0]) * len(vectors):
             raise ValueError("All data vectors must be equal!")
         for i in range(len(vectors[0])):

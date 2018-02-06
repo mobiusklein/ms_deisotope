@@ -12,7 +12,7 @@ def _format_parameter(key, value):
 
 class MGFSerializer(HeaderedDelimitedWriter):
     def __init__(self, stream, sample_name=None, deconvoluted=True):
-        super(MGFSerializer, self).__init__(stream)
+        super(MGFSerializer, self).__init__(stream, deconvoluted)
         self.sample_name = sample_name
         self.started = False
 
@@ -32,10 +32,14 @@ class MGFSerializer(HeaderedDelimitedWriter):
             self.write_scan(*self.prepare_scan_data(scan))
 
     def format_peak_vectors(self, scan):
-        (neutral_mass_array, intensity_array, charge_array) = super(
-            MGFSerializer, self).format_peak_vectors(scan)
-        mz_array = [mass_charge_ratio(
-            neutral_mass_array[i], charge_array[i]) for i in range(len(charge_array))]
+        if self.deconvoluted:
+            (neutral_mass_array, intensity_array, charge_array) = super(
+                MGFSerializer, self).format_peak_vectors(scan)
+            mz_array = [mass_charge_ratio(
+                neutral_mass_array[i], charge_array[i]) for i in range(len(charge_array))]
+        else:
+            (mz_array, intensity_array, charge_array) = super(
+                MGFSerializer, self).format_peak_vectors(scan)
         return (mz_array, intensity_array, charge_array)
 
     def write_header(self, header_dict):

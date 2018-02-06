@@ -380,6 +380,14 @@ class _MzMLMetadataLoader(object):
         return by_id
 
     def file_description(self):
+        """Read the file metadata and provenance from the ``<fileDescription>`` tag
+        if it is present.
+
+        Returns
+        -------
+        FileInformation
+            The description of the file's contents and its sources
+        """
         desc = _find_section(self._source, "fileDescription")
         fi = FileInformation(desc.get("fileContent", {}), [])
         for sf_data in desc.get('sourceFileList', {}).get("sourceFile", []):
@@ -407,6 +415,14 @@ class _MzMLMetadataLoader(object):
         return config
 
     def instrument_configuration(self):
+        """Read the instrument configurations settings from the
+        ``<instrumentConfigurationList>``
+
+        Returns
+        -------
+        list of InstrumentConfiguration
+            A list of different instrument states that scans may be acquired under
+        """
         instrument_info_list = _find_section(self._source, "instrumentConfigurationList").get(
             "instrumentConfiguration", [])
         out = []

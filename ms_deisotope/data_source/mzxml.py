@@ -17,6 +17,17 @@ class _MzXMLParser(mzxml.MzXML, IndexSavingXML):
 
 class _MzXMLMetadataLoader(object):
     def file_description(self):
+        """Read the file provenance from the ``<parentFile>`` tags
+        if any are present.
+
+        This returns no information about the file's contents as this
+        was not part of the mzXML schema
+
+        Returns
+        -------
+        FileInformation
+            The description of the file's  sources
+        """
         file_info = map(self.source._get_info_smart, iterparse_until(self.source, "parentFile", "scan"))
         self.source.reset()
         file_info = list(file_info)
@@ -30,6 +41,14 @@ class _MzXMLMetadataLoader(object):
         return fi
 
     def instrument_configuration(self):
+        """Read the instrument configurations settings from the
+        ``<msInstrument>`` elements.
+
+        Returns
+        -------
+        list of InstrumentConfiguration
+            A list of different instrument states that scans may be acquired under
+        """
         instrument_configuration = map(self.source._get_info_smart, iterparse_until(
             self.source, "msInstrument", "scan"))
         self.source.reset()
