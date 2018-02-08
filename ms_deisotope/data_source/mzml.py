@@ -9,6 +9,7 @@ from .common import (
     FileInformation, SourceFile, MultipleActivationInformation)
 from .metadata.activation import (
     supplemental_energy, energy_terms)
+from .metadata import file_information
 from weakref import WeakValueDictionary
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until,
@@ -468,13 +469,39 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def __init__(self, source_file, use_index=True):
         self.source_file = source_file
         self._source = _MzMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
-        self.make_iterator()
         self._scan_cache = WeakValueDictionary()
         self._use_index = use_index
         self._run_information = self._get_run_attributes()
         self._instrument_config = {
             k.id: k for k in self.instrument_configuration()
         }
+        self._file_description = self.file_description()
+        self.make_iterator()
+
+    def _has_msn_scans(self):
+        return file_information.MS_MSn_Spectrum in self._file_description
+
+    def _has_ms1_scans(self):
+        return file_information.MS_MS1_Spectrum in self._file_description
+
+    def make_iterator(self, iterator=None, grouped=True):
+        """Configure the iterator's behavior.
+
+        Parameters
+        ----------
+        iterator : Iterator, optional
+            The iterator to manipulate. If missing, the default
+            iterator will be used.
+        grouped : bool, optional
+            Whether the iterator should be grouped and produce scan bunches
+            or single scans. Defaults to True
+        """
+        try:
+            if not self._has_ms1_scans():
+                grouped = False
+        except Exception:
+            pass
+        return super(MzMLLoader, self).make_iterator(iterator, grouped=grouped)
 
     def _validate(self, scan):
         return "m/z array" in scan._data

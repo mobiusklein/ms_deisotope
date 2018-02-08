@@ -3,11 +3,34 @@ Common Scan Model
 
 .. automodule:: ms_deisotope.data_source.common
 
-    .. autoclass:: ScanBunch
-        :members:
-
     .. autoclass:: Scan
         :members:
 
+Scan-Level Metadata
+===================
+
     .. autoclass:: PrecursorInformation
+        :members:
+
+    .. autoclass:: ActivationInformation
+        :members:
+
+    .. autoclass:: ScanAcquisitionInformation
+        :members:
+
+    .. autoclass:: InstrumentInformation
+        :members:
+
+    .. autoclass:: IsolationWindow
+        :members:
+
+
+Supporting Data Structures
+--------------------------
+
+    .. autoclass:: RawDataArrays
+        :members:
+
+
+    .. autoclass:: ScanBunch
         :members:

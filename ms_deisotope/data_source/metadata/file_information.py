@@ -90,6 +90,10 @@ file_formats = {
 }
 
 
+MS_MS1_Spectrum = 'MS1 spectrum'
+MS_MSn_Spectrum = 'MSn spectrum'
+
+
 content_keys = [
     'CRM spectrum',
     'emission spectrum',
@@ -102,7 +106,7 @@ content_keys = [
     'time-delayed fragmentation spectrum',
     'PDA spectrum',
     'consecutive reaction monitoring chromatogram',
-    'MS1 spectrum',
+    MS_MS1_Spectrum,
     'SRM spectrum',
     'selected ion current chromatogram',
     'absorption chromatogram',
@@ -110,7 +114,7 @@ content_keys = [
     'charge inversion mass spectrum',
     'selected reaction monitoring chromatogram',
     'basepeak chromatogram',
-    'MSn spectrum',
+    MS_MSn_Spectrum,
     'mass spectrum',
     'constant neutral gain spectrum',
     'absorption spectrum',

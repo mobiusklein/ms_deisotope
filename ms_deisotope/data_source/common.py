@@ -43,7 +43,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
 
     Attributes
     ----------
-    precursor: Scan
+    precursor: :class:`.Scan`
         A single MS1 scan which may have undergone MSn
     products: list
         A list of 0 or more :class:`Scan` objects which were derived
@@ -107,7 +107,10 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
     """Represent the m/z and intensity arrays associated with a raw
     mass spectrum.
 
-    Supports scaling and summing, as well as low level m/z search
+    Supports scaling and summing, as well as low level m/z search.
+
+    Thin wrapper around a ``namedtuple``, so this object supports
+    the same interfaces as a tuple.
 
     Attributes
     ----------
@@ -118,6 +121,22 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
     """
 
     def plot(self, *args, **kwargs):
+        """Draw the profile spectrum described by the
+        contained arrays.
+
+        Parameters
+        ----------
+        ax: :class:`matplotlib._axes.Axes`
+            The figure axes onto which to draw the plot. If not provided,
+            this will default to the current figure interactively.
+        **kwargs
+            All keywords are forwarded to :meth:`plot` on ``ax``.
+
+        Returns
+        -------
+        :class:`matplotlib._axes.Axes`
+            The axes drawn on
+        """
         ax = draw_raw(self, *args, **kwargs)
         return ax
 
@@ -174,6 +193,20 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return 0
 
     def between_mz(self, low, high):
+        """Returns a slice of the arrays between ``low`` and ``high``
+        m/z
+
+        Parameters
+        ----------
+        low : float
+            The lower bound m/z
+        high : float
+            The upper bound m/z
+
+        Returns
+        -------
+        :class:`.RawDataArrays`
+        """
         i = self.find_mz(low)
         j = self.find_mz(high) + 1
         return self.__class__(self.mz[i:j], self.intensity[i:j])
@@ -692,28 +725,28 @@ class Scan(ScanBase):
     """Container for mass spectral data and associated descriptive information.
 
     A :class:`Scan` object is a generic object intended to be created by a :class:`ScanDataSource` and describes
-    a mass spectrum at each level of processing (Profile -> Peak Fitted -> Deconvoluted). The raw object
+    a mass spectrum at each level of processing (Profile --> Peak Fitted --> Deconvoluted). The raw object
     provided by the source is wrapped and queried lazily when an attribute is requested, delegated through
     :attr:`source`.
 
     Attributes
     ----------
-    deconvoluted_peak_set : ms_deisotope.peak_set.DeconvolutedPeakSet or None
+    deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None
         Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will
         be `None` if deconvolution has not been done.
-    peak_set : ms_peak_picker.peak_index.PeakIndex or None
+    peak_set : :class:`ms_peak_picker.PeakSet` or None
         Picked peaks and (possibly) associated raw data points as produced by :meth:`pick_peaks`.
         Will be `None` if peak picking has not been done.
     product_scans : list
         A list of :class:`Scan` instances which were produced by fragmenting ions from this one.
         This attribute is not guaranteed to be populated depending upon how the scan is loaded.
-    source : ScanDataSource
+    source : :class:`ScanDataSource`
         The object which produced this scan and which defines the methods for retrieving common
         attributes from the underlying data structures.
-    precursor_information: PrecursorInformation or None
+    precursor_information: :class:`PrecursorInformation` or None
         Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
         the precursor scan
-    arrays: RawDataArrays
+    arrays: :class:`RawDataArrays`
         A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and intensity data points
     id: str
         The unique identifier for this scan as given by the source
@@ -736,13 +769,13 @@ class Scan(ScanBase):
     polarity: int
         If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
         mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.
-    activation: ActivationInformation or None
+    activation: :class:`.ActivationInformation` or None
         If this scan is an MS^n scan, this attribute will contain information about the process
         used to produce it from its parent ion.
-    acquisition_information: ScanAcquisitionInformation or None
+    acquisition_information: :class:`.ScanAcquisitionInformation` or None
         Describes the type of event that produced this scan, as well as the scanning method
         used.
-    isolation_window: IsolationWindow or None
+    isolation_window: :class:`.IsolationWindow` or None
         Describes the range of m/z that were isolated from a parent scan to create this scan
     annotations: dict
         A set of key-value pairs describing the scan not part of the standard interface
