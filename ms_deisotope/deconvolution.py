@@ -895,7 +895,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             self._deconvoluted_peaks = self._merge_peaks(
                 self._deconvoluted_peaks)
 
-        return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
+        return DeconvolutedPeakSet(self._deconvoluted_peaks).reindex()
 
 
 try:
@@ -1356,7 +1356,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             self._deconvoluted_peaks = self._merge_peaks(
                 self._deconvoluted_peaks)
 
-        return DeconvolutedPeakSet(list(self._deconvoluted_peaks))._reindex()
+        return DeconvolutedPeakSet(list(self._deconvoluted_peaks)).reindex()
 
 
 class AveraginePeakDependenceGraphDeconvoluter(AveragineDeconvoluter, PeakDependenceGraphDeconvoluterBase):
@@ -1570,7 +1570,7 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase, DeconvoluterB
             self.deconvolute_composition(composition, error_tolerance=error_tolerance,
                                          charge_range=charge_range, charge_carrier=charge_carrier,
                                          truncate_after=truncate_after, mass_shift=mass_shift)
-        return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
+        return DeconvolutedPeakSet(self._deconvoluted_peaks).reindex()
 
 
 class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter):
@@ -1673,7 +1673,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
             if (begin_signal - end_signal) / end_signal < convergence:
                 break
             begin_signal = end_signal
-        return DeconvolutedPeakSet(self._deconvoluted_peaks)._reindex()
+        return DeconvolutedPeakSet(self._deconvoluted_peaks).reindex()
 
 
 class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(

@@ -71,11 +71,16 @@ cdef class DeconvolutedPeakSet(object):
         public tuple _mz_ordered
         public bint indexed
 
+
+    cpdef reindex(self)
+
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)
 
     cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)
 
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=*)
+
+    cdef DeconvolutedPeak _get_nearest_peak(self, double neutral_mass, double* errout)
 
     cdef size_t get_size(self)
 
@@ -90,7 +95,25 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
     cdef:
         double* neutral_mass_array
         double* mz_array
+        index_list* interval_index
+        
         size_t _size
 
     cdef void _build_index_arrays(self)
     cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) nogil
+
+
+cdef size_t INTERVAL_INDEX_SIZE = 10000
+
+cdef struct index_cell:
+    double center_value
+    size_t start
+    size_t end
+
+
+cdef struct index_list:
+    index_cell* index
+    size_t size
+    double low
+    double high
+

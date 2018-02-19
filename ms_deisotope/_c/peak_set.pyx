@@ -52,7 +52,7 @@ cdef class _Index(object):
         return "%d|%d" % (self.neutral_mass, self.mz)
 
     def clone(self):
-        return self.__class__(self.neutral_mass, self.mz)
+        return _Index._create(self.neutral_mass, self.mz)
 
     def __reduce__(self):
         return _Index, (self.neutral_mass, self.mz)
@@ -364,18 +364,7 @@ cdef class DeconvolutedPeakSet:
         self._mz_ordered = None
         self.indexed = False
 
-    def reindex(self):
-        """
-        Updates the :attr:`index` of each peak in `self` and updates the
-        sorted order.
-
-        Returns
-        -------
-        self: DeconvolutedPeakSet
-        """
-        self._reindex()
-
-    def _reindex(self):
+    cpdef reindex(self):
         """
         Updates the :attr:`index` of each peak in `self` and updates the
         sorted order.
@@ -465,11 +454,16 @@ cdef class DeconvolutedPeakSet:
             hi_ix -= 1
         return <tuple>PyTuple_GetSlice(self.peaks, lo_ix, hi_ix)
 
+    cdef DeconvolutedPeak _get_nearest_peak(self, double neutral_mass, double* errout):
+        cdef DeconvolutedPeak peak
+        peak = binary_search_nearest_neutral_mass(self.peaks, neutral_mass, errout)
+        return peak
+
     def get_nearest_peak(self, double neutral_mass):
         cdef:
             DeconvolutedPeak peak
             double errout
-        peak = binary_search_nearest_neutral_mass(self.peaks, neutral_mass, &errout)
+        peak = self._get_nearest_peak(neutral_mass, &errout)
         return peak, errout
 
     def between(self, m1, m2, tolerance=1e-5, use_mz=False):
@@ -490,7 +484,7 @@ cdef class DeconvolutedPeakSet:
             if collecting:
                 acc.append(peak.clone())
 
-        return self.__class__(acc)._reindex()
+        return self.__class__(acc).reindex()
 
 cdef double INF
 INF = float('inf')
@@ -837,6 +831,9 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         if self.mz_array != NULL:
             free(self.mz_array)
             self.mz_array = NULL
+        if self.interval_index != NULL:
+            free_index_list(self.interval_index)
+            self.interval_index = NULL
 
     cdef void _build_index_arrays(self):
         cdef:
@@ -853,15 +850,26 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             self.neutral_mass_array[i] = peak.neutral_mass
             self.mz_array[peak._index.mz] = peak.mz
 
-    def _reindex(self):
-        super(DeconvolutedPeakSetIndexed, self)._reindex()
+        if n > 2:
+            if self.interval_index != NULL:
+                free_index_list(self.interval_index)
+                self.interval_index = NULL
+            interval_index = <index_list*>malloc(sizeof(index_list))
+            build_interval_index(self, interval_index, INTERVAL_INDEX_SIZE)
+            if check_index(interval_index) != 0:
+                free_index_list(interval_index)
+            else:
+                self.interval_index = interval_index
+
+    cpdef reindex(self):
+        super(DeconvolutedPeakSetIndexed, self).reindex()
         self._build_index_arrays()
         return self
 
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
         cdef:
             int status
-            size_t i, n
+            size_t i, n, s
             DeconvolutedPeak peak
 
         n = self._size
@@ -871,12 +879,20 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
                 return None
             else:
                 return <DeconvolutedPeak>PyTuple_GET_ITEM(self._mz_ordered, i)
+        if n == 0:
+            return None
+        if self.interval_index != NULL:
+            find_search_interval(self.interval_index, neutral_mass, &s, &n)
+            status = _binary_search_with_hint(self.neutral_mass_array, neutral_mass, error_tolerance, n, s, &i)
         else:
             status = _binary_search(self.neutral_mass_array, neutral_mass, error_tolerance, n, &i)
-            if status != 0:
-                return None
-            else:
-                return self.getitem(i)
+        if status != 0:
+            return None
+        peak = self.getitem(i)
+        if abs((peak.neutral_mass - neutral_mass) / neutral_mass) < error_tolerance:
+            return peak
+        else:
+            return None
 
     def _test_interval(self, double neutral_mass, double tolerance=1e-5):
         cdef:
@@ -890,10 +906,17 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
         cdef:
             int status
-            size_t n, start, end
+            size_t n, s, start, end
         n = self._size
-        status = _binary_search_interval(
-            self.neutral_mass_array, neutral_mass, tolerance, n, &start, &end)
+        if n == 0:
+            return ()
+        if self.interval_index != NULL:
+            find_search_interval(self.interval_index, neutral_mass, &s, &n)
+            status = _binary_search_interval_with_hint(
+                self.neutral_mass_array, neutral_mass, tolerance, n, s, &start, &end)
+        else:
+            status = _binary_search_interval(
+                self.neutral_mass_array, neutral_mass, tolerance, n, &start, &end)
         if status != 0:
             return ()
         return <tuple>PyTuple_GetSlice(self.peaks, start, end)
@@ -906,3 +929,224 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         status = _binary_search_interval(
             self.neutral_mass_array, neutral_mass, tolerance, n, start, end)
         return status
+
+
+cdef int _binary_search_with_hint(double* array, double target, double error_tolerance, size_t n, size_t hint, size_t* out) nogil:
+    cdef:
+        size_t lo, hi, mid, i, j
+        size_t best_index
+        double err, found_mass
+        double best_error, abs_error
+
+    lo = hint
+    hi = n
+
+    while hi != lo:
+        mid = (hi + lo) / 2
+        found_mass = array[mid]
+        if fabs(_ppm_error(found_mass, target)) < error_tolerance:
+            best_index = mid
+            best_error = INF
+            i = 0
+            while mid - i >= 0 and i <= mid:
+                found_mass = array[mid - i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid - i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            i = 1
+            while (mid + i) < (n - 1):
+                found_mass = array[mid + i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid + i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            out[0] = best_index
+            if best_error == INF:
+                return 3
+            return 0
+        elif hi - lo == 1:
+            out[0] = 0
+            return 1
+        elif found_mass > target:
+            hi = mid
+        else:
+            lo = mid
+    out[0] = 0
+    return 2
+
+
+cdef int _binary_search_interval_with_hint(double* array, double target, double error_tolerance, size_t n, size_t hint, size_t* start, size_t* end) nogil:
+    cdef:
+        size_t lo, hi, mid, i, j
+        size_t best_index
+        double err, found_mass
+        double best_error, abs_error
+
+    lo = hint
+    hi = n
+
+    while hi != lo:
+        mid = (hi + lo) / 2
+        found_mass = array[mid]
+        if fabs(_ppm_error(found_mass, target)) < error_tolerance:
+            best_index = mid
+            best_error = INF
+            i = 0
+            while mid - i >= 0 and i <= mid:
+                found_mass = array[mid - i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid - i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            start[0] = mid - i + 1
+            i = 1
+            while (mid + i) < (n - 1):
+                found_mass = array[mid + i]
+                abs_error = fabs(_ppm_error(target, found_mass))
+                if abs_error < error_tolerance:
+                    if abs_error < best_error:
+                        best_index = mid + i
+                        best_error = abs_error
+                else:
+                    break
+                i += 1
+            end[0] = mid + i
+            return 0
+        elif hi - lo == 1:
+            start[0] = 0
+            end[0] = 0
+            return 1
+        elif found_mass > target:
+            hi = mid
+        else:
+            lo = mid
+    start[0] = 0
+    end[0] = 0
+    return 2
+
+
+cdef int build_interval_index(DeconvolutedPeakSet peaks, index_list* index, size_t index_size):
+    cdef:
+        double* linear_spacing
+        double current_value, err, next_value
+        size_t i, start_i, end_i, index_i, peaks_size
+        DeconvolutedPeak peak
+    peaks_size = peaks.get_size()
+    if peaks_size > 0:
+        index.low = peaks.getitem(0).neutral_mass
+        index.high = peaks.getitem(peaks_size - 1).neutral_mass
+    else:
+        index.low = 0
+        index.high = 1
+    index.size = index_size
+    linear_spacing = build_linear_spaced_array(
+        index.low,
+        index.high,
+        index_size)
+
+    index.index = <index_cell*>malloc(sizeof(index_cell) * index_size)
+
+    for index_i in range(index_size):
+        current_value = linear_spacing[index_i]
+        peak = peaks._get_nearest_peak(current_value, &err)
+        if peaks_size > 0:
+            start_i = peak._index.neutral_mass
+            if index_i > 0:
+                start_i = index.index[index_i - 1].end - 1
+            if index_i == index_size - 1:
+                end_i = peaks_size - 1
+            else:
+                next_value = linear_spacing[index_i + 1]
+                i = peak._index.neutral_mass
+                while i < peaks_size:
+                    peak = peaks.getitem(i)
+                    if abs(current_value - peak.neutral_mass) > abs(next_value - peak.neutral_mass):
+                        break
+                    i += 1
+                end_i = i
+        else:
+            start_i = 0
+            end_i = 0
+        index.index[index_i].center_value = current_value
+        index.index[index_i].start = start_i
+        index.index[index_i].end = end_i
+
+    free(linear_spacing)
+    return 0
+
+
+cdef double* build_linear_spaced_array(double low, double high, size_t n):
+    cdef:
+        double* array
+        double delta
+        size_t i
+
+    delta = (high - low) / (n - 1)
+
+    array = <double*>malloc(sizeof(double) * n)
+
+    for i in range(n):
+        array[i] = low + i * delta
+    return array
+
+
+cdef void free_index_list(index_list* index):
+    free(index.index)
+    free(index)
+
+
+cdef int check_index(index_list* index) nogil:
+    if index.size == 0:
+        return 1
+    elif (index.high - index.low) == 0:
+        return 2
+    else:
+        return 0
+
+
+cdef size_t interpolate_index(index_list* index, double value):
+    cdef:
+        double v
+        size_t i
+    v = (((value - index.low) / (index.high - index.low)) * index.size)
+    i = <size_t>v
+    return i
+
+
+cdef int find_search_interval(index_list* index, double value, size_t* start, size_t* end):
+    cdef:
+        size_t i
+    if value > index.high:
+        i = index.size - 1
+    elif value < index.low:
+        i = 0
+    else:
+        i = interpolate_index(index, value)
+    if i > 0:
+        if i < index.size:
+            start[0] = index.index[i - 1].start
+        else:
+            # if we're at index.size or greater, act as if we're at the last
+            # cell of the index
+            start[0] = index.index[index.size - 2].start
+    else:
+        # if somehow the index were negative, this could end badly.
+        start[0] = index.index[i].start
+    if i >= (index.size - 1):
+        end[0] = index.index[index.size - 1].end + 1
+    else:
+        end[0] = index.index[i + 1].end + 1
+    return 0
