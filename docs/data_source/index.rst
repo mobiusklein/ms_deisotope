@@ -26,7 +26,8 @@ To read from a supported file format, do one of the following:
 .. toctree::
     :caption: Topics
 
-    common
+    common_scan
+    common_reader
     mzml
     mzxml
     formats

@@ -18,15 +18,12 @@ Scan-Level Metadata
     .. autoclass:: ScanAcquisitionInformation
         :members:
 
-    .. autoclass:: InstrumentInformation
-        :members:
-
     .. autoclass:: IsolationWindow
         :members:
 
 
 Supporting Data Structures
---------------------------
+==========================
 
     .. autoclass:: RawDataArrays
         :members:

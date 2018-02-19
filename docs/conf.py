@@ -119,7 +119,8 @@ html_theme_options = {
     "sidebarlinkcolor": "darkcyan",
     "sidebartextcolor": "steelblue",
     "relbarbgcolor": "darkslateblue",
-    "footerbgcolor": "darkslateblue"
+    "footerbgcolor": "darkslateblue",
+    "headbgcolor": "ghostwhite"
 }
 
 # -- Options for HTMLHelp output ------------------------------------------
