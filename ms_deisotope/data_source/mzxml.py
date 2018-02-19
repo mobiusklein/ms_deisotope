@@ -8,7 +8,6 @@ from .common import (
     FileInformation, SourceFile)
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until)
-from weakref import WeakValueDictionary
 
 
 class _MzXMLParser(mzxml.MzXML, IndexSavingXML):
@@ -351,7 +350,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
     def __init__(self, source_file, use_index=True):
         self.source_file = source_file
         self._source = _MzXMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
         self._use_index = use_index
         self._scan_index_lookup = None
         if self._use_index:

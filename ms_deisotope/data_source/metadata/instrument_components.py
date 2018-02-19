@@ -5,27 +5,13 @@ from .cv import Term, render_list
 
 
 class Component(Term):
+    """Describes a named component of a mass spectrometer, either
+    using a controlled-vocabulary term or user-defined name.
 
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return self.name == other or self.id == other
-        else:
-            return tuple(self) == tuple(other)
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return super(Component, self).__repr__()
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def is_a(self, term):
-        return term == self.name or term in self.specialization
+    A :class:`Component` is equal to its name and its controlled
+    vocabulary identifier.
+    """
+    pass
 
 
 def __generate_list_code():

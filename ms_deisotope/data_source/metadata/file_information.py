@@ -2,6 +2,8 @@ import os
 import hashlib
 import warnings
 
+from collections import MutableMapping
+
 from six import string_types as basestring
 
 try:
@@ -127,7 +129,21 @@ content_keys = [
 ]
 
 
-class FileInformation(object):
+class FileInformation(MutableMapping):
+    """Describes the type of data found in this file and the
+    source files that contributed to it.
+
+    Implements the :class:`MutableMapping` Interface
+
+    Attributes
+    ----------
+    contents : dict
+        A mapping between controlled vocabullary names or user-defined
+        names and an optional value. For standard controlled names see :data:`.content_keys`
+    source_files : list of :class:`.SourceFile` objects
+        The set of files which either define the current file, or were used
+        to create the current file if recorded.
+    """
 
     def __init__(self, contents=None, source_files=None):
         if contents is None:
@@ -138,6 +154,27 @@ class FileInformation(object):
         self.source_files = list(source_files)
 
     def add_file(self, source, check=True):
+        """Add a new file to :attr:`source_files`
+
+        If ``source`` is a string, it will be interpreted as a path
+        and an instance of :class:`SourceFile` will be created using
+        :meth:`SourceFile.from_path`. Otherwise, it is assumed to be
+        an instance of :class:`SourceFile`.
+
+        Parameters
+        ----------
+        source : str or :class:`SourceFile`
+            Either the path to a file to be added to the source file
+            collection, or an instance of :class:`SourceFile`
+        check : bool, optional
+            Whether or not to check and validate that a path points to
+            a real file
+
+        Raises
+        ------
+        ValueError
+            If a path fails to validate as real
+        """
         if isinstance(source, basestring):
             source = os.path.realpath(source)
             if check:
@@ -148,9 +185,27 @@ class FileInformation(object):
         self.source_files.append(source)
 
     def add_content(self, key, value=None):
+        """Adds a new key-value pair to :attr:`contents` with
+        an optional value
+
+        Parameters
+        ----------
+        key : str
+            The content name, either a CV-term or a user-defined name
+        value : object, optional
+            The optional value, which should be any type of object whose
+            meaning makes sense given the definition of ``key``
+        """
         self.contents[key] = value
 
     def remove_content(self, key):
+        """Remove a key from :attr:`content`
+
+        Parameters
+        ----------
+        key : str
+            The content key to remove
+        """
         self.contents.pop(key, None)
 
     def get_content(self, key):
@@ -175,6 +230,12 @@ class FileInformation(object):
         template = "FileInformation(%s, %s)"
         return template % (self.contents, self.source_files)
 
+    def __len__(self):
+        return len(self.contents)
+
+    def __iter__(self):
+        return iter(self.contents)
+
     def copy(self):
         return self.__class__(
             self.contents.copy(), [f.copy() for f in self.source_filesr])
@@ -187,6 +248,27 @@ format_parameter_map = {
 
 
 class SourceFile(object):
+    """Represents a single raw data file which either defines or contributed data to another
+    data file, the "reference file"
+
+    Attributes
+    ----------
+    file_format : str
+        The name of a data file format. See :data:`file_formats`
+    id : str
+        The unique identifier for this file, among files which contributed to
+        the reference file
+    id_format : str
+        The name of a formal identifier schema. See :data:`id_formats`
+    location : str
+        The directory path to this file on the machine it was last read on to contribute to
+        or define the reference file
+    name : str
+        The base name of this file
+    parameters : dict
+        A set of key-value pairs associated with this file, either encoding extra metadata
+        annotations, or precomputed hash checksums
+    """
 
     _checksum_translation_map = {
         'sha1': 'sha1',

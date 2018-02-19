@@ -3,9 +3,8 @@ import io
 import gzip
 import os
 
-from weakref import WeakValueDictionary
 from .common import (
-    ScanIterator, RandomAccessScanSource)
+    RandomAccessScanSource)
 from lxml import etree
 from lxml.etree import XMLSyntaxError
 from pyteomics import xml
@@ -23,7 +22,7 @@ def in_minutes(x):
     return x
 
 
-class XMLReaderBase(RandomAccessScanSource, ScanIterator):
+class XMLReaderBase(RandomAccessScanSource):
     @property
     def index(self):
         return self._source._offset_index
@@ -61,7 +60,7 @@ class XMLReaderBase(RandomAccessScanSource, ScanIterator):
         except (IOError, AttributeError):
             pass
         self.make_iterator(None)
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
 
     def _validate(self, scan):
         raise NotImplementedError()

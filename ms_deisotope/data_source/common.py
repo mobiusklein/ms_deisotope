@@ -2,6 +2,7 @@ import abc
 import warnings
 
 from collections import namedtuple
+from weakref import WeakValueDictionary
 
 import numpy as np
 
@@ -225,8 +226,7 @@ class ScanDataSource(object):
     Data files come in many shapes and sizes, with different
     underlying structures. This class provides an API that
     should make features as consistent as possible to clients
-    of Scan objects, making the format those Scan objects
-    were read from unimportant.
+    of :class:`Scan` objects.
     """
     @abc.abstractmethod
     def _scan_arrays(self, scan):
@@ -435,7 +435,7 @@ class ScanIterator(ScanDataSource):
     data file.
     """
 
-    iteration_mode = 'single'
+    iteration_mode = 'group'
 
     @abc.abstractmethod
     def next(self):
@@ -465,8 +465,8 @@ class ScanIterator(ScanDataSource):
             The iterator to manipulate. If missing, the default
             iterator will be used.
         grouped : bool, optional
-            Whether the iterator should be grouped and produce scan bunches
-            or single scans. Defaults to True
+            Whether the iterator should be grouped and produce :class:`.ScanBunch` objects
+            or single :class:`.Scan`. Defaults to True
         """
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
@@ -532,28 +532,110 @@ class ScanIterator(ScanDataSource):
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
 
+    def _scan_cleared(self, scan):
+        self.scan_cache.pop(scan.id, None)
+
+    def initialize_scan_cache(self):
+        self._scan_cache = WeakValueDictionary()
+
+    @property
+    def scan_cache(self):
+        return self._scan_cache
+
+    @scan_cache.setter
+    def scan_cache(self, value):
+        self._scan_cache = value
+
 
 @add_metaclass(abc.ABCMeta)
-class RandomAccessScanSource(ScanDataSource):
+class RandomAccessScanSource(ScanIterator):
+    """An Abstract Base Class that extends ScanIterator
+    with additional requirements that the implementation support
+    random access to individual scans. This should be doable by unique
+    identifier, sequential index, or by scan time.
+    """
 
     @abc.abstractmethod
     def get_scan_by_id(self, scan_id):
+        """Retrieve the scan object for the specified scan id.
+
+        If the scan object is still bound and in memory somewhere,
+        a reference to that same object will be returned. Otherwise,
+        a new object will be created.
+
+        Parameters
+        ----------
+        scan_id : str
+            The unique scan id value to be retrieved
+
+        Returns
+        -------
+        Scan
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def get_scan_by_time(self, time):
+        """Retrieve the scan object for the specified scan time.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        time : float
+            The time to get the nearest scan from
+
+        Returns
+        -------
+        Scan
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def get_scan_by_index(self, index):
+        """Retrieve the scan object for the specified scan index.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        index: int
+            The index to get the scan for
+
+        Returns
+        -------
+        Scan
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
-        raise NotImplementedError()
+        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        ``rt``, or ``index``. Only one may be provided.
 
-    def _scan_cleared(self, scan):
-        pass
+        After invoking this method, the iterator this object wraps will be changed to begin
+        yielding scan bunchs (or single scans if ``grouped`` is ``False``).
+
+        This method will trigger several random-access operations, making it prohibitively
+        expensive for normally compressed files.
+
+        Arguments
+        ---------
+        scan_id: str, optional
+            Start from the scan with the specified id.
+        rt: float, optional
+            Start from the scan nearest to specified time (in minutes) in the run. If no
+            exact match is found, the nearest scan time will be found, rounded up.
+        index: int, optional
+            Start from the scan with the specified index.
+        require_ms1: bool, optional
+            Whether the iterator must start from an MS1 scan. True by default.
+        grouped: bool, optional
+            whether the iterator should yield scan bunches or single scans. True by default.
+        '''
+        raise NotImplementedError()
 
     def _locate_ms1_scan(self, scan):
         while scan.ms_level != 1:
@@ -653,6 +735,13 @@ class ScanBase(object):
         return self.id
 
     def copy(self):
+        """Return a deep copy of the :class:`Scan` object
+        wrapping the same reference data.
+
+        Returns
+        -------
+        :class:`Scan`
+        """
         return self.clone()
 
     def __copy__(self):
@@ -846,6 +935,12 @@ class Scan(ScanBase):
         self._instrument_configuration = None
 
     def clear(self):
+        """Releases all associated in-memory data and clears the cached
+        attributes.
+
+        The data reference attribute :attr:`_data` is retained
+        and unchanged.
+        """
         if self.source is not None:
             self.source._scan_cleared(self)
         self._unload()
@@ -1381,7 +1476,7 @@ class PrecursorInformation(object):
         The sum of the peak heights of the extracted isotopic pattern
     extracted_neutral_mass : float
         The monoisotopic neutral mass estimated from the source data
-    extracted_peak : DeconvolutedPeak
+    extracted_peak : :class:`.DeconvolutedPeak`
         The deconvoluted peak summarizing the precursor ion
     intensity : float
         The abundance reported in the source metadata
@@ -1390,14 +1485,14 @@ class PrecursorInformation(object):
     orphan : bool
         Whether there was an isotopic pattern to extract in the precursor scan. Usually
         paired with `defaulted`
-    peak : FittedPeak
-        The peak nearest `mz`, and the starting point for estimating information
+    peak : :class:`.FittedPeak`
+        The peak nearest :attr:`mz`, and the starting point for estimating information
         about the precursor ion
     precursor_scan_id : str
         The id string for the precursor scan
-    source : ScanIteratorBase
-        Any object implementing the `ScanIteratorBase` interface to be used to look up
-        the precursor scan with `precursor_scan_id`
+    source : :class:`ScanIterator`
+        Any object implementing the :class:`ScanIterator` interface to be used to look up
+        the precursor scan with :attr:`precursor_scan_id`
     """
     def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
@@ -1559,11 +1654,18 @@ class ProcessedScan(ScanBase):
     def scan_id(self):
         return self.id
 
+    @property
+    def is_profile(self):
+        return False
+
     def __iter__(self):
         return iter(self.deconvoluted_peak_set)
 
     def __getitem__(self, index):
         return self.deconvoluted_peak_set[index]
+
+    def has_peak(self, mass, error_tolerance=2e-5):
+        return self.deconvoluted_peak_set.has_peak(mass, error_tolerance)
 
     def __repr__(self):
         if self.deconvoluted_peak_set is not None:

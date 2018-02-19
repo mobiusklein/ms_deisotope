@@ -10,7 +10,6 @@ from .common import (
 from .metadata.activation import (
     supplemental_energy, energy_terms)
 from .metadata import file_information
-from weakref import WeakValueDictionary
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
@@ -469,7 +468,7 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def __init__(self, source_file, use_index=True):
         self.source_file = source_file
         self._source = _MzMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
         self._use_index = use_index
         self._run_information = self._get_run_attributes()
         self._instrument_config = {

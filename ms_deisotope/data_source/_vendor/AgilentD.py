@@ -32,7 +32,6 @@ import numpy as np
 from ms_deisotope.data_source.common import (
     ScanDataSource,
     RandomAccessScanSource,
-    ScanIterator,
     Scan,
     ScanBunch,
     PrecursorInformation,
@@ -472,7 +471,7 @@ _ADM = _AgilentDMetadataLoader
 _ADD = _AgilentDDirectory
 
 
-class AgilentDLoader(AgilentDDataInterface, _ADD, ScanIterator, RandomAccessScanSource, _ADM):
+class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
 
     def __init__(self, dirpath, **kwargs):
         self.dirpath = dirpath
@@ -492,7 +491,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, ScanIterator, RandomAccessScan
         self._scan_types_flags = self.source.MSScanFileInformation.ScanTypes
 
         self._producer = self._scan_group_iterator()
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
         self._index = self._pack_index()
         self._get_instrument_info()
 
@@ -508,7 +507,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, ScanIterator, RandomAccessScan
 
     def reset(self):
         self.make_iterator(None)
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
 
     def close(self):
         # seems to make attempting to re-open the same datafile cause a segfault

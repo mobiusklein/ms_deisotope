@@ -28,6 +28,18 @@ class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
         return hash(self.name)
 
     def is_a(self, term):
+        """Test whether this entity is exactly ``term`` or a specialization
+        of ``term``
+
+        Parameters
+        ----------
+        term : str or :class:`Term`
+            The entity to compare to
+
+        Returns
+        -------
+        bool
+        """
         return term == self.name or term in self.specialization
 
 

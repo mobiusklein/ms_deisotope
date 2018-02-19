@@ -1,7 +1,5 @@
 # pragma: no cover
 import re
-import warnings
-from weakref import WeakValueDictionary
 from collections import OrderedDict, defaultdict
 
 import logging
@@ -9,13 +7,14 @@ import logging
 import numpy as np
 
 from ms_deisotope.data_source.common import (
-    ScanDataSource, ScanIterator, RandomAccessScanSource,
+    ScanDataSource, RandomAccessScanSource,
     Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
     ActivationInformation, IsolationWindow,
     ScanAcquisitionInformation, ScanEventInformation, ScanWindow,
     component, ComponentGroup, InstrumentInformation,
-    FileInformation, SourceFile, MultipleActivationInformation)
-from .metadata.activation import supplemental_term_map, dissociation_methods_map
+    FileInformation, MultipleActivationInformation)
+from .metadata.activation import (supplemental_term_map, dissociation_methods_map)
+from .metadata.file_information import (MS_MS1_Spectrum, MS_MSn_Spectrum)
 from ms_deisotope.utils import Base
 
 
@@ -128,6 +127,18 @@ class FilterLine(str):
 
 
 def filter_line_parser(line):
+    """Parses instrument information from Thermo's filter string
+
+    Parameters
+    ----------
+    line : str
+        The filter string associated with a scan
+
+    Returns
+    -------
+    dict
+        Fields extracted from the filter string
+    """
     words = line.upper().split(" ")
     values = dict()
     i = 0
@@ -259,11 +270,11 @@ class _RawFileMetadataLoader(object):
         sf = fi.source_files[0]
         sf.add_checksum("sha1")
         if 1 in self._scan_type_index:
-            fi.add_content("MS1 spectrum")
+            fi.add_content(MS_MS1_Spectrum)
         scan_types = sorted(self._scan_type_index, reverse=True)
         if scan_types:
             if scan_types[0] > 1:
-                fi.add_content("MSn spectrum")
+                fi.add_content(MS_MSn_Spectrum)
         return fi
 
 
@@ -557,13 +568,14 @@ class ThermoRawDataInterface(ScanDataSource):
         return annots
 
 
-class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterator, _RawFileMetadataLoader):
+class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMetadataLoader):
     def __init__(self, source_file, _loadmetadata=True, **kwargs):
         self.source_file = source_file
         self._source = _ThermoRawFileAPI(self.source_file)
         self._producer = None
+        self._scan_type_index = dict()
         self.make_iterator()
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
         self._index = self._pack_index()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
         self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
@@ -571,6 +583,20 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
             self._method = _InstrumentMethod(self._source.GetInstMethod())
             self._build_scan_type_index()
             self._get_instrument_info()
+
+    def _has_ms1_scans(self):
+        if self._scan_type_index:
+            return 1 in self._scan_type_index
+        else:
+            # metadata has not been loaded so best to assume there is
+            return True
+
+    def _has_msn_scans(self):
+        if self._scan_type_index:
+            return max(self._scan_type_index) > 1
+        else:
+            # metadata has not been loaded so best to assume there is
+            return True
 
     def __reduce__(self):
         return self.__class__, (self.source_file, False)
@@ -598,7 +624,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, ScanIterat
 
     def reset(self):
         self.make_iterator(None)
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
 
     def get_scan_by_id(self, scan_id):
         """Retrieve the scan object for the specified scan id.

@@ -1,5 +1,4 @@
 import re
-from weakref import WeakValueDictionary
 from collections import OrderedDict
 import codecs
 
@@ -211,7 +210,7 @@ class MGFLoader(MGFInterface, ScanIterator):
         self.encoding = encoding
         self._index = self._index_file()
         self._source = self._create_parser()
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
         self.make_iterator()
 
     def _create_parser(self):
@@ -250,12 +249,12 @@ class MGFLoader(MGFInterface, ScanIterator):
         except (IOError, AttributeError):
             pass
         self.make_iterator(None)
-        self._scan_cache = WeakValueDictionary()
+        self.initialize_scan_cache()
 
     def _make_default_iterator(self):
         return iter(self._source)
 
-    def make_iterator(self, iterator=None, grouped=True):
+    def make_iterator(self, iterator=None, grouped=False):
         self.iteration_mode = 'single'
         self._producer = self._single_scan_iterator(iterator)
 

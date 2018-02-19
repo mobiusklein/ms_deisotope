@@ -1,7 +1,5 @@
 import logging
 
-from ms_deisotope.data_source.common import (ScanIterator, RandomAccessScanSource)
-
 try:
     from ms_deisotope.data_source._vendor.AgilentD import (
         AgilentDLoader, register_dll_dir, AgilentDScanPtr,

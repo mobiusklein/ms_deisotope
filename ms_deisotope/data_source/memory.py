@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from .common import (
-    ScanBunch, ScanIterator, ScanDataSource, RandomAccessScanSource,
+    ScanBunch, ScanDataSource, RandomAccessScanSource,
     Scan, ProcessedScan)
 
 try:
@@ -189,7 +189,7 @@ class MemoryScanInterface(ScanDataSource):
         raise NotImplementedError()
 
 
-class MemoryScanLoader(MemoryScanInterface, ScanIterator, RandomAccessScanSource):
+class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
 
     def __init__(self, scans, **kwargs):
         self._scans = tuple(sorted(scans, key=lambda x: x.scan_time))
