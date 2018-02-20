@@ -418,12 +418,50 @@ cdef class DeconvolutedPeakSet:
         return DeconvolutedPeakSet, (self.peaks, )
 
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
+        '''Find the peak that best matches ``neutral_mass`` within ``error_tolerance`` mass accuracy ppm.
+
+        If ``use_mz`` is True, instead of matching neutral masses, match peaks using m/z instead.
+
+        Parameters
+        ----------
+        neutral_mass: double
+            The mass to search for
+        error_tolerance: double
+            The PPM error tolerance to apply
+        use_mz: bool
+            Whether to search using m/z instead of neutral mass
+
+        Returns
+        -------
+        DeconvolutedPeak
+            The found peak, or None if no peak is found
+        '''
         if use_mz:
             return binary_search_mz(self._mz_ordered, neutral_mass, error_tolerance)
         else:
             return binary_search_neutral_mass(self.peaks, neutral_mass, error_tolerance)
 
     cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
+        '''Find the peak that best matches ``neutral_mass`` within ``error_tolerance`` mass accuracy ppm.
+
+        If ``use_mz`` is True, instead of matching neutral masses, match peaks using m/z instead.
+
+        If :attr:`indexed` is not :const:`True`, then :meth:`reindex` will be called.
+
+        Parameters
+        ----------
+        neutral_mass: double
+            The mass to search for
+        error_tolerance: double
+            The PPM error tolerance to apply
+        use_mz: bool
+            Whether to search using m/z instead of neutral mass
+
+        Returns
+        -------
+        DeconvolutedPeak
+            The found peak, or None if no peak is found
+        '''
         if not self.indexed:
             self.reindex()
         return self._has_peak(neutral_mass, error_tolerance, use_mz)
@@ -435,6 +473,20 @@ cdef class DeconvolutedPeakSet:
         return <tuple>PyTuple_GetSlice(self.peaks, start, end)
 
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
+        '''Find all peaks that match ``neutral_mass`` within ``error_tolerance`` mass accuracy ppm.
+
+        Parameters
+        ----------
+        neutral_mass: double
+            The mass to search for
+        error_tolerance: double
+            The PPM error tolerance to apply
+
+        Returns
+        -------
+        tuple of DeconvolutedPeak
+            The found peaks
+        '''
         cdef:
             double lo, hi, lo_err, hi_err
             int lo_ix, hi_ix
@@ -455,11 +507,39 @@ cdef class DeconvolutedPeakSet:
         return <tuple>PyTuple_GetSlice(self.peaks, lo_ix, hi_ix)
 
     cdef DeconvolutedPeak _get_nearest_peak(self, double neutral_mass, double* errout):
+        '''Find the peak nearest to ``neutral_mass``, regardless of error.
+
+        Parameters
+        ----------
+        neutral_mass: double
+            The mass to search for
+        errout: double*
+            A pointer to store the mass error in
+
+        Returns
+        -------
+        DeconvolutedPeak
+            The nearest peak
+        '''
         cdef DeconvolutedPeak peak
         peak = binary_search_nearest_neutral_mass(self.peaks, neutral_mass, errout)
         return peak
 
     def get_nearest_peak(self, double neutral_mass):
+        '''Find the peak nearest to ``neutral_mass``, regardless of error.
+
+        Parameters
+        ----------
+        neutral_mass: double
+            The mass to search for
+
+        Returns
+        -------
+        DeconvolutedPeak
+            The nearest peak
+        double
+            The error between ``neutral_mass`` and the found peak
+        '''
         cdef:
             DeconvolutedPeak peak
             double errout
@@ -467,6 +547,26 @@ cdef class DeconvolutedPeakSet:
         return peak, errout
 
     def between(self, m1, m2, tolerance=1e-5, use_mz=False):
+        """Retrieve a :class:`DeconvolutedPeakSet` containing all the peaks
+        whose mass is between ``m1`` and ``m2``.
+
+        These peaks are not copied.
+
+        If ``use_mz`` is :const:`True` then search by m/z instead of mass
+
+        Parameters
+        ----------
+        m1 : float
+            The lower mass limit
+        m2 : float
+            The upper mass limit
+        use_mz: bool
+            Whether to search for m/z instead of neutral mass
+
+        Returns
+        -------
+        DeconvolutedPeakSet
+        """
         acc = []
         collecting = False
         if not use_mz:
@@ -867,6 +967,24 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         return self
 
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
+        '''Find the peak that best matches ``neutral_mass`` within ``error_tolerance`` mass accuracy ppm.
+
+        If ``use_mz`` is True, instead of matching neutral masses, match peaks using m/z instead.
+
+        Parameters
+        ----------
+        neutral_mass: double
+            The mass to search for
+        error_tolerance: double
+            The PPM error tolerance to apply
+        use_mz: bool
+            Whether to search using m/z instead of neutral mass
+
+        Returns
+        -------
+        DeconvolutedPeak
+            The found peak, or None if no peak is found
+        '''
         cdef:
             int status
             size_t i, n, s
@@ -904,6 +1022,20 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         return status, start, end
 
     cpdef tuple all_peaks_for(self, double neutral_mass, double tolerance=1e-5):
+        '''Find all peaks that match ``neutral_mass`` within ``error_tolerance`` mass accuracy ppm.
+
+        Parameters
+        ----------
+        neutral_mass: double
+            The mass to search for
+        error_tolerance: double
+            The PPM error tolerance to apply
+
+        Returns
+        -------
+        tuple of DeconvolutedPeak
+            The found peaks
+        '''
         cdef:
             int status
             size_t n, s, start, end
@@ -929,6 +1061,25 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         status = _binary_search_interval(
             self.neutral_mass_array, neutral_mass, tolerance, n, start, end)
         return status
+
+    def test_interval(self, double value):
+        cdef:
+            int status
+            size_t start, end
+            size_t i
+
+        status = find_search_interval(self.interval_index, value, &start, &end)
+        return start, end, interpolate_index(self.interval_index, value)
+
+    def find_interval_for(self, double value):
+        return interpolate_index(self.interval_index, value)
+
+    def check_interval(self, size_t i):
+        cdef:
+            index_cell cell
+        cell = self.interval_index.index[i]
+        return cell
+
 
 
 cdef int _binary_search_with_hint(double* array, double target, double error_tolerance, size_t n, size_t hint, size_t* out) nogil:
