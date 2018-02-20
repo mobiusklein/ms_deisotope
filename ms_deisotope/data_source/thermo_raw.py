@@ -580,9 +580,12 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         self._first_scan_time = self.get_scan_by_index(0).scan_time
         self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
         if _loadmetadata:
-            self._method = _InstrumentMethod(self._source.GetInstMethod())
+            self._method = self._parse_method()
             self._build_scan_type_index()
             self._get_instrument_info()
+
+    def _parse_method(self):
+        return _InstrumentMethod(self._source.GetInstMethod())
 
     def _has_ms1_scans(self):
         if self._scan_type_index:
