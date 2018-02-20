@@ -932,6 +932,31 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
 
 
 cdef int _binary_search_with_hint(double* array, double target, double error_tolerance, size_t n, size_t hint, size_t* out) nogil:
+    '''Performs a best-matching binary search with a hint at the lower bound as well as the upper bound.
+
+    The best-matching step occurs once a match is found, iterating forwards and backwards from the initial
+    match until an index is found that minimizes the parts-per-million error with ``target``
+
+    The binary search starts with the lower bound ``lo = hint`` instead of ``lo = 0``. The upper bound
+    ``hi = n`` can be used as a hint to instruct the search to only consider a small segment of the array.
+
+    Parameters
+    ----------
+    array: double*
+        The array of doubles to search within
+    target: double
+        The value to search for
+    error_tolerance: double
+        The parts-per-million error tolerance to use to select solutions
+    n: size_t
+        The upper limit into ``array`` to search, usually the size of the array
+        but may also be made lower to reduce the space to search
+    hint: size_t
+        The lower limit into ``array`` to search. Leaving this as 0
+        will make this behave the same as :func:`_binary_search`.
+    out: size_t*
+        The best matching index
+    '''
     cdef:
         size_t lo, hi, mid, i, j
         size_t best_index

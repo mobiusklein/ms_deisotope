@@ -415,8 +415,8 @@ try:
 
     from ms_deisotope._c.peak_set import (
         Envelope, _Index, DeconvolutedPeak, DeconvolutedPeakSolution,
-        # DeconvolutedPeakSetIndexed as DeconvolutedPeakSet
-        DeconvolutedPeakSet
+        DeconvolutedPeakSetIndexed as DeconvolutedPeakSet
+        # DeconvolutedPeakSet
     )
 
 except ImportError:
