@@ -1040,6 +1040,8 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             int status
             size_t n, s, start, end
         n = self._size
+        if not self.indexed:
+            self.reindex()
         if n == 0:
             return ()
         if self.interval_index != NULL:
