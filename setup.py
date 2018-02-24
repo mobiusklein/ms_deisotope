@@ -207,6 +207,7 @@ def run_setup(include_cext=True):
             'License :: OSI Approved :: BSD License',
             'Topic :: Scientific/Engineering :: Bio-Informatics'],
         install_requires=install_requires,
+        include_package_data=True,
         zip_safe=False)
 
 
