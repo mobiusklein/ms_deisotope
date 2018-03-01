@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from collections import defaultdict
 from brainpy import (
     calculate_mass, neutral_mass, PROTON,
@@ -21,6 +23,16 @@ def shift_isotopic_pattern(mz, cluster):
 
 
 class TheoreticalIsotopicPattern(object):
+    """Represent a theoretical isotopic peak list
+
+    Attributes
+    ----------
+    peaklist: list of :class:`brainpy.TheoreticalPeak`
+        The theoretical isotopic pattern peak list
+    origin: float
+        The monoisotopic peak's m/z
+    """
+
     def __init__(self, peaklist, origin, offset=None):
         self.peaklist = list(peaklist)
         self.origin = float(origin)
@@ -30,9 +42,6 @@ class TheoreticalIsotopicPattern(object):
 
     def get(self, i):
         return self.peaklist[i]
-
-    def get_size(self):
-        return len(self.peaklist)
 
     def __len__(self):
         return len(self.peaklist)
@@ -52,18 +61,18 @@ class TheoreticalIsotopicPattern(object):
     def truncate_after(self, truncate_after=0.95):
         cumsum = 0
         result = []
-        n = self.get_size()
+        n = len(self)
         for i in range(n):
-            peak = self.get(i)
+            peak = self[i]
             cumsum += peak.intensity
             result.append(peak)
             if cumsum >= truncate_after:
                 break
         self.peaklist = result
-        n = self.get_size()
+        n = len(self)
         normalizer = 1. / cumsum
         for i in range(n):
-            peak = self.get(i)
+            peak = self[i]
             peak.intensity *= normalizer
         return self
 
@@ -78,7 +87,7 @@ class TheoreticalIsotopicPattern(object):
     def ignore_below(self, ignore_below=0):
         total = 0
         kept_tid = []
-        n = self.get_size()
+        n = len(self)
         for i in range(n):
             p = self.get(i)
             if (p.intensity < ignore_below) and (i > 1):
@@ -89,7 +98,7 @@ class TheoreticalIsotopicPattern(object):
                 kept_tid.append(p)
         self.peaklist = kept_tid
         self.offest = self.origin - self.peaklist[0].mz
-        n = self.get_size()
+        n = len(self)
         for i in range(n):
             p = self.get(i)
             p.intensity /= total
@@ -143,11 +152,50 @@ class TheoreticalIsotopicPattern(object):
 
 @dict_proxy("base_composition")
 class Averagine(object):
+    """An isotopic model which can be used to interpolate the composition
+    of a class of molecule given an average monomer composition and a theoretical
+    polymer mass
+
+    Implements the :class:`Mapping` interface.
+
+    Attributes
+    ----------
+    base_composition: Mapping
+        A mapping from element symbol to average count (float) of that element
+        for the average monomer
+    base_mass : float
+        The base mass of the average monomer. Calculated from :attr:`base_composition`
+    """
+
     def __init__(self, base_composition):
         self.base_composition = dict(base_composition)
         self.base_mass = calculate_mass(self.base_composition)
 
     def scale(self, mz, charge=1, charge_carrier=PROTON):
+        """Given an m/z and a charge state, interpolate the composition
+        of the polymer with the matching neutral mass
+
+        Parameters
+        ----------
+        mz : float
+            The reference m/z to calculate the neutral mass to interpolate from
+        charge : int, optional
+            The reference charge state to calculate the neutral mass. Defaults to 1
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to the mass of a proton.
+
+        Returns
+        -------
+        Mapping
+            The interpolated composition for the calculated neutral mass,
+            rounded to the nearest integer and hydrogen corrected.
+
+        References
+        ----------
+        Senko, M. W., Beu, S. C., & McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations
+        for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+        Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8
+        """
         neutral = neutral_mass(mz, charge, charge_carrier)
 
         scale = neutral / self.base_mass
@@ -166,18 +214,32 @@ class Averagine(object):
         return scaled
 
     def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
+        """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+        by theoretical peak height and density.
+
+        Parameters
+        ----------
+        mz : float
+            The reference m/z to calculate the neutral mass to interpolate from
+        charge : int, optional
+            The reference charge state to calculate the neutral mass. Defaults to 1
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to the mass of a proton.
+        truncate_after : float, optional
+            The percentage of the signal in the theoretical isotopic pattern to include.
+            Defaults to 0.95, including the first 95% of the signal in the generated pattern
+        ignore_below : float, optional
+            Omit theoretical peaks whose intensity is below this number.
+            Defaults to 0.0
+
+        Returns
+        -------
+        :class:`.TheoreticalIsotopicPattern`
+            The generated and thresholded pattern
+        """
         composition = self.scale(mz, charge, charge_carrier)
         peaklist = isotopic_variants(composition, charge=charge)
         tid = TheoreticalIsotopicPattern(peaklist, peaklist[0].mz, 0)
-        # cumsum = 0
-        # result = []
-        # for peak in isotopic_variants(composition, charge=charge):
-        #     cumsum += peak.intensity
-        #     result.append(peak)
-        #     if cumsum >= truncate_after:
-        #         break
-        # for peak in result:
-        #     peak.intensity *= 1. / cumsum
         tid.shift(mz)
         if truncate_after < 1.0:
             tid.truncate_after(truncate_after)
@@ -195,13 +257,33 @@ class Averagine(object):
         return hash(frozenset(self.base_composition.items()))
 
 
-def average_compositions(compositions):
+def average_compositions(compositions, weights=None):
+    """Calculate the average composition
+
+    Parameters
+    ----------
+    compositions: Iterable
+        An Iterable of Mappings representing chemical compositions
+    weights: Iterable, optional
+        An optional weight vector
+
+    Returns
+    -------
+    dict
+        The average composition
+    """
     n = 0
+    if weights is None:
+        weights = [1] * len(compositions)
+    else:
+        if len(weights) != len(compositions):
+            raise ValueError("The size of weights must match the size of compositions")
     result = defaultdict(float)
-    for comp in compositions:
-        n += 1
+    for i, comp in enumerate(compositions):
+        w = weights[i]
+        n += w
         for k, v in comp.items():
-            result[k] += v
+            result[k] += v * w
     for k, v in list(result.items()):
         result[k] = v / n
     return dict(result)
@@ -261,7 +343,34 @@ class AveragineCache(object):
             self.backend[key_mz, charge, charge_carrier] = tid.clone()
             return tid
 
-    isotopic_cluster = has_mz_charge_pair
+    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
+        """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+        by theoretical peak height and density.
+
+        Mimics :meth:`.Averagine.isotopic_cluster` but uses the object's cache through
+        :meth:`has_mz_charge_pair`.
+
+        Parameters
+        ----------
+        mz : float
+            The reference m/z to calculate the neutral mass to interpolate from
+        charge : int, optional
+            The reference charge state to calculate the neutral mass. Defaults to 1
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to the mass of a proton.
+        truncate_after : float, optional
+            The percentage of the signal in the theoretical isotopic pattern to include.
+            Defaults to 0.95, including the first 95% of the signal in the generated pattern
+        ignore_below : float, optional
+            Omit theoretical peaks whose intensity is below this number.
+            Defaults to 0.0
+
+        Returns
+        -------
+        :class:`.TheoreticalIsotopicPattern`
+            The generated and thresholded pattern
+        """
+        return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after, ignore_below)
 
     def __repr__(self):
         return "AveragineCache(%r)" % self.averagine

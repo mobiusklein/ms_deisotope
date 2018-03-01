@@ -2,6 +2,7 @@ import os
 from .mzml import MzMLLoader
 from .mzxml import MzXMLLoader
 from .mgf import MGFLoader
+from . import _compression
 
 guessers = []
 reader_types = [MzMLLoader, MzXMLLoader, MGFLoader]
@@ -57,14 +58,19 @@ def guess_type_from_path(file_path):
 def guess_type_from_file_sniffing(file_path):
     with open(file_path, 'rb') as handle:
         header = handle.read(1000)
-        if b"mzML" in header:
-            return MzMLLoader
-        elif b"mzXML" in header:
-            return MzXMLLoader
-        elif b"BEGIN IONS" in header:
-            return MGFLoader
-        else:
-            raise ValueError("Cannot determine ScanLoader type from header")
+
+    if _compression.starts_with_gz_magic(header):
+        with _compression.GzipFile(file_path, mode='rb') as handle:
+            header = handle.read(1000)
+
+    if b"mzML" in header:
+        return MzMLLoader
+    elif b"mzXML" in header:
+        return MzXMLLoader
+    elif b"BEGIN IONS" in header:
+        return MGFLoader
+    else:
+        raise ValueError("Cannot determine ScanLoader type from header")
 
 
 def guess_type(file_path):
@@ -83,4 +89,9 @@ def MSFileLoader(file_path, *args, **kwargs):
     random access.
     """
     reader_type = guess_type(file_path)
-    return reader_type(file_path, *args, **kwargs)
+    is_gz_compressed = _compression.test_gzipped(file_path)
+    if is_gz_compressed:
+        fobj = _compression.get_opener(file_path)
+    else:
+        fobj = file_path
+    return reader_type(fobj, *args, **kwargs)

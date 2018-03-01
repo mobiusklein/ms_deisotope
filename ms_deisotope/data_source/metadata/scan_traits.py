@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, Sequence
 
 
 def isclose(x, y, atol=1e-3):
@@ -30,6 +30,10 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     def upper_bound(self):
         return self.target + self.upper
 
+    @property
+    def width(self):
+        return self.lower + self.upper
+
     def __contains__(self, x):
         return self.spans(x, 0.1)
 
@@ -56,16 +60,24 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
         return not (self == other)
 
 
-class ScanAcquisitionInformation(object):
+class ScanAcquisitionInformation(Sequence):
+    """Describes the set distinct scans along the measurable range by
+    the instrument that were performed to produce the acquired data
+
+    Attributes
+    ----------
+    combination : str
+        A controlled vocabulary string describing the way in which scans were combined
+    scan_list : list of ScanEventInformation
+        The list of scan events performed
+    """
+
     def __init__(self, combination, scan_list):
         self.combination = combination
         self.scan_list = scan_list
 
     def __getitem__(self, i):
         return self.scan_list[i]
-
-    def __iter__(self):
-        return iter(self.scan_list)
 
     def __len__(self):
         return len(self.scan_list)

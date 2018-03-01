@@ -6,13 +6,13 @@
 Welcome to ms_deisotope's documentation!
 ========================================
 
-``ms_deisotope`` contains a variety of implementations for deisotoping and charge
-state deconvolution of mass spectra. It uses ``ms_peak_picker`` to perform the low
+:mod:`ms_deisotope` contains a variety of implementations for deisotoping and charge
+state deconvolution of mass spectra. It uses :mod:`ms_peak_picker` to perform the low
 level signal processing needed to translate profile spectra into centroided *m/z* peak lists
-and ``brainpy`` to generate theoretical isotopic patterns that it fits to these centroids
+and :mod:`brainpy` to generate theoretical isotopic patterns that it fits to these centroids
 to produce deconvoluted *neutral mass* peak lists.
 
-``ms_deisotope`` also includes a data access layer for reading mass spectra from several
+:mod:`ms_deisotope` also includes a data access layer for reading mass spectra from several
 common formats, including instrument information and and file metadata.
 
 .. toctree::
@@ -20,6 +20,7 @@ common formats, including instrument information and and file metadata.
    :caption: Contents:
 
    Data Access <data_source/index>
+   Deconvolution <deconvolution/index>
 
 
 

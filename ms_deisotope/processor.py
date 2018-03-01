@@ -584,6 +584,7 @@ class ScanProcessor(Base):
         self.reader.start_from_scan(*args, **kwargs)
         return self
 
+
 class EmptyScanError(ValueError):
     def __init__(self, msg, scan_id=None):
         ValueError.__init__(self, msg)

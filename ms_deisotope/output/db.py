@@ -178,7 +178,7 @@ class MSScan(Base):
 
             deconvoluted_peak_set = DeconvolutedPeakSet(
                 deconvoluted_peak_set_items)
-            deconvoluted_peak_set._reindex()
+            deconvoluted_peak_set.reindex()
         else:
             deconvoluted_peak_set = DeconvolutedPeakSet([])
 

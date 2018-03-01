@@ -1,6 +1,4 @@
 import json
-import io
-import gzip
 import os
 
 from .common import (
@@ -23,6 +21,14 @@ def in_minutes(x):
 
 
 class XMLReaderBase(RandomAccessScanSource):
+    '''A common implementation of :mod:`pyteomics`-based XML file formats.
+
+    Attributes
+    ----------
+    index: :class:`pyteomics.xml.ByteEncodingOrderedDict`
+        The byte offset index used to achieve fast random access
+    '''
+
     @property
     def index(self):
         return self._source._offset_index
@@ -364,29 +370,3 @@ def iterparse_until(source, target_name, quit_name):
                     yield tag
                 else:
                     tag.clear()
-
-
-def test_gzipped(f):
-    if isinstance(f, basestring):
-        f = io.open(f, 'rb')
-    current = f.tell()
-    f.seek(0)
-    magic = f.read(2)
-    f.seek(current)
-    return magic != br'\037\213'
-
-
-DEFAULT_BUFFER_SIZE = int(2e6)
-
-
-def get_opener(f, buffer_size=None):
-    if buffer_size is None:
-        buffer_size = DEFAULT_BUFFER_SIZE
-    if not hasattr(f, 'read'):
-        f = io.open(f, 'rb')
-    buffered_reader = io.BufferedReader(f, buffer_size)
-    if test_gzipped(f):
-        handle = gzip.GzipFile(fileobj=buffered_reader, mode='rb')
-    else:
-        handle = buffered_reader
-    return handle

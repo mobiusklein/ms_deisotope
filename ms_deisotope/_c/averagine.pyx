@@ -67,6 +67,20 @@ cdef dict scale_dict(dict data, double factor):
 
 
 cdef class Averagine(object):
+    """An isotopic model which can be used to interpolate the composition
+    of a class of molecule given an average monomer composition and a theoretical
+    polymer mass
+
+    Implements the :class:`Mapping` interface.
+
+    Attributes
+    ----------
+    base_composition: Mapping
+        A mapping from element symbol to average count (float) of that element
+        for the average monomer
+    base_mass : float
+        The base mass of the average monomer. Calculated from :attr:`base_composition`
+    """
 
     def __init__(self, object base_composition):
         self.base_composition = dict(**base_composition)
@@ -86,6 +100,30 @@ cdef class Averagine(object):
 
     @cython.cdivision
     cpdef dict scale(self, double mz, int charge=1, double charge_carrier=PROTON):
+        """Given an m/z and a charge state, interpolate the composition
+        of the polymer with the matching neutral mass
+
+        Parameters
+        ----------
+        mz : float
+            The reference m/z to calculate the neutral mass to interpolate from
+        charge : int, optional
+            The reference charge state to calculate the neutral mass. Defaults to 1
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to the mass of a proton.
+
+        Returns
+        -------
+        Mapping
+            The interpolated composition for the calculated neutral mass,
+            rounded to the nearest integer and hydrogen corrected.
+
+        References
+        ----------
+        Senko, M. W., Beu, S. C., & McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations
+        for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+        Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8
+        """
         cdef:
             double neutral, scale, scaled_mass
             dict scaled
@@ -134,6 +172,29 @@ cdef class Averagine(object):
 
     cpdef TheoreticalIsotopicPattern isotopic_cluster(self, double mz, int charge=1, double charge_carrier=PROTON,
                                                       double truncate_after=0.95, double ignore_below=0.0):
+        """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+        by theoretical peak height and density.
+
+        Parameters
+        ----------
+        mz : float
+            The reference m/z to calculate the neutral mass to interpolate from
+        charge : int, optional
+            The reference charge state to calculate the neutral mass. Defaults to 1
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to the mass of a proton.
+        truncate_after : float, optional
+            The percentage of the signal in the theoretical isotopic pattern to include.
+            Defaults to 0.95, including the first 95% of the signal in the generated pattern
+        ignore_below : float, optional
+            Omit theoretical peaks whose intensity is below this number.
+            Defaults to 0.0
+
+        Returns
+        -------
+        :class:`.TheoreticalIsotopicPattern`
+            The generated and thresholded pattern
+        """
         cdef:
             TheoreticalIsotopicPattern out
         out = self._isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
@@ -271,7 +332,7 @@ cdef class TheoreticalIsotopicPattern(object):
                 continue
             else:
                 total += p.intensity
-                PyList_Append(kept_tid, p)
+                kept_tid.append(p)
         self.peaklist = kept_tid
         self.offset = self.origin - self.get(0).mz
         n = self.get_size()
@@ -503,6 +564,32 @@ cdef class AveragineCache(object):
     cpdef TheoreticalIsotopicPattern isotopic_cluster(
                                 self, double mz, int charge=1, double charge_carrier=PROTON,
                                 double truncate_after=0.95, double ignore_below=0.0):
+        """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+        by theoretical peak height and density.
+
+        Mimics :meth:`.Averagine.isotopic_cluster` but uses the object's cache through
+        :meth:`has_mz_charge_pair`.
+
+        Parameters
+        ----------
+        mz : float
+            The reference m/z to calculate the neutral mass to interpolate from
+        charge : int, optional
+            The reference charge state to calculate the neutral mass. Defaults to 1
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to the mass of a proton.
+        truncate_after : float, optional
+            The percentage of the signal in the theoretical isotopic pattern to include.
+            Defaults to 0.95, including the first 95% of the signal in the generated pattern
+        ignore_below : float, optional
+            Omit theoretical peaks whose intensity is below this number.
+            Defaults to 0.0
+
+        Returns
+        -------
+        :class:`.TheoreticalIsotopicPattern`
+            The generated and thresholded pattern
+        """
         return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after, ignore_below)
 
     def __getitem__(self, key):
