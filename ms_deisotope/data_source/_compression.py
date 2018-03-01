@@ -1,11 +1,15 @@
 import io
 import gzip
 
+from six import string_types as basestring
+
 try:
     import idzip
     GzipFile = idzip.IdzipFile
+    has_idzip = True
 except (ImportError, AttributeError):
     GzipFile = gzip.GzipFile
+    has_idzip = False
 
 
 DEFAULT_BUFFER_SIZE = int(2e6)
