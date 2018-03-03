@@ -389,7 +389,10 @@ class _MzMLMetadataLoader(object):
             The description of the file's contents and its sources
         """
         desc = _find_section(self._source, "fileDescription")
-        fi = FileInformation(desc.get("fileContent", {}), [])
+        contents = desc.get("fileContent", {})
+        if not isinstance(contents, dict):
+            contents = {k: '' for k in contents}
+        fi = FileInformation(contents, [])
         for sf_data in desc.get('sourceFileList', {}).get("sourceFile", []):
             sf_data = sf_data.copy()
             fi.add_file(
