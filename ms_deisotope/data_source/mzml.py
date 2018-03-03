@@ -395,11 +395,19 @@ class _MzMLMetadataLoader(object):
         fi = FileInformation(contents, [])
         for sf_data in desc.get('sourceFileList', {}).get("sourceFile", []):
             sf_data = sf_data.copy()
-            fi.add_file(
-                SourceFile(
-                    sf_data.pop('name', ''),
-                    sf_data.pop('location', ''), sf_data.pop('id', ''),
-                    parameters=sf_data))
+            sf_name = sf_data.pop('name', '')
+            sf_location = sf_data.pop('location', '')
+            sf_id = sf_data.pop('id', '')
+            # incorrectly expanded globs may contaminate the "name" attribute
+            if isinstance(sf_name, list):
+                temp = sf_name
+                sf_name = temp[0]
+                for d in temp[1:]:
+                    sf_data[d] = ''
+            sf = SourceFile(
+                sf_name, sf_location, sf_id,
+                parameters=sf_data)
+            fi.add_file(sf)
         return fi
 
     def _convert_instrument(self, configuration):

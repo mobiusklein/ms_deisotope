@@ -13,6 +13,7 @@ scan_ids = [
 
 class TestMzMLLoaderScanBehavior(unittest.TestCase):
     path = datafile("three_test_scans.mzML")
+    only_ms2_path = datafile("only_ms2_mzml.mzML")
 
     @property
     def reader(self):
@@ -154,6 +155,23 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         bunch = next(reader)
         precursor = bunch.precursor
         assert len(precursor.annotations) > 0
+
+    def test_iteration_mode_detection(self):
+        reader = infer_type.MSFileLoader(self.only_ms2_path)
+        assert reader.iteration_mode == 'single'
+
+    def test_source_file_parsing(self):
+        reader = self.reader
+        finfo = reader.file_description()
+        sf = finfo.source_files[0]
+        assert sf.name == 'three_test_scans.mzML'
+        assert isinstance(sf.path, str)
+
+        reader = infer_type.MSFileLoader(self.only_ms2_path)
+        finfo = reader.file_description()
+        sf = finfo.source_files[0]
+        assert sf.name == 'analysis.baf'
+        assert isinstance(sf.path, str)
 
 
 if __name__ == '__main__':
