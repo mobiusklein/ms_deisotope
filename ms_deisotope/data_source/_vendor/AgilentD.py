@@ -502,6 +502,9 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
     def index(self):
         return self._index
 
+    def __len__(self):
+        return len(self.index)
+
     def __repr__(self):
         return "AgilentDLoader(%r)" % (self.dirpath)
 

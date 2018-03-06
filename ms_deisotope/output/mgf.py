@@ -62,6 +62,10 @@ class MGFSerializer(HeaderedDelimitedWriter):
 
 
 class ProcessedMGFDeserializer(MGFLoader):
+
+    def __init__(self, source_file, encoding='ascii'):
+        super(ProcessedMGFDeserializer, self).__init__(source_file, encoding)
+
     def _create_parser(self):
         return pymgf.read(self.source_file, read_charges=True,
                           convert_arrays=1, encoding=self.encoding)
@@ -70,18 +74,29 @@ class ProcessedMGFDeserializer(MGFLoader):
         mz_array = scan['m/z array']
         intensity_array = scan["intensity array"]
         charge_array = scan['charge array']
-        peaks = []
-        for i in range(len(mz_array)):
-            peak = DeconvolutedPeak(
-                neutral_mass(mz_array[i], charge_array[i]), intensity_array[i], charge_array[i],
-                intensity_array[i], i, 0)
-            peaks.append(peak)
-        peak_set = DeconvolutedPeakSet(peaks)
-        peak_set.reindex()
-        return peak_set
+        return build_deconvoluted_peak_set_from_arrays(mz_array, intensity_array, charge_array)
 
     def _make_scan(self, scan):
         scan = super(ProcessedMGFDeserializer, self)._make_scan(scan)
         scan.peak_set = None
         scan.deconvoluted_peak_set = self._build_peaks(scan._data)
         return scan.pack()
+
+
+def build_deconvoluted_peak_set_from_arrays(mz_array, intensity_array, charge_array):
+    peaks = []
+    for i in range(len(mz_array)):
+        peak = DeconvolutedPeak(
+            neutral_mass(mz_array[i], charge_array[i]), intensity_array[i], charge_array[i],
+            intensity_array[i], i, 0)
+        peaks.append(peak)
+    peak_set = DeconvolutedPeakSet(peaks)
+    peak_set.reindex()
+    return peak_set
+
+
+try:
+    _build_deconvoluted_peak_set_from_arrays = build_deconvoluted_peak_set_from_arrays
+    from ms_deisotope._c.utils import build_deconvoluted_peak_set_from_arrays
+except ImportError:
+    pass

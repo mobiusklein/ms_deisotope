@@ -198,7 +198,8 @@ def run_setup(include_cext=True):
         cmdclass=cmdclass,
         entry_points={
             'console_scripts': [
-                "ms-index = ms_deisotope.tools.indexing:main"
+                "ms-index = ms_deisotope.tools.indexing:main",
+                "ms-view = ms_deisotope.tools.view:main"
             ],
         },
         classifiers=[

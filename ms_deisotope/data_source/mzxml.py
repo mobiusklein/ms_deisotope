@@ -80,7 +80,7 @@ class _MzXMLMetadataLoader(object):
             ComponentGroup("analyzer", [analyzer], 2),
             ComponentGroup("detector", [detector], 3)
         ]
-        return InstrumentInformation(configuration['msInstrumentID'], parts)
+        return InstrumentInformation(configuration.get('msInstrumentID', 1), parts)
 
 
 class MzXMLDataInterface(ScanDataSource):

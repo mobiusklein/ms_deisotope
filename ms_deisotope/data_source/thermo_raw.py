@@ -617,6 +617,9 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             index[_make_id(sn)] = sn
         return index
 
+    def __len__(self):
+        return len(self.index)
+
     def close(self):
         if self._source is not None:
             self._source.Close()

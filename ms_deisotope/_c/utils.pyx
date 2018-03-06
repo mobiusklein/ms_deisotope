@@ -85,3 +85,37 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
     peak_set = DeconvolutedPeakSetIndexed(peaks)
     peak_set.reindex()
     return peak_set
+
+
+@cython.boundscheck(False)
+cpdef DeconvolutedPeakSetIndexed build_deconvoluted_peak_set_from_arrays(np.ndarray[double, ndim=1] mz_array,
+                                                                         np.ndarray[double, ndim=1] intensity_array,
+                                                                         np.ndarray[long, ndim=1] charge_array):
+    cdef:
+        list peaks
+        size_t n, i
+        double mz, peak_neutral_mass
+        int charge
+        DeconvolutedPeak peak
+        DeconvolutedPeakSetIndexed peak_set
+
+    peaks = []
+    n = mz_array.shape[0]
+    i = 0
+    for i in range(n):
+        mz = mz_array[i]
+        charge = charge_array[i]
+        peak_neutral_mass = neutral_mass(mz, charge)
+
+        peak = DeconvolutedPeak._create_simple(
+            peak_neutral_mass,
+            intensity_array[i],
+            charge_array[i],
+            intensity_array[i],
+            mz,
+            None)
+        peaks.append(peak)
+    peak_set = DeconvolutedPeakSetIndexed(peaks)
+    peak_set.reindex()
+    return peak_set
+

@@ -676,6 +676,10 @@ class RandomAccessScanSource(ScanIterator):
                 return None
         return None
 
+    @abc.abstractmethod
+    def __len__(self):
+        raise NotImplementedError()
+
 
 class DetachedAccessError(Exception):
     pass
@@ -1145,6 +1149,10 @@ class Scan(ScanBase):
         if self.peak_set is None:
             raise ValueError("Cannot deconvolute a scan that has not been "
                              "centroided. Call `pick_peaks` first.")
+        charge_range = kwargs.get("charge_range", (1, 8))
+        if self.polarity < 0 and max(charge_range) > 0:
+            charge_range = tuple(c * self.polarity for c in charge_range)
+        kwargs['charge_range'] = charge_range
         decon_results = deconvolute_peaks(self.peak_set, *args, **kwargs)
         self.deconvoluted_peak_set = decon_results.peak_set
         return self

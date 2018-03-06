@@ -251,6 +251,9 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
     def index(self):
         return self._index
 
+    def __len__(self):
+        return len(self.index)
+
     def _validate(self, scan):
         return True
 

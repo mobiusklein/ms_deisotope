@@ -398,7 +398,7 @@ class _MzMLMetadataLoader(object):
             sf_name = sf_data.pop('name', '')
             sf_location = sf_data.pop('location', '')
             sf_id = sf_data.pop('id', '')
-            # incorrectly expanded globs may contaminate the "name" attribute
+            # incorrectly merged parameters may contaminate the "name" attribute
             if isinstance(sf_name, list):
                 temp = sf_name
                 sf_name = temp[0]

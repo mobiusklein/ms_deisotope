@@ -52,6 +52,9 @@ class XMLReaderBase(RandomAccessScanSource):
         except AttributeError:
             pass
 
+    def __len__(self):
+        return len(self.index)
+
     def reset(self):
         """Reset the object, clearing out any existing
         state.
