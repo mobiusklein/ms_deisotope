@@ -533,7 +533,7 @@ class ScanIterator(ScanDataSource):
             yield ScanBunch(precursor_scan, product_scans)
 
     def _scan_cleared(self, scan):
-        self.scan_cache.pop(scan.id, None)
+        self.scan_cache.pop(self._make_cache_key(scan), None)
 
     def initialize_scan_cache(self):
         self._scan_cache = WeakValueDictionary()
