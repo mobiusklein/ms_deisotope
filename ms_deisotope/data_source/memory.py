@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import bisect
 from .common import (
     ScanBunch, ScanDataSource, RandomAccessScanSource,
     Scan, ProcessedScan)
@@ -191,8 +192,9 @@ class MemoryScanInterface(ScanDataSource):
 
 class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
 
-    def __init__(self, scans, **kwargs):
-        self._scans = tuple(sorted(scans, key=lambda x: x.scan_time))
+    def __init__(self, scans, binds=True, **kwargs):
+        self._scans = sorted(scans, key=lambda x: x.scan_time)
+        self._binds = binds
         self._producer = None
         self._scan_id_map = dict()
         self._scan_index_map = OrderedDict()
@@ -205,7 +207,7 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
         return self._scan_id_map
 
     @classmethod
-    def build(cls, scans):
+    def build(cls, scans, binds=True, **kwargs):
         scans = tuple(scans)
         try:
             scan = scans[0]
@@ -217,7 +219,7 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
                             yield product
                 return cls.build(generate())
             elif isinstance(scan, Scan):
-                scans = tuple(s.clone() for s in scans)
+                scans = tuple(s.clone()._load() for s in scans)
             elif isinstance(scan, ProcessedScan):
                 scans = tuple(s.clone() for s in scans)
             else:
@@ -232,7 +234,7 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
         # other attributes.
         for i, scan in enumerate(scans):
             scan.index = i
-        return cls(scans)
+        return cls(scans, binds=binds, **kwargs)
 
     def reset(self):
         self.make_iterator(None)
@@ -243,6 +245,8 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
         self._index = OrderedDict()
 
         for scan in self._scans:
+            if self._binds:
+                scan.bind(self)
             self._scan_id_map[scan.id] = scan
             self._scan_index_map[scan.index] = scan
             self._index[scan.id] = scan.index

@@ -680,6 +680,9 @@ class RandomAccessScanSource(ScanIterator):
     def __len__(self):
         raise NotImplementedError()
 
+    def __getitem__(self, i):
+        return self.get_scan_by_index(i)
+
 
 class DetachedAccessError(Exception):
     pass
@@ -813,6 +816,11 @@ class ScanBase(object):
     def __ne__(self, other):
         return not (self == other)
 
+    def bind(self, source):
+        if self.precursor_information is not None:
+            self.precursor_information.bind(source)
+        return self
+
 
 class Scan(ScanBase):
     """Container for mass spectral data and associated descriptive information.
@@ -912,16 +920,23 @@ class Scan(ScanBase):
         return dup
 
     def _load(self):
-        self.arrays
-        self.id
-        self.title
-        self.ms_level
-        self.scan_time
-        self.index
-        self.polarity
-        self.precursor_information
-        self.activation
-        self.acquisition_information
+        _ = self.arrays
+        _ = self.id
+        _ = self.title
+        _ = self.ms_level
+        _ = self.scan_time
+        _ = self.index
+        _ = self.polarity
+        _ = self.precursor_information
+        _ = self.activation
+        _ = self.acquisition_information
+        _ = self.isolation_window
+        _ = self.is_profile
+        _ = self.instrument_configuration
+        _ = self.annotations
+        _ = None
+        del _
+        return self
 
     def _unload(self):
         self._arrays = None
@@ -1048,6 +1063,11 @@ class Scan(ScanBase):
             self._annotations = self.source._annotations(self._data)
             self._annotations.update(self._external_annotations)
         return self._annotations
+
+    def bind(self, source):
+        super(Scan, self).bind(source)
+        self.source = source
+        return self
 
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
@@ -1577,6 +1597,10 @@ class PrecursorInformation(object):
 
     def __ne__(self, other):
         return not (self == other)
+
+    def bind(self, source):
+        self.source = source
+        return self
 
     def extract(self, peak, override_charge=None):
         self.extracted_neutral_mass = peak.neutral_mass

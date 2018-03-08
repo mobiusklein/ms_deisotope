@@ -500,7 +500,7 @@ class ThermoRawDataInterface(ScanDataSource):
             has_supplemental_activation = filter_line.get("supplemental_activation")
             if activation_type is not None:
                 energy = activation_event.get("activation_energy")
-                if has_supplemental_activation:
+                if has_supplemental_activation and len(activation_type) > 1:
                     activation_type.append(supplemental_term_map[
                         dissociation_methods_map[activation_type[-1]]])
                 if len(activation_type) == 1:
