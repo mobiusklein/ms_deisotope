@@ -2,18 +2,58 @@ from cpython.list cimport PyList_GetItem, PyList_Size
 from cpython.tuple cimport PyTuple_GetItem
 
 cdef class SpanningMixin(object):
-    cdef:
-        public double start
-        public double end
+    """Provides methods for checking whether an entity
+    which has a defined start and end point over a single
+    dimension contains or overlaps with another entity in
+    that same dimension.
+    """
 
     def __init__(self, start, end):
         self.start = start
         self.end = end
 
     def __contains__(self, i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : Number
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
+        return self._contains(i)
+
+    cdef bint _contains(self, double i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : double
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
         return self.start <= i <= self.end
 
     cpdef bint overlaps(self, SpanningMixin interval):
+        """Tests whether another spanning entity with
+        a defined start and end point overlaps with
+        this spanning entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin
+
+        Returns
+        -------
+        bool
+        """
+        cdef bint cond
         cond = ((self.start <= interval.start and self.end >= interval.start) or (
             self.start >= interval.start and self.end <= interval.end) or (
             self.start >= interval.start and self.end >= interval.end and self.start <= interval.end) or (
@@ -32,9 +72,31 @@ cdef class SpanningMixin(object):
             return self.start - interval.end
 
     cpdef bint is_contained_in_interval(self, SpanningMixin interval):
+        """Tests whether this spanning entity is
+        completely contained inside the other entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin
+
+        Returns
+        -------
+        bool
+        """
         return self.start >= interval.start and self.end <= interval.end
 
     cpdef bint contains_interval(self, SpanningMixin interval):
+        """Tests whether the other spanning entity is
+        completely contained inside this entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin
+
+        Returns
+        -------
+        bool
+        """
         return self.start <= interval.start and self.end >= interval.end
 
 
@@ -77,15 +139,6 @@ cdef double INF = float('inf')
 
 
 cdef class IntervalTreeNode(object):
-    cdef:
-        public double center
-        public double start
-        public double end
-        public IntervalTreeNode left
-        public IntervalTreeNode right
-        public list contained
-        public int level
-        public IntervalTreeNode parent
 
     def __init__(self, double center, IntervalTreeNode left, list contained, IntervalTreeNode right,
                  int level=0, IntervalTreeNode parent=None):
@@ -118,18 +171,6 @@ cdef class IntervalTreeNode(object):
             self.end = end
         else:
             self.start = self.end = center
-
-    cpdef IntervalTreeNode node_contains_point(self, double x):
-        if x < self.start:
-            if self.left is not None:
-                return self.left.node_contains_point(x)
-            return None
-        elif x > self.end:
-            if self.right is not None:
-                return self.right.node_contains_point(x)
-            return None
-        else:
-            return self
 
     cpdef list contains_point(self, double x):
         cdef:

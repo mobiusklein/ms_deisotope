@@ -1,13 +1,9 @@
-cdef class Interval(SpanningMixin):
-    cdef:
-        public object members
-        public dict data
-
-
 cdef class SpanningMixin(object):
     cdef:
         public double start
         public double end
+
+    cdef bint _contains(self, double i)
 
     cpdef bint overlaps(self, SpanningMixin interval)
 
@@ -16,6 +12,12 @@ cdef class SpanningMixin(object):
     cpdef bint is_contained_in_interval(self, SpanningMixin interval)
 
     cpdef bint contains_interval(self, SpanningMixin interval)
+
+
+cdef class Interval(SpanningMixin):
+    cdef:
+        public object members
+        public dict data
 
 
 cdef class IntervalTreeNode(object):
@@ -29,7 +31,6 @@ cdef class IntervalTreeNode(object):
         public int level
         public IntervalTreeNode parent
 
-    cpdef IntervalTreeNode node_contains_point(self, double x)
     cpdef list contains_point(self, double x)
     cpdef list _overlaps_interval(self, double start, double end)
     cpdef list overlaps(self, double start, double end)

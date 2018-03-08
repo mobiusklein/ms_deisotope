@@ -1,3 +1,4 @@
+from collections import deque
 
 
 class SpanningMixin(object):
@@ -177,31 +178,6 @@ class IntervalTreeNode(object):
         else:
             self.start = self.end = center
 
-    def node_contains_point(self, x):
-        """Returns the first node whose interval
-        contains the point `x`. Returns `None`
-        if no node is found.
-
-        Parameters
-        ----------
-        x : Number
-            The query point
-
-        Returns
-        -------
-        IntervalTreeNode
-        """
-        if x < self.start:
-            if self.left is not None:
-                return self.left.node_contains_point(x)
-            return None
-        elif x > self.end:
-            if self.right is not None:
-                return self.right.node_contains_point(x)
-            return None
-        else:
-            return self
-
     def contains_point(self, x):
         """Returns the list of contained intervals for all
         nodes which contain the point `x`.
@@ -282,6 +258,9 @@ class IntervalTreeNode(object):
                 result.extend(self.right.overlaps(start, end))
             return result
 
+    def node_contains(self, point):
+        return self.start <= point <= self.end
+
     def __repr__(self):
         return "IntervalTreeNode(level=%d, center=%0.4f, start=%0.4f, end=%0.4f)" % (
             self.level, self.center, self.start, self.end)
@@ -322,6 +301,80 @@ class IntervalTreeNode(object):
             else:
                 print(self, "!=", other)
             return result
+
+    def _update_bounds(self):
+        changed = False
+        if self.left is not None and self.left.start < self.start:
+            changed = True
+            self.start = self.left.start
+        if self.right is not None and self.right.end > self.end:
+            changed = True
+            self.end = self.right.end
+        if self.parent is not None:
+            self.parent._update_bounds()
+        return changed
+
+    def insert(self, interval):
+        insert_in_self = False
+        if self.node_contains(interval.start):
+            if self.left is not None and self.left.node_contains(interval.end):
+                return self.left.insert(interval)
+            elif (self.right is not None and self.right.node_contains(interval.end) and
+                  self.right.node_contains(interval.start)):
+                return self.right.insert(interval)
+            else:
+                insert_in_self = True
+        elif self.node_contains(interval.end):
+            if self.right is not None and self.right.node_contains(interval.start):
+                return self.right.insert(interval)
+            else:
+                insert_in_self = True
+        if not insert_in_self and self.parent is None:
+            insert_in_self = True
+        if insert_in_self:
+            self.contained.append(interval)
+            changed = False
+            if interval.start < self.start:
+                self.start = interval.start
+                changed = True
+            if interval.end > self.end:
+                self.end = interval.end
+                changed = True
+            if changed:
+                self._update_bounds()
+
+    def flatten(self):
+        # perform an infix traversal of the tree and collect
+        # the elements
+        items = []
+        stack = deque([])
+        current = self
+        done = False
+        while not done:
+            if current is not None:
+                stack.append(current)
+                current = current.left
+            else:
+                if stack:
+                    current = stack.pop()
+                    items.extend(current.contained)
+                    current = current.right
+                else:
+                    done = True
+        return items
+
+    def balance(self):
+        items = self.flatten()
+        tree = self.build(items)
+        self.left = tree.left
+        self.right = tree.right
+        self.contained = tree.contained
+        self.start = tree.start
+        self.end = tree.end
+        self.center = tree.center
+        self.left.parent = self
+        self.right.parent = self
+        self._update_bounds()
 
 
 def iterative_build_interval_tree(cls, intervals):
@@ -436,3 +489,11 @@ def recursive_build_interval_tree(cls, intervals, level=0):
 
 IntervalTreeNode.recursive_build_interval_tree = classmethod(
     recursive_build_interval_tree)
+
+try:
+    has_c = True
+    _SpanningMixin = SpanningMixin
+    _Interval = Interval
+    from ms_deisotope._c.peak_dependency_network.intervals import SpanningMixin, Interval
+except ImportError:
+    has_c = False

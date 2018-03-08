@@ -84,6 +84,9 @@ def make_extensions():
                       define_macros=macros),
             Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
+                      sources=['ms_deisotope/_c/peak_dependency_network/intervals.pyx'],
+                      include_dirs=[numpy.get_include()], define_macros=macros),
         ], compiler_directives=cython_directives, force=force_cythonize)
     except ImportError:
         extensions = ([
@@ -112,6 +115,9 @@ def make_extensions():
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
             Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.c"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
+                      sources=['ms_deisotope/_c/peak_dependency_network/intervals.c'],
+                      include_dirs=[numpy.get_include()], define_macros=macros),
         ])
     return extensions
 
@@ -215,6 +221,7 @@ def run_setup(include_cext=True):
 try:
     run_setup(True)
 except Exception as exc:
+    print(exc)
     run_setup(False)
 
     status_msgs(
