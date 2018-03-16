@@ -182,7 +182,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         hi = n
 
         while hi != lo:
-            mid = (hi + lo) / 2
+            mid = int((hi + lo) // 2)
             y = self.mz[mid]
             err = y - mz
             if hi - lo == 1:
