@@ -16,7 +16,6 @@ class TestMzMLScanSerializer(unittest.TestCase):
     def test_writer(self):
         source_reader = MzMLLoader(self.source_data_path)
         fd, name = tempfile.mkstemp()
-        print name
         with _compression.GzipFile(name, 'wb') as fh:
             writer = MzMLScanSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
             description = source_reader.file_description()
