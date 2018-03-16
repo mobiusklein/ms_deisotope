@@ -283,3 +283,7 @@ class InstrumentInformation(object):
     def __repr__(self):
         return "{self.__class__.__name__}({self.id!r}, {self.groups})".format(
             self=self)
+
+
+if __name__ == '__main__':
+    __generate_list_code()

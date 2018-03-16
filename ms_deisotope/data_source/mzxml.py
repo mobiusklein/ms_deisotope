@@ -82,6 +82,9 @@ class _MzXMLMetadataLoader(object):
         ]
         return InstrumentInformation(configuration.get('msInstrumentID', 1), parts)
 
+    def data_processing(self):
+        return []
+
 
 class MzXMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the

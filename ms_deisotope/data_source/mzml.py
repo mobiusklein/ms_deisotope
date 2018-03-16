@@ -10,6 +10,7 @@ from .common import (
 from .metadata.activation import (
     supplemental_energy, energy_terms)
 from .metadata import file_information
+from .metadata import data_transformation
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
@@ -451,7 +452,23 @@ class _MzMLMetadataLoader(object):
         return softwares
 
     def data_processing(self):
-        return _find_section(self._source, "dataProcessingList")
+        data_processing_list = _find_section(self._source, "dataProcessingList")
+        processing_list = []
+        for processing_group in data_processing_list.get("dataProcessing", []):
+            dpinfo = data_transformation.DataProcessingInformation()
+            dpinfo.id = processing_group['id']
+            for method_group in processing_group['processingMethod']:
+                order = int(method_group.pop("order", 0))
+                software_id = method_group.pop("softwareRef", '')
+                method = data_transformation.ProcessingMethod(order=order, software_id=software_id)
+                for key, value in method_group.items():
+                    if key == 'name':
+                        key = value
+                        value = ''
+                    method.add(key, value)
+                dpinfo.methods.append(method)
+            processing_list.append(dpinfo)
+        return processing_list
 
     def samples(self):
         return _find_section(self._source, "sampleList")

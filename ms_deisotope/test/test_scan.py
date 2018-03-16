@@ -66,6 +66,12 @@ class TestScanMachinery(unittest.TestCase):
         scan2 = self.make_scan()
         self.assertEqual(scan, scan2)
 
+    def test_raw_arrays(self):
+        scan = self.make_scan()
+        part = scan.arrays.between_mz(575., 577.)
+        assert part.intensity.sum() > 0
+        assert (scan.arrays * 2).between_mz(575., 577.).intensity.sum() > part.intensity.sum()
+
 
 if __name__ == '__main__':
     unittest.main()

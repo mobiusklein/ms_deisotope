@@ -277,6 +277,9 @@ class _RawFileMetadataLoader(object):
                 fi.add_content(MS_MSn_Spectrum)
         return fi
 
+    def data_processing(self):
+        return []
+
 
 class _InstrumentMethod(object):
     def __init__(self, method_text):

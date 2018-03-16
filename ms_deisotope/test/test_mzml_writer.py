@@ -4,6 +4,7 @@ import tempfile
 
 import ms_deisotope
 from ms_deisotope.data_source import MzMLLoader
+from ms_deisotope.data_source import _compression
 from ms_deisotope.test.common import datafile
 
 from ms_deisotope.output.mzml import MzMLScanSerializer, ProcessedMzMLDeserializer
@@ -15,7 +16,8 @@ class TestMzMLScanSerializer(unittest.TestCase):
     def test_writer(self):
         source_reader = MzMLLoader(self.source_data_path)
         fd, name = tempfile.mkstemp()
-        with open(name, 'wb') as fh:
+        print name
+        with _compression.GzipFile(name, 'wb') as fh:
             writer = MzMLScanSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
             description = source_reader.file_description()
             writer.add_file_information(description)
@@ -25,6 +27,8 @@ class TestMzMLScanSerializer(unittest.TestCase):
             instrument_configs = source_reader.instrument_configuration()
             for config in instrument_configs:
                 writer.add_instrument_configuration(config)
+            processing = writer.build_processing_method()
+            writer.add_data_processing(processing)
             bunch = next(source_reader)
             bunch.precursor.pick_peaks()
             bunch.precursor.deconvolute()
@@ -34,7 +38,7 @@ class TestMzMLScanSerializer(unittest.TestCase):
             writer.save(bunch)
             writer.complete()
         source_reader.reset()
-        processed_reader = ProcessedMzMLDeserializer(name)
+        processed_reader = ProcessedMzMLDeserializer(_compression.get_opener(name))
         for a, b in zip(source_reader.instrument_configuration(), processed_reader.instrument_configuration()):
             assert a.analyzers == b.analyzers
         for a, b in zip(source_reader, processed_reader):
@@ -55,7 +59,7 @@ class TestMzMLScanSerializer(unittest.TestCase):
 
         processed_reader.close()
         try:
-            os.remove(processed_reader.source_file)
+            os.remove(name)
             os.remove(processed_reader._index_file_name)
         except OSError:
             pass

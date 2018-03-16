@@ -1,5 +1,5 @@
 import os
-from collections import OrderedDict
+from collections import OrderedDict, Sequence
 from uuid import uuid4
 import warnings
 
@@ -9,7 +9,11 @@ from six import string_types as basestring
 
 from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
-from psims.mzml import writer
+
+try:
+    from psims.mzml import writer
+except ImportError:
+    writer = None
 
 try:
     WindowsError
@@ -23,8 +27,101 @@ from ms_deisotope import peak_set
 from ms_deisotope.utils import Base
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.data_source.common import PrecursorInformation, ScanBunch, ChargeNotProvided
+from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.feature_map import ExtendedScanIndex
+
+
+class SpectrumDescription(Sequence):
+    def __init__(self, attribs=None):
+        self.descriptors = list(attribs or [])
+
+    def __getitem__(self, i):
+        if isinstance(i, int):
+            return self.descriptors[i]
+        else:
+            for d in self:
+                if i == d.get('name'):
+                    return d.get('value')
+            else:
+                raise KeyError(i)
+
+    def __len__(self):
+        return len(self.descriptors)
+
+    def append(self, desc):
+        i = len(self)
+        self.descriptors.append(desc)
+        return i
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.descriptors})".format(self=self)
+
+    @classmethod
+    def from_peak_set(cls, peak_list):
+        descriptors = cls()
+        try:
+            base_peak = max(peak_list, key=lambda x: x.intensity)
+        except ValueError:
+            base_peak = None
+        descriptors.append({
+            "name": "base peak m/z",
+            "value": base_peak.mz if base_peak else 0
+        })
+        descriptors.append({
+            "name": "base peak intensity",
+            "value": base_peak.intensity if base_peak else 0
+        })
+        descriptors.append({
+            "name": "total ion current",
+            "value": sum(p.intensity for p in peak_list)
+        })
+        peaks_mz_order = sorted(peak_list, key=lambda x: x.mz)
+        try:
+            descriptors.append({
+                "name": "lowest observed m/z",
+                "value": peaks_mz_order[0].mz
+            })
+            descriptors.append({
+                "name": "highest observed m/z",
+                "value": peaks_mz_order[-1].mz
+            })
+        except IndexError:
+            pass
+        return descriptors
+
+    @classmethod
+    def from_arrays(cls, arrays):
+        descriptors = cls()
+        try:
+            base_peak_i = np.argmax(arrays.intensity)
+        except ValueError:
+            base_peak_i = None
+
+        descriptors.append({
+            "name": "base peak m/z",
+            "value": arrays.mz[base_peak_i] if base_peak_i else 0
+        })
+        descriptors.append({
+            "name": "base peak intensity",
+            "value": arrays.intensity[base_peak_i] if base_peak_i else 0
+        })
+        descriptors.append({
+            "name": "total ion current",
+            "value": arrays.intensity.sum()
+        })
+        try:
+            descriptors.append({
+                "name": "lowest observed m/z",
+                "value": arrays.mz[0]
+            })
+            descriptors.append({
+                "name": "highest observed m/z",
+                "value": arrays.mz[-1]
+            })
+        except IndexError:
+            pass
+        return descriptors
 
 
 class SampleRun(Base):
@@ -35,51 +132,14 @@ class SampleRun(Base):
         self.completed = completed
 
 
-def _base_peak_from_descriptors(descriptors):
-    return descriptors[1]['value']
-
-
-def _total_intensity_from_descriptors(descriptors):
-    return descriptors[2]['value']
-
-
-def describe_spectrum(peak_list):
-    descriptors = []
-    try:
-        base_peak = max(peak_list, key=lambda x: x.intensity)
-    except ValueError:
-        base_peak = None
-    descriptors.append({
-        "name": "base peak m/z",
-        "value": base_peak.mz if base_peak else 0
-    })
-    descriptors.append({
-        "name": "base peak intensity",
-        "value": base_peak.intensity if base_peak else 0
-    })
-    descriptors.append({
-        "name": "total ion current",
-        "value": sum(p.intensity for p in peak_list)
-    })
-    peaks_mz_order = sorted(peak_list, key=lambda x: x.mz)
-    try:
-        descriptors.append({
-            "name": "lowest observed m/z",
-            "value": peaks_mz_order[0].mz
-        })
-        descriptors.append({
-            "name": "highest observed m/z",
-            "value": peaks_mz_order[-1].mz
-        })
-    except IndexError:
-        pass
-    return descriptors
-
-
 class MzMLSerializer(ScanSerializerBase):
 
-    def __init__(self, handle, n_spectra=2e4, compression=writer.COMPRESSION_ZLIB,
+    def __init__(self, handle, n_spectra=2e4, compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True):
+        if writer is None:
+            raise ImportError("Cannot write mzML without psims. Please install psims to use this feature.")
+        if compression is None:
+            compression = writer.COMPRESSION_ZLIB
         self.handle = handle
         self.writer = writer.MzMLWriter(handle)
         self.n_spectra = n_spectra
@@ -184,7 +244,38 @@ class MzMLSerializer(ScanSerializerBase):
         self.source_file_list.append(unwrapped)
 
     def add_data_processing(self, data_processing_description):
-        self.data_processing_list.append(data_processing_description)
+        if isinstance(data_processing_description, data_transformation.DataProcessingInformation):
+            methods = []
+            for method in data_processing_description:
+                content = []
+                for op, val in method:
+                    content.append({'name': op.name, 'value': val})
+                method_descr = {
+                    'software_reference': method.software_id,
+                    'order': method.order,
+                    'params': content
+                }
+                methods.append(method_descr)
+            payload = {
+                'id': data_processing_description.id,
+                'processing_methods': methods
+            }
+            self.data_processing_list.append(payload)
+        elif isinstance(data_processing_description, data_transformation.ProcessingMethod):
+            content = []
+            for op, val in data_processing_description:
+                content.append({"name": op.name, 'value': val})
+            payload = {
+                'id': "data_processing_%d" % len(self.data_processing_list),
+                'processing_methods': [{
+                    'software_reference': data_processing_description.software_id,
+                    'order': data_processing_description.order,
+                    'params': content
+                }]
+            }
+            self.data_processing_list.append(payload)
+        else:
+            self.data_processing_list.append(data_processing_description)
 
     def add_processing_parameter(self, name, value):
         self.processing_parameters.append({"name": name, "value": value})
@@ -205,42 +296,36 @@ class MzMLSerializer(ScanSerializerBase):
     def _create_sample_list(self):
         self.writer.sample_list(self.sample_list)
 
-    def _build_processing_method(self, order=1, picked_peaks=True, smoothing=True,
-                                 baseline_reduction=True, additional_parameters=tuple()):
+    def build_processing_method(self, order=1, picked_peaks=True, smoothing=True,
+                                baseline_reduction=True, additional_parameters=tuple(),
+                                software_id=None, data_processing_id=None):
+        if software_id is None:
+            software_id = "ms_deisotope_1"
+        if data_processing_id is None:
+            data_processing_id = 'ms_deisotope_processing_%d' % len(self.data_processing_list)
+
+        method = data_transformation.ProcessingMethod(software_id=software_id)
         if self.deconvoluted:
-            params = [
-                "deisotoping",
-                "charge deconvolution",
-                "precursor recalculation",
-            ]
-        else:
-            params = []
+            method.add("deisotoping")
+            method.add("charge deconvolution")
+            method.add("precursor recalculation")
 
         if picked_peaks:
-            params.append("peak picking")
+            method.add("peak picking")
         if smoothing:
-            params.append("smoothing")
+            method.add("smoothing")
         if baseline_reduction:
-            params.append("baseline reduction")
-        params.append("Conversion to mzML")
+            method.add("baseline reduction")
 
-        params.extend(additional_parameters)
-
-        mapping = {
-            "software_reference": "ms_deisotope_1",
-            "order": order,
-            "params": params
-        }
-        return mapping
+        method.add("Conversion to mzML")
+        method.update(additional_parameters)
+        method.update(self.processing_parameters)
+        method.order = order
+        data_processing_info = data_transformation.DataProcessingInformation([method], data_processing_id)
+        # self.add_data_processing(data_processing_info)
+        return data_processing_info
 
     def _create_data_processing_list(self):
-        n = len(self.data_processing_list) - 1
-        entry = {
-            "id": "ms_deisotope_processing_1",
-            "processing_methods": [self._build_processing_method(
-                n, additional_parameters=self.processing_parameters)]
-        }
-        self.add_data_processing(entry)
         self.writer.data_processing_list(self.data_processing_list)
 
     def _create_instrument_configuration(self):
@@ -350,8 +435,10 @@ class MzMLSerializer(ScanSerializerBase):
 
         if self.deconvoluted:
             precursor_peaks = bunch.precursor.deconvoluted_peak_set
-        else:
+        elif bunch.precursor.peak_set:
             precursor_peaks = bunch.precursor.peak_set
+        else:
+            precursor_peaks = bunch.precursor.arrays
 
         if len(precursor_peaks) == 0:
             return
@@ -362,7 +449,15 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             charge_array = None
 
-        descriptors = describe_spectrum(precursor_peaks)
+        centroided = (bunch.precursor.peak_set or bunch.precursor.deconvoluted_peak_set)
+        if centroided:
+            descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
+            mz_array = [p.mz for p in precursor_peaks]
+            intensity_array = [p.intensity for p in precursor_peaks]
+        else:
+            descriptors = SpectrumDescription.from_arrays(precursor_peaks)
+            mz_array = precursor_peaks.mz
+            intensity_array = precursor_peaks.intensity
 
         instrument_config = bunch.precursor.instrument_configuration
         if instrument_config is None:
@@ -373,10 +468,12 @@ class MzMLSerializer(ScanSerializerBase):
         scan_parameters, scan_window_list = self.extract_scan_event_parameters(bunch.precursor)
 
         self.writer.write_spectrum(
-            [p.mz for p in precursor_peaks], [p.intensity for p in precursor_peaks], charge_array,
+            mz_array, intensity_array,
+            charge_array,
             id=bunch.precursor.id, params=[
                 {"name": "ms level", "value": bunch.precursor.ms_level},
-                {"name": "MS1 spectrum"}] + descriptors,
+                {"name": "MS1 spectrum"}] + list(descriptors),
+            centroided=centroided,
             polarity=polarity,
             scan_start_time=bunch.precursor.scan_time,
             compression=self.compression,
@@ -386,22 +483,32 @@ class MzMLSerializer(ScanSerializerBase):
             scan_window_list=scan_window_list)
 
         self.total_ion_chromatogram_tracker[
-            bunch.precursor.scan_time] = _total_intensity_from_descriptors(descriptors)
+            bunch.precursor.scan_time] = (descriptors["total ion current"])
         self.base_peak_chromatogram_tracker[
-            bunch.precursor.scan_time] = _base_peak_from_descriptors(descriptors)
+            bunch.precursor.scan_time] = (descriptors["base peak intensity"])
 
         for prod in bunch.products:
             if self.deconvoluted:
                 product_peaks = prod.deconvoluted_peak_set
-            else:
+            elif prod.peak_set:
                 product_peaks = prod.peak_set
+            else:
+                product_peaks = prod.arrays
 
-            descriptors = describe_spectrum(product_peaks)
+            centroided = (prod.peak_set or prod.deconvoluted_peak_set)
+            if centroided:
+                descriptors = SpectrumDescription.from_peak_set(product_peaks)
+                mz_array = [p.mz for p in product_peaks]
+                intensity_array = [p.intensity for p in product_peaks]
+            else:
+                descriptors = SpectrumDescription.from_arrays(product_peaks)
+                mz_array = product_peaks.mz
+                intensity_array = product_peaks.intensity
 
             self.total_ion_chromatogram_tracker[
-                prod.scan_time] = _total_intensity_from_descriptors(descriptors)
+                prod.scan_time] = (descriptors["total ion current"])
             self.base_peak_chromatogram_tracker[
-                prod.scan_time] = _base_peak_from_descriptors(descriptors)
+                prod.scan_time] = (descriptors["base peak intensity"])
 
             if self.deconvoluted:
                 charge_array = [p.charge for p in product_peaks]
@@ -416,10 +523,11 @@ class MzMLSerializer(ScanSerializerBase):
 
             scan_parameters, scan_window_list = self.extract_scan_event_parameters(prod)
             self.writer.write_spectrum(
-                [p.mz for p in product_peaks], [p.intensity for p in product_peaks], charge_array,
+                mz_array, intensity_array, charge_array,
                 id=prod.id, params=[
                     {"name": "ms level", "value": prod.ms_level},
-                    {"name": "MSn spectrum"}] + descriptors,
+                    {"name": "MSn spectrum"}] + list(descriptors),
+                centroided=centroided,
                 polarity=prod.polarity,
                 scan_start_time=prod.scan_time,
                 precursor_information=self._pack_precursor_information(
@@ -680,7 +788,10 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     @property
     def _index_file_name(self):
-        return ExtendedScanIndex.index_file_name(self.source_file)
+        if isinstance(self.source_file, basestring):
+            return ExtendedScanIndex.index_file_name(self.source_file)
+        else:
+            return ExtendedScanIndex.index_file_name(self.source_file.name)
 
     def build_extended_index(self, header_only=True):
         self.reset()

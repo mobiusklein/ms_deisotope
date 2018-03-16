@@ -440,6 +440,9 @@ class _AgilentDMetadataLoader(object):
     def instrument_configuration(self):
         return sorted(self._instrument_config.values(), key=lambda x: x.id)
 
+    def data_processing(self):
+        return []
+
     def _acquisition_method_xml_path(self):
         return os.path.join(self.dirpath, "AcqData", "AcqMethod.xml")
 

@@ -19,7 +19,8 @@ class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
         return self.name
 
     def __repr__(self):
-        return super(Term, self).__repr__()
+        text = super(Term, self).__repr__()
+        return self.__class__.__name__ + text[4:]
 
     def __ne__(self, other):
         return not (self == other)
@@ -43,10 +44,27 @@ class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
         return term == self.name or term in self.specialization
 
 
-def type_path(term):  # pragma: no cover
+def _unique_list(items):
+    seen = set()
+    out = []
+    for x in items:
+        if x in seen:
+            continue
+        seen.add(x)
+        out.append(x)
+    return out
+
+
+def type_path(term, seed):  # pragma: no cover
     path = []
     i = 0
-    steps = [term.is_a.comment]
+    steps = []
+    try:
+        steps.append(term.is_a.comment)
+    except AttributeError:
+        steps.extend(t.comment for t in term.is_a)
+    except KeyError:
+        pass
     while i < len(steps):
         step = steps[i]
         i += 1
@@ -58,12 +76,13 @@ def type_path(term):  # pragma: no cover
             steps.extend(t.comment for t in term.is_a)
         except KeyError:
             continue
-    return path
+    return _unique_list(path)
 
 
 def render_list(seed, list_name=None, term_cls_name="Term"):  # pragma: no cover
     component_type_list = [seed]
     i = 0
+    seen = set()
     if list_name is None:
         list_name = seed.replace(" ", "_") + 's'
     print("%s = [" % (list_name,))
@@ -71,8 +90,11 @@ def render_list(seed, list_name=None, term_cls_name="Term"):  # pragma: no cover
         component_type = component_type_list[i]
         i += 1
         for term in cv_psims[component_type].children:
+            if term.name in seen:
+                continue
+            seen.add(term.name)
             print("    %s(%r, %r, %r, %r), " % (
-                term_cls_name, term.name, term.id, component_type_list[0], type_path(term)))
+                term_cls_name, term.name, term.id, component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
     print("]")
