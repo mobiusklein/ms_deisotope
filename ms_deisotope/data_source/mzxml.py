@@ -6,6 +6,7 @@ from .common import (
     ScanEventInformation, ScanWindow,
     ComponentGroup, component, InstrumentInformation,
     FileInformation, SourceFile)
+from .metadata import data_transformation
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until)
 
@@ -83,7 +84,22 @@ class _MzXMLMetadataLoader(object):
         return InstrumentInformation(configuration.get('msInstrumentID', 1), parts)
 
     def data_processing(self):
-        return []
+        data_processing = map(self.source._get_info_smart, iterparse_until(
+            self.source, "dataProcessing", "scan"))
+        self.source.reset()
+        operation_groups = []
+        for i, group in enumerate(data_processing):
+            software_id = group.get("software", {}).get("name", "")
+            method_group = data_transformation.ProcessingMethod(order=1, software_id=software_id)
+            operations = group.get("processingOperation", [])
+            if isinstance(operations, list):
+                for op in operations:
+                    method_group.add(op)
+            else:
+                method_group.add(operations)
+            operation_groups.append(
+                data_transformation.DataProcessingInformation([method_group], id=i))
+        return operation_groups
 
 
 class MzXMLDataInterface(ScanDataSource):

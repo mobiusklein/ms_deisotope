@@ -173,6 +173,10 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         assert sf.name == 'analysis.baf'
         assert isinstance(sf.path, str)
 
+    def test_data_processing_parsing(self):
+        reader = infer_type.MSFileLoader(self.only_ms2_path)
+        assert len(reader.data_processing()[0]) == 3
+
 
 if __name__ == '__main__':
     unittest.main()

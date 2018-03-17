@@ -40,7 +40,10 @@ class Cursor(object):
         if not event.inaxes:
             return
         x, y = event.xdata, event.ydata
-        text = "m/z=%1.2f, intensity=%1.2f" % (x, y)
+        if y > 1e4:
+            text = "m/z=%1.2f, intensity=%1.2g" % (x, y)
+        else:
+            text = "m/z=%1.2f, intensity=%1.2f" % (x, y)
         self.binding.set(text)
 
 
@@ -123,6 +126,8 @@ class SpectrumViewer(object, ttk.Frame):
 
     def zoom(self, xmin, xmax):
         # If the bounds are not close, we're zooming in
+        if not self.scan:
+            return
         arrays = self.scan.arrays
         if (xmax - xmin) <= 1:
             min_peak = 0
@@ -237,15 +242,15 @@ class SpectrumViewer(object, ttk.Frame):
 
     def configure_display_row(self):
         pass
-        # self.display_row = ttk.Frame(self)
-        # self.grid(row=3, column=0, sticky=tk.W + tk.S + tk.E)
-        # self.cursor_label = ttk.Label(self.display_row, text="...!...")
-        # self.grid(row=1, column=0, sticky=tk.S + tk.W + tk.E + tk.N)
+        self.display_row = ttk.Frame(self)
+        self.display_row.grid(row=1, column=0, sticky=tk.W + tk.S + tk.E)
+        self.cursor_label = ttk.Label(self.display_row, text="")
+        self.cursor_label.grid(row=0)
 
-        # def update_label(*args, **kwargs):
-        #     self.cursor_label['text'] = "spam!"
+        def update_label(*args, **kwargs):
+            self.cursor_label['text'] = (" " * 5) + self.canvas_cursor.binding.get()
 
-        # self.canvas_cursor.binding.trace('w', update_label)
+        self.canvas_cursor.binding.trace('w', update_label)
 
     def configure_treeview(self):
         self.treeview = ttk.Treeview(self)
@@ -275,6 +280,31 @@ class SpectrumViewer(object, ttk.Frame):
         if children:
             self.treeview.delete(*children)
 
+    def _populate_range(self, start, stop):
+        print("populate range", start, stop)
+        scans = []
+        ended = False
+        for i in range(start, stop):
+            try:
+                scan = self.reader[i]
+            except Exception:
+                ended = True
+                break
+            if scan.index % 5000 == 0:
+                print(scan)
+            i = scan.index
+            values = [scan.id, "%0.4f" % scan.scan_time, scan.ms_level]
+            if scan.ms_level > 1:
+                values.extend([scan.precursor_information.mz, scan.precursor_information.charge,
+                               str(scan.activation)])
+            else:
+                values.extend(['-', '-', '-'])
+            scans.append(values)
+        for values in scans:
+            self.treeview.insert('', 'end', values=values, text=i)
+        if not ended:
+            self.after(100, self._populate_range, stop, stop + 500)
+
     def populate(self, clear=True):
         if clear:
             self.clear_treeview()
@@ -292,6 +322,7 @@ class SpectrumViewer(object, ttk.Frame):
                     values.extend(['-', '-', '-'])
                 self.treeview.insert('', 'end', values=values, text=i)
             self.reader.reset()
+            # self.after(10, self._populate_range, 0, 500)
 
 
 def main():
