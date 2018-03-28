@@ -30,6 +30,35 @@ from ms_deisotope.data_source import ScanBunch, Scan
 from ms_deisotope.peak_set import EnvelopePair
 from ms_deisotope.utils import (draw_raw, draw_peaklist)
 
+averagine_label_map = {
+    "peptide": ms_deisotope.peptide,
+    "glycan": ms_deisotope.glycan,
+    "glycopeptide": ms_deisotope.glycopeptide,
+    "heparan sulfate": ms_deisotope.heparan_sulfate
+}
+
+
+def interactive_console(**kwargs):
+    try:
+        from IPython.terminal.embed import InteractiveShellEmbed, load_default_config
+        config = kwargs.get('config')
+        header = kwargs.pop('header', u'')
+        compile_flags = kwargs.pop('compile_flags', None)
+        if config is None:
+            config = load_default_config()
+            config.InteractiveShellEmbed = config.TerminalInteractiveShell
+            kwargs['config'] = config
+        frame = sys._getframe(1)
+        shell = InteractiveShellEmbed.instance(
+            _init_location_id='%s:%s' % (
+                frame.f_code.co_filename, frame.f_lineno), **kwargs)
+        shell(header=header, stack_depth=2, compile_flags=compile_flags,
+              _call_location_id='%s:%s' % (frame.f_code.co_filename, frame.f_lineno))
+        InteractiveShellEmbed.clear_instance()
+    except ImportError:
+        import code
+        code.interact(kwargs.get("local", {}))
+
 
 class Cursor(object):
     def __init__(self, ax, binding):
@@ -41,9 +70,9 @@ class Cursor(object):
             return
         x, y = event.xdata, event.ydata
         if y > 1e4:
-            text = "m/z=%1.2f, intensity=%1.2g" % (x, y)
+            text = "m/z=%1.2f, inten=%1.2g" % (x, y)
         else:
-            text = "m/z=%1.2f, intensity=%1.2f" % (x, y)
+            text = "m/z=%1.2f, inten=%1.2f" % (x, y)
         self.binding.set(text)
 
 
@@ -109,7 +138,7 @@ class SpectrumViewer(object, ttk.Frame):
     def configure_toolbar(self):
         self.toolbar = tk.Menu(self)
         self.toolbar.add_command(label='Open', command=self.select_ms_file)
-
+        self.toolbar.add_command(label='Interact', command=lambda: interactive_console({'self': self}))
         self.root.config(menu=self.toolbar)
 
     def _zoom_in(self, min_mz, max_mz):
@@ -172,6 +201,23 @@ class SpectrumViewer(object, ttk.Frame):
                 self.annotations.append(
                     self.axis.text(x, y, label, ha='center', clip_on=True, fontsize=10))
 
+    def _process_scan(self):
+        self.scan.pick_peaks(signal_to_noise_threshold=1.5)
+        if self.scan.ms_level == 1:
+            averagine_value = self.ms1_averagine_combobox.get()
+            averagine_value = averagine_label_map[averagine_value]
+            truncate_after = 0.95
+            scorer = ms_deisotope.PenalizedMSDeconVFitter(20., 2.)
+        else:
+            averagine_value = self.msn_averagine_combobox.get()
+            averagine_value = averagine_label_map[averagine_value]
+            truncate_after = 0.8
+            scorer = ms_deisotope.MSDeconVFitter(10.)
+        self.scan.deconvolute(
+            averagine=averagine_value,
+            scorer=scorer,
+            truncate_after=truncate_after)
+
     def draw_plot(self, scan=None, children=None):
         if children is None:
             children = []
@@ -184,8 +230,7 @@ class SpectrumViewer(object, ttk.Frame):
             if scan.arrays.mz.shape[0] > 1:
                 self.scan = scan.average(3)
             self.scan = scan.denoise(4)
-        self.scan.pick_peaks(signal_to_noise_threshold=1.5)
-        self.scan.deconvolute()
+        self._process_scan()
         scan = self.scan
         if scan.is_profile:
             draw_raw(*scan.arrays, ax=self.axis, color='black', lw=0.75)
@@ -241,16 +286,37 @@ class SpectrumViewer(object, ttk.Frame):
             self.draw_plot(None)
 
     def configure_display_row(self):
-        pass
         self.display_row = ttk.Frame(self)
         self.display_row.grid(row=1, column=0, sticky=tk.W + tk.S + tk.E)
-        self.cursor_label = ttk.Label(self.display_row, text="")
-        self.cursor_label.grid(row=0)
+        self.cursor_label = ttk.Label(self.display_row, text=" " * 20)
+        self.cursor_label.grid(row=0, padx=(10, 10))
 
         def update_label(*args, **kwargs):
-            self.cursor_label['text'] = (" " * 5) + self.canvas_cursor.binding.get()
+            self.cursor_label['text'] = self.canvas_cursor.binding.get()
 
         self.canvas_cursor.binding.trace('w', update_label)
+
+        self.ms1_averagine_combobox = ttk.Combobox(self.display_row, values=[
+            "peptide",
+            "glycan",
+            "glycopeptide",
+            "heparan sulfate",
+        ])
+        self.ms1_averagine_combobox.set("glycopeptide")
+        self.ms1_averagine_combobox_label = ttk.Label(self.display_row, text="MS1 Averagine:")
+        self.ms1_averagine_combobox_label.grid(row=0, column=1, padx=(10, 0))
+        self.ms1_averagine_combobox.grid(row=0, column=2, padx=(1, 10))
+
+        self.msn_averagine_combobox = ttk.Combobox(self.display_row, values=[
+            "peptide",
+            "glycan",
+            "glycopeptide",
+            "heparan sulfate",
+        ])
+        self.msn_averagine_combobox.set("peptide")
+        self.msn_averagine_combobox_label = ttk.Label(self.display_row, text="MSn Averagine:")
+        self.msn_averagine_combobox_label.grid(row=0, column=3, padx=(10, 0))
+        self.msn_averagine_combobox.grid(row=0, column=4, padx=(1, 10))
 
     def configure_treeview(self):
         self.treeview = ttk.Treeview(self)

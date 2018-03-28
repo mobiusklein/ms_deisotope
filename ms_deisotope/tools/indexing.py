@@ -9,6 +9,7 @@ import click
 
 from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
+from ms_deisotope.data_source import _compression
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -180,6 +181,25 @@ def precursor_clustering(path, grouping_error=2e-5):
         acc += (var * (n - 1))
         nt += (n - 1)
     click.echo("MS/MS Precursor Mass Std. Dev.: %f Da" % (math.sqrt(acc / nt),))
+
+
+if _compression.has_idzip:
+
+    @cli.command("idzip")
+    @click.argument('path', type=click.Path(exists=True))
+    @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
+    def idzip_compression(path, output):
+        if output is None:
+            output = '-'
+        with click.open_file(output) as outfh:
+            writer = _compression.GzipFile(fileobj=outfh, mode='rb')
+            with open(path, 'rb') as infh:
+                buffer_size = 2 ** 16
+                chunk = infh.read(buffer_size)
+                while chunk:
+                    writer.write(chunk)
+                    chunk = infh.read(buffer_size)
+            writer.flush()
 
 
 main = cli.main

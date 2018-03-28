@@ -1,4 +1,7 @@
-import dill
+try:
+    import dill
+except ImportError:
+    pass
 
 from .averagine import (
     Averagine, peptide, glycan, glycopeptide, heparin,
