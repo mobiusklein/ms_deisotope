@@ -135,7 +135,13 @@ class SampleRun(Base):
 class MzMLSerializer(ScanSerializerBase):
 
     def __init__(self, handle, n_spectra=2e4, compression=None,
-                 deconvoluted=True, sample_name=None, build_extra_index=True):
+                 deconvoluted=True, sample_name=None, build_extra_index=True,
+                 encoding=None):
+        if encoding is None:
+            encoding = {
+                writer.MZ_ARRAY: np.float64,
+                writer.INTENSITY_ARRAY: np.float32,
+            }
         if writer is None:
             raise ImportError("Cannot write mzML without psims. Please install psims to use this feature.")
         if compression is None:
@@ -144,6 +150,7 @@ class MzMLSerializer(ScanSerializerBase):
         self.writer = writer.MzMLWriter(handle)
         self.n_spectra = n_spectra
         self.compression = compression
+        self.encoding = encoding
         self._has_started_writing_spectra = False
 
         self.writer.__enter__()
@@ -480,7 +487,8 @@ class MzMLSerializer(ScanSerializerBase):
             other_arrays=self._prepare_extra_arrays(bunch.precursor),
             instrument_configuration_id=instrument_config_id,
             scan_params=scan_parameters,
-            scan_window_list=scan_window_list)
+            scan_window_list=scan_window_list,
+            encoding=self.encoding)
 
         self.total_ion_chromatogram_tracker[
             bunch.precursor.scan_time] = (descriptors["total ion current"])
@@ -538,7 +546,8 @@ class MzMLSerializer(ScanSerializerBase):
                 other_arrays=self._prepare_extra_arrays(prod),
                 instrument_configuration_id=instrument_config_id,
                 scan_params=scan_parameters,
-                scan_window_list=scan_window_list)
+                scan_window_list=scan_window_list,
+                encoding=self.encoding)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)

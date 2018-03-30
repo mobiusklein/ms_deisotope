@@ -1416,10 +1416,14 @@ class Scan(ScanBase):
                 scans, mean=self.scan_time, sigma=weight_sigma)
         else:
             weights = None
-        reference = arrays[len(arrays) // 2 + 1]
         if default_dx:
+            if len(arrays) > 1:
+                reference = arrays[len(arrays) // 2 + 1]
+            else:
+                reference = arrays[0]
             empirical_dx = decimal_shift(2 * np.median(np.diff(reference.mz)))
             dx = min(dx, empirical_dx)
+
         new_arrays = average_signal(arrays, dx=dx, weights=weights)
         indices = [scan.index for scan in scans]
         return AveragedScan(
