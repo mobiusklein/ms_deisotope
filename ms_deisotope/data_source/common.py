@@ -11,7 +11,7 @@ from ms_peak_picker import (
     scan_filter, PeakIndex, PeakSet)
 
 from ..averagine import neutral_mass, mass_charge_ratio
-from ..utils import Constant, add_metaclass
+from ..utils import Constant, add_metaclass, decimal_shift
 from ..deconvolution import deconvolute_peaks
 
 from .metadata.instrument_components import (
@@ -1366,7 +1366,7 @@ class Scan(ScanBase):
         weights = np.exp((-(time_array - mean) ** 2) / sigma_sqrd_2)
         return weights
 
-    def average(self, index_interval=None, rt_interval=None, dx=0.01, weight_sigma=None):
+    def average(self, index_interval=None, rt_interval=None, dx=None, weight_sigma=None):
         """Average together multiple scans' raw data arrays to create a composite intensity
         profile for a common m/z axis.
 
@@ -1394,6 +1394,11 @@ class Scan(ScanBase):
             A shallow copy of this scan with its :attr:`arrays` attribute replaced
             with the averaged array
         """
+        if dx is None:
+            dx = 0.01
+            default_dx = True
+        else:
+            default_dx = False
         before, after = self._get_adjacent_scans(index_interval, rt_interval)
         scans = before + [self] + after
         arrays = []
@@ -1411,6 +1416,10 @@ class Scan(ScanBase):
                 scans, mean=self.scan_time, sigma=weight_sigma)
         else:
             weights = None
+        reference = arrays[len(arrays) // 2 + 1]
+        if default_dx:
+            empirical_dx = decimal_shift(2 * np.median(np.diff(reference.mz)))
+            dx = min(dx, empirical_dx)
         new_arrays = average_signal(arrays, dx=dx, weights=weights)
         indices = [scan.index for scan in scans]
         return AveragedScan(

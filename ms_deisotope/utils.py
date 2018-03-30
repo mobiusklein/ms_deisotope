@@ -369,3 +369,12 @@ class LRUDict(object):
     def _mark_used(self, key):
         value = self.store.pop(key, None)
         self.store[key] = value
+
+
+def decimal_shift(x):
+    i = 1.0
+    while i < 10 ** 10:
+        if round(x * i) > 0:
+            return 1.0 / i
+        i *= 10.
+    return 1.0 / i
