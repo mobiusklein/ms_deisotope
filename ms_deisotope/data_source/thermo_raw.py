@@ -45,7 +45,7 @@ try:
             return True
         except ImportError:
             return False
-except ImportError as e:
+except ImportError as e:  # pragma: no cover
     message = str(e)
 
     def is_thermo_raw_file(path):

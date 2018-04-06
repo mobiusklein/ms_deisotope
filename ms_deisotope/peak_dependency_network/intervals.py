@@ -279,7 +279,7 @@ class IntervalTreeNode(object):
     def __hash__(self):
         return hash((self.start, self.center, self.right, self.level))
 
-    def __diagnostic_eq__(self, other):
+    def __diagnostic_eq__(self, other):  # pragma: no cover
         if other is None:
             return False
         else:
@@ -451,7 +451,7 @@ def iterative_build_interval_tree(cls, intervals):
 IntervalTreeNode.build = classmethod(iterative_build_interval_tree)
 
 
-def recursive_build_interval_tree(cls, intervals, level=0):
+def recursive_build_interval_tree(cls, intervals, level=0):  # pragma: no cover
     if len(intervals) > 0:
         centers = [
             float(i.start + i.end) / 2. for i in intervals

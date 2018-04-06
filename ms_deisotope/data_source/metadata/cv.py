@@ -3,7 +3,7 @@ from collections import namedtuple
 try:
     from psims.controlled_vocabulary.controlled_vocabulary import load_psims
     cv_psims = load_psims()
-except Exception:
+except Exception:  # pragma: no cover
     cv_psims = None
 
 
@@ -44,7 +44,7 @@ class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
         return term == self.name or term in self.specialization
 
 
-def _unique_list(items):
+def _unique_list(items):  # pragma: no cover
     seen = set()
     out = []
     for x in items:

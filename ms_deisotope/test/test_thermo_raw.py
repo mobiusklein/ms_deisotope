@@ -4,12 +4,15 @@ import platform
 import numpy as np
 
 from ms_deisotope.data_source.thermo_raw import (
-    ThermoRawLoader, filter_line_parser)
+    determine_if_available)
 from ms_deisotope.test.common import datafile
 from ms_deisotope.data_source import infer_type
 
+not_windows = not platform.platform().lower().startswith("windows")
+missing_reader_dll = not determine_if_available()
 
-@unittest.skipIf(not platform.platform().lower().startswith("windows"), "Requires Windows COM")
+
+@unittest.skipIf(not_windows or missing_reader_dll, "Requires Windows COM")
 class TestThermoRawLoaderScanBehavior(unittest.TestCase):
     path = datafile("small.RAW")
 
@@ -24,6 +27,9 @@ class TestThermoRawLoaderScanBehavior(unittest.TestCase):
         assert bunch.precursor.id == 'controllerType=0 controllerNumber=1 scan=9'
         bunch = next(reader)
         assert bunch.precursor.id == 'controllerType=0 controllerNumber=1 scan=15'
+        reader.start_from_scan(rt=0.077788333333)
+        bunch = next(reader)
+        assert np.isclose(bunch.precursor.scan_time, 0.077788333333)
 
     def test_file_level_metadata(self):
         reader = self.reader

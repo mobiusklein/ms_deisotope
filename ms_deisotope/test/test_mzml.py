@@ -2,7 +2,7 @@ import unittest
 
 from ms_deisotope.data_source import MzMLLoader
 from ms_deisotope.test.common import datafile
-from ms_deisotope.data_source import infer_type
+from ms_deisotope.data_source import infer_type, xml_reader
 
 scan_ids = [
     "controllerType=0 controllerNumber=1 scan=10014",
@@ -18,6 +18,16 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
     @property
     def reader(self):
         return infer_type.MSFileLoader(self.path)
+
+    def test_index_building(self):
+        try:
+            MzMLLoader.prebuild_byte_offset_file(self.path)
+            parser = MzMLLoader._parser_cls(self.path)
+            assert parser._check_has_byte_offset_file()
+            assert isinstance(parser._offset_index,
+                              xml_reader.PrebuiltOffsetIndex)
+        except OSError:
+            pass
 
     def test_iteration(self):
         reader = self.reader

@@ -7,7 +7,7 @@ from collections import OrderedDict
 from six import add_metaclass
 
 
-try:
+try:  # pragma: no cover
     from ms_peak_picker.utils import draw_peaklist, draw_raw
     from matplotlib import pyplot as plt, gridspec
     has_plot = True
@@ -103,7 +103,7 @@ try:
         fig.tight_layout()
         return ax
 
-except (RuntimeError, ImportError):
+except (RuntimeError, ImportError):  # pragma: no cover
     has_plot = False
 
     def annotate_scan(scan, products, nperrow=4, ax=None):
@@ -318,7 +318,7 @@ def uid(n=128):
     return int_
 
 
-class LRUDict(object):
+class LRUDict(object):  # pragma: no cover
     def __init__(self, *args, **kwargs):
         maxsize = kwargs.pop("maxsize", 24)
         self.store = OrderedDict()

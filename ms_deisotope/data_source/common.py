@@ -688,7 +688,7 @@ class DetachedAccessError(Exception):
     pass
 
 
-class DataAccessProxy(object):
+class DataAccessProxy(object):  # pragma: no cover
     def __init__(self, source):
         self.source = None
         self.attach(source)
@@ -1738,7 +1738,7 @@ class ProcessedScan(ScanBase):
         return dup
 
 
-class IteratorFacadeBase(DataAccessProxy, ScanIterator):
+class IteratorFacadeBase(DataAccessProxy, ScanIterator):  # pragma: no cover
     def __init__(self, source, **kwargs):
         DataAccessProxy.__init__(self, source)
         self._producer = None

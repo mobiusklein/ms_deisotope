@@ -23,6 +23,14 @@ class TestMzXMLLoaderScanBehavior(unittest.TestCase):
         scan = loader.get_scan_by_id("210")
         self.assertEqual(scan.id, "210")
 
+    def test_start_from_scan(self):
+        loader = self.reader
+        time = 0.4856916666666667
+        bunch = next(loader.start_from_scan(rt=time))
+        self.assertAlmostEqual(bunch.precursor.scan_time, time, 3)
+        ix = bunch.precursor.index
+        assert next(loader.start_from_scan(index=ix)).precursor == bunch.precursor
+
     def test_polarity(self):
         self.assertEqual(self.first_scan.polarity, 1)
 

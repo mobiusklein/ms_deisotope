@@ -1,3 +1,4 @@
+# pragma: no cover
 try:
     from matplotlib import font_manager
     from matplotlib import pyplot as plt

@@ -122,9 +122,14 @@ class ScanEventInformation(object):
 
     def __eq__(self, other):
         eq = isclose(self.start_time, other.start_time) and (
-            self.window_list == other.window_list) and isclose(
-            self.drift_time, other.drift_time)
-        return eq
+            self.window_list == other.window_list)
+        if not eq:
+            return False
+        if self.has_ion_mobility() != other.has_ion_mobility():
+            return False
+        if self.has_ion_mobility() and not isclose(self.drift_time, other.drift_time):
+            return False
+        return True
 
     def __ne__(self, other):
         return not (self == other)
