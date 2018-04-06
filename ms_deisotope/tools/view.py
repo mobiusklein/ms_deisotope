@@ -21,9 +21,9 @@ except ImportError:
 import ttk
 
 try:
-    import tkFileDialog
+    import tkFileDialog as tkfiledialog
 except ImportError:
-    import tkinter.filedialog as tkFileDialog
+    import tkinter.filedialog as tkfiledialog
 
 import ms_deisotope
 from ms_deisotope.data_source import ScanBunch, Scan
@@ -109,7 +109,7 @@ class SpectrumViewer(object, ttk.Frame):
             self.populate()
 
     def select_ms_file(self):
-        file_name = tkFileDialog.askopenfilename()
+        file_name = tkfiledialog.askopenfilename()
         if file_name is not None and file_name != '':
             self.ms_file_name = file_name
 
@@ -138,7 +138,7 @@ class SpectrumViewer(object, ttk.Frame):
     def configure_toolbar(self):
         self.toolbar = tk.Menu(self)
         self.toolbar.add_command(label='Open', command=self.select_ms_file)
-        self.toolbar.add_command(label='Interact', command=lambda: interactive_console({'self': self}))
+        self.toolbar.add_command(label='Interact', command=lambda: interactive_console(**{'self': self}))
         self.root.config(menu=self.toolbar)
 
     def _zoom_in(self, min_mz, max_mz):
@@ -403,7 +403,7 @@ def main():
         fname = sys.argv[1]
     except IndexError:
         fname = None
-        # fname = tkFileDialog.askopenfilename()
+        # fname = tkfiledialog.askopenfilename()
         pass
     app.ms_file_name = fname
 

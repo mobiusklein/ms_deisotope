@@ -89,9 +89,12 @@ def MSFileLoader(file_path, *args, **kwargs):
     random access.
     """
     reader_type = guess_type(file_path)
-    is_gz_compressed = _compression.test_gzipped(file_path)
-    if is_gz_compressed:
-        fobj = _compression.get_opener(file_path)
+    if os.path.isfile(file_path):
+        is_gz_compressed = _compression.test_gzipped(file_path)
+        if is_gz_compressed:
+            fobj = _compression.get_opener(file_path)
+        else:
+            fobj = file_path
     else:
         fobj = file_path
     return reader_type(fobj, *args, **kwargs)

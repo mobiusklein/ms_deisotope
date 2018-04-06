@@ -565,14 +565,30 @@ class ThermoRawDataInterface(ScanDataSource):
 
     def _annotations(self, scan):
         fline = self._filter_line(scan)
+        trailer_extras = self._source.GetTrailerExtraForScanNum(scan.scan_number)
         annots = {
             "filter_line": fline,
         }
+        microscans = trailer_extras.get("Micro Scan Count")
+        if microscans is not None:
+            annots['[Thermo Trailer Extra]Micro Scan Count'] = microscans
+        scan_segment = trailer_extras.get("Scan Segment")
+        if scan_segment is not None:
+            annots['[Thermo Trailer Extra]Scan Segment'] = scan_segment
+        scan_event = trailer_extras.get("Scan Event")
+        if scan_event is not None:
+            annots['[Thermo Trailer Extra]Scan Event'] = scan_event
+        mono_mz = trailer_extras.get("Monoisotopic M/Z")
+        if mono_mz is not None and mono_mz > 0:
+            annots['[Thermo Trailer Extra]Monoisotopic M/Z'] = mono_mz
+        hcd_ev = trailer_extras.get('HCD Energy eV')
+        if hcd_ev is not None and hcd_ev > 0:
+            annots['[Thermo Trailer Extra]HCD Energy eV'] = hcd_ev
         return annots
 
 
 class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMetadataLoader):
-    def __init__(self, source_file, _loadmetadata=True, **kwargs):
+    def __init__(self, source_file, _load_metadata=True, **kwargs):
         self.source_file = source_file
         self._source = _ThermoRawFileAPI(self.source_file)
         self._producer = None
@@ -582,7 +598,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         self._index = self._pack_index()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
         self._last_scan_time = self.get_scan_by_id(self._source.LastSpectrumNumber).scan_time
-        if _loadmetadata:
+        if _load_metadata:
             self._method = self._parse_method()
             self._build_scan_type_index()
             self._get_instrument_info()

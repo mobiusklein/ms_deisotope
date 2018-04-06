@@ -493,9 +493,10 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def prebuild_byte_offset_file(path):
         return _MzMLParser.prebuild_byte_offset_file(path)
 
-    def __init__(self, source_file, use_index=True):
+    def __init__(self, source_file, use_index=True, huge_tree=False, **kwargs):
         self.source_file = source_file
-        self._source = _MzMLParser(source_file, read_schema=True, iterative=True, use_index=use_index)
+        self._source = _MzMLParser(source_file, read_schema=True, iterative=True,
+                                   huge_tree=huge_tree, use_index=use_index)
         self.initialize_scan_cache()
         self._use_index = use_index
         self._run_information = self._get_run_attributes()
