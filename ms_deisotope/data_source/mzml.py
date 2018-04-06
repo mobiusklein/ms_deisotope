@@ -1,3 +1,5 @@
+from six import string_types as basestring
+
 import numpy as np
 from pyteomics import mzml
 from .common import (
@@ -538,9 +540,11 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
 
     def _yield_from_index(self, scan_source, start):
         offset_provider = scan_source._offset_index.offsets
-        keys = offset_provider.keys()
+        keys = list(offset_provider.keys())
         if start is not None:
             if isinstance(start, basestring):
+                if isinstance(start, str):
+                    start = start.encode("utf8")
                 start = keys.index(start)
             elif isinstance(start, int):
                 start = start
@@ -549,4 +553,6 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         else:
             start = 0
         for key in keys[start:]:
+            if isinstance(key, bytes):
+                key = key.decode("utf8")
             yield scan_source.get_by_id(key)

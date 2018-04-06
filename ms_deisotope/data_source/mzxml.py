@@ -1,3 +1,5 @@
+from six import string_types as basestring
+
 import numpy as np
 from pyteomics import mzxml
 from .common import (
@@ -220,7 +222,7 @@ class MzXMLDataInterface(ScanDataSource):
         except KeyError:
             return -1
         except ValueError:
-            return -1
+            return -2
 
     def _ms_level(self, scan):
         """Returns the degree of exponential fragmentation
@@ -390,7 +392,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         index = dict()
         i = 0
         for scan, offset in self.index.items():
-            index[scan] = i
+            index[scan.decode("utf8")] = i
             i += 1
         self._scan_index_lookup = index
 
@@ -399,9 +401,11 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
 
     def _yield_from_index(self, scan_source, start=None):
         offset_provider = scan_source._offset_index.offsets
-        keys = offset_provider.keys()
+        keys = list(offset_provider.keys())
         if start is not None:
             if isinstance(start, basestring):
+                if isinstance(start, str):
+                    start = start.encode("utf8")
                 start = keys.index(start)
             elif isinstance(start, int):
                 start = start
@@ -410,5 +414,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         else:
             start = 0
         for key in keys[start:]:
+            if isinstance(key, bytes):
+                key = key.decode("utf8")
             scan = scan_source.get_by_id(key, "num")
             yield scan

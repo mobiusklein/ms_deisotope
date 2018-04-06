@@ -1,6 +1,8 @@
 from uuid import uuid4
 import os
 
+from six import string_types as basestring
+
 from sqlalchemy import create_engine, select, func, event
 from sqlalchemy.orm import sessionmaker, scoped_session, validates, deferred
 from sqlalchemy.orm.session import object_session

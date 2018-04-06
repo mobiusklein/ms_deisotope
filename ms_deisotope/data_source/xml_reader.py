@@ -132,6 +132,10 @@ class XMLReaderBase(RandomAccessScanSource):
         scan_ids = tuple(self.index)
         lo = 0
         hi = len(scan_ids)
+
+        best_match = None
+        best_error = float('inf')
+
         while hi != lo:
             mid = (hi + lo) // 2
             sid = scan_ids[mid]
@@ -145,10 +149,14 @@ class XMLReaderBase(RandomAccessScanSource):
                     scan = self.get_scan_by_id(sid)
 
             scan_time = scan.scan_time
+            err = abs(scan_time - time)
+            if err < best_error:
+                best_error = err
+                best_match = scan
             if scan_time == time:
                 return scan
             elif (hi - lo) == 1:
-                return scan
+                return best_match
             elif scan_time > time:
                 hi = mid
             else:
