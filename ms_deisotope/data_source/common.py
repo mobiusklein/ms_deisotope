@@ -1119,6 +1119,26 @@ class Scan(ScanBase):
 
         Parameters
         ----------
+        fit_type : str, optional
+            The name of the peak model to use. One of "quadratic", "gaussian", "lorentzian", or "apex"
+        signal_to_noise_threshold : int, optional
+            Minimum signal-to-noise measurement to accept a peak
+        intensity_threshold : int, optional
+            Minimum intensity measurement to accept a peak
+        threshold_data : bool, optional
+            Whether to apply thresholds to the data
+        target_envelopes : list, optional
+            A sequence of (start m/z, end m/z) pairs, limiting peak picking to only those intervals
+        transforms : list, optional
+            A list of :class:`scan_filter.FilterBase` instances or callable that
+            accepts (mz_array, intensity_array) and returns (mz_array, intensity_array) or
+            `str` matching one of the premade names in `scan_filter.filter_register`
+        verbose : bool, optional
+            Whether to log extra information while picking peaks
+        start_mz : float, optional
+            A minimum m/z value to start picking peaks from
+        stop_mz : float, optional
+            A maximum m/z value to stop picking peaks after
         *args :
             Passed along to :func:`ms_peak_picker.pick_peaks`
         **kwargs :
@@ -1537,7 +1557,7 @@ class PrecursorInformation(object):
     def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
                  peak=None, extracted_peak=None, defaulted=False, orphan=False,
-                 product_scan_id=None):
+                 product_scan_id=None, annotations=None):
         try:
             charge = int(charge)
         except Exception:
@@ -1563,6 +1583,7 @@ class PrecursorInformation(object):
         self.defaulted = defaulted
         self.orphan = orphan
         self.product_scan_id = product_scan_id
+        self.annotations = annotations
 
     def __repr__(self):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
