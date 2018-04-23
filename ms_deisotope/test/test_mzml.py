@@ -187,6 +187,10 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         reader = infer_type.MSFileLoader(self.only_ms2_path)
         assert len(reader.data_processing()[0]) == 3
 
+    def test_software_list(self):
+        reader = infer_type.MSFileLoader(self.path)
+        assert len(reader.software_list()) == 2
+
 
 if __name__ == '__main__':
     unittest.main()
