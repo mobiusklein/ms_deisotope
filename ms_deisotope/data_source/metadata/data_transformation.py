@@ -3,6 +3,7 @@ from collections import OrderedDict
 from six import string_types as basestring
 
 from .cv import Term, render_list
+from .software import Software, SoftwareName
 
 
 class DataTransformation(Term):
@@ -159,27 +160,6 @@ class DataProcessingInformation(object):
     def __repr__(self):
         template = "{self.__class__.__name__}({self.methods}, id={self.id!r})"
         return template.format(self=self)
-
-
-class Software(object):
-    def __init__(self, name, id=None, version=None, options=None):
-        self.name = name
-        self.id = id or name
-        self.version = version
-        self.options = options
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        template = '{self.__class__.__name__}({self.name}, {self.id}, {self.version})'
-        return template.format(self=self)
-
-    def __eq__(self, other):
-        try:
-            return self.name == other.name
-        except AttributeError:
-            return str(self) == str(other)
 
 
 if __name__ == '__main__':
