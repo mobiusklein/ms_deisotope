@@ -1,10 +1,11 @@
+import sys
 from collections import namedtuple
 
-try:
-    from psims.controlled_vocabulary.controlled_vocabulary import load_psims
-    cv_psims = load_psims()
-except Exception:  # pragma: no cover
-    cv_psims = None
+# try:
+#     from psims.controlled_vocabulary.controlled_vocabulary import load_psims
+#     cv_psims = load_psims()
+# except Exception:  # pragma: no cover
+#     cv_psims = None
 
 
 class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
@@ -55,6 +56,33 @@ def _unique_list(items):  # pragma: no cover
     return out
 
 
+class MappingProxy(object):
+    def __init__(self, loader):
+        assert callable(loader)
+        self.loader = loader
+        self.mapping = None
+
+    def _ensure_mapping(self):
+        if self.mapping is None:
+            self.mapping = self.loader()
+
+    def __getitem__(self, key):
+        self._ensure_mapping()
+        return self.mapping[key]
+
+
+def _lazy_load_psims():
+    try:
+        from psims.controlled_vocabulary.controlled_vocabulary import load_psims
+        cv_psims = load_psims()
+    except Exception:  # pragma: no cover
+        cv_psims = None
+    return cv_psims
+
+
+cv_psims = MappingProxy(_lazy_load_psims)
+
+
 def type_path(term, seed):  # pragma: no cover
     path = []
     i = 0
@@ -79,13 +107,15 @@ def type_path(term, seed):  # pragma: no cover
     return _unique_list(path)
 
 
-def render_list(seed, list_name=None, term_cls_name="Term"):  # pragma: no cover
+def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pragma: no cover
+    if stream is None:
+        stream = sys.stdout
     component_type_list = [seed]
     i = 0
     seen = set()
     if list_name is None:
         list_name = seed.replace(" ", "_") + 's'
-    print("%s = [" % (list_name,))
+    stream.write("%s = [\n" % (list_name,))
     while i < len(component_type_list):
         component_type = component_type_list[i]
         i += 1
@@ -93,8 +123,8 @@ def render_list(seed, list_name=None, term_cls_name="Term"):  # pragma: no cover
             if term.name in seen:
                 continue
             seen.add(term.name)
-            print("    %s(%r, %r, %r, %r), " % (
+            stream.write("    %s(%r, %r, %r, %r), \n" % (
                 term_cls_name, term.name, term.id, component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
-    print("]")
+    stream.write("]\n")
