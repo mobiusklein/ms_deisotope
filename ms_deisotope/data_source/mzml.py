@@ -451,7 +451,11 @@ class _MzMLMetadataLoader(object):
 
     def software_list(self):
         softwares = _find_section(self._source, "softwareList")
-        return softwares
+        software_list = []
+        for software in softwares.get('software', []):
+            software_list.append(
+                data_transformation.Software(**software))
+        return software_list
 
     def data_processing(self):
         data_processing_list = _find_section(self._source, "dataProcessingList")
