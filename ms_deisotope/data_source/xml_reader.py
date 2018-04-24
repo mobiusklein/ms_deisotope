@@ -136,6 +136,9 @@ class XMLReaderBase(RandomAccessScanSource):
         best_match = None
         best_error = float('inf')
 
+        if time == float('inf'):
+            return self.get_scan_by_id(scan_ids[-1])
+
         while hi != lo:
             mid = (hi + lo) // 2
             sid = scan_ids[mid]
