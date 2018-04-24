@@ -632,7 +632,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
 
     def _pack_index(self):
         index = OrderedDict()
-        for sn in range(1, self._source.NumSpectra):
+        for sn in range(1, self._source.NumSpectra + 1):
             index[_make_id(sn)] = sn
         return index
 

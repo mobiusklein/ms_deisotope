@@ -62,6 +62,14 @@ class TestThermoRawLoaderScanBehavior(unittest.TestCase):
         assert product.isolation_window.lower == 1.0
         assert not product.is_profile
 
+    def test_size(self):
+        reader = self.reader
+        n = len(reader)
+        assert n == 48
+        x = reader[-1]
+        y = reader.get_scan_by_time(float('inf'))
+        assert x == y
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -590,6 +590,9 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
         lo = 0
         hi = self._n_spectra
 
+        if time == float('inf'):
+            return self.get_scan_by_index(len(self) - 1)
+
         best_match = None
         best_error = float('inf')
 
