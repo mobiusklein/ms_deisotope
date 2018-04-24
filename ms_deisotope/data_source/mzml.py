@@ -19,6 +19,8 @@ from .xml_reader import (
 
 
 class _MzMLParser(mzml.MzML, IndexSavingXML):
+    # we do not care about chromatograms
+    _indexed_tags = {'spectrum', }
     pass
 
 
