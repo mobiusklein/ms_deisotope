@@ -75,7 +75,7 @@ cdef class FunctionScorer(IsotopicFitterBase):
 cdef class InterferenceDetection(object):
     cdef public PeakSet peaklist
 
-    cdef double detect_interference(self, list experimental_peaks)
+    cdef double detect_interference(self, list experimental_peaks, double lower=*, double upper=*)
 
 
 cdef class DistinctPatternFitter(IsotopicFitterBase):

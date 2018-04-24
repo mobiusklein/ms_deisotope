@@ -129,12 +129,12 @@ class MinimizeFitSelector(FitSelectorBase):
     """
     def best(self, results):
         """Returns the IsotopicFitRecord with the smallest score
-        
+
         Parameters
         ----------
         results : list of IsotopicFitRecord
             List of isotopic fits to select the most optimal case from
-        
+
         Returns
         -------
         IsotopicFitRecord
@@ -145,11 +145,11 @@ class MinimizeFitSelector(FitSelectorBase):
     def reject(self, fit):
         """Decide whether the fit should be discarded for having too
         large a score. Compares against :attr:`minimum_score`
-        
+
         Parameters
         ----------
         fit : IsotopicFitRecord
-        
+
         Returns
         -------
         bool
@@ -174,12 +174,12 @@ class MaximizeFitSelector(FitSelectorBase):
     """
     def best(self, results):
         """Returns the IsotopicFitRecord with the largest score
-        
+
         Parameters
         ----------
         results : list of IsotopicFitRecord
             List of isotopic fits to select the most optimal case from
-        
+
         Returns
         -------
         IsotopicFitRecord
@@ -190,11 +190,11 @@ class MaximizeFitSelector(FitSelectorBase):
     def reject(self, fit):
         """Decide whether the fit should be discarded for having too
         small a score. Compares against :attr:`minimum_score`
-        
+
         Parameters
         ----------
         fit : IsotopicFitRecord
-        
+
         Returns
         -------
         bool
@@ -379,13 +379,25 @@ class InterferenceDetection(object):
     def __init__(self, peaklist):
         self.peaklist = peaklist
 
-    def detect_interference(self, experimental_peaks):
+    def __call__(self, experimental_peaks, lower=None, upper=None):
+        return self.detect_interference(experimental_peaks, lower, upper)
+
+    def detect_interference(self, experimental_peaks, lower=None, upper=None):
         min_peak = experimental_peaks[0]
         max_peak = experimental_peaks[-1]
 
-        region = self.peaklist.between(
-            min_peak.mz - min_peak.full_width_at_half_max,
-            max_peak.mz + max_peak.full_width_at_half_max)
+        if lower is None:
+            try:
+                lower = min_peak.mz - min_peak.full_width_at_half_max
+            except AttributeError:
+                lower = min_peak.mz
+        if upper is None:
+            try:
+                upper = max_peak.mz + max_peak.full_width_at_half_max
+            except AttributeError:
+                upper = max_peak.mz
+
+        region = self.peaklist.between(lower, upper)
 
         included_intensity = sum(p.intensity for p in experimental_peaks)
         region_intensity = sum(p.intensity for p in region)

@@ -530,11 +530,16 @@ class MzMLSerializer(ScanSerializerBase):
                 instrument_config_id = instrument_config.id
 
             scan_parameters, scan_window_list = self.extract_scan_event_parameters(prod)
+            spectrum_params = [
+                {"name": "ms level", "value": prod.ms_level},
+                {"name": "MSn spectrum"},
+            ] + list(descriptors)
+            if 'precursor purity' in prod.annotations:
+                spectrum_params.append({'name': 'precursor purity',
+                                        'value': prod.annotations['precursor purity']})
             self.writer.write_spectrum(
                 mz_array, intensity_array, charge_array,
-                id=prod.id, params=[
-                    {"name": "ms level", "value": prod.ms_level},
-                    {"name": "MSn spectrum"}] + list(descriptors),
+                id=prod.id, params=spectrum_params,
                 centroided=centroided,
                 polarity=prod.polarity,
                 scan_start_time=prod.scan_time,

@@ -7,6 +7,7 @@ from .data_source.infer_type import MSFileLoader
 from .data_source.common import Scan, ScanBunch, ChargeNotProvided
 from .utils import Base, LRUDict
 from .peak_dependency_network import NoIsotopicClustersError
+from .scoring import InterferenceDetection
 
 logger = logging.getLogger("deconvolution_scan_processor")
 
@@ -43,15 +44,18 @@ class PriorityTarget(Base):
         The m/z of :attr:`peak`
     charge : int
         The charge state hint from :attr:`info`
+    isolation_window : IsolationWindow
+        The isolation window for this precursor ion. May be `None`
     """
 
     def __init__(self, peak, info, trust_charge_hint=True, precursor_scan_id=None,
-                 product_scan_id=None):
+                 product_scan_id=None, isolation_window=None):
         self.peak = peak
         self.info = info
         self.trust_charge_hint = trust_charge_hint
         self.precursor_scan_id = precursor_scan_id
         self.product_scan_id = product_scan_id
+        self.isolation_window = isolation_window
 
     def __iter__(self):
         yield self.peak
@@ -304,7 +308,7 @@ class ScanProcessor(Base):
         product_scan.peak_set = peaks
         return peaks
 
-    def get_precursor_peak_for_product_scans(self, precursor_scan):
+    def get_precursor_peak_for_product_scans(self, precursor_scan):  # pragma: no cover
         priorities = []
         peaks = precursor_scan.peak_set
         for scan in precursor_scan.product_scans:
@@ -313,7 +317,11 @@ class ScanProcessor(Base):
                 peaks = self.pick_precursor_scan_peaks(precursor_scan)
             peak, err = peaks.get_nearest_peak(precursor_ion.mz)
             precursor_ion.peak = peak
-            target = PriorityTarget(peak, precursor_ion, self.trust_charge_hint)
+            target = PriorityTarget(
+                peak,
+                precursor_ion,
+                self.trust_charge_hint,
+                isolation_window=scan.isolation_window)
             if self._reject_candidate_precursor_peak(peak, scan):
                 logger.info(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
@@ -360,7 +368,8 @@ class ScanProcessor(Base):
             target = PriorityTarget(
                 peak, precursor_ion, self.trust_charge_hint,
                 scan.precursor_information.precursor_scan_id,
-                scan.precursor_information.product_scan_id)
+                scan.precursor_information.product_scan_id,
+                isolation_window=scan.isolation_window)
             if self._reject_candidate_precursor_peak(peak, scan):
                 logger.info(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
@@ -418,9 +427,20 @@ class ScanProcessor(Base):
         # may be `None` if the deconvolution failed, but elements of `priorities`
         # should always be FittedPeak or Peak-like instances
 
+        interference_detector = InterferenceDetection(precursor_scan.peak_set)
         for product_scan in precursor_scan.product_scans:
             precursor_information = product_scan.precursor_information
 
+            isolation_window = product_scan.isolation_window
+            if isolation_window.is_empty():
+                lower = precursor_information.mz - self.default_precursor_ion_selection_window
+                upper = precursor_information.mz + self.default_precursor_ion_selection_window
+            else:
+                lower = isolation_window.lower_bound
+                upper = isolation_window.upper_bound
+
+            # unknown precursor purity
+            product_scan.annotations['precursor purity'] = 0.0
             i = get_nearest_index(precursor_information.mz, priorities)
 
             # If no peak is found in the priority list, it means the priority list is empty.
@@ -450,6 +470,8 @@ class ScanProcessor(Base):
                     precursor_information.default()
                     continue
 
+            precursor_purity = 1 - interference_detector.detect_interference(peak.envelope, lower, upper)
+            product_scan.annotations['precursor purity'] = precursor_purity
             precursor_information.extract(peak)
         precursor_scan.deconvoluted_peak_set = dec_peaks
         return dec_peaks, priority_results

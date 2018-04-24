@@ -604,7 +604,7 @@ cdef class InterferenceDetection(object):
     def __setstate__(self, state):
         self.peaklist, = state
 
-    cdef double detect_interference(self, list experimental_peaks):
+    cdef double detect_interference(self, list experimental_peaks, double lower=-1, double upper=-1):
         cdef:
             FittedPeak min_peak, max_peak
             PeakSet region
@@ -618,9 +618,14 @@ cdef class InterferenceDetection(object):
         min_peak = <FittedPeak>PyList_GET_ITEM(experimental_peaks, 0)
         max_peak = <FittedPeak>PyList_GET_ITEM(experimental_peaks, PyList_GET_SIZE(experimental_peaks) - 1)
 
+        if lower < 0:
+            lower = min_peak.mz - min_peak.full_width_at_half_max
+        if upper < 0:
+            upper = max_peak.mz + max_peak.full_width_at_half_max
+
         region = self.peaklist._between(
-            min_peak.mz - min_peak.full_width_at_half_max,
-            max_peak.mz + max_peak.full_width_at_half_max)
+            lower,
+            upper)
 
         included_intensity = sum_intensity_fitted(experimental_peaks)
         region_intensity = sum_intensity_fitted(list(region))
@@ -630,6 +635,12 @@ cdef class InterferenceDetection(object):
         score = 1 - (included_intensity / region_intensity)
         return score
 
+    def __call__(self, list experimental_peaks, lower=None, upper=None):
+        if lower is None:
+            lower = -1
+        if upper is None:
+            upper = -1
+        return self.detect_interference(experimental_peaks, lower, upper)
 
 cdef class DistinctPatternFitter(IsotopicFitterBase):
 
