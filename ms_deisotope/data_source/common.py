@@ -681,6 +681,30 @@ class RandomAccessScanSource(ScanIterator):
         raise NotImplementedError()
 
     def __getitem__(self, i):
+        """Retrieve the scan object for the specified scan index.
+
+        This internally calls :meth:`get_scan_by_index` but supports
+        slicing and negative indexing.
+
+        Parameters
+        ----------
+        index: int
+            The index to get the scan for
+
+        Returns
+        -------
+        Scan
+        """
+        if isinstance(i, slice):
+            n = len(self)
+            scans = []
+            start, stop, step = i.indices(n)
+            for i in range(start, stop, step):
+                scans.append(self[i])
+            return scans
+        elif i < 0:
+            n = len(self)
+            i = n + i
         return self.get_scan_by_index(i)
 
 
