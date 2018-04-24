@@ -294,10 +294,10 @@ def average_envelope(envelopes, error_tolerance=2e-5):
 def make_peak_index(fitted_peaks):
     ps = PeakSet(fitted_peaks)
     ps._index()
-    return PeakIndex(np.array([], dtype=float), np.array([], dtype=float), ps)
+    return ps
 
 
 def make_deconvoluted_peak_set(deconvoluted_peaks):
     ps = DeconvolutedPeakSet(deconvoluted_peaks)
-    ps._reindex()
+    ps.reindex()
     return ps

@@ -39,7 +39,7 @@ def cluster_scans(scans, precursor_error_tolerance=1e-5):
         best_similarity = 0.0
         for cluster in clusters:
             if abs(ppm_error(scan.precursor_information.neutral_mass,
-                             cluster[0].precursor_information.neutral_mass)) > precursor_error_tolerance:
+                             cluster.neutral_mass)) > precursor_error_tolerance:
                 continue
             similarity = peak_set_similarity(scan, cluster[0])
             if similarity > best_similarity:
