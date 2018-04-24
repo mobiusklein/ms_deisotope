@@ -191,8 +191,8 @@ if _compression.has_idzip:
     def idzip_compression(path, output):
         if output is None:
             output = '-'
-        with click.open_file(output) as outfh:
-            writer = _compression.GzipFile(fileobj=outfh, mode='rb')
+        with click.open_file(output, mode='wb') as outfh:
+            writer = _compression.GzipFile(fileobj=outfh, mode='wb')
             with open(path, 'rb') as infh:
                 buffer_size = 2 ** 16
                 chunk = infh.read(buffer_size)
