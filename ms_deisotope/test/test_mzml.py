@@ -130,6 +130,8 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
 
         product = reader.get_scan_by_time(22.132753)
         self.assertEqual(product.index, 1)
+        scan = reader.get_scan_by_time(float('inf'))
+        assert scan == reader[-1]
         reader.close()
 
     def test_instrument_configuration(self):
