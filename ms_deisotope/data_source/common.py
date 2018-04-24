@@ -1460,7 +1460,7 @@ class Scan(ScanBase):
         else:
             weights = None
         if default_dx:
-            if len(arrays) > 1:
+            if len(arrays) > 2:
                 reference = arrays[len(arrays) // 2 + 1]
             else:
                 reference = arrays[0]
