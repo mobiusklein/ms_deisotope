@@ -104,6 +104,8 @@ class XMLReaderBase(RandomAccessScanSource):
         -------
         Scan
         """
+        if isinstance(scan_id, bytes):
+            scan_id = scan_id.decode('utf8')
         try:
             return self._scan_cache[scan_id]
         except KeyError:
