@@ -831,6 +831,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             selected_ion_dict = self._get_selected_ion(data)
             scan.precursor_information.orphan = selected_ion_dict.get("ms_deisotope:orphan") == "true"
             scan.precursor_information.defaulted = selected_ion_dict.get("ms_deisotope:defaulted") == "true"
+            scan.annotations['precursor purity'] = data.get('precursor purity', 0)
         if "isotopic envelopes array" in data:
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
             scan.deconvoluted_peak_set = deserialize_deconvoluted_peak_set(data)
