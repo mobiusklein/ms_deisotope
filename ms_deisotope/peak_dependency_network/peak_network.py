@@ -419,6 +419,18 @@ class PeakDependenceGraph(object):
 
 
 class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
+    '''Stores the necessary information to retrieve the local optimal solution for
+    a single peak for a deconvolution algorithm from the optimal fit containing
+    :attr:`query_peak` in the set of disjoint best fits for the enclosing connected
+    component
+
+    Attributes
+    ----------
+    query_peak : FittedPeak
+        The peak queried with
+    solution_peak : DeconvolutedPeak
+        The optimal solution peak
+    '''
     def __init__(self, deconvoluter, peak, *args, **kwargs):
         super(NetworkedTargetedDeconvolutionResult, self).__init__(deconvoluter, *args, **kwargs)
         self.query_peak = peak
@@ -432,6 +444,12 @@ class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
             pass
 
     def get(self):
+        """Fetch the optimal solution after the computation has finished.
+
+        Returns
+        -------
+        DeconvolutedPeak
+        """
         self._get_solution()
         return self.solution_peak
 

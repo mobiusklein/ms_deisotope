@@ -32,10 +32,10 @@ class PriorityTarget(Base):
 
     Attributes
     ----------
-    info : PrecursorInformation
+    info : :class:`~.PrecursorInformation`
         The associated precursor information block which contains
         the charge state hint.
-    peak : FittedPeak
+    peak : :class:`~.FittedPeak`
         The peak from which to start the deconvolution
     trust_charge_hint : bool
         Whether or not to force the deconvoluter to only consider
@@ -44,7 +44,7 @@ class PriorityTarget(Base):
         The m/z of :attr:`peak`
     charge : int
         The charge state hint from :attr:`info`
-    isolation_window : IsolationWindow
+    isolation_window : :class:`~.IsolationWindow`
         The isolation window for this precursor ion. May be `None`
     """
 
@@ -98,7 +98,7 @@ class PriorityTarget(Base):
 
 
 class ScanProcessor(Base):
-    """Orchestrates the deconvolution of a `ScanIterator` scan by scan. This process will
+    """Orchestrates the deconvolution of a :class:`~.ScanIterator` scan by scan. This process will
     apply different rules for MS1 scans and MSn scans. This type itself is an Iterator,
     consuming (raw) mass spectral data and producing deisotoped and charge deconvolved spectra.
 
@@ -118,18 +118,18 @@ class ScanProcessor(Base):
         a :class:`ScanIterator` instance. A path to an mzML file will work for the
         default loader. Used to populate :attr:`reader`
     loader_type : callable
-        A callable, which when passed `data_source` returns an instance of :class:`ScanIterator`.
-        By default, this is :class:`MSFileLoader`. Used to populate :attr:`reader`
+        A callable, which when passed `data_source` returns an instance of :class:`~.ScanIterator`.
+        By default, this is :func:`~.MSFileLoader`. Used to populate :attr:`reader`
     reader: ScanIterator
-        Any object implementing the :class:`ScanIterator` interface, produced by calling
+        Any object implementing the :class:`~.ScanIterator` interface, produced by calling
         :attr:`loader_type` on :attr:`data_source`.
     ms1_deconvolution_args : dict
-        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MS1
+        The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MS1
         scans.
     ms1_peak_picking_args : dict
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS1 scans.
     msn_deconvolution_args : dict
-        The arguments passed to :func:`ms_deisotope.deconvolution.deconvolute_peaks` for MSn
+        The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MSn
         scans.
     msn_peak_picking_args : dict
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MSn scans.
@@ -184,8 +184,6 @@ class ScanProcessor(Base):
         self._signal_source = self.loader_type(data_source)
         self.envelope_selector = envelope_selector
         self.terminate_on_error = terminate_on_error
-
-        self._ms1_index_cache = LRUDict(maxsize=self.ms1_averaging * 2 + 2)
 
     def _reject_candidate_precursor_peak(self, peak, product_scan):
         isolation = product_scan.isolation_window
@@ -339,19 +337,19 @@ class ScanProcessor(Base):
 
         Parameters
         ----------
-        precursor_scan : Scan
+        precursor_scan : :class:`~.Scan`
             An MS1 Scan
-        product_scans : list of Scan
-            A list of MSn Scans related to `precursor_scan`
+        product_scans : :class:`list` of :class:`~.Scan`
+            A :class:`list` of MSn Scans related to `precursor_scan`
 
         Returns
         -------
-        precursor_scan: Scan
+        precursor_scan: :class:`~.Scan`
             As Parameter
-        prioritiies: list of PriorityTarget
-            list of the peak target windows in `precursor_scan` which
+        prioritiies: :class:`list` of :class:`~PriorityTarget`
+            :class:`list` of the peak target windows in `precursor_scan` which
             are related to `product_scans`
-        product_scans: list of Scan
+        product_scans: :class:`list` of :class:`~.Scan`
             As Parameter
         """
         prec_peaks = self.pick_precursor_scan_peaks(precursor_scan)
@@ -386,6 +384,29 @@ class ScanProcessor(Base):
                 scan.precursor_information.default(orphan=True)
 
     def deconvolute_precursor_scan(self, precursor_scan, priorities=None):
+        """Deconvolute the given precursor scan, giving priority to its product ions,
+        correcting the :attr:`precursor_information` attributes of priority targets.
+
+        Parameters
+        ----------
+        precursor_scan : :class:`~.Scan`
+            The precursor scan to deconvolute
+        priorities : :class:`list` of :class:`PriorityTarget`, optional
+            The priority targets for the product ions derived from ``precursor_scan``
+
+        Returns
+        -------
+        :class:`~DeconvolutedPeakSet`
+            The deconvoluted peaks of ``precursor_scan``
+        :class:`list` of :class:`PriorityTarget`
+            The precursor ions selected, with updated mass and charge information
+
+        Raises
+        ------
+        Exception
+            Any errors which are thrown during the deconvolution process may be thrown
+            if :attr:`terminate_on_error` is `True`.
+        """
         if priorities is None:
             priorities = []
 
@@ -527,18 +548,21 @@ class ScanProcessor(Base):
         """Fully preprocesses the `precursor` and `products` scans, performing
         any necessary information sharing.
 
+        This method may be used to process scans from other sources not from the
+        wrapped :class:`~.ScanIterator`.
+
         Parameters
         ----------
-        precursor : Scan
+        precursor : :class:`~.Scan`
             An MS1 Scan
-        products : list of Scan
+        products : :class:`list` of :class:`~.Scan`
             A list of MSn Scans related to `precursor`
 
         Returns
         -------
-        precursor_scan: Scan
+        precursor_scan: :class:`~.Scan`
             The fully processed version of `precursor`
-        product_scans: list of Scan
+        product_scans: :class:`list` of :class:`~.Scan`
             The fully processed version of `products`
         """
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
@@ -601,7 +625,7 @@ class ScanProcessor(Base):
 
         See Also
         --------
-        ms_deisotope.data_source.mzml.start_from_scan
+        ms_deisotope.data_source.common.start_from_scan
         """
         self.reader.start_from_scan(*args, **kwargs)
         return self

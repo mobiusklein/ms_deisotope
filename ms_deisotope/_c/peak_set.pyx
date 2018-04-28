@@ -550,8 +550,6 @@ cdef class DeconvolutedPeakSet:
         """Retrieve a :class:`DeconvolutedPeakSet` containing all the peaks
         whose mass is between ``m1`` and ``m2``.
 
-        These peaks are not copied.
-
         If ``use_mz`` is :const:`True` then search by m/z instead of mass
 
         Parameters
@@ -569,6 +567,7 @@ cdef class DeconvolutedPeakSet:
         """
         acc = []
         collecting = False
+        value = None
         if not use_mz:
             getter = operator.attrgetter("neutral_mass")
             iterator = self.peaks
@@ -576,9 +575,10 @@ cdef class DeconvolutedPeakSet:
             getter = operator.attrgetter("mz")
             iterator = self._mz_ordered
         for peak in iterator:
-            if not collecting and getter(peak) >= m1:
+            value = getter(peak)
+            if not collecting and value >= m1 and value < m2:
                 collecting = True
-            elif collecting and getter(peak) > m2:
+            elif collecting and value > m2:
                 break
 
             if collecting:

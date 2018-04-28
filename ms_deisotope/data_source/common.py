@@ -159,7 +159,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return self.__class__(self.mz, self.intensity / d)
 
     def __add__(self, other):
-        if np.allclose(self.mz, other.mz):
+        if len(self.mz) == len(other.mz) and np.allclose(self.mz, other.mz):
             return self.__class__(self.mz, self.intensity + other.intensity)
         else:
             return self.__class__(*average_signal([self, other])) * 2
@@ -897,6 +897,8 @@ class Scan(ScanBase):
     activation: :class:`.ActivationInformation` or None
         If this scan is an MS^n scan, this attribute will contain information about the process
         used to produce it from its parent ion.
+    instrument_configuration: :class:`~.InstrumentInformation`
+        The instrument configuration used to acquire this scan.
     acquisition_information: :class:`.ScanAcquisitionInformation` or None
         Describes the type of event that produced this scan, as well as the scanning method
         used.
@@ -1194,10 +1196,36 @@ class Scan(ScanBase):
 
         Parameters
         ----------
-        *args
-            Passed along to :func:`ms_deisotope.deconvolution.deconvolute_peaks`
+        decon_config : dict, optional
+            Parameters to use to initialize the deconvoluter instance produced by
+            ``deconvoluter_type``
+        charge_range : tuple of integers, optional
+            The range of charge states to consider.
+        error_tolerance : float, optional
+            PPM error tolerance to use to match experimental to theoretical peaks
+        priority_list : list, optional
+            The set of peaks to target for deconvolution to be able to enforce external
+            constraints on, such as selected precursors for fragmentation.
+        left_search_limit : int, optional
+            The maximum number of neutron shifts to search to the left  (decrease) from
+            each query peak
+        right_search_limit : int, optional
+            The maximum number of neutron shifts to search to the right (increase) from
+            each query peak
+        left_search_limit_for_priorities : int, optional
+            The maximum number of neutron shifts to search to the left (decrease) from
+            each query peak for priority targets
+        right_search_limit_for_priorities : None, optional
+            The maximum number of neutron shifts to search to the right (increase) from
+            each query peak for priority targets
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to PROTON
+        truncate_after : float, optional
+            The percentage of the isotopic pattern to include. Defaults to TRUNCATE_AFTER
+        deconvoluter_type : type or callable, optional
+            A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`
         **kwargs
-            Passed along to :func:`ms_deisotope.deconvolution.deconvolute_peaks`
+            Additional keywords passed to :func:`~.deconvolute_peaks`
 
         Returns
         -------
@@ -1209,6 +1237,10 @@ class Scan(ScanBase):
         ValueError
             If :attr:`peak_set` is None, a :class:`ValueError` will be raised
             indicating that a scan must be centroided before it can be deconvoluted
+
+        See Also
+        --------
+        :func:`~.deconvolute_peaks`
         """
         if self.peak_set is None:
             raise ValueError("Cannot deconvolute a scan that has not been "

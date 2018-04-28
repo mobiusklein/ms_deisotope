@@ -59,6 +59,23 @@ class TheoreticalIsotopicPattern(object):
         return self.__class__([p.clone() for p in self.peaklist], self.origin, self.offset)
 
     def truncate_after(self, truncate_after=0.95):
+        """Drops peaks from the end of the isotopic pattern
+        which make up the last ``1 - truncate_after`` percent
+        of the isotopic pattern.
+
+        After truncation, the pattern is renormalized to sum to ``1``
+
+        Parameters
+        ----------
+        truncate_after : float, optional
+            The percentage of the isotopic pattern signal to retain. Defaults
+            to 0.95.
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         cumsum = 0
         result = []
         n = len(self)
@@ -77,6 +94,22 @@ class TheoreticalIsotopicPattern(object):
         return self
 
     def shift(self, offset):
+        """Shift all the m/z of peaks in the isotopic pattern by ``offset``
+        m/z.
+
+        This will update :attr:`origin` to reflect the new starting
+        monoisotopic m/z.
+
+        Parameters
+        ----------
+        offset : float
+            The amount to shift each peak in the pattern by in m/z
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         new_origin = offset
         delta = (new_origin - self.origin)
         self.origin = new_origin
@@ -85,6 +118,21 @@ class TheoreticalIsotopicPattern(object):
         return self
 
     def ignore_below(self, ignore_below=0):
+        """Discards peaks whose intensity is below ``ignore_below``.
+
+        After discarding peaks, the pattern will be renormalized to
+        sum to ``1.0``
+
+        Parameters
+        ----------
+        ignore_below : float, optional
+            The threshold below which peaks will be discarded
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         total = 0
         kept_tid = []
         n = len(self)
@@ -115,6 +163,34 @@ class TheoreticalIsotopicPattern(object):
             ', '.join("%0.3f" % p.intensity for p in self.peaklist))
 
     def scale(self, experimental_distribution, method='sum'):
+        r"""Scales ``self``'s intensity to match the intensity distribution of the
+        experimental isotopic pattern in ``experimental_distribution``.
+
+        The ``method`` argument must be one of:
+
+        "sum"
+            Scale each peak of the theoretical distribution by the sum of the
+            intensity in the experimental distribution such that the sums of their
+            intensities are equal.
+
+        "max"
+            Select the most abundant peak in the theoretical distribution :math:`t_i`, find it's
+            match in the experimental distribution :math:`e_i`, find the scaling factor
+            :math:`\alpha = \frac{e_i}{t_i}` which will make :math:`e_i == t_i` and scale all
+            peaks in self by :math:`alpha`
+
+        Parameters
+        ----------
+        experimental_distribution : list
+            The experimental peaks matched
+        method : str, optional
+            The scaling method to use. Defaults to ``"sum"``
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         if method == 'sum':
             total_abundance = sum(
                 p.intensity for p in experimental_distribution)
@@ -321,6 +397,17 @@ def isotopic_shift(charge=1):
 
 @dict_proxy("averagine")
 class AveragineCache(object):
+    """A wrapper around a :class:`Averagine` instance which will cache isotopic patterns
+    produced for new (m/z, charge) pairs and reuses it for nearby m/z values
+
+    Attributes
+    ----------
+    averagine : :class:`~Averagine`
+        The averagine to use to generate new isotopic patterns
+    cache_truncation : float
+        Number of decimal places to round off the m/z for caching purposes
+    """
+
     def __init__(self, averagine, backend=None, cache_truncation=1.0):
         if backend is None:
             backend = {}

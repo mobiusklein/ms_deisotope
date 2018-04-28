@@ -54,6 +54,9 @@ id_formats = {
     u'multiple peak list nativeID format': "Native format defined by index=xsd:nonNegativeInteger.",
     u'SCIEX TOF/TOF T2D nativeID format': "Native format defined by file=xsd:IDREF.",
 }
+'''
+Formats for scan id recording
+'''
 
 
 file_formats = {
@@ -90,6 +93,9 @@ file_formats = {
     u'SCIEX API III format',
     u'SCiLS Lab format',
 }
+'''
+Formats for storing mass spectral data in either raw or processed form
+'''
 
 
 MS_MS1_Spectrum = 'MS1 spectrum'
@@ -127,6 +133,9 @@ content_keys = [
     'electromagnetic radiation spectrum',
     'precursor ion spectrum'
 ]
+'''
+Entries commonly used to describe the contents of a data file
+'''
 
 
 class FileInformation(MutableMapping):
@@ -139,7 +148,8 @@ class FileInformation(MutableMapping):
     ----------
     contents : dict
         A mapping between controlled vocabullary names or user-defined
-        names and an optional value. For standard controlled names see :data:`.content_keys`
+        names and an optional value. For standard controlled names see
+        :data:`content_keys`
     source_files : list of :class:`.SourceFile` objects
         The set of files which either define the current file, or were used
         to create the current file if recorded.
@@ -259,7 +269,7 @@ class SourceFile(object):
         The unique identifier for this file, among files which contributed to
         the reference file
     id_format : str
-        The name of a formal identifier schema. See :data:`id_formats`
+        The name of a formal identifier schema. See :data:`~.id_formats`
     location : str
         The directory path to this file on the machine it was last read on to contribute to
         or define the reference file

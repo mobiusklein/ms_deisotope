@@ -200,6 +200,23 @@ class Constant(object):
 
 
 class DeconvolutionProcessResult(object):
+    """Hold information from a multi-stage deconvolution process.
+
+    Emulates an interface matching a tuple of (:attr:`peak_set`, :attr:`priorities`)
+
+    Attributes
+    ----------
+    deconvoluter : :class:`~.DeconvoluterBase`
+        The deconvoluter used.
+    errors : list, optional
+        A list of :class:`~.Exception` instances that may have been
+        thrown during any stage of deconvolution.
+    peak_set : :class:`~.DeconvolutedPeakSet`
+        The resulting deconvoluted peaks
+    priorities : list
+        The extracted results from the targeted deconvolution list
+    """
+
     def __init__(self, deconvoluter, peak_set, priorities, errors=None):
         self.deconvoluter = deconvoluter
         self.peak_set = peak_set
@@ -228,7 +245,7 @@ class TargetedDeconvolutionResultBase(Base):
 
     Attributes
     ----------
-    deconvoluter : DeconvoluterBase
+    deconvoluter : :class:`~.DeconvoluterBase`
         The deconvoluter to use to look up the result
     """
     def __init__(self, deconvoluter, *args, **kwargs):
@@ -239,7 +256,7 @@ class TargetedDeconvolutionResultBase(Base):
 
         Returns
         -------
-        DeconvolutedPeak
+        :class:`~.DeconvolutedPeak`
         """
         raise NotImplementedError()
 
@@ -251,9 +268,9 @@ class TrivialTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
 
     Attributes
     ----------
-    query_peak : FittedPeak
+    query_peak : :class:`~.FittedPeak`
         The peak queried with
-    solution_peak : DeconvolutedPeak
+    solution_peak : :class:`~.DeconvolutedPeak`
         The optimal solution peak
     """
     def __init__(self, deconvoluter, solution_peak, query_peak, *args, **kwargs):
@@ -262,6 +279,12 @@ class TrivialTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
         self.query_peak = query_peak
 
     def get(self):
+        """Fetch the optimal solution after the computation has finished.
+
+        Returns
+        -------
+        :class:`~.DeconvolutedPeak`
+        """
         return self.solution_peak
 
 

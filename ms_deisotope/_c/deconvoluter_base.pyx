@@ -49,7 +49,32 @@ cdef FittedPeak make_placeholder_peak(double mz):
 
 
 cdef class DeconvoluterBase(object):
+    """Base class for all Deconvoluter types. Provides basic configuration for common operations,
+    regardless of implementation. Because these methods form the backbone of all deconvolution algorithms,
+    this class has a C-extension implementation as well.
 
+    Attributes
+    ----------
+    peaklist : ms_peak_picker.PeakSet
+        The centroided mass spectrum to deconvolute
+    scorer : IsotopicFitterBase
+        The criterion for evaluating individual isotopic pattern fits
+    merge_isobaric_peaks : bool
+        If multiple passes produce peaks with identical mass values,
+        should those peaks be summed
+    minimum_intensity : float
+        Experimental peaks whose intensity is below this level will be ignored
+        by peak querying methods
+    scale_method : str
+        The name of the method to use to scale theoretical isotopic pattern intensities
+        to match the experimental isotopic pattern
+    use_subtraction : bool
+        Whether or not to apply a subtraction procedure to experimental peaks after they
+        have been fitted. This is only necessary if the same signal may be examined multiple
+        times as in a multi-pass method or when peak dependence is not considered
+    verbose : bool
+        Produce extra logging information
+    """
     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
                   minimum_intensity=5., *args, **kwargs):
         self.use_subtraction = use_subtraction

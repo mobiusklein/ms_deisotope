@@ -285,6 +285,16 @@ cdef class MaximizeFitSelector(FitSelectorBase):
 
 
 cdef class IsotopicFitterBase(object):
+    '''A base class for Isotopic Pattern Fitters, objects
+    which given a set of experimental peaks and a set of matching
+    theoretical peaks, returns a fit score describing how good the
+    match is.
+
+    An IsotopicFitter may be optimal when the score is small (minimizing)
+    or when the score is large (maximizing), and the appropriate
+    :class:`FitSelectorBase` type will be used for :attr:`select`. This
+    will also be reflected by :meth:`is_maximizing`.
+    '''
 
     def __init__(self, score_threshold=0.5):
         self.select = MinimizeFitSelector(score_threshold)
@@ -299,21 +309,70 @@ cdef class IsotopicFitterBase(object):
         self.select, = state
 
     def evaluate(self, PeakSet peaklist, list observed, list expected, **kwargs):
+        """Evaluate a pair of peak lists for goodness-of-fit.
+
+        Parameters
+        ----------
+        peaklist : :class:`~.PeakSet`
+            The full set of all experimental peaks
+        observed : list
+            The list of experimental peaks that are part of this fit
+        expected : list
+            The list of theoretical peaks that are part of this fit
+        **kwargs
+
+        Returns
+        -------
+        float
+            The score
+        """
         return self._evaluate(peaklist, observed, expected)
 
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         return 0
 
     def __call__(self, *args, **kwargs):
+        """Invokes :meth:`evaluate`
+        
+        Parameters
+        ----------
+        *args
+            Forwarded to :meth:`evaluate`
+        **kwargs
+            Forwarded to :meth:`evaluate`
+        
+        Returns
+        -------
+        float
+            The score
+        """
         return self.evaluate(*args, **kwargs)
 
     cpdef bint reject(self, IsotopicFitRecord fit):
+        """Test whether this fit is too poor to be used
+
+        Parameters
+        ----------
+        fit : :class:`~IsotopicFitRecord`
+            The fit to test
+
+        Returns
+        -------
+        bool
+        """
         return self.select.reject(fit)
 
     cpdef bint reject_score(self, double score):
         return self.select.reject_score(score)
 
     cpdef bint is_maximizing(self):
+        """Whether or not this fitter's score gets better as it grows
+
+        Returns
+        -------
+        bool
+            Whether or not this fitter is a maximizing fitter
+        """
         return self.select.is_maximizing()
 
     cpdef IsotopicFitterBase _configure(self, DeconvoluterBase deconvoluter, dict kwargs):
@@ -372,7 +431,45 @@ cdef double* normalize_intensity_fitted(list peaklist, double* out, double total
         out[i] = peak.intensity / total
 
 
+cdef class GTestFitter(IsotopicFitterBase):
+    r"""Evaluate an isotopic fit using a G-test
+
+    .. math::
+        G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}
+
+    where :math:`o_i` is the intensity of the ith experimental peak
+    and :math:`e_i` is the intensity of the ith theoretical peak.
+    """
+    @cython.cdivision
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+        cdef:
+            double g_score, obs, theo, log_ratio
+            size_t n
+
+        n = PyList_GET_SIZE(observed)
+
+        g_score = 0.
+        for i in range(n):
+            obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity
+            theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity
+
+            log_ratio = log(obs / theo)
+            g_score += obs * log_ratio
+
+        return g_score * 2.
+
+
 cdef class ScaledGTestFitter(IsotopicFitterBase):
+    r"""Evaluate an isotopic fit using a G-test after normalizing the
+    list of experimental and theoretical peaks to both sum to 1.
+
+    .. math::
+        G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}
+
+    where :math:`o_i` is the intensity of the ith experimental peak
+    and :math:`e_i` is the intensity of the ith theoretical peak.
+    """
+
     @cython.cdivision
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         cdef:
@@ -427,7 +524,21 @@ cdef double max_intensity_fitted(list peaklist):
 
 
 cdef class LeastSquaresFitter(IsotopicFitterBase):
-    
+    r"""Evaluate an isotopic fit using least squares coefficient of
+    determination :math:`R^2`.
+
+    .. math::
+        {\hat e_i} &= e_i / max(e)
+
+        {\hat t_i} &= t_i / max(t)
+
+        {\hat t} &= \sum_i^n {\hat t_i}^2
+
+        R^2 &= \frac{1}{{\hat t}}\sum_i^n ({\hat e_i} - {\hat t_i})^2
+
+    where :math:`e_i` is the ith experimental peak intensity and :math:`t_i`
+    is the ith theoretical peak intensity
+    """
     @cython.cdivision
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         cdef:
@@ -486,7 +597,15 @@ cdef double ms_deconv_score_peak(FittedPeak obs, TheoreticalPeak theo, double ma
 
 
 cdef class MSDeconVFitter(IsotopicFitterBase):
+    '''An implementation of the scoring function used in :title-reference:`MSDeconV`
 
+    References
+    ----------
+    Liu, X., Inbar, Y., Dorrestein, P. C., Wynne, C., Edwards, N., Souda, P., …
+    Pevzner, P. A. (2010). Deconvolution and database search of complex tandem
+    mass spectra of intact proteins: a combinatorial approach. Molecular & Cellular
+    Proteomics : MCP, 9(12), 2772–2782. https://doi.org/10.1074/mcp.M110.002766
+    '''
     def __init__(self, minimum_score=10, mass_error_tolerance=0.02):
         self.mass_error_tolerance = mass_error_tolerance
         self.select = MaximizeFitSelector()
@@ -526,6 +645,15 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
 
 
 cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
+    r'''An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
+    weighted by 1 - :attr:`penalty_factor` * :class:`ScaledGTestFitter` score
+
+    .. math::
+        S(e, t) = M(e, t) * (1 - G(e, t))
+
+    where :math:`e` is the experimental peak list and :math:`t` is the theoretical
+    peak list
+    '''
     def __init__(self, minimum_score=10, penalty_factor=1, mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector(minimum_score)
         self.penalty_factor = penalty_factor

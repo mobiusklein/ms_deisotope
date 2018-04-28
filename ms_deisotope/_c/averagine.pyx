@@ -253,6 +253,15 @@ cdef double sum_intensity(list peaklist):
 
 @cython.freelist(1000000)
 cdef class TheoreticalIsotopicPattern(object):
+    """Represent a theoretical isotopic peak list
+
+    Attributes
+    ----------
+    peaklist: list of :class:`brainpy.TheoreticalPeak`
+        The theoretical isotopic pattern peak list
+    origin: float
+        The monoisotopic peak's m/z
+    """
 
     @staticmethod
     cdef TheoreticalIsotopicPattern _create(list peaklist, double origin, double offset):
@@ -318,6 +327,21 @@ cdef class TheoreticalIsotopicPattern(object):
 
     @cython.cdivision
     cpdef TheoreticalIsotopicPattern ignore_below(self, double ignore_below=0.0):
+        """Discards peaks whose intensity is below ``ignore_below``.
+
+        After discarding peaks, the pattern will be renormalized to
+        sum to ``1.0``
+
+        Parameters
+        ----------
+        ignore_below : float, optional
+            The threshold below which peaks will be discarded
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         cdef:
             double total
             list kept_tid
@@ -342,6 +366,22 @@ cdef class TheoreticalIsotopicPattern(object):
         return self
 
     cpdef TheoreticalIsotopicPattern shift(self, double mz):
+        """Shift all the m/z of peaks in the isotopic pattern by ``offset``
+        m/z.
+
+        This will update :attr:`origin` to reflect the new starting
+        monoisotopic m/z.
+
+        Parameters
+        ----------
+        offset : float
+            The amount to shift each peak in the pattern by in m/z
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         cdef:
             TheoreticalPeak peak
             size_t i, n
@@ -374,6 +414,23 @@ cdef class TheoreticalIsotopicPattern(object):
 
     @cython.cdivision
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=0.95):
+        """Drops peaks from the end of the isotopic pattern
+        which make up the last ``1 - truncate_after`` percent
+        of the isotopic pattern.
+
+        After truncation, the pattern is renormalized to sum to ``1``
+
+        Parameters
+        ----------
+        truncate_after : float, optional
+            The percentage of the isotopic pattern signal to retain. Defaults
+            to 0.95.
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         cdef:
             double cumsum, normalizer
             TheoreticalPeak peak
@@ -397,6 +454,34 @@ cdef class TheoreticalIsotopicPattern(object):
         return self
 
     cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method="sum"):
+        r"""Scales ``self``'s intensity to match the intensity distribution of the
+        experimental isotopic pattern in ``experimental_distribution``.
+
+        The ``method`` argument must be one of:
+
+        "sum"
+            Scale each peak of the theoretical distribution by the sum of the
+            intensity in the experimental distribution such that the sums of their
+            intensities are equal.
+
+        "max"
+            Select the most abundant peak in the theoretical distribution :math:`t_i`, find it's
+            match in the experimental distribution :math:`e_i`, find the scaling factor
+            :math:`\alpha = \frac{e_i}{t_i}` which will make :math:`e_i == t_i` and scale all
+            peaks in self by :math:`alpha`
+
+        Parameters
+        ----------
+        experimental_distribution : list
+            The experimental peaks matched
+        method : str, optional
+            The scaling method to use. Defaults to ``"sum"``
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
         return self._scale(experimental_distribution, method)
 
     @cython.final
@@ -504,6 +589,16 @@ cdef class TheoreticalIsotopicPattern(object):
 
 
 cdef class AveragineCache(object):
+    """A wrapper around a :class:`Averagine` instance which will cache isotopic patterns
+    produced for new (m/z, charge) pairs and reuses it for nearby m/z values
+
+    Attributes
+    ----------
+    averagine : :class:`~Averagine`
+        The averagine to use to generate new isotopic patterns
+    cache_truncation : float
+        Number of decimal places to round off the m/z for caching purposes
+    """
 
     def __init__(self, object averagine, object backend=None, double cache_truncation=1.):
         if backend is None:

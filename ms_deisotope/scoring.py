@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import math
 import numpy as np
 import operator
@@ -215,23 +217,82 @@ class MaximizeFitSelector(FitSelectorBase):
 
 
 class IsotopicFitterBase(Base):
+    '''A base class for Isotopic Pattern Fitters, objects
+    which given a set of experimental peaks and a set of matching
+    theoretical peaks, returns a fit score describing how good the
+    match is.
+
+    An IsotopicFitter may be optimal when the score is small (minimizing)
+    or when the score is large (maximizing), and the appropriate
+    :class:`FitSelectorBase` type will be used for :attr:`select`. This
+    will also be reflected by :meth:`is_maximizing`.
+    '''
 
     def __init__(self, score_threshold=0.5):
         self.select = MinimizeFitSelector(score_threshold)
 
     def evaluate(self, peaklist, observed, expected, **kwargs):
+        """Evaluate a pair of peak lists for goodness-of-fit.
+
+        Parameters
+        ----------
+        peaklist : :class:`~.PeakSet`
+            The full set of all experimental peaks
+        observed : list
+            The list of experimental peaks that are part of this fit
+        expected : list
+            The list of theoretical peaks that are part of this fit
+        **kwargs
+
+        Returns
+        -------
+        float
+            The score
+        """
         return NotImplemented
 
     def _evaluate(self, peaklist, observed, expected, **kwargs):
         return self.evaluate(peaklist, observed, expected, **kwargs)
 
     def __call__(self, *args, **kwargs):
+        """Invokes :meth:`evaluate`
+
+        Parameters
+        ----------
+        *args
+            Forwarded to :meth:`evaluate`
+        **kwargs
+            Forwarded to :meth:`evaluate`
+
+        Returns
+        -------
+        float
+            The score
+        """
         return self.evaluate(*args, **kwargs)
 
     def reject(self, fit):
+        """Test whether this fit is too poor to be used
+
+        Parameters
+        ----------
+        fit : :class:`~IsotopicFitRecord`
+            The fit to test
+
+        Returns
+        -------
+        bool
+        """
         return self.select.reject(fit)
 
     def is_maximizing(self):
+        """Whether or not this fitter's score gets better as it grows
+
+        Returns
+        -------
+        bool
+            Whether or not this fitter is a maximizing fitter
+        """
         return self.select.is_maximizing()
 
     def configure(self, deconvoluter, **kwargs):
@@ -239,7 +300,14 @@ class IsotopicFitterBase(Base):
 
 
 class GTestFitter(IsotopicFitterBase):
+    r"""Evaluate an isotopic fit using a G-test
 
+    .. math::
+        G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}
+
+    where :math:`o_i` is the intensity of the ith experimental peak
+    and :math:`e_i` is the intensity of the ith theoretical peak.
+    """
     def evaluate(self, peaklist, observed, expected, **kwargs):
         g_score = 2 * sum([obs.intensity * np.log(
             obs.intensity / theo.intensity) for obs, theo in zip(observed, expected)])
@@ -250,7 +318,15 @@ g_test = GTestFitter()
 
 
 class ScaledGTestFitter(IsotopicFitterBase):
+    r"""Evaluate an isotopic fit using a G-test after normalizing the
+    list of experimental and theoretical peaks to both sum to 1.
 
+    .. math::
+        G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}
+
+    where :math:`o_i` is the intensity of the ith experimental peak
+    and :math:`e_i` is the intensity of the ith theoretical peak.
+    """
     def evaluate(self, peaklist, observed, expected, **kwargs):
         total_observed = sum(p.intensity for p in observed)
         total_expected = sum(p.intensity for p in expected)
@@ -279,6 +355,21 @@ chi_sqr_test = ChiSquareFitter()
 
 
 class LeastSquaresFitter(IsotopicFitterBase):
+    r"""Evaluate an isotopic fit using least squares coefficient of
+    determination :math:`R^2`.
+
+    .. math::
+        {\hat e_i} &= e_i / max(e)
+
+        {\hat t_i} &= t_i / max(t)
+
+        {\hat t} &= \sum_i^n {\hat t_i}^2
+
+        R^2 &= \frac{1}{{\hat t}}\sum_i^n ({\hat e_i} - {\hat t_i})^2
+
+    where :math:`e_i` is the ith experimental peak intensity and :math:`t_i`
+    is the ith theoretical peak intensity
+    """
 
     def evaluate(self, peaklist, observed, expected, **kwargs):
         exp_max = max(p.intensity for p in observed)
@@ -299,6 +390,15 @@ least_squares = LeastSquaresFitter()
 
 
 class MSDeconVFitter(IsotopicFitterBase):
+    '''An implementation of the scoring function used in :title-reference:`MSDeconV`
+
+    References
+    ----------
+    Liu, X., Inbar, Y., Dorrestein, P. C., Wynne, C., Edwards, N., Souda, P., …
+    Pevzner, P. A. (2010). Deconvolution and database search of complex tandem
+    mass spectra of intact proteins: a combinatorial approach. Molecular & Cellular
+    Proteomics : MCP, 9(12), 2772–2782. https://doi.org/10.1074/mcp.M110.002766
+    '''
 
     def __init__(self, minimum_score=10, mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector()
@@ -351,7 +451,15 @@ class MSDeconVFitter(IsotopicFitterBase):
 
 
 class PenalizedMSDeconVFitter(IsotopicFitterBase):
+    r'''An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
+    weighted by 1 - :attr:`penalty_factor` * :class:`ScaledGTestFitter` score
 
+    .. math::
+        S(e, t) = M(e, t) * (1 - G(e, t))
+
+    where :math:`e` is the experimental peak list and :math:`t` is the theoretical
+    peak list
+    '''
     def __init__(self, minimum_score=10, penalty_factor=1., mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector(minimum_score)
         self.msdeconv = MSDeconVFitter(mass_error_tolerance=mass_error_tolerance)

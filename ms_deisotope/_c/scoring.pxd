@@ -52,6 +52,9 @@ cdef class LeastSquaresFitter(IsotopicFitterBase):
     pass
 
 
+cdef class GTestFitter(IsotopicFitterBase):
+    pass
+
 cdef class ScaledGTestFitter(IsotopicFitterBase):
     pass
 

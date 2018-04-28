@@ -36,8 +36,11 @@ class TestMzMLScanSerializer(unittest.TestCase):
                 product.deconvolute()
             writer.save(bunch)
             writer.complete()
+            fh.flush()
+            writer.format()
         source_reader.reset()
-        processed_reader = ProcessedMzMLDeserializer(_compression.get_opener(name))
+        processed_reader = ProcessedMzMLDeserializer(_compression.get_opener(writer.handle.name))
+
         for a, b in zip(source_reader.instrument_configuration(), processed_reader.instrument_configuration()):
             assert a.analyzers == b.analyzers
         for a, b in zip(source_reader, processed_reader):

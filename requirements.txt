@@ -6,3 +6,4 @@ numpy
 scipy
 brain-isotopic-distribution
 dill
+idzip-python>=0.3.2

@@ -622,6 +622,11 @@ class MzMLSerializer(ScanSerializerBase):
             except IOError as e:
                 warnings.warn("Could not write extended index file due to error %r" % (e,))
 
+        try:
+            self.writer.outfile.flush()
+        except (IOError, AttributeError):
+            pass
+
     def format(self):
         try:
             self.writer.format()
@@ -634,8 +639,12 @@ class MzMLSerializer(ScanSerializerBase):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.complete()
-        if hasattr(self.handle, "close"):
-            self.handle.close()
+        if hasattr(self.handle, "closed"):
+            if not self.handle.closed:
+                try:
+                    self.handle.close()
+                except AttributeError:
+                    pass
         self.format()
 
 
