@@ -1,0 +1,517 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.data_source.metadata.file_information &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.data_source.metadata.file_information</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.data_source.metadata.file_information</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">MutableMapping</span>
+
+<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="ne">FileNotFoundError</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="ne">FileNotFoundError</span> <span class="o">=</span> <span class="ne">OSError</span>
+
+
+<span class="n">id_formats</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">:</span> <span class="s2">&quot;Describes how the native spectrum identifiers are formated.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Agilent MassHunter nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by scanId=xsd:nonNegativeInteger.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;spectrum from database string nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by databasekey=xsd:string.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;spectrum from ProteinScape database nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by databasekey=xsd:long.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker U2 nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Native format defined by declaration=xsd:nonNegativeInteger&quot;</span>
+        <span class="s2">&quot; collection=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;no nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;No nativeID format indicates that the file tagged with this term &quot;</span>
+        <span class="s2">&quot;does not contain spectra that can have a nativeID format.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;Mascot query number&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by query=xsd:nonNegativeInteger.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;spectrum from database integer nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by databasekey=xsd:long.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Native format defined by source=xsd:string &quot;</span>
+        <span class="s2">&quot;start=xsd:nonNegativeInteger end=xsd:nonNegativeInteger.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;UIMF nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Native format defined by frame=xsd:nonNegativeInteger &quot;</span>
+        <span class="s2">&quot;scan=xsd:nonNegativeInteger frameType=xsd:nonNegativeInteger.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker Container nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native identifier (UUID).&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Native format defined by jobRun=xsd:nonNegativeInteger &quot;</span>
+        <span class="s2">&quot;spotLabel=xsd:string spectrum=xsd:nonNegativeInteger.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;Thermo nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Native format defined by controllerType=xsd:nonNegativeInteger &quot;</span>
+        <span class="s2">&quot;controllerNumber=xsd:positiveInteger scan=xsd:positiveInteger.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;Waters nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Native format defined by function=xsd:positiveInteger &quot;</span>
+        <span class="s2">&quot;process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;Scaffold nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Scaffold native ID format.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker FID nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by file=xsd:IDREF.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker BAF nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by scan=xsd:nonNegativeInteger.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker/Agilent YEP nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by scan=xsd:nonNegativeInteger.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;WIFF nativeID format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Native format defined by sample=xsd:nonNegativeInteger period=xsd:nonNegativeInteger&quot;</span>
+        <span class="s2">&quot; cycle=xsd:nonNegativeInteger experiment=xsd:nonNegativeInteger.&quot;</span><span class="p">),</span>
+    <span class="sa">u</span><span class="s1">&#39;spectrum identifier nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by spectrum=xsd:nonNegativeInteger.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;scan number only nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by scan=xsd:nonNegativeInteger.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;single peak list nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by file=xsd:IDREF.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;multiple peak list nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by index=xsd:nonNegativeInteger.&quot;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF T2D nativeID format&#39;</span><span class="p">:</span> <span class="s2">&quot;Native format defined by file=xsd:IDREF.&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Formats for scan id recording</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<span class="n">file_formats</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="sa">u</span><span class="s1">&#39;Mascot MGF format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Waters raw format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;DTA format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF T2D format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bioworks SRF format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Andi-MS format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF database&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;parameter file&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker/Agilent YEP format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;mz5 format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;ISB mzXML format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;ABI WIFF format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker BAF format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;UIMF format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;mzML format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Micromass PKL format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker XML format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker U2 format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker FID format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;text format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;PSI mzData format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech database entity&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Thermo RAW format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Agilent MassHunter format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;ProteinLynx Global Server mass spectrum XML format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Bruker Container format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;PerSeptive PKS format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Phenyx XML format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;Proteinscape spectra&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;SCIEX API III format&#39;</span><span class="p">,</span>
+    <span class="sa">u</span><span class="s1">&#39;SCiLS Lab format&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Formats for storing mass spectral data in either raw or processed form</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<span class="n">MS_MS1_Spectrum</span> <span class="o">=</span> <span class="s1">&#39;MS1 spectrum&#39;</span>
+<span class="n">MS_MSn_Spectrum</span> <span class="o">=</span> <span class="s1">&#39;MSn spectrum&#39;</span>
+
+
+<span class="n">content_keys</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;CRM spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;emission spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;emission chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;constant neutral loss spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;enhanced multiply charged spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;e/2 mass spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;product ion spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;time-delayed fragmentation spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PDA spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;consecutive reaction monitoring chromatogram&#39;</span><span class="p">,</span>
+    <span class="n">MS_MS1_Spectrum</span><span class="p">,</span>
+    <span class="s1">&#39;SRM spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;selected ion current chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;absorption chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;charge inversion mass spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;selected reaction monitoring chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;basepeak chromatogram&#39;</span><span class="p">,</span>
+    <span class="n">MS_MSn_Spectrum</span><span class="p">,</span>
+    <span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;constant neutral gain spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;absorption spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;SIM spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;selected ion monitoring chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;total ion current chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;electromagnetic radiation spectrum&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;precursor ion spectrum&#39;</span>
+<span class="p">]</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Entries commonly used to describe the contents of a data file</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<div class="viewcode-block" id="FileInformation"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation">[docs]</a><span class="k">class</span> <span class="nc">FileInformation</span><span class="p">(</span><span class="n">MutableMapping</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes the type of data found in this file and the</span>
+<span class="sd">    source files that contributed to it.</span>
+
+<span class="sd">    Implements the :class:`MutableMapping` Interface</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    contents : dict</span>
+<span class="sd">        A mapping between controlled vocabullary names or user-defined</span>
+<span class="sd">        names and an optional value. For standard controlled names see</span>
+<span class="sd">        :data:`content_keys`</span>
+<span class="sd">    source_files : list of :class:`.SourceFile` objects</span>
+<span class="sd">        The set of files which either define the current file, or were used</span>
+<span class="sd">        to create the current file if recorded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">contents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">source_files</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">source_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contents</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">source_files</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FileInformation.add_file"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.add_file">[docs]</a>    <span class="k">def</span> <span class="nf">add_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a new file to :attr:`source_files`</span>
+
+<span class="sd">        If ``source`` is a string, it will be interpreted as a path</span>
+<span class="sd">        and an instance of :class:`SourceFile` will be created using</span>
+<span class="sd">        :meth:`SourceFile.from_path`. Otherwise, it is assumed to be</span>
+<span class="sd">        an instance of :class:`SourceFile`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source : str or :class:`SourceFile`</span>
+<span class="sd">            Either the path to a file to be added to the source file</span>
+<span class="sd">            collection, or an instance of :class:`SourceFile`</span>
+<span class="sd">        check : bool, optional</span>
+<span class="sd">            Whether or not to check and validate that a path points to</span>
+<span class="sd">            a real file</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a path fails to validate as real</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Source File </span><span class="si">%r</span><span class="s2"> does not exist&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">source</span><span class="p">,))</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">SourceFile</span><span class="o">.</span><span class="n">from_path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">source</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FileInformation.add_content"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.add_content">[docs]</a>    <span class="k">def</span> <span class="nf">add_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a new key-value pair to :attr:`contents` with</span>
+<span class="sd">        an optional value</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            The content name, either a CV-term or a user-defined name</span>
+<span class="sd">        value : object, optional</span>
+<span class="sd">            The optional value, which should be any type of object whose</span>
+<span class="sd">            meaning makes sense given the definition of ``key``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="FileInformation.remove_content"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.remove_content">[docs]</a>    <span class="k">def</span> <span class="nf">remove_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a key from :attr:`content`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            The content key to remove</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">get_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">has_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_content</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_content</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;FileInformation(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="n">template</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_files</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_filesr</span><span class="p">])</span></div>
+
+
+<span class="n">format_parameter_map</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;thermo raw&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;Thermo nativeID format&quot;</span><span class="p">,</span> <span class="s2">&quot;Thermo RAW format&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;agilent d&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;Agilent MassHunter nativeID format&quot;</span><span class="p">,</span> <span class="s2">&quot;Agilent MassHunter format&quot;</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="SourceFile"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile">[docs]</a><span class="k">class</span> <span class="nc">SourceFile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a single raw data file which either defines or contributed data to another</span>
+<span class="sd">    data file, the &quot;reference file&quot;</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_format : str</span>
+<span class="sd">        The name of a data file format. See :data:`file_formats`</span>
+<span class="sd">    id : str</span>
+<span class="sd">        The unique identifier for this file, among files which contributed to</span>
+<span class="sd">        the reference file</span>
+<span class="sd">    id_format : str</span>
+<span class="sd">        The name of a formal identifier schema. See :data:`~.id_formats`</span>
+<span class="sd">    location : str</span>
+<span class="sd">        The directory path to this file on the machine it was last read on to contribute to</span>
+<span class="sd">        or define the reference file</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The base name of this file</span>
+<span class="sd">    parameters : dict</span>
+<span class="sd">        A set of key-value pairs associated with this file, either encoding extra metadata</span>
+<span class="sd">        annotations, or precomputed hash checksums</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_checksum_translation_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;sha1&#39;</span><span class="p">:</span> <span class="s1">&#39;sha1&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;SHA-1&#39;</span><span class="p">:</span> <span class="s1">&#39;sha1&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;md5&#39;</span><span class="p">:</span> <span class="s1">&#39;md5&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;MD5&#39;</span><span class="p">:</span> <span class="s1">&#39;md5&#39;</span>
+    <span class="p">}</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_resolve_checksum_hash_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">hash_type</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_checksum_translation_map</span><span class="p">[</span><span class="n">hash_type</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_checksum_translation_map</span><span class="p">[</span><span class="n">hash_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_path</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">location</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">idfmt</span><span class="p">,</span> <span class="n">file_fmt</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">guess_format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">idfmt</span><span class="p">,</span> <span class="n">file_fmt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">source</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;file:///&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clean_parameters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_format</span> <span class="o">=</span> <span class="n">id_format</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">infer_id_format_from_paramters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_format</span> <span class="o">=</span> <span class="n">file_format</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">infer_file_format_from_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_clean_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">infer_id_format_from_paramters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">id_formats</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fmt</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">fmt</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">infer_file_format_from_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fmt</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">file_formats</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">fmt</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">fmt</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_resolvable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">guess_format</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;AcqData&#39;</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">format_parameter_map</span><span class="p">[</span><span class="s1">&#39;agilent d&#39;</span><span class="p">]</span>
+
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.mzml&#39;</span><span class="p">:</span>
+                <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;mzML format&quot;</span>
+                <span class="n">id_fmt</span> <span class="o">=</span> <span class="s2">&quot;no nativeID format&quot;</span>
+                <span class="n">hit</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+                    <span class="kn">from</span> <span class="nn">..xml_reader</span> <span class="k">import</span> <span class="n">iterparse_until</span>
+                    <span class="k">for</span> <span class="n">sf_tag</span> <span class="ow">in</span> <span class="n">iterparse_until</span><span class="p">(</span><span class="n">fh</span><span class="p">,</span> <span class="s1">&#39;sourceFile&#39;</span><span class="p">,</span> <span class="s1">&#39;run&#39;</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">sf_tag</span><span class="o">.</span><span class="n">getchildren</span><span class="p">():</span>
+                            <span class="k">if</span> <span class="s2">&quot;nativeID&quot;</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]:</span>
+                                <span class="n">id_fmt</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                                <span class="n">hit</span> <span class="o">=</span> <span class="kc">True</span>
+                                <span class="k">break</span>
+                        <span class="k">if</span> <span class="n">hit</span><span class="p">:</span>
+                            <span class="k">break</span>
+                <span class="k">return</span> <span class="n">id_fmt</span><span class="p">,</span> <span class="n">fmt</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+            <span class="n">lead_bytes</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+            <span class="n">decoded</span> <span class="o">=</span> <span class="n">lead_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-16&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">decoded</span> <span class="o">==</span> <span class="s2">&quot;Finnigan&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">format_parameter_map</span><span class="p">[</span><span class="s1">&#39;thermo raw&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;SourceFile(</span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">, </span><span class="si">%r%s</span><span class="s2">)&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="n">tail</span> <span class="o">=</span> <span class="s2">&quot;, </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tail</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">template</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_format</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_format</span><span class="p">,</span>
+            <span class="n">tail</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_compute_checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hash_type</span><span class="o">=</span><span class="s1">&#39;sha1&#39;</span><span class="p">,</span> <span class="n">buffer_size</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">):</span>
+        <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
+        <span class="n">buffer_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">buffer_size</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+            <span class="n">content_buffer</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">buffer_size</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">content_buffer</span><span class="p">:</span>
+                <span class="n">hasher</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">content_buffer</span><span class="p">)</span>
+                <span class="n">content_buffer</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">buffer_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hasher</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hash_type</span><span class="o">=</span><span class="s1">&#39;sha1&#39;</span><span class="p">):</span>
+        <span class="n">hash_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_checksum_hash_type</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hash_type</span><span class="o">=</span><span class="s1">&#39;sha1&#39;</span><span class="p">):</span>
+        <span class="n">hash_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_checksum_hash_type</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
+        <span class="n">checksum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hash_type</span> <span class="o">==</span> <span class="s1">&#39;sha1&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;SHA-1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
+        <span class="k">elif</span> <span class="n">hash_type</span> <span class="o">==</span> <span class="s2">&quot;md5&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;MD5&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checksum</span>
+
+    <span class="k">def</span> <span class="nf">validate_checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">):</span>
+            <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> not found&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="s1">&#39;SHA-1&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="n">checksum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checksum</span><span class="p">(</span><span class="s1">&#39;sha1&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;SHA-1&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">checksum</span>
+        <span class="k">elif</span> <span class="s1">&#39;MD5&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="n">checksum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checksum</span><span class="p">(</span><span class="s2">&quot;md5&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;MD5&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">checksum</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%r</span><span class="s2"> did not have a reference checksum. Could not validate&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,))</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">has_checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hash_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">hash_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;SHA-1&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;MD5&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_checksum_hash_type</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;sha1&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;SHA-1&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_checksum_hash_type</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;md5&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;MD5&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">other</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_resolvable</span><span class="p">()</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">is_resolvable</span><span class="p">():</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">checksum</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">checksum</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_resolvable</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">hash_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;SHA-1&#39;</span><span class="p">,</span> <span class="s1">&#39;MD5&#39;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">has_checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">hash_type</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">other</span><span class="o">.</span><span class="n">is_resolvable</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">hash_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;SHA-1&#39;</span><span class="p">,</span> <span class="s1">&#39;MD5&#39;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">hash_type</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">hash_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;SHA-1&#39;</span><span class="p">,</span> <span class="s1">&#39;MD5&#39;</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">has_checksum</span><span class="p">(</span><span class="n">hash_type</span><span class="p">):</span>
+                            <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">hash_type</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">hash_type</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">id_format</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_format</span><span class="p">,</span>
+                              <span class="n">parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>

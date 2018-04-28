@@ -1,0 +1,702 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Common Scan Model &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Common MS File Model" href="common_reader.html" />
+    <link rel="prev" title="Data Access" href="index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Common Scan Model</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Data Access</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="common_reader.html">Common MS File Model</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-ms_deisotope.data_source.common">
+<span id="common-scan-model"></span><h1>Common Scan Model<a class="headerlink" href="#module-ms_deisotope.data_source.common" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="ms_deisotope.data_source.common.Scan">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">Scan</code><span class="sig-paren">(</span><em>data</em>, <em>source</em>, <em>peak_set=None</em>, <em>deconvoluted_peak_set=None</em>, <em>product_scans=None</em>, <em>annotations=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Container for mass spectral data and associated descriptive information.</p>
+<p>A <a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> object is a generic object intended to be created by a <a class="reference internal" href="common_reader.html#ms_deisotope.data_source.common.ScanDataSource" title="ms_deisotope.data_source.common.ScanDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code></a> and describes
+a mass spectrum at each level of processing (Profile –&gt; Peak Fitted –&gt; Deconvoluted). The raw object
+provided by the source is wrapped and queried lazily when an attribute is requested, delegated through
+<a class="reference internal" href="#ms_deisotope.data_source.common.Scan.source" title="ms_deisotope.data_source.common.Scan.source"><code class="xref py py-attr docutils literal notranslate"><span class="pre">source</span></code></a>.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.deconvoluted_peak_set">
+<code class="descname">deconvoluted_peak_set</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.deconvoluted_peak_set" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_deisotope.DeconvolutedPeakSet</span></code> or None – Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will
+be <cite>None</cite> if deconvolution has not been done.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.peak_set">
+<code class="descname">peak_set</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.peak_set" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet</span></code> or None – Picked peaks and (possibly) associated raw data points as produced by <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.pick_peaks" title="ms_deisotope.data_source.common.Scan.pick_peaks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pick_peaks()</span></code></a>.
+Will be <cite>None</cite> if peak picking has not been done.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.product_scans">
+<code class="descname">product_scans</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.product_scans" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> – A list of <a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> instances which were produced by fragmenting ions from this one.
+This attribute is not guaranteed to be populated depending upon how the scan is loaded.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.source">
+<code class="descname">source</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.source" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="common_reader.html#ms_deisotope.data_source.common.ScanDataSource" title="ms_deisotope.data_source.common.ScanDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code></a> – The object which produced this scan and which defines the methods for retrieving common
+attributes from the underlying data structures.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.precursor_information">
+<code class="descname">precursor_information</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.precursor_information" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#ms_deisotope.data_source.common.PrecursorInformation" title="ms_deisotope.data_source.common.PrecursorInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecursorInformation</span></code></a> or None – Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
+the precursor scan</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.arrays">
+<code class="descname">arrays</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#ms_deisotope.data_source.common.RawDataArrays" title="ms_deisotope.data_source.common.RawDataArrays"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawDataArrays</span></code></a> – A pair of <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> objects corresponding to the raw m/z and intensity data points</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.id">
+<code class="descname">id</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.id" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The unique identifier for this scan as given by the source</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.title">
+<code class="descname">title</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.title" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The human-readable display string for this scan as shown in some external software</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.ms_level">
+<code class="descname">ms_level</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.ms_level" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – The degree of fragmentation performed. 1 corresponds to a MS1 or “Survey” scan, 2 corresponds
+to MS/MS, and so on. If <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.ms_level" title="ms_deisotope.data_source.common.Scan.ms_level"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ms_level</span></code></a> &gt; 1, the scan is considered a “tandem scan” or “MS^n” scan</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.scan_time">
+<code class="descname">scan_time</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.scan_time" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The time the scan was acquired during data acquisition. The unit of time will always be minutes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.drift_time">
+<code class="descname">drift_time</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.drift_time" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float or None</em> – The time measured by the ion mobility spectrometer for this scan or frame. This quantity is None
+if the scan does not have ion mobility information associated with it, which is usually recorded
+in <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.acquisition_information" title="ms_deisotope.data_source.common.Scan.acquisition_information"><code class="xref py py-attr docutils literal notranslate"><span class="pre">acquisition_information</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.index">
+<code class="descname">index</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.index" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – The integer number indicating how many scans were acquired prior to this scan.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.is_profile">
+<code class="descname">is_profile</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.is_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – Whether this scan’s raw data points corresponds to a profile scan or whether the raw data was
+pre-centroided.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.polarity">
+<code class="descname">polarity</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.polarity" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – If the scan was acquired in positive mode, the value <code class="docutils literal notranslate"><span class="pre">+1</span></code>.  If the scan was acquired in negative
+mode, the value <code class="docutils literal notranslate"><span class="pre">-1</span></code>. May be used to indicating how to calibrate charge state determination methods.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.activation">
+<code class="descname">activation</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.activation" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#ms_deisotope.data_source.common.ActivationInformation" title="ms_deisotope.data_source.common.ActivationInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ActivationInformation</span></code></a> or None – If this scan is an MS^n scan, this attribute will contain information about the process
+used to produce it from its parent ion.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.instrument_configuration">
+<code class="descname">instrument_configuration</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.instrument_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a> – The instrument configuration used to acquire this scan.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.acquisition_information">
+<code class="descname">acquisition_information</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.acquisition_information" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#ms_deisotope.data_source.common.ScanAcquisitionInformation" title="ms_deisotope.data_source.common.ScanAcquisitionInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanAcquisitionInformation</span></code></a> or None – Describes the type of event that produced this scan, as well as the scanning method
+used.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.isolation_window">
+<code class="descname">isolation_window</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.isolation_window" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#ms_deisotope.data_source.common.IsolationWindow" title="ms_deisotope.data_source.common.IsolationWindow"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsolationWindow</span></code></a> or None – Describes the range of m/z that were isolated from a parent scan to create this scan</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.Scan.annotations">
+<code class="descname">annotations</code><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.annotations" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> – A set of key-value pairs describing the scan not part of the standard interface</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.Scan.average">
+<code class="descname">average</code><span class="sig-paren">(</span><em>index_interval=None</em>, <em>rt_interval=None</em>, <em>dx=None</em>, <em>weight_sigma=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan.average"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.average" title="Permalink to this definition">¶</a></dt>
+<dd><p>Average together multiple scans’ raw data arrays to create a composite intensity
+profile for a common m/z axis.</p>
+<p>Only MS1 scans will be averaged with this method</p>
+<p>Either an absolute number of scans before and after can be specified using
+<code class="docutils literal notranslate"><span class="pre">index_interval</span></code> or a time window may be specified using <code class="docutils literal notranslate"><span class="pre">rt_interval</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>index_interval</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of scans preceding and proceding to average with.</li>
+<li><strong>rt_interval</strong> (<em>float</em><em>, </em><em>optional</em>) – The range of time (in minutes) preceding and proceding to
+look for other scans to average with.</li>
+<li><strong>dx</strong> (<em>float</em><em>, </em><em>optional</em>) – The distance between each point in the generated common m/z axis.</li>
+<li><strong>weight_sigma</strong> (<em>float</em><em>, </em><em>optional</em>) – When this value is not None, scans are weighted according to a
+gaussian distribution with a $sigma$ equal to this value</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A shallow copy of this scan with its <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.arrays" title="ms_deisotope.data_source.common.Scan.arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">arrays</span></code></a> attribute replaced
+with the averaged array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.Scan.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Releases all associated in-memory data and clears the cached
+attributes.</p>
+<p>The data reference attribute <code class="xref py py-attr docutils literal notranslate"><span class="pre">_data</span></code> is retained
+and unchanged.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.Scan.deconvolute">
+<code class="descname">deconvolute</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan.deconvolute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.deconvolute" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper around <a class="reference internal" href="../deconvolution/deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks" title="ms_deisotope.deconvolution.deconvolute_peaks"><code class="xref py py-func docutils literal notranslate"><span class="pre">ms_deisotope.deconvolution.deconvolute_peaks()</span></code></a>.</p>
+<p>The scan must have had its peaks picked before it can be deconvoluted.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>decon_config</strong> (<em>dict</em><em>, </em><em>optional</em>) – Parameters to use to initialize the deconvoluter instance produced by
+<code class="docutils literal notranslate"><span class="pre">deconvoluter_type</span></code></li>
+<li><strong>charge_range</strong> (<em>tuple of integers</em><em>, </em><em>optional</em>) – The range of charge states to consider.</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – PPM error tolerance to use to match experimental to theoretical peaks</li>
+<li><strong>priority_list</strong> (<em>list</em><em>, </em><em>optional</em>) – The set of peaks to target for deconvolution to be able to enforce external
+constraints on, such as selected precursors for fragmentation.</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the left  (decrease) from
+each query peak</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the right (increase) from
+each query peak</li>
+<li><strong>left_search_limit_for_priorities</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the left (decrease) from
+each query peak for priority targets</li>
+<li><strong>right_search_limit_for_priorities</strong> (<em>None</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the right (increase) from
+each query peak for priority targets</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to PROTON</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the isotopic pattern to include. Defaults to TRUNCATE_AFTER</li>
+<li><strong>deconvoluter_type</strong> (<em>type</em><em> or </em><em>callable</em><em>, </em><em>optional</em>) – A callable returning a deconvoluter. Defaults to <a class="reference internal" href="../deconvolution/deconvolution.html#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveraginePeakDependenceGraphDeconvoluter</span></code></a></li>
+<li><strong>**kwargs</strong> – Additional keywords passed to <a class="reference internal" href="../deconvolution/deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks" title="ms_deisotope.deconvolution.deconvolute_peaks"><code class="xref py py-func docutils literal notranslate"><span class="pre">deconvolute_peaks()</span></code></a></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Returns self</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code> – If <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.peak_set" title="ms_deisotope.data_source.common.Scan.peak_set"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_set</span></code></a> is None, a <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code> will be raised
+indicating that a scan must be centroided before it can be deconvoluted</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="../deconvolution/deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks" title="ms_deisotope.deconvolution.deconvolute_peaks"><code class="xref py py-func docutils literal notranslate"><span class="pre">deconvolute_peaks()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.Scan.denoise">
+<code class="descname">denoise</code><span class="sig-paren">(</span><em>scale=5.0</em>, <em>window_length=2.0</em>, <em>region_width=10</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan.denoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.denoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a shallow copy of the scan with a noise reduction
+transformation applied.</p>
+<p>This method uses the scan filter <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.scan_filter.FTICRBaselineRemoval</span></code>
+which uses the MasSpike noise reduction algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>scale</strong> (<em>float</em><em>, </em><em>optional</em>) – The multiplier of the local noise window to remove</li>
+<li><strong>window_length</strong> (<em>float</em><em>, </em><em>optional</em>) – The width (in m/z) of each window</li>
+<li><strong>region_width</strong> (<em>int</em><em>, </em><em>optional</em>) – The width (in m/z) of each region of windows</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The denoised version of this scan</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.Scan.has_peak">
+<code class="descname">has_peak</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan.has_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.has_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper around <code class="xref py py-meth docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet.has_peak()</span></code> to query the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.FittedPeak</span></code> objects picked for this scan.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mz</strong> (<em>float</em>) – The m/z to search for</li>
+<li><strong>error_tolerance</strong> (<em>float</em>) – The parts per million mass error tolerance to use</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The peak closest to the query m/z within the error tolerance window or None
+if there are no peaks satisfying the requirements</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">ms_peak_picker.FittedPeak or None</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last">ValueError: – If the scan has not yet had peaks picked yet</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#ms_deisotope.data_source.common.Scan.pick_peaks" title="ms_deisotope.data_source.common.Scan.pick_peaks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scan.pick_peaks()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.Scan.pick_peaks">
+<code class="descname">pick_peaks</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan.pick_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.pick_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper around <code class="xref py py-func docutils literal notranslate"><span class="pre">ms_peak_picker.pick_peaks()</span></code> which will populate the
+<a class="reference internal" href="#ms_deisotope.data_source.common.Scan.peak_set" title="ms_deisotope.data_source.common.Scan.peak_set"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_set</span></code></a> attribute of this scan.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fit_type</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the peak model to use. One of “quadratic”, “gaussian”, “lorentzian”, or “apex”</li>
+<li><strong>signal_to_noise_threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum signal-to-noise measurement to accept a peak</li>
+<li><strong>intensity_threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Minimum intensity measurement to accept a peak</li>
+<li><strong>threshold_data</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to apply thresholds to the data</li>
+<li><strong>target_envelopes</strong> (<em>list</em><em>, </em><em>optional</em>) – A sequence of (start m/z, end m/z) pairs, limiting peak picking to only those intervals</li>
+<li><strong>transforms</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of <code class="xref py py-class docutils literal notranslate"><span class="pre">scan_filter.FilterBase</span></code> instances or callable that
+accepts (mz_array, intensity_array) and returns (mz_array, intensity_array) or
+<cite>str</cite> matching one of the premade names in <cite>scan_filter.filter_register</cite></li>
+<li><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to log extra information while picking peaks</li>
+<li><strong>start_mz</strong> (<em>float</em><em>, </em><em>optional</em>) – A minimum m/z value to start picking peaks from</li>
+<li><strong>stop_mz</strong> (<em>float</em><em>, </em><em>optional</em>) – A maximum m/z value to stop picking peaks after</li>
+<li><strong>*args</strong> – Passed along to <code class="xref py py-func docutils literal notranslate"><span class="pre">ms_peak_picker.pick_peaks()</span></code></li>
+<li><strong>**kwargs</strong> – Passed along to <code class="xref py py-func docutils literal notranslate"><span class="pre">ms_peak_picker.pick_peaks()</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Returns self</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.Scan.reprofile">
+<code class="descname">reprofile</code><span class="sig-paren">(</span><em>max_fwhm=0.2</em>, <em>dx=0.01</em>, <em>model_cls=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#Scan.reprofile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.reprofile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the picked peaks in <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.peak_set" title="ms_deisotope.data_source.common.Scan.peak_set"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_set</span></code></a> to create a new
+profile mass spectrum using a peak shape model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>max_fwhm</strong> (<em>float</em><em>, </em><em>optional</em>) – Maximum peak width above which peaks will be ignored</li>
+<li><strong>dx</strong> (<em>float</em><em>, </em><em>optional</em>) – The distance between each new point in m/z space in the
+reprofiled spectrum</li>
+<li><strong>model_cls</strong> (<em>ms_peak_picker.peak_statistics.PeakShapeModel</em><em>, </em><em>optional</em>) – The peak shape model to use to generate the profile data from
+the centroided peaks. Defaults a Gaussian model</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A shallow copy of this scan with its <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.arrays" title="ms_deisotope.data_source.common.Scan.arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">arrays</span></code></a> replaced with
+the new reprofiled arrays</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code> – A scan that has not been centroided and is already in profile mode
+must have its peaks picked before it can be reprofiled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="scan-level-metadata">
+<h2>Scan-Level Metadata<a class="headerlink" href="#scan-level-metadata" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">PrecursorInformation</code><span class="sig-paren">(</span><em>mz</em>, <em>intensity</em>, <em>charge</em>, <em>precursor_scan_id=None</em>, <em>source=None</em>, <em>extracted_neutral_mass=0</em>, <em>extracted_charge=0</em>, <em>extracted_intensity=0</em>, <em>peak=None</em>, <em>extracted_peak=None</em>, <em>defaulted=False</em>, <em>orphan=False</em>, <em>product_scan_id=None</em>, <em>annotations=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#PrecursorInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store information relating a tandem MS scan to its precursor MS scan.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.charge">
+<code class="descname">charge</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.charge" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – The charge reported in the source metadata</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.defaulted">
+<code class="descname">defaulted</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.defaulted" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – Whether the information in the extracted fields reflects empirical
+information or fell back on the vendor-reported values.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.extracted_charge">
+<code class="descname">extracted_charge</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.extracted_charge" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – The charge estimated from the source data</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.extracted_intensity">
+<code class="descname">extracted_intensity</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.extracted_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The sum of the peak heights of the extracted isotopic pattern</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.extracted_neutral_mass">
+<code class="descname">extracted_neutral_mass</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.extracted_neutral_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The monoisotopic neutral mass estimated from the source data</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.extracted_peak">
+<code class="descname">extracted_peak</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.extracted_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> – The deconvoluted peak summarizing the precursor ion</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.intensity">
+<code class="descname">intensity</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The abundance reported in the source metadata</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.mz">
+<code class="descname">mz</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.mz" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The m/z reported in the source metadata</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.orphan">
+<code class="descname">orphan</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.orphan" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – Whether there was an isotopic pattern to extract in the precursor scan. Usually
+paired with <cite>defaulted</cite></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.peak">
+<code class="descname">peak</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.peak" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> – The peak nearest <a class="reference internal" href="#ms_deisotope.data_source.common.PrecursorInformation.mz" title="ms_deisotope.data_source.common.PrecursorInformation.mz"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mz</span></code></a>, and the starting point for estimating information
+about the precursor ion</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.precursor_scan_id">
+<code class="descname">precursor_scan_id</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.precursor_scan_id" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The id string for the precursor scan</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.source">
+<code class="descname">source</code><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.source" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a> – Any object implementing the <a class="reference internal" href="common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a> interface to be used to look up
+the precursor scan with <a class="reference internal" href="#ms_deisotope.data_source.common.PrecursorInformation.precursor_scan_id" title="ms_deisotope.data_source.common.PrecursorInformation.precursor_scan_id"><code class="xref py py-attr docutils literal notranslate"><span class="pre">precursor_scan_id</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.common.ActivationInformation">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ActivationInformation</code><span class="sig-paren">(</span><em>method</em>, <em>energy</em>, <em>data=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/metadata/activation.html#ActivationInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ActivationInformation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.common.ScanAcquisitionInformation">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ScanAcquisitionInformation</code><span class="sig-paren">(</span><em>combination</em>, <em>scan_list</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/metadata/scan_traits.html#ScanAcquisitionInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanAcquisitionInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the set distinct scans along the measurable range by
+the instrument that were performed to produce the acquired data</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ScanAcquisitionInformation.combination">
+<code class="descname">combination</code><a class="headerlink" href="#ms_deisotope.data_source.common.ScanAcquisitionInformation.combination" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – A controlled vocabulary string describing the way in which scans were combined</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ScanAcquisitionInformation.scan_list">
+<code class="descname">scan_list</code><a class="headerlink" href="#ms_deisotope.data_source.common.ScanAcquisitionInformation.scan_list" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list of ScanEventInformation</em> – The list of scan events performed</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.common.IsolationWindow">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">IsolationWindow</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/metadata/scan_traits.html#IsolationWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.IsolationWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the m/z interval a precursor ion was isolated from in the precursor scan</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.IsolationWindow.lower">
+<code class="descname">lower</code><a class="headerlink" href="#ms_deisotope.data_source.common.IsolationWindow.lower" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The distance from the center of the isolation window towards 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.IsolationWindow.target">
+<code class="descname">target</code><a class="headerlink" href="#ms_deisotope.data_source.common.IsolationWindow.target" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The center of the isolation window in m/z</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.IsolationWindow.upper">
+<code class="descname">upper</code><a class="headerlink" href="#ms_deisotope.data_source.common.IsolationWindow.upper" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The distance from the center of the isolation window towards <span class="math notranslate nohighlight">\(\infty\)</span></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.IsolationWindow.lower_bound">
+<code class="descname">lower_bound</code><a class="headerlink" href="#ms_deisotope.data_source.common.IsolationWindow.lower_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The m/z coordinate of the lower bound <a class="reference internal" href="#ms_deisotope.data_source.common.IsolationWindow.target" title="ms_deisotope.data_source.common.IsolationWindow.target"><code class="xref py py-attr docutils literal notranslate"><span class="pre">target</span></code></a> - <a class="reference internal" href="#ms_deisotope.data_source.common.IsolationWindow.lower" title="ms_deisotope.data_source.common.IsolationWindow.lower"><code class="xref py py-attr docutils literal notranslate"><span class="pre">lower</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.IsolationWindow.upper_bound">
+<code class="descname">upper_bound</code><a class="headerlink" href="#ms_deisotope.data_source.common.IsolationWindow.upper_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The m/z coordinate of the upper bound <a class="reference internal" href="#ms_deisotope.data_source.common.IsolationWindow.target" title="ms_deisotope.data_source.common.IsolationWindow.target"><code class="xref py py-attr docutils literal notranslate"><span class="pre">target</span></code></a> + <a class="reference internal" href="#ms_deisotope.data_source.common.IsolationWindow.upper" title="ms_deisotope.data_source.common.IsolationWindow.upper"><code class="xref py py-attr docutils literal notranslate"><span class="pre">upper</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="supporting-data-structures">
+<h2>Supporting Data Structures<a class="headerlink" href="#supporting-data-structures" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.data_source.common.RawDataArrays">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">RawDataArrays</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RawDataArrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RawDataArrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represent the m/z and intensity arrays associated with a raw
+mass spectrum.</p>
+<p>Supports scaling and summing, as well as low level m/z search.</p>
+<p>Thin wrapper around a <code class="docutils literal notranslate"><span class="pre">namedtuple</span></code>, so this object supports
+the same interfaces as a tuple.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.RawDataArrays.mz">
+<code class="descname">mz</code><a class="headerlink" href="#ms_deisotope.data_source.common.RawDataArrays.mz" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>np.ndarray</em> – The m/z axis of a mass spectrum</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.RawDataArrays.intensity">
+<code class="descname">intensity</code><a class="headerlink" href="#ms_deisotope.data_source.common.RawDataArrays.intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>np.ndarray</em> – The intensity measured at the corresponding m/z of a mass spectrum</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.RawDataArrays.between_mz">
+<code class="descname">between_mz</code><span class="sig-paren">(</span><em>low</em>, <em>high</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RawDataArrays.between_mz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RawDataArrays.between_mz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a slice of the arrays between <code class="docutils literal notranslate"><span class="pre">low</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code>
+m/z</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>low</strong> (<em>float</em>) – The lower bound m/z</li>
+<li><strong>high</strong> (<em>float</em>) – The upper bound m/z</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.data_source.common.RawDataArrays" title="ms_deisotope.data_source.common.RawDataArrays"><code class="xref py py-class docutils literal notranslate"><span class="pre">RawDataArrays</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.RawDataArrays.find_mz">
+<code class="descname">find_mz</code><span class="sig-paren">(</span><em>mz</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RawDataArrays.find_mz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RawDataArrays.find_mz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the nearest index to the query <code class="docutils literal notranslate"><span class="pre">mz</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mz</strong> (<em>float</em>) – The m/z value to search for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The index nearest to the query m/z</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.RawDataArrays.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RawDataArrays.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RawDataArrays.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw the profile spectrum described by the
+contained arrays.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – The figure axes onto which to draw the plot. If not provided,
+this will default to the current figure interactively.</li>
+<li><strong>**kwargs</strong> – All keywords are forwarded to <a class="reference internal" href="#ms_deisotope.data_source.common.RawDataArrays.plot" title="ms_deisotope.data_source.common.RawDataArrays.plot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot()</span></code></a> on <code class="docutils literal notranslate"><span class="pre">ax</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The axes drawn on</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.common.ScanBunch">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ScanBunch</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#ScanBunch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanBunch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a single MS1 scan and all MSn scans derived from it</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ScanBunch.precursor">
+<code class="descname">precursor</code><a class="headerlink" href="#ms_deisotope.data_source.common.ScanBunch.precursor" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> – A single MS1 scan which may have undergone MSn</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ScanBunch.products">
+<code class="descname">products</code><a class="headerlink" href="#ms_deisotope.data_source.common.ScanBunch.products" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> – A list of 0 or more <a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> objects which were derived
+from <a class="reference internal" href="#ms_deisotope.data_source.common.ScanBunch.precursor" title="ms_deisotope.data_source.common.ScanBunch.precursor"><code class="xref py py-attr docutils literal notranslate"><span class="pre">precursor</span></code></a> or another element of this list derived
+from it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ScanBunch.precursor_for">
+<code class="descname">precursor_for</code><span class="sig-paren">(</span><em>scan</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#ScanBunch.precursor_for"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanBunch.precursor_for" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the precursor <a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> instance
+for the given scan object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scan</strong> (<a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><em>Scan</em></a>) – The MSn scan to look for the MSn-1 scan for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Data Access</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="common_reader.html">Common MS File Model</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>

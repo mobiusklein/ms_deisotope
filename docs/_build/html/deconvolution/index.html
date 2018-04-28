@@ -1,0 +1,100 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Deconvolution &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Envelope Search" href="deconvolution.html" />
+    <link rel="prev" title="ms_deisotope Quickstart" href="../Quickstart.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Deconvolution</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../Quickstart.html"><code class="docutils literal notranslate"><span class="pre">ms_deisotope</span></code> Quickstart</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="deconvolution.html">Envelope Search</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="deconvolution">
+<h1>Deconvolution<a class="headerlink" href="#deconvolution" title="Permalink to this headline">¶</a></h1>
+<p><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope</span></code>’s primary function is to deisotope and charge state deconvolute
+mass spectra. It contains several approaches to this problem class. This can be broken
+into two cooperative procedures, <em>envelope search</em> and <em>envelope scoring</em>. Envelope
+search can be targeted, using a list of compositions, or exhaustive using an average
+monomer isotopic model or <cite>averagine</cite> <a class="reference internal" href="#senko" id="id1">[Senko]</a>.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Envelope Search</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#high-level-api">High Level API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#algorithms-for-complex-spectra">Algorithms for Complex Spectra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#algorithms-for-simple-spectra">Algorithms for Simple Spectra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#base-classes">Base Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#module-ms_deisotope.utils">Utilities and Implementation Details</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="averagine.html">Isotopic Pattern Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="envelope_scoring.html">Envelope Scoring</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="envelope_scoring.html#scoring-functions">Scoring Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="envelope_scoring.html#minimizing-fitters">Minimizing Fitters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="envelope_scoring.html#maximizing-fitters">Maximizing Fitters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="envelope_scoring.html#support-structures">Support Structures</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">Deconvolution Pipeline</a></li>
+</ul>
+</div>
+<table class="docutils citation" frame="void" id="senko" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[Senko]</a></td><td>Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations
+for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.org/10.1016/1044-0305(95)00017-8">http://doi.org/10.1016/1044-0305(95)00017-8</a></td></tr>
+</tbody>
+</table>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../Quickstart.html"><code class="docutils literal notranslate"><span class="pre">ms_deisotope</span></code> Quickstart</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="deconvolution.html">Envelope Search</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>

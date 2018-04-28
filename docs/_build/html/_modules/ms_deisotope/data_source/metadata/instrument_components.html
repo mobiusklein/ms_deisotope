@@ -1,0 +1,340 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.data_source.metadata.instrument_components &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.data_source.metadata.instrument_components</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.data_source.metadata.instrument_components</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+
+<span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">render_list</span>
+
+
+<div class="viewcode-block" id="Component"><a class="viewcode-back" href="../../../../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.Component">[docs]</a><span class="k">class</span> <span class="nc">Component</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes a named component of a mass spectrometer, either</span>
+<span class="sd">    using a controlled-vocabulary term or user-defined name.</span>
+
+<span class="sd">    A :class:`Component` is equal to its name and its controlled</span>
+<span class="sd">    vocabulary identifier.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<span class="k">def</span> <span class="nf">__generate_list_code</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Prints the code to generate these static lists</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;Component&quot;</span><span class="p">)</span>
+    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;Component&quot;</span><span class="p">)</span>
+    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="s1">&#39;analyzer_types&#39;</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;Component&quot;</span><span class="p">)</span>
+    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;Component&quot;</span><span class="p">)</span>
+
+
+<span class="n">ionization_types</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;multiphoton ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000227&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;fast ion bombardment&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000446&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;resonance enhanced multiphoton ionization&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;MS:1000276&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;pyrolysis mass spectrometry&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000274&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;neutralization reionization mass spectrometry&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;MS:1000272&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;photoionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000273&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;Negative Ion chemical ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000271&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;chemical ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000071&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;electrospray ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000073&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;fast atom bombardment ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000074&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;flowing afterglow&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000255&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000247&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;atmospheric pressure ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000240&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;spark ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000404&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;thermal ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000407&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;surface ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000406&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;plasma desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000400&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;soft ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000403&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;secondary ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000402&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;vertical ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000408&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;autodetachment&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000383&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;adiabatic ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000380&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;associative ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000381&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;chemi-ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000386&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;autoionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000384&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;charge exchange ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000385&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;dissociative ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000388&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;electron ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000389&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;field ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000258&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;glow discharge ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000259&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;liquid secondary ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000395&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;penning ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000399&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;microelectrospray&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000397&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span>
+              <span class="s1">&#39;electrospray ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;nanoelectrospray&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000398&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span>
+              <span class="p">[</span><span class="s1">&#39;electrospray ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;matrix-assisted laser desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000075&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;field desorption&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000257&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span>
+              <span class="p">[</span><span class="s1">&#39;desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;surface-assisted laser desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000405&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;desorption/ionization on silicon&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000387&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;laser desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000393&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span>
+              <span class="s1">&#39;desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;atmospheric pressure matrix-assisted laser desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000239&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;atmospheric pressure ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;atmospheric pressure chemical ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000070&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;atmospheric pressure ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;desorption electrospray ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002011&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span>
+              <span class="s1">&#39;atmospheric pressure ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;atmospheric pressure photoionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000382&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span>
+              <span class="s1">&#39;atmospheric pressure ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;surface enhanced laser desorption ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000278&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;surface ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;surface enhanced neat desorption&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000279&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;surface ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+<span class="p">]</span>
+
+
+<span class="n">detector_types</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;channeltron&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000107&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;photomultiplier&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000116&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;multi-collector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000115&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;faraday cup&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000112&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;daly detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000110&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;electron multiplier&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000253&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;fluorescence detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002308&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;conversion dynode&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000346&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;dynode&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000347&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;array detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000345&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;focal plane collector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000348&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;ion-to-photon detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000349&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;postacceleration detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000351&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;point collector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000350&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;inductive detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000624&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;electron multiplier tube&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000111&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;electron multiplier&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;Acquity UPLC FLR&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000819&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="s1">&#39;fluorescence detector&#39;</span><span class="p">),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;conversion dynode electron multiplier&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000108&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;conversion dynode&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;conversion dynode photomultiplier&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000109&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;conversion dynode&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;microchannel plate detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000114&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;array detector&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;photodiode array detector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000621&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;array detector&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;focal plane array&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000113&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">,</span>
+              <span class="p">[</span><span class="s1">&#39;focal plane collector&#39;</span><span class="p">,</span> <span class="s1">&#39;detector type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;Acquity UPLC PDA&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000818&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;detector type&#39;</span><span class="p">,</span> <span class="s1">&#39;photodiode array detector&#39;</span><span class="p">),</span>
+<span class="p">]</span>
+
+
+<span class="n">analyzer_types</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;cyclotron&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000288&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;orbitrap&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000484&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000264&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;fourier transform ion cyclotron resonance mass spectrometer&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;MS:1000079&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;electrostatic energy analyzer&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000254&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;quadrupole&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000081&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;magnetic sector&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000080&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;time-of-flight&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000084&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;stored waveform inverse fourier transform&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;MS:1000284&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;quadrupole ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000082&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;linear ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000291&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span>
+              <span class="s1">&#39;ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;axial ejection linear ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000078&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span>
+              <span class="s1">&#39;linear ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;radial ejection linear ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000083&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">,</span> <span class="p">[</span>
+              <span class="s1">&#39;linear ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;ion trap&#39;</span><span class="p">,</span> <span class="s1">&#39;mass analyzer type&#39;</span><span class="p">]),</span>
+<span class="p">]</span>
+
+
+<span class="n">inlet_types</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;flow injection analysis&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000058&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;inductively coupled plasma&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000059&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;direct inlet&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000056&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electrospray inlet&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000057&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;continuous flow fast atom bombardment&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;MS:1000055&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;reservoir&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000067&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;particle beam&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000066&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;open split&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000065&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;moving wire&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000064&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;moving belt&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000063&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;membrane separator&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000062&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;jet separator&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000061&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;infusion&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000060&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;thermospray inlet&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000069&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;septum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000068&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;direct liquid introduction&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000249&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;direct insertion probe&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000248&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;membrane inlet&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000396&#39;</span><span class="p">,</span>
+              <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;nanospray inlet&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000485&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">,</span>
+              <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;electrospray inlet&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;inlet type&#39;</span><span class="p">]),</span>
+<span class="p">]</span>
+
+
+<span class="n">all_components</span> <span class="o">=</span> <span class="n">ionization_types</span> <span class="o">+</span> <span class="n">detector_types</span> <span class="o">+</span> <span class="n">analyzer_types</span> <span class="o">+</span> <span class="n">inlet_types</span>
+
+<span class="n">all_components_by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">all_components</span><span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">component</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">all_components_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Component</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="p">[</span><span class="n">name</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="ComponentGroup"><a class="viewcode-back" href="../../../../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup">[docs]</a><span class="k">class</span> <span class="nc">ComponentGroup</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">members</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">members</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">members</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{s.__class__.__name__}</span><span class="s2">(</span><span class="si">{s.type!r}</span><span class="s2">, </span><span class="si">{s.members}</span><span class="s2">, order=</span><span class="si">{s.order}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InstrumentInformation"><a class="viewcode-back" href="../../../../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation">[docs]</a><span class="k">class</span> <span class="nc">InstrumentInformation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;analyzer&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{self.__class__.__name__}</span><span class="s2">(</span><span class="si">{self.id!r}</span><span class="s2">, </span><span class="si">{self.groups}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">__generate_list_code</span><span class="p">()</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>

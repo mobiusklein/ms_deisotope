@@ -1,0 +1,234 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mzML &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mzXML" href="mzxml.html" />
+    <link rel="prev" title="Controlled Vocabulary Interface" href="metadata/cv.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>mzML</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="metadata/cv.html">Controlled Vocabulary Interface</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="mzxml.html">mzXML</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-ms_deisotope.data_source.mzml">
+<span id="mzml"></span><h1>mzML<a class="headerlink" href="#module-ms_deisotope.data_source.mzml" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.mzml.</code><code class="descname">MzMLLoader</code><span class="sig-paren">(</span><em>source_file</em>, <em>use_index=True</em>, <em>huge_tree=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mzml.html#MzMLLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
+random access.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.source_file">
+<code class="descname">source_file</code><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.source_file" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Path to file to read from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.source">
+<code class="descname">source</code><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.source" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>pyteomics.mzml.MzML</em> – Underlying scan data source</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.file_description">
+<code class="descname">file_description</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.file_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the file metadata and provenance from the <code class="docutils literal notranslate"><span class="pre">&lt;fileDescription&gt;</span></code> tag
+if it is present.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The description of the file’s contents and its sources</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation">FileInformation</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_id">
+<code class="descname">get_scan_by_id</code><span class="sig-paren">(</span><em>scan_id</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the scan object for the specified scan id.</p>
+<p>If the scan object is still bound and in memory somewhere,
+a reference to that same object will be returned. Otherwise,
+a new object will be created.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scan_id</strong> (<em>str</em>) – The unique scan id value to be retrieved</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_index">
+<code class="descname">get_scan_by_index</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the scan object for the specified scan index.</p>
+<p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_id" title="ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
+use its cache.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> (<em>int</em>) – The index to get the scan for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_time">
+<code class="descname">get_scan_by_time</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the scan object for the specified scan time.</p>
+<p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_id" title="ms_deisotope.data_source.mzml.MzMLLoader.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
+use its cache.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time</strong> (<em>float</em>) – The time to get the nearest scan from</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.instrument_configuration">
+<code class="descname">instrument_configuration</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.instrument_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the instrument configurations settings from the
+<code class="docutils literal notranslate"><span class="pre">&lt;instrumentConfigurationList&gt;</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of different instrument states that scans may be acquired under</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of InstrumentConfiguration</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.make_iterator">
+<code class="descname">make_iterator</code><span class="sig-paren">(</span><em>iterator=None</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mzml.html#MzMLLoader.make_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.make_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure the iterator’s behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>iterator</strong> (<em>Iterator</em><em>, </em><em>optional</em>) – The iterator to manipulate. If missing, the default
+iterator will be used.</li>
+<li><strong>grouped</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the iterator should be grouped and produce scan bunches
+or single scans. Defaults to True</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the object, clearing out any existing
+state.</p>
+<p>This resets the underlying file iterator, then
+calls <a class="reference internal" href="#ms_deisotope.data_source.mzml.MzMLLoader.make_iterator" title="ms_deisotope.data_source.mzml.MzMLLoader.make_iterator"><code class="xref py py-meth docutils literal notranslate"><span class="pre">make_iterator()</span></code></a>, and clears the scan
+cache.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mzml.MzMLLoader.start_from_scan">
+<code class="descname">start_from_scan</code><span class="sig-paren">(</span><em>scan_id=None</em>, <em>rt=None</em>, <em>index=None</em>, <em>require_ms1=True</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzml.MzMLLoader.start_from_scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruct an iterator which will start from the scan matching one of <code class="docutils literal notranslate"><span class="pre">scan_id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">rt</span></code>, or <code class="docutils literal notranslate"><span class="pre">index</span></code>. Only one may be provided.</p>
+<p>After invoking this method, the iterator this object wraps will be changed to begin
+yielding scan bunchs (or single scans if <code class="docutils literal notranslate"><span class="pre">grouped</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p>
+<p>This method will trigger several random-access operations, making it prohibitively
+expensive for normally compressed files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>scan_id</strong> (<em>str</em><em>, </em><em>optional</em>) – Start from the scan with the specified id.</li>
+<li><strong>rt</strong> (<em>float</em><em>, </em><em>optional</em>) – Start from the scan nearest to specified time (in minutes) in the run. If no
+exact match is found, the nearest scan time will be found, rounded up.</li>
+<li><strong>index</strong> (<em>int</em><em>, </em><em>optional</em>) – Start from the scan with the specified index.</li>
+<li><strong>require_ms1</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the iterator must start from an MS1 scan. True by default.</li>
+<li><strong>grouped</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether the iterator should yield scan bunches or single scans. True by default.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="metadata/cv.html">Controlled Vocabulary Interface</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="mzxml.html">mzXML</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>

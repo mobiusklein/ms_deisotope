@@ -1,0 +1,108 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Data Access &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Common Scan Model" href="common_scan.html" />
+    <link rel="prev" title="Deconvolution Pipeline" href="../deconvolution/pipeline.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Data Access</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../deconvolution/pipeline.html">Deconvolution Pipeline</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="common_scan.html">Common Scan Model</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="data-access">
+<h1>Data Access<a class="headerlink" href="#data-access" title="Permalink to this headline">¶</a></h1>
+<p><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope</span></code> can read from mzML, mzXML and MGF files directly, using the <code class="xref py py-mod docutils literal notranslate"><span class="pre">pyteomics</span></code> library.
+On Windows, it can also use <code class="xref py py-mod docutils literal notranslate"><span class="pre">comtypes</span></code> to access Thermo Fisher’s <a class="reference external" href="https://thermo.flexnetoperations.com/control/thmo/index">MSFileReader</a> to read RAW files and Agilent’s
+MassSpecDataReader to read .d directories. Whenever possible, the library provides a
+common interface to all supported formats.</p>
+<p>To read from a supported file format, do one of the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ms_deisotope</span>
+
+<span class="c1"># automatically determine the appropriate reader type</span>
+<span class="c1"># by inspecting the file</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSFileReader</span><span class="p">(</span><span class="s2">&quot;path/to/file.mzML&quot;</span><span class="p">)</span>
+
+<span class="c1"># explicitly select the reader type to use if the file</span>
+<span class="c1"># is compressed or ambiguous</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MzMLLoader</span><span class="p">(</span><span class="s2">&quot;path/to/file.mzML&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="common_scan.html">Common Scan Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="common_scan.html#scan-level-metadata">Scan-Level Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_scan.html#supporting-data-structures">Supporting Data Structures</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="common_reader.html">Common MS File Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="common_reader.html#abstract-base-classes">Abstract Base Classes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="metadata/index.html">File Metadata</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="metadata/file_metadata.html">File Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metadata/instrument_configuration.html">Instrument Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="metadata/cv.html">Controlled Vocabulary Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mzml.html">mzML</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mzxml.html">mzXML</a></li>
+<li class="toctree-l1"><a class="reference internal" href="formats.html">Formats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="formats.html#mzml-and-mzxml">mzML and mzXML</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats.html#mgf">MGF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats.html#vendor-readers">Vendor Readers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="formats.html#references">References</a></li>
+</ul>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../deconvolution/pipeline.html">Deconvolution Pipeline</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="common_scan.html">Common Scan Model</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,514 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>File Description &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Instrument Configuration" href="instrument_configuration.html" />
+    <link rel="prev" title="File Metadata" href="index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>File Description</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">File Metadata</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="instrument_configuration.html">Instrument Configuration</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="file-description">
+<h1>File Description<a class="headerlink" href="#file-description" title="Permalink to this headline">¶</a></h1>
+<p>A mass spectrometry data file contains heterogenous types of information
+derived from one or more provenance sources. Some formats, like <a class="reference external" href="https://doi.org/10.1074/mcp.R110.000133">mzML</a>, track this
+information. This information can be queried to make the object select
+behavior appropriate to its contents and to provide a clear chai of
+evidence back to the original raw data.</p>
+<span class="target" id="module-ms_deisotope.data_source.metadata.file_information"></span><dl class="class">
+<dt id="ms_deisotope.data_source.metadata.file_information.FileInformation">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.file_information.</code><code class="descname">FileInformation</code><span class="sig-paren">(</span><em>contents=None</em>, <em>source_files=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/file_information.html#FileInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.FileInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the type of data found in this file and the
+source files that contributed to it.</p>
+<p>Implements the <code class="xref py py-class docutils literal notranslate"><span class="pre">MutableMapping</span></code> Interface</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.FileInformation.contents">
+<code class="descname">contents</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.FileInformation.contents" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> – A mapping between controlled vocabullary names or user-defined
+names and an optional value. For standard controlled names see
+<a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.content_keys" title="ms_deisotope.data_source.metadata.file_information.content_keys"><code class="xref py py-data docutils literal notranslate"><span class="pre">content_keys</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.FileInformation.source_files">
+<code class="descname">source_files</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.FileInformation.source_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> objects – The set of files which either define the current file, or were used
+to create the current file if recorded.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.file_information.FileInformation.add_content">
+<code class="descname">add_content</code><span class="sig-paren">(</span><em>key</em>, <em>value=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/file_information.html#FileInformation.add_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.FileInformation.add_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new key-value pair to <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.FileInformation.contents" title="ms_deisotope.data_source.metadata.file_information.FileInformation.contents"><code class="xref py py-attr docutils literal notranslate"><span class="pre">contents</span></code></a> with
+an optional value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>key</strong> (<em>str</em>) – The content name, either a CV-term or a user-defined name</li>
+<li><strong>value</strong> (<em>object</em><em>, </em><em>optional</em>) – The optional value, which should be any type of object whose
+meaning makes sense given the definition of <code class="docutils literal notranslate"><span class="pre">key</span></code></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.file_information.FileInformation.add_file">
+<code class="descname">add_file</code><span class="sig-paren">(</span><em>source</em>, <em>check=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/file_information.html#FileInformation.add_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.FileInformation.add_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new file to <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.FileInformation.source_files" title="ms_deisotope.data_source.metadata.file_information.FileInformation.source_files"><code class="xref py py-attr docutils literal notranslate"><span class="pre">source_files</span></code></a></p>
+<p>If <code class="docutils literal notranslate"><span class="pre">source</span></code> is a string, it will be interpreted as a path
+and an instance of <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> will be created using
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">SourceFile.from_path()</span></code>. Otherwise, it is assumed to be
+an instance of <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>source</strong> (str or <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a>) – Either the path to a file to be added to the source file
+collection, or an instance of <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a></li>
+<li><strong>check</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to check and validate that a path points to
+a real file</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code> – If a path fails to validate as real</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.file_information.FileInformation.remove_content">
+<code class="descname">remove_content</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/file_information.html#FileInformation.remove_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.FileInformation.remove_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a key from <code class="xref py py-attr docutils literal notranslate"><span class="pre">content</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>key</strong> (<em>str</em>) – The content key to remove</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.metadata.file_information.SourceFile">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.file_information.</code><code class="descname">SourceFile</code><span class="sig-paren">(</span><em>name</em>, <em>location</em>, <em>id=None</em>, <em>id_format=None</em>, <em>file_format=None</em>, <em>parameters=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/file_information.html#SourceFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a single raw data file which either defines or contributed data to another
+data file, the “reference file”</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.file_format">
+<code class="descname">file_format</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.file_format" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The name of a data file format. See <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.file_formats" title="ms_deisotope.data_source.metadata.file_information.file_formats"><code class="xref py py-data docutils literal notranslate"><span class="pre">file_formats</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.id">
+<code class="descname">id</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.id" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The unique identifier for this file, among files which contributed to
+the reference file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.id_format">
+<code class="descname">id_format</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.id_format" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The name of a formal identifier schema. See <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.id_formats" title="ms_deisotope.data_source.metadata.file_information.id_formats"><code class="xref py py-data docutils literal notranslate"><span class="pre">id_formats</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.location">
+<code class="descname">location</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.location" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The directory path to this file on the machine it was last read on to contribute to
+or define the reference file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.name">
+<code class="descname">name</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The base name of this file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.parameters">
+<code class="descname">parameters</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> – A set of key-value pairs associated with this file, either encoding extra metadata
+annotations, or precomputed hash checksums</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.file_information.id_formats">
+<code class="descclassname">ms_deisotope.data_source.metadata.file_information.</code><code class="descname">id_formats</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.id_formats" title="Permalink to this definition">¶</a></dt>
+<dd><p>These are the recognized formats for encoding scan identifiers from raw and
+processed mass spectrometry data files, derived from the <cite>HUPO PSI-MS</cite>
+controlled vocabulary.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="24%" />
+<col width="76%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Format Name</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Agilent MassHunter nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scanId=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>Bruker BAF nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-even"><td>Bruker Container nativeID format</td>
+<td>Native identifier (UUID).</td>
+</tr>
+<tr class="row-odd"><td>Bruker FID nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">file=xsd:IDREF.</span></code></td>
+</tr>
+<tr class="row-even"><td>Bruker U2 nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">declaration=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">collection=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>Bruker/Agilent YEP nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-even"><td>Mascot query number</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">query=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>SCIEX TOF/TOF T2D nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">file=xsd:IDREF.</span></code></td>
+</tr>
+<tr class="row-even"><td>SCIEX TOF/TOF nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">jobRun=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">spotLabel=xsd:string</span></code> <code class="docutils literal notranslate"><span class="pre">spectrum=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>Scaffold nativeID format</td>
+<td>Scaffold native ID format.</td>
+</tr>
+<tr class="row-even"><td>Shimadzu Biotech nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">source=xsd:string</span></code> <code class="docutils literal notranslate"><span class="pre">start=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">end=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>Thermo nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">controllerType=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">controllerNumber=xsd:positiveInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:positiveInteger.</span></code></td>
+</tr>
+<tr class="row-even"><td>UIMF nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">frame=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">frameType=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>WIFF nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">sample=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">period=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">cycle=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">experiment=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-even"><td>Waters nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">function=xsd:positiveInteger</span></code> <code class="docutils literal notranslate"><span class="pre">process=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>multiple peak list nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">index=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-even"><td>native spectrum identifier format</td>
+<td>Describes how the native spectrum identifiers are formated.</td>
+</tr>
+<tr class="row-odd"><td>no nativeID format</td>
+<td>No nativeID format indicates that the file tagged with this term does not contain spectra that can have a nativeID format.</td>
+</tr>
+<tr class="row-even"><td>scan number only nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>single peak list nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">file=xsd:IDREF.</span></code></td>
+</tr>
+<tr class="row-even"><td>spectrum from ProteinScape database nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">databasekey=xsd:long.</span></code></td>
+</tr>
+<tr class="row-odd"><td>spectrum from database integer nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">databasekey=xsd:long.</span></code></td>
+</tr>
+<tr class="row-even"><td>spectrum from database string nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">databasekey=xsd:string.</span></code></td>
+</tr>
+<tr class="row-odd"><td>spectrum identifier nativeID format</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">spectrum=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.file_information.file_formats">
+<code class="descclassname">ms_deisotope.data_source.metadata.file_information.</code><code class="descname">file_formats</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.file_formats" title="Permalink to this definition">¶</a></dt>
+<dd><p>These are the recognized formats for storing raw and processed mass spectrometry
+data in, derived from the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="98%" />
+<col width="2%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Format Name</th>
+<th class="head">&#160;</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>ABI WIFF format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Agilent MassHunter format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Andi-MS format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Bioworks SRF format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Bruker BAF format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Bruker Container format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Bruker FID format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Bruker U2 format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Bruker XML format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Bruker/Agilent YEP format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>DTA format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>ISB mzXML format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Mascot MGF format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Micromass PKL format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>PSI mzData format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>PerSeptive PKS format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Phenyx XML format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>ProteinLynx Global Server mass spectrum XML format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Proteinscape spectra</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>SCIEX API III format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>SCIEX TOF/TOF T2D format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>SCIEX TOF/TOF database</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>SCiLS Lab format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Shimadzu Biotech database entity</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Thermo RAW format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>UIMF format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Waters raw format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>mass spectrometer file format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>mz5 format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>mzML format</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>parameter file</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>text format</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.file_information.content_keys">
+<code class="descclassname">ms_deisotope.data_source.metadata.file_information.</code><code class="descname">content_keys</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.content_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>These are commonly used to describe the contents of a mass spectrometry data file,
+derived from the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="98%" />
+<col width="2%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Content Type</th>
+<th class="head">&#160;</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>CRM spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>MS1 spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>MSn spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>PDA spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>SIM spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>SRM spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>absorption chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>absorption spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>basepeak chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>charge inversion mass spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>consecutive reaction monitoring chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>constant neutral gain spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>constant neutral loss spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>data file content</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>e/2 mass spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>electromagnetic radiation chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>electromagnetic radiation spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>emission chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>emission spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>enhanced multiply charged spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>mass chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>mass spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>precursor ion spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>product ion spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>selected ion current chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>selected ion monitoring chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>selected reaction monitoring chromatogram</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>time-delayed fragmentation spectrum</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>total ion current chromatogram</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">File Metadata</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="instrument_configuration.html">Instrument Configuration</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>
