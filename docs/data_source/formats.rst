@@ -8,7 +8,7 @@ mzML and mzXML
 and :mod:`mzXML <ms_deisotope.data_source.mzxml>` [Pedrioli2004a]_ files on all platforms, and can
 provide fast random access to uncompressed files. By default, these file types are assumed to be
 collections of MS1 and MSn scans, and will iterate over scan bunches. To iterate over single scans,
-call :meth:`make_iterator` or another iterator creation method with the keyword argument ``grouped=False``.
+call :meth:`~.ScanIterator.make_iterator` or another iterator creation method with the keyword argument ``grouped=False``.
 
 
 MGF
@@ -16,7 +16,7 @@ MGF
 
 :mod:`ms_deisotope` supports reading :mod:`MGF <ms_deisotope.data_source.mgf>` files on all platforms,
 and can provide fast random access to uncompressed files. As this format does not store MS1 scans, only
-single MSn scans are produced by iteration, as if ``grouped=False`` were passed to :meth:`make_iterator`.
+single MSn scans are produced by iteration, as if ``grouped=False`` were passed to :meth:`~.ScanIterator.make_iterator`.
 
 
 Vendor Readers

@@ -25,9 +25,11 @@ To read from a supported file format, do one of the following:
 
 .. toctree::
     :caption: Topics
+    :maxdepth: 2
 
     common_scan
     common_reader
+    metadata/index
     mzml
     mzxml
     formats

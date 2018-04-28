@@ -20,13 +20,13 @@ a chemical composition using :mod:`brainpy`, which is an implementation of the
 .. automodule:: ms_deisotope.averagine
 
     .. autoclass:: Averagine
-        :members:
+        :members: scale, isotopic_cluster
 
     .. autoclass:: TheoreticalIsotopicPattern
-        :members:
+        :members: scale, shift, truncate_after, ignore_below
 
     .. autoclass:: AveragineCache
-        :members:
+        :members: isotopic_cluster
 
 
 .. [Senko]

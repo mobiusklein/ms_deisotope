@@ -16,11 +16,12 @@ to produce deconvoluted *neutral mass* peak lists.
 common formats, including instrument information and and file metadata.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
-   Data Access <data_source/index>
+   Quickstart <Quickstart>
    Deconvolution <deconvolution/index>
+   Data Access <data_source/index>
 
 
 
