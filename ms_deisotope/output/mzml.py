@@ -624,7 +624,7 @@ class MzMLSerializer(ScanSerializerBase):
 
         try:
             self.writer.outfile.flush()
-        except (IOError, AttributeError):
+        except (IOError, AttributeError, ValueError):
             pass
 
     def format(self):
