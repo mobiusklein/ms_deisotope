@@ -408,6 +408,18 @@ cdef class DeconvolutedPeakSet:
             return self.__class__(tuple(p.clone() for p in self.peaks[item]))
         return self.peaks[item]
 
+    def __eq__(self, other):
+        try:
+            return self.peaks == other.peaks
+        except AttributeError:
+            return tuple(self) == tuple(other)
+
+    def __ne__(self, other):
+        try:
+            return self.peaks != other.peaks
+        except AttributeError:
+            return tuple(self) != tuple(other)
+
     def __iter__(self):
         return iter(self.peaks)
 

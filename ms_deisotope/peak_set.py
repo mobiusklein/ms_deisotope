@@ -290,6 +290,18 @@ class DeconvolutedPeakSet(Base):
     def clone(self):
         return self.__class__(tuple(p.clone() for p in self))
 
+    def __eq__(self, other):
+        try:
+            return self.peaks == other.peaks
+        except AttributeError:
+            return tuple(self) == tuple(other)
+
+    def __ne__(self, other):
+        try:
+            return self.peaks != other.peaks
+        except AttributeError:
+            return tuple(self) != tuple(other)
+
     def between(self, m1, m2, tolerance=1e-5, use_mz=False):
         acc = []
         collecting = False
