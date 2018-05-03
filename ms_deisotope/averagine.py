@@ -27,7 +27,7 @@ class TheoreticalIsotopicPattern(object):
 
     Attributes
     ----------
-    peaklist: list of :class:`brainpy.TheoreticalPeak`
+    peaklist: list of :class:`~.brainpy.TheoreticalPeak`
         The theoretical isotopic pattern peak list
     origin: float
         The monoisotopic peak's m/z

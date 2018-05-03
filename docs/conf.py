@@ -50,6 +50,8 @@ templates_path = ['_templates']
 # source_suffix = ['.rst', '.md']
 source_suffix = '.rst'
 
+rst_epilog = open("./definitions").read()
+
 # The master toctree document.
 master_doc = 'index'
 
