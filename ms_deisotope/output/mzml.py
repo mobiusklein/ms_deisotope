@@ -341,10 +341,10 @@ class MzMLSerializer(ScanSerializerBase):
 
     def _add_spectrum_list(self):
         self._create_file_description()
+        self._create_sample_list()
         self._create_software_list()
         self._create_instrument_configuration()
         self._create_data_processing_list()
-        self._create_sample_list()
 
         self._run_tag = self.writer.run(
             id=self.sample_name,
@@ -367,14 +367,14 @@ class MzMLSerializer(ScanSerializerBase):
         params.append({
             "name": "collision energy",
             "value": activation_information.energy,
-            "unitName": "electron volts"
+            "unitName": "electron volt"
         })
         if activation_information.is_multiple_dissociation():
             for energy in activation_information.energies[1:]:
                 params.append({
                     "name": "collision energy",
                     "value": energy,
-                    "unitName": "electron volts"
+                    "unitName": "electron volt"
                 })
 
         for key, val in activation_information.data.items():
