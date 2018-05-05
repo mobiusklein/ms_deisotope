@@ -374,3 +374,16 @@ div.viewcode-block:target {
 div.math p {
     text-align: center;
 }
+
+
+.colored-red {
+    color: red;
+}
+
+.colored-green {
+    color: green;
+}
+
+.colored-blue {
+    color: blue;
+}

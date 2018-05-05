@@ -4,3 +4,7 @@
 .. |TRUNCATE_AFTER| replace:: 0.95
 .. |CONVERGENCE| replace:: 1e-3
 .. |SCALE_METHOD| replace:: "sum" 
+
+.. role:: colored-red
+.. role:: colored-green
+.. role:: colored-blue
