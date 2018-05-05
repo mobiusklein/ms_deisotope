@@ -150,38 +150,40 @@ class MzMLSerializer(ScanSerializerBase):
     compression : :class:`str`
         The compression type to use for binary data arrays. Should be one of
         *"zlib"*, *"none"*, or :obj:`None`
-    data_encoding : dict
-        Description
+    data_encoding : :class:`dict` or :class:`int` or :obj:`numpy.dtype` or :class:`str`
+        The encoding specification to specify the binary encoding of numeric data arrays
+        that is passed to :meth:`~.MzMLWriter.write_spectrum` and related methods.
     data_processing_list : :class:`list`
-        Description
+        List of packaged :class:`~.DataProcessingInformation` to write out
     deconvoluted : bool
-        Description
+        Indicates whether the translation should include extra deconvolution information
     file_contents_list : :class:`list`
-        Description
-    handle : file
-        Description
-    indexer : TYPE
-        Description
+        List of terms to include in the :obj:`<fileContents>` tag
+    handle : file-like
+        The file-like object being written to
+    indexer : :class:`~.ExtendedScanIndex`
+        The external index builder
     instrument_configuration_list : :class:`list`
-        Description
+        List of packaged :class:`~.InstrumentInformation` to write out
     n_spectra : int
-        Description
+        The number of spectra to provide a size for in the :class:`<spectrumList>`
     processing_parameters : :class:`list`
-        Description
+        List of additional terms to include in a newly created :class:`~.DataProcessingInformation`
     sample_list : :class:`list`
-        Description
+        List of :class:`SampleRun` objects to write out
     sample_name : :class:`str`
-        Description
+        Default sample name
     sample_run : :class:`~.SampleRun`
         Description
     software_list : :class:`list`
-        Description
+        List of packaged :class:`~.Software` objects to write out
     source_file_list : :class:`list`
-        Description
+        List of packaged :class:`~.SourceFile` objects to write out
     total_ion_chromatogram_tracker : :class:`OrderedDict`
-        Description
+        Accumulated mapping of scan time to total intensity. This is
+        used to write the *total ion chromatogram*.
     writer : :class:`~psims.mzml.writer.MzMLWriter`
-        Description
+        The lower level writer implementation
     """
 
     def __init__(self, handle, n_spectra=2e4, compression=None,
@@ -280,7 +282,7 @@ class MzMLSerializer(ScanSerializerBase):
         for key, value in file_information.contents.items():
             if value is None:
                 value = ''
-            self.add_file_contents({key: value})
+            self.add_file_contents({str(key): value})
         for source_file in file_information.source_files:
             self.add_source_file(source_file)
 
@@ -326,9 +328,9 @@ class MzMLSerializer(ScanSerializerBase):
         }
         unwrapped['params'].extend(source_file.parameters)
         if source_file.id_format:
-            unwrapped['params'].append(source_file.id_format)
+            unwrapped['params'].append(str(source_file.id_format))
         if source_file.file_format:
-            unwrapped['params'].append(source_file.file_format)
+            unwrapped['params'].append(str(source_file.file_format))
         self.source_file_list.append(unwrapped)
 
     def add_data_processing(self, data_processing_description):
