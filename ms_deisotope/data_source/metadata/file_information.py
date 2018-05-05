@@ -11,131 +11,260 @@ try:
 except NameError:
     FileNotFoundError = OSError
 
-
-id_formats = {
-    u'native spectrum identifier format': "Describes how the native spectrum identifiers are formated.",
-    u'Agilent MassHunter nativeID format': "Native format defined by scanId=xsd:nonNegativeInteger.",
-    u'spectrum from database string nativeID format': "Native format defined by databasekey=xsd:string.",
-    u'spectrum from ProteinScape database nativeID format': "Native format defined by databasekey=xsd:long.",
-    u'Bruker U2 nativeID format': (
-        "Native format defined by declaration=xsd:nonNegativeInteger"
-        " collection=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger."),
-    u'no nativeID format': (
-        "No nativeID format indicates that the file tagged with this term "
-        "does not contain spectra that can have a nativeID format."),
-    u'Mascot query number': "Native format defined by query=xsd:nonNegativeInteger.",
-    u'spectrum from database integer nativeID format': "Native format defined by databasekey=xsd:long.",
-    u'Shimadzu Biotech nativeID format': (
-        "Native format defined by source=xsd:string "
-        "start=xsd:nonNegativeInteger end=xsd:nonNegativeInteger."),
-    u'UIMF nativeID format': (
-        "Native format defined by frame=xsd:nonNegativeInteger "
-        "scan=xsd:nonNegativeInteger frameType=xsd:nonNegativeInteger."),
-    u'Bruker Container nativeID format': "Native identifier (UUID).",
-    u'SCIEX TOF/TOF nativeID format': (
-        "Native format defined by jobRun=xsd:nonNegativeInteger "
-        "spotLabel=xsd:string spectrum=xsd:nonNegativeInteger."),
-    u'Thermo nativeID format': (
-        "Native format defined by controllerType=xsd:nonNegativeInteger "
-        "controllerNumber=xsd:positiveInteger scan=xsd:positiveInteger."),
-    u'Waters nativeID format': (
-        "Native format defined by function=xsd:positiveInteger "
-        "process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger."),
-    u'Scaffold nativeID format': "Scaffold native ID format.",
-    u'Bruker FID nativeID format': "Native format defined by file=xsd:IDREF.",
-    u'Bruker BAF nativeID format': "Native format defined by scan=xsd:nonNegativeInteger.",
-    u'Bruker/Agilent YEP nativeID format': "Native format defined by scan=xsd:nonNegativeInteger.",
-    u'WIFF nativeID format': (
-        "Native format defined by sample=xsd:nonNegativeInteger period=xsd:nonNegativeInteger"
-        " cycle=xsd:nonNegativeInteger experiment=xsd:nonNegativeInteger."),
-    u'spectrum identifier nativeID format': "Native format defined by spectrum=xsd:nonNegativeInteger.",
-    u'scan number only nativeID format': "Native format defined by scan=xsd:nonNegativeInteger.",
-    u'single peak list nativeID format': "Native format defined by file=xsd:IDREF.",
-    u'multiple peak list nativeID format': "Native format defined by index=xsd:nonNegativeInteger.",
-    u'SCIEX TOF/TOF T2D nativeID format': "Native format defined by file=xsd:IDREF.",
-}
-'''
-Formats for scan id recording
-'''
+from .cv import Term, render_list
 
 
-file_formats = {
-    u'Mascot MGF format',
-    u'Waters raw format',
-    u'DTA format',
-    u'SCIEX TOF/TOF T2D format',
-    u'Bioworks SRF format',
-    u'Andi-MS format',
-    u'SCIEX TOF/TOF database',
-    u'parameter file',
-    u'Bruker/Agilent YEP format',
-    u'mz5 format',
-    u'ISB mzXML format',
-    u'ABI WIFF format',
-    u'Bruker BAF format',
-    u'UIMF format',
-    u'mzML format',
-    u'Micromass PKL format',
-    u'mass spectrometer file format',
-    u'Bruker XML format',
-    u'Bruker U2 format',
-    u'Bruker FID format',
-    u'text format',
-    u'PSI mzData format',
-    u'Shimadzu Biotech database entity',
-    u'Thermo RAW format',
-    u'Agilent MassHunter format',
-    u'ProteinLynx Global Server mass spectrum XML format',
-    u'Bruker Container format',
-    u'PerSeptive PKS format',
-    u'Phenyx XML format',
-    u'Proteinscape spectra',
-    u'SCIEX API III format',
-    u'SCiLS Lab format',
-}
-'''
-Formats for storing mass spectral data in either raw or processed form
-'''
+class IDFormat(Term):
+    pass
 
 
-MS_MS1_Spectrum = 'MS1 spectrum'
-MS_MSn_Spectrum = 'MSn spectrum'
+class FileFormat(Term):
+    pass
+
+
+class FileContent(Term):
+    pass
+
+
+def __generate_list_code():
+    '''Prints the code to generate these static lists
+    '''
+    import sys
+    render_list('native spectrum identifier format',
+                "id_formats", term_cls_name="IDFormat")
+    sys.stdout.write("\n\n")
+    render_list('mass spectrometer file format',
+                "file_formats", term_cls_name="FileFormat")
+    sys.stdout.write("\n\n")
+    render_list('data file content', 'content_keys',
+                term_cls_name="FileContent")
+
+
+id_formats = [
+    IDFormat(u'Agilent MassHunter nativeID format', u'MS:1001508', u'Native format defined by scanId=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'spectrum from database string nativeID format', u'MS:1001532', u'Native format defined by databasekey=xsd:string.',
+             'native spectrum identifier format', [u'native spectrum identifier format', u'spectra data details', u'search input details']),
+    IDFormat(u'spectrum from ProteinScape database nativeID format', u'MS:1001531', u'Native format defined by databasekey=xsd:long.',
+             'native spectrum identifier format', [u'native spectrum identifier format', u'spectra data details', u'search input details']),
+    IDFormat(u'Bruker U2 nativeID format', u'MS:1000823', u'Native format defined by declaration=xsd:nonNegativeInteger collection=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'no nativeID format', u'MS:1000824', u'No nativeID format indicates that the file tagged with this term does not contain spectra that can have a nativeID format.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Mascot query number', u'MS:1001528', u'Native format defined by query=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format', u'spectrum identification result details']),
+    IDFormat(u'spectrum from database integer nativeID format', u'MS:1001526', u'Native format defined by databasekey=xsd:long.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Shimadzu Biotech nativeID format', u'MS:1000929', u'Native format defined by source=xsd:string start=xsd:nonNegativeInteger end=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'UIMF nativeID format', u'MS:1002532', u'Native format defined by frame=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger frameType=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Bruker TDF nativeID format', u'MS:1002818', u'Native format defined by frame=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Bruker Container nativeID format', u'MS:1002303', u'Native identifier (UUID).',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'SCIEX TOF/TOF nativeID format', u'MS:1001480', u'Native format defined by jobRun=xsd:nonNegativeInteger spotLabel=xsd:string spectrum=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Thermo nativeID format', u'MS:1000768', u'Native format defined by controllerType=xsd:nonNegativeInteger controllerNumber=xsd:positiveInteger scan=xsd:positiveInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Waters nativeID format', u'MS:1000769', u'Native format defined by function=xsd:positiveInteger process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Scaffold nativeID format', u'MS:1001562', u'Scaffold native ID format.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Bruker FID nativeID format', u'MS:1000773', u'Native format defined by file=xsd:IDREF.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Bruker BAF nativeID format', u'MS:1000772', u'Native format defined by scan=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Bruker/Agilent YEP nativeID format', u'MS:1000771', u'Native format defined by scan=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'WIFF nativeID format', u'MS:1000770', u'Native format defined by sample=xsd:nonNegativeInteger period=xsd:nonNegativeInteger cycle=xsd:nonNegativeInteger experiment=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'spectrum identifier nativeID format', u'MS:1000777', u'Native format defined by spectrum=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'scan number only nativeID format', u'MS:1000776', u'Native format defined by scan=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'single peak list nativeID format', u'MS:1000775', u'Native format defined by file=xsd:IDREF.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'multiple peak list nativeID format', u'MS:1000774', u'Native format defined by index=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'SCIEX TOF/TOF T2D nativeID format', u'MS:1001559', u'Native format defined by file=xsd:IDREF.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+]
+
+
+file_formats = [
+    FileFormat(u'Agilent MassHunter format', u'MS:1001509', u'A data file format found in an Agilent MassHunter directory which contains raw data acquired by an Agilent mass spectrometer.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'SCiLS Lab format', u'MS:1002385', u'SCiLS Lab file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Mascot MGF format', u'MS:1001062', u'Mascot MGF file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Andi-MS format', u'MS:1002441', u'AIA Analytical Data Interchange file format for mass spectrometry data.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bruker FID format', u'MS:1000825', u'Bruker FID file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Proteinscape spectra', u'MS:1001527', u'Spectra from Bruker/Protagen Proteinscape database.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'MS2 format', u'MS:1001466', u'MS2 file format for MS2 spectral data." [PMID:15317041, DOI:10.1002/rcm.1603', 'mass spectrometer file format', [
+               u'mass spectrometer file format', u'file format']),
+    FileFormat(u'PerSeptive PKS format', u'MS:1001245', u'PerSeptive peak list file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'SCIEX API III format', u'MS:1001246', u'PE SCIEX peak list file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bruker XML format', u'MS:1001247', u'Bruker data exchange XML format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Shimadzu Biotech database entity', u'MS:1000930', u'Shimadzu Biotech format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'mz5 format', u'MS:1001881', u'mz5 file format, modelled after mzML.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'mzMLb format', u'MS:1002838', u'mzMLb file format, mzML encapsulated within HDF5." [PSI:PI', 'mass spectrometer file format', [
+               u'mass spectrometer file format', u'file format']),
+    FileFormat(u'UIMF format', u'MS:1002531', u'SQLite-based file format created at Pacific Northwest National Lab. It stores an intermediate analysis of ion-mobility mass spectrometry data.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bruker TDF format', u'MS:1002817', u'Bruker TDF raw file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Waters raw format', u'MS:1000526', u'Waters data file format found in a Waters RAW directory, generated from an MS acquisition.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bruker Container format', u'MS:1002302', u'Bruker Container raw file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Phenyx XML format', u'MS:1001463', u'Phenyx open XML file format.', 'mass spectrometer file format', [
+               u'mass spectrometer file format', u'intermediate analysis format', u'file format']),
+    FileFormat(u'mzML format', u'MS:1000584', u'Proteomics Standards Inititative mzML file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bioworks SRF format', u'MS:1000742', u'Thermo Finnigan SRF file format.', 'mass spectrometer file format', [
+               u'mass spectrometer file format', u'intermediate analysis format', u'file format']),
+    FileFormat(u'parameter file', u'MS:1000740', u'Parameter file used to configure the acquisition of raw data on the instrument.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'ISB mzXML format', u'MS:1000566', u'Institute of Systems Biology mzXML file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bruker/Agilent YEP format', u'MS:1000567', u'Bruker/Agilent YEP file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'PSI mzData format', u'MS:1000564', u'Proteomics Standards Inititative mzData file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Micromass PKL format', u'MS:1000565', u'Micromass PKL file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'ABI WIFF format', u'MS:1000562', u'Applied Biosystems WIFF file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Thermo RAW format', u'MS:1000563', u'Thermo Scientific RAW file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'SCIEX TOF/TOF database', u'MS:1001481', u'Applied Biosystems/MDS Analytical Technologies TOF/TOF instrument database.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'DTA format', u'MS:1000613', u'SEQUEST DTA file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'ProteinLynx Global Server mass spectrum XML format', u'MS:1000614', u'Peak list file format used by ProteinLynx Global Server.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'text format', u'MS:1001369', u'Simple text file format of \\"m/z [intensity]\\" values for a PMF (or single MS2) search.', 'mass spectrometer file format', [
+               u'mass spectrometer file format', u'file format']),
+    FileFormat(u'SCIEX TOF/TOF T2D format', u'MS:1001560', u'Applied Biosystems/MDS Analytical Technologies TOF/TOF instrument export format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'MS1 format', u'MS:1002597', u'MS1 file format for MS1 spectral data." [PMID:15317041', 'mass spectrometer file format', [
+               u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bruker U2 format', u'MS:1000816', u'Bruker HyStar U2 file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'Bruker BAF format', u'MS:1000815', u'Bruker BAF raw file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+]
 
 
 content_keys = [
-    'CRM spectrum',
-    'emission spectrum',
-    'emission chromatogram',
-    'data file content',
-    'constant neutral loss spectrum',
-    'enhanced multiply charged spectrum',
-    'e/2 mass spectrum',
-    'product ion spectrum',
-    'time-delayed fragmentation spectrum',
-    'PDA spectrum',
-    'consecutive reaction monitoring chromatogram',
-    MS_MS1_Spectrum,
-    'SRM spectrum',
-    'selected ion current chromatogram',
-    'absorption chromatogram',
-    'electromagnetic radiation chromatogram',
-    'charge inversion mass spectrum',
-    'selected reaction monitoring chromatogram',
-    'basepeak chromatogram',
-    MS_MSn_Spectrum,
-    'mass spectrum',
-    'constant neutral gain spectrum',
-    'absorption spectrum',
-    'SIM spectrum',
-    'selected ion monitoring chromatogram',
-    'total ion current chromatogram',
-    'mass chromatogram',
-    'electromagnetic radiation spectrum',
-    'precursor ion spectrum'
+    FileContent(u'electromagnetic radiation spectrum', u'MS:1000804', u'A plot of the relative intensity of electromagnetic radiation as a function of the wavelength.',
+                'data file content', [u'data file content', u'spectrum type']),
+    FileContent(u'total ion current chromatogram', u'MS:1000235', u'Chromatogram obtained by plotting the total ion current detected in each of a series of mass spectra recorded as a function of retention time.',
+                'data file content', [u'data file content', u'mass chromatogram', u'chromatogram type']),
+    FileContent(u'absorption spectrum', u'MS:1000806', u'A plot of the relative intensity of electromagnetic radiation absorbed by atoms or molecules when excited.',
+                'data file content', [u'data file content', u'spectrum type']),
+    FileContent(u'selected reaction monitoring chromatogram', u'MS:1001473', u'Chromatogram created by creating an array of the measurements of a selectively monitored reaction at each time point.',
+                'data file content', [u'data file content', u'mass chromatogram', u'chromatogram type']),
+    FileContent(u'selected ion monitoring chromatogram', u'MS:1001472', u'Chromatogram created by creating an array of the measurements of a selectively monitored ion at each time point.',
+                'data file content', [u'data file content', u'mass chromatogram', u'chromatogram type']),
+    FileContent(u'consecutive reaction monitoring chromatogram', u'MS:1001474', u'OBSOLETE Chromatogram created by creating an array of the measurements of a series of monitored reactions at each time point.',
+                'data file content', [u'data file content', u'mass chromatogram', u'chromatogram type']),
+    FileContent(u'MSn spectrum', u'MS:1000580', u'MSn refers to multi-stage MS2 experiments designed to record product ion spectra where n is the number of product ion stages (progeny ions). For ion traps, sequential MS/MS experiments can be undertaken where n > 2 whereas for a simple triple quadrupole system n=2. Use the term ms level (MS:1000511) for specifying n.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'CRM spectrum', u'MS:1000581', u'Spectrum generated from MSn experiment with three or more stages of m/z separation and in which a particular multi-step reaction path is monitored.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'SIM spectrum', u'MS:1000582', u'Spectrum obtained with the operation of a mass spectrometer in which the abundances of one ion or several ions of specific m/z values are recorded rather than the entire mass spectrum (Selected Ion Monitoring).',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'SRM spectrum', u'MS:1000583', u'Spectrum obtained when data are acquired from specific product ions corresponding to m/z values of selected precursor ions a recorded via two or more stages of mass spectrometry. The precursor/product ion pair is called a transition pair. Data can be obtained for a single transition pair or multiple transition pairs. Multiple time segments of different transition pairs can exist in a single file. Single precursor ions can have multiple product ions consitituting multiple transition pairs. Selected reaction monitoring can be performed as tandem mass spectrometry in time or tandem mass spectrometry in space.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'enhanced multiply charged spectrum', u'MS:1000789', u'MS1 spectrum that is enriched in multiply-charged ions compared to singly-charged ions.',
+                'data file content', [u'data file content', u'MS1 spectrum', u'mass spectrum', u'spectrum type']),
+    FileContent(u'constant neutral gain spectrum', u'MS:1000325', u'A spectrum formed of all product ions that have been produced by gain of a pre-selected neutral mass following the reaction with and addition of the gas in a collision cell.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'constant neutral loss spectrum', u'MS:1000326', u'A spectrum formed of all product ions that have been produced with a selected m/z decrement from any precursor ions. The spectrum shown correlates to the precursor ion spectrum. See also neutral loss spectrum.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'charge inversion mass spectrum', u'MS:1000322', u'The measurement of the relative abundance of ions that result from a charge inversion reaction as a function of m/z.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'time-delayed fragmentation spectrum', u'MS:1000790', u'MSn spectrum in which the product ions are collected after a time delay, which allows the observation of lower energy fragmentation processes after precursor ion activation.',
+                'data file content', [u'data file content', u'MSn spectrum', u'mass spectrum', u'spectrum type']),
+    FileContent(u'emission spectrum', u'MS:1000805', u'A plot of the relative intensity of electromagnetic radiation emitted by atoms or molecules when excited.',
+                'data file content', [u'data file content', u'spectrum type']),
+    FileContent(u'product ion spectrum', u'MS:1000343', u'OBSOLETE A mass spectrum recorded from any spectrometer in which the appropriate m/z separation scan function is set to record the product ion or ions of selected precursor ions.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'precursor ion spectrum', u'MS:1000341', u'Spectrum generated by scanning precursor m/z while monitoring a fixed product m/z.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'mass spectrum', u'MS:1000294', u'A plot of the relative abundance of a beam or other collection of ions as a function of the mass-to-charge ratio (m/z).',
+                'data file content', [u'data file content', u'spectrum type']),
+    FileContent(u'basepeak chromatogram', u'MS:1000628', u'Chromatogram created by creating an array of the most intense peaks at each time point.',
+                'data file content', [u'data file content', u'mass chromatogram', u'chromatogram type']),
+    FileContent(u'selected ion current chromatogram', u'MS:1000627', u'Chromatogram created by creating an array of the measurements of a specific single ion current at each time point.',
+                'data file content', [u'data file content', u'mass chromatogram', u'chromatogram type']),
+    FileContent(u'PDA spectrum', u'MS:1000620', u'OBSOLETE Spectrum generated from a photodiode array detector (ultraviolet/visible spectrum).',
+                'data file content', [u'data file content', u'spectrum type']),
+    FileContent(u'MS1 spectrum', u'MS:1000579', u'Mass spectrum created by a single-stage MS experiment or the first stage of a multi-stage experiment.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'absorption chromatogram', u'MS:1000812', u'The measurement of light absorbed by the sample as a function of the retention time.',
+                'data file content', [u'data file content', u'electromagnetic radiation chromatogram', u'chromatogram type']),
+    FileContent(u'emission chromatogram', u'MS:1000813', u'The measurement of light emitted by the sample as a function of the retention time.',
+                'data file content', [u'data file content', u'electromagnetic radiation chromatogram', u'chromatogram type']),
+    FileContent(u'mass chromatogram', u'MS:1000810', u'A plot of the relative abundance of a beam or other collection of ions as a function of the retention time.',
+                'data file content', [u'data file content', u'chromatogram type']),
+    FileContent(u'electromagnetic radiation chromatogram', u'MS:1000811', u'The measurement of electromagnetic properties as a function of the retention time.',
+                'data file content', [u'data file content', u'chromatogram type']),
+    FileContent(u'e/2 mass spectrum', u'MS:1000328', u'A mass spectrum obtained using a sector mass spectrometer in which the electric sector field E is set to half the value required to transmit the main ion-beam. This spectrum records the signal from doubly charged product ions of charge-stripping reactions.',
+                'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
 ]
-'''
-Entries commonly used to describe the contents of a data file
-'''
+
+
+def find(collection, key):
+    i = collection.index(key)
+    return collection[i]
+
+
+id_formats_by_name = {k.name: k for k in id_formats}
+file_formats_by_name = {k.name: k for k in file_formats}
+content_keys_by_name = {k.name: k for k in content_keys}
+
+
+MS_MS1_Spectrum = content_keys_by_name.get('MS1 spectrum')
+MS_MSn_Spectrum = content_keys_by_name.get('MSn spectrum')
+
+
+def id_format(name):
+    try:
+        return id_formats_by_name[name]
+    except KeyError:
+        if name is None:
+            return None
+        return IDFormat(name, name, name, name, [name])
+
+
+def file_format(name):
+    try:
+        return file_formats_by_name[name]
+    except KeyError:
+        if name is None:
+            return None
+        return FileFormat(name, name, name, name, [name])
+
+
+def content_key(name):
+    try:
+        return content_keys_by_name[name]
+    except KeyError:
+        if name is None:
+            return None
+        return FileContent(name, name, name, name, [name])
 
 
 class FileInformation(MutableMapping):
@@ -252,8 +381,10 @@ class FileInformation(MutableMapping):
 
 
 format_parameter_map = {
-    "thermo raw": ("Thermo nativeID format", "Thermo RAW format"),
-    "agilent d": ("Agilent MassHunter nativeID format", "Agilent MassHunter format"),
+    "thermo raw": (id_formats_by_name.get("Thermo nativeID format"),
+                   file_formats_by_name.get("Thermo RAW format")),
+    "agilent d": (id_formats_by_name.get("Agilent MassHunter nativeID format"),
+                  file_formats_by_name.get("Agilent MassHunter format")),
 }
 
 
@@ -263,12 +394,12 @@ class SourceFile(object):
 
     Attributes
     ----------
-    file_format : str
+    file_format : :class:`~.FileFormat`
         The name of a data file format. See :data:`file_formats`
     id : str
         The unique identifier for this file, among files which contributed to
         the reference file
-    id_format : str
+    id_format : :class:`~.IDFormat`
         The name of a formal identifier schema. See :data:`~.id_formats`
     location : str
         The directory path to this file on the machine it was last read on to contribute to
@@ -318,6 +449,22 @@ class SourceFile(object):
         self._clean_parameters()
         self.id_format = id_format or self.infer_id_format_from_paramters()
         self.file_format = file_format or self.infer_file_format_from_parameters()
+
+    @property
+    def id_format(self):
+        return self._id_format
+
+    @id_format.setter
+    def id_format(self, value):
+        self._id_format = id_format(str(value))
+
+    @property
+    def file_format(self):
+        return self._file_format
+
+    @file_format.setter
+    def file_format(self, value):
+        self._file_format = file_format(str(value))
 
     def _clean_parameters(self):
         self.parameters.pop("location", None)
@@ -382,7 +529,7 @@ class SourceFile(object):
         return None, None
 
     def __repr__(self):
-        template = "SourceFile(%r, %r, %r, %r, %r%s)"
+        template = "SourceFile(%r, %r, %r, %s, %s%s)"
         if self.parameters:
             tail = ", %r" % self.parameters
         else:
@@ -425,7 +572,8 @@ class SourceFile(object):
             checksum = self.checksum("md5")
             return self.parameters['MD5'] == checksum
         else:
-            warnings.warn("%r did not have a reference checksum. Could not validate" % (self,))
+            warnings.warn(
+                "%r did not have a reference checksum. Could not validate" % (self,))
             return True
 
     def has_checksum(self, hash_type=None):
@@ -464,3 +612,7 @@ class SourceFile(object):
         return self.__class__(self.name, self.location, self.id,
                               self.id_format, self.file_format,
                               parameters=self.parameters.copy())
+
+
+if __name__ == '__main__':
+    __generate_list_code()

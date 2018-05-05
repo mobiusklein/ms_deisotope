@@ -1,14 +1,15 @@
 import sys
 from collections import namedtuple
 
-# try:
-#     from psims.controlled_vocabulary.controlled_vocabulary import load_psims
-#     cv_psims = load_psims()
-# except Exception:  # pragma: no cover
-#     cv_psims = None
+
+def clean_definition(text):
+    if text.startswith('"'):
+        text = text.rsplit(" ", 1)[0]
+        text = text[1:-1]
+    return text
 
 
-class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
+class Term(namedtuple("Term", ("name", "id", "description", "category", "specialization"))):
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -17,7 +18,7 @@ class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
             return tuple(self) == tuple(other)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def __repr__(self):
         text = super(Term, self).__repr__()
@@ -30,12 +31,12 @@ class Term(namedtuple("Term", ("name", "id", "category", "specialization"))):
         return hash(self.name)
 
     def is_a(self, term):
-        """Test whether this entity is exactly ``term`` or a specialization
-        of ``term``
+        """Test whether this entity is exactly **term** or a specialization
+        of **term**
 
         Parameters
         ----------
-        term : str or :class:`Term`
+        term : str or :class:`~.Term`
             The entity to compare to
 
         Returns
@@ -123,8 +124,9 @@ def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pra
             if term.name in seen:
                 continue
             seen.add(term.name)
-            stream.write("    %s(%r, %r, %r, %r), \n" % (
-                term_cls_name, term.name, term.id, component_type_list[0], type_path(term, seed)))
+            stream.write("    %s(%r, %r, %r, %r, %r), \n" % (
+                term_cls_name, term.name, term.id, clean_definition(term.definition),
+                component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
     stream.write("]\n")
