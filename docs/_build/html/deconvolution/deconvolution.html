@@ -83,12 +83,12 @@ each query peak</li>
 each query peak</li>
 <li><strong>left_search_limit_for_priorities</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the left (decrease) from
 each query peak for priority targets</li>
-<li><strong>right_search_limit_for_priorities</strong> (<em>None</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the right (increase) from
+<li><strong>right_search_limit_for_priorities</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the right (increase) from
 each query peak for priority targets</li>
 <li><strong>verbose_priorities</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to turn on verbose mode for priority targets</li>
 <li><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to the deconvoluter to enable verbose mode globally</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to PROTON</li>
-<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the isotopic pattern to include. Defaults to TRUNCATE_AFTER</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the isotopic pattern to include. Defaults to 0.95</li>
 <li><strong>deconvoluter_type</strong> (<em>type</em><em> or </em><em>callable</em><em>, </em><em>optional</em>) – A callable returning a deconvoluter. Defaults to <a class="reference internal" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveraginePeakDependenceGraphDeconvoluter</span></code></a></li>
 <li><strong>**kwargs</strong> – Additional keywords included in <code class="docutils literal notranslate"><span class="pre">decon_config</span></code></li>
 </ul>
@@ -205,12 +205,12 @@ choose the optimal solution.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peak</strong> (<em>FittedPeak</em>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -221,7 +221,7 @@ the overall shape of the isotopic pattern.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The best scoring isotopic fit</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord">IsotopicFitRecord</a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
 </td>
 </tr>
 </tbody>
@@ -240,13 +240,13 @@ followed by <code class="xref py py-meth docutils literal notranslate"><span cla
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
-be visited during deconvolution. Defaults to <cite>operator.attrgetter(“index”)</cite></li>
-<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -261,7 +261,7 @@ intensity_after)) / sum(intensity_after)</cite></li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DeconvolutedPeakSet</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
 </td>
 </tr>
 </tbody>
@@ -279,11 +279,11 @@ parameters, populating the peak dependence graph with all viable candidates.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – </li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 1</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 0</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -310,11 +310,11 @@ the required information for recovering the best fit containing <cite>peak</cite
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 </ul>
 </td>
 </tr>
@@ -421,7 +421,7 @@ the overall shape of the isotopic pattern.</li>
 <li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
 moving all peaks forward by that mass charge ratio transformed mass.</li>
 <li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
-each incremental change in charge state. Defaults to <cite>PROTON</cite></li>
+each incremental change in charge state. Defaults to 1.0072</li>
 </ul>
 </td>
 </tr>
@@ -488,12 +488,12 @@ choose the optimal solution.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peak</strong> (<em>FittedPeak</em>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -504,7 +504,7 @@ the overall shape of the isotopic pattern.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The best scoring isotopic fit</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord">IsotopicFitRecord</a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
 </td>
 </tr>
 </tbody>
@@ -524,13 +524,13 @@ by the search limits. This is usually not the case. For an alternative see
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
-be visited during deconvolution. Defaults to <cite>operator.attrgetter(“index”)</cite></li>
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -541,7 +541,7 @@ the overall shape of the isotopic pattern.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DeconvolutedPeakSet</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
 </td>
 </tr>
 </tbody>
@@ -562,11 +562,11 @@ now and storing the result in a <code class="xref py py-class docutils literal n
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -599,7 +599,7 @@ the <code class="xref py py-class docutils literal notranslate"><span class="pre
 <dl class="attribute">
 <dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.peaklist">
 <code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.peaklist" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code> – The collection of ms_peak_picker.FittedPeak instances and possible associated
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code> – The collection of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> instances and possible associated
 data to deconvolute.</p>
 </dd></dl>
 
@@ -664,7 +664,7 @@ the overall shape of the isotopic pattern.</li>
 <li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
 moving all peaks forward by that mass charge ratio transformed mass.</li>
 <li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
-each incremental change in charge state. Defaults to <cite>PROTON</cite></li>
+each incremental change in charge state. Defaults to 1.0072</li>
 </ul>
 </td>
 </tr>
@@ -849,7 +849,7 @@ the overall shape of the isotopic pattern.</li>
 <li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
 moving all peaks forward by that mass charge ratio transformed mass.</li>
 <li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
-each incremental change in charge state. Defaults to <cite>PROTON</cite></li>
+each incremental change in charge state. Defaults to 1.0072</li>
 </ul>
 </td>
 </tr>
@@ -878,7 +878,7 @@ the overall shape of the isotopic pattern.</li>
 <li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
 moving all peaks forward by that mass charge ratio transformed mass.</li>
 <li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
-each incremental change in charge state. Defaults to <cite>PROTON</cite></li>
+each incremental change in charge state. Defaults to 1.0072</li>
 </ul>
 </td>
 </tr>
@@ -910,7 +910,7 @@ the overall shape of the isotopic pattern.</li>
 <li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
 moving all peaks forward by that mass charge ratio transformed mass.</li>
 <li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
-each incremental change in charge state. Defaults to <cite>PROTON</cite></li>
+each incremental change in charge state. Defaults to 1.0072</li>
 </ul>
 </td>
 </tr>
@@ -948,12 +948,12 @@ choose the optimal solution.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peak</strong> (<em>FittedPeak</em>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -964,7 +964,7 @@ the overall shape of the isotopic pattern.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The best scoring isotopic fit</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord">IsotopicFitRecord</a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
 </td>
 </tr>
 </tbody>
@@ -984,13 +984,13 @@ by the search limits. This is usually not the case. For an alternative see
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
-be visited during deconvolution. Defaults to <cite>operator.attrgetter(“index”)</cite></li>
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -1001,7 +1001,7 @@ the overall shape of the isotopic pattern.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DeconvolutedPeakSet</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
 </td>
 </tr>
 </tbody>
@@ -1022,13 +1022,13 @@ solution.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peak</strong> (<em>FittedPeak</em>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
-each incremental change in charge state. Defaults to <cite>PROTON</cite></li>
+each incremental change in charge state. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -1039,7 +1039,7 @@ the overall shape of the isotopic pattern.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DeconvolutedPeak</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></p>
 </td>
 </tr>
 </tbody>
@@ -1060,11 +1060,11 @@ now and storing the result in a <code class="xref py py-class docutils literal n
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -1123,13 +1123,13 @@ followed by <a class="reference internal" href="#ms_deisotope.deconvolution.Peak
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
-be visited during deconvolution. Defaults to <cite>operator.attrgetter(“index”)</cite></li>
-<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -1144,7 +1144,7 @@ intensity_after)) / sum(intensity_after)</cite></li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DeconvolutedPeakSet</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
 </td>
 </tr>
 </tbody>
@@ -1162,11 +1162,11 @@ parameters, populating the peak dependence graph with all viable candidates.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – </li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 1</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 0</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 <li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
 starting from the monoisotopic peak. This will cause theoretical isotopic patterns
 to be truncated, excluding trailing peaks which do not contribute substantially to
@@ -1216,11 +1216,11 @@ the required information for recovering the best fit containing <cite>peak</cite
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
-<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
 <li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
 <li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
 <li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
-<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to <cite>PROTON</cite></li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
 </ul>
 </td>
 </tr>

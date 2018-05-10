@@ -101,7 +101,7 @@
 <span class="sd">    peak : ms_peak_picker.FittedPeak</span>
 <span class="sd">        The peak to use as a point of reference</span>
 <span class="sd">    charge : int, optional</span>
-<span class="sd">        The charge state to interpolate from. Defaults to `2`.</span>
+<span class="sd">        The charge state to interpolate from. Defaults to 2.</span>
 <span class="sd">    step : int, optional</span>
 <span class="sd">        The number of peaks along the isotopic pattern to search.</span>
 
@@ -124,7 +124,7 @@
 <span class="sd">    peak : ms_peak_picker.FittedPeak</span>
 <span class="sd">        The peak to use as a point of reference</span>
 <span class="sd">    charge : int, optional</span>
-<span class="sd">        The charge state to interpolate from. Defaults to `2`.</span>
+<span class="sd">        The charge state to interpolate from. Defaults to 2.</span>
 <span class="sd">    step : int, optional</span>
 <span class="sd">        The number of peaks along the isotopic pattern to search.</span>
 
@@ -308,14 +308,14 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        theoretical_distribution : list of TheoreticalPeak</span>
+<span class="sd">        theoretical_distribution : list of :class:`~.TheoreticalPeak`</span>
 <span class="sd">            The theoretical isotopic pattern to match</span>
 <span class="sd">        error_tolerance : float, optional</span>
 <span class="sd">            Parts-per-million error tolerance to permit in searching for matches</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        list of FittedPeak</span>
+<span class="sd">        list of :class:`~.FittedPeak`</span>
 <span class="sd">            The list of matched peaks</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">experimental_distribution</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span>
@@ -333,14 +333,14 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        theoretical_distribution : list of TheoreticalPeak</span>
+<span class="sd">        theoretical_distribution : list of :class:`~.TheoreticalPeak`</span>
 <span class="sd">            The theoretical isotopic pattern to scale up</span>
-<span class="sd">        experimental_distribution : list of FittedPeak</span>
+<span class="sd">        experimental_distribution : list of :class:`~.FittedPeak`</span>
 <span class="sd">            The experimental isotopic pattern to use as a reference</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        list of TheoreticalPeak</span>
+<span class="sd">        list of :class:`~.TheoreticalPeak`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_method</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">:</span>
             <span class="n">total_abundance</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
@@ -366,7 +366,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        isotopic_cluster : list of TheoreticalPeak</span>
+<span class="sd">        isotopic_cluster : list of :class:`~.TheoreticalPeak`</span>
 <span class="sd">            The isotopic cluster to subtract</span>
 <span class="sd">        error_tolerance : float, optional</span>
 <span class="sd">            Parts-per-million mass accuracy error tolerance to permit when</span>
@@ -505,18 +505,18 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        peak : FittedPeak</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The putative monoisotopic peak to use for interpolating an isotopic pattern</span>
 <span class="sd">        error_tolerance : float</span>
 <span class="sd">            Parts-per-million error tolerance for isotopic pattern matching</span>
 <span class="sd">        charge : int</span>
 <span class="sd">            The charge state to produce an isotopic pattern for</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The charge carrier mass, defaults to `PROTON`</span>
+<span class="sd">            The charge carrier mass, defaults to |PROTON|</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        IsotopicFitRecord</span>
+<span class="sd">        :class:`~.IsotopicFitRecord`</span>
 <span class="sd">            The fitted isotopic pattern</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">averagine</span><span class="o">.</span><span class="n">isotopic_cluster</span><span class="p">(</span>
@@ -541,16 +541,16 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        peak_charge_set : set</span>
-<span class="sd">            The set of candidate (FittedPeak, charge) tuples to try to fit</span>
+<span class="sd">            The set of candidate (:class:`~.FittedPeak`, charge) tuples to try to fit</span>
 <span class="sd">        error_tolerance : float</span>
 <span class="sd">            Matching error tolerance</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The charge carrier to use. Defaults to `PROTON`</span>
+<span class="sd">            The charge carrier to use. Defaults to |PROTON|</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        set</span>
-<span class="sd">            The set of IsotopicFitRecord instances produced</span>
+<span class="sd">            The set of :class:`~.IsotopicFitRecord` instances produced</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">peak</span><span class="p">,</span> <span class="n">charge</span> <span class="ow">in</span> <span class="n">peak_charge_set</span><span class="p">:</span>
@@ -608,10 +608,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        peak : FittedPeak</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The peak to start the search from</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -682,10 +682,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        peak : FittedPeak</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The peak to start the search from</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -696,7 +696,7 @@
 <span class="sd">            Whether or not to re-calculate the putative starting peak m/z based upon nearby</span>
 <span class="sd">            peaks close to where isotopic peaks for `peak` should be. Defaults to True</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -706,7 +706,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        set</span>
-<span class="sd">            The set of IsotopicFitRecord instances produced</span>
+<span class="sd">            The set of :class:`~.IsotopicFitRecord` instances produced</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">target_peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_peak_charge_pairs</span><span class="p">(</span>
             <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
@@ -731,10 +731,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        peak : FittedPeak</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The peak to start the search from</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -742,7 +742,7 @@
 <span class="sd">        right_search_limit : int, optional</span>
 <span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -751,7 +751,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        IsotopicFitRecord</span>
+<span class="sd">        :class:`~.IsotopicFitRecord`</span>
 <span class="sd">            The best scoring isotopic fit</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_all_charge_states</span><span class="p">(</span>
@@ -783,10 +783,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        peak : FittedPeak</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The peak to start the search from</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -795,7 +795,7 @@
 <span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
 <span class="sd">        charge_carrier : float, optional</span>
 <span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
-<span class="sd">            each incremental change in charge state. Defaults to `PROTON`</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -804,7 +804,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        DeconvolutedPeak</span>
+<span class="sd">        :class:`~.DeconvolutedPeak`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_state_determination</span><span class="p">(</span>
             <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
@@ -858,7 +858,7 @@
 <span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The peak to start the search from</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -866,7 +866,7 @@
 <span class="sd">        right_search_limit : int, optional</span>
 <span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -900,18 +900,18 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        order_chooser : callable, optional:</span>
 <span class="sd">            A callable used as a key function for sorting peaks into the order they will</span>
-<span class="sd">            be visited during deconvolution. Defaults to `operator.attrgetter(&quot;index&quot;)`</span>
+<span class="sd">            be visited during deconvolution. Defaults to :obj:`operator.attrgetter(&quot;index&quot;)`</span>
 <span class="sd">        left_search_limit : int, optional</span>
 <span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
 <span class="sd">        right_search_limit : int, optional</span>
 <span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -920,7 +920,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        DeconvolutedPeakSet</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">order_chooser</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -1049,13 +1049,13 @@
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
-<span class="sd">    averagine : list of ms_deisotope.averagine.AveragineCache</span>
+<span class="sd">    averagine : list of :class:`~.ms_deisotope.averagine.AveragineCache`</span>
 <span class="sd">        The averagine models and associated theoretical isotopic pattern caches to use</span>
 <span class="sd">        to build theoretical isotopic patterns.</span>
-<span class="sd">    peaklist : ms_peak_picker.PeakSet</span>
+<span class="sd">    peaklist : :class:`~.ms_peak_picker.PeakSet`</span>
 <span class="sd">        The collection of ms_peak_picker.FittedPeak instances and possible associated</span>
 <span class="sd">        data to deconvolute.</span>
-<span class="sd">    scorer : ms_deisotope.scoring.IsotopicFitterBase</span>
+<span class="sd">    scorer : :class:`~.ms_deisotope.scoring.IsotopicFitterBase`</span>
 <span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
 <span class="sd">    verbose : bool</span>
 <span class="sd">        How much diagnostic information to provide</span>
@@ -1150,7 +1150,7 @@
 <span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The peak to start the search from</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -1158,7 +1158,7 @@
 <span class="sd">        right_search_limit : int, optional</span>
 <span class="sd">            The number of steps to search to the right of `peak`. Defaults to 0</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -1211,7 +1211,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -1219,7 +1219,7 @@
 <span class="sd">        right_search_limit : int, optional</span>
 <span class="sd">            The number of steps to search to the right of `peak`. Defaults to 0</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -1307,7 +1307,7 @@
 <span class="sd">        peak : :class:`~.FittedPeak`</span>
 <span class="sd">            The peak to start the search from</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        left_search_limit : int, optional</span>
@@ -1315,7 +1315,7 @@
 <span class="sd">        right_search_limit : int, optional</span>
 <span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1338,23 +1338,23 @@
 
 <span class="sd">        For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`</span>
 <span class="sd">        followed by :meth:`select_best_disjoint_subgraphs` to populate the resulting</span>
-<span class="sd">        :class:`DeconvolutedPeakSet`</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        error_tolerance : float, optional</span>
-<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
 <span class="sd">        charge_range : tuple, optional</span>
 <span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
 <span class="sd">        order_chooser : callable, optional:</span>
 <span class="sd">            A callable used as a key function for sorting peaks into the order they will</span>
-<span class="sd">            be visited during deconvolution. Defaults to `operator.attrgetter(&quot;index&quot;)`</span>
+<span class="sd">            be visited during deconvolution. Defaults to :obj:`operator.attrgetter(&quot;index&quot;)`</span>
 <span class="sd">        left_search_limit : int, optional</span>
-<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">            The number of steps to search to the left of :obj:`peak`. Defaults to 3</span>
 <span class="sd">        right_search_limit : int, optional</span>
-<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">            The number of steps to search to the right of :obj:`peak`. Defaults to 3</span>
 <span class="sd">        charge_carrier : float, optional</span>
-<span class="sd">            The mass of the charge carrier. Defaults to `PROTON`</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">        truncate_after : float, optional</span>
 <span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
 <span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
@@ -1369,7 +1369,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        DeconvolutedPeakSet</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
             <span class="n">iterations</span> <span class="o">=</span> <span class="mi">1</span>
@@ -1458,16 +1458,16 @@
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
-<span class="sd">    peaklist : ms_peak_picker.PeakSet</span>
+<span class="sd">    peaklist : :class:`~.ms_peak_picker.PeakSet`</span>
 <span class="sd">        The centroided mass spectrum to deconvolute</span>
-<span class="sd">    scorer : IsotopicFitterBase</span>
+<span class="sd">    scorer : :class:`~.IsotopicFitterBase`</span>
 <span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
-<span class="sd">    averagine : list of ms_deisotope.averagine.AveragineCache</span>
+<span class="sd">    averagine : list of :class:`~.ms_deisotope.averagine.AveragineCache`</span>
 <span class="sd">        The averagine model and associated theoretical isotopic pattern cache to use</span>
 <span class="sd">        to build theoretical isotopic patterns.</span>
 <span class="sd">    max_missed_peaks : int</span>
 <span class="sd">        The maximum number of missing peaks to tolerate in an isotopic fit</span>
-<span class="sd">    peak_dependency_network : PeakDependenceGraph</span>
+<span class="sd">    peak_dependency_network : :class:`~.PeakDependenceGraph`</span>
 <span class="sd">        The peak dependence graph onto which isotopic fit dependences on peaks</span>
 <span class="sd">        are constructed and solved.</span>
 <span class="sd">    merge_isobaric_peaks : bool</span>
@@ -1526,7 +1526,7 @@
 <span class="sd">            moving all peaks forward by that mass charge ratio transformed mass.</span>
 <span class="sd">        charge_carrier : float, optional</span>
 <span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
-<span class="sd">            each incremental change in charge state. Defaults to `PROTON`</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1570,7 +1570,7 @@
 <span class="sd">            moving all peaks forward by that mass charge ratio transformed mass.</span>
 <span class="sd">        charge_carrier : float, optional</span>
 <span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
-<span class="sd">            each incremental change in charge state. Defaults to `PROTON`</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1618,7 +1618,7 @@
 <span class="sd">            moving all peaks forward by that mass charge ratio transformed mass.</span>
 <span class="sd">        charge_carrier : float, optional</span>
 <span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
-<span class="sd">            each incremental change in charge state. Defaults to `PROTON`</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">charge</span> <span class="ow">in</span> <span class="n">charge_range_</span><span class="p">(</span><span class="o">*</span><span class="n">charge_range</span><span class="p">):</span>
             <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_composition_at_charge</span><span class="p">(</span><span class="n">composition</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="n">charge</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
@@ -1669,7 +1669,7 @@
 <span class="sd">        A series of objects which represent elemental compositions and support</span>
 <span class="sd">        the :class:`~.Mapping` interface to access their individual elements.</span>
 <span class="sd">    peaklist : :class:`~ms_peak_picker.PeakSet`</span>
-<span class="sd">        The collection of ms_peak_picker.FittedPeak instances and possible associated</span>
+<span class="sd">        The collection of :class:`~.ms_peak_picker.FittedPeak` instances and possible associated</span>
 <span class="sd">        data to deconvolute.</span>
 <span class="sd">    scorer : :class:`~.IsotopicFitterBase`</span>
 <span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
@@ -1927,7 +1927,7 @@
 <span class="sd">    left_search_limit_for_priorities : int, optional</span>
 <span class="sd">        The maximum number of neutron shifts to search to the left (decrease) from</span>
 <span class="sd">        each query peak for priority targets</span>
-<span class="sd">    right_search_limit_for_priorities : None, optional</span>
+<span class="sd">    right_search_limit_for_priorities : int, optional</span>
 <span class="sd">        The maximum number of neutron shifts to search to the right (increase) from</span>
 <span class="sd">        each query peak for priority targets</span>
 <span class="sd">    verbose_priorities : bool, optional</span>
@@ -1935,9 +1935,9 @@
 <span class="sd">    verbose : bool, optional</span>
 <span class="sd">        Passed to the deconvoluter to enable verbose mode globally</span>
 <span class="sd">    charge_carrier : float, optional</span>
-<span class="sd">        The mass of the charge carrier. Defaults to PROTON</span>
+<span class="sd">        The mass of the charge carrier. Defaults to |PROTON|</span>
 <span class="sd">    truncate_after : float, optional</span>
-<span class="sd">        The percentage of the isotopic pattern to include. Defaults to TRUNCATE_AFTER</span>
+<span class="sd">        The percentage of the isotopic pattern to include. Defaults to |TRUNCATE_AFTER|</span>
 <span class="sd">    deconvoluter_type : type or callable, optional</span>
 <span class="sd">        A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`</span>
 <span class="sd">    **kwargs</span>

@@ -484,7 +484,59 @@ the precursor scan with <a class="reference internal" href="#ms_deisotope.data_s
 <dl class="class">
 <dt id="ms_deisotope.data_source.common.ActivationInformation">
 <em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ActivationInformation</code><span class="sig-paren">(</span><em>method</em>, <em>energy</em>, <em>data=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/metadata/activation.html#ActivationInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ActivationInformation" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Describes the dissociation process used to produce an MSn scan.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ActivationInformation.data">
+<code class="descname">data</code><a class="headerlink" href="#ms_deisotope.data_source.common.ActivationInformation.data" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> – Additional metadata describing the dissociation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ActivationInformation.energy">
+<code class="descname">energy</code><a class="headerlink" href="#ms_deisotope.data_source.common.ActivationInformation.energy" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The quantity of energy used</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ActivationInformation.method">
+<code class="descname">method</code><a class="headerlink" href="#ms_deisotope.data_source.common.ActivationInformation.method" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DissociationMethod</span></code> – The dissociation method used</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ActivationInformation.has_supplemental_dissociation">
+<code class="descname">has_supplemental_dissociation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/metadata/activation.html#ActivationInformation.has_supplemental_dissociation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ActivationInformation.has_supplemental_dissociation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if supplemental activation was used</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ActivationInformation.is_multiple_dissociation">
+<code class="descname">is_multiple_dissociation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/metadata/activation.html#ActivationInformation.is_multiple_dissociation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ActivationInformation.is_multiple_dissociation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if multiple dissociation methods were
+used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="ms_deisotope.data_source.common.ScanAcquisitionInformation">

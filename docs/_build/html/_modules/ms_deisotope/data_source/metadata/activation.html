@@ -32,10 +32,21 @@
         
         
   <h1>Source code for ms_deisotope.data_source.metadata.activation</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span>
+<span></span><span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">render_list</span>
 
 
-<div class="viewcode-block" id="ActivationInformation"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ActivationInformation">[docs]</a><span class="k">class</span> <span class="nc">ActivationInformation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="ActivationInformation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.ActivationInformation">[docs]</a><span class="k">class</span> <span class="nc">ActivationInformation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes the dissociation process used to produce an MSn scan.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : :class:`dict`</span>
+<span class="sd">        Additional metadata describing the dissociation</span>
+<span class="sd">    energy : float</span>
+<span class="sd">        The quantity of energy used</span>
+<span class="sd">    method : :class:`DissociationMethod`</span>
+<span class="sd">        The dissociation method used</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -52,11 +63,24 @@
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">is_multiple_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">False</span>
+<div class="viewcode-block" id="ActivationInformation.is_multiple_dissociation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.ActivationInformation.is_multiple_dissociation">[docs]</a>    <span class="k">def</span> <span class="nf">is_multiple_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine if multiple dissociation methods were</span>
+<span class="sd">        used.</span>
 
-    <span class="k">def</span> <span class="nf">has_supplemental_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">False</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="ActivationInformation.has_supplemental_dissociation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.ActivationInformation.has_supplemental_dissociation">[docs]</a>    <span class="k">def</span> <span class="nf">has_supplemental_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine if supplemental activation was used</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 
     <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">other</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -69,7 +93,19 @@
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">MultipleActivationInformation</span><span class="p">(</span><span class="n">ActivationInformation</span><span class="p">):</span>
+<div class="viewcode-block" id="MultipleActivationInformation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.MultipleActivationInformation">[docs]</a><span class="k">class</span> <span class="nc">MultipleActivationInformation</span><span class="p">(</span><span class="n">ActivationInformation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes the dissociation processes used to produce an MSn</span>
+<span class="sd">    scan with multiple types of activation.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : :class:`dict`</span>
+<span class="sd">        Additional metadata describing the dissociation</span>
+<span class="sd">    energies : :class:`list` of float</span>
+<span class="sd">        A list of dissociation energies used. Parallel to :attr:`methods`</span>
+<span class="sd">    methods : :class:`list` of :class:`DissociationMethod`</span>
+<span class="sd">        A list of dissociation methods used. Parallel to :attr:`energies`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">energies</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -98,11 +134,11 @@
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">is_multiple_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="kc">True</span>
+<div class="viewcode-block" id="MultipleActivationInformation.is_multiple_dissociation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.MultipleActivationInformation.is_multiple_dissociation">[docs]</a>    <span class="k">def</span> <span class="nf">is_multiple_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
-    <span class="k">def</span> <span class="nf">has_supplemental_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">any</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">is_supplemental</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">])</span>
+<div class="viewcode-block" id="MultipleActivationInformation.has_supplemental_dissociation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.MultipleActivationInformation.has_supplemental_dissociation">[docs]</a>    <span class="k">def</span> <span class="nf">has_supplemental_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">([</span><span class="n">d</span><span class="o">.</span><span class="n">is_supplemental</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">])</span></div>
 
     <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">other</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -111,63 +147,81 @@
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
             <span class="nb">abs</span><span class="p">(</span><span class="n">self_energy</span> <span class="o">-</span> <span class="n">other_energy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span> <span class="k">for</span> <span class="n">self_energy</span><span class="p">,</span> <span class="n">other_energy</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">energies</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">energies</span><span class="p">))</span></div>
 
 
-<span class="k">class</span> <span class="nc">DissociationMethod</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+<div class="viewcode-block" id="DissociationMethod"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.DissociationMethod">[docs]</a><span class="k">class</span> <span class="nc">DissociationMethod</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Controlled vocabulary describing a dissociation process</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">is_supplemental</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;supplemental&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+<div class="viewcode-block" id="DissociationMethod.is_supplemental"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.DissociationMethod.is_supplemental">[docs]</a>    <span class="k">def</span> <span class="nf">is_supplemental</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns whether or not the dissociation process is</span>
+<span class="sd">        supplemental</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;supplemental&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">__generate_list_code</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Prints the code to generate these static lists</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;DissociationMethod&quot;</span><span class="p">)</span>
 
 
 <span class="n">dissociation_methods</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;sustained off-resonance irradiation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000282&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;post-source decay&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000135&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;plasma desorption&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000134&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;surface-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000136&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000133&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;pulsed q dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000599&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electron transfer dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000598&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;in-source collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001880&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;infrared multiphoton dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000262&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;blackbody infrared radiative dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000242&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;low-energy collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000433&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;photodissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000435&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;LIFT&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002000&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
-                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)&#39;</span><span class="p">,</span>
-                       <span class="sa">u</span><span class="s1">&#39;MS:1002631&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electron capture dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000250&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;trap-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002472&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000422&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;supplemental collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002679&#39;</span><span class="p">,</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;higher energy beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002481&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
-                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span>
-                        <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;supplemental beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002678&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
-                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span>
-                        <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-<span class="p">]</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;sustained off-resonance irradiation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000282&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s2">&quot;A technique associated with Fourier transform ion cyclotron resonance (FT-ICR) mass spectrometry to carry out ion/neutral reactions such as low-energy collision-induced dissociation. A radio-frequency electric field of slightly off-resonance to the cyclotron frequency of the reactant ion cyclically accelerates and decelerates the reactant ion that is confined in the Penning ion trap. The ion&#39;s orbit does not exceed the dimensions of ion trap while the ion undergoes an ion/neutral species process that produces a high average translational energy for an extended time.&quot;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;post-source decay&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;MS:1000135&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;A technique specific to reflectron time-of-flight mass spectrometers where product ions of metastable transitions or collision-induced dissociations generated in the drift tube prior to entering the reflectron are m/z separated to yield product ion spectra.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;plasma desorption&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000134&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;The ionization of material in a solid sample by bombarding it with ionic or neutral atoms formed as a result of the fission of a suitable nuclide, typically 252Cf. Synonymous with fission fragment ionization.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;surface-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000136&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;Fragmentation that results from the collision of an ion with a surface.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000133&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;The dissociation of an ion after collisional excitation. The term collisional-activated dissociation is not recommended.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;pulsed q dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000599&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;A process that involves precursor ion activation at high Q, a time delay to allow the precursor to fragment, then a rapid pulse to low Q where all fragment ions are trapped. The product ions can then be scanned out of the ion trap and detected.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electron transfer dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000598&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;A process to fragment ions in a mass spectrometer by inducing fragmentation of cations (e.g. peptides or proteins) by transferring electrons to them.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;in-source collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001880&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;The dissociation of an ion as a result of collisional excitation during ion transfer from an atmospheric pressure ion source and the mass spectrometer vacuum.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;infrared multiphoton dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000262&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;Multiphoton ionization where the reactant ion dissociates as a result of the absorption of multiple infrared photons.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;blackbody infrared radiative dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000242&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;A special case of infrared multiphoton dissociation wherein excitation of the reactant ion is caused by absorption of infrared photons radiating from heated blackbody surroundings, which are usually the walls of a vacuum chamber. See also infrared multiphoton dissociation.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;low-energy collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000433&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process wherein the precursor ion has the translational energy lower than approximately 1000 eV. This process typically requires multiple collisions and the collisional excitation is cumulative.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;photodissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000435&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;A process wherein the reactant ion is dissociated as a result of absorption of one or more photons.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span>
+            <span class="sa">u</span><span class="s1">&#39;LIFT&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002000&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;A Bruker</span><span class="se">\&#39;</span><span class="s1">s proprietary technique where molecular ions are initially accelerated at lower energy, then collide with inert gas in a collision cell that is then </span><span class="se">\&#39;</span><span class="s1">lifted</span><span class="se">\&#39;</span><span class="s1"> to high potential. The use of inert gas is optional, as it could lift also fragments provided by LID.&quot; [DOI:10.1007/s00216-003-2057-0 &#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002631&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;A dissociation process combining electron-transfer and higher-energy collision dissociation (EThcD). It combines ETD (reaction time) followed by HCD (activation energy).&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electron capture dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000250&#39;</span><span class="p">,</span>
+                           <span class="sa">u</span><span class="s1">&#39;A process in which a multiply protonated molecules interacts with a low energy electrons. Capture of the electron leads the liberation of energy and a reduction in charge state of the ion with the production of the (M + nH) (n-1)+ odd electron ion, which readily fragments.&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;trap-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002472&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process that occurs in a trap-type collision cell.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000422&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process that occurs in a beam-type collision cell.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;supplemental collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002679&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;The dissociation of an ion after supplemental collisional excitation.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;higher energy beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002481&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process wherein the projectile ion has the translational energy higher than approximately 1000 eV.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+        <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;supplemental beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002678&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;A supplemental collision-induced dissociation process that occurs in a beam-type collision cell in addition to another primary type of dissociation.&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+    <span class="p">]</span>
 
 
 <span class="n">UnknownDissociation</span> <span class="o">=</span> <span class="n">DissociationMethod</span><span class="p">(</span>
-    <span class="s2">&quot;unknown dissociation&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+    <span class="s2">&quot;unknown dissociation&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
     <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">])</span>
 
 
@@ -218,6 +272,10 @@
 
 
 <span class="n">ActivationInformation</span><span class="o">.</span><span class="n">dissociation_methods</span> <span class="o">=</span> <span class="n">dissociation_methods_map</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">__generate_list_code</span><span class="p">()</span>
 </pre></div>
 
       </div>

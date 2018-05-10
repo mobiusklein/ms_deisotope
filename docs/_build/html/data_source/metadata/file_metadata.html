@@ -136,7 +136,7 @@ data file, the “reference file”</p>
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.file_format">
 <code class="descname">file_format</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.file_format" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – The name of a data file format. See <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.file_formats" title="ms_deisotope.data_source.metadata.file_information.file_formats"><code class="xref py py-data docutils literal notranslate"><span class="pre">file_formats</span></code></a></p>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FileFormat</span></code> – The name of a data file format. See <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.file_formats" title="ms_deisotope.data_source.metadata.file_information.file_formats"><code class="xref py py-data docutils literal notranslate"><span class="pre">file_formats</span></code></a></p>
 </dd></dl>
 
 <dl class="attribute">
@@ -149,7 +149,7 @@ the reference file</p>
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.file_information.SourceFile.id_format">
 <code class="descname">id_format</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.file_information.SourceFile.id_format" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – The name of a formal identifier schema. See <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.id_formats" title="ms_deisotope.data_source.metadata.file_information.id_formats"><code class="xref py py-data docutils literal notranslate"><span class="pre">id_formats</span></code></a></p>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">IDFormat</span></code> – The name of a formal identifier schema. See <a class="reference internal" href="#ms_deisotope.data_source.metadata.file_information.id_formats" title="ms_deisotope.data_source.metadata.file_information.id_formats"><code class="xref py py-data docutils literal notranslate"><span class="pre">id_formats</span></code></a></p>
 </dd></dl>
 
 <dl class="attribute">
@@ -182,85 +182,137 @@ processed mass spectrometry data files, derived from the <cite>HUPO PSI-MS</cite
 controlled vocabulary.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="24%" />
-<col width="76%" />
+<col width="23%" />
+<col width="4%" />
+<col width="0%" />
+<col width="73%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Format Name</th>
+<th class="head">ID</th>
+<th class="head">&#160;</th>
 <th class="head">Description</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>Agilent MassHunter nativeID format</td>
+<td>MS:1001508</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scanId=xsd:nonNegativeInteger.</span></code></td>
 </tr>
 <tr class="row-odd"><td>Bruker BAF nativeID format</td>
+<td>MS:1000772</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
 </tr>
 <tr class="row-even"><td>Bruker Container nativeID format</td>
+<td>MS:1002303</td>
+<td>&#160;</td>
 <td>Native identifier (UUID).</td>
 </tr>
 <tr class="row-odd"><td>Bruker FID nativeID format</td>
+<td>MS:1000773</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">file=xsd:IDREF.</span></code></td>
 </tr>
-<tr class="row-even"><td>Bruker U2 nativeID format</td>
+<tr class="row-even"><td>Bruker TDF nativeID format</td>
+<td>MS:1002818</td>
+<td>&#160;</td>
+<td>Native format defined by <code class="docutils literal notranslate"><span class="pre">frame=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
+</tr>
+<tr class="row-odd"><td>Bruker U2 nativeID format</td>
+<td>MS:1000823</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">declaration=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">collection=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-odd"><td>Bruker/Agilent YEP nativeID format</td>
+<tr class="row-even"><td>Bruker/Agilent YEP nativeID format</td>
+<td>MS:1000771</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-even"><td>Mascot query number</td>
+<tr class="row-odd"><td>Mascot query number</td>
+<td>MS:1001528</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">query=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-odd"><td>SCIEX TOF/TOF T2D nativeID format</td>
+<tr class="row-even"><td>SCIEX TOF/TOF T2D nativeID format</td>
+<td>MS:1001559</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">file=xsd:IDREF.</span></code></td>
 </tr>
-<tr class="row-even"><td>SCIEX TOF/TOF nativeID format</td>
+<tr class="row-odd"><td>SCIEX TOF/TOF nativeID format</td>
+<td>MS:1001480</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">jobRun=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">spotLabel=xsd:string</span></code> <code class="docutils literal notranslate"><span class="pre">spectrum=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-odd"><td>Scaffold nativeID format</td>
+<tr class="row-even"><td>Scaffold nativeID format</td>
+<td>MS:1001562</td>
+<td>&#160;</td>
 <td>Scaffold native ID format.</td>
 </tr>
-<tr class="row-even"><td>Shimadzu Biotech nativeID format</td>
+<tr class="row-odd"><td>Shimadzu Biotech nativeID format</td>
+<td>MS:1000929</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">source=xsd:string</span></code> <code class="docutils literal notranslate"><span class="pre">start=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">end=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-odd"><td>Thermo nativeID format</td>
+<tr class="row-even"><td>Thermo nativeID format</td>
+<td>MS:1000768</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">controllerType=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">controllerNumber=xsd:positiveInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:positiveInteger.</span></code></td>
 </tr>
-<tr class="row-even"><td>UIMF nativeID format</td>
+<tr class="row-odd"><td>UIMF nativeID format</td>
+<td>MS:1002532</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">frame=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">frameType=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-odd"><td>WIFF nativeID format</td>
+<tr class="row-even"><td>WIFF nativeID format</td>
+<td>MS:1000770</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">sample=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">period=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">cycle=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">experiment=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-even"><td>Waters nativeID format</td>
+<tr class="row-odd"><td>Waters nativeID format</td>
+<td>MS:1000769</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">function=xsd:positiveInteger</span></code> <code class="docutils literal notranslate"><span class="pre">process=xsd:nonNegativeInteger</span></code> <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-odd"><td>multiple peak list nativeID format</td>
+<tr class="row-even"><td>multiple peak list nativeID format</td>
+<td>MS:1000774</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">index=xsd:nonNegativeInteger.</span></code></td>
 </tr>
-<tr class="row-even"><td>native spectrum identifier format</td>
-<td>Describes how the native spectrum identifiers are formated.</td>
-</tr>
 <tr class="row-odd"><td>no nativeID format</td>
+<td>MS:1000824</td>
+<td>&#160;</td>
 <td>No nativeID format indicates that the file tagged with this term does not contain spectra that can have a nativeID format.</td>
 </tr>
 <tr class="row-even"><td>scan number only nativeID format</td>
+<td>MS:1000776</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">scan=xsd:nonNegativeInteger.</span></code></td>
 </tr>
 <tr class="row-odd"><td>single peak list nativeID format</td>
+<td>MS:1000775</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">file=xsd:IDREF.</span></code></td>
 </tr>
 <tr class="row-even"><td>spectrum from ProteinScape database nativeID format</td>
+<td>MS:1001531</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">databasekey=xsd:long.</span></code></td>
 </tr>
 <tr class="row-odd"><td>spectrum from database integer nativeID format</td>
+<td>MS:1001526</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">databasekey=xsd:long.</span></code></td>
 </tr>
 <tr class="row-even"><td>spectrum from database string nativeID format</td>
+<td>MS:1001532</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">databasekey=xsd:string.</span></code></td>
 </tr>
 <tr class="row-odd"><td>spectrum identifier nativeID format</td>
+<td>MS:1000777</td>
+<td>&#160;</td>
 <td>Native format defined by <code class="docutils literal notranslate"><span class="pre">spectrum=xsd:nonNegativeInteger.</span></code></td>
 </tr>
 </tbody>
@@ -274,110 +326,156 @@ controlled vocabulary.</p>
 data in, derived from the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="98%" />
+<col width="82%" />
 <col width="2%" />
+<col width="16%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Format Name</th>
 <th class="head">&#160;</th>
+<th class="head">ID</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>ABI WIFF format</td>
 <td>&#160;</td>
+<td>MS:1000562</td>
 </tr>
 <tr class="row-odd"><td>Agilent MassHunter format</td>
 <td>&#160;</td>
+<td>MS:1001509</td>
 </tr>
 <tr class="row-even"><td>Andi-MS format</td>
 <td>&#160;</td>
+<td>MS:1002441</td>
 </tr>
 <tr class="row-odd"><td>Bioworks SRF format</td>
 <td>&#160;</td>
+<td>MS:1000742</td>
 </tr>
 <tr class="row-even"><td>Bruker BAF format</td>
 <td>&#160;</td>
+<td>MS:1000815</td>
 </tr>
 <tr class="row-odd"><td>Bruker Container format</td>
 <td>&#160;</td>
+<td>MS:1002302</td>
 </tr>
 <tr class="row-even"><td>Bruker FID format</td>
 <td>&#160;</td>
+<td>MS:1000825</td>
 </tr>
-<tr class="row-odd"><td>Bruker U2 format</td>
+<tr class="row-odd"><td>Bruker TDF format</td>
 <td>&#160;</td>
+<td>MS:1002817</td>
 </tr>
-<tr class="row-even"><td>Bruker XML format</td>
+<tr class="row-even"><td>Bruker U2 format</td>
 <td>&#160;</td>
+<td>MS:1000816</td>
 </tr>
-<tr class="row-odd"><td>Bruker/Agilent YEP format</td>
+<tr class="row-odd"><td>Bruker XML format</td>
 <td>&#160;</td>
+<td>MS:1001247</td>
 </tr>
-<tr class="row-even"><td>DTA format</td>
+<tr class="row-even"><td>Bruker/Agilent YEP format</td>
 <td>&#160;</td>
+<td>MS:1000567</td>
 </tr>
-<tr class="row-odd"><td>ISB mzXML format</td>
+<tr class="row-odd"><td>DTA format</td>
 <td>&#160;</td>
+<td>MS:1000613</td>
 </tr>
-<tr class="row-even"><td>Mascot MGF format</td>
+<tr class="row-even"><td>ISB mzXML format</td>
 <td>&#160;</td>
+<td>MS:1000566</td>
 </tr>
-<tr class="row-odd"><td>Micromass PKL format</td>
+<tr class="row-odd"><td>MS1 format</td>
 <td>&#160;</td>
+<td>MS:1002597</td>
 </tr>
-<tr class="row-even"><td>PSI mzData format</td>
+<tr class="row-even"><td>MS2 format</td>
 <td>&#160;</td>
+<td>MS:1001466</td>
 </tr>
-<tr class="row-odd"><td>PerSeptive PKS format</td>
+<tr class="row-odd"><td>Mascot MGF format</td>
 <td>&#160;</td>
+<td>MS:1001062</td>
 </tr>
-<tr class="row-even"><td>Phenyx XML format</td>
+<tr class="row-even"><td>Micromass PKL format</td>
 <td>&#160;</td>
+<td>MS:1000565</td>
 </tr>
-<tr class="row-odd"><td>ProteinLynx Global Server mass spectrum XML format</td>
+<tr class="row-odd"><td>PSI mzData format</td>
 <td>&#160;</td>
+<td>MS:1000564</td>
 </tr>
-<tr class="row-even"><td>Proteinscape spectra</td>
+<tr class="row-even"><td>PerSeptive PKS format</td>
 <td>&#160;</td>
+<td>MS:1001245</td>
 </tr>
-<tr class="row-odd"><td>SCIEX API III format</td>
+<tr class="row-odd"><td>Phenyx XML format</td>
 <td>&#160;</td>
+<td>MS:1001463</td>
 </tr>
-<tr class="row-even"><td>SCIEX TOF/TOF T2D format</td>
+<tr class="row-even"><td>ProteinLynx Global Server mass spectrum XML format</td>
 <td>&#160;</td>
+<td>MS:1000614</td>
 </tr>
-<tr class="row-odd"><td>SCIEX TOF/TOF database</td>
+<tr class="row-odd"><td>Proteinscape spectra</td>
 <td>&#160;</td>
+<td>MS:1001527</td>
 </tr>
-<tr class="row-even"><td>SCiLS Lab format</td>
+<tr class="row-even"><td>SCIEX API III format</td>
 <td>&#160;</td>
+<td>MS:1001246</td>
 </tr>
-<tr class="row-odd"><td>Shimadzu Biotech database entity</td>
+<tr class="row-odd"><td>SCIEX TOF/TOF T2D format</td>
 <td>&#160;</td>
+<td>MS:1001560</td>
 </tr>
-<tr class="row-even"><td>Thermo RAW format</td>
+<tr class="row-even"><td>SCIEX TOF/TOF database</td>
 <td>&#160;</td>
+<td>MS:1001481</td>
 </tr>
-<tr class="row-odd"><td>UIMF format</td>
+<tr class="row-odd"><td>SCiLS Lab format</td>
 <td>&#160;</td>
+<td>MS:1002385</td>
 </tr>
-<tr class="row-even"><td>Waters raw format</td>
+<tr class="row-even"><td>Shimadzu Biotech database entity</td>
 <td>&#160;</td>
+<td>MS:1000930</td>
 </tr>
-<tr class="row-odd"><td>mass spectrometer file format</td>
+<tr class="row-odd"><td>Thermo RAW format</td>
 <td>&#160;</td>
+<td>MS:1000563</td>
+</tr>
+<tr class="row-even"><td>UIMF format</td>
+<td>&#160;</td>
+<td>MS:1002531</td>
+</tr>
+<tr class="row-odd"><td>Waters raw format</td>
+<td>&#160;</td>
+<td>MS:1000526</td>
 </tr>
 <tr class="row-even"><td>mz5 format</td>
 <td>&#160;</td>
+<td>MS:1001881</td>
 </tr>
 <tr class="row-odd"><td>mzML format</td>
 <td>&#160;</td>
+<td>MS:1000584</td>
 </tr>
-<tr class="row-even"><td>parameter file</td>
+<tr class="row-even"><td>mzMLb format</td>
 <td>&#160;</td>
+<td>MS:1002838</td>
 </tr>
-<tr class="row-odd"><td>text format</td>
+<tr class="row-odd"><td>parameter file</td>
 <td>&#160;</td>
+<td>MS:1000740</td>
+</tr>
+<tr class="row-even"><td>text format</td>
+<td>&#160;</td>
+<td>MS:1001369</td>
 </tr>
 </tbody>
 </table>
@@ -390,101 +488,128 @@ data in, derived from the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
 derived from the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="98%" />
+<col width="80%" />
 <col width="2%" />
+<col width="18%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Content Type</th>
 <th class="head">&#160;</th>
+<th class="head">ID</th>
 </tr>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>CRM spectrum</td>
 <td>&#160;</td>
+<td>MS:1000581</td>
 </tr>
 <tr class="row-odd"><td>MS1 spectrum</td>
 <td>&#160;</td>
+<td>MS:1000579</td>
 </tr>
 <tr class="row-even"><td>MSn spectrum</td>
 <td>&#160;</td>
+<td>MS:1000580</td>
 </tr>
 <tr class="row-odd"><td>PDA spectrum</td>
 <td>&#160;</td>
+<td>MS:1000620</td>
 </tr>
 <tr class="row-even"><td>SIM spectrum</td>
 <td>&#160;</td>
+<td>MS:1000582</td>
 </tr>
 <tr class="row-odd"><td>SRM spectrum</td>
 <td>&#160;</td>
+<td>MS:1000583</td>
 </tr>
 <tr class="row-even"><td>absorption chromatogram</td>
 <td>&#160;</td>
+<td>MS:1000812</td>
 </tr>
 <tr class="row-odd"><td>absorption spectrum</td>
 <td>&#160;</td>
+<td>MS:1000806</td>
 </tr>
 <tr class="row-even"><td>basepeak chromatogram</td>
 <td>&#160;</td>
+<td>MS:1000628</td>
 </tr>
 <tr class="row-odd"><td>charge inversion mass spectrum</td>
 <td>&#160;</td>
+<td>MS:1000322</td>
 </tr>
 <tr class="row-even"><td>consecutive reaction monitoring chromatogram</td>
 <td>&#160;</td>
+<td>MS:1001474</td>
 </tr>
 <tr class="row-odd"><td>constant neutral gain spectrum</td>
 <td>&#160;</td>
+<td>MS:1000325</td>
 </tr>
 <tr class="row-even"><td>constant neutral loss spectrum</td>
 <td>&#160;</td>
+<td>MS:1000326</td>
 </tr>
-<tr class="row-odd"><td>data file content</td>
+<tr class="row-odd"><td>e/2 mass spectrum</td>
 <td>&#160;</td>
+<td>MS:1000328</td>
 </tr>
-<tr class="row-even"><td>e/2 mass spectrum</td>
+<tr class="row-even"><td>electromagnetic radiation chromatogram</td>
 <td>&#160;</td>
+<td>MS:1000811</td>
 </tr>
-<tr class="row-odd"><td>electromagnetic radiation chromatogram</td>
+<tr class="row-odd"><td>electromagnetic radiation spectrum</td>
 <td>&#160;</td>
+<td>MS:1000804</td>
 </tr>
-<tr class="row-even"><td>electromagnetic radiation spectrum</td>
+<tr class="row-even"><td>emission chromatogram</td>
 <td>&#160;</td>
+<td>MS:1000813</td>
 </tr>
-<tr class="row-odd"><td>emission chromatogram</td>
+<tr class="row-odd"><td>emission spectrum</td>
 <td>&#160;</td>
+<td>MS:1000805</td>
 </tr>
-<tr class="row-even"><td>emission spectrum</td>
+<tr class="row-even"><td>enhanced multiply charged spectrum</td>
 <td>&#160;</td>
+<td>MS:1000789</td>
 </tr>
-<tr class="row-odd"><td>enhanced multiply charged spectrum</td>
+<tr class="row-odd"><td>mass chromatogram</td>
 <td>&#160;</td>
+<td>MS:1000810</td>
 </tr>
-<tr class="row-even"><td>mass chromatogram</td>
+<tr class="row-even"><td>mass spectrum</td>
 <td>&#160;</td>
+<td>MS:1000294</td>
 </tr>
-<tr class="row-odd"><td>mass spectrum</td>
+<tr class="row-odd"><td>precursor ion spectrum</td>
 <td>&#160;</td>
+<td>MS:1000341</td>
 </tr>
-<tr class="row-even"><td>precursor ion spectrum</td>
+<tr class="row-even"><td>product ion spectrum</td>
 <td>&#160;</td>
+<td>MS:1000343</td>
 </tr>
-<tr class="row-odd"><td>product ion spectrum</td>
+<tr class="row-odd"><td>selected ion current chromatogram</td>
 <td>&#160;</td>
+<td>MS:1000627</td>
 </tr>
-<tr class="row-even"><td>selected ion current chromatogram</td>
+<tr class="row-even"><td>selected ion monitoring chromatogram</td>
 <td>&#160;</td>
+<td>MS:1001472</td>
 </tr>
-<tr class="row-odd"><td>selected ion monitoring chromatogram</td>
+<tr class="row-odd"><td>selected reaction monitoring chromatogram</td>
 <td>&#160;</td>
+<td>MS:1001473</td>
 </tr>
-<tr class="row-even"><td>selected reaction monitoring chromatogram</td>
+<tr class="row-even"><td>time-delayed fragmentation spectrum</td>
 <td>&#160;</td>
+<td>MS:1000790</td>
 </tr>
-<tr class="row-odd"><td>time-delayed fragmentation spectrum</td>
+<tr class="row-odd"><td>total ion current chromatogram</td>
 <td>&#160;</td>
-</tr>
-<tr class="row-even"><td>total ion current chromatogram</td>
-<td>&#160;</td>
+<td>MS:1000235</td>
 </tr>
 </tbody>
 </table>

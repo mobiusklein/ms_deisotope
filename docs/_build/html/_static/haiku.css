@@ -51,18 +51,18 @@ div.footer {
 a:link {
     font-weight: bold;
     text-decoration: none;
-    color: #dc3c01;
+    color: #197cdf;
 }
 
 a:visited {
     font-weight: bold;
     text-decoration: none;
-    color: #892601;
+    color: #0c3762;
 }
 
 a:hover, a:active {
     text-decoration: underline;
-    color: #ff4500;
+    color: #078037;
 }
 
 /* Some headers act as anchors, don't give them a hover effect */
@@ -202,11 +202,11 @@ table.index td {
 table.index a:link, table.index a:visited {
     font-weight: normal;
     text-decoration: none;
-    color: #dc3c01;
+    color: #197cdf;
 }
 table.index a:hover, table.index a:active {
     text-decoration: underline;
-    color: #ff4500;
+    color: #078037;
 }
 
 
@@ -373,4 +373,17 @@ div.viewcode-block:target {
 /* math display */
 div.math p {
     text-align: center;
+}
+
+
+.colored-red {
+    color: red;
+}
+
+.colored-green {
+    color: green;
+}
+
+.colored-blue {
+    color: blue;
 }

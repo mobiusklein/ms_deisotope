@@ -1,0 +1,307 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Activation &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Controlled Vocabulary Interface" href="cv.html" />
+    <link rel="prev" title="Instrument Configuration" href="instrument_configuration.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Activation</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="instrument_configuration.html">Instrument Configuration</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="cv.html">Controlled Vocabulary Interface</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-ms_deisotope.data_source.metadata.activation">
+<span id="activation"></span><h1>Activation<a class="headerlink" href="#module-ms_deisotope.data_source.metadata.activation" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.activation.</code><code class="descname">ActivationInformation</code><span class="sig-paren">(</span><em>method</em>, <em>energy</em>, <em>data=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#ActivationInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the dissociation process used to produce an MSn scan.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.data">
+<code class="descname">data</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.data" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> – Additional metadata describing the dissociation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.energy">
+<code class="descname">energy</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.energy" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The quantity of energy used</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.method">
+<code class="descname">method</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.method" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod" title="ms_deisotope.data_source.metadata.activation.DissociationMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">DissociationMethod</span></code></a> – The dissociation method used</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.has_supplemental_dissociation">
+<code class="descname">has_supplemental_dissociation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#ActivationInformation.has_supplemental_dissociation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.has_supplemental_dissociation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if supplemental activation was used</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.is_multiple_dissociation">
+<code class="descname">is_multiple_dissociation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#ActivationInformation.is_multiple_dissociation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.is_multiple_dissociation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if multiple dissociation methods were
+used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.activation.</code><code class="descname">MultipleActivationInformation</code><span class="sig-paren">(</span><em>methods</em>, <em>energies</em>, <em>data=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#MultipleActivationInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the dissociation processes used to produce an MSn
+scan with multiple types of activation.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.data">
+<code class="descname">data</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.data" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> – Additional metadata describing the dissociation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies">
+<code class="descname">energies</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of float – A list of dissociation energies used. Parallel to <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods" title="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods"><code class="xref py py-attr docutils literal notranslate"><span class="pre">methods</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods">
+<code class="descname">methods</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod" title="ms_deisotope.data_source.metadata.activation.DissociationMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">DissociationMethod</span></code></a> – A list of dissociation methods used. Parallel to <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies" title="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies"><code class="xref py py-attr docutils literal notranslate"><span class="pre">energies</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.has_supplemental_dissociation">
+<code class="descname">has_supplemental_dissociation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#MultipleActivationInformation.has_supplemental_dissociation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.has_supplemental_dissociation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if supplemental activation was used</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.is_multiple_dissociation">
+<code class="descname">is_multiple_dissociation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#MultipleActivationInformation.is_multiple_dissociation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.is_multiple_dissociation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine if multiple dissociation methods were
+used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.metadata.activation.DissociationMethod">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.activation.</code><code class="descname">DissociationMethod</code><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#DissociationMethod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Controlled vocabulary describing a dissociation process</p>
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.activation.DissociationMethod.is_supplemental">
+<code class="descname">is_supplemental</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/activation.html#DissociationMethod.is_supplemental"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod.is_supplemental" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether or not the dissociation process is
+supplemental</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.activation.dissociation_methods">
+<code class="descclassname">ms_deisotope.data_source.metadata.activation.</code><code class="descname">dissociation_methods</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.dissociation_methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>These are the recognized dissociation method names derived from
+the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="9%" />
+<col width="36%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Dissociation Method</th>
+<th class="head">ID</th>
+<th class="head">Category</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)</td>
+<td>MS:1002631</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>LIFT</td>
+<td>MS:1002000</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>beam-type collision-induced dissociation</td>
+<td>MS:1000422</td>
+<td>collision-induced dissociation</td>
+</tr>
+<tr class="row-odd"><td>blackbody infrared radiative dissociation</td>
+<td>MS:1000242</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>collision-induced dissociation</td>
+<td>MS:1000133</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>electron capture dissociation</td>
+<td>MS:1000250</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>electron transfer dissociation</td>
+<td>MS:1000598</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>higher energy beam-type collision-induced dissociation</td>
+<td>MS:1002481</td>
+<td>beam-type collision-induced dissociation</td>
+</tr>
+<tr class="row-even"><td>in-source collision-induced dissociation</td>
+<td>MS:1001880</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>infrared multiphoton dissociation</td>
+<td>MS:1000262</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>low-energy collision-induced dissociation</td>
+<td>MS:1000433</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>photodissociation</td>
+<td>MS:1000435</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>plasma desorption</td>
+<td>MS:1000134</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>post-source decay</td>
+<td>MS:1000135</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>pulsed q dissociation</td>
+<td>MS:1000599</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>supplemental beam-type collision-induced dissociation</td>
+<td>MS:1002678</td>
+<td>beam-type collision-induced dissociation</td>
+</tr>
+<tr class="row-even"><td>supplemental collision-induced dissociation</td>
+<td>MS:1002679</td>
+<td>collision-induced dissociation</td>
+</tr>
+<tr class="row-odd"><td>surface-induced dissociation</td>
+<td>MS:1000136</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>sustained off-resonance irradiation</td>
+<td>MS:1000282</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>trap-type collision-induced dissociation</td>
+<td>MS:1002472</td>
+<td>collision-induced dissociation</td>
+</tr>
+<tr class="row-even"><td>unknown dissociation</td>
+<td>None</td>
+<td>dissociation method</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="instrument_configuration.html">Instrument Configuration</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="cv.html">Controlled Vocabulary Interface</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+    </div>
+  </body>
+</html>

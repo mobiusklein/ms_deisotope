@@ -34,10 +34,12 @@
   <h1>Source code for ms_deisotope.processor</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">logging</span>
 
+<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+
 <span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="k">import</span> <span class="n">pick_peaks</span>
 
 <span class="kn">from</span> <span class="nn">.deconvolution</span> <span class="k">import</span> <span class="n">deconvolute_peaks</span>
-<span class="kn">from</span> <span class="nn">.data_source.infer_type</span> <span class="k">import</span> <span class="n">MSFileLoader</span>
+<span class="kn">from</span> <span class="nn">.data_source</span> <span class="k">import</span> <span class="n">MSFileLoader</span><span class="p">,</span> <span class="n">ScanIterator</span>
 <span class="kn">from</span> <span class="nn">.data_source.common</span> <span class="k">import</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">ScanBunch</span><span class="p">,</span> <span class="n">ChargeNotProvided</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">Base</span><span class="p">,</span> <span class="n">LRUDict</span>
 <span class="kn">from</span> <span class="nn">.peak_dependency_network</span> <span class="k">import</span> <span class="n">NoIsotopicClustersError</span>
@@ -131,6 +133,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span></div>
 
 
+<span class="k">def</span> <span class="nf">_loader_creator</span><span class="p">(</span><span class="n">specification</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specification</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">MSFileLoader</span><span class="p">(</span><span class="n">specification</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specification</span><span class="p">,</span> <span class="n">ScanIterator</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">specification</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot determine how to get a ScanIterator from </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">specification</span><span class="p">,))</span>
+
+
 <div class="viewcode-block" id="ScanProcessor"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor">[docs]</a><span class="k">class</span> <span class="nc">ScanProcessor</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Orchestrates the deconvolution of a :class:`~.ScanIterator` scan by scan. This process will</span>
 <span class="sd">    apply different rules for MS1 scans and MSn scans. This type itself is an Iterator,</span>
@@ -196,7 +207,7 @@
                  <span class="n">ms1_averaging</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">respect_isolation_window</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">loader_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">loader_type</span> <span class="o">=</span> <span class="n">MSFileLoader</span>
+            <span class="n">loader_type</span> <span class="o">=</span> <span class="n">_loader_creator</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data_source</span> <span class="o">=</span> <span class="n">data_source</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ms1_peak_picking_args</span> <span class="o">=</span> <span class="n">ms1_peak_picking_args</span> <span class="ow">or</span> <span class="p">{}</span>
