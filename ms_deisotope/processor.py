@@ -1,9 +1,11 @@
 import logging
 
+from six import string_types as basestring
+
 from ms_peak_picker import pick_peaks
 
 from .deconvolution import deconvolute_peaks
-from .data_source.infer_type import MSFileLoader
+from .data_source import MSFileLoader, ScanIterator
 from .data_source.common import Scan, ScanBunch, ChargeNotProvided
 from .utils import Base, LRUDict
 from .peak_dependency_network import NoIsotopicClustersError
@@ -97,6 +99,15 @@ class PriorityTarget(Base):
             self.mz, self.peak.intensity, self.charge)
 
 
+def _loader_creator(specification):
+    if isinstance(specification, basestring):
+        return MSFileLoader(specification)
+    elif isinstance(specification, ScanIterator):
+        return specification
+    else:
+        raise ValueError("Cannot determine how to get a ScanIterator from %r" % (specification,))
+
+
 class ScanProcessor(Base):
     """Orchestrates the deconvolution of a :class:`~.ScanIterator` scan by scan. This process will
     apply different rules for MS1 scans and MSn scans. This type itself is an Iterator,
@@ -162,7 +173,7 @@ class ScanProcessor(Base):
                  ms1_averaging=0,
                  respect_isolation_window=False):
         if loader_type is None:
-            loader_type = MSFileLoader
+            loader_type = _loader_creator
 
         self.data_source = data_source
         self.ms1_peak_picking_args = ms1_peak_picking_args or {}

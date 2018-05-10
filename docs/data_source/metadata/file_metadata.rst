@@ -42,10 +42,10 @@ evidence back to the original raw data.
                 parts.append(line[start:])
                 return ''.join(parts)
 
-            data = sorted(id_formats.items())
-            rows = [("Format Name", "Description")]
-            for name, desc in data:
-                rows.append((name, xsd_detection(desc)))
+            data = sorted(id_formats)
+            rows = [("Format Name", "ID", ' ', "Description")]
+            for desc in data:
+                rows.append((desc.name, desc.id, ' ', xsd_detection(desc.description)))
             print(as_rest_table(rows))
 
     .. data:: file_formats
@@ -58,10 +58,10 @@ evidence back to the original raw data.
             from ms_deisotope.data_source.metadata.file_information import file_formats
             from rst_table import as_rest_table
 
-            rows = [('Format Name', ' ')]
+            rows = [('Format Name', ' ', 'ID')]
 
-            for name in sorted(file_formats):
-                rows.append((name, ' '))
+            for file_format in sorted(file_formats):
+                rows.append((file_format.name, ' ', file_format.id))
 
             print(as_rest_table(rows))
 
@@ -75,9 +75,9 @@ evidence back to the original raw data.
             from ms_deisotope.data_source.metadata.file_information import content_keys
             from rst_table import as_rest_table
 
-            rows = [('Content Type', ' ')]
+            rows = [('Content Type', ' ', 'ID')]
 
-            for name in sorted(content_keys):
-                rows.append((name, ' '))
+            for content in sorted(content_keys):
+                rows.append((content.name, ' ', content.id))
 
             print(as_rest_table(rows))

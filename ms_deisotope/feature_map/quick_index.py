@@ -62,6 +62,10 @@ def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None,
         end_scan = len(reader.index)
     else:
         start_scan, end_scan = scan_interval
+        if start_scan is None:
+            start_scan = 0
+        if end_scan is None:
+            end_scan = len(reader.index)
     if n_chunks is None:
         n_chunks = n_processes
     n_items = end_scan - start_scan

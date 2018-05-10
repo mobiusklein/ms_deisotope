@@ -13,4 +13,5 @@ attribute on a :class:`Scan` object.
 
     file_metadata
     instrument_configuration
+    activation
     cv

@@ -1,5 +1,9 @@
 import os
-from collections import OrderedDict, Sequence
+from collections import OrderedDict
+try:
+    from collections import Sequence, Mapping
+except ImportError:
+    from collections.abc import Sequence, Mapping
 from uuid import uuid4
 import warnings
 
@@ -33,6 +37,7 @@ from ms_deisotope.feature_map import ExtendedScanIndex
 
 
 class SpectrumDescription(Sequence):
+
     def __init__(self, attribs=None):
         self.descriptors = list(attribs or [])
 
@@ -125,32 +130,84 @@ class SpectrumDescription(Sequence):
 
 
 class SampleRun(Base):
-    def __init__(self, name, uuid, completed=True, sample_type=None):
+
+    def __init__(self, name, uuid, completed=True, sample_type=None, **kwargs):
         self.name = name
         self.uuid = uuid
         self.sample_type = sample_type
         self.completed = completed
+        self.parameters = kwargs
 
 
 class MzMLSerializer(ScanSerializerBase):
 
+    """Write :mod:`ms_deisotope` data structures to a file in mzML format.
+
+    Attributes
+    ----------
+    base_peak_chromatogram_tracker : :class:`OrderedDict`
+        Accumulated mapping of scan time to base peak intensity. This is
+        used to write the *base peak chromatogram*.
+    chromatogram_queue : :class:`list`
+        Accumulate chromatogram data structures which will be written out
+        after all spectra have been written to file.
+    compression : :class:`str`
+        The compression type to use for binary data arrays. Should be one of
+        :obj:`"zlib"`, :obj:`"none"`, or :obj:`None`
+    data_encoding : :class:`dict` or :class:`int` or :obj:`numpy.dtype` or :class:`str`
+        The encoding specification to specify the binary encoding of numeric data arrays
+        that is passed to :meth:`~.MzMLWriter.write_spectrum` and related methods.
+    data_processing_list : :class:`list`
+        List of packaged :class:`~.DataProcessingInformation` to write out
+    deconvoluted : bool
+        Indicates whether the translation should include extra deconvolution information
+    file_contents_list : :class:`list`
+        List of terms to include in the :obj:`<fileContents>` tag
+    handle : file-like
+        The file-like object being written to
+    indexer : :class:`~.ExtendedScanIndex`
+        The external index builder
+    instrument_configuration_list : :class:`list`
+        List of packaged :class:`~.InstrumentInformation` to write out
+    n_spectra : int
+        The number of spectra to provide a size for in the :obj:`<spectrumList>`
+    processing_parameters : :class:`list`
+        List of additional terms to include in a newly created :class:`~.DataProcessingInformation`
+    sample_list : :class:`list`
+        List of :class:`~.SampleRun` objects to write out
+    sample_name : :class:`str`
+        Default sample name
+    sample_run : :class:`~.SampleRun`
+        Description
+    software_list : :class:`list`
+        List of packaged :class:`~.Software` objects to write out
+    source_file_list : :class:`list`
+        List of packaged :class:`~.SourceFile` objects to write out
+    total_ion_chromatogram_tracker : :class:`OrderedDict`
+        Accumulated mapping of scan time to total intensity. This is
+        used to write the *total ion chromatogram*.
+    writer : :class:`~psims.mzml.writer.MzMLWriter`
+        The lower level writer implementation
+    """
+
     def __init__(self, handle, n_spectra=2e4, compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
-                 encoding=None):
-        if encoding is None:
-            encoding = {
+                 data_encoding=None):
+        if data_encoding is None:
+            data_encoding = {
                 writer.MZ_ARRAY: np.float64,
                 writer.INTENSITY_ARRAY: np.float32,
             }
         if writer is None:
-            raise ImportError("Cannot write mzML without psims. Please install psims to use this feature.")
+            raise ImportError(
+                "Cannot write mzML without psims. Please install psims to use this feature.")
         if compression is None:
             compression = writer.COMPRESSION_ZLIB
         self.handle = handle
         self.writer = writer.MzMLWriter(handle)
         self.n_spectra = n_spectra
         self.compression = compression
-        self.encoding = encoding
+        self.data_encoding = data_encoding
         self._has_started_writing_spectra = False
 
         self.writer.__enter__()
@@ -190,6 +247,14 @@ class MzMLSerializer(ScanSerializerBase):
             self.indexer = ExtendedScanIndex()
 
     def add_instrument_configuration(self, configuration):
+        """Add an :class:`~.InstrumentInformation` object to
+        the output document.
+
+        Parameters
+        ----------
+        configuration: :class:`~.InstrumentInformation`
+            The instrument configuration to add
+        """
         component_list = []
         for group in configuration.groups:
             tag = None
@@ -208,22 +273,37 @@ class MzMLSerializer(ScanSerializerBase):
         self.instrument_configuration_list.append(config_element)
 
     def add_software(self, software_description):
+        """Add a :class:`~.Software` object to the output document.
+
+        Parameters
+        ----------
+        software_description : :class:`~.Software`
+            The software description to add
+        """
         self.software_list.append(software_description)
 
     def add_file_information(self, file_information):
         for key, value in file_information.contents.items():
             if value is None:
                 value = ''
-            self.add_file_contents({key: value})
+            self.add_file_contents({str(key): value})
         for source_file in file_information.source_files:
             self.add_source_file(source_file)
 
     def add_file_contents(self, file_contents):
+        """Add a key to the resulting :obj:`<fileDescription>`
+        of the output document.
+
+        Parameters
+        ----------
+        file_contents: :class:`str` or :class:`Mapping`
+            The parameter to add
+        """
         self.file_contents_list.append(file_contents)
 
     def remove_file_contents(self, name):
         for i, content in enumerate(self.file_contents_list):
-            if isinstance(content, dict):
+            if isinstance(content, Mapping):
                 if 'name' in content:
                     content = content['name']
                 elif len(content) == 1:
@@ -237,6 +317,13 @@ class MzMLSerializer(ScanSerializerBase):
         self.file_contents_list.pop(i)
 
     def add_source_file(self, source_file):
+        """Add the :class:`~.SourceFile` to the output document
+
+        Parameters
+        ----------
+        source_file : :class:`~.SourceFile`
+            The source fil to add
+        """
         unwrapped = {
             "name": source_file.name,
             "location": source_file.location,
@@ -245,12 +332,22 @@ class MzMLSerializer(ScanSerializerBase):
         }
         unwrapped['params'].extend(source_file.parameters)
         if source_file.id_format:
-            unwrapped['params'].append(source_file.id_format)
+            unwrapped['params'].append(str(source_file.id_format))
         if source_file.file_format:
-            unwrapped['params'].append(source_file.file_format)
+            unwrapped['params'].append(str(source_file.file_format))
         self.source_file_list.append(unwrapped)
 
     def add_data_processing(self, data_processing_description):
+        """Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`
+        to the output document as a new :obj:`<dataProcessing>` entry describing one or
+        more :obj:`<processingMethod>`s for a single referenced :class:`~.Software`
+        instance.
+
+        Parameters
+        ----------
+        data_processing_description : :class:`~.DataProcessingInformation` or :class:`~.ProcessingMethod`
+            Data manipulation sequence to add to the document
+        """
         if isinstance(data_processing_description, data_transformation.DataProcessingInformation):
             methods = []
             for method in data_processing_description:
@@ -284,7 +381,17 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             self.data_processing_list.append(data_processing_description)
 
-    def add_processing_parameter(self, name, value):
+    def add_processing_parameter(self, name, value=None):
+        """Add a new processing method to the writer's own
+        :obj:`<dataProcessing>` element.
+
+        Parameters
+        ----------
+        name : str
+            The processing technique's name
+        value : obj
+            The processing technique's value, if any
+        """
         self.processing_parameters.append({"name": name, "value": value})
 
     def add_sample(self, sample):
@@ -309,7 +416,8 @@ class MzMLSerializer(ScanSerializerBase):
         if software_id is None:
             software_id = "ms_deisotope_1"
         if data_processing_id is None:
-            data_processing_id = 'ms_deisotope_processing_%d' % len(self.data_processing_list)
+            data_processing_id = 'ms_deisotope_processing_%d' % len(
+                self.data_processing_list)
 
         method = data_transformation.ProcessingMethod(software_id=software_id)
         if self.deconvoluted:
@@ -328,7 +436,8 @@ class MzMLSerializer(ScanSerializerBase):
         method.update(additional_parameters)
         method.update(self.processing_parameters)
         method.order = order
-        data_processing_info = data_transformation.DataProcessingInformation([method], data_processing_id)
+        data_processing_info = data_transformation.DataProcessingInformation(
+            [method], data_processing_id)
         # self.add_data_processing(data_processing_info)
         return data_processing_info
 
@@ -341,10 +450,10 @@ class MzMLSerializer(ScanSerializerBase):
 
     def _add_spectrum_list(self):
         self._create_file_description()
+        self._create_sample_list()
         self._create_software_list()
         self._create_instrument_configuration()
         self._create_data_processing_list()
-        self._create_sample_list()
 
         self._run_tag = self.writer.run(
             id=self.sample_name,
@@ -354,7 +463,21 @@ class MzMLSerializer(ScanSerializerBase):
             count=self.n_spectra)
         self._spectrum_list_tag.__enter__()
 
+    def has_started_writing_spectra(self):
+        return self._has_started_writing_spectra
+
     def _pack_activation(self, activation_information):
+        """Pack :class:`~.ActivationInformation` into a :class:`dict` structure
+        which that :class:`~psims.mzml.writer.MzMLWriter` expects.
+
+        Parameters
+        ----------
+        activation_information: :class:`~.ActivationInformation`
+
+        Returns
+        -------
+        :class:`dict`
+        """
         params = []
         params.append({
             "name": str(activation_information.method),
@@ -367,14 +490,14 @@ class MzMLSerializer(ScanSerializerBase):
         params.append({
             "name": "collision energy",
             "value": activation_information.energy,
-            "unitName": "electron volts"
+            "unitName": "electron volt"
         })
         if activation_information.is_multiple_dissociation():
             for energy in activation_information.energies[1:]:
                 params.append({
                     "name": "collision energy",
                     "value": energy,
-                    "unitName": "electron volts"
+                    "unitName": "electron volt"
                 })
 
         for key, val in activation_information.data.items():
@@ -391,6 +514,20 @@ class MzMLSerializer(ScanSerializerBase):
 
     def _pack_precursor_information(self, precursor_information, activation_information=None,
                                     isolation_window=None):
+        """Repackage the :class:`~.PrecursorInformation`, :class:`~.ActivationInformation`,
+        and :class:~.IsolationWindow` into the nested :class:`dict` structure that
+        :class:`~psims.mzml.writer.MzMLWriter` expects.
+
+        Parameters
+        ----------
+        precursor_information : :class:`~.PrecursorInformation`
+        activation_information : :class:`~.ActivationInformation`, optional
+        isolation_window : :class:`~.IsolationWindow`, optional
+
+        Returns
+        -------
+        :class:`dict`
+        """
         # If the scan bunch has been fully deconvoluted and it's PrecursorInformation
         # filled in, its extracted fields will be populated and should be used, otherwise
         # use the default read values.
@@ -415,7 +552,8 @@ class MzMLSerializer(ScanSerializerBase):
         if package['charge'] == ChargeNotProvided:
             package["charge"] = None
         if activation_information is not None:
-            package['activation'] = self._pack_activation(activation_information)
+            package['activation'] = self._pack_activation(
+                activation_information)
         if isolation_window is not None:
             package['isolation_window_args'] = {
                 "lower": isolation_window.lower,
@@ -431,11 +569,27 @@ class MzMLSerializer(ScanSerializerBase):
                 peak.score for peak in scan.deconvoluted_peak_set
             ]
             extra_arrays.append(("deconvolution score array", score_array))
-            envelope_array = envelopes_to_array([peak.envelope for peak in scan.deconvoluted_peak_set])
+            envelope_array = envelopes_to_array(
+                [peak.envelope for peak in scan.deconvoluted_peak_set])
             extra_arrays.append(("isotopic envelopes array", envelope_array))
         return extra_arrays
 
     def save_scan_bunch(self, bunch, **kwargs):
+        """Write a :class:`~.ScanBunch` to the output document
+        as a collection of related :obj:`<spectrum>` tags.
+
+        .. note::
+
+            If no spectra have been written to the output document
+            yet, this method will call :meth:`_add_spectrum_list` and
+            writes all of the metadata lists out. After this point,
+            no new document-level metadata can be added.
+
+        Parameters
+        ----------
+        bunch : :class:`~.ScanBunch`
+            The scan set to write.
+        """
         if not self._has_started_writing_spectra:
             self._add_spectrum_list()
             self._has_started_writing_spectra = True
@@ -456,7 +610,8 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             charge_array = None
 
-        centroided = (bunch.precursor.peak_set or bunch.precursor.deconvoluted_peak_set)
+        centroided = (
+            bunch.precursor.peak_set or bunch.precursor.deconvoluted_peak_set)
         if centroided:
             descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
             mz_array = [p.mz for p in precursor_peaks]
@@ -472,7 +627,8 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             instrument_config_id = instrument_config.id
 
-        scan_parameters, scan_window_list = self.extract_scan_event_parameters(bunch.precursor)
+        scan_parameters, scan_window_list = self.extract_scan_event_parameters(
+            bunch.precursor)
 
         self.writer.write_spectrum(
             mz_array, intensity_array,
@@ -488,7 +644,7 @@ class MzMLSerializer(ScanSerializerBase):
             instrument_configuration_id=instrument_config_id,
             scan_params=scan_parameters,
             scan_window_list=scan_window_list,
-            encoding=self.encoding)
+            encoding=self.data_encoding)
 
         self.total_ion_chromatogram_tracker[
             bunch.precursor.scan_time] = (descriptors["total ion current"])
@@ -529,7 +685,8 @@ class MzMLSerializer(ScanSerializerBase):
             else:
                 instrument_config_id = instrument_config.id
 
-            scan_parameters, scan_window_list = self.extract_scan_event_parameters(prod)
+            scan_parameters, scan_window_list = self.extract_scan_event_parameters(
+                prod)
             spectrum_params = [
                 {"name": "ms level", "value": prod.ms_level},
                 {"name": "MSn spectrum"},
@@ -552,12 +709,26 @@ class MzMLSerializer(ScanSerializerBase):
                 instrument_configuration_id=instrument_config_id,
                 scan_params=scan_parameters,
                 scan_window_list=scan_window_list,
-                encoding=self.encoding)
+                encoding=self.data_encoding)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)
 
     def extract_scan_event_parameters(self, scan):
+        """Package :class:`~.ScanAcquisitionInformation` into a pair of
+        :class:`list`s that :class:`~psims.mzml.writer.MzMLWriter` expects.
+
+        Parameters
+        ----------
+        scan : :class:`~.Scan`
+
+        Returns
+        -------
+        scan_parameters: :class:`list`
+            Parameters qualifying the scan event (:class:`dict`)
+        scan_window_list: :class:`list`
+            Packed pairs of scan windows (:class:`list`)
+        """
         scan_parameters = []
         scan_window_list = []
         acquisition_info = scan.acquisition_information
@@ -606,6 +777,11 @@ class MzMLSerializer(ScanSerializerBase):
                     **chromatogram)
 
     def complete(self):
+        """Finish writing to the output document.
+
+        This closes the open list tags, empties the chromatogram accumulator,
+        and closes the :obj:`<mzML>` tag, and attempts to flush the output file.
+        """
         self._spectrum_list_tag.__exit__(None, None, None)
         self._make_default_chromatograms()
         self.write_chromatograms()
@@ -620,14 +796,22 @@ class MzMLSerializer(ScanSerializerBase):
                 with open(ExtendedScanIndex.index_file_name(name), 'w') as ixfile:
                     self.indexer.serialize(ixfile)
             except IOError as e:
-                warnings.warn("Could not write extended index file due to error %r" % (e,))
+                warnings.warn(
+                    "Could not write extended index file due to error %r" % (e,))
 
         try:
             self.writer.outfile.flush()
-        except (IOError, AttributeError):
+        except (IOError, AttributeError, ValueError):
             pass
 
     def format(self):
+        """Formats the output mzML document to be well indented
+        and wraps it in an :obj:`<indexedmzML>` structure.
+
+        This method calls :meth:`psims.mzml.writer.MzMLWriter.format`
+        which reads the entire document into memory, which may be
+        prohibitive for large documents.
+        """
         try:
             self.writer.format()
         except OSError as e:
@@ -694,11 +878,14 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     Attributes
     ----------
-    extended_index : ExtendedIndex
+    extended_index: :class:`~.ExtendedIndex`
         Holds the additional indexing information
         that may have been generated with the data
         file being accessed.
+    sample_run: :class:`SampleRun`
+
     """
+
     def __init__(self, source_file, use_index=True):
         MzMLLoader.__init__(self, source_file, use_index=use_index)
         self.extended_index = None
@@ -720,7 +907,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         with open(self._index_file_name) as handle:
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
-    deserialize_deconvoluted_peak_set = staticmethod(deserialize_deconvoluted_peak_set)
+    deserialize_deconvoluted_peak_set = staticmethod(
+        deserialize_deconvoluted_peak_set)
     deserialize_peak_set = staticmethod(deserialize_peak_set)
 
     def has_index_file(self):
@@ -779,7 +967,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 precursor_scan = packed
                 product_scans = []
             else:
-                raise Exception("This object is not able to handle MS levels higher than 2")
+                raise Exception(
+                    "This object is not able to handle MS levels higher than 2")
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
         self.reset()
@@ -803,7 +992,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             return self._scan_cache[scan_id]
         except KeyError:
             try:
-                packed = super(ProcessedMzMLDeserializer, self)._make_scan(self._source.get_by_id(scan_id))
+                packed = super(ProcessedMzMLDeserializer, self)._make_scan(
+                    self._source.get_by_id(scan_id))
                 return packed
             except AttributeError as ae:
                 raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
@@ -838,14 +1028,19 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         if scan.precursor_information:
             scan.precursor_information.default()
             selected_ion_dict = self._get_selected_ion(data)
-            scan.precursor_information.orphan = selected_ion_dict.get("ms_deisotope:orphan") == "true"
-            scan.precursor_information.defaulted = selected_ion_dict.get("ms_deisotope:defaulted") == "true"
-            scan.annotations['precursor purity'] = data.get('precursor purity', 0)
+            scan.precursor_information.orphan = selected_ion_dict.get(
+                "ms_deisotope:orphan") == "true"
+            scan.precursor_information.defaulted = selected_ion_dict.get(
+                "ms_deisotope:defaulted") == "true"
+            scan.annotations['precursor purity'] = data.get(
+                'precursor purity', 0)
         if "isotopic envelopes array" in data:
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-            scan.deconvoluted_peak_set = deserialize_deconvoluted_peak_set(data)
+            scan.deconvoluted_peak_set = deserialize_deconvoluted_peak_set(
+                data)
             if scan.id in self.extended_index.ms1_ids:
-                chosen_indices = self.extended_index.ms1_ids[scan.id]['msms_peaks']
+                chosen_indices = self.extended_index.ms1_ids[
+                    scan.id]['msms_peaks']
                 for ix in chosen_indices:
                     scan.deconvoluted_peak_set[ix].chosen_for_msms = True
         else:
@@ -865,9 +1060,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
     def _build_scan_id_to_rt_cache(self):
         if self.extended_index:
             for key in self.extended_index.ms1_ids:
-                self._scan_id_to_rt[key] = self.extended_index.ms1_ids[key]['scan_time']
+                self._scan_id_to_rt[key] = self.extended_index.ms1_ids[
+                    key]['scan_time']
             for key in self.extended_index.msn_ids:
-                self._scan_id_to_rt[key] = self.extended_index.msn_ids[key]['scan_time']
+                self._scan_id_to_rt[key] = self.extended_index.msn_ids[
+                    key]['scan_time']
 
     # LC-MS/MS Database API
 

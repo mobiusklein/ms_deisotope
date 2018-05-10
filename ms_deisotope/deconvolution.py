@@ -67,7 +67,7 @@ def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_t
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference
     charge : int, optional
-        The charge state to interpolate from. Defaults to `2`.
+        The charge state to interpolate from. Defaults to 2.
     step : int, optional
         The number of peaks along the isotopic pattern to search.
 
@@ -90,7 +90,7 @@ def has_successor_peak_at_charge(peak_collection, peak, charge=2, step=1, error_
     peak : ms_peak_picker.FittedPeak
         The peak to use as a point of reference
     charge : int, optional
-        The charge state to interpolate from. Defaults to `2`.
+        The charge state to interpolate from. Defaults to 2.
     step : int, optional
         The number of peaks along the isotopic pattern to search.
 
@@ -274,14 +274,14 @@ class DeconvoluterBase(Base):
 
         Parameters
         ----------
-        theoretical_distribution : list of TheoreticalPeak
+        theoretical_distribution : list of :class:`~.TheoreticalPeak`
             The theoretical isotopic pattern to match
         error_tolerance : float, optional
             Parts-per-million error tolerance to permit in searching for matches
 
         Returns
         -------
-        list of FittedPeak
+        list of :class:`~.FittedPeak`
             The list of matched peaks
         """
         experimental_distribution = [self.has_peak(
@@ -299,14 +299,14 @@ class DeconvoluterBase(Base):
 
         Parameters
         ----------
-        theoretical_distribution : list of TheoreticalPeak
+        theoretical_distribution : list of :class:`~.TheoreticalPeak`
             The theoretical isotopic pattern to scale up
-        experimental_distribution : list of FittedPeak
+        experimental_distribution : list of :class:`~.FittedPeak`
             The experimental isotopic pattern to use as a reference
 
         Returns
         -------
-        list of TheoreticalPeak
+        list of :class:`~.TheoreticalPeak`
         """
         if self.scale_method == 'sum':
             total_abundance = sum(
@@ -332,7 +332,7 @@ class DeconvoluterBase(Base):
 
         Parameters
         ----------
-        isotopic_cluster : list of TheoreticalPeak
+        isotopic_cluster : list of :class:`~.TheoreticalPeak`
             The isotopic cluster to subtract
         error_tolerance : float, optional
             Parts-per-million mass accuracy error tolerance to permit when
@@ -471,18 +471,18 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
 
         Parameters
         ----------
-        peak : FittedPeak
+        peak : :class:`~.FittedPeak`
             The putative monoisotopic peak to use for interpolating an isotopic pattern
         error_tolerance : float
             Parts-per-million error tolerance for isotopic pattern matching
         charge : int
             The charge state to produce an isotopic pattern for
         charge_carrier : float, optional
-            The charge carrier mass, defaults to `PROTON`
+            The charge carrier mass, defaults to |PROTON|
 
         Returns
         -------
-        IsotopicFitRecord
+        :class:`~.IsotopicFitRecord`
             The fitted isotopic pattern
         """
         tid = self.averagine.isotopic_cluster(
@@ -507,16 +507,16 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
         Parameters
         ----------
         peak_charge_set : set
-            The set of candidate (FittedPeak, charge) tuples to try to fit
+            The set of candidate (:class:`~.FittedPeak`, charge) tuples to try to fit
         error_tolerance : float
             Matching error tolerance
         charge_carrier : float, optional
-            The charge carrier to use. Defaults to `PROTON`
+            The charge carrier to use. Defaults to |PROTON|
 
         Returns
         -------
         set
-            The set of IsotopicFitRecord instances produced
+            The set of :class:`~.IsotopicFitRecord` instances produced
         """
         results = []
         for peak, charge in peak_charge_set:
@@ -574,10 +574,10 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
         Parameters
         ----------
-        peak : FittedPeak
+        peak : :class:`~.FittedPeak`
             The peak to start the search from
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -648,10 +648,10 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
         Parameters
         ----------
-        peak : FittedPeak
+        peak : :class:`~.FittedPeak`
             The peak to start the search from
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -662,7 +662,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             Whether or not to re-calculate the putative starting peak m/z based upon nearby
             peaks close to where isotopic peaks for `peak` should be. Defaults to True
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -672,7 +672,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         Returns
         -------
         set
-            The set of IsotopicFitRecord instances produced
+            The set of :class:`~.IsotopicFitRecord` instances produced
         """
         target_peaks = self._get_all_peak_charge_pairs(
             peak, error_tolerance=error_tolerance,
@@ -697,10 +697,10 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
         Parameters
         ----------
-        peak : FittedPeak
+        peak : :class:`~.FittedPeak`
             The peak to start the search from
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -708,7 +708,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         right_search_limit : int, optional
             The number of steps to search to the right of `peak`. Defaults to 3
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -717,7 +717,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
         Returns
         -------
-        IsotopicFitRecord
+        :class:`~.IsotopicFitRecord`
             The best scoring isotopic fit
         """
         results = self._fit_all_charge_states(
@@ -749,10 +749,10 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
         Parameters
         ----------
-        peak : FittedPeak
+        peak : :class:`~.FittedPeak`
             The peak to start the search from
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -761,7 +761,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             The number of steps to search to the right of `peak`. Defaults to 3
         charge_carrier : float, optional
             The mass of the charge carrier, or more specifically, the moiety which is added for
-            each incremental change in charge state. Defaults to `PROTON`
+            each incremental change in charge state. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -770,7 +770,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
         Returns
         -------
-        DeconvolutedPeak
+        :class:`~.DeconvolutedPeak`
         """
         fit = self.charge_state_determination(
             peak, error_tolerance=error_tolerance,
@@ -824,7 +824,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         peak : :class:`~.FittedPeak`
             The peak to start the search from
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -832,7 +832,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         right_search_limit : int, optional
             The number of steps to search to the right of `peak`. Defaults to 3
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -866,18 +866,18 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         Parameters
         ----------
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         order_chooser : callable, optional:
             A callable used as a key function for sorting peaks into the order they will
-            be visited during deconvolution. Defaults to `operator.attrgetter("index")`
+            be visited during deconvolution. Defaults to :obj:`operator.attrgetter("index")`
         left_search_limit : int, optional
             The number of steps to search to the left of `peak`. Defaults to 3
         right_search_limit : int, optional
             The number of steps to search to the right of `peak`. Defaults to 3
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -886,7 +886,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
         Returns
         -------
-        DeconvolutedPeakSet
+        :class:`~.DeconvolutedPeakSet`
         """
         i = 0
         for peak in sorted(self.peaklist, key=order_chooser, reverse=True):
@@ -1015,13 +1015,13 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
 
     Attributes
     ----------
-    averagine : list of ms_deisotope.averagine.AveragineCache
+    averagine : list of :class:`~.ms_deisotope.averagine.AveragineCache`
         The averagine models and associated theoretical isotopic pattern caches to use
         to build theoretical isotopic patterns.
-    peaklist : ms_peak_picker.PeakSet
+    peaklist : :class:`~.ms_peak_picker.PeakSet`
         The collection of ms_peak_picker.FittedPeak instances and possible associated
         data to deconvolute.
-    scorer : ms_deisotope.scoring.IsotopicFitterBase
+    scorer : :class:`~.ms_deisotope.scoring.IsotopicFitterBase`
         The criterion for evaluating individual isotopic pattern fits
     verbose : bool
         How much diagnostic information to provide
@@ -1116,7 +1116,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         peak : :class:`~.FittedPeak`
             The peak to start the search from
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -1124,7 +1124,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         right_search_limit : int, optional
             The number of steps to search to the right of `peak`. Defaults to 0
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -1177,7 +1177,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         ----------
         peak : :class:`~.FittedPeak`
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -1185,7 +1185,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         right_search_limit : int, optional
             The number of steps to search to the right of `peak`. Defaults to 0
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -1273,7 +1273,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         peak : :class:`~.FittedPeak`
             The peak to start the search from
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         left_search_limit : int, optional
@@ -1281,7 +1281,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         right_search_limit : int, optional
             The number of steps to search to the right of `peak`. Defaults to 3
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
 
         Returns
         -------
@@ -1304,23 +1304,23 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
         For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`
         followed by :meth:`select_best_disjoint_subgraphs` to populate the resulting
-        :class:`DeconvolutedPeakSet`
+        :class:`~.DeconvolutedPeakSet`
 
         Parameters
         ----------
         error_tolerance : float, optional
-            The parts-per-million error tolerance in m/z to search with. Defaults to ERROR_TOLERANCE
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
         charge_range : tuple, optional
             The range of charge states to consider. Defaults to (1, 8)
         order_chooser : callable, optional:
             A callable used as a key function for sorting peaks into the order they will
-            be visited during deconvolution. Defaults to `operator.attrgetter("index")`
+            be visited during deconvolution. Defaults to :obj:`operator.attrgetter("index")`
         left_search_limit : int, optional
-            The number of steps to search to the left of `peak`. Defaults to 3
+            The number of steps to search to the left of :obj:`peak`. Defaults to 3
         right_search_limit : int, optional
-            The number of steps to search to the right of `peak`. Defaults to 3
+            The number of steps to search to the right of :obj:`peak`. Defaults to 3
         charge_carrier : float, optional
-            The mass of the charge carrier. Defaults to `PROTON`
+            The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
             The percent of intensity to ensure is included in a theoretical isotopic pattern
             starting from the monoisotopic peak. This will cause theoretical isotopic patterns
@@ -1335,7 +1335,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
         Returns
         -------
-        DeconvolutedPeakSet
+        :class:`~.DeconvolutedPeakSet`
         """
         if not self.use_subtraction:
             iterations = 1
@@ -1424,16 +1424,16 @@ class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, 
 
     Attributes
     ----------
-    peaklist : ms_peak_picker.PeakSet
+    peaklist : :class:`~.ms_peak_picker.PeakSet`
         The centroided mass spectrum to deconvolute
-    scorer : IsotopicFitterBase
+    scorer : :class:`~.IsotopicFitterBase`
         The criterion for evaluating individual isotopic pattern fits
-    averagine : list of ms_deisotope.averagine.AveragineCache
+    averagine : list of :class:`~.ms_deisotope.averagine.AveragineCache`
         The averagine model and associated theoretical isotopic pattern cache to use
         to build theoretical isotopic patterns.
     max_missed_peaks : int
         The maximum number of missing peaks to tolerate in an isotopic fit
-    peak_dependency_network : PeakDependenceGraph
+    peak_dependency_network : :class:`~.PeakDependenceGraph`
         The peak dependence graph onto which isotopic fit dependences on peaks
         are constructed and solved.
     merge_isobaric_peaks : bool
@@ -1492,7 +1492,7 @@ class CompositionListDeconvoluterBase(object):
             moving all peaks forward by that mass charge ratio transformed mass.
         charge_carrier : float, optional
             The mass of the charge carrier, or more specifically, the moiety which is added for
-            each incremental change in charge state. Defaults to `PROTON`
+            each incremental change in charge state. Defaults to |PROTON|
 
         Returns
         -------
@@ -1536,7 +1536,7 @@ class CompositionListDeconvoluterBase(object):
             moving all peaks forward by that mass charge ratio transformed mass.
         charge_carrier : float, optional
             The mass of the charge carrier, or more specifically, the moiety which is added for
-            each incremental change in charge state. Defaults to `PROTON`
+            each incremental change in charge state. Defaults to |PROTON|
 
         Returns
         -------
@@ -1584,7 +1584,7 @@ class CompositionListDeconvoluterBase(object):
             moving all peaks forward by that mass charge ratio transformed mass.
         charge_carrier : float, optional
             The mass of the charge carrier, or more specifically, the moiety which is added for
-            each incremental change in charge state. Defaults to `PROTON`
+            each incremental change in charge state. Defaults to |PROTON|
         """
         for charge in charge_range_(*charge_range):
             fit = self.fit_composition_at_charge(composition, charge=charge, error_tolerance=error_tolerance,
@@ -1635,7 +1635,7 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase, DeconvoluterB
         A series of objects which represent elemental compositions and support
         the :class:`~.Mapping` interface to access their individual elements.
     peaklist : :class:`~ms_peak_picker.PeakSet`
-        The collection of ms_peak_picker.FittedPeak instances and possible associated
+        The collection of :class:`~.ms_peak_picker.FittedPeak` instances and possible associated
         data to deconvolute.
     scorer : :class:`~.IsotopicFitterBase`
         The criterion for evaluating individual isotopic pattern fits
@@ -1893,7 +1893,7 @@ def deconvolute_peaks(peaklist, decon_config=None,
     left_search_limit_for_priorities : int, optional
         The maximum number of neutron shifts to search to the left (decrease) from
         each query peak for priority targets
-    right_search_limit_for_priorities : None, optional
+    right_search_limit_for_priorities : int, optional
         The maximum number of neutron shifts to search to the right (increase) from
         each query peak for priority targets
     verbose_priorities : bool, optional
@@ -1901,9 +1901,9 @@ def deconvolute_peaks(peaklist, decon_config=None,
     verbose : bool, optional
         Passed to the deconvoluter to enable verbose mode globally
     charge_carrier : float, optional
-        The mass of the charge carrier. Defaults to PROTON
+        The mass of the charge carrier. Defaults to |PROTON|
     truncate_after : float, optional
-        The percentage of the isotopic pattern to include. Defaults to TRUNCATE_AFTER
+        The percentage of the isotopic pattern to include. Defaults to |TRUNCATE_AFTER|
     deconvoluter_type : type or callable, optional
         A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`
     **kwargs
