@@ -21,8 +21,8 @@ class Term(namedtuple("Term", ("name", "id", "description", "category", "special
         return str(self.name)
 
     def __repr__(self):
-        text = super(Term, self).__repr__()
-        return self.__class__.__name__ + text[4:]
+        text = "(%s)" % ', '.join("%s=%r" % (k, v) for k, v in self._asdict() if k != 'description')
+        return self.__class__.__name__ + text
 
     def __ne__(self, other):
         return not (self == other)

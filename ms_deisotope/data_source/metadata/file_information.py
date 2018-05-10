@@ -49,7 +49,8 @@ id_formats = [
              'native spectrum identifier format', [u'native spectrum identifier format', u'spectra data details', u'search input details']),
     IDFormat(u'Bruker U2 nativeID format', u'MS:1000823', u'Native format defined by declaration=xsd:nonNegativeInteger collection=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
-    IDFormat(u'no nativeID format', u'MS:1000824', u'No nativeID format indicates that the file tagged with this term does not contain spectra that can have a nativeID format.',
+    IDFormat(u'no nativeID format', u'MS:1000824',
+             u'No nativeID format indicates that the file tagged with this term does not contain spectra that can have a nativeID format.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
     IDFormat(u'Mascot query number', u'MS:1001528', u'Native format defined by query=xsd:nonNegativeInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format', u'spectrum identification result details']),
@@ -67,7 +68,8 @@ id_formats = [
              'native spectrum identifier format', [u'native spectrum identifier format']),
     IDFormat(u'Thermo nativeID format', u'MS:1000768', u'Native format defined by controllerType=xsd:nonNegativeInteger controllerNumber=xsd:positiveInteger scan=xsd:positiveInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
-    IDFormat(u'Waters nativeID format', u'MS:1000769', u'Native format defined by function=xsd:positiveInteger process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
+    IDFormat(u'Waters nativeID format', u'MS:1000769',
+             u'Native format defined by function=xsd:positiveInteger process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
     IDFormat(u'Scaffold nativeID format', u'MS:1001562', u'Scaffold native ID format.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
@@ -522,7 +524,8 @@ class SourceFile(object):
                 return id_fmt, fmt
 
         with open(path, 'rb') as fh:
-            lead_bytes = fh.read(100)
+            lead_bytes = fh.read(30)
+            # looking for pattern matching b'\x01\xa1F\x00i\x00n\x00n\x00i\x00g\x00a\x00n\x00'
             decoded = lead_bytes.decode("utf-16")[1:9]
             if decoded == "Finnigan":
                 return format_parameter_map['thermo raw']

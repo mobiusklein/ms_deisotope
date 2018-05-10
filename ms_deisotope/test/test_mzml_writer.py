@@ -7,17 +7,17 @@ from ms_deisotope.data_source import MzMLLoader
 from ms_deisotope.data_source import _compression
 from ms_deisotope.test.common import datafile
 
-from ms_deisotope.output.mzml import MzMLScanSerializer, ProcessedMzMLDeserializer
+from ms_deisotope.output.mzml import MzMLSerializer, ProcessedMzMLDeserializer
 
 
-class TestMzMLScanSerializer(unittest.TestCase):
+class TestMzMLSerializer(unittest.TestCase):
     source_data_path = datafile("three_test_scans.mzML")
 
     def test_writer(self):
         source_reader = MzMLLoader(self.source_data_path)
         fd, name = tempfile.mkstemp()
         with _compression.GzipFile(name, 'wb') as fh:
-            writer = MzMLScanSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
+            writer = MzMLSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
             description = source_reader.file_description()
             writer.add_file_information(description)
             writer.add_file_contents("profile spectrum")

@@ -1,5 +1,9 @@
 import os
-from collections import OrderedDict, Sequence
+from collections import OrderedDict
+try:
+    from collections import Sequence, Mapping
+except ImportError:
+    from collections.abc import Sequence, Mapping
 from uuid import uuid4
 import warnings
 
@@ -149,7 +153,7 @@ class MzMLSerializer(ScanSerializerBase):
         after all spectra have been written to file.
     compression : :class:`str`
         The compression type to use for binary data arrays. Should be one of
-        *"zlib"*, *"none"*, or :obj:`None`
+        :obj:`"zlib"`, :obj:`"none"`, or :obj:`None`
     data_encoding : :class:`dict` or :class:`int` or :obj:`numpy.dtype` or :class:`str`
         The encoding specification to specify the binary encoding of numeric data arrays
         that is passed to :meth:`~.MzMLWriter.write_spectrum` and related methods.
@@ -166,11 +170,11 @@ class MzMLSerializer(ScanSerializerBase):
     instrument_configuration_list : :class:`list`
         List of packaged :class:`~.InstrumentInformation` to write out
     n_spectra : int
-        The number of spectra to provide a size for in the :class:`<spectrumList>`
+        The number of spectra to provide a size for in the :obj:`<spectrumList>`
     processing_parameters : :class:`list`
         List of additional terms to include in a newly created :class:`~.DataProcessingInformation`
     sample_list : :class:`list`
-        List of :class:`SampleRun` objects to write out
+        List of :class:`~.SampleRun` objects to write out
     sample_name : :class:`str`
         Default sample name
     sample_run : :class:`~.SampleRun`
@@ -292,14 +296,14 @@ class MzMLSerializer(ScanSerializerBase):
 
         Parameters
         ----------
-        file_contents: :class:`str` or :class:`dict`
+        file_contents: :class:`str` or :class:`Mapping`
             The parameter to add
         """
         self.file_contents_list.append(file_contents)
 
     def remove_file_contents(self, name):
         for i, content in enumerate(self.file_contents_list):
-            if isinstance(content, dict):
+            if isinstance(content, Mapping):
                 if 'name' in content:
                     content = content['name']
                 elif len(content) == 1:
@@ -334,6 +338,16 @@ class MzMLSerializer(ScanSerializerBase):
         self.source_file_list.append(unwrapped)
 
     def add_data_processing(self, data_processing_description):
+        """Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`
+        to the output document as a new :obj:`<dataProcessing>` entry describing one or
+        more :obj:`<processingMethod>`s for a single referenced :class:`~.Software`
+        instance.
+
+        Parameters
+        ----------
+        data_processing_description : :class:`~.DataProcessingInformation` or :class:`~.ProcessingMethod`
+            Data manipulation sequence to add to the document
+        """
         if isinstance(data_processing_description, data_transformation.DataProcessingInformation):
             methods = []
             for method in data_processing_description:
@@ -367,7 +381,17 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             self.data_processing_list.append(data_processing_description)
 
-    def add_processing_parameter(self, name, value):
+    def add_processing_parameter(self, name, value=None):
+        """Add a new processing method to the writer's own
+        :obj:`<dataProcessing>` element.
+
+        Parameters
+        ----------
+        name : str
+            The processing technique's name
+        value : obj
+            The processing technique's value, if any
+        """
         self.processing_parameters.append({"name": name, "value": value})
 
     def add_sample(self, sample):
@@ -438,6 +462,9 @@ class MzMLSerializer(ScanSerializerBase):
         self._spectrum_list_tag = self.writer.spectrum_list(
             count=self.n_spectra)
         self._spectrum_list_tag.__enter__()
+
+    def has_started_writing_spectra(self):
+        return self._has_started_writing_spectra
 
     def _pack_activation(self, activation_information):
         """Pack :class:`~.ActivationInformation` into a :class:`dict` structure

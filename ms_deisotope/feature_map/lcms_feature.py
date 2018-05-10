@@ -1,6 +1,8 @@
 import random
 import numpy as np
 
+from collections import OrderedDict
+
 from ms_deisotope.utils import uid
 
 
@@ -688,3 +690,32 @@ class RunningWeightedAverage(object):
 
     def __repr__(self):
         return "RunningWeightedAverage(%r, %d)" % (self.current_mean, self.current_count)
+
+
+class SimpleLCMSFeature(object):
+    def __init__(self, storage=None):
+        if storage is None:
+            storage = OrderedDict()
+        self.storage = storage
+
+    def as_arrays(self):
+        return (
+            np.array(self.storage.keys()),
+            np.array(self.storage.values()))
+
+    @property
+    def total_signal(self):
+        return sum(self.storage.values())
+
+    @property
+    def apex_time(self):
+        rt, intensity = self.as_arrays()
+        return rt[np.argmax(intensity)]
+
+    @property
+    def start_time(self):
+        return tuple(self.storage.keys())[0]
+
+    @property
+    def end_time(self):
+        return tuple(self.storage.keys())[-1]
