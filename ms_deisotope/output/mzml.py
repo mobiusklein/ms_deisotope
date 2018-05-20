@@ -732,6 +732,9 @@ class MzMLSerializer(ScanSerializerBase):
         scan_parameters = []
         scan_window_list = []
         acquisition_info = scan.acquisition_information
+        filter_line = scan.annotations.get("filter_line")
+        if filter_line is not None:
+            scan_parameters.append({"name": "filter line", "value": filter_line})
         if acquisition_info is not None and len(acquisition_info) > 0:
             scan_event = acquisition_info[0]
             if scan_event.has_ion_mobility():
