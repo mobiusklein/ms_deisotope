@@ -1,5 +1,4 @@
 import sys
-from collections import namedtuple
 
 
 def clean_definition(text):
@@ -9,7 +8,31 @@ def clean_definition(text):
     return text
 
 
-class Term(namedtuple("Term", ("name", "id", "description", "category", "specialization"))):
+class Term(object):
+    __slots__ = ("name", "id", "description", "category", "specialization")
+
+    def __init__(self, name, id, description, category, specialization):
+        self.name = name
+        self.id = id
+        self.description = description
+        self.category = category
+        self.specialization = specialization
+
+    def __iter__(self):
+        yield self.name
+        yield self.id
+        yield self.description
+        yield self.category
+        yield self.specialization
+
+    def _asdict(self):
+        return {
+            "name": self.name,
+            "id": self.id,
+            "description": self.description,
+            "category": self.category,
+            "specialization": self.specialization
+        }
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -23,6 +46,18 @@ class Term(namedtuple("Term", ("name", "id", "description", "category", "special
     def __repr__(self):
         text = "(%s)" % ', '.join("%s=%r" % (k, v) for k, v in self._asdict() if k != 'description')
         return self.__class__.__name__ + text
+
+    def __reduce__(self):
+        return self.__class__, (None, None, None, None, None), self.__getstate__()
+
+    def __getstate__(self):
+        return tuple(self)
+
+    def __setstate__(self, d):
+        if len(d) == 4:
+            self.name, self.id, self.category, self.specialization = d
+        else:
+            self.name, self.id, self.description, self.category, self.specialization = d
 
     def __ne__(self, other):
         return not (self == other)
@@ -116,6 +151,10 @@ def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pra
     seen = set()
     if list_name is None:
         list_name = seed.replace(" ", "_") + 's'
+
+    template = (
+        "    %s(%r, %r, %r,"
+        "       %r, %r), \n")
     stream.write("%s = [\n" % (list_name,))
     while i < len(component_type_list):
         component_type = component_type_list[i]
@@ -124,7 +163,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pra
             if term.name in seen:
                 continue
             seen.add(term.name)
-            stream.write("    %s(%r, %r, %r, %r, %r), \n" % (
+            stream.write(template % (
                 term_cls_name, term.name, term.id, clean_definition(term.definition),
                 component_type_list[0], type_path(term, seed)))
             if term.children:
