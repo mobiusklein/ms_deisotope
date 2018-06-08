@@ -221,7 +221,7 @@ class TheoreticalIsotopicPattern(object):
 
         return self
 
-    def _scale_raw(self, scale_factor):
+    def scale_raw(self, scale_factor):
         for peak in self:
             peak.intensity *= scale_factor
 

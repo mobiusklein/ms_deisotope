@@ -12,6 +12,8 @@ from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyL
 from ms_peak_picker._c.peak_set cimport FittedPeak, PeakBase
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak
+
 cimport numpy as np
 import numpy as np
 
@@ -40,28 +42,31 @@ cdef class LCMSFeatureTreeList(object):
         inst._node_id_hash = None
         return inst
 
+    cpdef LCMSFeatureTreeNodeBase _make_node(self, double time, list peaks):
+        return LCMSFeatureTreeNode(time, peaks)
+
     cdef void _invalidate(self):
         self._node_id_hash = None
 
     cpdef tuple find_time(self, double time):
         cdef:
             size_t indexout
-            LCMSFeatureTreeNode node
+            LCMSFeatureTreeNodeBase node
         node = self._find_time(time, &indexout)
         return node, indexout
 
-    cdef LCMSFeatureTreeNode _find_time(self, double time, size_t* indexout):
+    cdef LCMSFeatureTreeNodeBase _find_time(self, double time, size_t* indexout):
         cdef:
             int lo, hi
             double rt
-            LCMSFeatureTreeNode node
+            LCMSFeatureTreeNodeBase node
         hi = PyList_GET_SIZE(self.roots)
         if hi == 0:
             raise ValueError()
         lo = 0
         while lo != hi:
             i = (lo + hi) / 2
-            node = <LCMSFeatureTreeNode>PyList_GET_ITEM(self.roots, i)
+            node = <LCMSFeatureTreeNodeBase>PyList_GET_ITEM(self.roots, i)
             rt = node.time
             if rt == time:
                 indexout[0] = i
@@ -85,10 +90,10 @@ cdef class LCMSFeatureTreeList(object):
             self._build_node_id_hash()
         return self._node_id_hash
 
-    def insert_node(self, LCMSFeatureTreeNode node):
+    def insert_node(self, LCMSFeatureTreeNodeBase node):
         self._invalidate()
         cdef:
-            LCMSFeatureTreeNode root
+            LCMSFeatureTreeNodeBase root
             size_t i
         try:
             root = self._find_time(node.time, &i)
@@ -108,7 +113,7 @@ cdef class LCMSFeatureTreeList(object):
             return 0
 
     def insert(self, time, peaks):
-        node = LCMSFeatureTreeNode(time, peaks)
+        node = self._make_node(time, peaks)
         return self.insert_node(node)
 
     def extend(self, iterable):
@@ -118,8 +123,8 @@ cdef class LCMSFeatureTreeList(object):
     def __getitem__(self, i):
         return self.roots[i]
 
-    cdef LCMSFeatureTreeNode getitem(self, size_t i):
-        return <LCMSFeatureTreeNode>PyList_GetItem(self.roots, i)
+    cdef LCMSFeatureTreeNodeBase getitem(self, size_t i):
+        return <LCMSFeatureTreeNodeBase>PyList_GetItem(self.roots, i)
 
     def __len__(self):
         return PyList_GET_SIZE(self.roots)
@@ -139,7 +144,7 @@ cdef class LCMSFeatureTreeList(object):
     def unspool(self):
         cdef:
             list out_queue, stack
-            LCMSFeatureTreeNode node, root
+            LCMSFeatureTreeNodeBase node, root
             size_t i, n
         out_queue = []
         n = self.get_size()
@@ -164,19 +169,10 @@ cdef object uid = _uid
 cdef object sample = _sample
 
 
-cdef class LCMSFeatureTreeNode(object):
-    def __init__(self, time, members=None):
-        if members is None:
-            members = []
-        self.time = time
-        self.members = members
-        self._most_abundant_member = None
-        self._mz = 0
-        self._recalculate()
-        self.node_id = uid()
+cdef class LCMSFeatureTreeNodeBase(object):
 
     def clone(self, deep=False):
-        cdef LCMSFeatureTreeNode node
+        cdef LCMSFeatureTreeNodeBase node
         cdef list peaks
         cdef size_t i, n
         cdef PeakBase peak
@@ -199,9 +195,46 @@ cdef class LCMSFeatureTreeNode(object):
             self.time, list(self.members))
         yield node
 
+    def __getstate__(self):
+        return (self.time, self.members, self.node_id)
+
+    def __setstate__(self, state):
+        self.time, self.members, self.node_id = state
+        self._recalculate()
+
+    def __reduce__(self):
+        return self.__class__, (self.time, []), self.__getstate__()
+
+    def add(self, node, recalculate=True):
+        if self.node_id == node.node_id:
+            raise ValueError("Duplicate Node %s" % node)
+        self.members.extend(node.members)
+        if recalculate:
+            self._recalculate()
+
+    cpdef double _total_intensity_members(self):
+        cdef:
+            double total
+            size_t n, i
+            PeakBase peak
+        total = 0.
+        n = self.get_members_size()
+        for i in range(n):
+            peak = self.getitem(i)
+            total += peak.intensity
+        return total
+
+    cpdef double max_intensity(self):
+        return self._most_abundant_member.intensity
+
+    cpdef double total_intensity(self):
+        return self._total_intensity_members()
+
     cpdef _recalculate(self):
         self._calculate_most_abundant_member()
-        self._mz = self._most_abundant_member.mz
+
+    cdef inline size_t get_members_size(self):
+        return PyList_GET_SIZE(self.members)
 
     cdef PeakBase _find_most_abundant_member(self):
         cdef:
@@ -231,18 +264,32 @@ cdef class LCMSFeatureTreeNode(object):
                 self._most_abundant_member = self._find_most_abundant_member()
         return
 
-    def __getstate__(self):
-        return (self.time, self.members, self.node_id)
+    cdef PeakBase getitem(self, size_t i):
+        return <PeakBase>PyList_GET_ITEM(self.members, i)
 
-    def __setstate__(self, state):
-        self.time, self.members, self.node_id = state
+    @property
+    def peaks(self):
+        peaks = list(self.members)
+        return peaks
+
+    def __hash__(self):
+        return hash(self.uid)
+
+
+cdef class LCMSFeatureTreeNode(LCMSFeatureTreeNodeBase):
+    def __init__(self, time, members=None):
+        if members is None:
+            members = []
+        self.time = time
+        self.members = members
+        self._most_abundant_member = None
+        self._mz = 0
         self._recalculate()
+        self.node_id = uid()
 
-    def __reduce__(self):
-        return self.__class__, (self.time, []), self.__getstate__()
-
-    cdef inline size_t get_members_size(self):
-        return PyList_GET_SIZE(self.members)
+    cpdef _recalculate(self):
+        self._calculate_most_abundant_member()
+        self._mz = self._most_abundant_member.mz
 
     @property
     def mz(self):
@@ -256,31 +303,6 @@ cdef class LCMSFeatureTreeNode(object):
             if self._most_abundant_member is not None:
                 self._mz = self._most_abundant_member.mz
         return self._mz
-
-    def add(self, node, recalculate=True):
-        if self.node_id == node.node_id:
-            raise ValueError("Duplicate Node %s" % node)
-        self.members.extend(node.members)
-        if recalculate:
-            self._recalculate()
-
-    cpdef double _total_intensity_members(self):
-        cdef:
-            double total
-            size_t n, i
-            PeakBase peak
-        total = 0.
-        n = self.get_members_size()
-        for i in range(n):
-            peak = self.getitem(i)
-            total += peak.intensity
-        return total
-
-    cpdef double max_intensity(self):
-        return self._most_abundant_member.intensity
-
-    cpdef double total_intensity(self):
-        return self._total_intensity_members()
 
     cpdef bint _eq(self, LCMSFeatureTreeNode other):
         return self.members == other.members and abs(
@@ -296,14 +318,6 @@ cdef class LCMSFeatureTreeNode(object):
             return self._ne(other)
         else:
             return NotImplemented
-
-    def __hash__(self):
-        return hash(self.uid)
-
-    @property
-    def peaks(self):
-        peaks = list(self.members)
-        return peaks
     
     def __repr__(self):
         return "%s(%f, %0.4f %s|%d)" % (
@@ -313,9 +327,6 @@ cdef class LCMSFeatureTreeNode(object):
 
     cdef inline FittedPeak getpeak(self, size_t i):
         return <FittedPeak>PyList_GET_ITEM(self.members, i)
-
-    cdef PeakBase getitem(self, size_t i):
-        return <PeakBase>PyList_GET_ITEM(self.members, i)
 
 
 @cython.freelist(10000000)
@@ -996,7 +1007,12 @@ cdef class RunningWeightedAverage(object):
             self.add(p)
 
     def __repr__(self):
-        return "RunningWeightedAverage(%r, %d)" % (self.current_mean, self.current_count)
+        return "%s(%r, %d)" % (self.__class__.__name__, self.current_mean, self.current_count)
+
+    cpdef RunningWeightedAverage subsample(self, size_t k):
+        sampled_peaks = sample(self.accumulator, k)
+        inst = RunningWeightedAverage._create(sampled_peaks)
+        return inst
 
     @cython.nonecheck(False)
     @cython.cdivision(True)
@@ -1011,8 +1027,7 @@ cdef class RunningWeightedAverage(object):
         if self.current_count < k:
             k = self.current_count
         for i in range(n):
-            sampled_peaks = sample(self.accumulator, k)
-            inst = RunningWeightedAverage._create(sampled_peaks)
+            inst = self.subsample(k)
             traces.append(inst)
         tn = i + 1
         total_weight = 0
@@ -1026,4 +1041,46 @@ cdef class RunningWeightedAverage(object):
 
     cpdef RunningWeightedAverage bootstrap(self, size_t n=150, size_t k=40):
         self.current_mean = self._bootstrap(n, k)
+        return self
+
+
+cdef class RunningWeightedAverageNeutralMass(RunningWeightedAverage):
+
+    @staticmethod
+    cdef RunningWeightedAverageNeutralMass _create(list peaks):
+        cdef:
+            RunningWeightedAverageNeutralMass inst
+
+        inst = RunningWeightedAverageNeutralMass.__new__(RunningWeightedAverageNeutralMass)
+        if peaks is None:
+            return inst
+        else:
+            inst._update(peaks)
+            return inst
+
+    cpdef RunningWeightedAverage subsample(self, size_t k):
+        sampled_peaks = sample(self.accumulator, k)
+        inst = RunningWeightedAverageNeutralMass._create(sampled_peaks)
+        return inst
+
+    @cython.nonecheck(False)
+    @cython.cdivision(True)
+    cpdef add(self, PeakBase peak):
+        if peak.intensity == 0:
+            if self.current_mean == 0 and self.total_weight == 0:
+                self.current_mean = (<DeconvolutedPeak?>peak).neutral_mass
+                self.total_weight = 1
+            else:
+                return
+
+        self.accumulator.append(peak)
+        agg = (self.total_weight * self.current_mean) + \
+            ((<DeconvolutedPeak?>peak).neutral_mass * peak.intensity)
+        self.total_weight += peak.intensity
+        self.current_count += 1
+
+        if self.total_weight != 0:
+            self.current_mean = agg / (self.total_weight)
+        else:
+            print("NaN produced in add()")
         return self

@@ -94,7 +94,7 @@ class TestCompositionListDeconvolution(unittest.TestCase):
             for charge, abundance in charges:
                 tid = brainpy.isotopic_variants(comp, charge=-charge)
                 tid = TheoreticalIsotopicPattern(tid, tid[0].mz)
-                tid._scale_raw(abundance * 100)
+                tid.scale_raw(abundance * 100)
                 peaks.extend(tid)
         peaks.sort(key=lambda x: x.mz)
 

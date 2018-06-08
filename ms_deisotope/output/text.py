@@ -1,6 +1,12 @@
 from .common import ScanSerializerBase
 
 
+class HeaderInformation(dict):
+    def __init__(self, scan):
+        dict.__init__(self)
+        self.scan = scan
+
+
 class TextScanSerializerBase(ScanSerializerBase):
     def __init__(self, stream, deconvoluted=True):
         self.stream = stream
@@ -16,7 +22,7 @@ class TextScanSerializerBase(ScanSerializerBase):
 
     def construct_header(self, scan):
         prec_info = scan.precursor_information
-        header_dict = {}
+        header_dict = HeaderInformation(scan)
         if prec_info is not None:
             header_dict['precursor_neutral_mass'] = prec_info.extracted_neutral_mass
             header_dict['precursor_charge'] = prec_info.extracted_charge
