@@ -122,8 +122,9 @@ html_sidebars = {
     ]
 }
 
-html_theme_options = {
+html_logo = '_static/logo.svg'
 
+html_theme_options = {
 }
 
 
