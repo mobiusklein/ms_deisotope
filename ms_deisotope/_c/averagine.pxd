@@ -40,6 +40,7 @@ cdef class TheoreticalIsotopicPattern(object):
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=*)
     cpdef TheoreticalIsotopicPattern shift(self, double mz)
     cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method=*)
+    cpdef scale_raw(self, double scale_factor)
 
     @cython.final
     cdef inline TheoreticalIsotopicPattern _scale(self, list experimental_distribution, str method=*)

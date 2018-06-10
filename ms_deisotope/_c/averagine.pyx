@@ -411,7 +411,6 @@ cdef class TheoreticalIsotopicPattern(object):
             peaklist.append(TheoreticalPeak._create(p.mz + delta, p.intensity, p.charge))
         return TheoreticalIsotopicPattern._create(peaklist, mz, self.offset)
 
-
     @cython.cdivision
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=0.95):
         """Drops peaks from the end of the isotopic pattern
@@ -532,7 +531,7 @@ cdef class TheoreticalIsotopicPattern(object):
                 peak.intensity *= scale_factor
         return self
 
-    def _scale_raw(self, double scale_factor):
+    cpdef scale_raw(self, double scale_factor):
         for peak in self:
             peak.intensity *= scale_factor
 

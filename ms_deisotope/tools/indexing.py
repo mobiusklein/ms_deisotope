@@ -180,26 +180,28 @@ def precursor_clustering(path, grouping_error=2e-5):
         var = sum([(p[0] - mean) ** 2 for p in obs]) / (n - 1)
         acc += (var * (n - 1))
         nt += (n - 1)
+    for centroid, obs in centroids:
+        click.echo("%f: %d" % (centroid, len(obs)))
     click.echo("MS/MS Precursor Mass Std. Dev.: %f Da" % (math.sqrt(acc / nt),))
 
 
 if _compression.has_idzip:
 
     @cli.command("idzip")
-    @click.argument('path', type=click.Path(exists=True))
+    @click.argument('path', type=str)
     @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
     def idzip_compression(path, output):
         if output is None:
             output = '-'
         with click.open_file(output, mode='wb') as outfh:
             writer = _compression.GzipFile(fileobj=outfh, mode='wb')
-            with open(path, 'rb') as infh:
-                buffer_size = 2 ** 16
+            with click.open_file(path, 'rb') as infh:
+                buffer_size = 2 ** 28
                 chunk = infh.read(buffer_size)
                 while chunk:
                     writer.write(chunk)
                     chunk = infh.read(buffer_size)
-            writer.flush()
+            writer.close()
 
 
 main = cli.main

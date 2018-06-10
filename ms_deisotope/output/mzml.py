@@ -732,6 +732,9 @@ class MzMLSerializer(ScanSerializerBase):
         scan_parameters = []
         scan_window_list = []
         acquisition_info = scan.acquisition_information
+        filter_line = scan.annotations.get("filter_line")
+        if filter_line is not None:
+            scan_parameters.append({"name": "filter line", "value": filter_line})
         if acquisition_info is not None and len(acquisition_info) > 0:
             scan_event = acquisition_info[0]
             if scan_event.has_ion_mobility():
@@ -907,9 +910,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         with open(self._index_file_name) as handle:
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
-    deserialize_deconvoluted_peak_set = staticmethod(
-        deserialize_deconvoluted_peak_set)
-    deserialize_peak_set = staticmethod(deserialize_peak_set)
+    def deserialize_deconvoluted_peak_set(self, scan_dict):
+        return deserialize_deconvoluted_peak_set(scan_dict)
+
+    def deserialize_peak_set(self, scan_dict):
+        return deserialize_peak_set(scan_dict)
 
     def has_index_file(self):
         return os.path.exists(self._index_file_name)
@@ -1036,7 +1041,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 'precursor purity', 0)
         if "isotopic envelopes array" in data:
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-            scan.deconvoluted_peak_set = deserialize_deconvoluted_peak_set(
+            scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
                 data)
             if scan.id in self.extended_index.ms1_ids:
                 chosen_indices = self.extended_index.ms1_ids[
@@ -1044,7 +1049,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 for ix in chosen_indices:
                     scan.deconvoluted_peak_set[ix].chosen_for_msms = True
         else:
-            scan.peak_set = deserialize_peak_set(data)
+            scan.peak_set = self.deserialize_peak_set(data)
             scan.deconvoluted_peak_set = None
         packed = scan.pack()
         return packed

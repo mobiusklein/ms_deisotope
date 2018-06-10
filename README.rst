@@ -1,3 +1,5 @@
+.. image:: docs/_static/logo.svg
+
 A Library for Deisotoping and Charge State Deconvolution For Mass Spectrometry
 ------------------------------------------------------------------------------
 

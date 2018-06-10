@@ -11,19 +11,20 @@ cdef class LCMSFeatureTreeList(object):
 
     cdef void _invalidate(self)
 
+    cpdef LCMSFeatureTreeNodeBase _make_node(self, double time, list peaks)
+
     cpdef tuple find_time(self, double time)
-    cdef inline LCMSFeatureTreeNode _find_time(self, double time, size_t* indexout)
-    cdef inline LCMSFeatureTreeNode getitem(self, size_t i)
+    cdef inline LCMSFeatureTreeNodeBase _find_time(self, double time, size_t* indexout)
+    cdef inline LCMSFeatureTreeNodeBase getitem(self, size_t i)
 
     cdef inline size_t get_size(self)
 
 
-cdef class LCMSFeatureTreeNode(object):
+cdef class LCMSFeatureTreeNodeBase(object):
     cdef:
         public double time
         public list members
         public PeakBase _most_abundant_member
-        public double _mz
         public object node_id
 
     cpdef double _total_intensity_members(self)
@@ -34,11 +35,20 @@ cdef class LCMSFeatureTreeNode(object):
     cpdef _calculate_most_abundant_member(self)
     cpdef _recalculate(self)
 
+    cdef PeakBase getitem(self, size_t i)
+    cdef inline size_t get_members_size(self)
+
+
+
+
+cdef class LCMSFeatureTreeNode(LCMSFeatureTreeNodeBase):
+    cdef:
+
+        public double _mz
+
     cpdef bint _eq(self, LCMSFeatureTreeNode other)
     cpdef bint _ne(self, LCMSFeatureTreeNode other)
     cdef inline FittedPeak getpeak(self, size_t i)
-    cdef PeakBase getitem(self, size_t i)
-    cdef inline size_t get_members_size(self)
 
     cdef double get_mz(self)
 
@@ -128,7 +138,14 @@ cdef class RunningWeightedAverage(object):
     cpdef RunningWeightedAverage update(self, iterable)
     cpdef double _bootstrap(self, size_t n=*, size_t k=*)
     cpdef RunningWeightedAverage bootstrap(self, size_t n=*, size_t k=*)
+    cpdef RunningWeightedAverage subsample(self, size_t k)
 
     @staticmethod
     cdef RunningWeightedAverage _create(list peaks)
     cdef void _update(self, list peaks)
+
+
+cdef class RunningWeightedAverageNeutralMass(RunningWeightedAverage):
+
+    @staticmethod
+    cdef RunningWeightedAverageNeutralMass _create(list peaks)
