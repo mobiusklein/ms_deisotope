@@ -18,7 +18,7 @@ from .xml_reader import (
     get_tag_attributes, _find_section, in_minutes)
 
 
-class _MzMLParser(mzml.MzML, IndexSavingXML):
+class _MzMLParser(IndexSavingXML, mzml.MzML):
     # we do not care about chromatograms
     _indexed_tags = {'spectrum', }
     pass

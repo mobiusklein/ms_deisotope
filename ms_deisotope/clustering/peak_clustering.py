@@ -1,3 +1,5 @@
+# pragma: no cover
+
 import numpy as np
 from ms_peak_picker import FittedPeak, PeakIndex, PeakSet
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet

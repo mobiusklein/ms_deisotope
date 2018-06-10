@@ -3,6 +3,8 @@ try:
 except ImportError:
     pass
 
+from .version import version
+
 from .averagine import (
     Averagine, peptide, glycan, glycopeptide, heparin,
     heparan_sulfate, permethylated_glycan,
@@ -35,5 +37,5 @@ __all__ = [
     "MSDeconVFitter", "PenalizedMSDeconVFitter", "DistinctPatternFitter", "IsotopicFitRecord",
     "DeconvolutedPeak", "DeconvolutedPeakSet", "DeconvolutedPeakSolution",
     "MzMLLoader", "MzXMLLoader", "MSFileLoader", "ScanProcessor",
-    "deconvolute_peaks"
+    "deconvolute_peaks", 'version'
 ]

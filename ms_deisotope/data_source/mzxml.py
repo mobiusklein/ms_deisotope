@@ -13,7 +13,7 @@ from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until)
 
 
-class _MzXMLParser(mzxml.MzXML, IndexSavingXML):
+class _MzXMLParser(IndexSavingXML, mzxml.MzXML):
     pass
 
 
