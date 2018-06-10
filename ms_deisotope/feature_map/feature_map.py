@@ -595,3 +595,9 @@ class NeutralMassIndex(_FeatureIndex):
             return self[lo:hi]
         else:
             return []
+
+
+try:
+    from ms_deisotope._c.feature_map.feature_map import binary_search_with_flag
+except ImportError:
+    pass

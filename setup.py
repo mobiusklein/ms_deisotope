@@ -78,6 +78,10 @@ def make_extensions():
                       "ms_deisotope/_c/feature_map/feature_fit.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.shape_fitter', sources=[
+                      "ms_deisotope/_c/feature_map/shape_fitter.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
+                      define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
                       "ms_deisotope/_c/feature_map/profile_transform.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
@@ -110,6 +114,10 @@ def make_extensions():
             Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=[
                       "ms_deisotope/_c/feature_map/feature_fit.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.shape_fitter', sources=[
+                      "ms_deisotope/_c/feature_map/shape_fitter.c"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
+                      define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
                       "ms_deisotope/_c/feature_map/profile_transform.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),

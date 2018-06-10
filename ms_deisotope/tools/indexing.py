@@ -196,13 +196,12 @@ if _compression.has_idzip:
         with click.open_file(output, mode='wb') as outfh:
             writer = _compression.GzipFile(fileobj=outfh, mode='wb')
             with click.open_file(path, 'rb') as infh:
-                buffer_size = 2 ** 14
+                buffer_size = 2 ** 28
                 chunk = infh.read(buffer_size)
                 while chunk:
                     writer.write(chunk)
                     chunk = infh.read(buffer_size)
-                    writer.flush()
-            writer.flush()
+            writer.close()
 
 
 main = cli.main

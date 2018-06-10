@@ -10,6 +10,8 @@ from .common import (
     ScanDataSource, ScanIterator, ScanBunch,
     ScanWindow, RandomAccessScanSource, ChargeNotProvided)
 
+from ._compression import get_opener
+
 __all__ = [
     "MSFileLoader", "MzMLLoader",
     "MzXMLLoader", "MGFLoader",
@@ -18,5 +20,6 @@ __all__ = [
     "IsolationWindow", "dissociation_methods",
     "ScanAcquisitionInformation", "ScanEventInformation",
     "ScanDataSource", "ScanIterator", "ScanBunch",
-    "ScanWindow", "RandomAccessScanSource", "ChargeNotProvided"
+    "ScanWindow", "RandomAccessScanSource", "ChargeNotProvided",
+    "get_opener"
 ]

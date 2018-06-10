@@ -179,10 +179,9 @@ class ChromatogramShapeFitterBase(object):
         return NotImplemented
 
     def perform_line_test(self):
-        ys = self.ys
         residuals = self.compute_residuals()
-        horizontal_fit_residuals = ys - ((ys.max() + ys.min()) / 2.)
-        line_test = (residuals ** 2).sum() / (horizontal_fit_residuals ** 2).sum()
+        null_residuals = linear_regression_residuals(self.xs, self.ys)
+        line_test = (residuals ** 2).sum() / (null_residuals).sum()
         if line_test > 1.0:
             line_test = 1.0
         self.line_test = line_test
