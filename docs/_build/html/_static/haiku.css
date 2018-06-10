@@ -141,7 +141,9 @@ div.header h2 {
 }
 
 div.header img.rightlogo {
-    float: right;
+    float: left;
+    width: 128px;
+    padding-right: 1em;
 }
 
 
