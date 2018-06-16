@@ -509,6 +509,8 @@ class InterferenceDetection(object):
 
         included_intensity = sum(p.intensity for p in experimental_peaks)
         region_intensity = sum(p.intensity for p in region)
+        if region_intensity == 0:
+            return 0.
 
         score = 1 - (included_intensity / region_intensity)
         return score

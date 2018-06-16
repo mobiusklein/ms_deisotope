@@ -501,8 +501,11 @@ class ScanProcessor(Base):
                         precursor_information, peak)
                     precursor_information.default()
                     continue
+            try:
+                precursor_purity = 1 - interference_detector.detect_interference(peak.envelope, lower, upper)
+            except (AttributeError, ZeroDivisionError):
+                precursor_purity = -1.0
 
-            precursor_purity = 1 - interference_detector.detect_interference(peak.envelope, lower, upper)
             product_scan.annotations['precursor purity'] = precursor_purity
             precursor_information.extract(peak)
         precursor_scan.deconvoluted_peak_set = dec_peaks

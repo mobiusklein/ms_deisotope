@@ -741,7 +741,7 @@ cdef class InterferenceDetection(object):
 
         n = PyList_GET_SIZE(experimental_peaks)
         if n == 0:
-            return 1.0
+            return 0.0
 
         min_peak = <FittedPeak>PyList_GET_ITEM(experimental_peaks, 0)
         max_peak = <FittedPeak>PyList_GET_ITEM(experimental_peaks, PyList_GET_SIZE(experimental_peaks) - 1)
@@ -758,7 +758,7 @@ cdef class InterferenceDetection(object):
         included_intensity = sum_intensity_fitted(experimental_peaks)
         region_intensity = sum_intensity_fitted(list(region))
         if region_intensity == 0:
-            return 1.0
+            return 0.0
 
         score = 1 - (included_intensity / region_intensity)
         return score
