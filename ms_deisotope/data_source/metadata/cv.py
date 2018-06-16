@@ -44,7 +44,7 @@ class Term(object):
         return str(self.name)
 
     def __repr__(self):
-        text = "(%s)" % ', '.join("%s=%r" % (k, v) for k, v in self._asdict() if k != 'description')
+        text = "(%s)" % ', '.join("%s=%r" % (k, v) for k, v in self._asdict().items() if k != 'description')
         return self.__class__.__name__ + text
 
     def __reduce__(self):
