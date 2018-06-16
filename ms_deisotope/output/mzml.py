@@ -217,8 +217,29 @@ class MzMLSerializer(ScanSerializerBase):
 
         self.writer.controlled_vocabularies()
         self.deconvoluted = deconvoluted
-        self.sample_name = sample_name
 
+        self._initialize_description_lists()
+        self._init_sample(sample_name)
+
+        self.total_ion_chromatogram_tracker = OrderedDict()
+        self.base_peak_chromatogram_tracker = OrderedDict()
+        self.chromatogram_queue = []
+
+        self.indexer = None
+        if build_extra_index:
+            self.indexer = ExtendedScanIndex()
+
+    def _init_sample(self, sample_name, **kwargs):
+        self.sample_name = sample_name
+        self.sample_run = SampleRun(name=sample_name, uuid=str(uuid4()))
+        self.add_sample({
+            "name": self.sample_run.name,
+            "id": "sample_1",
+            "params": [
+                {"name": "SampleRun-UUID", "value": self.sample_run.uuid},
+            ]})
+
+    def _initialize_description_lists(self):
         self.file_contents_list = []
         self.software_list = []
         self.source_file_list = []
@@ -227,24 +248,6 @@ class MzMLSerializer(ScanSerializerBase):
         self.sample_list = []
 
         self.processing_parameters = []
-
-        self.total_ion_chromatogram_tracker = OrderedDict()
-        self.base_peak_chromatogram_tracker = OrderedDict()
-
-        self.sample_run = SampleRun(name=sample_name, uuid=str(uuid4()))
-
-        self.add_sample({
-            "name": sample_name,
-            "id": "sample_1",
-            "params": [
-                {"name": "SampleRun-UUID", "value": self.sample_run.uuid},
-            ]})
-
-        self.chromatogram_queue = []
-
-        self.indexer = None
-        if build_extra_index:
-            self.indexer = ExtendedScanIndex()
 
     def add_instrument_configuration(self, configuration):
         """Add an :class:`~.InstrumentInformation` object to
@@ -595,10 +598,13 @@ class MzMLSerializer(ScanSerializerBase):
             self._has_started_writing_spectra = True
 
         if self.deconvoluted:
+            centroided = True
             precursor_peaks = bunch.precursor.deconvoluted_peak_set
         elif bunch.precursor.peak_set:
+            centroided = True
             precursor_peaks = bunch.precursor.peak_set
         else:
+            centroided = False
             precursor_peaks = bunch.precursor.arrays
 
         if len(precursor_peaks) == 0:
@@ -610,8 +616,6 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             charge_array = None
 
-        centroided = (
-            bunch.precursor.peak_set or bunch.precursor.deconvoluted_peak_set)
         if centroided:
             descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
             mz_array = [p.mz for p in precursor_peaks]
@@ -653,13 +657,15 @@ class MzMLSerializer(ScanSerializerBase):
 
         for prod in bunch.products:
             if self.deconvoluted:
+                centroided = True
                 product_peaks = prod.deconvoluted_peak_set
             elif prod.peak_set:
+                centroided = True
                 product_peaks = prod.peak_set
             else:
+                centroided = False
                 product_peaks = prod.arrays
 
-            centroided = (prod.peak_set or prod.deconvoluted_peak_set)
             if centroided:
                 descriptors = SpectrumDescription.from_peak_set(product_peaks)
                 mz_array = [p.mz for p in product_peaks]
