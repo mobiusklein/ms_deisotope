@@ -382,6 +382,13 @@ class ThermoRawScanPtr(Base):
         self.scan_number = scan_number
         self.filter_line = None
 
+    def validate(self, source):
+        try:
+            source._scan_time(self)
+            return True
+        except IOError:
+            return False
+
 
 def _make_id(scan_number):
     try:
@@ -672,6 +679,8 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             return self._scan_cache[scan_number]
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
+            if not package.validate(self):
+                raise KeyError(str(scan_id))
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan
@@ -696,6 +705,8 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             return self._scan_cache[scan_number]
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
+            if not package.validate(self):
+                raise KeyError(index)
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan
