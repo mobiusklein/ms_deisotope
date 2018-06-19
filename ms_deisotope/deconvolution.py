@@ -56,7 +56,7 @@ def mean(numbers):
     return total / n
 
 
-def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=2e-5):
+def has_previous_peak_at_charge(peak_collection, peak, charge=2, step=1, error_tolerance=ERROR_TOLERANCE):
     """Get the `step`th *preceding* peak from `peak` in a isotopic pattern at
     charge state `charge`, or return `None` if it is missing.
 
