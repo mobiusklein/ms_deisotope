@@ -1,6 +1,6 @@
 import json
 import os
-
+import warnings
 from .common import (
     RandomAccessScanSource)
 from lxml import etree
@@ -14,9 +14,16 @@ def in_minutes(x):
         unit = x.unit_info
     except AttributeError:
         return x
-    if unit == 'second':
+    if unit == 'minute':
+        return x
+    elif unit == 'second':
         y = unitfloat(x / 60., 'minute')
         return y
+    elif unit == 'hour':
+        y = unitfloat(x * 60, 'minute')
+        return y
+    else:
+        warnings.warn("Time unit %r not recognized" % unit)
     return x
 
 
