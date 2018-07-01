@@ -103,3 +103,17 @@ def cluster_scans(scans, precursor_error_tolerance=1e-5, minimum_similarity=0.1)
         else:
             best_cluster.append(scan)
     return clusters
+
+
+class ScanClusterWriter(object):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+
+    def save(self, cluster):
+        self.write("%f\t%d\n" % (cluster.neutral_mass, len(cluster)))
+        for member in cluster:
+            self.write("\t%s\n" % member.id)
+        self.write('\n')
