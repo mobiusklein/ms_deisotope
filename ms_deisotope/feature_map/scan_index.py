@@ -11,8 +11,7 @@ class MSRecordBase(Base):
         self.scan_time = scan_time
         self.drift_time = drift_time
         self._extra_keys = kwargs.keys()
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.__dict__.update(kwargs)
 
     def __getitem__(self, key):
         return getattr(self, key)
