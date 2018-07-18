@@ -1054,6 +1054,10 @@ class Scan(ScanBase):
             self._precursor_information = self.source._precursor_information(self._data)
         return self._precursor_information
 
+    @precursor_information.setter
+    def precursor_information(self, value):
+        self._precursor_information = value
+
     @property
     def activation(self):
         if self.ms_level < 2:
@@ -1733,6 +1737,17 @@ class PrecursorInformation(object):
     @property
     def product(self):
         return self.source.get_scan_by_id(self.product_scan_id)
+
+    def copy(self):
+        dup = self.__class__(
+            self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source,
+            self.extracted_neutral_mass, self.extracted_charge, self.extracted_intensity,
+            self.peak, self.extracted_peak, self.defaulted, self.orphan,
+            self.product_scan_id, self.annotations)
+        return dup
+
+    def clone(self):
+        return self.copy()
 
 
 class ProcessedScan(ScanBase):
