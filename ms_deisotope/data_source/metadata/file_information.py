@@ -40,8 +40,18 @@ def __generate_list_code():
                 term_cls_name="FileContent")
 
 
+id_formats = []
+
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('native spectrum identifier format',
+#             "id_formats", term_cls_name="IDFormat", writer=cog.out)
+# ]]]
 id_formats = [
     IDFormat(u'Agilent MassHunter nativeID format', u'MS:1001508', u'Native format defined by scanId=xsd:nonNegativeInteger.',
+             'native spectrum identifier format', [u'native spectrum identifier format']),
+    IDFormat(u'Shimadzu Biotech QTOF nativeID format', u'MS:1002898', u'Native format defined by scan=xsd:nonNegativeInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
     IDFormat(u'spectrum from database string nativeID format', u'MS:1001532', u'Native format defined by databasekey=xsd:string.',
              'native spectrum identifier format', [u'native spectrum identifier format', u'spectra data details', u'search input details']),
@@ -49,8 +59,7 @@ id_formats = [
              'native spectrum identifier format', [u'native spectrum identifier format', u'spectra data details', u'search input details']),
     IDFormat(u'Bruker U2 nativeID format', u'MS:1000823', u'Native format defined by declaration=xsd:nonNegativeInteger collection=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
-    IDFormat(u'no nativeID format', u'MS:1000824',
-             u'No nativeID format indicates that the file tagged with this term does not contain spectra that can have a nativeID format.',
+    IDFormat(u'no nativeID format', u'MS:1000824', u'No nativeID format indicates that the file tagged with this term does not contain spectra that can have a nativeID format.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
     IDFormat(u'Mascot query number', u'MS:1001528', u'Native format defined by query=xsd:nonNegativeInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format', u'spectrum identification result details']),
@@ -68,8 +77,7 @@ id_formats = [
              'native spectrum identifier format', [u'native spectrum identifier format']),
     IDFormat(u'Thermo nativeID format', u'MS:1000768', u'Native format defined by controllerType=xsd:nonNegativeInteger controllerNumber=xsd:positiveInteger scan=xsd:positiveInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
-    IDFormat(u'Waters nativeID format', u'MS:1000769',
-             u'Native format defined by function=xsd:positiveInteger process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
+    IDFormat(u'Waters nativeID format', u'MS:1000769', u'Native format defined by function=xsd:positiveInteger process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
     IDFormat(u'Scaffold nativeID format', u'MS:1001562', u'Scaffold native ID format.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
@@ -92,12 +100,25 @@ id_formats = [
     IDFormat(u'SCIEX TOF/TOF T2D nativeID format', u'MS:1001559', u'Native format defined by file=xsd:IDREF.',
              'native spectrum identifier format', [u'native spectrum identifier format']),
 ]
+# [[[end]]]
 
 
+file_formats = []
+
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('mass spectrometer file format',
+#             "file_formats", term_cls_name="FileFormat", writer=cog.out)
+# ]]]
 file_formats = [
     FileFormat(u'Agilent MassHunter format', u'MS:1001509', u'A data file format found in an Agilent MassHunter directory which contains raw data acquired by an Agilent mass spectrometer.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'msalign format', u'MS:1002899', u'msalign file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'SCiLS Lab format', u'MS:1002385', u'SCiLS Lab file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'chrom format', u'MS:1002966', u'The Lipid Data Analyzer native chrom format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'Mascot MGF format', u'MS:1001062', u'Mascot MGF file format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
@@ -107,7 +128,7 @@ file_formats = [
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'Proteinscape spectra', u'MS:1001527', u'Spectra from Bruker/Protagen Proteinscape database.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
-    FileFormat(u'MS2 format', u'MS:1001466', u'MS2 file format for MS2 spectral data." [PMID:15317041, DOI:10.1002/rcm.1603', 'mass spectrometer file format', [
+    FileFormat(u'MS2 format', u'MS:1001466', u'MS2 file format for MS2 spectral data." [PMID:15317041, DOI:10.1002/rcm.1603',       'mass spectrometer file format', [
                u'mass spectrometer file format', u'file format']),
     FileFormat(u'PerSeptive PKS format', u'MS:1001245', u'PerSeptive peak list file format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
@@ -119,7 +140,7 @@ file_formats = [
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'mz5 format', u'MS:1001881', u'mz5 file format, modelled after mzML.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
-    FileFormat(u'mzMLb format', u'MS:1002838', u'mzMLb file format, mzML encapsulated within HDF5." [PSI:PI', 'mass spectrometer file format', [
+    FileFormat(u'mzMLb format', u'MS:1002838', u'mzMLb file format, mzML encapsulated within HDF5." [PSI:PI',       'mass spectrometer file format', [
                u'mass spectrometer file format', u'file format']),
     FileFormat(u'UIMF format', u'MS:1002531', u'SQLite-based file format created at Pacific Northwest National Lab. It stores an intermediate analysis of ion-mobility mass spectrometry data.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
@@ -127,13 +148,15 @@ file_formats = [
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'Waters raw format', u'MS:1000526', u'Waters data file format found in a Waters RAW directory, generated from an MS acquisition.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
+    FileFormat(u'feature format', u'MS:1002900', u'TopFD feature file format.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'Bruker Container format', u'MS:1002302', u'Bruker Container raw file format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
-    FileFormat(u'Phenyx XML format', u'MS:1001463', u'Phenyx open XML file format.', 'mass spectrometer file format', [
+    FileFormat(u'Phenyx XML format', u'MS:1001463', u'Phenyx open XML file format.',       'mass spectrometer file format', [
                u'mass spectrometer file format', u'intermediate analysis format', u'file format']),
     FileFormat(u'mzML format', u'MS:1000584', u'Proteomics Standards Inititative mzML file format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
-    FileFormat(u'Bioworks SRF format', u'MS:1000742', u'Thermo Finnigan SRF file format.', 'mass spectrometer file format', [
+    FileFormat(u'Bioworks SRF format', u'MS:1000742', u'Thermo Finnigan SRF file format.',       'mass spectrometer file format', [
                u'mass spectrometer file format', u'intermediate analysis format', u'file format']),
     FileFormat(u'parameter file', u'MS:1000740', u'Parameter file used to configure the acquisition of raw data on the instrument.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
@@ -155,19 +178,28 @@ file_formats = [
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'ProteinLynx Global Server mass spectrum XML format', u'MS:1000614', u'Peak list file format used by ProteinLynx Global Server.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
-    FileFormat(u'text format', u'MS:1001369', u'Simple text file format of \\"m/z [intensity]\\" values for a PMF (or single MS2) search.', 'mass spectrometer file format', [
-               u'mass spectrometer file format', u'file format']),
+    FileFormat(u'text format', u'MS:1001369', u'Simple text file format of \\"m/z [intensity]\\" values for a PMF (or single MS2) search.',
+               'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'SCIEX TOF/TOF T2D format', u'MS:1001560', u'Applied Biosystems/MDS Analytical Technologies TOF/TOF instrument export format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
-    FileFormat(u'MS1 format', u'MS:1002597', u'MS1 file format for MS1 spectral data." [PMID:15317041', 'mass spectrometer file format', [
+    FileFormat(u'MS1 format', u'MS:1002597', u'MS1 file format for MS1 spectral data." [PMID:15317041',       'mass spectrometer file format', [
                u'mass spectrometer file format', u'file format']),
     FileFormat(u'Bruker U2 format', u'MS:1000816', u'Bruker HyStar U2 file format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
     FileFormat(u'Bruker BAF format', u'MS:1000815', u'Bruker BAF raw file format.',
                'mass spectrometer file format', [u'mass spectrometer file format', u'file format']),
 ]
+# [[[end]]]
 
 
+content_keys = []
+
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('data file content',
+#             "content_keys", term_cls_name="FileContent", writer=cog.out)
+# ]]]
 content_keys = [
     FileContent(u'electromagnetic radiation spectrum', u'MS:1000804', u'A plot of the relative intensity of electromagnetic radiation as a function of the wavelength.',
                 'data file content', [u'data file content', u'spectrum type']),
@@ -226,6 +258,7 @@ content_keys = [
     FileContent(u'e/2 mass spectrum', u'MS:1000328', u'A mass spectrum obtained using a sector mass spectrometer in which the electric sector field E is set to half the value required to transmit the main ion-beam. This spectrum records the signal from doubly charged product ions of charge-stripping reactions.',
                 'data file content', [u'mass spectrum', u'data file content', u'spectrum type']),
 ]
+# [[[end]]]
 
 
 def find(collection, key):

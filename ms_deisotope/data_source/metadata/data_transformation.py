@@ -22,11 +22,19 @@ def __generate_list_code():
     render_list('data transformation', term_cls_name="DataTransformation")
 
 
+data_transformations = []
+
+
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('data transformation', term_cls_name="DataTransformation", writer=cog.out)
+# ]]]
 data_transformations = [
-    DataTransformation(u'file format conversion', u'MS:1000530',
-                       u'Conversion of one file format to another.', 'data transformation', [u'data transformation']),
-    DataTransformation(u'data processing action', u'MS:1000543',
-                       u'Data processing attribute used to describe the type of data processing performed on the data file.', 'data transformation', [u'data transformation']),
+    DataTransformation(u'file format conversion', u'MS:1000530', u'Conversion of one file format to another.',
+                       'data transformation', [u'data transformation']),
+    DataTransformation(u'data processing action', u'MS:1000543', u'Data processing attribute used to describe the type of data processing performed on the data file.',
+                       'data transformation', [u'data transformation']),
     DataTransformation(u'Conversion to mzML', u'MS:1000544', u'Conversion of a file format to Proteomics Standards Initiative mzML file format.',
                        'data transformation', [u'file format conversion', u'data transformation']),
     DataTransformation(u'Conversion to mzMLb', u'MS:1002839', u'Conversion of a file format to Proteomics Standards Initiative mzMLb file format.',
@@ -69,7 +77,7 @@ data_transformations = [
                        'data transformation', [u'baseline reduction', u'data processing action', u'data transformation']),
     DataTransformation(u'median baseline reduction', u'MS:1001996', u'The spectrum that will be baseline subtracted is divided into a number of segments.',
                        'data transformation', [u'baseline reduction', u'data processing action', u'data transformation']),
-    DataTransformation(u'wavelet transformation smoothing', u'MS:1001997', u'The random noise is removed by using the undecimated wavelet transform." [DOI:10.1093/bioinformatics/btl355', 'data transformation', [
+    DataTransformation(u'wavelet transformation smoothing', u'MS:1001997', u'The random noise is removed by using the undecimated wavelet transform." [DOI:10.1093/bioinformatics/btl355',       'data transformation', [
                        u'smoothing', u'data processing action', u'data transformation']),
     DataTransformation(u'Gaussian smoothing', u'MS:1000784', u'Reduces intensity spikes by convolving the data with a one-dimensional Gaussian function.',
                        'data transformation', [u'smoothing', u'data processing action', u'data transformation']),
@@ -89,9 +97,10 @@ data_transformations = [
                        'data transformation', [u'intensity normalization', u'data processing action', u'data transformation']),
     DataTransformation(u'below precursor intensity dominance charge state calculation', u'MS:1000779', u'Infers charge state as single or ambiguously multiple by determining the fraction of intensity below the precursor m/z.',
                        'data transformation', [u'charge state calculation', u'data processing action', u'data transformation']),
-    DataTransformation(u'sophisticated numerical annotation procedure', u'MS:1001998', u'It searches for known patterns in the measured spectrum." [DOI:10.1021/ac951158i', 'data transformation', [
+    DataTransformation(u'sophisticated numerical annotation procedure', u'MS:1001998', u'It searches for known patterns in the measured spectrum." [DOI:10.1021/ac951158i',       'data transformation', [
                        u'area peak picking', u'peak picking', u'data processing action', u'data transformation']),
 ]
+# [[[end]]]
 
 
 data_transformations_by_name = {c.name: c for c in data_transformations}

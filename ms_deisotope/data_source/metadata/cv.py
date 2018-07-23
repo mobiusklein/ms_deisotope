@@ -143,9 +143,9 @@ def type_path(term, seed):  # pragma: no cover
     return _unique_list(path)
 
 
-def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pragma: no cover
-    if stream is None:
-        stream = sys.stdout
+def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pragma: no cover
+    if writer is None:
+        writer = sys.stdout.write
     component_type_list = [seed]
     i = 0
     seen = set()
@@ -155,7 +155,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pra
     template = (
         "    %s(%r, %r, %r,"
         "       %r, %r), \n")
-    stream.write("%s = [\n" % (list_name,))
+    writer("%s = [\n" % (list_name,))
     while i < len(component_type_list):
         component_type = component_type_list[i]
         i += 1
@@ -163,9 +163,9 @@ def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pra
             if term.name in seen:
                 continue
             seen.add(term.name)
-            stream.write(template % (
+            writer(template % (
                 term_cls_name, term.name, term.id, clean_definition(term.definition),
                 component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
-    stream.write("]\n")
+    writer("]\n")
