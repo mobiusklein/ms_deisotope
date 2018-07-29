@@ -633,8 +633,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         return target_peaks
 
     def _fit_all_charge_states(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=3,
-                               right_search_limit=3,
-                               recalculate_starting_peak=True, charge_carrier=PROTON,
+                               right_search_limit=3, recalculate_starting_peak=True, charge_carrier=PROTON,
                                truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
         """Carry out the fitting process for `peak`.
 
@@ -736,6 +735,30 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         except ValueError:
             return None
 
+    def _make_deconvoluted_peak(self, fit, charge_carrier):
+        score, charge, eid, tid = fit
+        rep_eid = drop_placeholders(eid)
+        total_abundance = sum(p.intensity for p in rep_eid)
+        monoisotopic_mass = neutral_mass(
+            tid.monoisotopic_mz, charge, charge_carrier)
+        reference_peak = first_peak(eid)
+
+        dpeak = DeconvolutedPeak(
+            neutral_mass=monoisotopic_mass, intensity=total_abundance, charge=charge,
+            signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
+            index=reference_peak.index,
+            full_width_at_half_max=mean(
+                p.full_width_at_half_max for p in rep_eid),
+            a_to_a2_ratio=a_to_a2_ratio(tid),
+            most_abundant_mass=neutral_mass(
+                most_abundant_mz(eid), charge),
+            average_mass=neutral_mass(average_mz(eid), charge),
+            score=score,
+            envelope=[(p.mz, p.intensity) for p in eid],
+            mz=tid.monoisotopic_mz, fit=fit,
+            area=sum(e.area for e in eid))
+        return dpeak
+
     def deconvolute_peak(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                          left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
                          truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
@@ -780,28 +803,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             ignore_below=ignore_below)
         if fit is None:
             return
-        score, charge, eid, tid = fit
-        rep_eid = drop_placeholders(eid)
-        total_abundance = sum(p.intensity for p in rep_eid)
-        monoisotopic_mass = neutral_mass(
-            tid.monoisotopic_mz, charge, charge_carrier=charge_carrier)
-        reference_peak = first_peak(eid)
-
-        dpeak = DeconvolutedPeak(
-            neutral_mass=monoisotopic_mass, intensity=total_abundance, charge=charge,
-            signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
-            index=reference_peak.index,
-            full_width_at_half_max=mean(
-                p.full_width_at_half_max for p in rep_eid),
-            a_to_a2_ratio=a_to_a2_ratio(tid),
-            most_abundant_mass=neutral_mass(most_abundant_mz(eid), charge),
-            average_mass=neutral_mass(average_mz(eid), charge),
-            score=score,
-            envelope=[(p.mz, p.intensity) for p in eid],
-            mz=tid.monoisotopic_mz,
-            fit=fit,
-            area=sum(e.area for e in eid))
-
+        tid = fit.theoretical
+        dpeak = self._make_deconvoluted_peak(fit, charge_carrier)
         self._deconvoluted_peaks.append(dpeak)
         if self.use_subtraction:
             self.subtraction(tid, error_tolerance)
@@ -966,16 +969,6 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
 
 
 class MultiAveragineDeconvoluterBase(DeconvoluterBase):
-
-    def fit_theoretical_distribution(self, peak, error_tolerance, charge, averagine, charge_carrier=PROTON,
-                                     truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
-        tid = averagine.isotopic_cluster(
-            peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
-        eid = self.match_theoretical_isotopic_distribution(
-            tid, error_tolerance=error_tolerance)
-        self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer(self.peaklist, eid, tid)
-        return IsotopicFitRecord(peak, score, charge, tid, eid)
 
     def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON,
                               truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
@@ -1229,28 +1222,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 rep_eid = drop_placeholders(eid)
                 if len(rep_eid) == 0:
                     continue
-                total_abundance = sum(p.intensity for p in rep_eid)
-                monoisotopic_mass = neutral_mass(
-                    tid.monoisotopic_mz, charge, charge_carrier)
-                reference_peak = first_peak(eid)
-
-                dpeak = DeconvolutedPeak(
-                    neutral_mass=monoisotopic_mass, intensity=total_abundance, charge=charge,
-                    signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
-                    index=reference_peak.index,
-                    full_width_at_half_max=mean(
-                        p.full_width_at_half_max for p in rep_eid),
-                    a_to_a2_ratio=a_to_a2_ratio(tid),
-                    most_abundant_mass=neutral_mass(
-                        most_abundant_mz(eid), charge),
-                    average_mass=neutral_mass(average_mz(eid), charge),
-                    score=score,
-                    envelope=[(p.mz, p.intensity) for p in eid],
-                    mz=tid.monoisotopic_mz, fit=fit,
-                    area=sum(e.area for e in eid))
-
+                dpeak = self._make_deconvoluted_peak(fit, charge_carrier)
                 self.peak_dependency_network.add_solution(fit, dpeak)
-
                 self._deconvoluted_peaks.append(dpeak)
                 i += 1
                 if self.use_subtraction:
