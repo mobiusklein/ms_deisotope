@@ -1,4 +1,4 @@
-from .cv import Term, render_list
+from .cv import Term
 
 
 class ActivationInformation(object):
@@ -131,12 +131,6 @@ class DissociationMethod(Term):
         return "supplemental" in self.name
 
 
-def __generate_list_code():
-    '''Prints the code to generate these static lists
-    '''
-    render_list('dissociation method', term_cls_name="DissociationMethod")
-
-
 dissociation_methods = []
 
 
@@ -244,5 +238,9 @@ dissociation_methods_map.update({
 ActivationInformation.dissociation_methods = dissociation_methods_map
 
 
-if __name__ == '__main__':
-    __generate_list_code()
+__all__ = [
+    "ActivationInformation", "MultipleActivationInformation", "DissociationMethod",
+    "dissociation_methods", "UnknownDissociation", "dissociation_methods_map",
+    "CID", "HCD", "ETD", "ECD", "supplemental_energy", "supplemental_term_map",
+    "energy_terms"
+]

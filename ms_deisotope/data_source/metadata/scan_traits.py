@@ -164,3 +164,9 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
 
     def __ne__(self, other):
         return not (self == other)
+
+
+__all__ = [
+    "IsolationWindow", "ScanAcquisitionInformation", "ScanEventInformation",
+    "ScanWindow"
+]

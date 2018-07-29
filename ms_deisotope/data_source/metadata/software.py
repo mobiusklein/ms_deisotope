@@ -1,13 +1,6 @@
 from .cv import Term, render_list
 
 
-def __generate_list_code():
-    '''Prints the code to generate these static lists
-    '''
-    render_list('software', list_name='software_names',
-                term_cls_name="SoftwareName")
-
-
 class SoftwareName(Term):
     pass
 
@@ -721,5 +714,7 @@ def software_name(name):
         return SoftwareName(name, name, name, name, [name])
 
 
-if __name__ == '__main__':
-    __generate_list_code()
+__all__ = [
+    "SoftwareName", "Software", "software_names",
+    "software_name"
+]

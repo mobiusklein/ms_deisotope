@@ -336,5 +336,8 @@ class InstrumentInformation(object):
             self=self)
 
 
-if __name__ == '__main__':
-    __generate_list_code()
+__all__ = [
+    "InstrumentInformation", "ComponentGroup", "Component",
+    "all_components_by_name", "ionization_types", "detector_types",
+    "analyzer_types", "inlet_types", "component"
+]

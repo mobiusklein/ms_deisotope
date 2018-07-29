@@ -650,5 +650,9 @@ class SourceFile(object):
                               parameters=self.parameters.copy())
 
 
-if __name__ == '__main__':
-    __generate_list_code()
+__all__ = [
+    "IDFormat", "FileFormat", "FileContent",
+    "id_formats", "file_formats", "content_keys",
+    "id_format", "file_format", "content_key",
+    "FileInformation", "SourceFile"
+]

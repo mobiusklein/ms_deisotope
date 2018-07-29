@@ -2,8 +2,8 @@ from collections import OrderedDict
 
 from six import string_types as basestring
 
-from .cv import Term, render_list
-from .software import Software, SoftwareName
+from .cv import Term
+# from .software import Software, SoftwareName
 
 
 class DataTransformation(Term):
@@ -14,12 +14,6 @@ class DataTransformation(Term):
     vocabulary identifier.
     """
     pass
-
-
-def __generate_list_code():
-    '''Prints the code to generate these static lists
-    '''
-    render_list('data transformation', term_cls_name="DataTransformation")
 
 
 data_transformations = []
@@ -173,5 +167,7 @@ class DataProcessingInformation(object):
         return template.format(self=self)
 
 
-if __name__ == '__main__':
-    __generate_list_code()
+__all__ = [
+    "DataTransformation", "data_transformations", 'data_transformation',
+    "ProcessingMethod", "DataProcessingInformation"
+]

@@ -32,8 +32,9 @@ from .metadata.activation import (
     dissociation_methods_map as dissociation_methods,
     HCD, CID, ETD, ECD, UnknownDissociation)
 
+
 try:
-    from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors
+    from ..utils import draw_raw, annotate_scan as _annotate_precursors
     has_plot = True
 except Exception:
     has_plot = False
@@ -1846,3 +1847,25 @@ class IteratorFacadeBase(DataAccessProxy, ScanIterator):  # pragma: no cover
 
     def next(self):
         return self._transform(next(self._producer))
+
+
+__all__ = [
+    "Scan", "ScanBunch", "ProcessedScan", "WrappedScan",
+    "AveragedScan", "PrecursorInformation", "RandomAccessScanSource",
+    "ScanDataSource", "ScanIterator", "RawDataArrays",
+
+    "ScanAcquisitionInformation", "ScanEventInformation", "ScanWindow",
+    "IsolationWindow",
+
+    "ChargeNotProvided", "DEFAULT_CHARGE_WHEN_NOT_RESOLVED",
+
+    "ActivationInformation", "MultipleActivationInformation", "dissociation_methods",
+    "HCD", "CID", "ETD", "ECD", "UnknownDissociation",
+
+    "FileInformation", "SourceFile",
+
+    "Component", "component", "all_components", "ComponentGroup",
+    "InstrumentInformation",
+
+
+]
