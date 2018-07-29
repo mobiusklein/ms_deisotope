@@ -6,6 +6,7 @@ omit =
     */interval_viz.py
     */output/db.py
     */tools/*
+    ms_deisotope/clustering/peak_clustering.py
 
 [report]
 # Regexes for lines to exclude from consideration

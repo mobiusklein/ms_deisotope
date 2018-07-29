@@ -445,6 +445,13 @@ class DeconvoluterBase(Base):
                     self._find_previous_putative_peak(prev_peak_mz, charge, step - 1, tolerance))
         return candidates
 
+    def _check_fit(self, fit):
+        if len(drop_placeholders(fit.experimental)) == 1 and fit.charge > 1:
+            return False
+        if self.scorer.reject(fit):
+            return False
+        return True
+
     def __repr__(self):
         type_name = self.__class__.__name__
         return "%s(peaklist=%s)" % (type_name, self.peaklist)
@@ -526,9 +533,7 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
                 peak, error_tolerance, charge, charge_carrier, truncate_after,
                 ignore_below)
             fit.missed_peaks = count_placeholders(fit.experimental)
-            if len(drop_placeholders(fit.experimental)) == 1 and fit.charge > 1:
-                continue
-            if self.scorer.reject(fit):
+            if not self._check_fit(fit):
                 continue
             results.append(fit)
         return set(results)
@@ -982,9 +987,7 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                     truncate_after=truncate_after, ignore_below=ignore_below)
                 fit.missed_peaks = count_placeholders(fit.experimental)
                 fit.data = averagine
-                if len(drop_placeholders(fit.experimental)) == 1 and fit.charge > 1:
-                    continue
-                if self.scorer.reject(fit):
+                if not self._check_fit(fit):
                     continue
                 results.append(fit)
         return set(results)
@@ -1534,6 +1537,35 @@ class CompositionListDeconvoluterBase(object):
         fit.missed_peaks = missed_peaks
         return fit
 
+    def _make_deconvoluted_peak_solution(self, fit, composition, charge_carrier):
+        eid = fit.experimental
+        tid = fit.theoretical
+        charge = fit.charge
+        rep_eid = drop_placeholders(eid)
+        total_abundance = sum(
+            p.intensity for p in eid if p.intensity > 1)
+
+        monoisotopic_mass = neutral_mass(
+            tid.monoisotopic_mz, charge, charge_carrier)
+        monoisotopic_mz = tid.monoisotopic_mz
+
+        reference_peak = first_peak(eid)
+        peak = DeconvolutedPeakSolution(
+            composition, fit,
+            monoisotopic_mass, total_abundance, charge,
+            signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
+            index=reference_peak.index,
+            full_width_at_half_max=mean(
+                p.full_width_at_half_max for p in rep_eid),
+            a_to_a2_ratio=a_to_a2_ratio(tid),
+            most_abundant_mass=neutral_mass(
+                most_abundant_mz(eid), charge),
+            average_mass=neutral_mass(average_mz(eid), charge),
+            score=fit.score,
+            envelope=[(p.mz, p.intensity) for p in rep_eid],
+            mz=monoisotopic_mz, area=sum(e.area for e in eid))
+        return peak
+
     def deconvolute_composition(self, composition, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                 charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
                                 mass_shift=None):
@@ -1569,32 +1601,12 @@ class CompositionListDeconvoluterBase(object):
             if not self.scorer.reject(fit):
                 eid = fit.experimental
                 tid = fit.theoretical
-
-                total_abundance = sum(
-                    p.intensity for p in eid if p.intensity > 1)
-
-                monoisotopic_mass = neutral_mass(
-                    tid.monoisotopic_mz, charge, charge_carrier)
-                monoisotopic_mz = tid.monoisotopic_mz
-
-                reference_peak = first_peak(eid)
                 rep_eid = drop_placeholders(eid)
                 if len(rep_eid) < 2 or len(rep_eid) < len(tid) / 2. or len(rep_eid) == 1 and fit.charge > 1:
                     continue
-                peak = DeconvolutedPeakSolution(
-                    composition, fit,
-                    monoisotopic_mass, total_abundance, charge,
-                    signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
-                    index=reference_peak.index,
-                    full_width_at_half_max=mean(
-                        p.full_width_at_half_max for p in rep_eid),
-                    a_to_a2_ratio=a_to_a2_ratio(tid),
-                    most_abundant_mass=neutral_mass(
-                        most_abundant_mz(eid), charge),
-                    average_mass=neutral_mass(average_mz(eid), charge),
-                    score=fit.score,
-                    envelope=[(p.mz, p.intensity) for p in rep_eid],
-                    mz=monoisotopic_mz, area=sum(e.area for e in eid))
+
+                peak = self._make_deconvoluted_peak_solution(
+                    fit, composition, charge_carrier)
 
                 self._deconvoluted_peaks.append(peak)
                 if self.use_subtraction:
@@ -1737,33 +1749,12 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                 eid = fit.experimental
                 tid = fit.theoretical
                 composition = fit.data
-                charge = fit.charge
-                score = fit.score
-
-                total_abundance = sum(
-                    p.intensity for p in eid if p.intensity > 1)
-                monoisotopic_mass = neutral_mass(
-                    tid.monoisotopic_mz, charge, charge_carrier)
-                monoisotopic_mz = tid.monoisotopic_mz
-                reference_peak = first_peak(eid)
                 rep_eid = drop_placeholders(eid)
                 if len(rep_eid) < 2 or len(rep_eid) < len(tid) / 2.:
                     continue
-                peak = DeconvolutedPeakSolution(
-                    composition, fit,
-                    monoisotopic_mass, total_abundance, charge,
-                    signal_to_noise=mean(p.signal_to_noise for p in rep_eid),
-                    index=reference_peak.index,
-                    full_width_at_half_max=mean(
-                        p.full_width_at_half_max for p in rep_eid),
-                    a_to_a2_ratio=a_to_a2_ratio(tid),
-                    most_abundant_mass=neutral_mass(
-                        most_abundant_mz(eid), charge),
-                    average_mass=neutral_mass(average_mz(eid), charge),
-                    score=score,
-                    envelope=[(p.mz, p.intensity) for p in eid],
-                    mz=monoisotopic_mz, area=sum(e.area for e in eid))
 
+                peak = self._make_deconvoluted_peak_solution(
+                    fit, composition, charge_carrier)
                 self._save_peak_solution(peak)
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
