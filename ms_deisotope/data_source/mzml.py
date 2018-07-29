@@ -11,6 +11,7 @@ from .common import (
     FileInformation, SourceFile, MultipleActivationInformation)
 from .metadata.activation import (
     supplemental_energy, energy_terms)
+from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .xml_reader import (
@@ -455,7 +456,7 @@ class _MzMLMetadataLoader(object):
         software_list = []
         for software in softwares.get('software', []):
             software_list.append(
-                data_transformation.Software(**software))
+                Software(**software))
         return software_list
 
     def data_processing(self):

@@ -48,8 +48,7 @@ class SpectrumDescription(Sequence):
             for d in self:
                 if i == d.get('name'):
                     return d.get('value')
-            else:
-                raise KeyError(i)
+            raise KeyError(i)
 
     def __len__(self):
         return len(self.descriptors)

@@ -32,7 +32,6 @@ from .metadata.activation import (
     dissociation_methods_map as dissociation_methods,
     HCD, CID, ETD, ECD, UnknownDissociation)
 
-
 try:
     from ..utils import draw_raw, annotate_scan as _annotate_precursors
     has_plot = True
