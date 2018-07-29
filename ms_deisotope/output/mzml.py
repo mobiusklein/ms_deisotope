@@ -1032,7 +1032,6 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 indexer.serialize(handle)
         except (IOError, OSError, AttributeError) as err:
             print(err)
-            pass
 
     def _make_scan(self, data):
         scan = super(ProcessedMzMLDeserializer, self)._make_scan(data)

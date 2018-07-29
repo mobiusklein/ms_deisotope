@@ -306,7 +306,7 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
     def get_scan_by_index(self, index):
         return self._scan_index_map[index]
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
         if scan_id is not None:
             index = self.get_scan_by_id(scan_id).index
         elif rt is not None:
@@ -317,5 +317,5 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
                 index -= 1
                 scan = self.get_scan_by_index(index)
 
-        self.make_iterator(self._make_scan_index_producer(index))
+        self.make_iterator(self._make_scan_index_producer(index), grouped=grouped)
         return self

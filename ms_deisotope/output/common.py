@@ -26,13 +26,13 @@ class ScanDeserializerBase(object):
     def next(self):
         raise NotImplementedError()
 
-    def get_scan_by_id(self, x):
+    def get_scan_by_id(self, scan_id):
         raise NotImplementedError()
 
-    def get_scan_by_time(self, x):
+    def get_scan_by_time(self, rt, require_ms1=False):
         raise NotImplementedError()
 
-    def get_scan_by_index(self, x):
+    def get_scan_by_index(self, index):
         raise NotImplementedError()
 
 
