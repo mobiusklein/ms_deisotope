@@ -999,15 +999,12 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         Scan
         """
         try:
-            return self._scan_cache[scan_id]
-        except KeyError:
-            try:
-                packed = super(ProcessedMzMLDeserializer, self)._make_scan(
-                    self._source.get_by_id(scan_id))
-                return packed
-            except AttributeError as ae:
-                raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
-                    ae, scan_id))
+            packed = super(ProcessedMzMLDeserializer, self)._make_scan(
+                self._source.get_by_id(scan_id))
+            return packed
+        except AttributeError as ae:
+            raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
+                ae, scan_id))
 
     @property
     def _index_file_name(self):
