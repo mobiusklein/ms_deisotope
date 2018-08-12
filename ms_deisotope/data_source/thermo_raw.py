@@ -1,5 +1,6 @@
 # pragma: no cover
 import re
+import warnings
 from collections import OrderedDict, defaultdict
 
 import logging
@@ -55,11 +56,17 @@ except ImportError as e:  # pragma: no cover
         raise ValueError(message)
 
     def register_dll(paths):
-        print("no-op: %s" % (message,))
+        try:
+            warnings.warn("no-op: %s" % (message,))
+        except Exception:
+            pass
         return False
 
     def determine_if_available():
-        print("no-op: %s" % (message,))
+        try:
+            warnings.warn("no-op: %s" % (message,))
+        except Exception:
+            pass
         return False
 
 try:
