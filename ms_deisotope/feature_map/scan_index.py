@@ -151,6 +151,10 @@ class ExtendedScanIndex(object):
         for product in bunch.products:
             self.msn_ids[product.id] = MSnRecord(**self._package_precursor_information(product))
 
+    def update_from_reader(self, reader):
+        for bunch in reader:
+            self.add_scan_bunch(bunch)
+
     def serialize(self, handle):
         mapping = {
             "ms1_ids": [(k, v.to_dict()) for k, v in self.ms1_ids.items()],
