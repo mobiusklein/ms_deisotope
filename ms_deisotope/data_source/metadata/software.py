@@ -390,6 +390,8 @@ software_names = [
                  'software', [u'analysis software', u'software']),
     SoftwareName(u'DeBunker', u'MS:1001973', u'DeBunker software.',
                  'software', [u'analysis software', u'software']),
+    SoftwareName(u'Proline', u'MS:1002981', u'The Proline software suite for mass spectrometry based proteomics.',
+                 'software', [u'analysis software', u'software']),
     SoftwareName(u'Scaffold', u'MS:1001561', u'Scaffold analysis software.',
                  'software', [u'analysis software', u'software']),
     SoftwareName(u'ProLuCID', u'MS:1002596', u'The SEQUEST-like sequence search engine ProLuCID, developed in the Yates Lab at the Scripps Research Institute.',
