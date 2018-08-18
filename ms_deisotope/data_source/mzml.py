@@ -294,7 +294,10 @@ class MzMLDataInterface(ScanDataSource):
             upper = struct.get("isolation window upper limit")
             lower = struct.get("isolation window lower limit")
             if upper is lower is None:
-                return None
+                if target is not None:
+                    return IsolationWindow.make_empty(target)
+                else:
+                    return None
             else:
                 target = (upper - lower) / 2 + lower
                 upper = upper - target

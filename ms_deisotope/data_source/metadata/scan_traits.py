@@ -6,7 +6,7 @@ def isclose(x, y, atol=1e-3):
 
 
 class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
-    """Describes the m/z interval a precursor ion was isolated from in the precursor scan
+    r"""Describes the m/z interval a precursor ion was isolated from in the precursor scan
 
     Attributes
     ----------
@@ -21,6 +21,10 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     upper_bound: float
         The m/z coordinate of the upper bound :attr:`target` + :attr:`upper`
     """
+
+    @classmethod
+    def make_empty(cls, point):
+        return cls(0, point, 0)
 
     @property
     def lower_bound(self):

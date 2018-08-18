@@ -329,13 +329,18 @@ class MzXMLDataInterface(ScanDataSource):
     def _isolation_window(self, scan):
         try:
             pinfo_dict = scan['precursorMz'][0]
-            width = float(pinfo_dict['windowWideness'])
             target = float(pinfo_dict['precursorMz'])
+            width = float(pinfo_dict['windowWideness'])
             lower = width / 2
             upper = width / 2
             return IsolationWindow(lower, target, upper)
         except KeyError:
-            return None
+            try:
+                pinfo_dict = scan['precursorMz'][0]
+                target = float(pinfo_dict['precursorMz'])
+                return IsolationWindow.make_empty(target)
+            except KeyError:
+                return None
 
     def _instrument_configuration(self, scan):
         try:
