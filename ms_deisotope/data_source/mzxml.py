@@ -373,10 +373,10 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
     def prebuild_byte_offset_file(path):
         return _MzXMLParser.prebuild_byte_offset_file(path)
 
-    def __init__(self, source_file, use_index=True, huge_tree=False, **kwargs):
+    def __init__(self, source_file, use_index=True, **kwargs):
         self.source_file = source_file
         self._source = _MzXMLParser(source_file, read_schema=True, iterative=True,
-                                    huge_tree=huge_tree, use_index=use_index)
+                                    huge_tree=True, use_index=use_index)
         self.initialize_scan_cache()
         self._use_index = use_index
         self._scan_index_lookup = None

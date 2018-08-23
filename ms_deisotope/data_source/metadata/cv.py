@@ -164,7 +164,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
                 continue
             seen.add(term.name)
             writer(template % (
-                term_cls_name, term.name, term.id, clean_definition(term.definition),
+                term_cls_name, term.name, term.id, clean_definition(term.get("def", '')),
                 component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
