@@ -23,6 +23,34 @@ class _MzMLParser(IndexSavingXML, mzml.MzML):
     # we do not care about chromatograms
     _indexed_tags = {'spectrum', }
 
+    def _handle_param(self, element, **kwargs):
+        try:
+            element.attrib["value"]
+        except KeyError:
+            element.attrib["value"] = ""
+        return super(_MzMLParser, self)._handle_param(element, **kwargs)
+
+    def _determine_array_dtype(self, info):
+        dtype = None
+        types = {'32-bit float': np.float32, '64-bit float': np.float64,
+                 '32-bit integer': np.int32, '64-bit integer': np.int64,
+                 'null-terminated ASCII string': np.uint8,
+                 }
+        for t, code in types.items():
+            if t in info:
+                dtype = code
+                del info[t]
+                break
+        # sometimes it's under 'name'
+        else:
+            if 'name' in info:
+                for t, code in types.items():
+                    if t in info['name']:
+                        dtype = code
+                        info['name'].remove(t)
+                        break
+        return dtype
+
 
 class MzMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the

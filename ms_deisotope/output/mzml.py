@@ -70,15 +70,16 @@ class SpectrumDescription(Sequence):
             base_peak = None
         descriptors.append({
             "name": "base peak m/z",
-            "value": base_peak.mz if base_peak else 0
+            "value": base_peak.mz if base_peak else 0,
         })
         descriptors.append({
             "name": "base peak intensity",
-            "value": base_peak.intensity if base_peak else 0
+            "value": base_peak.intensity if base_peak else 0,
+            "unit_name": writer.DEFAULT_INTENSITY_UNIT
         })
         descriptors.append({
             "name": "total ion current",
-            "value": sum(p.intensity for p in peak_list)
+            "value": sum(p.intensity for p in peak_list),
         })
         peaks_mz_order = sorted(peak_list, key=lambda x: x.mz)
         try:
@@ -108,11 +109,12 @@ class SpectrumDescription(Sequence):
         })
         descriptors.append({
             "name": "base peak intensity",
-            "value": arrays.intensity[base_peak_i] if base_peak_i else 0
+            "value": arrays.intensity[base_peak_i] if base_peak_i else 0,
+            "unit_name": writer.DEFAULT_INTENSITY_UNIT
         })
         descriptors.append({
             "name": "total ion current",
-            "value": arrays.intensity.sum()
+            "value": arrays.intensity.sum(),
         })
         try:
             descriptors.append({
@@ -196,6 +198,7 @@ class MzMLSerializer(ScanSerializerBase):
             data_encoding = {
                 writer.MZ_ARRAY: np.float64,
                 writer.INTENSITY_ARRAY: np.float32,
+                writer.CHARGE_ARRAY: np.int32,
             }
         if writer is None:
             raise ImportError(
