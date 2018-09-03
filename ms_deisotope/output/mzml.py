@@ -335,7 +335,8 @@ class MzMLSerializer(ScanSerializerBase):
             "id": source_file.id,
             "params": []
         }
-        unwrapped['params'].extend(source_file.parameters)
+        unwrapped['params'].extend([(getattr(key, 'accession', str(key)), value)
+                                    for key, value in source_file.parameters.items()])
         if source_file.id_format:
             unwrapped['params'].append(str(source_file.id_format))
         if source_file.file_format:

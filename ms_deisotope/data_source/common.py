@@ -1649,7 +1649,7 @@ class PrecursorInformation(object):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
             self.mz,
             self.extracted_mz if self.extracted_neutral_mass != 0. else 0.,
-            self.intensity, self.extracted_intensity or 0., self.charge,
+            self.intensity or 0., self.extracted_intensity or 0., self.charge,
             self.extracted_charge or 0., self.precursor_scan_id)
 
     def __reduce__(self):

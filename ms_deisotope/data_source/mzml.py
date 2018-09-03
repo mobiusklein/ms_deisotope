@@ -34,8 +34,7 @@ class _MzMLParser(IndexSavingXML, mzml.MzML):
         dtype = None
         types = {'32-bit float': np.float32, '64-bit float': np.float64,
                  '32-bit integer': np.int32, '64-bit integer': np.int64,
-                 'null-terminated ASCII string': np.uint8,
-                 }
+                 'null-terminated ASCII string': np.uint8}
         for t, code in types.items():
             if t in info:
                 dtype = code
