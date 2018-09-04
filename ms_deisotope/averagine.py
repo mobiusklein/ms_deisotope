@@ -7,19 +7,9 @@ from brainpy import (
 
 from brainpy.composition import (
     parse_formula,
-    SimpleComposition)
+    PyComposition)
 
 from .utils import dict_proxy
-
-
-def shift_isotopic_pattern(mz, cluster):
-    first_peak = cluster[0]
-    for peak in cluster[1:]:
-        delta = (peak.mz - first_peak.mz)
-        peak.mz = mz + delta
-
-    cluster[0].mz = mz
-    return cluster
 
 
 class TheoreticalIsotopicPattern(object):
@@ -421,8 +411,6 @@ class AveragineCache(object):
         else:
             key_mz = round(mz / self.cache_truncation) * self.cache_truncation
         if (key_mz, charge, charge_carrier) in self.backend:
-            # return shift_isotopic_pattern(
-            #     mz, [p.clone() for p in self.backend[key_mz, charge, charge_carrier]])
             return self.backend[key_mz, charge, charge_carrier].clone().shift(mz)
         else:
             tid = self.averagine.isotopic_cluster(

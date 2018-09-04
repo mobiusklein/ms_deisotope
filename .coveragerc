@@ -3,10 +3,10 @@ plugins = Cython.Coverage
 omit = 
     */_vendor/*
     */feature_map/*
-    */peak_set_averaging/*
     */interval_viz.py
     */output/db.py
     */tools/*
+    ms_deisotope/clustering/peak_clustering.py
 
 [report]
 # Regexes for lines to exclude from consideration

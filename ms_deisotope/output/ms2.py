@@ -1,3 +1,5 @@
+# pragma: no cover
+
 from ms_deisotope import mass_charge_ratio
 
 from .text import TextScanSerializerBase

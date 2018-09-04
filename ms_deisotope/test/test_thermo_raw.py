@@ -16,6 +16,9 @@ missing_reader_dll = not determine_if_available()
 class TestThermoRawLoaderScanBehavior(unittest.TestCase):
     path = datafile("small.RAW")
 
+    reference_mzml = datafile("small.mzML")
+    reference_mgf = datafile("small.mgf")
+
     @property
     def reader(self):
         return infer_type.MSFileLoader(self.path)
@@ -69,6 +72,24 @@ class TestThermoRawLoaderScanBehavior(unittest.TestCase):
         x = reader[-1]
         y = reader.get_scan_by_time(float('inf'))
         assert x == y
+
+    def test_compat(self):
+        raw_reader = self.reader
+        mzml_reader = infer_type.MSFileLoader(self.reference_mzml)
+        mgf_reader = infer_type.MSFileLoader(self.reference_mgf)
+
+        mgf_scan = next(mgf_reader)
+        mzml_scan = mzml_reader[2]
+        raw_scan = raw_reader[2]
+
+        self.assertEqual(mzml_scan, raw_scan)
+
+        mgf_scan.pick_peaks()
+        raw_scan.pick_peaks()
+        self.assertEqual(raw_scan.peak_set, mgf_scan.peak_set)
+
+        self.assertEqual(raw_scan.precursor_information.precursor,
+                         mzml_scan.precursor_information.precursor)
 
 
 if __name__ == '__main__':

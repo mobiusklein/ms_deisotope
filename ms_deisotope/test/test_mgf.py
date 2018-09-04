@@ -15,6 +15,10 @@ class TestMGFLoaderScanBehavior(unittest.TestCase):
     def test_index(self):
         reader = self.reader
         assert len(reader.index) == 287
+        scan = reader.get_scan_by_id(
+            '20150710_3um_AGP_001.1700581.1700581.4 File:"20150710_3um_AGP_001.d", NativeID:"scanId=1700581"')
+        assert scan.id ==\
+            '20150710_3um_AGP_001.1700581.1700581.4 File:"20150710_3um_AGP_001.d", NativeID:"scanId=1700581"'
 
     def test_scan_interface(self):
         reader = self.reader

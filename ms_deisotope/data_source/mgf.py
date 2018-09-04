@@ -205,7 +205,7 @@ def index_mgf(path, encoding='latin-1', read_size=1000000):
 
 class MGFLoader(MGFInterface, ScanIterator):
 
-    def __init__(self, source_file, encoding='latin-1'):
+    def __init__(self, source_file, encoding='utf-8'):
         self.source_file = source_file
         self.encoding = encoding
         self._index = self._index_file()
@@ -223,6 +223,16 @@ class MGFLoader(MGFInterface, ScanIterator):
         except TypeError:
             index = OrderedDict()
         return index
+
+    def get_scan_by_id(self, scan_id):
+        try:
+            return self.scan_cache[scan_id]
+        except KeyError:
+            pass
+        scan = self.source.get_spectrum(scan_id)
+        scan = self._make_scan(scan)
+        self.scan_cache[scan_id] = scan
+        return scan
 
     @property
     def source(self):

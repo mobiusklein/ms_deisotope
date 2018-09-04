@@ -11,8 +11,7 @@ class MSRecordBase(Base):
         self.scan_time = scan_time
         self.drift_time = drift_time
         self._extra_keys = kwargs.keys()
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.__dict__.update(kwargs)
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -151,6 +150,10 @@ class ExtendedScanIndex(object):
         self.ms1_ids[bunch.precursor.id] = MS1Record(**package)
         for product in bunch.products:
             self.msn_ids[product.id] = MSnRecord(**self._package_precursor_information(product))
+
+    def update_from_reader(self, reader):
+        for bunch in reader:
+            self.add_scan_bunch(bunch)
 
     def serialize(self, handle):
         mapping = {

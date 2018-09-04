@@ -11,6 +11,7 @@ from .common import (
     FileInformation, SourceFile, MultipleActivationInformation)
 from .metadata.activation import (
     supplemental_energy, energy_terms)
+from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .xml_reader import (
@@ -18,10 +19,36 @@ from .xml_reader import (
     get_tag_attributes, _find_section, in_minutes)
 
 
-class _MzMLParser(mzml.MzML, IndexSavingXML):
+class _MzMLParser(IndexSavingXML, mzml.MzML):
     # we do not care about chromatograms
     _indexed_tags = {'spectrum', }
-    pass
+
+    def _handle_param(self, element, **kwargs):
+        try:
+            element.attrib["value"]
+        except KeyError:
+            element.attrib["value"] = ""
+        return super(_MzMLParser, self)._handle_param(element, **kwargs)
+
+    def _determine_array_dtype(self, info):
+        dtype = None
+        types = {'32-bit float': np.float32, '64-bit float': np.float64,
+                 '32-bit integer': np.int32, '64-bit integer': np.int64,
+                 'null-terminated ASCII string': np.uint8}
+        for t, code in types.items():
+            if t in info:
+                dtype = code
+                del info[t]
+                break
+        # sometimes it's under 'name'
+        else:
+            if 'name' in info:
+                for t, code in types.items():
+                    if t in info['name']:
+                        dtype = code
+                        info['name'].remove(t)
+                        break
+        return dtype
 
 
 class MzMLDataInterface(ScanDataSource):
@@ -294,7 +321,10 @@ class MzMLDataInterface(ScanDataSource):
             upper = struct.get("isolation window upper limit")
             lower = struct.get("isolation window lower limit")
             if upper is lower is None:
-                return None
+                if target is not None:
+                    return IsolationWindow.make_empty(target)
+                else:
+                    return None
             else:
                 target = (upper - lower) / 2 + lower
                 upper = upper - target
@@ -322,21 +352,18 @@ class MzMLDataInterface(ScanDataSource):
         scan_info['combination'] = combination
         scan_info_scan_list = []
         for scan in scan_list_struct.get("scan", []):
+            scan = scan.copy()
             struct = {}
-            try:
-                struct['start_time'] = scan['scan start time']
-            except KeyError:
-                struct['start_time'] = 0
-            try:
-                struct['drift_time'] = scan['ion mobility drift time']
-            except KeyError:
-                struct['drift_time'] = 0
+            struct['start_time'] = scan.pop('scan start time', 0)
+            struct['drift_time'] = scan.pop('ion mobility drift time', 0)
+            struct['injection_time'] = scan.pop("ion injection time", 0)
             windows = []
-            for window in scan.get("scanWindowList", {}).get("scanWindow", []):
+            for window in scan.pop("scanWindowList", {}).get("scanWindow", []):
                 windows.append(ScanWindow(
                     window['scan window lower limit'],
                     window['scan window upper limit']))
             struct['window_list'] = windows
+            struct['traits'] = scan
             scan_info_scan_list.append(ScanEventInformation(**struct))
         scan_info['scan_list'] = scan_info_scan_list
         return ScanAcquisitionInformation(**scan_info)
@@ -456,7 +483,7 @@ class _MzMLMetadataLoader(object):
         software_list = []
         for software in softwares.get('software', []):
             software_list.append(
-                data_transformation.Software(**software))
+                Software(**software))
         return software_list
 
     def data_processing(self):
@@ -503,10 +530,10 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def prebuild_byte_offset_file(path):
         return _MzMLParser.prebuild_byte_offset_file(path)
 
-    def __init__(self, source_file, use_index=True, huge_tree=False, **kwargs):
+    def __init__(self, source_file, use_index=True, **kwargs):
         self.source_file = source_file
         self._source = self._parser_cls(source_file, read_schema=True, iterative=True,
-                                        huge_tree=huge_tree, use_index=use_index)
+                                        huge_tree=True, use_index=use_index)
         self.initialize_scan_cache()
         self._use_index = use_index
         self._run_information = self._get_run_attributes()

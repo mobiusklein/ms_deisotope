@@ -13,7 +13,7 @@ from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until)
 
 
-class _MzXMLParser(mzxml.MzXML, IndexSavingXML):
+class _MzXMLParser(IndexSavingXML, mzxml.MzXML):
     pass
 
 
@@ -329,13 +329,18 @@ class MzXMLDataInterface(ScanDataSource):
     def _isolation_window(self, scan):
         try:
             pinfo_dict = scan['precursorMz'][0]
-            width = float(pinfo_dict['windowWideness'])
             target = float(pinfo_dict['precursorMz'])
+            width = float(pinfo_dict['windowWideness'])
             lower = width / 2
             upper = width / 2
             return IsolationWindow(lower, target, upper)
         except KeyError:
-            return None
+            try:
+                pinfo_dict = scan['precursorMz'][0]
+                target = float(pinfo_dict['precursorMz'])
+                return IsolationWindow.make_empty(target)
+            except KeyError:
+                return None
 
     def _instrument_configuration(self, scan):
         try:
@@ -368,10 +373,10 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
     def prebuild_byte_offset_file(path):
         return _MzXMLParser.prebuild_byte_offset_file(path)
 
-    def __init__(self, source_file, use_index=True, huge_tree=False, **kwargs):
+    def __init__(self, source_file, use_index=True, **kwargs):
         self.source_file = source_file
         self._source = _MzXMLParser(source_file, read_schema=True, iterative=True,
-                                    huge_tree=huge_tree, use_index=use_index)
+                                    huge_tree=True, use_index=use_index)
         self.initialize_scan_cache()
         self._use_index = use_index
         self._scan_index_lookup = None

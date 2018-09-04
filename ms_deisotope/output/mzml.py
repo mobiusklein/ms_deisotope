@@ -48,8 +48,7 @@ class SpectrumDescription(Sequence):
             for d in self:
                 if i == d.get('name'):
                     return d.get('value')
-            else:
-                raise KeyError(i)
+            raise KeyError(i)
 
     def __len__(self):
         return len(self.descriptors)
@@ -71,15 +70,16 @@ class SpectrumDescription(Sequence):
             base_peak = None
         descriptors.append({
             "name": "base peak m/z",
-            "value": base_peak.mz if base_peak else 0
+            "value": base_peak.mz if base_peak else 0,
         })
         descriptors.append({
             "name": "base peak intensity",
-            "value": base_peak.intensity if base_peak else 0
+            "value": base_peak.intensity if base_peak else 0,
+            "unit_name": writer.DEFAULT_INTENSITY_UNIT
         })
         descriptors.append({
             "name": "total ion current",
-            "value": sum(p.intensity for p in peak_list)
+            "value": sum(p.intensity for p in peak_list),
         })
         peaks_mz_order = sorted(peak_list, key=lambda x: x.mz)
         try:
@@ -109,11 +109,12 @@ class SpectrumDescription(Sequence):
         })
         descriptors.append({
             "name": "base peak intensity",
-            "value": arrays.intensity[base_peak_i] if base_peak_i else 0
+            "value": arrays.intensity[base_peak_i] if base_peak_i else 0,
+            "unit_name": writer.DEFAULT_INTENSITY_UNIT
         })
         descriptors.append({
             "name": "total ion current",
-            "value": arrays.intensity.sum()
+            "value": arrays.intensity.sum(),
         })
         try:
             descriptors.append({
@@ -197,6 +198,7 @@ class MzMLSerializer(ScanSerializerBase):
             data_encoding = {
                 writer.MZ_ARRAY: np.float64,
                 writer.INTENSITY_ARRAY: np.float32,
+                writer.CHARGE_ARRAY: np.int32,
             }
         if writer is None:
             raise ImportError(
@@ -217,8 +219,29 @@ class MzMLSerializer(ScanSerializerBase):
 
         self.writer.controlled_vocabularies()
         self.deconvoluted = deconvoluted
-        self.sample_name = sample_name
 
+        self._initialize_description_lists()
+        self._init_sample(sample_name)
+
+        self.total_ion_chromatogram_tracker = OrderedDict()
+        self.base_peak_chromatogram_tracker = OrderedDict()
+        self.chromatogram_queue = []
+
+        self.indexer = None
+        if build_extra_index:
+            self.indexer = ExtendedScanIndex()
+
+    def _init_sample(self, sample_name, **kwargs):
+        self.sample_name = sample_name
+        self.sample_run = SampleRun(name=sample_name, uuid=str(uuid4()))
+        self.add_sample({
+            "name": self.sample_run.name,
+            "id": "sample_1",
+            "params": [
+                {"name": "SampleRun-UUID", "value": self.sample_run.uuid},
+            ]})
+
+    def _initialize_description_lists(self):
         self.file_contents_list = []
         self.software_list = []
         self.source_file_list = []
@@ -227,24 +250,6 @@ class MzMLSerializer(ScanSerializerBase):
         self.sample_list = []
 
         self.processing_parameters = []
-
-        self.total_ion_chromatogram_tracker = OrderedDict()
-        self.base_peak_chromatogram_tracker = OrderedDict()
-
-        self.sample_run = SampleRun(name=sample_name, uuid=str(uuid4()))
-
-        self.add_sample({
-            "name": sample_name,
-            "id": "sample_1",
-            "params": [
-                {"name": "SampleRun-UUID", "value": self.sample_run.uuid},
-            ]})
-
-        self.chromatogram_queue = []
-
-        self.indexer = None
-        if build_extra_index:
-            self.indexer = ExtendedScanIndex()
 
     def add_instrument_configuration(self, configuration):
         """Add an :class:`~.InstrumentInformation` object to
@@ -330,7 +335,8 @@ class MzMLSerializer(ScanSerializerBase):
             "id": source_file.id,
             "params": []
         }
-        unwrapped['params'].extend(source_file.parameters)
+        unwrapped['params'].extend([(getattr(key, 'accession', str(key)), value)
+                                    for key, value in source_file.parameters.items()])
         if source_file.id_format:
             unwrapped['params'].append(str(source_file.id_format))
         if source_file.file_format:
@@ -595,10 +601,13 @@ class MzMLSerializer(ScanSerializerBase):
             self._has_started_writing_spectra = True
 
         if self.deconvoluted:
+            centroided = True
             precursor_peaks = bunch.precursor.deconvoluted_peak_set
         elif bunch.precursor.peak_set:
+            centroided = True
             precursor_peaks = bunch.precursor.peak_set
         else:
+            centroided = False
             precursor_peaks = bunch.precursor.arrays
 
         if len(precursor_peaks) == 0:
@@ -610,8 +619,6 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             charge_array = None
 
-        centroided = (
-            bunch.precursor.peak_set or bunch.precursor.deconvoluted_peak_set)
         if centroided:
             descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
             mz_array = [p.mz for p in precursor_peaks]
@@ -653,13 +660,15 @@ class MzMLSerializer(ScanSerializerBase):
 
         for prod in bunch.products:
             if self.deconvoluted:
+                centroided = True
                 product_peaks = prod.deconvoluted_peak_set
             elif prod.peak_set:
+                centroided = True
                 product_peaks = prod.peak_set
             else:
+                centroided = False
                 product_peaks = prod.arrays
 
-            centroided = (prod.peak_set or prod.deconvoluted_peak_set)
             if centroided:
                 descriptors = SpectrumDescription.from_peak_set(product_peaks)
                 mz_array = [p.mz for p in product_peaks]
@@ -745,6 +754,15 @@ class MzMLSerializer(ScanSerializerBase):
                     'unit_cv_ref': "UO",
                     "unit_accession": 'UO:0000028'
                 })
+            if scan_event.injection_time is not None:
+                scan_parameters.append({
+                    "accession": 'MS:1000927', "value": scan_event.injection_time,
+                    "unit_name": getattr(scan_event.injection_time, 'unit_info', None),
+                })
+            traits = scan_event.traits.items()
+            for name, value in traits:
+                param = {"name": name, "value": value, 'unit_name': getattr(value, 'unit_info', None)}
+                scan_parameters.append(param)
             scan_window_list = list(scan_event)
         return scan_parameters, scan_window_list
 
@@ -994,15 +1012,12 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         Scan
         """
         try:
-            return self._scan_cache[scan_id]
-        except KeyError:
-            try:
-                packed = super(ProcessedMzMLDeserializer, self)._make_scan(
-                    self._source.get_by_id(scan_id))
-                return packed
-            except AttributeError as ae:
-                raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
-                    ae, scan_id))
+            packed = super(ProcessedMzMLDeserializer, self)._make_scan(
+                self._source.get_by_id(scan_id))
+            return packed
+        except AttributeError as ae:
+            raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
+                ae, scan_id))
 
     @property
     def _index_file_name(self):
@@ -1026,7 +1041,6 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 indexer.serialize(handle)
         except (IOError, OSError, AttributeError) as err:
             print(err)
-            pass
 
     def _make_scan(self, data):
         scan = super(ProcessedMzMLDeserializer, self)._make_scan(data)

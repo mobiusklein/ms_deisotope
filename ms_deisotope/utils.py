@@ -33,7 +33,7 @@ try:  # pragma: no cover
         ax.set_title(scan.id)
         k = -1
         # for the ith row of the grid
-        for i in range((n / nperrow) + 1):
+        for i in range(int(n // nperrow) + 1):
             # for the jth column of the row
             for j in range(nperrow):
                 # the kth MS^n scan

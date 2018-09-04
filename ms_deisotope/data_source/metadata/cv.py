@@ -1,4 +1,5 @@
 import sys
+import textwrap
 
 
 def clean_definition(text):
@@ -44,7 +45,7 @@ class Term(object):
         return str(self.name)
 
     def __repr__(self):
-        text = "(%s)" % ', '.join("%s=%r" % (k, v) for k, v in self._asdict() if k != 'description')
+        text = "(%s)" % ', '.join("%s=%r" % (k, v) for k, v in self._asdict().items() if k != 'description')
         return self.__class__.__name__ + text
 
     def __reduce__(self):
@@ -143,19 +144,24 @@ def type_path(term, seed):  # pragma: no cover
     return _unique_list(path)
 
 
-def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pragma: no cover
-    if stream is None:
-        stream = sys.stdout
+def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pragma: no cover
+    if writer is None:
+        writer = sys.stdout.write
     component_type_list = [seed]
     i = 0
     seen = set()
     if list_name is None:
         list_name = seed.replace(" ", "_") + 's'
-
     template = (
-        "    %s(%r, %r, %r,"
+        "    %s(%r, %r,\n    %s,\n"
         "       %r, %r), \n")
-    stream.write("%s = [\n" % (list_name,))
+
+    def _wraplines(text, width=60, indent='        '):
+        lines = textwrap.wrap(text, width=60)
+        lines = map(repr, lines)
+        return indent[:-1] + '(' + ('\n' + indent).join(lines) + ')'
+
+    writer("%s = [\n" % (list_name,))
     while i < len(component_type_list):
         component_type = component_type_list[i]
         i += 1
@@ -163,9 +169,15 @@ def render_list(seed, list_name=None, term_cls_name="Term", stream=None):  # pra
             if term.name in seen:
                 continue
             seen.add(term.name)
-            stream.write(template % (
-                term_cls_name, term.name, term.id, clean_definition(term.definition),
+            writer(template % (
+                term_cls_name, term.name, term.id, _wraplines(clean_definition(term.get("def", ''))),
                 component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
-    stream.write("]\n")
+    writer("]\n")
+
+
+__all__ = [
+    "Term", "cv_psims", "render_list",
+    "MappingProxy"
+]

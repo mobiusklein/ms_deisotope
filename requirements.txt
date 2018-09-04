@@ -4,6 +4,7 @@ psims
 six
 numpy
 scipy
+ms_peak_picker
 brain-isotopic-distribution
 dill
 idzip-python>=0.3.2

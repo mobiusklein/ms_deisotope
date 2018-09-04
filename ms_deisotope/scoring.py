@@ -116,7 +116,7 @@ class FitSelectorBase(Base):
     def __call__(self, *args, **kwargs):
         return self.best(*args, **kwargs)
 
-    def reject(self, result):
+    def reject(self, fit):
         raise NotImplementedError()
 
     def reject_score(self, score):
@@ -509,6 +509,8 @@ class InterferenceDetection(object):
 
         included_intensity = sum(p.intensity for p in experimental_peaks)
         region_intensity = sum(p.intensity for p in region)
+        if region_intensity == 0:
+            return 0.
 
         score = 1 - (included_intensity / region_intensity)
         return score
@@ -523,7 +525,7 @@ class DistinctPatternFitter(IsotopicFitterBase):
         self.peak_count_scale = peak_count_scale
         self.domain_scale = domain_scale
 
-    def evaluate(self, peaklist, experimental, theoretical):
+    def evaluate(self, peaklist, experimental, theoretical, **kwargs):
         npeaks = float(len(experimental))
         if self.interference_detector is None:
             self.interference_detector = InterferenceDetection(peaklist)

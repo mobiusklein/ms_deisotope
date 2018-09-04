@@ -464,7 +464,7 @@ class ScanProcessor(Base):
             precursor_information = product_scan.precursor_information
 
             isolation_window = product_scan.isolation_window
-            if isolation_window.is_empty():
+            if isolation_window is None or isolation_window.is_empty():
                 lower = precursor_information.mz - self.default_precursor_ion_selection_window
                 upper = precursor_information.mz + self.default_precursor_ion_selection_window
             else:
@@ -501,8 +501,11 @@ class ScanProcessor(Base):
                         precursor_information, peak)
                     precursor_information.default()
                     continue
+            try:
+                precursor_purity = 1 - interference_detector.detect_interference(peak.envelope, lower, upper)
+            except (AttributeError, ZeroDivisionError):
+                precursor_purity = -1.0
 
-            precursor_purity = 1 - interference_detector.detect_interference(peak.envelope, lower, upper)
             product_scan.annotations['precursor purity'] = precursor_purity
             precursor_information.extract(peak)
         precursor_scan.deconvoluted_peak_set = dec_peaks

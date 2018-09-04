@@ -9,6 +9,12 @@ for evaluating MS data modularly. The goal of this library is to combine the mod
 to streamline processing raw data.
 
 
+Installing
+----------
+
+Building from source requires a version of Cython >= 0.27.0
+
+
 API
 ---
 

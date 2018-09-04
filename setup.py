@@ -42,13 +42,13 @@ def make_extensions():
     except ImportError:
         print("Installation requires `ms_peak_picker`")
         raise
+    macros = []
     try:
         from Cython.Build import cythonize
         cython_directives = {
             'embedsignature': True,
             "profile": include_diagnostics
         }
-        macros = []
         if include_diagnostics:
             macros.append(("CYTHON_TRACE_NOGIL", "1"))
         if is_ci and include_diagnostics:
@@ -184,7 +184,7 @@ def status_msgs(*msgs):
 
 install_requires = [
     "numpy",
-    # "ms_peak_picker",
+    "ms_peak_picker",
     "brain-isotopic-distribution",
     "pyteomics",
     "lxml",
@@ -202,12 +202,21 @@ def run_setup(include_cext=True):
         else:
             print("Cannot determine version")
 
+    try:
+        with open("README.rst") as readme_file:
+            long_description = readme_file.read()
+    except Exception as e:
+        print(e)
+        long_description = ''
+
     setup(
         name='ms_deisotope',
         version=version,
         packages=find_packages(),
         author=', '.join(["Joshua Klein"]),
         author_email=["jaklein@bu.edu"],
+        description='Access, Deisotope, and Charge Deconvolute Mass Spectra',
+        long_description=long_description,
         ext_modules=make_extensions() if include_cext else None,
         cmdclass=cmdclass,
         entry_points={
@@ -223,7 +232,12 @@ def run_setup(include_cext=True):
             'Topic :: Scientific/Engineering :: Bio-Informatics'],
         install_requires=install_requires,
         include_package_data=True,
-        zip_safe=False)
+        zip_safe=False,
+        project_urls={
+            'Documentation': 'https://mobiusklein.github.io/ms_deisotope',
+            'Source Code': 'https://github.com/mobiusklein/ms_deisotope',
+            'Issue Tracker': 'https://github.com/mobiusklein/ms_deisotope/issues',
+        })
 
 
 try:

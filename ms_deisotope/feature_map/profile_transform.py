@@ -126,7 +126,7 @@ def binsearch(array, value):
     lo = 0
     hi = len(array)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         point = array[mid]
         if value == point:
             return mid

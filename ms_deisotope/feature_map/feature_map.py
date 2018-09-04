@@ -185,7 +185,7 @@ def binary_search_with_flag(array, mz, error_tolerance=1e-5):
     lo = 0
     n = hi = len(array)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         x = array[mid]
         err = (x.mz - mz) / mz
         if abs(err) <= error_tolerance:
@@ -243,7 +243,7 @@ def binary_search(array, mz, error_tolerance=1e-5):
     lo = 0
     n = hi = len(array)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         x = array[mid]
         err = (x.mz - mz) / mz
         if abs(err) <= error_tolerance:
@@ -280,7 +280,7 @@ def search_sweep(array, mz, error_tolerance=1e-5):
     lo = 0
     n = hi = len(array)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         x = array[mid]
         err = (x.mz - mz) / mz
         if abs(err) <= error_tolerance:
@@ -314,7 +314,7 @@ def binary_search_with_flag_neutral(array, neutral_mass, error_tolerance=1e-5):
         lo = 0
         n = hi = len(array)
         while hi != lo:
-            mid = (hi + lo) / 2
+            mid = (hi + lo) // 2
             x = array[mid]
             err = (x.neutral_mass - neutral_mass) / neutral_mass
             if abs(err) <= error_tolerance:
@@ -372,7 +372,7 @@ def binary_search_neutral(array, neutral_mass, error_tolerance=1e-5):
     lo = 0
     n = hi = len(array)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         x = array[mid]
         err = (x.neutral_mass - neutral_mass) / neutral_mass
         if abs(err) <= error_tolerance:
@@ -409,7 +409,7 @@ def search_sweep_neutral(array, neutral_mass, error_tolerance=1e-5):
     lo = 0
     n = hi = len(array)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         x = array[mid]
         err = (x.neutral_mass - neutral_mass) / neutral_mass
         if abs(err) <= error_tolerance:

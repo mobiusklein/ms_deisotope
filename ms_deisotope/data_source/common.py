@@ -33,7 +33,7 @@ from .metadata.activation import (
     HCD, CID, ETD, ECD, UnknownDissociation)
 
 try:
-    from ..utils import draw_raw, draw_peaklist, annotate_scan as _annotate_precursors
+    from ..utils import draw_raw, annotate_scan as _annotate_precursors
     has_plot = True
 except Exception:
     has_plot = False
@@ -1054,6 +1054,10 @@ class Scan(ScanBase):
             self._precursor_information = self.source._precursor_information(self._data)
         return self._precursor_information
 
+    @precursor_information.setter
+    def precursor_information(self, value):
+        self._precursor_information = value
+
     @property
     def activation(self):
         if self.ms_level < 2:
@@ -1097,7 +1101,8 @@ class Scan(ScanBase):
 
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
-            self.id, self.index, self.scan_time, self.ms_level,
+            self.id, (self.index if self.index is not None else -1), (
+                self.scan_time if self.scan_time is not None else -1), self.ms_level,
             ", " + repr(self.precursor_information) if self.precursor_information else '')
 
     # peak manipulation
@@ -1645,7 +1650,7 @@ class PrecursorInformation(object):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
             self.mz,
             self.extracted_mz if self.extracted_neutral_mass != 0. else 0.,
-            self.intensity, self.extracted_intensity or 0., self.charge,
+            self.intensity or 0., self.extracted_intensity or 0., self.charge,
             self.extracted_charge or 0., self.precursor_scan_id)
 
     def __reduce__(self):
@@ -1733,6 +1738,17 @@ class PrecursorInformation(object):
     @property
     def product(self):
         return self.source.get_scan_by_id(self.product_scan_id)
+
+    def copy(self):
+        dup = self.__class__(
+            self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source,
+            self.extracted_neutral_mass, self.extracted_charge, self.extracted_intensity,
+            self.peak, self.extracted_peak, self.defaulted, self.orphan,
+            self.product_scan_id, self.annotations)
+        return dup
+
+    def clone(self):
+        return self.copy()
 
 
 class ProcessedScan(ScanBase):
@@ -1831,3 +1847,25 @@ class IteratorFacadeBase(DataAccessProxy, ScanIterator):  # pragma: no cover
 
     def next(self):
         return self._transform(next(self._producer))
+
+
+__all__ = [
+    "Scan", "ScanBunch", "ProcessedScan", "WrappedScan",
+    "AveragedScan", "PrecursorInformation", "RandomAccessScanSource",
+    "ScanDataSource", "ScanIterator", "RawDataArrays",
+
+    "ScanAcquisitionInformation", "ScanEventInformation", "ScanWindow",
+    "IsolationWindow",
+
+    "ChargeNotProvided", "DEFAULT_CHARGE_WHEN_NOT_RESOLVED",
+
+    "ActivationInformation", "MultipleActivationInformation", "dissociation_methods",
+    "HCD", "CID", "ETD", "ECD", "UnknownDissociation",
+
+    "FileInformation", "SourceFile",
+
+    "Component", "component", "all_components", "ComponentGroup",
+    "InstrumentInformation",
+
+
+]

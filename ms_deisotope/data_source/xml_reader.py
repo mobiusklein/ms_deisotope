@@ -1,6 +1,6 @@
 import json
 import os
-
+import warnings
 from .common import (
     RandomAccessScanSource)
 from lxml import etree
@@ -14,9 +14,16 @@ def in_minutes(x):
         unit = x.unit_info
     except AttributeError:
         return x
-    if unit == 'second':
+    if unit == 'minute':
+        return x
+    elif unit == 'second':
         y = unitfloat(x / 60., 'minute')
         return y
+    elif unit == 'hour':
+        y = unitfloat(x * 60, 'minute')
+        return y
+    else:
+        warnings.warn("Time unit %r not recognized" % unit)
     return x
 
 
@@ -114,7 +121,17 @@ class XMLReaderBase(RandomAccessScanSource):
             return packed
 
     def _get_scan_by_id_raw(self, scan_id):
-        return self._source.get_by_id(scan_id)
+        try:
+            return self._source.get_by_id(scan_id)
+        except AttributeError as exc:
+            # If the source is somehow None, then we should not try to convert
+            # the error into a KeyError
+            if self._source is None:
+                raise exc
+            # When index-driven lookup fails, pyteomics will parse the XML
+            # file from the beginning until it runs out of file
+            err = KeyError(scan_id)
+            raise err
 
     def get_scan_by_time(self, time):
         """Retrieve the scan object for the specified scan time.
