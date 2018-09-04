@@ -9,7 +9,7 @@
     <title>Envelope Search &#8212; ms_deisotope  documentation</title>
     <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -403,7 +403,7 @@ times as in a multi-pass method or when peak dependence is not considered</p>
 
 <dl class="method">
 <dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition">
-<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>truncate_after=0.95</em>, <em>charge_carrier=1.00727646677</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution.html#CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
+<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.01</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution.html#CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
 <dd><p>For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
 and if the fit is satisfactory, add it to the results set.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -646,7 +646,7 @@ times as in a multi-pass method or when peak dependence is not considered</p>
 
 <dl class="method">
 <dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute_composition">
-<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
+<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.01</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
 <dd><p>For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
 and if the fit is satisfactory, add it to the results set.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -831,7 +831,7 @@ the <code class="xref py py-class docutils literal notranslate"><span class="pre
 
 <dl class="method">
 <dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase.deconvolute_composition">
-<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution.html#CompositionListDeconvoluterBase.deconvolute_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
+<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.01</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution.html#CompositionListDeconvoluterBase.deconvolute_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
 <dd><p>For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
 and if the fit is satisfactory, add it to the results set.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -859,7 +859,7 @@ each incremental change in charge state. Defaults to 1.0072</li>
 
 <dl class="method">
 <dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase.fit_composition_at_charge">
-<code class="descname">fit_composition_at_charge</code><span class="sig-paren">(</span><em>composition</em>, <em>charge</em>, <em>error_tolerance=2e-05</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution.html#CompositionListDeconvoluterBase.fit_composition_at_charge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.fit_composition_at_charge" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fit_composition_at_charge</code><span class="sig-paren">(</span><em>composition</em>, <em>charge</em>, <em>error_tolerance=2e-05</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.01</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution.html#CompositionListDeconvoluterBase.fit_composition_at_charge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.fit_composition_at_charge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Produce an isotopic fit for <cite>composition</cite> at <cite>charge</cite> against the experimental peak set.</p>
 <p>This method requires that the instance also possess a method named <cite>match_theoretical_isotopic_distribution</cite>
 such as the one implemented in <a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="ms_deisotope.deconvolution.DeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvoluterBase</span></code></a>.</p>
@@ -1370,7 +1370,7 @@ Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.or
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
     </div>
   </body>
 </html>

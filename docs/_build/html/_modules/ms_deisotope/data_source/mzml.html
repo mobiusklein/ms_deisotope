@@ -9,7 +9,7 @@
     <title>ms_deisotope.data_source.mzml &#8212; ms_deisotope  documentation</title>
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -45,6 +45,7 @@
     <span class="n">FileInformation</span><span class="p">,</span> <span class="n">SourceFile</span><span class="p">,</span> <span class="n">MultipleActivationInformation</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.metadata.activation</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">supplemental_energy</span><span class="p">,</span> <span class="n">energy_terms</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.metadata.software</span> <span class="k">import</span> <span class="n">Software</span>
 <span class="kn">from</span> <span class="nn">.metadata</span> <span class="k">import</span> <span class="n">file_information</span>
 <span class="kn">from</span> <span class="nn">.metadata</span> <span class="k">import</span> <span class="n">data_transformation</span>
 <span class="kn">from</span> <span class="nn">.xml_reader</span> <span class="k">import</span> <span class="p">(</span>
@@ -52,10 +53,36 @@
     <span class="n">get_tag_attributes</span><span class="p">,</span> <span class="n">_find_section</span><span class="p">,</span> <span class="n">in_minutes</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">_MzMLParser</span><span class="p">(</span><span class="n">mzml</span><span class="o">.</span><span class="n">MzML</span><span class="p">,</span> <span class="n">IndexSavingXML</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_MzMLParser</span><span class="p">(</span><span class="n">IndexSavingXML</span><span class="p">,</span> <span class="n">mzml</span><span class="o">.</span><span class="n">MzML</span><span class="p">):</span>
     <span class="c1"># we do not care about chromatograms</span>
     <span class="n">_indexed_tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;spectrum&#39;</span><span class="p">,</span> <span class="p">}</span>
-    <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_handle_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MzMLParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_handle_param</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_determine_array_dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">types</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;32-bit float&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="s1">&#39;64-bit float&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                 <span class="s1">&#39;32-bit integer&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="s1">&#39;64-bit integer&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
+                 <span class="s1">&#39;null-terminated ASCII string&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">code</span>
+                <span class="k">del</span> <span class="n">info</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+                <span class="k">break</span>
+        <span class="c1"># sometimes it&#39;s under &#39;name&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]:</span>
+                        <span class="n">dtype</span> <span class="o">=</span> <span class="n">code</span>
+                        <span class="n">info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+                        <span class="k">break</span>
+        <span class="k">return</span> <span class="n">dtype</span>
 
 
 <span class="k">class</span> <span class="nc">MzMLDataInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
@@ -328,7 +355,10 @@
             <span class="n">upper</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;isolation window upper limit&quot;</span><span class="p">)</span>
             <span class="n">lower</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;isolation window lower limit&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="n">lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">IsolationWindow</span><span class="o">.</span><span class="n">make_empty</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">target</span> <span class="o">=</span> <span class="p">(</span><span class="n">upper</span> <span class="o">-</span> <span class="n">lower</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">lower</span>
                 <span class="n">upper</span> <span class="o">=</span> <span class="n">upper</span> <span class="o">-</span> <span class="n">target</span>
@@ -356,21 +386,18 @@
         <span class="n">scan_info</span><span class="p">[</span><span class="s1">&#39;combination&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">combination</span>
         <span class="n">scan_info_scan_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">scan_list_struct</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scan&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="n">struct</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;scan start time&#39;</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;drift_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;ion mobility drift time&#39;</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;drift_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;scan start time&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;drift_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;ion mobility drift time&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;injection_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;ion injection time&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="n">windows</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scanWindowList&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scanWindow&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;scanWindowList&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scanWindow&quot;</span><span class="p">,</span> <span class="p">[]):</span>
                 <span class="n">windows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ScanWindow</span><span class="p">(</span>
                     <span class="n">window</span><span class="p">[</span><span class="s1">&#39;scan window lower limit&#39;</span><span class="p">],</span>
                     <span class="n">window</span><span class="p">[</span><span class="s1">&#39;scan window upper limit&#39;</span><span class="p">]))</span>
             <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;window_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">windows</span>
+            <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;traits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span>
             <span class="n">scan_info_scan_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ScanEventInformation</span><span class="p">(</span><span class="o">**</span><span class="n">struct</span><span class="p">))</span>
         <span class="n">scan_info</span><span class="p">[</span><span class="s1">&#39;scan_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan_info_scan_list</span>
         <span class="k">return</span> <span class="n">ScanAcquisitionInformation</span><span class="p">(</span><span class="o">**</span><span class="n">scan_info</span><span class="p">)</span>
@@ -490,7 +517,7 @@
         <span class="n">software_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">software</span> <span class="ow">in</span> <span class="n">softwares</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;software&#39;</span><span class="p">,</span> <span class="p">[]):</span>
             <span class="n">software_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">data_transformation</span><span class="o">.</span><span class="n">Software</span><span class="p">(</span><span class="o">**</span><span class="n">software</span><span class="p">))</span>
+                <span class="n">Software</span><span class="p">(</span><span class="o">**</span><span class="n">software</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">software_list</span>
 
     <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -537,10 +564,10 @@
     <span class="k">def</span> <span class="nf">prebuild_byte_offset_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_MzMLParser</span><span class="o">.</span><span class="n">prebuild_byte_offset_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">huge_tree</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser_cls</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">iterative</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                        <span class="n">huge_tree</span><span class="o">=</span><span class="n">huge_tree</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">)</span>
+                                        <span class="n">huge_tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize_scan_cache</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span> <span class="o">=</span> <span class="n">use_index</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_information</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_run_attributes</span><span class="p">()</span>
@@ -609,7 +636,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
     </div>
   </body>
 </html>

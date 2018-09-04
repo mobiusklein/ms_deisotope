@@ -7,30 +7,24 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>ms_deisotope Quickstart &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Deconvolution" href="deconvolution/index.html" />
-    <link rel="prev" title="Installing ms_deisotope" href="installing.html" /> 
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
   </head><body>
-      <div class="header" role="banner"><img class="rightlogo" src="_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="index.html">
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
           <span>ms_deisotope  documentation</span></a></h1>
         <h2 class="heading"><span>ms_deisotope Quickstart</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
       
         <p>
-        «&#160;&#160;<a href="installing.html">Installing ms_deisotope</a>
-        &#160;&#160;::&#160;&#160;
-        <a class="uplink" href="index.html">Contents</a>
-        &#160;&#160;::&#160;&#160;
-        <a href="deconvolution/index.html">Deconvolution</a>&#160;&#160;»
+        <a class="uplink" href="../index.html">Contents</a>
         </p>
 
       </div>
@@ -205,16 +199,16 @@ div.nboutput div.output_area.stderr {
 </style>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [2]:
+<span></span>In [7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">ms_deisotope</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.test.common</span> <span class="kn">import</span> <span class="n">datafile</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.test.common</span> <span class="k">import</span> <span class="n">datafile</span>
 
 <span class="o">%</span><span class="k">matplotlib</span> inline
 
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span><span class="p">,</span> <span class="n">rcParams</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span><span class="p">,</span> <span class="n">rcParams</span>
 <span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">4</span>
 </pre></div>
 </div>
@@ -229,10 +223,10 @@ simple mzML file with only one <span class="math notranslate nohighlight">\(\tex
 can use <code class="docutils literal notranslate"><span class="pre">MSFileLoader</span></code> to automatically pick the right reader.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [3]:
+<span></span>In [2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">reader</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSFileLoader</span><span class="p">(</span><span class="n">datafile</span><span class="p">(</span><span class="s2">&quot;three_test_scans.mzML&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -241,10 +235,10 @@ can use <code class="docutils literal notranslate"><span class="pre">MSFileLoade
 <code class="docutils literal notranslate"><span class="pre">next()</span></code> method on the <code class="docutils literal notranslate"><span class="pre">reader</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [4]:
+<span></span>In [3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bunch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
 <span class="n">bunch</span>
 </pre></div>
@@ -252,13 +246,13 @@ can use <code class="docutils literal notranslate"><span class="pre">MSFileLoade
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[4]:
+<span></span>Out[3]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
 <span></span>ScanBunch(
 precursor=
-Scan(&#39;controllerType=0 controllerNumber=1 scan=10014&#39;, index=0, time=22.1283, ms_level=1),
+Scan(&#39;controllerType=0 controllerNumber=1 scan=10014&#39;, index=-1, time=22.1283, ms_level=1),
 products=
 [Scan(&#39;controllerType=0 controllerNumber=1 scan=10015&#39;, index=1, time=22.1328, ms_level=2, PrecursorInformation(mz=562.7397/0.0000, intensity=506701696.0000/0.0000, charge=2/0.0, scan_id=&#39;controllerType=0 controllerNumber=1 scan=10014&#39;)),
        Scan(&#39;controllerType=0 controllerNumber=1 scan=10016&#39;, index=2, time=22.1340, ms_level=2, PrecursorInformation(mz=617.2649/0.0000, intensity=3400959.2500/0.0000, charge=2/0.0, scan_id=&#39;controllerType=0 controllerNumber=1 scan=10014&#39;))])
@@ -268,17 +262,17 @@ products=
 <p>The precursor scan is in profile mode</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [5]:
+<span></span>In [4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">is_profile</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[5]:
+<span></span>Out[4]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -289,10 +283,10 @@ products=
 <p>We can centroid the peaks using the <code class="docutils literal notranslate"><span class="pre">pick_peaks</span></code> method of the scan.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [6]:
+<span></span>In [5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">peak_set</span>
 </pre></div>
@@ -300,7 +294,7 @@ products=
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[6]:
+<span></span>Out[5]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -312,10 +306,10 @@ products=
 isolated</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [7]:
+<span></span>In [8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">annotate_precursors</span><span class="p">(</span><span class="n">nperrow</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -324,17 +318,17 @@ isolated</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_10_0.png" src="_images/Quickstart_10_0.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_10_0.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_10_0.png" />
 </div>
 </div>
 <p>We can count the number of peaks in the isolation window around the
 second precursor (617.265) to see how many peaks may be coisolated</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [8]:
+<span></span>In [9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">window</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">isolation_window</span>
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">)</span>
 </pre></div>
@@ -342,7 +336,7 @@ second precursor (617.265) to see how many peaks may be coisolated</p>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[8]:
+<span></span>Out[9]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -358,10 +352,10 @@ monoisotopic m/z for all peaks in the scan and this can help to
 discrminate peaks which may not be reliable.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [9]:
+<span></span>In [10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvolute</span><span class="p">(</span><span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">peptide</span><span class="p">,</span> <span class="n">scorer</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSDeconVFitter</span><span class="p">(</span><span class="mf">10.</span><span class="p">))</span>
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
 </pre></div>
@@ -369,7 +363,7 @@ discrminate peaks which may not be reliable.</p>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[9]:
+<span></span>Out[10]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -381,17 +375,17 @@ discrminate peaks which may not be reliable.</p>
 under 1,300.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [10]:
+<span></span>In [11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[10]:
+<span></span>Out[11]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -403,10 +397,10 @@ under 1,300.</p>
 m/z falls in the isolation window.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [11]:
+<span></span>In [12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">annotate_precursors</span><span class="p">(</span><span class="n">nperrow</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -415,7 +409,7 @@ m/z falls in the isolation window.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_18_0.png" src="_images/Quickstart_18_0.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_18_0.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_18_0.png" />
 </div>
 </div>
 <p>The dark blue lines denote deisotoped peaks. We can see that there is a
@@ -423,10 +417,10 @@ peak to the left of the isolation window whose isotopic envelope also
 overlaps it.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [12]:
+<span></span>In [13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">product</span> <span class="o">=</span> <span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">product</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
 <span class="n">product</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
@@ -436,7 +430,7 @@ overlaps it.</p>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[12]:
+<span></span>Out[13]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -449,15 +443,15 @@ overlaps it.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_20_1.png" src="_images/Quickstart_20_1.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_20_1.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_20_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [13]:
+<span></span>In [14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">draw_peaklist</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">550</span><span class="p">)</span>
@@ -466,7 +460,7 @@ overlaps it.</p>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[13]:
+<span></span>Out[14]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -478,17 +472,17 @@ overlaps it.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_21_1.png" src="_images/Quickstart_21_1.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_21_1.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_21_1.png" />
 </div>
 </div>
 <p>We can deisotope the product scan to remove the isotopic peaks and
 simplify the spectrum</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [35]:
+<span></span>In [15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">product</span><span class="o">.</span><span class="n">deconvolute</span><span class="p">(</span><span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">peptide</span><span class="p">,</span> <span class="n">scorer</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSDeconVFitter</span><span class="p">(</span><span class="mf">10.</span><span class="p">),</span>
                     <span class="n">max_missed_peaks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">precursor_information</span><span class="o">.</span><span class="n">charge</span><span class="p">))</span>
 <span class="nb">len</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span>
@@ -497,7 +491,7 @@ simplify the spectrum</p>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[35]:
+<span></span>Out[15]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -507,10 +501,10 @@ simplify the spectrum</p>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [36]:
+<span></span>In [16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Raw&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">draw_peaklist</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Centroid&#39;</span><span class="p">)</span>
 <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">draw_peaklist</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Deconvoluted&#39;</span><span class="p">)</span>
@@ -518,7 +512,7 @@ simplify the spectrum</p>
     <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span>
                 <span class="s2">&quot;$</span><span class="si">%0.2f</span><span class="s2">^</span><span class="si">%d</span><span class="s2">$&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">),</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-                <span class="n">clip_on</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">clip_on</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">display</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="p">)</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">550</span><span class="p">)</span>
@@ -530,14 +524,14 @@ simplify the spectrum</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_24_0.png" src="_images/Quickstart_24_0.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_24_0.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_24_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_24_1.png" src="_images/Quickstart_24_1.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_24_1.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_24_1.png" />
 </div>
 </div>
 <p>This removed 69 isotopic peaks from the spectrum, including the abundant
@@ -549,10 +543,10 @@ both singly and doubly charged.</p>
 <code class="docutils literal notranslate"><span class="pre">product</span></code> using <code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.all_peaks_for</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [37]:
+<span></span>In [18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">product</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
@@ -561,8 +555,8 @@ both singly and doubly charged.</p>
     <span class="n">all_for</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">all_peaks_for</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_for</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">all_for</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_for</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">print</span> <span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span>
-        <span class="k">print</span> <span class="p">[(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">score</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">all_for</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">([(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">score</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">all_for</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">all_for</span><span class="p">:</span>
             <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 
@@ -574,18 +568,18 @@ both singly and doubly charged.</p>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-728.343623987
-[(729.3512365140559, 1, 7641.586719903839), (365.17908846043434, 2, 3974.0392814118777)]
-756.325933622
-[(757.3375606274757, 1, 1229.4184357706297), (379.17024327784117, 2, 2993.183880791818)]
-792.341521491
-[(793.3487979573216, 1, 7112.189429899965), (397.1791384435298, 2, 4478.046582621094)]
-859.384865896
+728.3436239873287
+[(729.3512365140559, 1, 7641.586719889179), (365.17908846043434, 2, 3974.039281416177)]
+756.3259336221423
+[(757.3375606274757, 1, 1229.418435769393), (379.17024327784117, 2, 2993.183880788114)]
+792.3415214905516
+[(793.3487979573216, 1, 7112.189429899965), (397.1791384435298, 2, 4478.046582630733)]
+859.3848658955126
 [(860.3922369366855, 1, 8148.628541826695), (430.6997094145263, 2, 5154.952375827611)]
-923.382506619
-[(924.3897830858219, 1, 7188.717282372034), (462.69874701632676, 2, 5361.219818531934)]
-970.414635624
-[(971.4242097498669, 1, 2302.9869681779255), (486.214594278865, 2, 3073.0652030648903)]
+923.3825066190519
+[(924.3897830858219, 1, 7188.717282372034), (462.69874701632676, 2, 5361.114074861609)]
+970.4146356241899
+[(971.4242097498669, 1, 2302.986968183627), (486.214594278865, 2, 3073.0652030611436)]
 </pre></div></div>
 </div>
 <p>We can use <code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.has_peak</span></code> or
@@ -600,11 +594,11 @@ precursor masses and other conveniences for deconvoluting only part of
 an LC-MS/MS run.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [53]:
+<span></span>In [19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">ms_deisotope</span> <span class="kn">import</span> <span class="n">ScanProcessor</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">ms_deisotope</span> <span class="k">import</span> <span class="n">ScanProcessor</span>
 </pre></div>
 </div>
 </div>
@@ -612,20 +606,20 @@ an LC-MS/MS run.</p>
 This file has already been denoised and centroided</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [70]:
+<span></span>In [20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">complex_mzml</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">(</span><span class="s2">&quot;20150710_3um_AGP_001_29_30.mzML.gz&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [71]:
+<span></span>In [21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">raw</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSFileLoader</span><span class="p">(</span><span class="n">complex_mzml</span><span class="p">)</span>
 <span class="n">raw_bunch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
 </pre></div>
@@ -633,23 +627,23 @@ This file has already been denoised and centroided</p>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [76]:
+<span></span>In [22]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">raw_bunch</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[76]:
+<span></span>Out[22]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
 <span></span>ScanBunch(
 precursor=
-Scan(&#39;scanId=1739784&#39;, index=0, time=28.9963, ms_level=1),
+Scan(&#39;scanId=1739784&#39;, index=-1, time=28.9963, ms_level=1),
 products=
 [Scan(&#39;scanId=1740086&#39;, index=1, time=29.0013, ms_level=2, PrecursorInformation(mz=1161.0110/0.0000, intensity=795342.7477/0.0000, charge=4/0.0, scan_id=&#39;scanId=1739784&#39;)),
        Scan(&#39;scanId=1740149&#39;, index=2, time=29.0024, ms_level=2, PrecursorInformation(mz=1198.0268/0.0000, intensity=134530.9754/0.0000, charge=4/0.0, scan_id=&#39;scanId=1739784&#39;)),
@@ -661,17 +655,17 @@ products=
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [75]:
+<span></span>In [23]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">raw_bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">is_profile</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[75]:
+<span></span>Out[23]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
@@ -681,21 +675,21 @@ products=
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [73]:
+<span></span>In [24]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">raw_bunch</span><span class="o">.</span><span class="n">annotate_precursors</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[73]:
+<span></span>Out[24]:
 </pre></div>
 </div>
 <div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x1cf5d438&gt;
+<span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x20522156198&gt;
 </pre></div>
 </div>
 </div>
@@ -703,7 +697,7 @@ products=
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_35_1.png" src="_images/Quickstart_35_1.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_35_1.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_35_1.png" />
 </div>
 </div>
 <p>As you can see, this scan is more complex than the previous example,
@@ -720,7 +714,7 @@ deconvolution arguments.</p>
 <span></span>In [74]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">reader</span> <span class="o">=</span> <span class="n">ScanProcessor</span><span class="p">(</span><span class="n">complex_mzml</span><span class="p">,</span> <span class="n">ms1_deconvolution_args</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;averagine&quot;</span><span class="p">:</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">glycopeptide</span><span class="p">,</span>
     <span class="s2">&quot;scorer&quot;</span><span class="p">:</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">PenalizedMSDeconVFitter</span><span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
@@ -737,7 +731,7 @@ deconvolution arguments.</p>
 <span></span>In [67]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bunch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -747,7 +741,7 @@ deconvolution arguments.</p>
 <span></span>In [68]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bunch</span><span class="o">.</span><span class="n">annotate_precursors</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -766,7 +760,7 @@ deconvolution arguments.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_40_1.png" src="_images/Quickstart_40_1.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_40_1.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_40_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -774,7 +768,7 @@ deconvolution arguments.</p>
 <span></span>In [69]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">bunch</span><span class="o">.</span><span class="n">products</span>
 </pre></div>
 </div>
@@ -798,14 +792,14 @@ deconvolution arguments.</p>
 <span></span>In [81]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">draw_peaklist</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Centroided&#39;</span><span class="p">)</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">draw_peaklist</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Deconvoluted&#39;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">&gt;</span> <span class="mi">400</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span>
                 <span class="s2">&quot;$</span><span class="si">%0.2f</span><span class="s2">^</span><span class="si">%d</span><span class="s2">$&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">),</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-                <span class="n">clip_on</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">clip_on</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -824,7 +818,7 @@ deconvolution arguments.</p>
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_42_1.png" src="_images/Quickstart_42_1.png" />
+<img alt="../_images/.ipynb_checkpoints_Quickstart-checkpoint_42_1.png" src="../_images/.ipynb_checkpoints_Quickstart-checkpoint_42_1.png" />
 </div>
 </div>
 </div>
@@ -834,11 +828,7 @@ deconvolution arguments.</p>
       <div class="bottomnav" role="navigation" aria-label="bottom navigation">
       
         <p>
-        «&#160;&#160;<a href="installing.html">Installing ms_deisotope</a>
-        &#160;&#160;::&#160;&#160;
-        <a class="uplink" href="index.html">Contents</a>
-        &#160;&#160;::&#160;&#160;
-        <a href="deconvolution/index.html">Deconvolution</a>&#160;&#160;»
+        <a class="uplink" href="../index.html">Contents</a>
         </p>
 
       </div>

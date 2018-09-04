@@ -9,7 +9,7 @@
     <title>ms_deisotope.data_source.metadata.cv &#8212; ms_deisotope  documentation</title>
     <link rel="stylesheet" href="../../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
@@ -33,6 +33,7 @@
         
   <h1>Source code for ms_deisotope.data_source.metadata.cv</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
 
 
 <span class="k">def</span> <span class="nf">clean_definition</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
@@ -78,7 +79,7 @@
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">=</span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;description&#39;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">=</span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;description&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">text</span>
 
     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -177,19 +178,24 @@
     <span class="k">return</span> <span class="n">_unique_list</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">render_list</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="n">list_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;Term&quot;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-    <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">stream</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+<span class="k">def</span> <span class="nf">render_list</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="n">list_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;Term&quot;</span><span class="p">,</span> <span class="n">writer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">if</span> <span class="n">writer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span>
     <span class="n">component_type_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">seed</span><span class="p">]</span>
     <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">list_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">list_name</span> <span class="o">=</span> <span class="n">seed</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;s&#39;</span>
-
     <span class="n">template</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;    </span><span class="si">%s</span><span class="s2">(</span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">,&quot;</span>
+        <span class="s2">&quot;    </span><span class="si">%s</span><span class="s2">(</span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">,</span><span class="se">\n</span><span class="s2">    </span><span class="si">%s</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span>
         <span class="s2">&quot;       </span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">), </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> = [</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">list_name</span><span class="p">,))</span>
+
+    <span class="k">def</span> <span class="nf">_wraplines</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="s1">&#39;        &#39;</span><span class="p">):</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">indent</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">indent</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span>
+
+    <span class="n">writer</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> = [</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">list_name</span><span class="p">,))</span>
     <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">component_type_list</span><span class="p">):</span>
         <span class="n">component_type</span> <span class="o">=</span> <span class="n">component_type_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
         <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -197,12 +203,18 @@
             <span class="k">if</span> <span class="n">term</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">term_cls_name</span><span class="p">,</span> <span class="n">term</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">term</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">clean_definition</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">definition</span><span class="p">),</span>
+            <span class="n">writer</span><span class="p">(</span><span class="n">template</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">term_cls_name</span><span class="p">,</span> <span class="n">term</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">term</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">_wraplines</span><span class="p">(</span><span class="n">clean_definition</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;def&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))),</span>
                 <span class="n">component_type_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">type_path</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">seed</span><span class="p">)))</span>
             <span class="k">if</span> <span class="n">term</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
                 <span class="n">component_type_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-    <span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">writer</span><span class="p">(</span><span class="s2">&quot;]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Term&quot;</span><span class="p">,</span> <span class="s2">&quot;cv_psims&quot;</span><span class="p">,</span> <span class="s2">&quot;render_list&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MappingProxy&quot;</span>
+<span class="p">]</span>
 </pre></div>
 
       </div>
@@ -216,7 +228,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
     </div>
   </body>
 </html>

@@ -9,7 +9,7 @@
     <title>ms_deisotope.data_source.xml_reader &#8212; ms_deisotope  documentation</title>
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -34,7 +34,7 @@
   <h1>Source code for ms_deisotope.data_source.xml_reader</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">os</span>
-
+<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">.common</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">RandomAccessScanSource</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">lxml</span> <span class="k">import</span> <span class="n">etree</span>
@@ -48,9 +48,16 @@
         <span class="n">unit</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">unit_info</span>
     <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">x</span>
-    <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;second&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;minute&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span>
+    <span class="k">elif</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;second&#39;</span><span class="p">:</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">unitfloat</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="mf">60.</span><span class="p">,</span> <span class="s1">&#39;minute&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">y</span>
+    <span class="k">elif</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;hour&#39;</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">unitfloat</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span> <span class="s1">&#39;minute&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">y</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Time unit </span><span class="si">%r</span><span class="s2"> not recognized&quot;</span> <span class="o">%</span> <span class="n">unit</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">x</span>
 
 
@@ -148,7 +155,17 @@
             <span class="k">return</span> <span class="n">packed</span>
 
     <span class="k">def</span> <span class="nf">_get_scan_by_id_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="c1"># If the source is somehow None, then we should not try to convert</span>
+            <span class="c1"># the error into a KeyError</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">exc</span>
+            <span class="c1"># When index-driven lookup fails, pyteomics will parse the XML</span>
+            <span class="c1"># file from the beginning until it runs out of file</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">err</span>
 
     <span class="k">def</span> <span class="nf">get_scan_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan time.</span>
@@ -433,7 +450,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.4.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
     </div>
   </body>
 </html>

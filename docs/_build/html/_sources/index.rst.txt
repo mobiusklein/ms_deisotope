@@ -19,6 +19,8 @@ common formats, including instrument information and and file metadata.
    :maxdepth: 3
    :caption: Contents:
 
+   Installation <installing>
+
    Quickstart <Quickstart>
    Deconvolution <deconvolution/index>
    Data Access <data_source/index>
