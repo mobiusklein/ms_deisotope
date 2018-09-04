@@ -754,6 +754,15 @@ class MzMLSerializer(ScanSerializerBase):
                     'unit_cv_ref': "UO",
                     "unit_accession": 'UO:0000028'
                 })
+            if scan_event.injection_time is not None:
+                scan_parameters.append({
+                    "accession": 'MS:1000927', "value": scan_event.injection_time,
+                    "unit_name": getattr(scan_event.injection_time, 'unit_info', None),
+                })
+            traits = scan_event.traits.items()
+            for name, value in traits:
+                param = {"name": name, "value": value, 'unit_name': getattr(value, 'unit_info', None)}
+                scan_parameters.append(param)
             scan_window_list = list(scan_event)
         return scan_parameters, scan_window_list
 

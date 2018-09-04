@@ -352,21 +352,18 @@ class MzMLDataInterface(ScanDataSource):
         scan_info['combination'] = combination
         scan_info_scan_list = []
         for scan in scan_list_struct.get("scan", []):
+            scan = scan.copy()
             struct = {}
-            try:
-                struct['start_time'] = scan['scan start time']
-            except KeyError:
-                struct['start_time'] = 0
-            try:
-                struct['drift_time'] = scan['ion mobility drift time']
-            except KeyError:
-                struct['drift_time'] = 0
+            struct['start_time'] = scan.pop('scan start time', 0)
+            struct['drift_time'] = scan.pop('ion mobility drift time', 0)
+            struct['injection_time'] = scan.pop("ion injection time", 0)
             windows = []
-            for window in scan.get("scanWindowList", {}).get("scanWindow", []):
+            for window in scan.pop("scanWindowList", {}).get("scanWindow", []):
                 windows.append(ScanWindow(
                     window['scan window lower limit'],
                     window['scan window upper limit']))
             struct['window_list'] = windows
+            struct['traits'] = scan
             scan_info_scan_list.append(ScanEventInformation(**struct))
         scan_info['scan_list'] = scan_info_scan_list
         return ScanAcquisitionInformation(**scan_info)

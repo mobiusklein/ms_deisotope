@@ -13,12 +13,14 @@ update-cv-lists:
 		ms_deisotope/data_source/metadata/activation.py \
 		ms_deisotope/data_source/metadata/data_transformation.py \
 		ms_deisotope/data_source/metadata/instrument_components.py \
-		ms_deisotope/data_source/metadata/file_information.py
+		ms_deisotope/data_source/metadata/file_information.py \
+		ms_deisotope/data_source/metadata/scan_traits.py
 	python -m autopep8 -i --max-line-length 80 ms_deisotope/data_source/metadata/software.py \
 		ms_deisotope/data_source/metadata/activation.py \
 		ms_deisotope/data_source/metadata/data_transformation.py \
 		ms_deisotope/data_source/metadata/instrument_components.py \
-		ms_deisotope/data_source/metadata/file_information.py
+		ms_deisotope/data_source/metadata/file_information.py \
+		ms_deisotope/data_source/metadata/scan_traits.py
 
 
 update-docs:

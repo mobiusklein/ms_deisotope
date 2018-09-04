@@ -1,4 +1,5 @@
 import sys
+import textwrap
 
 
 def clean_definition(text):
@@ -151,10 +152,15 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
     seen = set()
     if list_name is None:
         list_name = seed.replace(" ", "_") + 's'
-
     template = (
-        "    %s(%r, %r, %r,"
+        "    %s(%r, %r,\n    %s,\n"
         "       %r, %r), \n")
+
+    def _wraplines(text, width=60, indent='        '):
+        lines = textwrap.wrap(text, width=60)
+        lines = map(repr, lines)
+        return indent[:-1] + '(' + ('\n' + indent).join(lines) + ')'
+
     writer("%s = [\n" % (list_name,))
     while i < len(component_type_list):
         component_type = component_type_list[i]
@@ -164,7 +170,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
                 continue
             seen.add(term.name)
             writer(template % (
-                term_cls_name, term.name, term.id, clean_definition(term.get("def", '')),
+                term_cls_name, term.name, term.id, _wraplines(clean_definition(term.get("def", ''))),
                 component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)

@@ -7,7 +7,7 @@ from brainpy import (
 
 from brainpy.composition import (
     parse_formula,
-    SimpleComposition)
+    PyComposition)
 
 from .utils import dict_proxy
 
