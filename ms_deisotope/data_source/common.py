@@ -1101,7 +1101,8 @@ class Scan(ScanBase):
 
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
-            self.id, (self.index or -1), (self.scan_time or -1), self.ms_level,
+            self.id, (self.index if self.index is not None else -1), (
+                self.scan_time if self.scan_time is not None else -1), self.ms_level,
             ", " + repr(self.precursor_information) if self.precursor_information else '')
 
     # peak manipulation
