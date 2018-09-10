@@ -2,6 +2,12 @@ import abc
 import warnings
 
 from collections import namedtuple
+try:
+    from collections.abc import Mapping, Sequence
+except ImportError:
+    from collections import Mapping, Sequence
+
+
 from weakref import WeakValueDictionary
 
 import numpy as np
@@ -269,7 +275,7 @@ class ScanDataSource(object):
     @abc.abstractmethod
     def _scan_title(self, scan):
         """Returns a verbose name for this scan, if one
-        were stored in the file. Usually includes both the
+        was stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
 
@@ -400,13 +406,13 @@ class ScanDataSource(object):
         """Returns information about the activation method used to
         produce this scan, if any.
 
-        Returns `None` for MS1 scans
+        Returns :const:`None` for MS1 scans
 
         Parameters
         ----------
         scan : Mapping
             The underlying scan information storage,
-            usually a `dict`
+            usually a :class:`dict`
 
         Returns
         -------
@@ -1020,11 +1026,24 @@ class Scan(ScanBase):
             self._arrays = RawDataArrays(*self.source._scan_arrays(self._data))
         return self._arrays
 
+    @arrays.setter
+    def arrays(self, value):
+        if isinstance(value, RawDataArrays) or value is None:
+            self._arrays = value
+        elif (isinstance(value, Sequence) and len(value) == 2):
+            self._arrays = RawDataArrays(*map(np.asanyarray, value))
+        else:
+            raise TypeError("arrays must be an instance of RawDataArrays or a pair of numpy arrays")
+
     @property
     def title(self):
         if self._title is None:
             self._title = self.source._scan_title(self._data)
         return self._title
+
+    @title.setter
+    def title(self, value):
+        self._title = value
 
     @property
     def id(self):
@@ -1032,9 +1051,11 @@ class Scan(ScanBase):
             self._id = self.source._scan_id(self._data)
         return self._id
 
-    @property
-    def scan_id(self):
-        return self.id
+    @id.setter
+    def id(self, value):
+        self._id = value
+
+    scan_id = id
 
     @property
     def index(self):
@@ -1056,6 +1077,8 @@ class Scan(ScanBase):
 
     @precursor_information.setter
     def precursor_information(self, value):
+        if not isinstance(value, PrecursorInformation) and value is not None:
+            raise TypeError("precursor_information must be a %r instance" % (PrecursorInformation, ))
         self._precursor_information = value
 
     @property
@@ -1066,6 +1089,13 @@ class Scan(ScanBase):
             self._activation = self.source._activation(self._data)
         return self._activation
 
+    @activation.setter
+    def activation(self, value):
+        if not isinstance(value, ActivationInformation) and value is not None:
+            raise TypeError(
+                "activation must be an %r instance" % (ActivationInformation, ))
+        self._activation = value
+
     @property
     def isolation_window(self):
         if self.ms_level < 2:
@@ -1074,11 +1104,36 @@ class Scan(ScanBase):
             self._isolation_window = self.source._isolation_window(self._data)
         return self._isolation_window
 
+    @isolation_window.setter
+    def isolation_window(self, value):
+        if isinstance(value, IsolationWindow) or value is None:
+            self._isolation_window = value
+        elif isinstance(value, Sequence):
+            if len(value) == 2:
+                lo, hi = value
+                width = (hi - lo) / 2.
+                center = lo + width
+                self._isolation_window = IsolationWindow(center, width, width)
+            elif len(value) == 3:
+                self._isolation_window = IsolationWindow(lo, center, hi)
+            else:
+                raise ValueError("Could not convert %r to an %r" % (value, IsolationWindow))
+        else:
+            raise TypeError(
+                "isolation_window must be an either an %r instance or a sequence of two or three elements" % (
+                    IsolationWindow))
+
     @property
     def acquisition_information(self):
         if self._acquisition_information is None:
             self._acquisition_information = self.source._acquisition_information(self._data)
         return self._acquisition_information
+
+    @acquisition_information.setter
+    def acquisition_information(self, value):
+        if not isinstance(value, ScanAcquisitionInformation) and value is not None:
+            raise TypeError("acquisition_information must be an instance of %r" % (ScanAcquisitionInformation, ))
+        self._acquisition_information = value
 
     @property
     def instrument_configuration(self):
@@ -1087,12 +1142,23 @@ class Scan(ScanBase):
                 self._data)
         return self._instrument_configuration
 
+    @instrument_configuration.setter
+    def instrument_configuration(self, value):
+        if not isinstance(value, InstrumentInformation) and value is not None:
+            raise TypeError("instrument_configuration must be an instance of %r" % (InstrumentInformation, ))
+        self._instrument_configuration = value
+
     @property
     def annotations(self):
         if self._annotations is None:
             self._annotations = self.source._annotations(self._data)
             self._annotations.update(self._external_annotations)
         return self._annotations
+
+    @annotations.setter
+    def annotations(self, value):
+        self._external_annotations = dict(value)
+        self._annotations = self._external_annotations.copy()
 
     def bind(self, source):
         super(Scan, self).bind(source)
@@ -1447,7 +1513,7 @@ class Scan(ScanBase):
         return weights
 
     def average(self, index_interval=None, rt_interval=None, dx=None, weight_sigma=None):
-        """Average together multiple scans' raw data arrays to create a composite intensity
+        r"""Average together multiple scans' raw data arrays to create a composite intensity
         profile for a common m/z axis.
 
         Only MS1 scans will be averaged with this method
