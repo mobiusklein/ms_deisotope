@@ -377,7 +377,7 @@
             <span class="n">unwrapped</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source_file</span><span class="o">.</span><span class="n">file_format</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">add_data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_processing_description</span><span class="p">):</span>
+<div class="viewcode-block" id="MzMLSerializer.add_data_processing"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_data_processing">[docs]</a>    <span class="k">def</span> <span class="nf">add_data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_processing_description</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`</span>
 <span class="sd">        to the output document as a new :obj:`&lt;dataProcessing&gt;` entry describing one or</span>
 <span class="sd">        more :obj:`&lt;processingMethod&gt;`s for a single referenced :class:`~.Software`</span>
@@ -419,7 +419,7 @@
             <span class="p">}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_processing_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_processing_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_processing_description</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_processing_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_processing_description</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="MzMLSerializer.add_processing_parameter"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_processing_parameter">[docs]</a>    <span class="k">def</span> <span class="nf">add_processing_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add a new processing method to the writer&#39;s own</span>
@@ -437,15 +437,57 @@
     <span class="k">def</span> <span class="nf">add_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">copy_metadata_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">file_description</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_file_information</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">instrument_configs</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">instrument_configuration</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">instrument_configs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">instrument_configs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_instrument_configuration</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">software_list</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">software_list</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">software_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">software</span> <span class="ow">in</span> <span class="n">software_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_software</span><span class="p">(</span><span class="n">software</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data_processing_list</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">data_processing</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">data_processing_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">data_processing_</span> <span class="ow">in</span> <span class="n">data_processing_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_data_processing</span><span class="p">(</span><span class="n">data_processing_</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_create_file_description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">file_description</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">file_contents_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_file_list</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_create_software_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">software_list</span><span class="p">([{</span>
+        <span class="n">software_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sw</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">software_list</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">sw</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="n">sw</span><span class="o">.</span><span class="n">version</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">sw</span><span class="o">.</span><span class="n">is_name</span><span class="p">(</span><span class="n">sw</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">sw</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">&#39;MS:1000799&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sw</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">d</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sw</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="n">software_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+        <span class="n">software_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
             <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;ms_deisotope_1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ms_deisotope&quot;</span>
-        <span class="p">}])</span>
+            <span class="s1">&#39;MS:1000799&#39;</span><span class="p">:</span> <span class="s2">&quot;ms_deisotope&quot;</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">software_list</span><span class="p">(</span><span class="n">software_list</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_create_sample_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">sample_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_list</span><span class="p">)</span>
@@ -496,7 +538,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_create_data_processing_list</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-            <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_name</span><span class="p">,</span>
+            <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_name</span> <span class="ow">or</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">sample</span><span class="o">=</span><span class="s1">&#39;sample_1&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_tag</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum_list_tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">spectrum_list</span><span class="p">(</span>

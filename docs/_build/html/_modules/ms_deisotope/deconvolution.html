@@ -42,7 +42,7 @@
 <span class="kn">from</span> <span class="nn">.averagine</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">AveragineCache</span><span class="p">,</span> <span class="n">peptide</span><span class="p">,</span> <span class="n">glycopeptide</span><span class="p">,</span> <span class="n">glycan</span><span class="p">,</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">isotopic_variants</span><span class="p">,</span>
     <span class="n">isotopic_shift</span><span class="p">,</span> <span class="n">PROTON</span><span class="p">,</span> <span class="n">TheoreticalIsotopicPattern</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.peak_set</span> <span class="k">import</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
+<span class="kn">from</span> <span class="nn">.peak_set</span> <span class="k">import</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span><span class="p">,</span> <span class="n">Envelope</span>
 <span class="kn">from</span> <span class="nn">.scoring</span> <span class="k">import</span> <span class="n">IsotopicFitRecord</span><span class="p">,</span> <span class="n">penalized_msdeconv</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="nb">range</span><span class="p">,</span> <span class="n">Base</span><span class="p">,</span> <span class="n">TrivialTargetedDeconvolutionResult</span><span class="p">,</span> <span class="n">DeconvolutionProcessResult</span>
 <span class="kn">from</span> <span class="nn">.envelope_statistics</span> <span class="k">import</span> <span class="n">a_to_a2_ratio</span><span class="p">,</span> <span class="n">average_mz</span><span class="p">,</span> <span class="n">most_abundant_mz</span>
@@ -214,6 +214,30 @@
             <span class="n">new_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
             <span class="n">new_otherpeaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">otherpeaks</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">new_peaks</span><span class="p">,</span> <span class="n">new_otherpeaks</span>
+
+
+<span class="k">def</span> <span class="nf">from_fitted_peak</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a :class:`~.FittedPeak` into a :class:`~.DeconvolutedPeak`</span>
+<span class="sd">    at the specified charge state.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peak : :class:`~.FittedPeak`</span>
+<span class="sd">        The fitted peak to use as the template</span>
+<span class="sd">    charge : int, optional</span>
+<span class="sd">        The charge state to use, defaults to 1+</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`~.DeconvolutedPeak`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mass</span> <span class="o">=</span> <span class="n">neutral_mass</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">)</span>
+    <span class="n">dpeak</span> <span class="o">=</span> <span class="n">DeconvolutedPeak</span><span class="p">(</span>
+        <span class="n">mass</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span>
+        <span class="n">peak</span><span class="o">.</span><span class="n">signal_to_noise</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">full_width_at_half_max</span><span class="p">,</span>
+        <span class="mi">0</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Envelope</span><span class="p">([(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">)]),</span>
+        <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">area</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dpeak</span>
 
 
 <span class="k">class</span> <span class="nc">DeconvoluterBase</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
