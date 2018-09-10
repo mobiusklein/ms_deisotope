@@ -162,7 +162,7 @@ class MzXMLDataInterface(ScanDataSource):
 
     def _scan_title(self, scan):
         """Returns a verbose name for this scan, if one
-        were stored in the file. Usually includes both the
+        was stored in the file. Usually includes both the
         scan's id string, as well as information about the
         original file and format.
 
