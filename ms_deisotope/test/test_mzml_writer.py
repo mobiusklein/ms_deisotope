@@ -23,9 +23,19 @@ class TestMzMLSerializer(unittest.TestCase):
             writer.add_file_contents("profile spectrum")
             writer.add_file_contents("centroid spectrum")
             writer.remove_file_contents("profile spectrum")
+
             instrument_configs = source_reader.instrument_configuration()
             for config in instrument_configs:
                 writer.add_instrument_configuration(config)
+
+            software_list = source_reader.software_list()
+            for software in software_list:
+                writer.add_software(software)
+
+            data_processing_list = source_reader.data_processing()
+            for dp in data_processing_list:
+                writer.add_data_processing(dp)
+
             processing = writer.build_processing_method()
             writer.add_data_processing(processing)
             bunch = next(source_reader)

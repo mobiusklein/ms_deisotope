@@ -286,5 +286,5 @@ scan_attributes = [
 
 __all__ = [
     "IsolationWindow", "ScanAcquisitionInformation", "ScanEventInformation",
-    "ScanWindow"
+    "ScanWindow", "scan_attributes"
 ]

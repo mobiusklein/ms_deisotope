@@ -8,7 +8,7 @@ from ms_peak_picker import (
 from .averagine import (
     AveragineCache, peptide, glycopeptide, glycan, neutral_mass, isotopic_variants,
     isotopic_shift, PROTON, TheoreticalIsotopicPattern)
-from .peak_set import DeconvolutedPeak, DeconvolutedPeakSolution, DeconvolutedPeakSet
+from .peak_set import DeconvolutedPeak, DeconvolutedPeakSolution, DeconvolutedPeakSet, Envelope
 from .scoring import IsotopicFitRecord, penalized_msdeconv
 from .utils import range, Base, TrivialTargetedDeconvolutionResult, DeconvolutionProcessResult
 from .envelope_statistics import a_to_a2_ratio, average_mz, most_abundant_mz
@@ -180,6 +180,30 @@ def drop_placeholders_parallel(peaks, otherpeaks):
             new_peaks.append(peak)
             new_otherpeaks.append(otherpeaks[i])
     return new_peaks, new_otherpeaks
+
+
+def from_fitted_peak(peak, charge=1):
+    """Convert a :class:`~.FittedPeak` into a :class:`~.DeconvolutedPeak`
+    at the specified charge state.
+
+    Parameters
+    ----------
+    peak : :class:`~.FittedPeak`
+        The fitted peak to use as the template
+    charge : int, optional
+        The charge state to use, defaults to 1+
+
+    Returns
+    -------
+    :class:`~.DeconvolutedPeak`
+    """
+    mass = neutral_mass(peak.mz, charge)
+    dpeak = DeconvolutedPeak(
+        mass, peak.intensity, charge,
+        peak.signal_to_noise, -1, peak.full_width_at_half_max,
+        0, mass, mass, 0, Envelope([(peak.mz, peak.intensity)]),
+        peak.mz, area=peak.area)
+    return dpeak
 
 
 class DeconvoluterBase(Base):

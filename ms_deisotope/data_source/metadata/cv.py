@@ -154,7 +154,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
         list_name = seed.replace(" ", "_") + 's'
     template = (
         "    %s(%r, %r,\n    %s,\n"
-        "       %r, %r), \n")
+        "       %r,\n       %r), \n")
 
     def _wraplines(text, width=60, indent='        '):
         lines = textwrap.wrap(text, width=60)

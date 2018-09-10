@@ -403,15 +403,57 @@ class MzMLSerializer(ScanSerializerBase):
     def add_sample(self, sample):
         self.sample_list.append(sample)
 
+    def copy_metadata_from(self, reader):
+        try:
+            description = reader.file_description()
+            self.add_file_information(description)
+        except AttributeError:
+            pass
+
+        try:
+            instrument_configs = reader.instrument_configuration()
+        except AttributeError:
+            instrument_configs = []
+        for config in instrument_configs:
+            self.add_instrument_configuration(config)
+
+        try:
+            software_list = reader.software_list()
+        except AttributeError:
+            software_list = []
+        for software in software_list:
+            self.add_software(software)
+
+        try:
+            data_processing_list = reader.data_processing()
+        except AttributeError:
+            data_processing_list = []
+        for data_processing_ in data_processing_list:
+            self.add_data_processing(data_processing_)
+
     def _create_file_description(self):
         self.writer.file_description(
             self.file_contents_list, self.source_file_list)
 
     def _create_software_list(self):
-        self.writer.software_list([{
+        software_list = []
+        for sw in self.software_list:
+            d = {
+                'id': sw.id,
+                'version': sw.version
+            }
+            if sw.is_name(sw.name):
+                d[sw.name] = ''
+            else:
+                d['MS:1000799'] = sw.name
+            d['params'] = list(sw.options.items())
+            software_list.append(d)
+
+        software_list.append({
             "id": "ms_deisotope_1",
-            "name": "ms_deisotope"
-        }])
+            'MS:1000799': "ms_deisotope"
+        })
+        self.writer.software_list(software_list)
 
     def _create_sample_list(self):
         self.writer.sample_list(self.sample_list)
@@ -462,7 +504,7 @@ class MzMLSerializer(ScanSerializerBase):
         self._create_data_processing_list()
 
         self._run_tag = self.writer.run(
-            id=self.sample_name,
+            id=self.sample_name or 1,
             sample='sample_1')
         self._run_tag.__enter__()
         self._spectrum_list_tag = self.writer.spectrum_list(
