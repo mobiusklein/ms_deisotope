@@ -234,6 +234,10 @@ class ScanDataSource(object):
     should make features as consistent as possible to clients
     of :class:`Scan` objects.
     """
+
+    def _make_scan(self, data):
+        return Scan(data, self)
+
     @abc.abstractmethod
     def _scan_arrays(self, scan):
         """Returns raw data arrays for m/z and intensity
@@ -447,9 +451,6 @@ class ScanIterator(ScanDataSource):
     def next(self):
         raise NotImplementedError()
 
-    def _make_scan(self, data):
-        return Scan(data, self)
-
     def __next__(self):
         return self.next()
 
@@ -459,6 +460,7 @@ class ScanIterator(ScanDataSource):
     def reset(self):
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def _make_default_iterator(self):
         raise NotImplementedError()
 
