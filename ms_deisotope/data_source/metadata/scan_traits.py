@@ -72,9 +72,9 @@ class ScanAcquisitionInformation(Sequence):
 
     Attributes
     ----------
-    combination : str
+    combination : :class:`str`
         A controlled vocabulary string describing the way in which scans were combined
-    scan_list : list of ScanEventInformation
+    scan_list : :class:`list` of :class:`ScanEventInformation`
         The list of scan events performed
     """
 
