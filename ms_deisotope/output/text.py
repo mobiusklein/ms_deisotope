@@ -15,10 +15,8 @@ class TextScanSerializerBase(ScanSerializerBase):
     def close(self):
         self.stream.close()
 
-    def save_scan_bunch(self, bunch, **kwargs):
-        self.write_scan(*self.prepare_scan_data(bunch.precursor))
-        for scan in bunch.products:
-            self.write_scan(*self.prepare_scan_data(scan))
+    def save_scan(self, scan, **kwargs):
+        self.write_scan(*self.prepare_scan_data(scan))
 
     def construct_header(self, scan):
         prec_info = scan.precursor_information

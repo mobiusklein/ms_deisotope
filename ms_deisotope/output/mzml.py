@@ -622,6 +622,109 @@ class MzMLSerializer(ScanSerializerBase):
             extra_arrays.append(("isotopic envelopes array", envelope_array))
         return extra_arrays
 
+    def _get_annotations(self, scan):
+        skip = {'filter string', 'base peak intensity', 'base peak m/z', 'lowest observed m/z',
+                'highest observed m/z', 'total ion current', }
+        annotations = []
+        for key, value in scan.annotations.items():
+            if key in skip:
+                continue
+            annotations.append({
+                key: value
+            })
+        return annotations
+
+    def save_scan(self, scan, **kwargs):
+        """Write a :class:`~.Scan` to the output document
+        as a collection of related :obj:`<spectrum>` tags.
+
+        .. note::
+
+            If no spectra have been written to the output document
+            yet, this method will call :meth:`_add_spectrum_list` and
+            writes all of the metadata lists out. After this point,
+            no new document-level metadata can be added.
+
+        Parameters
+        ----------
+        scan: :class:`~.Scan`
+            The scan to write.
+        deconvoluted: :class:`bool`
+            Whether the scan to write out should include deconvolution information
+        """
+        if not self._has_started_writing_spectra:
+            self._add_spectrum_list()
+            self._has_started_writing_spectra = True
+
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
+        if deconvoluted:
+            centroided = True
+            precursor_peaks = scan.deconvoluted_peak_set
+        elif scan.peak_set:
+            centroided = True
+            precursor_peaks = scan.peak_set
+        else:
+            centroided = False
+            precursor_peaks = scan.arrays
+        polarity = scan.polarity
+        if deconvoluted:
+            charge_array = [p.charge for p in precursor_peaks]
+        else:
+            charge_array = None
+
+        if centroided:
+            descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
+            mz_array = [p.mz for p in precursor_peaks]
+            intensity_array = [p.intensity for p in precursor_peaks]
+        else:
+            descriptors = SpectrumDescription.from_arrays(precursor_peaks)
+            mz_array = precursor_peaks.mz
+            intensity_array = precursor_peaks.intensity
+
+        instrument_config = scan.instrument_configuration
+        if instrument_config is None:
+            instrument_config_id = None
+        else:
+            instrument_config_id = instrument_config.id
+
+        scan_parameters, scan_window_list = self.extract_scan_event_parameters(
+            scan)
+
+        if scan.precursor_information:
+            precursor_information = self._pack_precursor_information(
+                scan.precursor_information,
+                scan.activation,
+                scan.isolation_window)
+        else:
+            precursor_information = None
+
+        spectrum_params = [
+            {"name": "ms level", "value": scan.ms_level},
+            {"name": "MS1 spectrum"} if scan.ms_level == 1 else {"name": "MSn spectrum"},
+        ] + list(descriptors)
+
+        spectrum_params.extend(self._get_annotations(scan))
+
+        self.writer.write_spectrum(
+            mz_array, intensity_array,
+            charge_array,
+            id=scan.id, params=spectrum_params,
+            centroided=centroided,
+            polarity=polarity,
+            scan_start_time=scan.scan_time,
+            compression=self.compression,
+            other_arrays=self._prepare_extra_arrays(scan),
+            instrument_configuration_id=instrument_config_id,
+            precursor_information=precursor_information,
+            scan_params=scan_parameters,
+            scan_window_list=scan_window_list,
+            encoding=self.data_encoding)
+
+        self.total_ion_chromatogram_tracker[
+            scan.scan_time] = (descriptors["total ion current"])
+        self.base_peak_chromatogram_tracker[
+            scan.scan_time] = (descriptors["base peak intensity"])
+
     def save_scan_bunch(self, bunch, **kwargs):
         """Write a :class:`~.ScanBunch` to the output document
         as a collection of related :obj:`<spectrum>` tags.
@@ -638,130 +741,11 @@ class MzMLSerializer(ScanSerializerBase):
         bunch : :class:`~.ScanBunch`
             The scan set to write.
         """
-        if not self._has_started_writing_spectra:
-            self._add_spectrum_list()
-            self._has_started_writing_spectra = True
-
         if bunch.precursor is not None:
-            if self.deconvoluted:
-                centroided = True
-                precursor_peaks = bunch.precursor.deconvoluted_peak_set
-            elif bunch.precursor.peak_set:
-                centroided = True
-                precursor_peaks = bunch.precursor.peak_set
-            else:
-                centroided = False
-                precursor_peaks = bunch.precursor.arrays
-
-            if len(precursor_peaks) == 0:
-                return
-
-            polarity = bunch.precursor.polarity
-            if self.deconvoluted:
-                charge_array = [p.charge for p in precursor_peaks]
-            else:
-                charge_array = None
-
-            if centroided:
-                descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
-                mz_array = [p.mz for p in precursor_peaks]
-                intensity_array = [p.intensity for p in precursor_peaks]
-            else:
-                descriptors = SpectrumDescription.from_arrays(precursor_peaks)
-                mz_array = precursor_peaks.mz
-                intensity_array = precursor_peaks.intensity
-
-            instrument_config = bunch.precursor.instrument_configuration
-            if instrument_config is None:
-                instrument_config_id = None
-            else:
-                instrument_config_id = instrument_config.id
-
-            scan_parameters, scan_window_list = self.extract_scan_event_parameters(
-                bunch.precursor)
-
-            self.writer.write_spectrum(
-                mz_array, intensity_array,
-                charge_array,
-                id=bunch.precursor.id, params=[
-                    {"name": "ms level", "value": bunch.precursor.ms_level},
-                    {"name": "MS1 spectrum"}] + list(descriptors),
-                centroided=centroided,
-                polarity=polarity,
-                scan_start_time=bunch.precursor.scan_time,
-                compression=self.compression,
-                other_arrays=self._prepare_extra_arrays(bunch.precursor),
-                instrument_configuration_id=instrument_config_id,
-                scan_params=scan_parameters,
-                scan_window_list=scan_window_list,
-                encoding=self.data_encoding)
-
-            self.total_ion_chromatogram_tracker[
-                bunch.precursor.scan_time] = (descriptors["total ion current"])
-            self.base_peak_chromatogram_tracker[
-                bunch.precursor.scan_time] = (descriptors["base peak intensity"])
+            self.save_scan(bunch.precursor)
 
         for prod in bunch.products:
-            if self.deconvoluted:
-                centroided = True
-                product_peaks = prod.deconvoluted_peak_set
-            elif prod.peak_set:
-                centroided = True
-                product_peaks = prod.peak_set
-            else:
-                centroided = False
-                product_peaks = prod.arrays
-
-            if centroided:
-                descriptors = SpectrumDescription.from_peak_set(product_peaks)
-                mz_array = [p.mz for p in product_peaks]
-                intensity_array = [p.intensity for p in product_peaks]
-            else:
-                descriptors = SpectrumDescription.from_arrays(product_peaks)
-                mz_array = product_peaks.mz
-                intensity_array = product_peaks.intensity
-
-            self.total_ion_chromatogram_tracker[
-                prod.scan_time] = (descriptors["total ion current"])
-            self.base_peak_chromatogram_tracker[
-                prod.scan_time] = (descriptors["base peak intensity"])
-
-            if self.deconvoluted:
-                charge_array = [p.charge for p in product_peaks]
-            else:
-                charge_array = None
-
-            instrument_config = prod.instrument_configuration
-            if instrument_config is None:
-                instrument_config_id = None
-            else:
-                instrument_config_id = instrument_config.id
-
-            scan_parameters, scan_window_list = self.extract_scan_event_parameters(
-                prod)
-            spectrum_params = [
-                {"name": "ms level", "value": prod.ms_level},
-                {"name": "MSn spectrum"},
-            ] + list(descriptors)
-            if 'precursor purity' in prod.annotations:
-                spectrum_params.append({'name': 'precursor purity',
-                                        'value': prod.annotations['precursor purity']})
-            self.writer.write_spectrum(
-                mz_array, intensity_array, charge_array,
-                id=prod.id, params=spectrum_params,
-                centroided=centroided,
-                polarity=prod.polarity,
-                scan_start_time=prod.scan_time,
-                precursor_information=self._pack_precursor_information(
-                    prod.precursor_information,
-                    prod.activation,
-                    prod.isolation_window),
-                compression=self.compression,
-                other_arrays=self._prepare_extra_arrays(prod),
-                instrument_configuration_id=instrument_config_id,
-                scan_params=scan_parameters,
-                scan_window_list=scan_window_list,
-                encoding=self.data_encoding)
+            self.save_scan(prod)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)

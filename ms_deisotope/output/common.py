@@ -7,10 +7,18 @@ class ScanSerializerBase(object):
         pass
 
     def save_scan_bunch(self, bunch, **kwargs):
+        self.save_scan(bunch.precursor, **kwargs)
+        for prod in bunch.products:
+            self.save_scan(prod, **kwargs)
+
+    def save_scan(self, scan, **kwargs):
         raise NotImplementedError()
 
     def save(self, bunch, **kwargs):
-        self.save_scan_bunch(bunch, **kwargs)
+        if isinstance(bunch, ScanBunch):
+            self.save_scan_bunch(bunch, **kwargs)
+        else:
+            self.save_scan(bunch, **kwargs)
 
     def complete(self):
         pass

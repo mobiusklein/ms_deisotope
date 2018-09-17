@@ -27,9 +27,9 @@ class MGFSerializer(HeaderedDelimitedWriter):
     def add_parameter(self, name, value):
         self._add_parameter(name, value)
 
-    def save_scan_bunch(self, bunch):
+    def save_scan_bunch(self, bunch, **kwargs):
         for scan in bunch.products:
-            self.write_scan(*self.prepare_scan_data(scan))
+            self.save_scan(scan, **kwargs)
 
     def format_peak_vectors(self, scan):
         if self.deconvoluted:
