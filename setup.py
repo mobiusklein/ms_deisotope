@@ -188,6 +188,7 @@ install_requires = [
     "brain-isotopic-distribution",
     "pyteomics",
     "lxml",
+    "psims >= 0.1.19",
 ]
 
 
