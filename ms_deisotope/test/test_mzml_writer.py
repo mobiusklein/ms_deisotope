@@ -1,6 +1,7 @@
 import unittest
 import os
 import tempfile
+import gzip
 
 import ms_deisotope
 from ms_deisotope.data_source import MzMLLoader
@@ -16,7 +17,7 @@ class TestMzMLSerializer(unittest.TestCase):
     def test_writer(self):
         source_reader = MzMLLoader(self.source_data_path)
         fd, name = tempfile.mkstemp()
-        with _compression.GzipFile(name, 'wb') as fh:
+        with open(name, 'wb') as fh:
             writer = MzMLSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
             description = source_reader.file_description()
             writer.add_file_information(description)

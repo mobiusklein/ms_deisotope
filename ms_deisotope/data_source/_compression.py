@@ -4,10 +4,10 @@ import gzip
 from six import string_types as basestring
 
 
-_GzipFile = gzip.GzipFile
+GzipFile = _GzipFile = gzip.GzipFile
 try:
     import idzip
-    GzipFile = idzip.IdzipFile
+    # GzipFile = idzip.IdzipFile
     has_idzip = True
 except (ImportError, AttributeError):
     GzipFile = gzip.GzipFile
