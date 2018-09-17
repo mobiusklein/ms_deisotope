@@ -3,6 +3,8 @@ import gzip
 
 from six import string_types as basestring
 
+
+_GzipFile = gzip.GzipFile
 try:
     import idzip
     GzipFile = idzip.IdzipFile
@@ -12,14 +14,15 @@ except (ImportError, AttributeError):
     has_idzip = False
 
 
-try:
-    from psims import compression as psims_compression
+# Do not register idzip with psims, indexing seems to corrupt file
+# try:
+#     from psims import compression as psims_compression
 
-    if has_idzip:
-        psims_compression.register(GzipFile, 'gz', b'\037\213')
-        psims_compression.register(GzipFile, 'dz', b'\037\213')
-except ImportError:
-    pass
+#     if has_idzip:
+#         psims_compression.register(GzipFile, 'gz', b'\037\213')
+#         psims_compression.register(GzipFile, 'dz', b'\037\213')
+# except ImportError:
+#     pass
 
 
 DEFAULT_BUFFER_SIZE = int(2e6)
