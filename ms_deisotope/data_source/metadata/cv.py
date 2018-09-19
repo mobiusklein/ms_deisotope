@@ -82,6 +82,45 @@ class Term(object):
         return term == self.name or term in self.specialization
 
 
+class TermSet(object):
+    def __init__(self, terms):
+        self.terms = list(terms)
+        self.by_name = {
+            t.name: t for t in self.terms
+        }
+        self.by_id = {
+            t.id: t for t in self.terms
+        }
+
+    def __iter__(self):
+        return iter(self.terms)
+
+    def __len__(self):
+        return len(self.terms)
+
+    def __add__(self, other):
+        return self.__class__(list(self) + list(other))
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except (KeyError, IndexError):
+            return default
+
+    def __getitem__(self, k):
+        if isinstance(k, int):
+            return self.terms[k]
+        try:
+            return self.by_id[k]
+        except KeyError:
+            pass
+        try:
+            return self.by_name[k]
+        except KeyError:
+            pass
+        raise KeyError(k)
+
+
 def _unique_list(items):  # pragma: no cover
     seen = set()
     out = []
@@ -161,7 +200,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
         lines = map(repr, lines)
         return indent[:-1] + '(' + ('\n' + indent).join(lines) + ')'
 
-    writer("%s = [\n" % (list_name,))
+    writer("%s = TermSet([\n" % (list_name,))
     while i < len(component_type_list):
         component_type = component_type_list[i]
         i += 1
@@ -174,7 +213,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
                 component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
-    writer("]\n")
+    writer("])\n")
 
 
 __all__ = [
