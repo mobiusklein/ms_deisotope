@@ -73,7 +73,10 @@ class MGFInterface(ScanDataSource):
         return scan['params']["title"]
 
     def _scan_time(self, scan):
-        return float(scan['params']['rtinseconds']) / 60.0
+        try:
+            return float(scan['params']['rtinseconds']) / 60.0
+        except KeyError:
+            return -1
 
     def _is_profile(self, scan):
         return False
