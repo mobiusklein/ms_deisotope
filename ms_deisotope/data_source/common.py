@@ -437,6 +437,90 @@ class ScanDataSource(object):
         return dict()
 
 
+class _ScanIteratorImplBase(object):
+    def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None):
+        if scan_validator is None:
+            def scan_validator(scan):
+                return True
+        if scan_cacher is None:
+            def scan_cacher(scan):
+                return None
+        self.iterator = iterator
+        self.scan_packer = scan_packer
+        self.scan_validator = scan_validator
+        self.scan_cacher = scan_cacher
+        self._producer = None
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self._producer is None:
+            self._producer = self._make_producer()
+        return next(self._producer)
+
+    def __next__(self):
+        return self.next()
+
+    def _make_producer(self):
+        raise NotImplementedError()
+
+
+class _SingleScanIteratorImpl(_ScanIteratorImplBase):
+
+    def _make_producer(self):
+        _make_scan = self.scan_packer
+        _validate = self.scan_validator
+        _cache_scan = self.scan_cacher
+        for scan in self.iterator:
+            packed = _make_scan(scan)
+            if not _validate(packed):
+                continue
+            _cache_scan(packed)
+            yield packed
+
+
+class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
+
+    def _make_producer(self):
+        _make_scan = self.scan_packer
+        _validate = self.scan_validator
+        _cache_scan = self.scan_cacher
+
+        precursor_scan = None
+        product_scans = []
+
+        current_level = 1
+
+        for scan in self.iterator:
+            packed = _make_scan(scan)
+            if not _validate(packed):
+                continue
+            _cache_scan(packed)
+            if packed.ms_level > 1:
+                # inceasing ms level
+                if current_level < packed.ms_level:
+                    current_level = packed.ms_level
+                # decreasing ms level
+                elif current_level > packed.ms_level:
+                    current_level = packed.ms_level
+                product_scans.append(packed)
+            elif packed.ms_level == 1:
+                if current_level > 1:
+                    precursor_scan.product_scans = list(product_scans)
+                    yield ScanBunch(precursor_scan, product_scans)
+                else:
+                    if precursor_scan is not None:
+                        precursor_scan.product_scans = list(product_scans)
+                        yield ScanBunch(precursor_scan, product_scans)
+                precursor_scan = packed
+                product_scans = []
+            else:
+                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
+        if precursor_scan is not None:
+            yield ScanBunch(precursor_scan, product_scans)
+
+
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
     """An Abstract Base Class that extends ScanDataSource
@@ -486,6 +570,11 @@ class ScanIterator(ScanDataSource):
     def _make_cache_key(self, scan):
         return scan.id
 
+    def _cache_scan(self, scan):
+        key = self._make_cache_key(scan)
+        self._scan_cache[key] = scan
+        return key
+
     def _validate(self, scan):
         return True
 
@@ -493,52 +582,17 @@ class ScanIterator(ScanDataSource):
         if iterator is None:
             iterator = self._make_default_iterator()
 
-        _make_scan = self._make_scan
-
-        for scan in iterator:
-            packed = _make_scan(scan)
-            if not self._validate(packed):
-                continue
-            self._scan_cache[self._make_cache_key(packed)] = packed
-            yield packed
+        impl = _SingleScanIteratorImpl(
+            iterator, self._make_scan, self._validate, self._cache_scan)
+        return impl
 
     def _scan_group_iterator(self, iterator=None):
         if iterator is None:
             iterator = self._make_default_iterator()
-        precursor_scan = None
-        product_scans = []
 
-        current_level = 1
-
-        _make_scan = self._make_scan
-
-        for scan in iterator:
-            packed = _make_scan(scan)
-            if not self._validate(packed):
-                continue
-            self._scan_cache[self._make_cache_key(packed)] = packed
-            if packed.ms_level > 1:
-                # inceasing ms level
-                if current_level < packed.ms_level:
-                    current_level = packed.ms_level
-                # decreasing ms level
-                elif current_level > packed.ms_level:
-                    current_level = packed.ms_level
-                product_scans.append(packed)
-            elif packed.ms_level == 1:
-                if current_level > 1:
-                    precursor_scan.product_scans = list(product_scans)
-                    yield ScanBunch(precursor_scan, product_scans)
-                else:
-                    if precursor_scan is not None:
-                        precursor_scan.product_scans = list(product_scans)
-                        yield ScanBunch(precursor_scan, product_scans)
-                precursor_scan = packed
-                product_scans = []
-            else:
-                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
-        if precursor_scan is not None:
-            yield ScanBunch(precursor_scan, product_scans)
+        impl = _GroupedScanIteratorImpl(
+            iterator, self._make_scan, self._validate, self._cache_scan)
+        return impl
 
     def _scan_cleared(self, scan):
         self.scan_cache.pop(self._make_cache_key(scan), None)
