@@ -134,6 +134,23 @@ class ExtendedScanIndex(object):
                 package['drift_time'] = product.drift_time
         return package
 
+    def add_scan(self, scan):
+        if scan.ms_level == 1:
+            package = {
+                "scan_time": scan.scan_time,
+                # would be populated if add_scan_bunch were used
+                "product_scan_ids": [],
+                "msms_peaks": [
+                    p.index.neutral_mass for p in scan.deconvoluted_peak_set
+                    if p.chosen_for_msms
+                ] if scan.deconvoluted_peak_set is not None else [],
+            }
+            if scan.has_ion_mobility():
+                package['drift_time'] = scan.drift_time
+            self.ms1_ids[scan.id] = MS1Record(**package)
+        else:
+            self.msn_ids[scan.id] = MSnRecord(**self._package_precursor_information(scan))
+
     def add_scan_bunch(self, bunch):
         package = {
             "scan_time": bunch.precursor.scan_time,
