@@ -1801,10 +1801,14 @@ class PrecursorInformation(object):
 
     @property
     def precursor(self):
+        if self.precursor_scan_id is None:
+            return None
         return self.source.get_scan_by_id(self.precursor_scan_id)
 
     @property
     def product(self):
+        if self.product_scan_id is None:
+            return None
         return self.source.get_scan_by_id(self.product_scan_id)
 
     def copy(self):
