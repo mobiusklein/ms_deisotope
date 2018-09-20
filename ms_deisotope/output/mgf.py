@@ -43,7 +43,7 @@ class MGFSerializer(HeaderedDelimitedWriter):
         return (mz_array, intensity_array, charge_array)
 
     def write_header(self, header_dict):
-        pepmass = header_dict['precursor_neutral_mass']
+        pepmass = header_dict['precursor_mz']
         charge = header_dict['precursor_charge']
         intensity = header_dict['precursor_intensity']
         self.add_parameter("pepmass", "%f %f" % (pepmass, intensity))
