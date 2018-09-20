@@ -83,6 +83,18 @@ class Term(object):
 
 
 class TermSet(object):
+    """A collection that mocks a list and a dictionary for controlled vocabulary terms
+
+    Attributes
+    ----------
+    by_id : dict
+        Mapping from :attr:`Term.id` to :class:`Term`
+    by_name : dict
+        Mapping from :attr:`Term.name` to :class:`Term`
+    terms : list
+        List of :class:`Term` objects
+    """
+
     def __init__(self, terms):
         self.terms = list(terms)
         self.by_name = {
@@ -100,6 +112,12 @@ class TermSet(object):
 
     def __add__(self, other):
         return self.__class__(list(self) + list(other))
+
+    def __contains__(self, term):
+        return term in self.terms or term in self.by_id or term in self.by_name
+
+    def keys(self):
+        return set(self.by_id.keys()) | set(self.by_name.keys())
 
     def get(self, key, default=None):
         try:
