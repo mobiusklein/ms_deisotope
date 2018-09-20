@@ -82,13 +82,8 @@ class MGFInterface(ScanDataSource):
         return False
 
     def _precursor_information(self, scan):
-        neutral_mass, intensity = scan['params']['pepmass']
+        mz, intensity = scan['params']['pepmass']
         charge = scan['params'].get('charge', [ChargeNotProvided])[0]
-        if charge != ChargeNotProvided:
-            charge = int(charge)
-            mz = mass_charge_ratio(neutral_mass, charge)
-        else:
-            mz = mass_charge_ratio(neutral_mass, 1)
         pinfo = PrecursorInformation(
             mz, intensity, charge, source=self,
             product_scan_id=self._scan_id(scan),
