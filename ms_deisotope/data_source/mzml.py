@@ -105,17 +105,19 @@ class MzMLDataInterface(ScanDataSource):
             precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
         except KeyError:
             precursor_scan_id = None
-            last_index = self._scan_index(scan) - 1
-            current_level = self._ms_level(scan)
-            i = 0
-            while last_index > 0 and i < 100:
-                prev_scan = self.get_scan_by_index(last_index)
-                if prev_scan.ms_level >= current_level:
-                    last_index -= 1
-                else:
-                    precursor_scan_id = self._scan_id(prev_scan._data)
-                    break
-                i += 1
+            # only attempt to scan if there are supposed to be MS1 scans in the file
+            if self._has_ms1_scans() and self._use_index:
+                last_index = self._scan_index(scan) - 1
+                current_level = self._ms_level(scan)
+                i = 0
+                while last_index > 0 and i < 100:
+                    prev_scan = self.get_scan_by_index(last_index)
+                    if prev_scan.ms_level >= current_level:
+                        last_index -= 1
+                    else:
+                        precursor_scan_id = self._scan_id(prev_scan._data)
+                        break
+                    i += 1
         pinfo = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),
