@@ -579,7 +579,8 @@ class MzMLSerializer(ScanSerializerBase):
         # If the scan bunch has been fully deconvoluted and it's PrecursorInformation
         # filled in, its extracted fields will be populated and should be used, otherwise
         # use the default read values.
-        if precursor_information.extracted_neutral_mass != 0:
+        extracted_neutral_mass = precursor_information.extracted_neutral_mass
+        if (extracted_neutral_mass != 0):
             package = {
                 "mz": precursor_information.extracted_mz,
                 "intensity": precursor_information.extracted_intensity,
