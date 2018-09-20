@@ -1049,8 +1049,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         iterator = self
         if header_only:
             iterator = self.iter_scan_headers()
-        for bunch in iterator:
-            indexer.add_scan_bunch(bunch)
+        if self._has_ms1_scans():
+            for bunch in iterator:
+                indexer.add_scan_bunch(bunch)
+        else:
+            for scan in iterator:
+                indexer.add_scan(scan)
+
         self.reset()
         self.extended_index = indexer
         try:
