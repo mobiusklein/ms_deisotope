@@ -22,9 +22,9 @@ class TextScanSerializerBase(ScanSerializerBase):
         prec_info = scan.precursor_information
         header_dict = HeaderInformation(scan)
         if prec_info is not None:
-            header_dict['precursor_neutral_mass'] = prec_info.extracted_neutral_mass
-            header_dict['precursor_charge'] = prec_info.extracted_charge
-            header_dict['precursor_intensity'] = prec_info.extracted_intensity
+            header_dict['precursor_neutral_mass'] = prec_info.extracted_neutral_mass or prec_info.neutral_mass
+            header_dict['precursor_charge'] = prec_info.extracted_charge or prec_info.charge
+            header_dict['precursor_intensity'] = prec_info.extracted_intensity or prec_info.intensity
             header_dict['precursor_scan_id'] = prec_info.precursor_scan_id
             header_dict['defaulted'] = prec_info.defaulted
             activation = scan.activation
