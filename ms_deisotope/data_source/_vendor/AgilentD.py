@@ -582,7 +582,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
         except KeyError:
             package = AgilentDScanPtr(scan_number)
             scan = Scan(package, self)
-            self._scan_cache[scan_number] = scan
+            self._cache_scan(scan)
             return scan
 
     def get_scan_by_time(self, time):
@@ -655,12 +655,15 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
             self._producer = self._single_scan_iterator(iterator)
         return self
 
+    def _make_cache_key(self, scan):
+        return scan._data.index
+
     def _single_scan_iterator(self, iterator=None):
         if iterator is None:
             iterator = self._make_scan_index_producer()
         for ix in iterator:
             packed = self.get_scan_by_index(ix)
-            self._scan_cache[packed._data.index] = packed
+            self._cache_scan(packed)
             yield packed
 
     def _scan_group_iterator(self, iterator=None):
@@ -674,7 +677,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
 
         for ix in iterator:
             packed = self.get_scan_by_index(ix)
-            self._scan_cache[packed._data.index] = packed
+            self._cache_scan(packed)
             if packed.ms_level > 1:
                 # inceasing ms level
                 if current_level < packed.ms_level:
