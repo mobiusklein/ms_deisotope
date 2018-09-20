@@ -438,6 +438,21 @@ class ScanDataSource(object):
 
 
 class _ScanIteratorImplBase(object):
+    """Internal base class for scan iteration strategies
+
+    Attributes
+    ----------
+    iterator : :class:`Iterator`
+        An iterator that produces a raw scan which will be packaged by :attr:`scan_packer`
+    scan_cacher : :class:`Callable`
+        A callable that will cache the scan, or a no-op
+    scan_packer : :class:`Callable`
+        A callable that will package a raw scan object into a :class:`Scan` object
+    scan_validator : :class:`Callable`
+        A callable that will check if a raw scan object is valid or not for filtering
+        out unwanted entries, or a no-op
+    """
+
     def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None):
         if scan_validator is None:
             def scan_validator(scan):
