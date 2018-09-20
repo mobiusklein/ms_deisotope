@@ -30,7 +30,9 @@ from .text_utils import (envelopes_to_array, decode_envelopes)
 from ms_deisotope import peak_set
 from ms_deisotope.utils import Base
 from ms_deisotope.averagine import neutral_mass
-from ms_deisotope.data_source.common import PrecursorInformation, ScanBunch, ChargeNotProvided
+from ms_deisotope.data_source.common import (
+    PrecursorInformation, ScanBunch, ChargeNotProvided,
+    _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
 from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.feature_map import ExtendedScanIndex
@@ -988,40 +990,27 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         except Exception:
             return {}
 
-    def iter_scan_headers(self, iterator=None):
+    def iter_scan_headers(self, iterator=None, grouped=True):
+        try:
+            if not self._has_ms1_scans():
+                grouped = False
+        except Exception:
+            pass
         self.reset()
         if iterator is None:
             iterator = iter(self._source)
-        precursor_scan = None
-        product_scans = []
 
         _make_scan = super(ProcessedMzMLDeserializer, self)._make_scan
         _validate = super(ProcessedMzMLDeserializer, self)._validate
 
-        current_level = 1
-        for scan in iterator:
-            packed = _make_scan(scan)
-            if not _validate(packed):
-                continue
-            if scan['ms level'] == 2:
-                if current_level < 2:
-                    current_level = 2
-                product_scans.append(packed)
-            elif scan['ms level'] == 1:
-                if current_level > 1:
-                    precursor_scan.product_scans = list(product_scans)
-                    yield ScanBunch(precursor_scan, product_scans)
-                else:
-                    if precursor_scan is not None:
-                        precursor_scan.product_scans = list(product_scans)
-                        yield ScanBunch(precursor_scan, product_scans)
-                precursor_scan = packed
-                product_scans = []
-            else:
-                raise Exception(
-                    "This object is not able to handle MS levels higher than 2")
-        if precursor_scan is not None:
-            yield ScanBunch(precursor_scan, product_scans)
+        if grouped:
+            impl = _GroupedScanIteratorImpl(iterator, _make_scan, _validate)
+        else:
+            impl = _SingleScanIteratorImpl(iterator, _make_scan, _validate)
+
+        for x in impl:
+            yield x
+
         self.reset()
 
     def get_scan_header_by_id(self, scan_id):
