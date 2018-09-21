@@ -291,6 +291,8 @@ cdef class IntervalTreeNode(object):
         root = cls(0, None, [], None, -1)
 
         intervals_ = list(intervals)
+        if not intervals_:
+            return root
         stack.append((root, intervals_, "left"))
 
         while stack:

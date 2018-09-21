@@ -394,6 +394,8 @@ def iterative_build_interval_tree(cls, intervals):
     """
     stack = []
     root = cls(0, None, [], None, -1)
+    if not intervals:
+        return root
 
     stack.append((root, intervals, "left"))
 
