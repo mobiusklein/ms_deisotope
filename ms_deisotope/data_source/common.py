@@ -480,8 +480,20 @@ class _ScanIteratorImplBase(object):
     def _make_producer(self):
         raise NotImplementedError()
 
+    @property
+    def iteration_mode(self):
+        raise NotImplementedError()
+
 
 class _SingleScanIteratorImpl(_ScanIteratorImplBase):
+    """Iterate over individual scans.
+
+    The default strategy when MS1 scans are missing.
+    """
+
+    @property
+    def iteration_mode(self):
+        return 'single'
 
     def _make_producer(self):
         _make_scan = self.scan_packer
@@ -496,6 +508,14 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase):
 
 
 class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
+    """Iterate over related scan bunches.
+
+    The default strategy when MS1 scans are present
+    """
+
+    @property
+    def iteration_mode(self):
+        return 'grouped'
 
     def _make_producer(self):
         _make_scan = self.scan_packer
