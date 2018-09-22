@@ -264,11 +264,17 @@ class PrecursorInformation(Base):
             self.precursor.scan_id, self.neutral_mass, self.charge)
 
     def convert(self, data_source=None):
-        return MemoryPrecursorInformation(
-            mass_charge_ratio(self.neutral_mass,
-                              self.charge), self.intensity, self.charge,
-            self.precursor.scan_id, data_source, self.neutral_mass, self.charge,
-            self.intensity)
+        precursor_id = None
+        if self.precursor is not None:
+            precursor_id = self.precursor.scan_id
+        product_id = None
+        if self.product is not None:
+            product_id = self.product.scan_id
+        conv = MemoryPrecursorInformation(
+            mass_charge_ratio(self.neutral_mass, self.charge), self.intensity, self.charge,
+            precursor_id, data_source, self.neutral_mass, self.charge,
+            self.intensity, self.defaulted, self.orphan, product_id)
+        return conv
 
     @classmethod
     def serialize(cls, inst, precursor, product, sample_run_id):
