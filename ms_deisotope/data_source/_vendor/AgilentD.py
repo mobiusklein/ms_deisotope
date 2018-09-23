@@ -395,6 +395,12 @@ class _AgilentDMetadataLoader(object):
     def _has_msn_scans(self):
         return bool(self._scan_types_flags & scan_type_map['ProductIon'])
 
+    def has_msn_scans(self):
+        return self._has_msn_scans()
+
+    def has_ms1_scans(self):
+        return self._has_ms1_scans()
+
     def file_description(self):
         fi = FileInformation(contents={}, source_files=[])
         if self._has_ms1_scans():

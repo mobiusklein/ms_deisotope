@@ -634,6 +634,12 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             # metadata has not been loaded so best to assume there is
             return True
 
+    def has_msn_scans(self):
+        return self._has_msn_scans()
+
+    def has_ms1_scans(self):
+        return self._has_ms1_scans()
+
     def __reduce__(self):
         return self.__class__, (self.source_file, False)
 

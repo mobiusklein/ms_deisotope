@@ -397,7 +397,11 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         index = dict()
         i = 0
         for scan, offset in self.index.items():
-            index[scan.decode("utf8")] = i
+            try:
+                scan = scan.decode("utf8")
+            except AttributeError:
+                pass
+            index[scan] = i
             i += 1
         self._scan_index_lookup = index
 

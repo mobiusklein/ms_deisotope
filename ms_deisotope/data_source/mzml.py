@@ -551,6 +551,12 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def _has_ms1_scans(self):
         return file_information.MS_MS1_Spectrum in self._file_description
 
+    def has_msn_scans(self):
+        return self._has_msn_scans()
+
+    def has_ms1_scans(self):
+        return self._has_ms1_scans()
+
     def make_iterator(self, iterator=None, grouped=True):
         """Configure the iterator's behavior.
 

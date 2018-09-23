@@ -507,6 +507,20 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase):
             yield packed
 
 
+class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl):
+    '''Mimics the interface of :class:`_GroupedScanIteratorImpl` for
+    types which only support single scans
+    '''
+    @property
+    def iteration_mode(self):
+        return 'grouped'
+
+    def _make_producer(self):
+        generator = super(_FakeGroupedScanIteratorImpl, self)._make_producer()
+        for scan in generator:
+            yield ScanBunch(None, [scan])
+
+
 class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
     """Iterate over related scan bunches.
 
@@ -734,14 +748,28 @@ class RandomAccessScanSource(ScanIterator):
         '''
         raise NotImplementedError()
 
-    def _locate_ms1_scan(self, scan):
-        while scan.ms_level != 1:
+    def has_ms1_scans(self):
+        return True
+
+    def has_msn_scans(self):
+        return True
+
+    def _locate_ms1_scan(self, scan, search_range=150):
+        i = 0
+        initial_scan = scan
+        if not self.has_msn_scans():
+            raise IndexError('Cannot locate MS1 Scan')
+        while scan.ms_level != 1 and i < search_range:
+            i += 1
             if scan.index <= 0:
                 break
             scan = self.get_scan_by_index(scan.index - 1)
         if scan.ms_level == 1:
             return scan
-        while scan.ms_level != 1:
+        scan = initial_scan
+        i = 0
+        while scan.ms_level != 1 and i < search_range:
+            i += 1
             try:
                 scan = self.get_scan_by_index(scan.index + 1)
             except IndexError:
@@ -749,6 +777,8 @@ class RandomAccessScanSource(ScanIterator):
         return scan
 
     def find_previous_ms1(self, start_index):
+        if not self.has_ms1_scans():
+            return None
         index = start_index - 1
         while index >= 0:
             try:
@@ -761,6 +791,8 @@ class RandomAccessScanSource(ScanIterator):
         return None
 
     def find_next_ms1(self, start_index):
+        if not self.has_ms1_scans():
+            return None
         index = start_index + 1
         n = len(self.index)
         while index < n:

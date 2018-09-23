@@ -9,7 +9,7 @@ from ms_deisotope import mass_charge_ratio
 
 from .common import (
     Scan, RandomAccessScanSource, PrecursorInformation,
-    ScanDataSource, ScanIterator, ChargeNotProvided)
+    ScanDataSource, ScanIterator, ChargeNotProvided, _FakeGroupedScanIteratorImpl)
 
 
 class MGFInterface(ScanDataSource):
@@ -126,8 +126,8 @@ class MGFInterface(ScanDataSource):
         int
         """
         try:
-            return self._index[self._scan_title(scan)]
-        except KeyError:
+            return tuple(self._index.keys()).index(self._scan_title(scan))
+        except ValueError:
             return -1
 
     def _annotations(self, scan):
@@ -191,7 +191,7 @@ def index_mgf(path, encoding='latin-1', read_size=1000000):
     gen = chunk_mgf(path, encoding, read_size)
     i = 0
     index = OrderedDict()
-    pattern = re.compile(_remove_bom(u"TITLE=".encode(encoding)) + b"([^\n]+)\n")
+    pattern = re.compile(_remove_bom(u"TITLE=".encode(encoding)) + b"([^\r\n]+)\r?\n")
     for chunk in gen:
         match = pattern.search(chunk)
         if match:
@@ -203,13 +203,19 @@ def index_mgf(path, encoding='latin-1', read_size=1000000):
 
 class MGFLoader(MGFInterface, ScanIterator):
 
-    def __init__(self, source_file, encoding='utf-8'):
+    def __init__(self, source_file, encoding='utf-8', **kwargs):
         self.source_file = source_file
         self.encoding = encoding
         self._index = self._index_file()
         self._source = self._create_parser()
         self.initialize_scan_cache()
         self.make_iterator()
+
+    def has_msn_scans(self):
+        return True
+
+    def has_ms1_scans(self):
+        return False
 
     def _create_parser(self):
         return mgf.read(self.source_file, read_charges=False,
@@ -243,6 +249,9 @@ class MGFLoader(MGFInterface, ScanIterator):
     def __len__(self):
         return len(self.index)
 
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self.encoding)
+
     def close(self):
         self._source.close()
 
@@ -266,8 +275,26 @@ class MGFLoader(MGFInterface, ScanIterator):
         return iter(self._source)
 
     def make_iterator(self, iterator=None, grouped=False):
-        self.iteration_mode = 'single'
-        self._producer = self._single_scan_iterator(iterator)
+        """Configure the iterator's behavior.
+
+        Parameters
+        ----------
+        iterator : Iterator, optional
+            The iterator to manipulate. If missing, the default
+            iterator will be used.
+        grouped : bool, optional
+            Whether the iterator should be grouped and produce :class:`.ScanBunch` objects
+            or single :class:`.Scan`. Defaults to False
+        """
+        return super(MGFLoader, self).make_iterator(iterator, grouped)
+
+    def _scan_group_iterator(self, iterator=None):
+        if iterator is None:
+            iterator = self._make_default_iterator()
+
+        impl = _FakeGroupedScanIteratorImpl(
+            iterator, self._make_scan, self._validate, self._cache_scan)
+        return impl
 
     def next(self):
         return next(self._producer)
