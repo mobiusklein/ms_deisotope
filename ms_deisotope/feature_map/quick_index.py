@@ -5,8 +5,18 @@ from .scan_interval_tree import (
 
 
 def indexing_iterator(reader, start, end, index):
-    for scan_bunch in reader.start_from_scan(index=start):
-        if scan_bunch.precursor.index > end:
+    try:
+        iterator = reader.start_from_scan(index=start, grouped=True)
+    except AttributeError:
+        if start != 0:
+            raise
+        iterator = reader
+    for scan_bunch in iterator:
+        try:
+            ix = scan_bunch.precursor.index
+        except AttributeError:
+            ix = scan_bunch.products[0].index
+        if ix > end:
             break
         index.add_scan_bunch(scan_bunch)
         yield scan_bunch
@@ -94,8 +104,14 @@ def make_interval_tree(intervals):
 
 
 def index(reader, n_processes=4, scan_interval=None):
-    chunks = run_task_in_chunks(
-        reader, n_processes, scan_interval=scan_interval, task=_Indexer())
+    task = _Indexer()
+    # indexing a :class:`ScanIterator` without random access, have to go in sequence
+    if not hasattr(reader, 'start_from_scan'):
+        reader.make_iterator(grouped=True)
+        chunks = [task((reader, 0, len(reader)))]
+    else:
+        chunks = run_task_in_chunks(
+            reader, n_processes, scan_interval=scan_interval, task=task)
     indices = [chunk[2] for chunk in chunks]
     intervals = [chunk[3] for chunk in chunks]
     index = merge_indices(indices)

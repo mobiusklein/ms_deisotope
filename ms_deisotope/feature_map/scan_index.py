@@ -152,19 +152,20 @@ class ExtendedScanIndex(object):
             self.msn_ids[scan.id] = MSnRecord(**self._package_precursor_information(scan))
 
     def add_scan_bunch(self, bunch):
-        package = {
-            "scan_time": bunch.precursor.scan_time,
-            "product_scan_ids": [
-                product.id for product in bunch.products
-            ],
-            "msms_peaks": [
-                p.index.neutral_mass for p in bunch.precursor.deconvoluted_peak_set
-                if p.chosen_for_msms
-            ] if bunch.precursor.deconvoluted_peak_set is not None else [],
-        }
-        if bunch.precursor.has_ion_mobility():
-            package['drift_time'] = bunch.precursor.drift_time
-        self.ms1_ids[bunch.precursor.id] = MS1Record(**package)
+        if bunch.precursor is not None:
+            package = {
+                "scan_time": bunch.precursor.scan_time,
+                "product_scan_ids": [
+                    product.id for product in bunch.products
+                ],
+                "msms_peaks": [
+                    p.index.neutral_mass for p in bunch.precursor.deconvoluted_peak_set
+                    if p.chosen_for_msms
+                ] if bunch.precursor.deconvoluted_peak_set is not None else [],
+            }
+            if bunch.precursor.has_ion_mobility():
+                package['drift_time'] = bunch.precursor.drift_time
+            self.ms1_ids[bunch.precursor.id] = MS1Record(**package)
         for product in bunch.products:
             self.msn_ids[product.id] = MSnRecord(**self._package_precursor_information(product))
 
