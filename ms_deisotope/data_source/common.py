@@ -1807,7 +1807,7 @@ class PrecursorInformation(object):
     def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
                  peak=None, extracted_peak=None, defaulted=False, orphan=False,
-                 product_scan_id=None, annotations=None):
+                 product_scan_id=None, annotations=None, coisolation=None):
         try:
             charge = int(charge)
         except Exception:
@@ -1816,6 +1816,10 @@ class PrecursorInformation(object):
             extracted_charge = int(extracted_charge)
         except Exception:
             pass
+        if not annotations:
+            annotations = {}
+        if not coisolation:
+            coisolation = []
 
         self.mz = mz
         self.intensity = intensity
@@ -1833,7 +1837,9 @@ class PrecursorInformation(object):
         self.defaulted = defaulted
         self.orphan = orphan
         self.product_scan_id = product_scan_id
+
         self.annotations = annotations
+        self.coisolation = coisolation
 
     def __repr__(self):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
@@ -1843,17 +1849,21 @@ class PrecursorInformation(object):
             self.extracted_charge or 0., self.precursor_scan_id)
 
     def __reduce__(self):
-        return self.__class__, self.__getstate__()
+        return self.__class__, (0, 0, 0), self.__getstate__()
 
     def __getstate__(self):
         return (self.mz, self.intensity, self.charge, self.precursor_scan_id, None, self.extracted_neutral_mass,
                 self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
-                self.defaulted, self.orphan, self.product_scan_id)
+                self.defaulted, self.orphan, self.product_scan_id, self.annotations, self.coisolation)
 
     def __setstate__(self, state):
         (self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source, self.extracted_neutral_mass,
          self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
-         self.defaulted, self.orphan, self.product_scan_id) = state
+         self.defaulted, self.orphan, self.product_scan_id) = state[:13]
+        if len(state) > 13:
+            self.annotations = state[13]
+        if len(state) > 14:
+            self.coisolation = list(state[14])
 
     def __eq__(self, other):
         if other is None:
@@ -1937,7 +1947,7 @@ class PrecursorInformation(object):
             self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source,
             self.extracted_neutral_mass, self.extracted_charge, self.extracted_intensity,
             self.peak, self.extracted_peak, self.defaulted, self.orphan,
-            self.product_scan_id, self.annotations)
+            self.product_scan_id, self.annotations, self.coisolation)
         return dup
 
     def clone(self):
