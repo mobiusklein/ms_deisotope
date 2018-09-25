@@ -33,9 +33,9 @@ jobs:
       pip install -v -r requirements.txt
     displayName: 'Install dependencies'
   - script: |
-      python setup.py install
+      python setup.py develop
       pip install pytest
-      pytest -v -l ms_deisotope/test/ --junitxml=junit/test-results.xml
+      pytest -v --color=yes -l ms_deisotope/test/ --junitxml=junit/test-results.xml
     displayName: 'pytest'
   - task: PublishTestResults@2
     inputs:
