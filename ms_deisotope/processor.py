@@ -10,6 +10,7 @@ from .data_source.common import Scan, ScanBunch, ChargeNotProvided
 from .utils import Base, LRUDict
 from .peak_dependency_network import NoIsotopicClustersError
 from .scoring import InterferenceDetection
+from .envelope_statistics import PrecursorPurityEstimator
 
 logger = logging.getLogger("deconvolution_scan_processor")
 
@@ -446,7 +447,7 @@ class ScanProcessor(Base):
         if decon_result.errors:
             logger.error("Errors occurred during deconvolution of %s, %r" % (
                 precursor_scan.id, decon_result.errors))
-
+        precursor_scan.deconvoluted_peak_set = dec_peaks
         for pr in priority_results:
             if pr is None:
                 continue
@@ -459,17 +460,9 @@ class ScanProcessor(Base):
         # may be `None` if the deconvolution failed, but elements of `priorities`
         # should always be FittedPeak or Peak-like instances
 
-        interference_detector = InterferenceDetection(precursor_scan.peak_set)
+        coisolation_detection = PrecursorPurityEstimator(default_width=self.default_precursor_ion_selection_window)
         for product_scan in precursor_scan.product_scans:
             precursor_information = product_scan.precursor_information
-
-            isolation_window = product_scan.isolation_window
-            if isolation_window is None or isolation_window.is_empty():
-                lower = precursor_information.mz - self.default_precursor_ion_selection_window
-                upper = precursor_information.mz + self.default_precursor_ion_selection_window
-            else:
-                lower = isolation_window.lower_bound
-                upper = isolation_window.upper_bound
 
             # unknown precursor purity
             product_scan.annotations['precursor purity'] = 0.0
@@ -501,14 +494,14 @@ class ScanProcessor(Base):
                         precursor_information, peak)
                     precursor_information.default()
                     continue
-            try:
-                precursor_purity = 1 - interference_detector.detect_interference(peak.envelope, lower, upper)
-            except (AttributeError, ZeroDivisionError):
-                precursor_purity = -1.0
+
+            precursor_purity = -1.0
+            if peak is not None:
+                precursor_purity, coisolation = coisolation_detection(precursor_scan, peak)
+                precursor_information.coisolation = coisolation
 
             product_scan.annotations['precursor purity'] = precursor_purity
             precursor_information.extract(peak)
-        precursor_scan.deconvoluted_peak_set = dec_peaks
         return dec_peaks, priority_results
 
     def deconvolute_product_scan(self, product_scan):
@@ -589,7 +582,7 @@ class ScanProcessor(Base):
             self.pick_product_scan_peaks(product_scan)
             self.deconvolute_product_scan(product_scan)
 
-        return precursor_scan, product_scans
+        return ScanBunch(precursor_scan, product_scans)
 
     def next(self):
         """Fetches the next bunch of scans from :attr:`reader` and
@@ -600,8 +593,8 @@ class ScanProcessor(Base):
         ScanBunch
         """
         precursor, products = self._get_next_scans()
-        precursor_scan, product_scans = self.process(precursor, products)
-        return ScanBunch(precursor_scan, product_scans)
+        bunch = self.process(precursor, products)
+        return bunch
 
     def __next__(self):
         """Fetches the next bunch of scans from :attr:`reader` and

@@ -1,5 +1,8 @@
 import operator
 
+from collections import namedtuple
+
+from ms_deisotope.averagine import mass_charge_ratio
 
 intensity_getter = operator.attrgetter("intensity")
 mz_getter = operator.attrgetter("mz")
@@ -39,3 +42,65 @@ def weighted_average(values, weights):
     # as a generator (i.e. py3's map) would always have sum(weights) == 0
     weights = list(weights)
     return sum(v * w for v, w in zip(values, weights)) / float(sum(weights))
+
+
+_CoIsolation = namedtuple("CoIsolation", ("neutral_mass", "intensity", "charge"))
+
+
+class CoIsolation(_CoIsolation):
+    @property
+    def mz(self):
+        return mass_charge_ratio(self.neutral_mass, self.charge)
+
+
+class PrecursorPurityEstimator(object):
+
+    def __init__(self, lower_extension=1.5, default_width=1.5):
+        self.lower_extension = lower_extension
+        self.default_width = default_width
+
+    def precursor_purity(self, scan, precursor_peak):
+        peak_set = scan.peak_set
+        mz = precursor_peak.mz
+        isolation_window = scan.isolation_window
+        if isolation_window is None:
+            lower_bound = mz - self.default_width
+            upper_bound = mz + self.default_width
+        else:
+            lower_bound = isolation_window.lower_bound
+            upper_bound = isolation_window.upper_bound
+        envelope = precursor_peak.envelope
+        assigned = sum([p.intensity for p in envelope])
+        total = sum([p.intensity for p in peak_set.between(lower_bound, upper_bound)])
+        if total == 0:
+            return 0
+        purity = 1 - (assigned / total)
+        return purity
+
+    def coisolation(self, scan, precursor_peak, relative_intensity_threshold=0.1, ignore_singly_charged=True):
+        peak_set = scan.deconvoluted_peak_set
+        mz = precursor_peak.mz
+
+        isolation_window = scan.isolation_window
+        if isolation_window is None:
+            lower_bound = mz - self.default_width
+            upper_bound = mz + self.default_width
+        else:
+            lower_bound = isolation_window.lower_bound
+            upper_bound = isolation_window.upper_bound
+        extended_lower_bound = lower_bound - self.lower_extension
+
+        peaks = peak_set.between(extended_lower_bound, upper_bound, use_mz=True)
+        others = [
+            CoIsolation(p.neutral_mass, p.intensity, p.charge)
+            for p in peaks if p != precursor_peak and p.intensity > (
+                precursor_peak.intensity * relative_intensity_threshold) and
+            p.envelope[-1].mz > lower_bound and ((abs(p.charge) != 1 and ignore_singly_charged) or
+                                                 not ignore_singly_charged)
+        ]
+        return others
+
+    def __call__(self, scan, precursor_peak):
+        purity = self.precursor_purity(scan, precursor_peak)
+        coisolation = self.coisolation(scan, precursor_peak)
+        return purity, coisolation

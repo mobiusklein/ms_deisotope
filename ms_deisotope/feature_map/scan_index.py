@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 from ms_deisotope.data_source.common import PrecursorInformation, ChargeNotProvided
 from ms_deisotope.utils import Base
+from ms_deisotope.envelope_statistics import CoIsolation
 
 
 class MSRecordBase(Base):
@@ -49,7 +50,7 @@ class MS1Record(MSRecordBase):
 class MSnRecord(MSRecordBase):
     def __init__(self, scan_time=None, neutral_mass=None, mz=None, intensity=None, charge=None,
                  precursor_scan_id=None, product_scan_id=None, defaulted=None, orphan=None,
-                 drift_time=None, **kwargs):
+                 drift_time=None, coisolation=None, **kwargs):
         super(MSnRecord, self).__init__(scan_time, drift_time, **kwargs)
         self.neutral_mass = neutral_mass
         self.mz = mz
@@ -59,6 +60,7 @@ class MSnRecord(MSRecordBase):
         self.product_scan_id = product_scan_id
         self.defaulted = defaulted
         self.orphan = orphan
+        self.coisolation = [CoIsolation(*c) if c else c for c in (coisolation or [])]
 
     def to_dict(self):
         package = super(MSnRecord, self).to_dict()
@@ -70,6 +72,7 @@ class MSnRecord(MSRecordBase):
         package['product_scan_id'] = self.product_scan_id
         package['defaulted'] = self.defaulted
         package['orphan'] = self.orphan
+        package['coisolation'] = self.coisolation
         return package
 
 
@@ -111,10 +114,9 @@ class ExtendedScanIndex(object):
                 "product_scan_id": product.id,
                 "scan_time": product.scan_time,
                 "defaulted": precursor_information.defaulted,
-                "orphan": precursor_information.orphan
+                "orphan": precursor_information.orphan,
+                "coisolation": precursor_information.coisolation,
             }
-            if product.has_ion_mobility():
-                package['drift_time'] = product.drift_time
         else:
             charge = precursor_information.charge
             if charge == ChargeNotProvided:
@@ -128,10 +130,11 @@ class ExtendedScanIndex(object):
                 "product_scan_id": product.id,
                 "scan_time": product.scan_time,
                 "defaulted": precursor_information.defaulted,
-                "orphan": precursor_information.orphan
+                "orphan": precursor_information.orphan,
+                "coisolation": precursor_information.coisolation,
             }
-            if product.has_ion_mobility():
-                package['drift_time'] = product.drift_time
+        if product.has_ion_mobility():
+            package['drift_time'] = product.drift_time
         return package
 
     def add_scan(self, scan):
@@ -214,7 +217,8 @@ class ExtendedScanIndex(object):
             pinfo = PrecursorInformation(
                 mz, intensity, charge, precursor_scan_id,
                 bind, neutral_mass, charge, intensity,
-                product_scan_id=product_scan_id)
+                product_scan_id=product_scan_id,
+                coisolation=info.get('coisolation'))
             out.append(pinfo)
         return out
 

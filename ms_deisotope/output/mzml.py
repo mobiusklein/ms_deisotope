@@ -30,6 +30,7 @@ from .text_utils import (envelopes_to_array, decode_envelopes)
 from ms_deisotope import peak_set
 from ms_deisotope.utils import Base
 from ms_deisotope.averagine import neutral_mass
+from ms_deisotope.envelope_statistics import CoIsolation
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ScanBunch, ChargeNotProvided,
     _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
@@ -593,6 +594,12 @@ class MzMLSerializer(ScanSerializerBase):
                     {"ms_deisotope:orphan": precursor_information.orphan}
                 ]
             }
+            if precursor_information.coisolation:
+                for p in precursor_information.coisolation:
+                    package['params'].append({
+                        "name": "ms_deisotope:coisolation",
+                        "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
+                    })
         else:
             package = {
                 "mz": precursor_information.mz,
@@ -833,10 +840,13 @@ class MzMLSerializer(ScanSerializerBase):
         This closes the open list tags, empties the chromatogram accumulator,
         and closes the :obj:`<mzML>` tag, and attempts to flush the output file.
         """
-        self._spectrum_list_tag.__exit__(None, None, None)
-        self._make_default_chromatograms()
-        self.write_chromatograms()
-        self._run_tag.__exit__(None, None, None)
+        if self._spectrum_list_tag is not None:
+            self._spectrum_list_tag.__exit__(None, None, None)
+        if self._run_tag is not None:
+            self._make_default_chromatograms()
+            self.write_chromatograms()
+        if self._run_tag is not None:
+            self._run_tag.__exit__(None, None, None)
         self.writer.__exit__(None, None, None)
         if self.indexer is not None:
             try:
@@ -971,6 +981,35 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         samples = self.samples()
         sample = samples['sample'][0]
         return SampleRun(name=sample['name'], uuid=sample['SampleRun-UUID'])
+
+    def _precursor_information(self, scan):
+        """Returns information about the precursor ion,
+        if any, that this scan was derived form.
+
+        Returns `None` if this scan has no precursor ion
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        PrecursorInformation
+        """
+        precursor = super(ProcessedMzMLDeserializer, self)._precursor_information(scan)
+        pinfo_dict = self._get_selected_ion(scan)
+        coisolation_params = pinfo_dict.get("ms_deisotope:coisolation", [])
+        if not isinstance(coisolation_params, list):
+            coisolation_params = [coisolation_params]
+        coisolation = []
+        for entry in coisolation_params:
+            mass, intensity, charge = entry.split(" ")
+            coisolation.append(
+                CoIsolation(float(mass), float(intensity), int(charge)))
+        precursor.coisolation = coisolation
+        return precursor
 
     @property
     def sample_run(self):
