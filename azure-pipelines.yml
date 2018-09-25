@@ -30,12 +30,12 @@ jobs:
   - script: |
       python -m pip install --upgrade pip
       pip install Cython
-      pip install -r requirements.txt
+      pip install -v -r requirements.txt
     displayName: 'Install dependencies'
   - script: |
-      pip install .
+      python setup.py install
       pip install pytest
-      pytest ms_deisotope/test/ --junitxml=junit/test-results.xml
+      pytest -v -l ms_deisotope/test/ --junitxml=junit/test-results.xml
     displayName: 'pytest'
   - task: PublishTestResults@2
     inputs:
