@@ -363,7 +363,10 @@ class IndexSavingXML(xml.IndexedXML):
         try:
             self._read_byte_offsets()
         except (IOError, TypeError):
-            super(IndexSavingXML, self)._build_index()
+            try:
+                super(IndexSavingXML, self)._build_index()
+            except TypeError:
+                xml.IndexedXML._build_index(self)
 
     @classmethod
     def prebuild_byte_offset_file(cls, path):
