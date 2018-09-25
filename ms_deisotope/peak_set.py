@@ -229,7 +229,7 @@ class DeconvolutedPeakSet(Base):
         -------
         self: DeconvolutedPeakSet
         """
-        self._reindex()
+        return self._reindex()
 
     def _reindex(self):
         """
