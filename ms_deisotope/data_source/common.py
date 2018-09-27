@@ -757,7 +757,7 @@ class RandomAccessScanSource(ScanIterator):
     def _locate_ms1_scan(self, scan, search_range=150):
         i = 0
         initial_scan = scan
-        if not self.has_msn_scans():
+        if not self.has_ms1_scans():
             raise IndexError('Cannot locate MS1 Scan')
         while scan.ms_level != 1 and i < search_range:
             i += 1

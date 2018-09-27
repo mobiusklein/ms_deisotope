@@ -29,6 +29,7 @@ import ms_deisotope
 from ms_deisotope.data_source import ScanBunch, Scan
 from ms_deisotope.peak_set import EnvelopePair
 from ms_deisotope.utils import (draw_raw, draw_peaklist)
+from ms_deisotope.output import ProcessedMzMLDeserializer
 
 averagine_label_map = {
     "peptide": ms_deisotope.peptide,
