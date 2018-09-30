@@ -928,13 +928,28 @@ class ScanBase(object):
         except AttributeError:
             # ProcessedScan doesn't have an arrays attribute
             pass
-        eq = self.peak_set == other.peak_set
-        if not eq:
-            return False
+        try:
+            eq = self.peak_set == other.peak_set
+            if not eq:
+                return False
+        except AttributeError:
+            if ((self.peak_set is None and other.peak_set is not None) or (
+                    self.peak_set is not None and other.peak_set is None)):
+                pass
+            else:
+                return False
 
-        eq = self.deconvoluted_peak_set == other.deconvoluted_peak_set
-        if not eq:
-            return False
+        try:
+            eq = self.deconvoluted_peak_set == other.deconvoluted_peak_set
+            if not eq:
+                return False
+        except AttributeError:
+            if ((self.deconvoluted_peak_set is None and other.deconvoluted_peak_set is not None) or (
+                    self.deconvoluted_peak_set is not None and other.deconvoluted_peak_set is None)):
+                pass
+            else:
+                return False
+
         eq = self.precursor_information == other.precursor_information
         if not eq:
             return False
