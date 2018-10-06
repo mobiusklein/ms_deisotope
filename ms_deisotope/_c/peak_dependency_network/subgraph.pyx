@@ -205,4 +205,3 @@ cdef class ConnectedSubgraph(object):
             return solution.select()
         else:
             raise NotImplementedError(method)
-

@@ -5,6 +5,8 @@ cdef class SpanningMixin(object):
 
     cdef bint _contains(self, double i)
 
+    cpdef bint contains(self, double i)
+
     cpdef bint overlaps(self, SpanningMixin interval)
 
     cpdef double overlap_size(self, SpanningMixin interval)

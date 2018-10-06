@@ -19,6 +19,20 @@ class SpanningMixin(object):
         -------
         bool
         """
+        return self.contains(i)
+
+    def contains(self, i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : Number
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
         return self.start <= i <= self.end
 
     def overlaps(self, interval):

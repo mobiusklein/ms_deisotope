@@ -1,17 +1,19 @@
 import operator
 import warnings
+
 from collections import defaultdict
 
-from .subgraph import ConnectedSubgraph
-from .intervals import SpanningMixin, IntervalTreeNode
-from ..utils import Base, TargetedDeconvolutionResultBase
+cimport cython
+
+from ms_peak_picker._c.peak_set cimport FittedPeak, PeakSet
+
+from ms_deisotope._c.scoring cimport IsotopicFitRecord
+from ms_deisotope._c.peak_dependency_network.intervals cimport SpanningMixin, IntervalTreeNode
+from ms_deisotope._c.peak_dependency_network.subgraph cimport ConnectedSubgraph
 
 
-def ident(x):
-    return x
-
-
-class PeakNode(Base):
+@cython.freelist(1000000)
+cdef class PeakNode(object):
     """
     Represent a single FittedPeak and the junction of multiple
     IsotopicFitRecords which depend uponit
@@ -23,6 +25,19 @@ class PeakNode(Base):
     peak : ms_peak_picker.FittedPeak
         The peak being depended upon
     """
+
+    cdef:
+        public FittedPeak peak
+        public dict links
+        long _hash
+
+    @staticmethod
+    cdef PeakNode _create(FittedPeak peak):
+        cdef PeakNode inst = PeakNode.__new__(PeakNode)
+        inst.peak = peak
+        inst.links = dict()
+        inst._hash = hash(peak)
+        return inst
 
     def __init__(self, peak, links=None):
         if links is None:
@@ -50,7 +65,7 @@ class PeakNode(Base):
         return "PeakNode(%s, %s)" % (self.peak, self.links)
 
 
-class DependenceCluster(SpanningMixin):
+cdef class DependenceCluster(SpanningMixin):
     """
     Represent a cluster of isotopic fits which are overlapping
 
@@ -67,6 +82,12 @@ class DependenceCluster(SpanningMixin):
         isotopic fit score
     """
 
+    cdef:
+        public object parent
+        public list dependencies
+        public bint maximize
+        public IsotopicFitRecord best_fit
+
     def __init__(self, parent=None, dependencies=None, maximize=True):
         if parent is None:
             parent = self
@@ -76,16 +97,15 @@ class DependenceCluster(SpanningMixin):
             dependencies = sorted(dependencies, key=lambda x: x.score, reverse=maximize)
         self.parent = parent
         self.dependencies = dependencies
-        self.rank = 0
         self.maximize = maximize
         self._reset()
 
-    def _reset(self):
+    cpdef _reset(self):
         self.start = self._start()
         self.end = self._end()
         self.best_fit = self._best_fit()
 
-    def add(self, fit):
+    cpdef add(self, IsotopicFitRecord fit):
         """
         Adds a new IsotopicFitRecord to this cluster, and ensures the sorted
         property still holds
@@ -97,18 +117,18 @@ class DependenceCluster(SpanningMixin):
 
         """
         self.dependencies.append(fit)
-        self.dependencies.sort(key=lambda x: x.score, reverse=self.maximize)
+        self.dependencies.sort(reverse=self.maximize)
         self._reset()
 
-    def disjoint_subset(self):
+    cpdef list disjoint_subset(self):
         graph = self.build_graph()
         return graph.find_heaviest_path()
 
-    def build_graph(self):
+    cpdef ConnectedSubgraph build_graph(self):
         graph = ConnectedSubgraph(self.dependencies, maximize=self.maximize)
         return graph
 
-    def _best_fit(self):
+    cdef IsotopicFitRecord _best_fit(self):
         """
         Retrieve the absolute best single fit for the cluster
 
@@ -119,7 +139,7 @@ class DependenceCluster(SpanningMixin):
         """
         return self.dependencies[0]
 
-    def disjoint_best_fits(self):
+    cpdef list disjoint_best_fits(self):
         """
         Compute the best set of disjoint isotopic fits spanning this cluster
 
@@ -131,7 +151,7 @@ class DependenceCluster(SpanningMixin):
         best_fits = fit_sets
         return [node.fit for node in best_fits]
 
-    def _start(self):
+    cdef double _start(self):
         """
         Determine the first mz coordinate for members of this cluster
 
@@ -141,7 +161,7 @@ class DependenceCluster(SpanningMixin):
         """
         return min([member.experimental[0].mz for member in self.dependencies])
 
-    def _end(self):
+    cdef double _end(self):
         """
         Determines the last mz coordinate for members of this cluster
 
@@ -171,7 +191,21 @@ class DependenceCluster(SpanningMixin):
         return self.dependencies[i]
 
 
-class PeakDependenceGraph(object):
+cdef class PeakDependenceGraph(object):
+    cdef:
+        public dict nodes
+        public set dependencies
+        public PeakSet peaklist
+        public int max_missed_peaks
+        public bint use_monoisotopic_superceded_filtering
+        public bint maximize
+
+        public list clusters
+        public dict _solution_map
+        public list _all_clusters
+
+        public IntervalTreeNode _interval_tree
+
     def __init__(self, peaklist, nodes=None, dependencies=None, max_missed_peaks=1,
                  use_monoisotopic_superceded_filtering=True, maximize=True):
         if nodes is None:
@@ -280,7 +314,14 @@ class PeakDependenceGraph(object):
             fit = common[0]
         return self._solution_map[fit]
 
-    def _populate_initial_graph(self):
+    cpdef _populate_initial_graph(self):
+        cdef:
+            size_t i, n
+            FittedPeak peak
+        n = self.peaklist.get_size()
+        for i in range(n):
+            peak = self.peaklist.getitem(i)
+
         for peak in self.peaklist:
             self.nodes[peak.index] = PeakNode(peak)
 
@@ -417,42 +458,6 @@ class PeakDependenceGraph(object):
 
     def __repr__(self):
         return "PeakDependenceNetwork(%s, %d)" % (self.peaklist, len(self.dependencies))
-
-
-class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
-    '''Stores the necessary information to retrieve the local optimal solution for
-    a single peak for a deconvolution algorithm from the optimal fit containing
-    :attr:`query_peak` in the set of disjoint best fits for the enclosing connected
-    component
-
-    Attributes
-    ----------
-    query_peak : FittedPeak
-        The peak queried with
-    solution_peak : DeconvolutedPeak
-        The optimal solution peak
-    '''
-    def __init__(self, deconvoluter, peak, *args, **kwargs):
-        super(NetworkedTargetedDeconvolutionResult, self).__init__(deconvoluter, *args, **kwargs)
-        self.query_peak = peak
-        self.solution_peak = None
-
-    def _get_solution(self):
-        try:
-            self.solution_peak = self.deconvoluter.peak_dependency_network.find_solution_for(
-                self.query_peak)
-        except IndexError:
-            pass
-
-    def get(self):
-        """Fetch the optimal solution after the computation has finished.
-
-        Returns
-        -------
-        DeconvolutedPeak
-        """
-        self._get_solution()
-        return self.solution_peak
 
 
 class NoIsotopicClustersError(ValueError):

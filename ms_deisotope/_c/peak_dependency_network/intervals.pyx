@@ -40,6 +40,20 @@ cdef class SpanningMixin(object):
         """
         return self.start <= i <= self.end
 
+    cpdef bint contains(self, double i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : double
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
+        return self._contains(i)
+
     cpdef bint overlaps(self, SpanningMixin interval):
         """Tests whether another spanning entity with
         a defined start and end point overlaps with
