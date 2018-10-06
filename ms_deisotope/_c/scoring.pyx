@@ -917,10 +917,10 @@ cdef class DotProductFitter(IsotopicFitterBase):
             FittedPeak obs
             TheoreticalPeak theo
             double score
-        n = PyList_GET_SIZE(observed)
+        n = PyList_GET_SIZE(experimental)
         score = 0
         for i in range(n):
-            obs = <FittedPeak>PyList_GET_ITEM(observed, i)
-            theo = <TheoreticalPeak>PyList_GET_ITEM(expected, i)
+            obs = <FittedPeak>PyList_GET_ITEM(experimental, i)
+            theo = <TheoreticalPeak>PyList_GET_ITEM(theoretical, i)
             score += obs.intensity * theo.intensity
         return score
