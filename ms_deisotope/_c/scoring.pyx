@@ -329,6 +329,7 @@ cdef class IsotopicFitterBase(object):
         return self._evaluate(peaklist, observed, expected)
 
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+        raise NotImplementedError()
         return 0
 
     def __call__(self, *args, **kwargs):
@@ -570,6 +571,23 @@ cdef class LeastSquaresFitter(IsotopicFitterBase):
 cdef LeastSquaresFitter least_squares
 
 least_squares = LeastSquaresFitter()
+
+
+cdef class ChiSquareFitter(IsotopicFitterBase):
+
+    @cython.cdivision
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+        cdef:
+            double running_total
+            size_t i
+            TheoreticalPeak t
+            FittedPeak e
+        running_total = 0
+        for i in range(PyList_GET_SIZE(observed)):
+            e = <FittedPeak>PyList_GetItem(observed, i)
+            t = <TheoreticalPeak>PyList_GetItem(expected, i)
+            running_total += ((e - t) ** 2) / t
+        return running_total
 
 
 @cython.cdivision
@@ -885,4 +903,24 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
         score = self.scorer._evaluate(peaklist, experimental, theoretical)
         self.scale_fitted_peaks(experimental, self.scale_factor)
         self.scale_theoretical_peaks(theoretical, self.scale_factor)
+        return score
+
+
+cdef class DotProductFitter(IsotopicFitterBase):
+
+    def __init__(self,  minimum_score=100):
+        self.select = MaximizeFitSelector(minimum_score)
+
+    cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
+        cdef:
+            size_t i, n
+            FittedPeak obs
+            TheoreticalPeak theo
+            double score
+        n = PyList_GET_SIZE(observed)
+        score = 0
+        for i in range(n):
+            obs = <FittedPeak>PyList_GET_ITEM(observed, i)
+            theo = <TheoreticalPeak>PyList_GET_ITEM(expected, i)
+            score += obs.intensity * theo.intensity
         return score

@@ -96,3 +96,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
     cpdef double _calculate_scale_factor(self, PeakSet peaklist)
     cdef void scale_fitted_peaks(self, list experimental, double factor)
     cdef void scale_theoretical_peaks(self, list theoretical, double factor)
+
+
+cdef class DotProductFitter(IsotopicFitterBase):
+    pass
