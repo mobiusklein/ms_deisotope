@@ -70,7 +70,10 @@ class PriorityTarget(Base):
 
     @property
     def charge(self):
-        return int(self.info.charge)
+        try:
+            return int(self.info.charge)
+        except TypeError:
+            return 0
 
     def charge_range_hint(self, charge_range):
         """Create an updated charge range for a Deconvoluter to search.
