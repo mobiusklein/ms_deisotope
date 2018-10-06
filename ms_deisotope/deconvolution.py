@@ -377,7 +377,7 @@ class DeconvoluterBase(Base):
         current_peak = peak_list[0]
         merged_peaks = []
         for peak in peak_list[1:]:
-            if current_peak.neutral_mass == peak.neutral_mass and current_peak.charge == peak.charge:
+            if abs(current_peak.neutral_mass - peak.neutral_mass) < 1e-3 and current_peak.charge == peak.charge:
                 current_peak.intensity += peak.intensity
             else:
                 merged_peaks.append(current_peak)
@@ -939,8 +939,10 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
 try:
     from ms_deisotope._c.deconvoluter_base import (
-        _get_all_peak_charge_pairs as _c_get_all_peak_charge_pairs)
+        _get_all_peak_charge_pairs as _c_get_all_peak_charge_pairs,
+        _make_deconvoluted_peak as _c_make_deconvoluted_peak)
     ExhaustivePeakSearchDeconvoluterBase._get_all_peak_charge_pairs = _c_get_all_peak_charge_pairs
+    ExhaustivePeakSearchDeconvoluterBase._make_deconvoluted_peak = _c_make_deconvoluted_peak
 except ImportError as e:
     pass
 
@@ -1102,6 +1104,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
     """
     def __init__(self, peaklist, *args, **kwargs):
         max_missed_peaks = kwargs.pop("max_missed_peaks", 1)
+        self.subgraph_solver_type = kwargs.pop("subgraph_solver", 'disjoint')
         ExhaustivePeakSearchDeconvoluterBase.__init__(self)
         self.peak_dependency_network = PeakDependenceGraph(
             self.peaklist, maximize=self.scorer.is_maximizing())
@@ -1242,19 +1245,164 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         """
         disjoint_envelopes = self.peak_dependency_network.find_non_overlapping_intervals()
         i = 0
+        if self.subgraph_solver_type == 'disjoint':
+            solver = self._solve_subgraph_disjoint
+        elif self.subgraph_solver_type == 'iterative':
+            solver = self._solve_subgraph_iterative
+        elif self.subgraph_solver_type == 'top':
+            solver = self._solve_subgraph_top
+        else:
+            raise ValueError("Unknown solver type %r" % (self.subgraph_solver_type, ))
+
         for cluster in disjoint_envelopes:
-            disjoint_best_fits = cluster.disjoint_best_fits()
-            for fit in disjoint_best_fits:
-                score, charge, eid, tid = fit
-                rep_eid = drop_placeholders(eid)
-                if len(rep_eid) == 0:
-                    continue
-                dpeak = self._make_deconvoluted_peak(fit, charge_carrier)
-                self.peak_dependency_network.add_solution(fit, dpeak)
+            solutions = solver(cluster, error_tolerance, charge_carrier)
+            for dpeak in solutions:
+                self.peak_dependency_network.add_solution(dpeak.fit, dpeak)
                 self._deconvoluted_peaks.append(dpeak)
                 i += 1
+
+    def _solve_subgraph_top(self, cluster, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
+        """Given a :class:`~.DependenceCluster`, return the single best fit from the collection of
+        co-dependent fits.
+
+        Parameters
+        ----------
+        cluster : :class:`~.DependenceCluster`
+            The connected subgraph whose nodes will be searched
+        error_tolerance : float, optional
+            The error tolerance to use when performing subtraction, if subtraction is
+            being performed.
+        charge_carrier : float, optional
+            The mass of the charge carrier as used for the deconvolution. Required to
+            back-out the neutral mass of the deconvoluted result
+
+        Returns
+        -------
+        list of :class:`~DeconvolutedPeak`
+            The solved deconvolution solutions
+        """
+        fit = cluster[0]
+        score, charge, eid, tid = fit
+        rep_eid = drop_placeholders(eid)
+        if len(rep_eid) == 0:
+            return []
+        dpeak = self._make_deconvoluted_peak(fit, charge_carrier)
+        if self.use_subtraction:
+            self.subtraction(tid, error_tolerance)
+        return [dpeak]
+
+    def _solve_subgraph_disjoint(self, cluster, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
+        """Given a :class:`~.DependenceCluster`, find a greedy disjoint set of isotopic fits.
+
+        Parameters
+        ----------
+        cluster : :class:`~.DependenceCluster`
+            The connected subgraph whose nodes will be searched
+        error_tolerance : float, optional
+            The error tolerance to use when performing subtraction, if subtraction is
+            being performed.
+        charge_carrier : float, optional
+            The mass of the charge carrier as used for the deconvolution. Required to
+            back-out the neutral mass of the deconvoluted result
+
+        Returns
+        -------
+        list of :class:`~DeconvolutedPeak`
+            The solved deconvolution solutions
+
+        """
+        disjoint_best_fits = cluster.disjoint_best_fits()
+        i = 0
+        solutions = []
+        for fit in disjoint_best_fits:
+            score, charge, eid, tid = fit
+            rep_eid = drop_placeholders(eid)
+            if len(rep_eid) == 0:
+                continue
+            dpeak = self._make_deconvoluted_peak(fit, charge_carrier)
+            solutions.append(dpeak)
+            i += 1
+            if self.use_subtraction:
+                self.subtraction(tid, error_tolerance)
+        return solutions
+
+    def _solve_subgraph_iterative(self, cluster, error_tolerance=ERROR_TOLERANCE, charge_carrier=PROTON):
+        """Given a :class:`~.DependenceCluster`, build a :class:`~.ConnectedSubgraph` and incrementally
+        subtract the best fitting solution and update its overlapping envelopes.
+
+        Parameters
+        ----------
+        cluster : :class:`~.DependencyCluster`
+            The connected subgraph whose nodes will be searched
+        error_tolerance : float, optional
+            The error tolerance to use when performing subtraction, if subtraction is
+            being performed.
+        charge_carrier : float, optional
+            The mass of the charge carrier as used for the deconvolution. Required to
+            back-out the neutral mass of the deconvoluted result
+
+        Returns
+        -------
+        list of :class:`~DeconvolutedPeak`
+            The solved deconvolution solutions
+        """
+        subgraph = cluster.build_graph()
+        solutions = []
+        mask = set()
+        best_node = subgraph[0]
+        peak = self._make_deconvoluted_peak(best_node.fit, charge_carrier)
+        solutions.append(peak)
+        if self.use_subtraction:
+            self.subtraction(best_node.fit.theoretical, error_tolerance)
+        mask.add(best_node.index)
+
+        overlapped_nodes = list(best_node.overlap_edges)
+        maximize = subgraph.maximize
+
+        n = len(subgraph)
+        while len(mask) != n:
+            best_node = None
+            best_score = 0 if maximize else float('inf')
+            retained = []
+            for node in overlapped_nodes:
+                if node.index in mask:
+                    continue
+                missed_peaks = node.fit.missed_peaks = count_placeholders(node.fit.experimental)
+                total_peaks = len(node.fit.experimental)
+                invalid_peak_count = (missed_peaks >= total_peaks - 1 and abs(node.fit.charge) > 1
+                                      ) or missed_peaks == total_peaks
+                if invalid_peak_count or missed_peaks > self.max_missed_peaks:
+                    mask.add(node.index)
+                    continue
+                fit = node.fit
+                fit.theoretical.normalize().scale(fit.experimental, self.scale_method)
+                fit.score = self.scorer.evaluate(self.peaklist, fit.experimental, fit.theoretical.peaklist)
+                if self.scorer.reject(fit):
+                    mask.add(node.index)
+                    continue
+                else:
+                    retained.append(node)
+                if maximize:
+                    if fit.score > best_score:
+                        best_node = node
+                        best_score = fit.score
+                else:
+                    if fit.score < best_score:
+                        best_node = node
+                        best_score = fit.score
+
+            if best_node is not None:
+                peak = self._make_deconvoluted_peak(best_node.fit, charge_carrier)
+                solutions.append(peak)
                 if self.use_subtraction:
-                    self.subtraction(tid, error_tolerance)
+                    self.subtraction(best_node.fit.theoretical, error_tolerance)
+                mask.add(best_node.index)
+                overlapped_nodes = [node for node in best_node.overlap_edges if node.index not in mask]
+            else:
+                overlapped_nodes = []
+            if not overlapped_nodes and len(mask) != n:
+                overlapped_nodes = [node for node in subgraph if node.index not in mask]
+        return solutions
 
     def targeted_deconvolution(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                left_search_limit=3, right_search_limit=3, charge_carrier=PROTON,
@@ -1315,9 +1463,9 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             A callable used as a key function for sorting peaks into the order they will
             be visited during deconvolution. Defaults to :obj:`operator.attrgetter("index")`
         left_search_limit : int, optional
-            The number of steps to search to the left of :obj:`peak`. Defaults to 3
+            The number of steps to search to the left of :obj:`peak`. Defaults to 1
         right_search_limit : int, optional
-            The number of steps to search to the right of :obj:`peak`. Defaults to 3
+            The number of steps to search to the right of :obj:`peak`. Defaults to 0
         charge_carrier : float, optional
             The mass of the charge carrier. Defaults to |PROTON|
         truncate_after : float, optional
