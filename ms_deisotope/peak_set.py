@@ -136,8 +136,11 @@ class DeconvolutedPeak(Base):
         self.area = area
 
     def __eq__(self, other):
-        return (abs(self.neutral_mass - other.neutral_mass) < 1e-4) and (
-            abs(self.intensity - other.intensity) < 1e-4)
+        epsilon = 1e-3
+        return (abs(self.neutral_mass - other.neutral_mass) < epsilon) and (
+            abs(self.intensity - other.intensity) < epsilon) and (
+            self.charge == other.charge) and (
+            abs(self.score - other.score) < epsilon)
 
     def __ne__(self, other):
         return not (self == other)
