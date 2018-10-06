@@ -9,7 +9,8 @@ from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from ms_deisotope.constants import ERROR_TOLERANCE as _ERROR_TOLERANCE
 from ms_deisotope._c.scoring cimport IsotopicFitterBase, IsotopicFitRecord
 from ms_deisotope._c.averagine cimport (AveragineCache, isotopic_shift, PROTON,
-                                        TheoreticalIsotopicPattern)
+                                        TheoreticalIsotopicPattern, neutral_mass)
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE
 from cpython.tuple cimport PyTuple_GET_ITEM
@@ -46,6 +47,52 @@ cdef FittedPeak make_placeholder_peak(double mz):
         mz, intensity=1.0, signal_to_noise=1.0, peak_count=-1, index=0, full_width_at_half_max=0.0,
         area=1.0, left_width=0.0, right_width=0.0)
     return peak
+
+
+cdef list drop_placeholders(list peaks):
+    """Removes all placeholder peaks from an iterable of peaks
+
+    Parameters
+    ----------
+    peaks : Iterable of FittedPeak
+
+    Returns
+    -------
+    list
+    """
+    cdef:
+        size_t i, n
+        list retained
+        FittedPeak peak
+    retained = []
+    n = PyList_GET_SIZE(peaks)
+    for i in range(n):
+        peak = <FittedPeak>PyList_GET_ITEM(peaks, i)
+        if peak.mz > 1 and peak.intensity > 1:
+            retained.append(peak)
+    return retained
+
+
+cdef FittedPeak first_peak(peaks):
+    """Get the first non-placeholder peak in a list of peaks
+
+    Parameters
+    ----------
+    peaks : Iterable of FittedPeak
+
+    Returns
+    -------
+    FittedPeak
+    """
+    cdef:
+        size_t i, n
+        FittedPeak peak
+    n = PyList_GET_SIZE(peaks)
+    for i in range(n):
+        peak = <FittedPeak>PyList_GET_ITEM(peaks, i)
+        if peak.mz > 1 and peak.intensity > 1:
+            return peak
+    return None
 
 
 cdef class DeconvoluterBase(object):
@@ -153,7 +200,7 @@ cdef class DeconvoluterBase(object):
         current_peak = peak_list[0]
         merged_peaks = []
         for peak in peak_list[1:]:
-            if current_peak.neutral_mass == peak.neutral_mass and current_peak.charge == peak.charge:
+            if abs(current_peak.neutral_mass - peak.neutral_mass) < 1e-3 and current_peak.charge == peak.charge:
                 current_peak.intensity += peak.intensity
             else:
                 merged_peaks.append(current_peak)
@@ -284,6 +331,7 @@ cdef class DeconvoluterBase(object):
     def __repr__(self):
         type_name = self.__class__.__name__
         return "%s(peaklist=%s, scorer=%s)" % (type_name, self.peaklist, self.scorer)
+
 
 
 cdef bint has_multiple_real_peaks(list peaklist):
@@ -625,3 +673,85 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
                     self._find_next_putative_peak_inplace(peak.mz, charge, target_peaks, step=i, tolerance=2 * error_tolerance)
 
         return target_peaks
+
+
+@cython.binding(True)
+cpdef DeconvolutedPeak _make_deconvoluted_peak(self, IsotopicFitRecord fit, double charge_carrier):
+    '''Helper method to package a finished :class:`~.IsotopicFitRecord` into a :class:`~.DeconvolutedPeak`
+
+    Arguments
+    ---------
+    fit: :class:`~.IsotopicFitRecord`
+        The fit to package
+    charge_carrier: :class:`float`
+        The mass of the charge carrier
+
+    Returns
+    -------
+    :class:`~.DeconvolutedPeak`
+    '''
+    cdef:
+        double score, total_abundance, signal_to_noise, full_width_at_half_max
+        double most_abundant_mz, most_abundant_mz_intensity, average_mz, area
+        double a_to_a2_ratio
+        int charge
+        list eid, rep_eid, envelope
+        TheoreticalIsotopicPattern tid
+        FittedPeak fpeak, reference_peak
+        size_t i, n
+
+    score = fit.score
+    charge = fit.charge
+    eid = fit.experimental
+    tid = fit.theoretical
+    rep_eid = drop_placeholders(eid)
+
+    total_abundance = 0
+    signal_to_noise = 0
+    full_width_at_half_max = 0
+    most_abundant_mz = 0
+    most_abundant_mz_intensity = 0
+    average_mz = 0
+    area = 0
+    envelope = []
+    n = PyList_GET_SIZE(rep_eid)
+    for i in range(n):
+        fpeak = <FittedPeak>PyList_GET_ITEM(rep_eid, i)
+        if fpeak.intensity > most_abundant_mz_intensity:
+            most_abundant_mz_intensity = fpeak.intensity
+            most_abundant_mz = fpeak.mz
+        total_abundance += fpeak.intensity
+        average_mz += fpeak.mz
+        area += fpeak.area
+        signal_to_noise += fpeak.signal_to_noise
+        full_width_at_half_max += fpeak.full_width_at_half_max
+    full_width_at_half_max /= n
+    signal_to_noise /= n
+    average_mz /= n
+
+    n = PyList_GET_SIZE(eid)
+    for i in range(n):
+        fpeak = <FittedPeak>PyList_GET_ITEM(eid, i)
+        envelope.append((fpeak.mz, fpeak.intensity))
+
+    a_to_a2_ratio = 0
+    if tid.get_size() > 2:
+        a_to_a2_ratio = tid.get(0).intensity / tid.get(2).intensity
+
+    monoisotopic_mass = neutral_mass(
+        tid.get_monoisotopic_mz(), charge, charge_carrier)
+    reference_peak = first_peak(eid)
+
+    dpeak = DeconvolutedPeak(
+        neutral_mass=monoisotopic_mass, intensity=total_abundance, charge=charge,
+        signal_to_noise=signal_to_noise,
+        index=reference_peak.index if reference_peak is not None else -1,
+        full_width_at_half_max=full_width_at_half_max,
+        a_to_a2_ratio=a_to_a2_ratio,
+        most_abundant_mass=neutral_mass(most_abundant_mz, charge),
+        average_mass=neutral_mass(average_mz, charge),
+        score=score,
+        envelope=envelope,
+        mz=tid.monoisotopic_mz, fit=fit,
+        area=area)
+    return dpeak
