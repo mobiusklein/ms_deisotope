@@ -40,7 +40,14 @@ cdef class TheoreticalIsotopicPattern(object):
     cpdef TheoreticalIsotopicPattern truncate_after(self, double truncate_after=*)
     cpdef TheoreticalIsotopicPattern shift(self, double mz)
     cpdef TheoreticalIsotopicPattern scale(self, list experimental_distribution, str method=*)
-    cpdef scale_raw(self, double scale_factor)
+    cpdef TheoreticalIsotopicPattern scale_raw(self, double scale_factor)
+    cpdef double drop_last_peak(self)
+
+    @cython.final
+    cpdef double total(self)
+    
+    @cython.final
+    cpdef TheoreticalIsotopicPattern normalize(self)
 
     @cython.final
     cdef inline TheoreticalIsotopicPattern _scale(self, list experimental_distribution, str method=*)
@@ -59,6 +66,8 @@ cdef class TheoreticalIsotopicPattern(object):
     @cython.final
     cdef inline list get_processed_peaks(self)
 
+    @cython.final
+    cpdef size_t _basepeak_index(self)
 
 
 cdef class AveragineCache(object):

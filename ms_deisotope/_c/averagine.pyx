@@ -3,7 +3,7 @@
 cimport cython
 from cpython cimport PyObject
 from cpython.float cimport PyFloat_AsDouble
-from cpython.list cimport PyList_New, PyList_GET_ITEM, PyList_SET_ITEM, PyList_GET_SIZE, PyList_Append
+from cpython.list cimport PyList_New, PyList_GET_ITEM, PyList_SET_ITEM, PyList_GET_SIZE, PyList_Append, PyList_SetItem
 from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 
 from libc.math cimport floor
@@ -529,11 +529,91 @@ cdef class TheoreticalIsotopicPattern(object):
             for i in range(n):
                 peak = self.get(i)
                 peak.intensity *= scale_factor
+        elif method == 'basepeak':
+            i = 1
+            j = self._basepeak_index()
+            scale_factor =  (<FittedPeak>PyList_GET_ITEM(
+                experimental_distribution, j)).intensity / self.get(j).intensity
+            if j < n:
+                scale_factor += (<FittedPeak>PyList_GET_ITEM(
+                                experimental_distribution, j + 1)).intensity / self.get(j + 1).intensity
+                i += 1
+            if j > 0:
+                scale_factor += (<FittedPeak>PyList_GET_ITEM(
+                                experimental_distribution, j - 1)).intensity / self.get(j - 1).intensity
+                i += 1
+            scale_factor /= i
+            for i in range(n):
+                peak = self.get(i)
+                peak.intensity *= scale_factor
         return self
 
-    cpdef scale_raw(self, double scale_factor):
+    cpdef size_t _basepeak_index(self):
+        cdef:
+            size_t i, n, bp_index
+            double bp_intensity
+            TheoreticalPeak p
+        bp_intensity = 0
+        bp_index = 0
+        for i in range(self.get_size()):
+            p = self.get(i)
+            if p.intensity > bp_intensity:
+                bp_intensity = p.intensity
+                bp_index = i
+        return 0
+
+    @cython.cdivision
+    cpdef TheoreticalIsotopicPattern normalize(self):
+        cdef:
+            size_t i, j, n
+            TheoreticalPeak peak
+            double total_abundance
+        n = self.get_size()
+        total_abundance = 0
+        for i in range(n):
+            total_abundance += self.get(i).intensity
+        for i in range(n):
+            peak = self.get(i)
+            peak.intensity /= total_abundance
+        return self
+
+    cpdef TheoreticalIsotopicPattern scale_raw(self, double scale_factor):
         for peak in self:
             peak.intensity *= scale_factor
+        return self
+
+    cpdef double drop_last_peak(self):
+        cdef:
+            size_t i, n
+            TheoreticalPeak p, tail
+            double scaler
+            list peaks
+
+        n = self.get_size()
+        # peaks = PyList_New(n - 1)
+        peaks = []
+        i = 0
+        tail = self.get(n - 1)
+        scaler = 1 - tail.intensity
+        for i in range(n - 1):
+            p = self.get(i)
+            p.intensity /= scaler
+            # PyList_SetItem(peaks, i, p)
+            PyList_Append(peaks, p)
+        self.peaklist = peaks
+        return scaler
+
+    cpdef double total(self):
+        cdef:
+            double total
+            size_t i, n
+            TheoreticalPeak p
+
+        n = self.get_size()
+        for i in range(n):
+            p = self.get(i)
+            total += p.intensity
+        return total
 
     def __repr__(self):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (

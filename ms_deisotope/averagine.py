@@ -214,6 +214,23 @@ class TheoreticalIsotopicPattern(object):
     def scale_raw(self, scale_factor):
         for peak in self:
             peak.intensity *= scale_factor
+        return self
+
+    def drop_last_peak(self):
+        tail = self[-1]
+        scaler = 1 - tail.intensity
+        for p in self[:-1]:
+            p.intensity /= scaler
+        return scaler
+
+    def total(self):
+        return sum(p.intensity for p in self)
+
+    def normalize(self):
+        total = self.total()
+        for peak in self:
+            peak.intensity /= total
+        return self
 
 
 @dict_proxy("base_composition")
