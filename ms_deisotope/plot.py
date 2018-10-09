@@ -2,7 +2,7 @@
 import math
 import itertools
 
-from ms_peak_picker.utils import draw_peaklist, draw_raw
+from ms_peak_picker.plot import draw_peaklist, draw_raw
 from matplotlib import pyplot as plt, gridspec
 has_plot = True
 
