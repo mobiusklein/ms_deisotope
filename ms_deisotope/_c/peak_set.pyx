@@ -224,6 +224,8 @@ cdef class DeconvolutedPeak(PeakBase):
             index = _Index._create(0, 0)
         elif index == -1:
             index = _Index._create(0, 0)
+        if envelope is None:
+            envelope = ()
         self.neutral_mass = neutral_mass
         self.intensity = intensity
         self.signal_to_noise = signal_to_noise
