@@ -4,6 +4,8 @@ cimport cython
 from libc.stdlib cimport malloc, free
 
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak, PeakSetIndexed
+from ms_peak_picker._c.peak_index cimport PeakIndex
+
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 from ms_deisotope.constants import ERROR_TOLERANCE as _ERROR_TOLERANCE
@@ -19,6 +21,11 @@ from cpython.long cimport PyLong_Check
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
 from cpython.object cimport PyObject
 from cpython.set cimport PySet_Add
+
+import numpy as np
+cimport numpy as cnp
+
+cnp.import_array()
 
 import operator
 
@@ -586,6 +593,98 @@ cdef class ChargeIterator(object):
 
     cdef size_t get_size(self):
         return self.size
+
+
+@cython.cdivision
+cpdef np.ndarray[int, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t index, int min_charge, int max_charge):
+    """An implementation of Hoopman's QuickCharge [1] algorithm for quickly capping charge
+    state queries
+
+    Parameters
+    ----------
+    peak_set : :class:`ms_peak_picker.PeakSet
+        The centroided peak set to search
+    index : int
+        The index of the peak to start the search from
+    min_charge : int
+        The minimum charge state to consider
+    max_charge : int
+        The maximum charge state to consider
+
+    Returns
+    -------
+    np.ndarray
+        The list of feasible charge states
+
+    References
+    ----------
+    [1] Hoopmann, M. R., Finney, G. L., MacCoss, M. J., Michael R. Hoopmann, Gregory L. Finney,
+        and, MacCoss*, M. J., … MacCoss, M. J. (2007). "High-speed data reduction, feature detection
+        and MS/MS spectrum quality assessment of shotgun proteomics data sets using high-resolution
+        Mass Spectrometry". Analytical Chemistry, 79(15), 5620–5632. https://doi.org/10.1021/ac0700833
+    """
+    cdef:
+        PeakSet peaks
+        int[1000] charges
+        np.ndarray[int, ndim=1] result
+        double min_intensity, diff, raw_charge, remain
+        int charge
+        int max_charge_found, min_charge_found, result_size
+        ssize_t j
+        size_t i, n
+        bint matched
+    if FittedPeakCollection is PeakSet:
+        peaks = peak_set
+    else:
+        peaks = peak_set.peaks
+    n = 1000
+    result_size = 0
+    min_intensity = peaks.getitem(index).intensity / 4.
+    for i in range(n):
+        charges[i] = 0
+    for j in range(index + 1, (peaks.get_size())):
+        if peaks.getitem(j).intensity < min_intensity:
+            continue
+        diff = peaks.getitem(j).mz - peaks.getitem(index).mz
+        if diff > 1.1:
+            break
+        raw_charge = 1 / diff
+        charge = <int>(raw_charge + 0.5)
+        remain = raw_charge - <int>(raw_charge)
+        if 0.2 < remain and remain < 0.8:
+            continue
+        if (charge < min_charge) or (charge > max_charge):
+            continue
+        if charges[charge] == 0:
+            result_size += 1
+        charges[charge] = 1
+    if result_size == 0:
+        result = np.empty(0, dtype=int)
+        return result
+    for j in range(index - 1, -1, -1):
+        diff = peaks.getitem(index).mz - peaks.getitem(j).mz
+        if diff > 1.1:
+            break
+        raw_charge = 1 / diff
+        charge = <int>(raw_charge + 0.5)
+        remain = raw_charge - <int>(raw_charge)
+        if 0.2 < remain and remain < 0.8:
+            continue
+        if (charge < min_charge) or (charge > max_charge):
+            continue
+        if charges[charge] == 0:
+            result_size += 1
+        charges[charge] = 1
+    if result_size <= 0:
+        return np.zeros(0, dtype=int)
+    result = np.zeros(result_size, dtype=int)
+
+    i = 0
+    for j in range(n):
+        if charges[j] != 0:
+            result[i] = j
+            i += 1
+    return result
 
 
 @cython.binding(True)

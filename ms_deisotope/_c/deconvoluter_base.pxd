@@ -1,10 +1,19 @@
 cimport cython
 
 from ms_peak_picker._c.peak_set cimport PeakSet, PeakSetIndexed, FittedPeak
+from ms_peak_picker._c.peak_index cimport PeakIndex
+
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
 from ms_deisotope._c.scoring cimport IsotopicFitterBase, IsotopicFitRecord
 from ms_deisotope._c.averagine cimport AveragineCache, TheoreticalIsotopicPattern
+
+cimport numpy as np
+
+
+ctypedef fused FittedPeakCollection:
+    PeakSet
+    PeakIndex
 
 
 cdef class DeconvoluterBase(object):
@@ -65,3 +74,5 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
                                      object charge_range=*,
                                      int left_search_limit=*, int right_search_limit=*,
                                      bint recalculate_starting_peak=*)
+
+cpdef np.ndarray[int, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t index, int min_charge, int max_charge)

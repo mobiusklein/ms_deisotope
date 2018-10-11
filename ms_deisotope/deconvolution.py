@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import operator
 import logging
+import numpy as np
 
 from ms_peak_picker import (
     FittedPeak, PeakSet, PeakIndex, simple_peak, is_peak)
@@ -204,6 +205,66 @@ def from_fitted_peak(peak, charge=1):
         0, mass, mass, 0, Envelope([(peak.mz, peak.intensity)]),
         peak.mz, area=peak.area)
     return dpeak
+
+
+def quick_charge(peak_set, index, min_charge, max_charge):
+    """An implementation of Hoopman's QuickCharge [1] algorithm for quickly capping charge
+    state queries
+
+    Parameters
+    ----------
+    peak_set : :class:`ms_peak_picker.PeakSet
+        The centroided peak set to search
+    index : int
+        The index of the peak to start the search from
+    min_charge : int
+        The minimum charge state to consider
+    max_charge : int
+        The maximum charge state to consider
+
+    Returns
+    -------
+    np.ndarray
+        The list of feasible charge states
+
+    References
+    ----------
+    [1] Hoopmann, M. R., Finney, G. L., MacCoss, M. J., Michael R. Hoopmann, Gregory L. Finney,
+        and, MacCoss*, M. J., … MacCoss, M. J. (2007). "High-speed data reduction, feature detection
+        and MS/MS spectrum quality assessment of shotgun proteomics data sets using high-resolution
+        Mass Spectrometry". Analytical Chemistry, 79(15), 5620–5632. https://doi.org/10.1021/ac0700833
+    """
+    min_intensity = peak_set[index].intensity / 4.
+    charges = np.zeros(max_charge, dtype=int)
+    for j in range(index + 1, len(peak_set)):
+        if peak_set[j].intensity < min_intensity:
+            continue
+        diff = peak_set[j].mz - peak_set[index].mz
+        if diff > 1.1:
+            break
+        raw_charge = 1 / diff
+        charge = int(raw_charge + 0.5)
+        remain = raw_charge - int(raw_charge)
+        if 0.2 < remain < 0.8:
+            continue
+        if charge < min_charge or charge > max_charge:
+            continue
+        charges[charge] = 1
+    if not np.any(charges):
+        return np.array([], dtype=int)
+    for j in range(index - 1, -1, -1):
+        diff = peak_set[index].mz - peak_set[j].mz
+        if diff > 1.1:
+            break
+        raw_charge = 1 / diff
+        charge = int(raw_charge + 0.5)
+        remain = raw_charge - int(raw_charge)
+        if 0.2 < remain < 0.8:
+            continue
+        if charge < min_charge or charge > max_charge:
+            continue
+        charges[charge] = 1
+    return np.where(charges)[0]
 
 
 class DeconvoluterBase(Base):
@@ -565,6 +626,12 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
 
 try:
     from ms_deisotope._c.deconvoluter_base import DeconvoluterBase, AveragineDeconvoluterBase
+except ImportError:
+    pass
+
+try:
+    _quick_charge = quick_charge
+    from ms_deisotope._c.deconvoluter_base import quick_charge
 except ImportError:
     pass
 
