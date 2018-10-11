@@ -192,13 +192,19 @@ def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
 
 
 def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
+    from .peak_set import DeconvolutedPeakSet
+
     if ax is None:
         fig, ax = plt.subplots(1)
     if color_cycle is None:
         color_cycle = _default_color_cycle()
     color_cycle = itertools.cycle(color_cycle)
-    for peak in getattr(scan, "deconvoluted_peak_set", []):
+    if isinstance(scan, DeconvolutedPeakSet):
+        peaks = scan
+    else:
+        peaks = getattr(scan, "deconvoluted_peak_set", [])
+    for peak in peaks:
         color = next(color_cycle)
-        draw_peaklist(peak.envelope, ax=ax, color=color, alpha=0.8, **kwargs)
-        ax.scatter(*zip(*peak.envelope), color=color, alpha=0.8)
+        draw_peaklist(peak.envelope, ax=ax, color=color, alpha=0.75, **kwargs)
+        ax.scatter(*zip(*peak.envelope), color=color, alpha=0.75)
     return ax
