@@ -964,8 +964,10 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 pass
             self._build_scan_id_to_rt_cache()
 
-    def read_index_file(self):
-        with open(self._index_file_name) as handle:
+    def read_index_file(self, index_path=None):
+        if index_path is None:
+            index_path = self._index_file_name
+        with open(index_path) as handle:
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
