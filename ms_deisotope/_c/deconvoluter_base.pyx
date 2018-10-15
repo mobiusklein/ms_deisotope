@@ -179,11 +179,34 @@ cdef class DeconvoluterBase(object):
 
     cpdef scale_theoretical_distribution(self, TheoreticalIsotopicPattern theoretical_distribution,
                                          list experimental_distribution):
-        cdef:
-            size_t i
-            TheoreticalPeak peak
-            double total_abundance
         return theoretical_distribution.scale(experimental_distribution, self.scale_method)    
+
+    cpdef IsotopicFitRecord _evaluate_theoretical_distribution(self, list experimental,
+                                                               TheoreticalIsotopicPattern theoretical,
+                                                               FittedPeak peak, int charge):
+        """Evaluate a provided theoretical isotopic pattern fit against a
+        set of matched experimental peaks.
+
+        Parameters
+        ----------
+        experimental : list
+            A list of experimental fitted peaks to test
+        theoretical : :class:`~.TheoreticalIsotopicPattern`
+            A list of theoretical isotopic peaks to test
+        peak : :class:`~.FittedPeak`
+            The seed peak for the isotopic pattern fit
+        charge : int
+            The target charge state
+
+        Returns
+        -------
+        :class:`~.IsotopicFitRecord`
+        """
+        cdef:
+            double score
+        theoretical._scale(experimental, self.scale_method)
+        score = self.scorer._evaluate(self.peaklist, experimental, theoretical.peaklist)
+        return IsotopicFitRecord._create(peak, score, charge, theoretical, experimental, None, 0)
 
     cpdef subtraction(self, TheoreticalIsotopicPattern isotopic_cluster, double error_tolerance=2e-5):
         cdef:
@@ -199,6 +222,15 @@ cdef class DeconvoluterBase(object):
                 match.intensity -= peak.intensity
                 if (match.intensity < 0) or (peak.intensity > (existing * 0.7)):
                     match.intensity = 1.
+
+    cpdef bint _check_fit(self, IsotopicFitRecord fit):
+        cdef:
+            size_t n
+        if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
+            return False
+        if self.scorer.reject(fit):
+            return False
+        return True
 
     def _merge_peaks(self, peak_list):
         peak_list = sorted(peak_list, key=operator.attrgetter("neutral_mass"))
@@ -374,10 +406,7 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
             peak.mz, charge, charge_carrier=charge_carrier, truncate_after=truncate_after,
             ignore_below=ignore_below)
         eid = self.match_theoretical_isotopic_distribution(tid.peaklist, error_tolerance=error_tolerance)
-        # self.scale_theoretical_distribution(tid, eid)
-        tid._scale(eid, self.scale_method)
-        score = self.scorer._evaluate(self.peaklist, eid, tid.peaklist)
-        return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
+        return self._evaluate_theoretical_distribution(eid, tid, peak, charge)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
                                     double truncate_after=0.95, double ignore_below=0):
@@ -404,9 +433,7 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
                      charge_carrier, truncate_after=truncate_after,
                      ignore_below=ignore_below)
             fit.missed_peaks = count_missed_peaks(fit.experimental)
-            if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
-                continue
-            if self.scorer.reject(fit):
+            if not self._check_fit(fit):
                 continue
             results.add(fit)
         return results
@@ -431,9 +458,7 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             peak.mz, charge, charge_carrier=charge_carrier,
             truncate_after=truncate_after, ignore_below=ignore_below)
         eid = self.match_theoretical_isotopic_distribution(tid.peaklist, error_tolerance=error_tolerance)
-        self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer._evaluate(self.peaklist, eid, tid.peaklist)
-        return IsotopicFitRecord._create(peak, score, charge, tid, eid, None, 0)
+        return self._evaluate_theoretical_distribution(eid, tid, peak, charge)
 
     cpdef set _fit_peaks_at_charges(self, set peak_charge_set, double error_tolerance, double charge_carrier=PROTON,
                                     double truncate_after=0.95, double ignore_below=0):
@@ -461,9 +486,7 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                     truncate_after=truncate_after, ignore_below=ignore_below)
                 fit.missed_peaks = count_missed_peaks(fit.experimental)
                 fit.data = averagine
-                if not has_multiple_real_peaks(fit.experimental) and fit.charge > 1:
-                    continue
-                if self.scorer.reject(fit):
+                if not self._check_fit(fit):
                     continue
                 # should we track the best fit for each hypothetical peak charge pair
                 # and only add the best one to the result set? This would save time
@@ -520,14 +543,8 @@ cdef FittedPeak has_successor_peak_at_charge(DeconvoluterBase peak_collection, F
 
 
 @cython.final
+@cython.freelist(10)
 cdef class ChargeIterator(object):
-    cdef:
-        public int lower
-        public int upper
-        public int sign
-        int* values
-        public size_t size
-        public size_t index
 
     def __init__(self, int lo, int hi):
         self.set_bounds(lo, hi)
@@ -546,7 +563,7 @@ cdef class ChargeIterator(object):
         return inst
 
     @staticmethod
-    cdef ChargeIterator _from_tuple(tuple charge_range):
+    cdef ChargeIterator from_tuple(tuple charge_range):
         cdef:
             ChargeIterator inst
             int a, b
@@ -554,6 +571,43 @@ cdef class ChargeIterator(object):
         a = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 0))
         b = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 1))
         return ChargeIterator._create(a, b)
+
+    @staticmethod
+    cdef ChargeIterator from_quickcharge(tuple charge_range, PeakSet peaks, FittedPeak peak):
+        cdef:
+            ChargeIterator inst
+            int a, b
+        a = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 0))
+        b = PyInt_AsLong(<object>PyTuple_GET_ITEM(charge_range, 1))
+        inst = ChargeIterator.__new__(ChargeIterator)
+        inst.set_bounds(a, b)
+        inst.sequence_from_quickcharge(peaks, peak)
+        return inst
+
+    cpdef sequence_from_quickcharge(self, PeakSet peaks, FittedPeak peak):
+        cdef:
+            np.ndarray[int, ndim=1] charges
+            size_t i, n
+        self.release_sequence()
+        self.index = 0
+        charges = quick_charge(peaks, peak.peak_count, abs(self.lower), abs(self.upper))
+        n = charges.shape[0]
+        if n == 0:
+            self.size = 1
+            self.values = <int*>malloc(sizeof(int) * 1)
+            self.values[0] = self.sign
+        elif charges[0] != 1:
+            n += 1
+            self.size = n
+            self.values = <int*>malloc(sizeof(int) * n)
+            self.values[0] = self.sign
+            for i in range(1, n):
+                self.values[i] = self.sign * charges[i - 1]
+        else:
+            self.size = n
+            self.values = <int*>malloc(sizeof(int) * n)
+            for i in range(n):
+                self.values[i] = self.sign * charges[i]
 
     cdef void set_bounds(self, int lo, int hi):
         cdef:
@@ -566,20 +620,31 @@ cdef class ChargeIterator(object):
         else:
             self.lower = abs_hi
             self.upper = abs_lo
-        self.size = self.upper
+        self.size = self.upper - self.lower + 1
 
-    cdef void make_sequence(self):
+    cpdef make_sequence(self):
         cdef:
             int v
             size_t i, n
+        self.release_sequence()
+        n = self.size = self.upper - self.lower + 1
         self.index = 0
-        n = self.get_size()
         if n == 0:
             return
         self.values = <int*>malloc(sizeof(int) * n)
 
         for i in range(n):
             self.values[i] = (self.upper - i) * self.sign
+
+    cdef void release_sequence(self):
+        if self.values != NULL:
+            free(self.values)
+            self.values = NULL
+        self.size = 0
+        self.reset()
+
+    cpdef reset(self):
+        self.index = 0
 
     cpdef bint has_more(self):
         return self.index < self.get_size()
@@ -593,6 +658,19 @@ cdef class ChargeIterator(object):
 
     cdef size_t get_size(self):
         return self.size
+
+    def __len__(self):
+        return self.size
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index == self.size:
+            raise StopIteration()
+        value = self.values[self.index]
+        self.index += 1
+        return value
 
 
 @cython.cdivision
@@ -690,7 +768,7 @@ cpdef np.ndarray[int, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t
 @cython.binding(True)
 cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, double error_tolerance=ERROR_TOLERANCE,
                                      object charge_range=(1, 8), int left_search_limit=3, int right_search_limit=3,
-                                     bint recalculate_starting_peak=True):
+                                     bint recalculate_starting_peak=True, bint use_quick_charge=False):
         """Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using
         the provided search parameters.
 
@@ -726,7 +804,10 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
             FittedPeak prev_peak, nxt_peak
             object add_, update_
 
-        charge_iterator = ChargeIterator._from_tuple(tuple(charge_range))
+        if use_quick_charge:
+            charge_iterator = ChargeIterator.from_quickcharge(tuple(charge_range), self.peaklist, peak)
+        else:
+            charge_iterator = ChargeIterator.from_tuple(tuple(charge_range))
 
         target_peaks = set()
         add_ = target_peaks.add
