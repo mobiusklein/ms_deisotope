@@ -204,9 +204,12 @@ cdef class DeconvoluterBase(object):
         """
         cdef:
             double score
+            IsotopicFitRecord fit
         theoretical._scale(experimental, self.scale_method)
         score = self.scorer._evaluate(self.peaklist, experimental, theoretical.peaklist)
-        return IsotopicFitRecord._create(peak, score, charge, theoretical, experimental, None, 0)
+        fit = IsotopicFitRecord._create(peak, score, charge, theoretical, experimental, None, 0)
+        fit.missed_peaks = count_missed_peaks(fit.experimental)
+        return fit
 
     cpdef subtraction(self, TheoreticalIsotopicPattern isotopic_cluster, double error_tolerance=2e-5):
         cdef:
@@ -432,7 +435,7 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
                      peak, error_tolerance, charge,
                      charge_carrier, truncate_after=truncate_after,
                      ignore_below=ignore_below)
-            fit.missed_peaks = count_missed_peaks(fit.experimental)
+            # fit.missed_peaks = count_missed_peaks(fit.experimental)
             if not self._check_fit(fit):
                 continue
             results.add(fit)
@@ -484,7 +487,7 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                 fit = self.fit_theoretical_distribution(
                     peak, error_tolerance, charge, averagine, charge_carrier,
                     truncate_after=truncate_after, ignore_below=ignore_below)
-                fit.missed_peaks = count_missed_peaks(fit.experimental)
+                # fit.missed_peaks = count_missed_peaks(fit.experimental)
                 fit.data = averagine
                 if not self._check_fit(fit):
                     continue

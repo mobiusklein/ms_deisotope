@@ -1,5 +1,5 @@
 import unittest
-
+import logging
 import numpy as np
 
 import brainpy
@@ -11,14 +11,18 @@ from ms_deisotope.deconvolution import (
     deconvolute_peaks, AveragineDeconvoluter,
     AveraginePeakDependenceGraphDeconvoluter,
     CompositionListDeconvoluter,
-    CompositionListPeakDependenceGraphDeconvoluter)
-from ms_deisotope.scoring import PenalizedMSDeconVFitter
+    CompositionListPeakDependenceGraphDeconvoluter,
+    count_placeholders, drop_placeholders)
+from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 from brainpy import neutral_mass
 
 from ms_deisotope.test.test_scan import (
     make_profile, points, fwhm,
     FittedPeak)
 from ms_deisotope.test.common import datafile
+
+
+logger = logging.getLogger('ms_deisotope.test.test_deconvolution')
 
 
 class TestAveragineDeconvolution(unittest.TestCase):
@@ -93,14 +97,34 @@ class TestCompositionListDeconvolution(unittest.TestCase):
         ((3, 20), (4, 90), (5, 45))
     ]
 
-    def make_scan(self):
-        peaks = []
+    def make_tids(self):
+        tids = []
+        ions = []
         for comp, charges in zip(self.compositions, self.charges):
             for charge, abundance in charges:
                 tid = brainpy.isotopic_variants(comp, charge=-charge)
                 tid = TheoreticalIsotopicPattern(tid, tid[0].mz)
                 tid.scale_raw(abundance * 100)
-                peaks.extend(tid)
+                tids.append(tid)
+                ions.append((comp, -charge))
+        return tids, ions
+
+    @staticmethod
+    def get_nearest_index(query_mz, tid_list):
+        best_index = None
+        best_error = float('inf')
+
+        for i, tid in enumerate(tid_list):
+            error = abs(tid.monoisotopic_mz - query_mz)
+            if error < best_error:
+                best_error = error
+                best_index = i
+        return best_index
+
+    def make_scan(self):
+        peaks = []
+        tids, ions = self.make_tids()
+        list(map(peaks.extend, tids))
         peaks.sort(key=lambda x: x.mz)
 
         mz = np.array([0])
@@ -131,30 +155,96 @@ class TestCompositionListDeconvolution(unittest.TestCase):
         scan.pick_peaks()
         self.assertIsNotNone(scan.peak_set)
         algorithm_type = CompositionListDeconvoluter
+        decon_config = {
+            "composition_list": self.compositions,
+            "scorer": PenalizedMSDeconVFitter(5., 2.),
+            # "scorer": MSDeconVFitter(5.),
+            "use_subtraction": False
+        }
         deconresult = deconvolute_peaks(
-            scan.peak_set, {
-                "composition_list": self.compositions,
-                "scorer": PenalizedMSDeconVFitter(5., 2.),
-                "use_subtraction": True
-            }, charge_range=(-1, -8), deconvoluter_type=algorithm_type)
+            scan.peak_set, decon_config, charge_range=(-1, -8), deconvoluter_type=algorithm_type)
         dpeaks = deconresult.peak_set
         n_cases = sum(map(len, self.charges))
-        assert len(dpeaks) == n_cases
+        if not (len(dpeaks) == n_cases):
+            tids, ions = self.make_tids()
+            tids, ions = zip(*sorted(zip(tids, ions), key=lambda x: x[0].monoisotopic_mz))
+            seen = set()
+            for i, dp in enumerate(sorted(dpeaks, key=lambda x: x.mz)):
+                ix = self.get_nearest_index(dp.mz, tids)
+                logger.warning("%0.3f %d %0.3f %r (Matched %d)", dp.neutral_mass, dp.charge, dp.score, dp.solution, ix)
+                seen.add(ix)
+            indices = set(range(len(ions)))
+            missed = list(indices - seen)
+            deconvoluter = algorithm_type(scan.peak_set.clone(), **decon_config)
+            for ix in missed:
+                tid = deconvoluter.generate_theoretical_isotopic_cluster(*ions[ix])
+                assert np.isclose(sum(p.intensity for p in tid), 1.0)
+                monoisotopic_peak = deconvoluter.peaklist.has_peak(tid[0].mz, 2e-5)
+                if monoisotopic_peak is not None:
+                    tid = deconvoluter.recalibrate_theoretical_mz(tid, monoisotopic_peak.mz)
+                eid = deconvoluter.match_theoretical_isotopic_distribution(
+                    tid.peaklist, 2e-5)
+                missed_peaks = count_placeholders(eid)
+                deconvoluter.scale_theoretical_distribution(tid, eid)
+                score = deconvoluter.scorer.evaluate(deconvoluter.peaklist, eid, tid.peaklist)
+                fit_record = deconvoluter.fit_composition_at_charge(*ions[ix])
+                eid = fit_record.experimental
+                tid = fit_record.theoretical
+                rep_eid = drop_placeholders(eid)
+                validation = (len(rep_eid) < 2), (len(rep_eid) < len(tid) / 2.), (
+                    len(rep_eid) == 1 and fit_record.charge > 1)
+                composition, charge = ions[ix]
+                logger.warning("Missed %r %d (%d missed peaks, score = %0.3f, record = %r, validation = %r)" % (
+                    composition, charge, missed_peaks, score, fit_record, validation))
+            assert not missed
 
     def test_graph_deconvolution(self):
         scan = self.make_scan()
         scan.pick_peaks()
         self.assertIsNotNone(scan.peak_set)
         algorithm_type = CompositionListPeakDependenceGraphDeconvoluter
+        decon_config = {
+            "composition_list": self.compositions,
+            "scorer": PenalizedMSDeconVFitter(5., 2.),
+            "use_subtraction": True
+        }
         deconresult = deconvolute_peaks(
-            scan.peak_set, {
-                "composition_list": self.compositions,
-                "scorer": PenalizedMSDeconVFitter(5., 2.),
-                "use_subtraction": True
-            }, charge_range=(-1, -8), deconvoluter_type=algorithm_type)
+            scan.peak_set, decon_config, charge_range=(-1, -8), deconvoluter_type=algorithm_type)
         dpeaks = deconresult.peak_set
         n_cases = sum(map(len, self.charges))
-        assert len(dpeaks) == n_cases
+        # assert len(dpeaks) == n_cases
+        if not (len(dpeaks) == n_cases):
+            tids, ions = self.make_tids()
+            tids, ions = zip(*sorted(zip(tids, ions), key=lambda x: x[0].monoisotopic_mz))
+            seen = set()
+            for i, dp in enumerate(sorted(dpeaks, key=lambda x: x.mz)):
+                ix = self.get_nearest_index(dp.mz, tids)
+                logger.warning("%0.3f %d %0.3f %r (Matched %d)", dp.neutral_mass, dp.charge, dp.score, dp.solution, ix)
+                seen.add(ix)
+            indices = set(range(len(ions)))
+            missed = list(indices - seen)
+            deconvoluter = algorithm_type(scan.peak_set.clone(), **decon_config)
+            for ix in missed:
+                tid = deconvoluter.generate_theoretical_isotopic_cluster(*ions[ix])
+                assert np.isclose(sum(p.intensity for p in tid), 1.0)
+                monoisotopic_peak = deconvoluter.peaklist.has_peak(tid[0].mz, 2e-5)
+                if monoisotopic_peak is not None:
+                    tid = deconvoluter.recalibrate_theoretical_mz(tid, monoisotopic_peak.mz)
+                eid = deconvoluter.match_theoretical_isotopic_distribution(
+                    tid.peaklist, 2e-5)
+                missed_peaks = count_placeholders(eid)
+                deconvoluter.scale_theoretical_distribution(tid, eid)
+                score = deconvoluter.scorer.evaluate(deconvoluter.peaklist, eid, tid.peaklist)
+                fit_record = deconvoluter.fit_composition_at_charge(*ions[ix])
+                eid = fit_record.experimental
+                tid = fit_record.theoretical
+                rep_eid = drop_placeholders(eid)
+                validation = (len(rep_eid) < 2), (len(rep_eid) < len(tid) / 2.), (
+                    len(rep_eid) == 1 and fit_record.charge > 1)
+                composition, charge = ions[ix]
+                logger.warning("Missed %r %d (%d missed peaks, score = %0.3f, record = %r, validation = %r)" % (
+                    composition, charge, missed_peaks, score, fit_record, validation))
+            assert not missed
 
 
 class TestSolutionRetrieval(unittest.TestCase):
@@ -227,13 +317,31 @@ class TestSolutionRetrieval(unittest.TestCase):
         for i, result in enumerate(priority_results):
             query = priorities[i].mz
             if result is None:
+                logger.warn("Query %d (%f) had no result", i, query)
                 raw_peaks = scan.peak_set.between(query - 2, query + 3)
                 anchor_peak = scan.peak_set.has_peak(query)
                 deconvoluted_peaks = dpeaks.between(query - 2, query + 3, use_mz=True)
                 possible_solutions = reference_deconvoluter._fit_all_charge_states(anchor_peak)
-                assert anchor_peak is not None and raw_peaks and possible_solutions and not deconvoluted_peaks
+                sols = []
+                logger.warn("Possible Solutions %r", possible_solutions)
+                if not possible_solutions:
+                    for charge in [3, 4, 5]:
+                        tid = reference_deconvoluter.averagine.isotopic_cluster(
+                            anchor_peak.mz, charge)
+                        assert np.isclose(tid.monoisotopic_mz, anchor_peak.mz)
+                        assert np.isclose(sum(p.intensity for p in tid), 1.0)
+                        eid = reference_deconvoluter.match_theoretical_isotopic_distribution(
+                            tid.peaklist, error_tolerance=2e-5)
+                        assert len(eid) == len(tid)
+                        record = reference_deconvoluter._evaluate_theoretical_distribution(
+                            eid, tid, anchor_peak, charge)
+                        sols.append(record)
+                    logger.warn("Manually Generated Solutions %r", sols)
+                assert anchor_peak is not None and raw_peaks and (possible_solutions or sols) and not deconvoluted_peaks
                 assert deconvoluter.peak_dependency_network.find_solution_for(anchor_peak) is not None
                 assert dpeaks.has_peak(query, use_mz=True)
+                # error out
+                assert result is not None
             else:
                 assert 0 <= abs(result.mz - query) < 1
                 anchor_peak = scan.peak_set.has_peak(query)

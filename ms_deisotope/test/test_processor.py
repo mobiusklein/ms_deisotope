@@ -41,6 +41,11 @@ class TestScanProcessor(unittest.TestCase):
             self.assertIsNotNone(scan_bunch)
             self.assertIsNotNone(scan_bunch.precursor)
             self.assertIsNotNone(scan_bunch.products)
+            for product in scan_bunch.products:
+                if product.precursor_information.defaulted:
+                    candidates = scan_bunch.precursor.peak_set.between(
+                        product.precursor_information.mz - 1, product.precursor_information.mz + 1)
+                    assert len(candidates) == 0
 
     def test_complex_processor(self):
         proc = processor.ScanProcessor(self.complex_compressed_mzml, ms1_deconvolution_args={

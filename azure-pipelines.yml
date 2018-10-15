@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/vsts/pipelines/languages/python
 jobs:
 
-- job: 'Test'
+- job: 'Test_vs2017_win2016'
   pool:
     vmImage: 'vs2017-win2016'
   strategy:
@@ -43,8 +43,8 @@ jobs:
       testRunTitle: 'Python $(python.version)'
     condition: succeededOrFailed()
 
-- job: 'Publish'
-  dependsOn: 'Test'
+- job: 'Publish_vs2017_win2016'
+  dependsOn: 'Test_vs2017_win2016'
   pool:
     vmImage: 'vs2017-win2016'
   strategy:

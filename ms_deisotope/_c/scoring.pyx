@@ -454,7 +454,7 @@ cdef class GTestFitter(IsotopicFitterBase):
             obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity
             theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity
 
-            log_ratio = log(obs / theo)
+            log_ratio = log(obs) - log(theo)
             g_score += obs * log_ratio
 
         return g_score * 2.
@@ -487,7 +487,7 @@ cdef class ScaledGTestFitter(IsotopicFitterBase):
             obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_observed
             theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_expected
 
-            log_ratio = log(obs / theo)
+            log_ratio = log(obs) - log(theo)
             g_score += obs * log_ratio
 
         return g_score * 2.
@@ -698,6 +698,9 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
             double score, total_intensity_observed, total_intensity_expected
             double penalty, _obs, _theo, log_ratio
 
+        total_intensity_observed = 0
+        total_intensity_expected = 0
+
         n = PyList_GET_SIZE(observed)
         score = 0
         for i in range(n):
@@ -711,7 +714,7 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
             _obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_intensity_observed
             _theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_intensity_expected
 
-            log_ratio = log(_obs / (_theo))
+            log_ratio = log(_obs) - log(_theo)
             penalty += _obs * log_ratio
         penalty = abs(2 * penalty)
         score *= ((1 - penalty * self.penalty_factor))
