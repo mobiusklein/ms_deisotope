@@ -10,6 +10,7 @@ from ms_deisotope.test.common import datafile
 import idzip
 
 
+@unittest.skip("Long Test")
 class TestScanClustering(unittest.TestCase):
     path = datafile("AGP_tryptic_300ng_2microscans_glycoproteomics_nCE_27-30.preprocessed.mzML.gz")
 

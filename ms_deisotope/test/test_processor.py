@@ -49,9 +49,11 @@ class TestScanProcessor(unittest.TestCase):
         }, msn_deconvolution_args={
             "averagine": peptide,
             "scorer": MSDeconVFitter(10.),
-        }, ms1_averaging=1)
+        })
         bunch = next(proc)
         assert len(bunch.products) == 5
+        for product in bunch.products:
+            assert not product.precursor_information.defaulted
         product = bunch.products[0]
         diff_mz = product.precursor_information.mz - product.precursor_information.extracted_mz
         assert 0 < abs(diff_mz) < 1
