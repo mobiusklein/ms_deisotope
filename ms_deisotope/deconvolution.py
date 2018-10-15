@@ -1865,9 +1865,6 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
 
         self.scale_theoretical_distribution(tid, eid)
         score = self.scorer.evaluate(self.peaklist, eid, tid.peaklist)
-        score2 = self.scorer.evaluate(self.peaklist, eid, tid.peaklist)
-        debug("Double-checking the score for %r @ %d %f, %f" % (composition, charge, score, score2))
-        assert np.isclose(score, score2)
         fit = IsotopicFitRecord(None, score, charge, tid, eid)
         fit.missed_peaks = missed_peaks
         return fit
@@ -1931,7 +1928,6 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
             fit = self.fit_composition_at_charge(composition, charge=charge, error_tolerance=error_tolerance,
                                                  truncate_after=truncate_after, charge_carrier=charge_carrier,
                                                  mass_shift=mass_shift, ignore_below=ignore_below)
-            debug("The fit produced for %r at %d was %r" % (composition, charge, fit))
             if fit is None:
                 continue
             if not self.scorer.reject(fit):
@@ -1939,27 +1935,13 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
                 tid = fit.theoretical
                 rep_eid = drop_placeholders(eid)
                 if (len(rep_eid) < 2) or (len(rep_eid) < (len(tid) / 2.)) or (len(rep_eid) == 1 and fit.charge > 1):
-                    debug("Fit was rejected by missing peak filters %r, %r, %r %r" % (
-                        (len(rep_eid) < 2),
-                        (len(rep_eid) < (len(tid) / 2.)),
-                        (len(rep_eid) == 1 and fit.charge > 1),
-                        eid),
-                    )
                     continue
 
                 peak = self._make_deconvoluted_peak_solution(
                     fit, composition, charge_carrier)
-                debug("Creating Solution %r" % (peak, ))
                 self._deconvoluted_peaks.append(peak)
                 if self.use_subtraction:
                     self.subtraction(tid, error_tolerance)
-            else:
-                debug("%r was rejected by score threshold %r %r" % (fit, fit.experimental, fit.theoretical.peaklist))
-                debug("Rescored: %f", self.scorer.evaluate(None, fit.experimental, fit.theoretical.peaklist))
-                debug("Using Fresh Evaluator: %f", PenalizedMSDeconVFitter(0, 2).evaluate(
-                    None, fit.experimental, fit.theoretical.peaklist))
-                debug("Using Fresh Evaluator: %f", DotProductFitter(0).evaluate(
-                    None, fit.experimental, fit.theoretical.peaklist))
 
 
 class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
