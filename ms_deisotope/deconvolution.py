@@ -723,7 +723,7 @@ class ChargeIterator(object):
         return self.__next__()
 
 
-class ExhaustivePeakSearchDeconvoluterBase(object):
+class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
     """Provides common methods for algorithms which attempt to find a deconvolution for every peak
     in a spectrum. This assumes no dependence between different peaks, instead it relies on subtraction,
     breadth of search, and order of encounter to avoid artefactual fits. This is usually not reasonable,
@@ -736,6 +736,7 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
 
     """
     def __init__(self, peaklist, *args, **kwargs):
+        # Don't call superclass constructor from mixin?
         super(ExhaustivePeakSearchDeconvoluterBase, self).__init__(peaklist, *args, **kwargs)
         self.use_quick_charge = kwargs.get("use_quick_charge", False)
 
@@ -1142,7 +1143,7 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
 
         super(AveragineDeconvoluter, self).__init__(
             use_subtraction, scale_method, merge_isobaric_peaks=True, **kwargs)
-        ExhaustivePeakSearchDeconvoluterBase.__init__(self, peaklist, **kwargs)
+        # ExhaustivePeakSearchDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
     def config(self):
         return {
@@ -1232,7 +1233,7 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
         super(MultiAveragineDeconvoluter, self).__init__(
             use_subtraction, scale_method, merge_isobaric_peaks,
             minimum_intensity, *args, **kwargs)
-        ExhaustivePeakSearchDeconvoluterBase.__init__(self, peaklist, **kwargs)
+        # ExhaustivePeakSearchDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
 
 class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
@@ -1716,9 +1717,9 @@ class AveraginePeakDependenceGraphDeconvoluter(AveragineDeconvoluter, PeakDepend
         Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8
     """
     def __init__(self, peaklist, *args, **kwargs):
-        # super(AveraginePeakDependenceGraphDeconvoluter, self).__init__(peaklist, *args, **kwargs)
-        AveragineDeconvoluter.__init__(self, peaklist, *args, **kwargs)
-        PeakDependenceGraphDeconvoluterBase.__init__(self, peaklist, **kwargs)
+        super(AveraginePeakDependenceGraphDeconvoluter, self).__init__(peaklist, *args, **kwargs)
+        # AveragineDeconvoluter.__init__(self, peaklist, *args, **kwargs)
+        # PeakDependenceGraphDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
 
 class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, PeakDependenceGraphDeconvoluterBase):
@@ -1758,12 +1759,12 @@ class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, 
 
     """
     def __init__(self, peaklist, *args, **kwargs):
-        # super(MultiAveraginePeakDependenceGraphDeconvoluter, self).__init__(peaklist, *args, **kwargs)
-        MultiAveragineDeconvoluter.__init__(self, peaklist, *args, **kwargs)
-        PeakDependenceGraphDeconvoluterBase.__init__(self, peaklist, **kwargs)
+        super(MultiAveraginePeakDependenceGraphDeconvoluter, self).__init__(peaklist, *args, **kwargs)
+        # MultiAveragineDeconvoluter.__init__(self, peaklist, *args, **kwargs)
+        # PeakDependenceGraphDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
 
-class CompositionListDeconvoluterBase(object):
+class CompositionListDeconvoluterBase(DeconvoluterBase):
     """A mixin class to provide common features for deconvoluters which process spectra
     using a list of targeted compositions.
 
@@ -1773,8 +1774,9 @@ class CompositionListDeconvoluterBase(object):
         A series of objects which represent elemental compositions and support
         the :class:`~.Mapping` interface to access their individual elements.
     """
-    def __init__(self, composition_list):
+    def __init__(self, composition_list, *args, **kwargs):
         self.composition_list = list(composition_list)
+        super(CompositionListDeconvoluterBase, self).__init__(*args, **kwargs)
 
     def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=TRUNCATE_AFTER,
                                               mass_shift=None, charge_carrier=PROTON,
@@ -1943,7 +1945,7 @@ class CompositionListDeconvoluterBase(object):
                     self.subtraction(tid, error_tolerance)
 
 
-class CompositionListDeconvoluter(CompositionListDeconvoluterBase, DeconvoluterBase):
+class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
     '''
     Attributes
     ----------
@@ -1978,9 +1980,8 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase, DeconvoluterB
         self.scorer = scorer
         self.verbose = verbose
         self._deconvoluted_peaks = []
-        CompositionListDeconvoluterBase.__init__(self, composition_list)
-        DeconvoluterBase.__init__(
-            self,
+        super(CompositionListDeconvoluter, self).__init__(
+            composition_list,
             use_subtraction=use_subtraction, scale_method=scale_method, merge_isobaric_peaks=True)
 
     def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), charge_carrier=PROTON,
@@ -2031,8 +2032,9 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                  verbose=False, **kwargs):
         max_missed_peaks = kwargs.get("max_missed_peaks", 1)
         super(CompositionListPeakDependenceGraphDeconvoluter, self).__init__(
-            peaklist, composition_list, scorer, use_subtraction, scale_method,
-            verbose)
+            peaklist, composition_list, scorer=scorer, use_subtraction=use_subtraction,
+            scale_method=scale_method,
+            verbose=verbose, **kwargs)
 
         self.peak_dependency_network = PeakDependenceGraph(
             self.peaklist, maximize=self.scorer.is_maximizing(), **kwargs)
@@ -2113,8 +2115,8 @@ _APDGD = AveraginePeakDependenceGraphDeconvoluter
 
 class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(_APDGD, CompositionListDeconvoluterBase):
     def __init__(self, peaklist, composition_list, *args, **kwargs):
-        AveraginePeakDependenceGraphDeconvoluter.__init__(self, peaklist, *args, **kwargs)
-        CompositionListDeconvoluterBase.__init__(self, composition_list)
+        super(HybridAveragineCompositionListPeakDependenceGraphDeconvoluter, self).__init__(
+            peaklist, composition_list=composition_list, *args, **kwargs)
 
     def deconvolute_composition(self, composition, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                 truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, ignore_below=IGNORE_BELOW,
