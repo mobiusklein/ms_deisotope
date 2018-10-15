@@ -408,6 +408,29 @@ class DeconvoluterBase(Base):
                 peak.intensity *= scale_factor
             return theoretical_distribution
 
+    def _evaluate_theoretical_distribution(self, experimental, theoretical, peak, charge):
+        """Evaluate a provided theoretical isotopic pattern fit against a
+        set of matched experimental peaks.
+
+        Parameters
+        ----------
+        experimental : list
+            A list of experimental fitted peaks to test
+        theoretical : :class:`~.TheoreticalIsotopicPattern`
+            A list of theoretical isotopic peaks to test
+        peak : :class:`~.FittedPeak`
+            The seed peak for the isotopic pattern fit
+        charge : int
+            The target charge state
+
+        Returns
+        -------
+        :class:`~.IsotopicFitRecord`
+        """
+        self.scale_theoretical_distribution(theoretical, experimental)
+        score = self.scorer(self.peaklist, experimental, theoretical)
+        return IsotopicFitRecord(peak, score, charge, theoretical, experimental)
+
     def subtraction(self, isotopic_cluster, error_tolerance=ERROR_TOLERANCE):
         """Subtract signal attributed to `isotopic_cluster` from the equivalent
         peaks in :attr:`peaklist`, mutating the peaks within.
@@ -582,9 +605,8 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             truncate_after=truncate_after, ignore_below=ignore_below)
         eid = self.match_theoretical_isotopic_distribution(
             tid, error_tolerance=error_tolerance)
-        self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer(self.peaklist, eid, tid)
-        return IsotopicFitRecord(peak, score, charge, tid, eid)
+        record = self._evaluate_theoretical_distribution(eid, tid, peak, charge)
+        return record
 
     def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON, truncate_after=0.8,
                               ignore_below=IGNORE_BELOW):
@@ -646,6 +668,61 @@ def charge_range_(lo, hi, step=None):
         yield c * sign
 
 
+class ChargeIterator(object):
+    def __init__(self, lo, hi):
+        self.set_bounds(lo, hi)
+        self.make_sequence()
+
+    def set_bounds(self, lo, hi):
+        self.sign = -1 if lo < 0 else 1
+        abs_lo, abs_hi = abs(lo), abs(hi)
+        if abs_lo < abs_hi:
+            self.lower = abs_lo
+            self.upper = abs_hi
+        else:
+            self.lower = abs_hi
+            self.upper = abs_lo
+        self.size = self.upper - self.lower + 1
+
+    def make_sequence(self):
+        self.index = 0
+        self.size = self.upper - self.lower + 1
+        self.values = [self.sign * (self.upper - i) for i in range(self.size)]
+
+    def __len__(self):
+        return self.size
+
+    def reset(self):
+        self.index = 0
+
+    def sequence_from_quickcharge(self, peak_set, peak):
+        charges = quick_charge(peak_set, peak.peak_count, abs(self.lower), abs(self.upper))
+        n = charges.shape[0]
+        self.index = 0
+        if n == 0:
+            self.size = 1
+            self.values = [1 * self.sign]
+        elif charges[0] != 1:
+            self.size = n + 1
+            self.values = [1 * self.sign] + list(self.sign * charges)
+        else:
+            self.size = n
+            self.values = self.sign * charges
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index == self.size:
+            raise StopIteration()
+        value = self.values[self.index]
+        self.index += 1
+        return value
+
+    def next(self):
+        return self.__next__()
+
+
 class ExhaustivePeakSearchDeconvoluterBase(object):
     """Provides common methods for algorithms which attempt to find a deconvolution for every peak
     in a spectrum. This assumes no dependence between different peaks, instead it relies on subtraction,
@@ -658,10 +735,13 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
     and `_fit_peaks_at_charges`
 
     """
+    def __init__(self, peaklist, *args, **kwargs):
+        super(ExhaustivePeakSearchDeconvoluterBase, self).__init__(peaklist, *args, **kwargs)
+        self.use_quick_charge = kwargs.get("use_quick_charge", False)
 
     def _get_all_peak_charge_pairs(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                    left_search_limit=3, right_search_limit=3,
-                                   recalculate_starting_peak=True):
+                                   recalculate_starting_peak=True, use_quick_charge=False):
         """Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using
         the provided search parameters.
 
@@ -691,10 +771,16 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
         """
 
         target_peaks = set()
+
+        charges = ChargeIterator(*charge_range)
+
+        if use_quick_charge:
+            charges.sequence_from_quickcharge(self.peaklist, peak)
+
         if self.verbose:
             info("Considering charge range %r for %r" %
                  (list(charge_range_(*charge_range)), peak))
-        for charge in charge_range_(*charge_range):
+        for charge in charges:
             target_peaks.add((peak, charge))
 
             # Look Left
@@ -774,7 +860,8 @@ class ExhaustivePeakSearchDeconvoluterBase(object):
             charge_range=charge_range,
             left_search_limit=left_search_limit,
             right_search_limit=right_search_limit,
-            recalculate_starting_peak=recalculate_starting_peak)
+            recalculate_starting_peak=recalculate_starting_peak,
+            use_quick_charge=self.use_quick_charge)
 
         results = self._fit_peaks_at_charges(
             target_peaks, error_tolerance, charge_carrier=charge_carrier, truncate_after=truncate_after,
@@ -1054,7 +1141,8 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
         self.verbose = verbose
 
         super(AveragineDeconvoluter, self).__init__(
-            use_subtraction, scale_method, merge_isobaric_peaks=True)
+            use_subtraction, scale_method, merge_isobaric_peaks=True, **kwargs)
+        ExhaustivePeakSearchDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
     def config(self):
         return {
@@ -1144,6 +1232,7 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
         super(MultiAveragineDeconvoluter, self).__init__(
             use_subtraction, scale_method, merge_isobaric_peaks,
             minimum_intensity, *args, **kwargs)
+        ExhaustivePeakSearchDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
 
 class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
@@ -1170,13 +1259,13 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         are constructed and solved.
     """
     def __init__(self, peaklist, *args, **kwargs):
-        max_missed_peaks = kwargs.pop("max_missed_peaks", 1)
-        self.subgraph_solver_type = kwargs.pop("subgraph_solver", 'disjoint')
-        ExhaustivePeakSearchDeconvoluterBase.__init__(self)
+        max_missed_peaks = kwargs.get("max_missed_peaks", 1)
+        self.subgraph_solver_type = kwargs.get("subgraph_solver", 'disjoint')
+        super(PeakDependenceGraphDeconvoluterBase, self).__init__(peaklist, *args, **kwargs)
         self.peak_dependency_network = PeakDependenceGraph(
             self.peaklist, maximize=self.scorer.is_maximizing())
         self.max_missed_peaks = max_missed_peaks
-        self.fit_postprocessor = kwargs.pop("fit_postprocessor", None)
+        self.fit_postprocessor = kwargs.get("fit_postprocessor", None)
         self._priority_map = {}
 
     @property
@@ -1188,8 +1277,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         self.peak_dependency_network.max_missed_peaks = value
 
     def _explore_local(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=1,
-                       right_search_limit=0, charge_carrier=PROTON,
-                       truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+                       right_search_limit=0, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                       ignore_below=IGNORE_BELOW):
         """Given a peak, explore the local neighborhood for candidate isotopic fits and add each
         fit above a threshold to the peak dependence graph.
 
@@ -1627,6 +1716,7 @@ class AveraginePeakDependenceGraphDeconvoluter(AveragineDeconvoluter, PeakDepend
         Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8
     """
     def __init__(self, peaklist, *args, **kwargs):
+        # super(AveraginePeakDependenceGraphDeconvoluter, self).__init__(peaklist, *args, **kwargs)
         AveragineDeconvoluter.__init__(self, peaklist, *args, **kwargs)
         PeakDependenceGraphDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
@@ -1668,6 +1758,7 @@ class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, 
 
     """
     def __init__(self, peaklist, *args, **kwargs):
+        # super(MultiAveraginePeakDependenceGraphDeconvoluter, self).__init__(peaklist, *args, **kwargs)
         MultiAveragineDeconvoluter.__init__(self, peaklist, *args, **kwargs)
         PeakDependenceGraphDeconvoluterBase.__init__(self, peaklist, **kwargs)
 
