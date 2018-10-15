@@ -3,8 +3,6 @@
 cimport cython
 from cpython.list cimport PyList_Append, PyList_GET_ITEM
 
-from libc.math cimport sqrt, exp, pi
-
 import numpy as np
 cimport numpy as np
 
