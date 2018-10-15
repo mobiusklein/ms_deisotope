@@ -164,6 +164,46 @@ class TestSolutionRetrieval(unittest.TestCase):
         bunch = next(reader)
         return bunch
 
+    def target_envelopes(self):
+        envelopes = [
+            [1161.00927734375,
+             1161.25830078125,
+             1161.508544921875,
+             1161.7586669921875,
+             1162.0111083984375,
+             1162.2607421875,
+             1162.5128173828125],
+            [1197.52197265625,
+             1197.7735595703125,
+             1198.024169921875,
+             1198.2742919921875,
+             1198.524658203125,
+             1198.774169921875,
+             1199.02490234375]
+            [929.0088500976562,
+             929.2091674804688,
+             929.4107055664062,
+             929.6107788085938,
+             929.8109741210938,
+             930.01171875,
+             930.213134765625]
+            [1088.234619140625,
+             1088.4853515625,
+             1088.7354736328125,
+             1088.987060546875,
+             1089.237060546875,
+             1089.4873046875,
+             1089.7379150390625],
+            [1002.0338745117188,
+             1002.2335815429688,
+             1002.4354858398438,
+             1002.63671875,
+             1002.837646484375,
+             1003.0364990234375,
+             1003.2337646484375],
+        ]
+        return envelopes
+
     def test_retrieve_deconvolution_solution(self):
         bunch = self.make_scan()
         scan = bunch.precursor
@@ -183,13 +223,15 @@ class TestSolutionRetrieval(unittest.TestCase):
         dpeaks = deconresult.peak_set
         deconvoluter = deconresult.deconvoluter
         priority_results = deconresult.priorities
+        reference_deconvoluter = algorithm_type(scan.peak_set.clone(), **ms1_deconvolution_args)
         for i, result in enumerate(priority_results):
             query = priorities[i].mz
             if result is None:
                 raw_peaks = scan.peak_set.between(query - 2, query + 3)
                 anchor_peak = scan.peak_set.has_peak(query)
                 deconvoluted_peaks = dpeaks.between(query - 2, query + 3, use_mz=True)
-                assert anchor_peak is not None and raw_peaks and deconvoluted_peaks
+                possible_solutions = reference_deconvoluter._fit_all_charge_states(anchor_peak)
+                assert anchor_peak is not None and raw_peaks and possible_solutions and not deconvoluted_peaks
                 assert deconvoluter.peak_dependency_network.find_solution_for(anchor_peak) is not None
                 assert dpeaks.has_peak(query, use_mz=True)
             else:
