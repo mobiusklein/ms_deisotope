@@ -947,22 +947,23 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     """
 
-    def __init__(self, source_file, use_index=True):
+    def __init__(self, source_file, use_index=True, use_extended_index=True):
         MzMLLoader.__init__(self, source_file, use_index=use_index)
         self.extended_index = None
         self._scan_id_to_rt = dict()
         self._sample_run = None
         if self._use_index:
-            try:
-                if self.has_index_file():
-                    self.read_index_file()
-                else:
-                    self.build_extended_index()
-            except IOError:
-                pass
-            except ValueError:
-                pass
-            self._build_scan_id_to_rt_cache()
+            if use_extended_index:
+                try:
+                    if self.has_index_file():
+                        self.read_index_file()
+                    else:
+                        self.build_extended_index()
+                except IOError:
+                    pass
+                except ValueError:
+                    pass
+                self._build_scan_id_to_rt_cache()
 
     def read_index_file(self, index_path=None):
         if index_path is None:
