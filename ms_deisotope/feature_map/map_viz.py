@@ -79,7 +79,7 @@ def draw_feature_sets(feature_sets, ax=None, alpha=0.65, width=2e-5, **kwargs):
         ellipse_sets.append(ellipses)
 
     for ellipses in ellipse_sets:
-        color = np.random.rand(3.)
+        color = np.random.rand(3)
         for ell in ellipses:
             ell.set_alpha(alpha)
             ell.set_facecolor(color)
