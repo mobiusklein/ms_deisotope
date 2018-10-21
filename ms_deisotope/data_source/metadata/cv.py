@@ -1,6 +1,8 @@
 import sys
 import textwrap
 
+from six import string_types as basestring
+
 
 def clean_definition(text):
     if text.startswith('"'):
@@ -36,7 +38,7 @@ class Term(object):
         }
 
     def __eq__(self, other):
-        if isinstance(other, str):
+        if isinstance(other, basestring):
             return self.name == other or self.id == other
         else:
             return tuple(self) == tuple(other)
@@ -79,7 +81,7 @@ class Term(object):
         -------
         bool
         """
-        return term == self.name or term in self.specialization
+        return getattr(term, 'name', term) == self.name or term in self.specialization
 
 
 class TermSet(object):

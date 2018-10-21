@@ -182,11 +182,6 @@ software_names = TermSet([
                   u'for LECO instruments.'),
                  'software',
                  [u'acquisition software', u'analysis software', u'data processing software', u'LECO software', u'software']),
-    SoftwareName(u'MALDI Solutions Microbial Identification', u'MS:1001878',
-                 (u'Shimadzu Biotech software for data acquisition, processing,'
-                  u'and analysis.'),
-                 'software',
-                 [u'acquisition software', u'analysis software', u'data processing software', u'MALDI Solutions', u'software', u'Shimadzu Corporation software']),
     SoftwareName(u'6300 Series Ion Trap Data Analysis Software', u'MS:1000688',
                  (u'Software for data analysis of 6300 series ion trap mass'
                   u'spectrometers.'),
@@ -286,11 +281,6 @@ software_names = TermSet([
                  (u'Preprocessing software.'),
                  'software',
                  [u'data processing software', u'software']),
-    SoftwareName(u'PIA', u'MS:1002387',
-                 (u'PIA - Protein Inference Algorithms, a toolbox for protein'
-                  u'inference and identification analysis." [PSI:PI'),
-                 'software',
-                 [u'postprocessing software', u'analysis software', u'data processing software', u'software']),
     SoftwareName(u'PEAKS Online', u'MS:1001947',
                  (u'PEAKS Online software for high throughput data analysis.'),
                  'software',
@@ -528,21 +518,15 @@ software_names = TermSet([
                   u'identification.'),
                  'software',
                  [u'SCIEX software', u'analysis software', u'data processing software', u'software']),
-    SoftwareName(u'PRIDE Converter2', u'MS:1002335',
-                 (u'Java software designed to convert one of several proteomics'
-                  u'identification results formats into PRIDE XML.'),
-                 'software',
-                 [u'conversion software', u'data processing software', u'software']),
-    SoftwareName(u'ProCon', u'MS:1002334',
-                 (u'Java software designed to convert one of several proteomics'
-                  u'identification results formats into mzIdentML or PRIDE XML."'
-                  u'[PSI:PI'),
-                 'software',
-                 [u'conversion software', u'data processing software', u'software']),
     SoftwareName(u'conversion software', u'MS:1002333',
                  (u'Computer software primarily designed to convert data'
                   u'represented in one format to another format, sometimes with'
                   u'minor data alterations in the process.'),
+                 'software',
+                 [u'data processing software', u'software']),
+    SoftwareName(u'ms_deisotope', u'MS:1002990',
+                 (u'ms_deisotope, a library for deisotoping and charge state'
+                  u'deconvolution of mass spectra.'),
                  'software',
                  [u'data processing software', u'software']),
     SoftwareName(u'PEAKS Node', u'MS:1001948',
@@ -652,6 +636,11 @@ software_names = TermSet([
                   u'based lipidomics data.'),
                  'software',
                  [u'lipidomics analysis software', u'data processing software', u'small molecule analysis software', u'software', u'analysis software']),
+    SoftwareName(u'PIA', u'MS:1002387',
+                 (u'PIA - Protein Inference Algorithms, a toolbox for protein'
+                  u'inference and identification analysis." [PSI:PI'),
+                 'software',
+                 [u'postprocessing software', u'analysis software', u'data processing software', u'software']),
     SoftwareName(u'PepNovo', u'MS:1002982',
                  (u'PepNovo tool for de novo peptide sequencing.'),
                  'software',
@@ -668,6 +657,10 @@ software_names = TermSet([
                  [u'analysis software', u'software']),
     SoftwareName(u'Morpheus', u'MS:1002661',
                  (u'Morpheus search engine.'),
+                 'software',
+                 [u'analysis software', u'software']),
+    SoftwareName(u'IdentiPy', u'MS:1002987',
+                 (u'IdentiPy." [PMID:29682971'),
                  'software',
                  [u'analysis software', u'software']),
     SoftwareName(u'Mascot Distiller', u'MS:1001488',
@@ -1041,6 +1034,26 @@ software_names = TermSet([
                   u'information from an MS experiment.'),
                  'software',
                  [u'quantitation software name', u'TOPP software', u'software', u'quantification information', u'analysis software', u'data processing software']),
+    SoftwareName(u'MALDI Solutions Microbial Identification', u'MS:1001878',
+                 (u'Shimadzu Biotech software for data acquisition, processing,'
+                  u'and analysis.'),
+                 'software',
+                 [u'MALDI Solutions', u'acquisition software', u'analysis software', u'data processing software', u'Shimadzu Corporation software', u'software']),
+    SoftwareName(u'PRIDE Converter2', u'MS:1002335',
+                 (u'Java software designed to convert one of several proteomics'
+                  u'identification results formats into PRIDE XML.'),
+                 'software',
+                 [u'conversion software', u'data processing software', u'software']),
+    SoftwareName(u'ProCon', u'MS:1002334',
+                 (u'Java software designed to convert one of several proteomics'
+                  u'identification results formats into mzIdentML or PRIDE XML."'
+                  u'[PSI:PI'),
+                 'software',
+                 [u'conversion software', u'data processing software', u'software']),
+    SoftwareName(u'python-psims', u'MS:1002991',
+                 (u'python-psims, a library for generating mzML and mzIdentML.'),
+                 'software',
+                 [u'conversion software', u'data processing software', u'software']),
     SoftwareName(u'TOPP noise filter', u'MS:1002131',
                  (u'Noise filter component of the TOPP software.'),
                  'software',

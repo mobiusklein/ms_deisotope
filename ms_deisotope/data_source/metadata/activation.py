@@ -58,6 +58,9 @@ class ActivationInformation(object):
     def __ne__(self, other):
         return not (self == other)
 
+    def has_dissociation_type(self, dissociation_type):
+        return self.method.is_a(dissociation_type)
+
 
 class MultipleActivationInformation(ActivationInformation):
     """Describes the dissociation processes used to produce an MSn
@@ -92,6 +95,9 @@ class MultipleActivationInformation(ActivationInformation):
     def energy(self):
         return self.energies[0]
 
+    def __iter__(self):
+        return iter(self.methods)
+
     def __repr__(self):
         return "MultipleActivationInformation(methods=%r, energies=%r%s)" % (
             list(map(str, self.methods)), self.energies,
@@ -114,6 +120,9 @@ class MultipleActivationInformation(ActivationInformation):
         return (self.methods == other.methods) and all(
             abs(self_energy - other_energy) < 1e-3 for self_energy, other_energy in zip(
                 self.energies, other.energies))
+
+    def has_dissociation_type(self, dissociation_type):
+        return any(method.is_a(dissociation_type) for method in self.methods)
 
 
 class DissociationMethod(Term):
