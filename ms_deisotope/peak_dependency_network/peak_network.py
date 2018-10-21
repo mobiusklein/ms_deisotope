@@ -271,7 +271,7 @@ class PeakDependenceGraph(object):
                 if self.maximize:
                     case_err /= case.score
                 else:
-                    case_err /= (1. / case.score)
+                    case_err /= (1. / (case.score + 1e-6))
                 if case_err < err:
                     i = j
                     err = case_err
