@@ -21,26 +21,34 @@ def cli():
 
 
 @cli.command("byte-index")
-@click.argument("path", type=click.Path(exists=True))
-def byte_index(path):
-    reader = ms_deisotope.MSFileLoader(path, use_index=False)
-    try:
-        fn = reader.prebuild_byte_offset_file
-    except AttributeError:
-        click.echo("\"%s\" does not support pre-indexing byte offsets" % (path,))
-        return
-    fn(path)
+@click.argument('paths', type=click.Path(exists=True), nargs=-1)
+def byte_index(paths):
+    for path in paths:
+        reader = ms_deisotope.MSFileLoader(path, use_index=False)
+        try:
+            fn = reader.prebuild_byte_offset_file
+        except AttributeError:
+            click.echo("\"%s\" does not support pre-indexing byte offsets" % (path,))
+            return
+        fn(path)
 
 
 @cli.command("metadata-index")
-@click.argument("path", type=click.Path(exists=True))
-def metadata_index(path, processes=4):
-    reader = ms_deisotope.MSFileLoader(path)
-    index, interval_tree = quick_index.index(reader, processes)
-    name = path
-    index_file_name = index.index_file_name(name)
-    with open(index_file_name, 'w') as fh:
-        index.serialize(fh)
+@click.argument('paths', type=click.Path(exists=True), nargs=-1)
+def metadata_index(paths, processes=4):
+    for path in paths:
+        reader = ms_deisotope.MSFileLoader(path)
+        try:
+            fn = reader.prebuild_byte_offset_file
+            if not reader.source._check_has_byte_offset_file():
+                fn(path)
+        except AttributeError:
+            pass
+        index, interval_tree = quick_index.index(reader, processes)
+        name = path
+        index_file_name = index.index_file_name(name)
+        with open(index_file_name, 'w') as fh:
+            index.serialize(fh)
 
 
 def partial_ms_file_iterator(reader, start, end):
