@@ -125,15 +125,18 @@ inlet_map = {
 }
 
 
-class FilterLine(str):
+class FilterString(str):
     def __init__(self, value):
-        self.data = filter_line_parser(self)
+        self.data = self._parse()
 
     def get(self, key):
         return self.data.get(key)
 
+    def _parse(self):
+        return filter_string_parser(self)
 
-def filter_line_parser(line):
+
+def filter_string_parser(line):
     """Parses instrument information from Thermo's filter string
 
     Parameters
@@ -231,7 +234,7 @@ class _RawFileMetadataLoader(object):
         analyzer_confs = dict()
         for scan in self:
             index[scan.ms_level] += 1
-            fline = self._filter_line(scan._data)
+            fline = self._filter_string(scan._data)
             analyzer = analyzer_map[fline.data['analyzer']]
             try:
                 analyzer_confs[analyzer]
@@ -244,8 +247,8 @@ class _RawFileMetadataLoader(object):
 
     def _get_instrument_info(self):
         scan = self.get_scan_by_index(0)
-        filter_line = self._filter_line(scan._data)
-        ionization_label = filter_line.data.get("ionization")
+        filter_string = self._filter_string(scan._data)
+        ionization_label = filter_string.data.get("ionization")
         try:
             ionization = ionization_map[ionization_label]
         except KeyError:
@@ -387,7 +390,7 @@ def method_parser(method_text):
 class ThermoRawScanPtr(Base):
     def __init__(self, scan_number):
         self.scan_number = scan_number
-        self.filter_line = None
+        self.filter_string = None
 
     def validate(self, source):
         try:
@@ -428,16 +431,16 @@ class ThermoRawDataInterface(ScanDataSource):
             scan.scan_number)
 
     def _polarity(self, scan):
-        filter_line = self._filter_line(scan)
-        return filter_line.data['polarity']
+        filter_string = self._filter_string(scan)
+        return filter_string.data['polarity']
 
-    def _filter_line(self, scan):
-        if scan.filter_line is None:
-            scan.filter_line = FilterLine(self._source.GetFilterForScanNum(scan.scan_number))
-        return scan.filter_line
+    def _filter_string(self, scan):
+        if scan.filter_string is None:
+            scan.filter_string = FilterString(self._source.GetFilterForScanNum(scan.scan_number))
+        return scan.filter_string
 
     def _scan_title(self, scan):
-        return "%s %r" % (self._scan_id(scan), self._filter_line(scan))
+        return "%s %r" % (self._scan_id(scan), self._filter_string(scan))
 
     def _scan_arrays(self, scan):
         arrays, flags = self._source.GetMassListFromScanNum(
@@ -509,12 +512,12 @@ class ThermoRawDataInterface(ScanDataSource):
         return pinfo
 
     def _activation(self, scan):
-        filter_line = self._filter_line(scan)
-        tandem_sequence = filter_line.get("tandem_sequence")
+        filter_string = self._filter_string(scan)
+        tandem_sequence = filter_string.get("tandem_sequence")
         if tandem_sequence is not None:
             activation_event = tandem_sequence[-1]
-            activation_type = activation_event.get("activation_type")
-            has_supplemental_activation = filter_line.get("supplemental_activation")
+            activation_type = list(activation_event.get("activation_type"))
+            has_supplemental_activation = filter_string.get("supplemental_activation")
             if activation_type is not None:
                 energy = activation_event.get("activation_energy")
                 if has_supplemental_activation and len(activation_type) > 1:
@@ -561,7 +564,7 @@ class ThermoRawDataInterface(ScanDataSource):
         return IsolationWindow(isolation_width, isolation_mz, isolation_width)
 
     def _instrument_configuration(self, scan):
-        fline = self._filter_line(scan)
+        fline = self._filter_string(scan)
         try:
             confid = self._analyzer_to_configuration_index[analyzer_map[fline.data.get("analyzer")]]
             return self._instrument_config[confid]
@@ -569,7 +572,7 @@ class ThermoRawDataInterface(ScanDataSource):
             return None
 
     def _acquisition_information(self, scan):
-        fline = self._filter_line(scan)
+        fline = self._filter_string(scan)
 
         event = ScanEventInformation(
             self._scan_time(scan),
@@ -578,10 +581,10 @@ class ThermoRawDataInterface(ScanDataSource):
         return ScanAcquisitionInformation("no combination", [event])
 
     def _annotations(self, scan):
-        fline = self._filter_line(scan)
+        fline = self._filter_string(scan)
         trailer_extras = self._source.GetTrailerExtraForScanNum(scan.scan_number)
         annots = {
-            "filter_line": fline,
+            "filter_string": fline,
         }
         microscans = trailer_extras.get("Micro Scan Count")
         if microscans is not None:
