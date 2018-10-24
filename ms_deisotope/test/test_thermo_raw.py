@@ -59,7 +59,7 @@ class TestThermoRawLoaderScanBehavior(unittest.TestCase):
         annotations = {'[Thermo Trailer Extra]Micro Scan Count': 3.0,
                        '[Thermo Trailer Extra]Scan Event': 3.0,
                        '[Thermo Trailer Extra]Scan Segment': 1.0,
-                       'filter_line': 'ITMS + c ESI d Full ms2 810.75@cid35.00 [210.00-1635.00]'}
+                       'filter_string': 'ITMS + c ESI d Full ms2 810.75@cid35.00 [210.00-1635.00]'}
         assert product.annotations == annotations
         assert np.isclose(product.isolation_window.target, 810.752807)
         assert product.isolation_window.lower == 1.0
