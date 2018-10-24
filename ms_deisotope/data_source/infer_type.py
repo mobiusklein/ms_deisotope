@@ -56,12 +56,23 @@ def guess_type_from_path(file_path):
 
 @register_type_guesser
 def guess_type_from_file_sniffing(file_path):
-    with open(file_path, 'rb') as handle:
+    is_random_access_file = is_random_access(file_path)
+    if is_random_access_file:
+        handle = file_path
         header = handle.read(1000)
+        handle.seek(0)
+    else:
+        with open(file_path, 'rb') as handle:
+            header = handle.read(1000)
 
     if _compression.starts_with_gz_magic(header):
-        with _compression.GzipFile(file_path, mode='rb') as handle:
+        if is_random_access_file:
+            handle = _compression.GzipFile(fileobj=file_path, mode='rb')
             header = handle.read(1000)
+            handle.seek(0)
+        else:
+            with _compression.GzipFile(file_path, mode='rb') as handle:
+                header = handle.read(1000)
 
     if b"mzML" in header:
         return MzMLLoader
@@ -89,7 +100,11 @@ def MSFileLoader(file_path, *args, **kwargs):
     random access.
     """
     reader_type = guess_type(file_path)
-    if os.path.isfile(file_path):
+    try:
+        is_file = os.path.isfile(file_path)
+    except TypeError:
+        is_file = False
+    if is_file:
         is_gz_compressed = _compression.test_gzipped(file_path)
         if is_gz_compressed:
             fobj = _compression.get_opener(file_path)
@@ -98,3 +113,7 @@ def MSFileLoader(file_path, *args, **kwargs):
     else:
         fobj = file_path
     return reader_type(fobj, *args, **kwargs)
+
+
+def is_random_access(fp):
+    return hasattr(fp, 'read') and hasattr(fp, 'seek')
