@@ -544,10 +544,21 @@ class MzMLSerializer(ScanSerializerBase):
             "unitName": "electron volt"
         })
         if activation_information.is_multiple_dissociation():
-            for energy in activation_information.energies[1:]:
+            energies = activation_information.energies[1:]
+            supplemental_energy = None
+            if activation_information.has_supplemental_dissociation():
+                supplemental_energy = energies[-1]
+                energies = energies[:-1]
+            for energy in energies:
                 params.append({
                     "name": "collision energy",
                     "value": energy,
+                    "unitName": "electron volt"
+                })
+            if supplemental_energy is not None:
+                params.append({
+                    "name": 'supplemental collision energy',
+                    "value": supplemental_energy,
                     "unitName": "electron volt"
                 })
 
@@ -778,9 +789,9 @@ class MzMLSerializer(ScanSerializerBase):
         scan_parameters = []
         scan_window_list = []
         acquisition_info = scan.acquisition_information
-        filter_line = scan.annotations.get("filter_line")
-        if filter_line is not None:
-            scan_parameters.append({"name": "filter line", "value": filter_line})
+        filter_string = scan.annotations.get("filter_string")
+        if filter_string is not None:
+            scan_parameters.append({"name": "filter string", "value": filter_string})
         if acquisition_info is not None and len(acquisition_info) > 0:
             scan_event = acquisition_info[0]
             if scan_event.has_ion_mobility():
@@ -978,7 +989,10 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         return deserialize_peak_set(scan_dict)
 
     def has_index_file(self):
-        return os.path.exists(self._index_file_name)
+        try:
+            return os.path.exists(self._index_file_name)
+        except (TypeError, AttributeError):
+            return False
 
     def _make_sample_run(self):
         samples = self.samples()
@@ -1083,7 +1097,10 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         if isinstance(self.source_file, basestring):
             return ExtendedScanIndex.index_file_name(self.source_file)
         else:
-            return ExtendedScanIndex.index_file_name(self.source_file.name)
+            try:
+                return ExtendedScanIndex.index_file_name(self.source_file.name)
+            except AttributeError:
+                return None
 
     def build_extended_index(self, header_only=True):
         self.reset()
@@ -1103,7 +1120,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         try:
             with open(self._index_file_name, 'w') as handle:
                 indexer.serialize(handle)
-        except (IOError, OSError, AttributeError) as err:
+        except (IOError, OSError, AttributeError, TypeError) as err:
             print(err)
 
     def _make_scan(self, data):
