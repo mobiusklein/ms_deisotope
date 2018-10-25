@@ -51,17 +51,39 @@ class TestScanProcessor(unittest.TestCase):
         proc = processor.ScanProcessor(self.complex_compressed_mzml, ms1_deconvolution_args={
             "averagine": glycopeptide,
             "scorer": PenalizedMSDeconVFitter(20., 2.),
+            "truncate_after": 0.95
         }, msn_deconvolution_args={
             "averagine": peptide,
             "scorer": MSDeconVFitter(10.),
+            "truncate_after": 0.8
         })
         bunch = next(proc)
         assert len(bunch.products) == 5
         for product in bunch.products:
             assert not product.precursor_information.defaulted
-        product = bunch.products[0]
-        diff_mz = product.precursor_information.mz - product.precursor_information.extracted_mz
-        assert 0 < abs(diff_mz) < 1
+        recalculated_precursors = {
+            'scanId=1740086': 4640.00074242012,
+            'scanId=1740149': 4786.05878475792,
+            'scanId=1740226': 4640.007868154431,
+            'scanId=1740344': 4348.90894554512,
+            'scanId=1740492': 5005.1329902247435
+        }
+        for product in bunch.products:
+            mass = product.precursor_information.extracted_neutral_mass
+            self.assertAlmostEqual(mass, recalculated_precursors[product.id], 2)
+
+        proc.start_from_scan("scanId=1760847")
+        bunch = next(proc)
+        recalculated_precursors = {
+            'scanId=1761168': 4640.01972225792,
+            'scanId=1761235': 4640.019285920238,
+            'scanId=1761325': 4786.07251976387,
+            'scanId=1761523': 4696.016295197582,
+            'scanId=1761804': 986.58798612896
+        }
+        for product in bunch.products:
+            mass = product.precursor_information.extracted_neutral_mass
+            self.assertAlmostEqual(mass, recalculated_precursors[product.id], 2)
 
 
 if __name__ == '__main__':
