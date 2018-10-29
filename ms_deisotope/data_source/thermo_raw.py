@@ -514,12 +514,24 @@ class ThermoRawDataInterface(ScanDataSource):
     def _activation(self, scan):
         filter_string = self._filter_string(scan)
         tandem_sequence = filter_string.get("tandem_sequence")
+        # If the tandem sequence exists, the last entry is the most recent tandem acquisition.
+        # It will list contain one or more activation types. Alternatively, multiple activations
+        # of the same precursor may exist in the list as separate events in the tandem sequence.
         if tandem_sequence is not None:
             activation_event = tandem_sequence[-1]
             activation_type = list(activation_event.get("activation_type"))
             has_supplemental_activation = filter_string.get("supplemental_activation")
+
             if activation_type is not None:
-                energy = activation_event.get("activation_energy")
+                energy = list(activation_event.get("activation_energy"))
+                if len(tandem_sequence) > 1:
+                    prev_event = tandem_sequence[-2]
+                    # Merge previous tandem sequences of the same precursor
+                    if abs(prev_event['isolation_mz'] - activation_event['isolation_mz']) < 1e-3:
+                        activation_type = list(prev_event.get("activation_type")) + activation_type
+                        energy = list(prev_event.get("activation_energy")) + energy
+                        has_supplemental_activation = True
+
                 if has_supplemental_activation and len(activation_type) > 1:
                     activation_type.append(supplemental_term_map[
                         dissociation_methods_map[activation_type[-1]]])
