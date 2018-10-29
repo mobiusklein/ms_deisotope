@@ -7,9 +7,8 @@ from ms_peak_picker import pick_peaks
 from .deconvolution import deconvolute_peaks
 from .data_source import MSFileLoader, ScanIterator
 from .data_source.common import Scan, ScanBunch, ChargeNotProvided
-from .utils import Base, LRUDict
+from .utils import Base
 from .peak_dependency_network import NoIsotopicClustersError
-from .scoring import InterferenceDetection
 from .envelope_statistics import PrecursorPurityEstimator
 
 logger = logging.getLogger("deconvolution_scan_processor")

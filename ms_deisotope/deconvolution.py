@@ -2148,10 +2148,6 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(_APDGD, Comp
             right_search_limit=right_search_limit,
             charge_carrier=charge_carrier, truncate_after=truncate_after)
 
-    def subtraction(self, isotopic_cluster, error_tolerance=ERROR_TOLERANCE):
-        super(HybridAveragineCompositionListPeakDependenceGraphDeconvoluter, self).subtraction(
-            isotopic_cluster, error_tolerance)
-
 
 def deconvolute_peaks(peaklist, decon_config=None,
                       charge_range=(1, 8), error_tolerance=ERROR_TOLERANCE,
