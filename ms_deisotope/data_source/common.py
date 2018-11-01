@@ -1940,7 +1940,8 @@ class PrecursorInformation(object):
 
     @property
     def extracted_mz(self):
-        if self.extracted_charge == ChargeNotProvided:
+        if self.extracted_charge == ChargeNotProvided or (
+                self.extracted_charge == 0 and self.charge == ChargeNotProvided):
             warnings.warn("A precursor with an unknown charge state was used to compute a m/z.")
             return mass_charge_ratio(self.mz, DEFAULT_CHARGE_WHEN_NOT_RESOLVED)
         return mass_charge_ratio(self.extracted_neutral_mass, self.extracted_charge)

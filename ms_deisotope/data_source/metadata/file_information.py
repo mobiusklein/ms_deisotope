@@ -519,6 +519,33 @@ content_keys = TermSet([
 # [[[end]]]
 
 
+spectrum_representation = []
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('spectrum representation',
+#             "spectrum_representation", term_cls_name="FileContent", writer=cog.out)
+# ]]]
+spectrum_representation = TermSet([
+    FileContent(u'centroid spectrum', u'MS:1000127',
+                (u'Processing of profile data to produce spectra that contains'
+                 u'discrete peaks of zero width. Often used to reduce the size'
+                 u'of dataset.'),
+                'spectrum representation',
+                [u'spectrum representation']),
+    FileContent(u'profile spectrum', u'MS:1000128',
+                (u'A profile mass spectrum is created when data is recorded'
+                 u'with ion current (counts per second) on one axis and'
+                 u'mass/charge ratio on another axis.'),
+                'spectrum representation',
+                [u'spectrum representation']),
+])
+# [[[end]]]
+
+
+content_keys = content_keys + spectrum_representation
+
+
 def find(collection, key):
     i = collection.index(key)
     return collection[i]

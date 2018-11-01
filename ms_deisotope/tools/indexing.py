@@ -10,6 +10,7 @@ import click
 from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
 from ms_deisotope.data_source import _compression
+from ms_deisotope.tools import conversion
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -211,6 +212,12 @@ if _compression.has_idzip:
                     chunk = infh.read(buffer_size)
             writer.close()
 
+
+try:
+    for name, command in conversion.ms_conversion.commands.items():
+        cli.add_command(command, name)
+except Exception as e:
+    click.secho("%r occurred while loading conversion tools" % (e, ), err=True, fg='yellow')
 
 main = cli.main
 
