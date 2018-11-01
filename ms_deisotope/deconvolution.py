@@ -10,7 +10,7 @@ from .averagine import (
     AveragineCache, peptide, glycopeptide, glycan, neutral_mass, isotopic_variants,
     isotopic_shift, PROTON, TheoreticalIsotopicPattern)
 from .peak_set import DeconvolutedPeak, DeconvolutedPeakSolution, DeconvolutedPeakSet, Envelope
-from .scoring import IsotopicFitRecord, penalized_msdeconv, PenalizedMSDeconVFitter, DotProductFitter
+from .scoring import IsotopicFitRecord, penalized_msdeconv
 from .utils import range, Base, TrivialTargetedDeconvolutionResult, DeconvolutionProcessResult
 from .envelope_statistics import a_to_a2_ratio, average_mz, most_abundant_mz
 from .peak_dependency_network import PeakDependenceGraph, NetworkedTargetedDeconvolutionResult
