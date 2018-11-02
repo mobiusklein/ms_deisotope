@@ -4,7 +4,7 @@ import click
 from six import string_types as basestring
 
 import ms_deisotope
-from ms_deisotope.data_source.metadata import activation as activation_module
+from ms_deisotope.data_source.metadata import activation as activation_module, data_transformation
 from ms_deisotope.output import MzMLSerializer, MGFSerializer
 from ms_peak_picker.scan_filter import parse as parse_filter
 from pyteomics.xml import unitfloat
@@ -30,11 +30,14 @@ def to_mgf(reader, outstream, msn_filters=None):
         writer.save_scan(scan)
 
 
-@ms_conversion.command('mgf')
+@ms_conversion.command('mgf', short_help="Convert a mass spectrometry data file to MGF")
 @click.argument("source")
 @click.argument("output", type=click.File(mode='wb'))
 @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
 def mgf(source, output, msn_filters=None):
+    """Convert a mass spectrometry data file to MGF. MGF can only represent centroid spectra
+    and generally does not contain any MS1 information.
+    """
     reader = ms_deisotope.MSFileLoader(source)
     to_mgf(reader, output, msn_filters=msn_filters)
 
@@ -47,6 +50,11 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
     reader.make_iterator(grouped=True)
     writer = MzMLSerializer(outstream, deconvoluted=False)
     writer.copy_metadata_from(reader)
+    method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
+    if pick_peaks:
+        method.add('MS:1000035')
+    method.add('MS:1000544')
+    writer.add_data_processing(method)
     if default_activation is not None:
         if isinstance(default_activation, basestring):
             default_activation = activation_module.ActivationInformation(
@@ -81,7 +89,7 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
     writer.format()
 
 
-@ms_conversion.command("mzml")
+@ms_conversion.command("mzml", short_help="Convert a mass spectrometrydata file to mzML")
 @click.argument("source")
 @click.argument("output", type=click.File(mode='wb'))
 @click.option("-r", "--ms1-filter", "ms1_filters", multiple=True, type=parse_filter)

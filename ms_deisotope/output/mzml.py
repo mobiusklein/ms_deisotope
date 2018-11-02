@@ -13,7 +13,6 @@ from six import string_types as basestring
 
 from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
-
 try:
     from psims.mzml import writer
 except ImportError:
@@ -27,7 +26,7 @@ except NameError:
 
 from .common import ScanSerializerBase, ScanDeserializerBase
 from .text_utils import (envelopes_to_array, decode_envelopes)
-from ms_deisotope import peak_set
+from ms_deisotope import peak_set, version as lib_version
 from ms_deisotope.utils import Base
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.envelope_statistics import CoIsolation
@@ -454,7 +453,8 @@ class MzMLSerializer(ScanSerializerBase):
 
         software_list.append({
             "id": "ms_deisotope_1",
-            'MS:1000799': "ms_deisotope"
+            'version': lib_version,
+            'ms_deisotope': "",
         })
         self.writer.software_list(software_list)
 

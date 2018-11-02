@@ -21,7 +21,7 @@ def cli():
     pass
 
 
-@cli.command("byte-index")
+@cli.command("byte-index", short_help='Build an external byte offset index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 def byte_index(paths):
     for path in paths:
@@ -34,7 +34,7 @@ def byte_index(paths):
         fn(path)
 
 
-@cli.command("metadata-index")
+@cli.command("metadata-index", short_help='Build an external scan metadata index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 def metadata_index(paths, processes=4):
     for path in paths:
@@ -74,7 +74,8 @@ class MSMSIntervalTask(object):
         return intervals
 
 
-@cli.command("msms-intervals")
+@cli.command("msms-intervals", short_help=(
+    'Build an interval tree over precursor isolation events in time and m/z space'))
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
 def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3., output=None):
@@ -123,7 +124,7 @@ def _ensure_metadata_index(path):
     return reader, index
 
 
-@cli.command("charge-states")
+@cli.command("charge-states", short_help='Count the different precursor charge states in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def charge_states(path):
     reader, index = _ensure_metadata_index(path)
@@ -153,7 +154,7 @@ def binsearch(array, x):
     return
 
 
-@cli.command("precursor-clustering")
+@cli.command("precursor-clustering", short_help='Cluster precursor masses in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def precursor_clustering(path, grouping_error=2e-5):
     reader, index = _ensure_metadata_index(path)
@@ -196,7 +197,7 @@ def precursor_clustering(path, grouping_error=2e-5):
 
 if _compression.has_idzip:
 
-    @cli.command("idzip")
+    @cli.command("idzip", short_help='Compress a file idzip, providing random access over a compressed file')
     @click.argument('path', type=str)
     @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
     def idzip_compression(path, output):

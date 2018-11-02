@@ -134,7 +134,7 @@ class MGFInterface(ScanDataSource):
         annots = dict()
         params = scan['params']
         for key, value in params.items():
-            if key in ("pepmass", "charge"):
+            if key in ("pepmass", "charge", "title", "rtinseconds"):
                 continue
             else:
                 try:
