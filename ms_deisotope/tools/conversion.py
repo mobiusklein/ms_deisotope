@@ -89,7 +89,7 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
     writer.format()
 
 
-@ms_conversion.command("mzml", short_help="Convert a mass spectrometrydata file to mzML")
+@ms_conversion.command("mzml", short_help="Convert a mass spectrometry data file to mzML")
 @click.argument("source")
 @click.argument("output", type=click.File(mode='wb'))
 @click.option("-r", "--ms1-filter", "ms1_filters", multiple=True, type=parse_filter)
