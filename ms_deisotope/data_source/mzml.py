@@ -8,9 +8,10 @@ from .common import (
     ScanAcquisitionInformation, ScanEventInformation,
     ScanWindow, IsolationWindow,
     InstrumentInformation, ComponentGroup, component,
-    FileInformation, SourceFile, MultipleActivationInformation)
+    FileInformation, SourceFile, MultipleActivationInformation,
+    ScanFileMetadataBase)
 from .metadata.activation import (
-    supplemental_energy, energy_terms)
+    supplemental_energy)
 from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
@@ -76,6 +77,12 @@ class MzMLDataInterface(ScanDataSource):
             An array of intensity values for this scan
         """
         try:
+            decode = not self._decode_binary
+        except AttributeError:
+            decode = False
+        try:
+            if decode:
+                return scan['m/z array'].decode(), scan["intensity array"].decode()
             return scan['m/z array'], scan["intensity array"]
         except KeyError:
             return np.array([]), np.array([])
@@ -399,7 +406,7 @@ class MzMLDataInterface(ScanDataSource):
         return annot
 
 
-class _MzMLMetadataLoader(object):
+class _MzMLMetadataLoader(ScanFileMetadataBase):
 
     def _collect_reference_groups(self):
         params = next(iterparse_until(self._source, "referenceableParamGroupList", "run"))
@@ -532,12 +539,14 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def prebuild_byte_offset_file(path):
         return _MzMLParser.prebuild_byte_offset_file(path)
 
-    def __init__(self, source_file, use_index=True, **kwargs):
+    def __init__(self, source_file, use_index=True, decode_binary=True, **kwargs):
         self.source_file = source_file
         self._source = self._parser_cls(source_file, read_schema=True, iterative=True,
-                                        huge_tree=True, use_index=use_index)
+                                        huge_tree=True, decode_binary=decode_binary,
+                                        use_index=use_index)
         self.initialize_scan_cache()
         self._use_index = use_index
+        self._decode_binary = decode_binary
         self._run_information = self._get_run_attributes()
         self._instrument_config = {
             k.id: k for k in self.instrument_configuration()

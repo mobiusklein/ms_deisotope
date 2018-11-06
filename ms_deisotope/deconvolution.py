@@ -736,7 +736,6 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
 
     """
     def __init__(self, peaklist, *args, **kwargs):
-        # Don't call superclass constructor from mixin?
         super(ExhaustivePeakSearchDeconvoluterBase, self).__init__(peaklist, *args, **kwargs)
         self.use_quick_charge = kwargs.get("use_quick_charge", False)
 

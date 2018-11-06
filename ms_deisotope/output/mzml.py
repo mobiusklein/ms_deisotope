@@ -406,6 +406,14 @@ class MzMLSerializer(ScanSerializerBase):
         self.sample_list.append(sample)
 
     def copy_metadata_from(self, reader):
+        """Copies the file-level metadata from an instance of :class:`~.ScanFileMetadataBase`
+        into the metadata of the file to be written
+
+        Parameters
+        ----------
+        reader : :class:`~.ScanFileMetadataBase`
+            The source to copy metadata from
+        """
         try:
             description = reader.file_description()
             self.add_file_information(description)

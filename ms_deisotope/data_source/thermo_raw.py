@@ -9,11 +9,11 @@ import numpy as np
 
 from ms_deisotope.data_source.common import (
     ScanDataSource, RandomAccessScanSource,
-    Scan, PrecursorInformation, ScanBunch, ChargeNotProvided,
+    Scan, PrecursorInformation, ChargeNotProvided,
     ActivationInformation, IsolationWindow,
     ScanAcquisitionInformation, ScanEventInformation, ScanWindow,
     component, ComponentGroup, InstrumentInformation,
-    FileInformation, MultipleActivationInformation)
+    FileInformation, MultipleActivationInformation, ScanFileMetadataBase)
 from .metadata.activation import (supplemental_term_map, dissociation_methods_map)
 from .metadata.file_information import (MS_MS1_Spectrum, MS_MSn_Spectrum)
 from ms_deisotope.utils import Base
@@ -226,7 +226,7 @@ def filter_string_parser(line):
 _id_template = "controllerType=0 controllerNumber=1 scan="
 
 
-class _RawFileMetadataLoader(object):
+class _RawFileMetadataLoader(ScanFileMetadataBase):
     def _build_scan_type_index(self):
         self.make_iterator(grouped=False)
         index = defaultdict(int)

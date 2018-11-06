@@ -545,12 +545,6 @@ spectrum_representation = TermSet([
 
 content_keys = content_keys + spectrum_representation
 
-
-def find(collection, key):
-    i = collection.index(key)
-    return collection[i]
-
-
 id_formats_by_name = {k.name: k for k in id_formats}
 file_formats_by_name = {k.name: k for k in file_formats}
 content_keys_by_name = {k.name: k for k in content_keys}
@@ -705,6 +699,9 @@ format_parameter_map = {
                    file_formats_by_name.get("Thermo RAW format")),
     "agilent d": (id_formats_by_name.get("Agilent MassHunter nativeID format"),
                   file_formats_by_name.get("Agilent MassHunter format")),
+    'mgf': (id_formats_by_name.get("no nativeID format"),
+            # id_formats_by_name.get("multiple peak list nativeID format"),
+            file_formats_by_name.get('Mascot MGF format')),
 }
 
 

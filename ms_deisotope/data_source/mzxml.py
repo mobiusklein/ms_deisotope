@@ -7,7 +7,7 @@ from .common import (
     ActivationInformation, IsolationWindow, ScanAcquisitionInformation,
     ScanEventInformation, ScanWindow,
     ComponentGroup, component, InstrumentInformation,
-    FileInformation, SourceFile)
+    FileInformation, ScanFileMetadataBase)
 from .metadata import data_transformation
 from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until)
@@ -17,7 +17,7 @@ class _MzXMLParser(IndexSavingXML, mzxml.MzXML):
     pass
 
 
-class _MzXMLMetadataLoader(object):
+class _MzXMLMetadataLoader(ScanFileMetadataBase):
     def file_description(self):
         """Read the file provenance from the ``<parentFile>`` tags
         if any are present.

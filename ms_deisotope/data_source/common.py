@@ -867,6 +867,29 @@ class DataAccessProxy(object):  # pragma: no cover
         return self.source.get_scan_by_id(scan_id)
 
 
+@add_metaclass(abc.ABCMeta)
+class ScanFileMetadataBase(object):
+    """Objects implementing this interface can describe the original source
+    files, instrument configuration, and data processing parameters used to
+    create the current spectral data file.
+
+    Patterned after the provenance features of mzML that could also be mapped
+    onto mzXML and other complete vendor readers.
+    """
+
+    @abc.abstractmethod
+    def file_description(self):
+        return FileInformation()
+
+    @abc.abstractmethod
+    def instrument_configuration(self):
+        return []
+
+    @abc.abstractmethod
+    def data_processing(self):
+        return []
+
+
 class ScanBase(object):
 
     def has_ion_mobility(self):
