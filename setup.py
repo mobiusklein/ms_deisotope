@@ -238,7 +238,7 @@ def run_setup(include_cext=True):
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Science/Research',
-            'License :: OSI Approved :: BSD License',
+            'License :: OSI Approved :: Apache Software License',
             'Topic :: Scientific/Engineering :: Bio-Informatics'],
         install_requires=install_requires,
         include_package_data=True,
