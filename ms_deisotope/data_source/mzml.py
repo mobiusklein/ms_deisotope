@@ -11,7 +11,7 @@ from .common import (
     FileInformation, SourceFile, MultipleActivationInformation,
     ScanFileMetadataBase)
 from .metadata.activation import (
-    supplemental_energy)
+    supplemental_energy, UnknownDissociation)
 from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
@@ -298,7 +298,7 @@ class MzMLDataInterface(ScanDataSource):
                 activation = activation_methods[0]
                 activation_methods = activation_methods[1:]
             else:
-                activation = "unknown dissociation method"
+                activation = UnknownDissociation
             energy = struct.pop("collision energy", -1)
             if energy == -1:
                 energy = struct.pop("activation energy", -1)

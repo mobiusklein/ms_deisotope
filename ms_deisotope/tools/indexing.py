@@ -197,7 +197,7 @@ def precursor_clustering(path, grouping_error=2e-5):
 
 if _compression.has_idzip:
 
-    @cli.command("idzip", short_help='Compress a file idzip, providing random access over a compressed file')
+    @cli.command("idzip", short_help='Compress a file with idzip, a gzip-compatible format with random access support')
     @click.argument('path', type=str)
     @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
     def idzip_compression(path, output):
