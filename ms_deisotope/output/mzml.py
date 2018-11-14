@@ -447,6 +447,7 @@ class MzMLSerializer(ScanSerializerBase):
 
     def _create_software_list(self):
         software_list = []
+        ms_deisotope_entries = []
         for sw in self.software_list:
             d = {
                 'id': sw.id,
@@ -457,7 +458,19 @@ class MzMLSerializer(ScanSerializerBase):
             else:
                 d['MS:1000799'] = sw.name
             d['params'] = list(sw.options.items())
+            if 'ms_deisotope' in str(sw.id):
+                ms_deisotope_entries.append(str(sw.id))
             software_list.append(d)
+
+        for i in range(1, 100):
+            query = 'ms_deisotope_%d' % i
+            if query in ms_deisotope_entries:
+                continue
+            else:
+                new_entry_id = query
+                break
+        else:
+            new_entry_id = 'ms_deisotope_%s' % str(uuid4())
 
         software_list.append({
             "id": "ms_deisotope_1",

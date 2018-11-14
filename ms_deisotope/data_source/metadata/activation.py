@@ -17,9 +17,15 @@ class ActivationInformation(object):
     def __init__(self, method, energy, data=None):
         if data is None:
             data = dict()
-        self.method = dissociation_methods_map.get(str(method).lower(), method)
+        self.method = dissociation_methods_map.get(str(method).lower(), None)
+        if self.method is None:
+            self.method = self._make_unknown_method(method)
         self.energy = energy
         self.data = data
+
+    @staticmethod
+    def _make_unknown_method(method):
+        return DissociationMethod(UnknownDissociation.name, method, method, method, [method])
 
     def __repr__(self):
         return "ActivationInformation(%r, %r%s)" % (

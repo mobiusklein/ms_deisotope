@@ -143,8 +143,9 @@ def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
         lower = pinfo.mz - 4
         upper = pinfo.mz + 4
 
+    peak_set = scan.peak_set
     try:
-        peak = max(scan.peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
+        peak = max(peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
         local_intensity = peak.intensity
     except ValueError:
         local_intensity = 1e3
