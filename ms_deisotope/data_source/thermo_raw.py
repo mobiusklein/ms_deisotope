@@ -686,6 +686,10 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         self.make_iterator(None)
         self.initialize_scan_cache()
 
+    def _scan_time_to_scan_number(self, scan_time):
+        scan_number = self._source.ScanNumFromRT(scan_time)
+        return scan_number
+
     def get_scan_by_id(self, scan_id):
         """Retrieve the scan object for the specified scan id.
 
@@ -758,7 +762,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             time = self._first_scan_time
         elif time > self._last_scan_time:
             time = self._last_scan_time
-        scan_number = self._source.ScanNumFromRT(time)
+        scan_number = self._scan_time_to_scan_number(time)
         try:
             return self._scan_cache[scan_number]
         except KeyError:
@@ -793,7 +797,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         elif index is not None:
             scan_number = int(index)
         elif rt is not None:
-            scan_number = self._source.ScanNumFromRT(rt)
+            scan_number = self._scan_time_to_scan_number(rt)
         if require_ms1:
             start_index = scan_number
             while start_index != 0:
@@ -814,7 +818,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         if start_index is not None:
             return range(start_index + 1, self._source.NumSpectra + 1)
         elif start_time is not None:
-            start_index = self._source.ScanNumFromRT(start_time)
+            start_index = self._scan_time_to_scan_number(start_time)
             while start_index != 1:
                 scan = self.get_scan_by_index(start_index)
                 if scan.ms_level > 1:
