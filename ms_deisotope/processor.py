@@ -163,6 +163,8 @@ class ScanProcessor(Base):
         Whether or not  to stop processing on an error. Defaults to `True`
     """
 
+    logger = logger
+
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None,
@@ -198,6 +200,9 @@ class ScanProcessor(Base):
         self._signal_source = self.loader_type(data_source)
         self.envelope_selector = envelope_selector
         self.terminate_on_error = terminate_on_error
+
+    def log(self, *args, **kwargs):
+        self.logger.info(*args, **kwargs)
 
     def _reject_candidate_precursor_peak(self, peak, product_scan):
         isolation = product_scan.isolation_window
@@ -297,7 +302,7 @@ class ScanProcessor(Base):
         -------
         PeakSet
         """
-        logger.info("Picking Precursor Scan Peaks: %r", precursor_scan)
+        self.log("Picking Precursor Scan Peaks: %r" % (precursor_scan, ))
         if self.ms1_averaging > 0:
             prec_peaks = self._average_ms1(precursor_scan)
         else:
@@ -335,7 +340,7 @@ class ScanProcessor(Base):
                 self.trust_charge_hint,
                 isolation_window=scan.isolation_window)
             if self._reject_candidate_precursor_peak(peak, scan):
-                logger.info(
+                self.log(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
                         precursor_ion, scan.title,
                         precursor_scan.title))
@@ -383,7 +388,7 @@ class ScanProcessor(Base):
                 scan.precursor_information.product_scan_id,
                 isolation_window=scan.isolation_window)
             if self._reject_candidate_precursor_peak(peak, scan):
-                logger.info(
+                self.log(
                     "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
                         precursor_ion, scan.id,
                         precursor_scan.id))
@@ -424,8 +429,8 @@ class ScanProcessor(Base):
         if priorities is None:
             priorities = []
 
-        logger.info("Deconvoluting Precursor Scan %r", precursor_scan)
-        logger.info("Priorities: %r", priorities)
+        self.log("Deconvoluting Precursor Scan %r", precursor_scan)
+        self.log("Priorities: %r", priorities)
 
         ms1_deconvolution_args = self.ms1_deconvolution_args.copy()
 
@@ -507,7 +512,7 @@ class ScanProcessor(Base):
         return dec_peaks, priority_results
 
     def deconvolute_product_scan(self, product_scan):
-        logger.info("Deconvoluting Product Scan %r", product_scan)
+        self.log("Deconvoluting Product Scan %r" % (product_scan, ))
         precursor_ion = product_scan.precursor_information
         top_charge_state = precursor_ion.extracted_charge
         deconargs = dict(self.msn_deconvolution_args)
@@ -526,7 +531,7 @@ class ScanProcessor(Base):
         try:
             dec_peaks, _ = deconvolute_peaks(product_scan.peak_set, **deconargs)
         except NoIsotopicClustersError as e:
-            logger.info("No Isotopic Clusters found in %r" % product_scan.id)
+            self.log("No Isotopic Clusters found in %r" % product_scan.id)
             e.scan_id = product_scan.id
             if self.terminate_on_error:
                 raise e
