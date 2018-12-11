@@ -12,8 +12,13 @@ from ms_peak_picker import (
     pick_peaks, reprofile, average_signal,
     scan_filter, PeakIndex, PeakSet)
 
-
-from ms_deisotope.plot import annotate_scan as _annotate_precursors, draw_raw
+try:
+    from ms_deisotope.plot import annotate_scan as _annotate_precursors, draw_raw
+except ImportError:
+    def _missing_matplotlib(*args, **kwargs):
+        raise ImportError("This method requires matplotlib. Please install it.")
+    _annotate_precursors = _missing_matplotlib
+    draw_raw = _missing_matplotlib
 
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.utils import Constant, decimal_shift
