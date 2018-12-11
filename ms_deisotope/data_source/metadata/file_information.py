@@ -348,35 +348,37 @@ content_keys = TermSet([
                  u'radiation as a function of the wavelength.'),
                 'data file content',
                 [u'data file content', u'spectrum type']),
-    FileContent(u'total ion current chromatogram', u'MS:1000235',
-                (u'Chromatogram obtained by plotting the total ion current'
-                 u'detected in each of a series of mass spectra recorded as a'
-                 u'function of retention time.'),
-                'data file content',
-                [u'data file content', u'mass chromatogram', u'chromatogram type']),
     FileContent(u'absorption spectrum', u'MS:1000806',
                 (u'A plot of the relative intensity of electromagnetic'
                  u'radiation absorbed by atoms or molecules when excited.'),
                 'data file content',
                 [u'data file content', u'spectrum type']),
-    FileContent(u'selected reaction monitoring chromatogram', u'MS:1001473',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a selectively monitored reaction at each'
-                 u'time point.'),
+    FileContent(u'emission spectrum', u'MS:1000805',
+                (u'A plot of the relative intensity of electromagnetic'
+                 u'radiation emitted by atoms or molecules when excited.'),
                 'data file content',
-                [u'data file content', u'mass chromatogram', u'chromatogram type']),
-    FileContent(u'selected ion monitoring chromatogram', u'MS:1001472',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a selectively monitored ion at each time'
-                 u'point.'),
+                [u'data file content', u'spectrum type']),
+    FileContent(u'mass spectrum', u'MS:1000294',
+                (u'A plot of the relative abundance of a beam or other'
+                 u'collection of ions as a function of the mass-to-charge ratio'
+                 u'(m/z).'),
                 'data file content',
-                [u'data file content', u'mass chromatogram', u'chromatogram type']),
-    FileContent(u'consecutive reaction monitoring chromatogram', u'MS:1001474',
-                (u'OBSOLETE Chromatogram created by creating an array of the'
-                 u'measurements of a series of monitored reactions at each time'
-                 u'point.'),
+                [u'data file content', u'spectrum type']),
+    FileContent(u'PDA spectrum', u'MS:1000620',
+                (u'OBSOLETE Spectrum generated from a photodiode array detector'
+                 u'(ultraviolet/visible spectrum).'),
                 'data file content',
-                [u'data file content', u'mass chromatogram', u'chromatogram type']),
+                [u'data file content', u'spectrum type']),
+    FileContent(u'mass chromatogram', u'MS:1000810',
+                (u'A plot of the relative abundance of a beam or other'
+                 u'collection of ions as a function of the retention time.'),
+                'data file content',
+                [u'data file content', u'chromatogram type']),
+    FileContent(u'electromagnetic radiation chromatogram', u'MS:1000811',
+                (u'The measurement of electromagnetic properties as a function'
+                 u'of the retention time.'),
+                'data file content',
+                [u'data file content', u'chromatogram type']),
     FileContent(u'MSn spectrum', u'MS:1000580',
                 (u'MSn refers to multi-stage MS2 experiments designed to record'
                  u'product ion spectra where n is the number of product ion'
@@ -413,11 +415,14 @@ content_keys = TermSet([
                  u'time or tandem mass spectrometry in space.'),
                 'data file content',
                 [u'mass spectrum', u'data file content', u'spectrum type']),
-    FileContent(u'enhanced multiply charged spectrum', u'MS:1000789',
-                (u'MS1 spectrum that is enriched in multiply-charged ions'
-                 u'compared to singly-charged ions.'),
+    FileContent(u'e/2 mass spectrum', u'MS:1000328',
+                (u'A mass spectrum obtained using a sector mass spectrometer in'
+                 u'which the electric sector field E is set to half the value'
+                 u'required to transmit the main ion-beam. This spectrum'
+                 u'records the signal from doubly charged product ions of'
+                 u'charge-stripping reactions.'),
                 'data file content',
-                [u'data file content', u'MS1 spectrum', u'mass spectrum', u'spectrum type']),
+                [u'mass spectrum', u'data file content', u'spectrum type']),
     FileContent(u'constant neutral gain spectrum', u'MS:1000325',
                 (u'A spectrum formed of all product ions that have been'
                  u'produced by gain of a pre-selected neutral mass following'
@@ -438,17 +443,6 @@ content_keys = TermSet([
                  u'm/z.'),
                 'data file content',
                 [u'mass spectrum', u'data file content', u'spectrum type']),
-    FileContent(u'time-delayed fragmentation spectrum', u'MS:1000790',
-                (u'MSn spectrum in which the product ions are collected after a'
-                 u'time delay, which allows the observation of lower energy'
-                 u'fragmentation processes after precursor ion activation.'),
-                'data file content',
-                [u'data file content', u'MSn spectrum', u'mass spectrum', u'spectrum type']),
-    FileContent(u'emission spectrum', u'MS:1000805',
-                (u'A plot of the relative intensity of electromagnetic'
-                 u'radiation emitted by atoms or molecules when excited.'),
-                'data file content',
-                [u'data file content', u'spectrum type']),
     FileContent(u'product ion spectrum', u'MS:1000343',
                 (u'OBSOLETE A mass spectrum recorded from any spectrometer in'
                  u'which the appropriate m/z separation scan function is set to'
@@ -460,61 +454,67 @@ content_keys = TermSet([
                  u'monitoring a fixed product m/z.'),
                 'data file content',
                 [u'mass spectrum', u'data file content', u'spectrum type']),
-    FileContent(u'mass spectrum', u'MS:1000294',
-                (u'A plot of the relative abundance of a beam or other'
-                 u'collection of ions as a function of the mass-to-charge ratio'
-                 u'(m/z).'),
-                'data file content',
-                [u'data file content', u'spectrum type']),
-    FileContent(u'basepeak chromatogram', u'MS:1000628',
-                (u'Chromatogram created by creating an array of the most'
-                 u'intense peaks at each time point.'),
-                'data file content',
-                [u'data file content', u'mass chromatogram', u'chromatogram type']),
-    FileContent(u'selected ion current chromatogram', u'MS:1000627',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a specific single ion current at each time'
-                 u'point.'),
-                'data file content',
-                [u'data file content', u'mass chromatogram', u'chromatogram type']),
-    FileContent(u'PDA spectrum', u'MS:1000620',
-                (u'OBSOLETE Spectrum generated from a photodiode array detector'
-                 u'(ultraviolet/visible spectrum).'),
-                'data file content',
-                [u'data file content', u'spectrum type']),
     FileContent(u'MS1 spectrum', u'MS:1000579',
                 (u'Mass spectrum created by a single-stage MS experiment or the'
                  u'first stage of a multi-stage experiment.'),
                 'data file content',
                 [u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'total ion current chromatogram', u'MS:1000235',
+                (u'Chromatogram obtained by plotting the total ion current'
+                 u'detected in each of a series of mass spectra recorded as a'
+                 u'function of retention time.'),
+                'data file content',
+                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+    FileContent(u'selected reaction monitoring chromatogram', u'MS:1001473',
+                (u'Chromatogram created by creating an array of the'
+                 u'measurements of a selectively monitored reaction at each'
+                 u'time point.'),
+                'data file content',
+                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+    FileContent(u'selected ion monitoring chromatogram', u'MS:1001472',
+                (u'Chromatogram created by creating an array of the'
+                 u'measurements of a selectively monitored ion at each time'
+                 u'point.'),
+                'data file content',
+                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+    FileContent(u'consecutive reaction monitoring chromatogram', u'MS:1001474',
+                (u'OBSOLETE Chromatogram created by creating an array of the'
+                 u'measurements of a series of monitored reactions at each time'
+                 u'point.'),
+                'data file content',
+                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+    FileContent(u'basepeak chromatogram', u'MS:1000628',
+                (u'Chromatogram created by creating an array of the most'
+                 u'intense peaks at each time point.'),
+                'data file content',
+                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+    FileContent(u'selected ion current chromatogram', u'MS:1000627',
+                (u'Chromatogram created by creating an array of the'
+                 u'measurements of a specific single ion current at each time'
+                 u'point.'),
+                'data file content',
+                [u'mass chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'absorption chromatogram', u'MS:1000812',
                 (u'The measurement of light absorbed by the sample as a'
                  u'function of the retention time.'),
                 'data file content',
-                [u'data file content', u'electromagnetic radiation chromatogram', u'chromatogram type']),
+                [u'electromagnetic radiation chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'emission chromatogram', u'MS:1000813',
                 (u'The measurement of light emitted by the sample as a function'
                  u'of the retention time.'),
                 'data file content',
-                [u'data file content', u'electromagnetic radiation chromatogram', u'chromatogram type']),
-    FileContent(u'mass chromatogram', u'MS:1000810',
-                (u'A plot of the relative abundance of a beam or other'
-                 u'collection of ions as a function of the retention time.'),
+                [u'electromagnetic radiation chromatogram', u'data file content', u'chromatogram type']),
+    FileContent(u'time-delayed fragmentation spectrum', u'MS:1000790',
+                (u'MSn spectrum in which the product ions are collected after a'
+                 u'time delay, which allows the observation of lower energy'
+                 u'fragmentation processes after precursor ion activation.'),
                 'data file content',
-                [u'data file content', u'chromatogram type']),
-    FileContent(u'electromagnetic radiation chromatogram', u'MS:1000811',
-                (u'The measurement of electromagnetic properties as a function'
-                 u'of the retention time.'),
+                [u'MSn spectrum', u'mass spectrum', u'data file content', u'spectrum type']),
+    FileContent(u'enhanced multiply charged spectrum', u'MS:1000789',
+                (u'MS1 spectrum that is enriched in multiply-charged ions'
+                 u'compared to singly-charged ions.'),
                 'data file content',
-                [u'data file content', u'chromatogram type']),
-    FileContent(u'e/2 mass spectrum', u'MS:1000328',
-                (u'A mass spectrum obtained using a sector mass spectrometer in'
-                 u'which the electric sector field E is set to half the value'
-                 u'required to transmit the main ion-beam. This spectrum'
-                 u'records the signal from doubly charged product ions of'
-                 u'charge-stripping reactions.'),
-                'data file content',
-                [u'mass spectrum', u'data file content', u'spectrum type']),
+                [u'MS1 spectrum', u'mass spectrum', u'data file content', u'spectrum type']),
 ])
 # [[[end]]]
 
