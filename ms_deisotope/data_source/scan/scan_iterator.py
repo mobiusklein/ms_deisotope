@@ -1,6 +1,14 @@
 from .scan import ScanBunch
 
 
+def _null_scan_validator(scan):
+    return True
+
+
+def _null_scan_cacher(scan):
+    return None
+
+
 class _ScanIteratorImplBase(object):
     """Internal base class for scan iteration strategies
 
@@ -19,11 +27,9 @@ class _ScanIteratorImplBase(object):
 
     def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None):
         if scan_validator is None:
-            def scan_validator(scan):
-                return True
+            scan_validator = _null_scan_validator
         if scan_cacher is None:
-            def scan_cacher(scan):
-                return None
+            scan_cacher = _null_scan_cacher
         self.iterator = iterator
         self.scan_packer = scan_packer
         self.scan_validator = scan_validator
