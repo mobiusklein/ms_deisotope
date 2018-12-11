@@ -17,7 +17,7 @@ from .metadata.activation import (
     HCD, CID, ETD, ECD, UnknownDissociation)
 
 from .scan import (
-    ScanBunch, Scan, ProcessedScan,
+    ScanBunch, Scan, ProcessedScan, ScanBase,
     PrecursorInformation, WrappedScan, AveragedScan,
     RawDataArrays, ChargeNotProvided,
     DEFAULT_CHARGE_WHEN_NOT_RESOLVED,
@@ -28,12 +28,17 @@ from .scan import (
 
 
 __all__ = [
-    "Scan", "ScanBunch", "ProcessedScan", "WrappedScan",
-    "AveragedScan", "PrecursorInformation", "RandomAccessScanSource",
-    "ScanDataSource", "ScanIterator", "RawDataArrays",
+    "Scan", "ScanBunch", "ProcessedScan", "WrappedScan", "ScanBase",
+    "AveragedScan", "PrecursorInformation", "RawDataArrays",
 
     "ScanAcquisitionInformation", "ScanEventInformation", "ScanWindow",
     "IsolationWindow",
+
+    "ScanDataSource", "ScanIterator", "RandomAccessScanSource",
+    "ScanFileMetadataBase",
+
+    "_ScanIteratorImplBase", "_SingleScanIteratorImpl",
+    "_FakeGroupedScanIteratorImpl", "_GroupedScanIteratorImpl",
 
     "ChargeNotProvided", "DEFAULT_CHARGE_WHEN_NOT_RESOLVED",
 
