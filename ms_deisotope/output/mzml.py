@@ -980,12 +980,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
     """
 
     def __init__(self, source_file, use_index=True, use_extended_index=True):
-        MzMLLoader.__init__(self, source_file, use_index=use_index)
+        MzMLLoader.__init__(self, source_file, use_index=use_index, decode_binary=True)
         self.extended_index = None
         self._scan_id_to_rt = dict()
         self._sample_run = None
+        self._use_extended_index = use_extended_index
         if self._use_index:
-            if use_extended_index:
+            if self._use_extended_index:
                 try:
                     if self.has_index_file():
                         self.read_index_file()
@@ -996,6 +997,26 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 except ValueError:
                     pass
                 self._build_scan_id_to_rt_cache()
+
+    def require_extended_index(self):
+        if not self.has_extended_index():
+            try:
+                if self.has_index_file():
+                    self.read_index_file()
+                else:
+                    self.build_extended_index()
+            except IOError:
+                pass
+            except ValueError:
+                pass
+            self._build_scan_id_to_rt_cache()
+        return self.extended_index
+
+    def has_extended_index(self):
+        return self.extended_index is not None
+
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self._use_index, self._use_extended_index)
 
     def read_index_file(self, index_path=None):
         if index_path is None:
@@ -1159,7 +1180,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
             scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
                 data)
-            if scan.id in self.extended_index.ms1_ids:
+            if self.has_extended_index() and scan.id in self.extended_index.ms1_ids:
                 chosen_indices = self.extended_index.ms1_ids[
                     scan.id]['msms_peaks']
                 for ix in chosen_indices:
@@ -1179,7 +1200,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             return header.scan_time
 
     def _build_scan_id_to_rt_cache(self):
-        if self.extended_index:
+        if self.has_extended_index():
             for key in self.extended_index.ms1_ids:
                 self._scan_id_to_rt[key] = self.extended_index.ms1_ids[
                     key]['scan_time']

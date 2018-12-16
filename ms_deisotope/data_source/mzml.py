@@ -606,3 +606,6 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
             if isinstance(key, bytes):
                 key = key.decode("utf8")
             yield scan_source.get_by_id(key)
+
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self._use_index, self._decode_binary)
