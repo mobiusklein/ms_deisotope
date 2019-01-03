@@ -237,7 +237,7 @@ class ScanBase(object):
     def scan_id(self):
         return self.id
 
-    def copy(self):
+    def copy(self, deep=True):
         """Return a deep copy of the :class:`Scan` object
         wrapping the same reference data.
 
@@ -245,7 +245,7 @@ class ScanBase(object):
         -------
         :class:`Scan`
         """
-        return self.clone()
+        return self.clone(deep)
 
     def __copy__(self):
         return self.clone()
@@ -424,12 +424,17 @@ class Scan(ScanBase):
 
         self.product_scans = product_scans
 
-    def clone(self):
+    def clone(self, deep=True):
         dup = self.__class__(
             self._data, self.source,
-            self.peak_set.clone() if self.peak_set is not None else None,
-            self.deconvoluted_peak_set.clone() if self.deconvoluted_peak_set is not None else None,
-            [s.clone() for s in self.product_scans], self._external_annotations.copy())
+
+            self.peak_set.clone() if self.peak_set is not None else None
+            if deep else self.peak_set,
+
+            self.deconvoluted_peak_set.clone() if self.deconvoluted_peak_set is not None else None
+            if deep else self.deconvoluted_peak_set,
+
+            [s.clone(deep=deep) for s in self.product_scans], self._external_annotations.copy())
         return dup
 
     def _load(self):
@@ -1092,14 +1097,19 @@ class WrappedScan(Scan):
             else:
                 warnings.warn("Cannot override attribute %s" % (key,))
 
-    def clone(self):
+    def clone(self, deep=True):
         dup = self.__class__(
             self._data, self.source, self.arrays,
-            [s.clone() for s in self.product_scans],
+            [s.clone(deep=deep) for s in self.product_scans],
             annotations=self._external_annotations,
             **self._overrides)
-        dup.peak_set = self.peak_set.clone()
-        dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
+        if deep:
+            dup.peak_set = self.peak_set.clone() if self.peak_set is not None else None
+            dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()\
+                if self.deconvoluted_peak_set is not None else None
+        else:
+            dup.peak_set = self.peak_set
+            dup.deconvoluted_peak_set = self.deconvoluted_peak_set
         return dup
 
 
@@ -1110,15 +1120,20 @@ class AveragedScan(WrappedScan):
             product_scans=product_scans, annotations=annotations, **overrides)
         self.scan_indices = scan_indices
 
-    def clone(self):
+    def clone(self, deep=True):
         dup = self.__class__(
             self._data, self.source, self.arrays,
             self.scan_indices,
-            [s.clone() for s in self.product_scans],
+            [s.clone(deep=deep) for s in self.product_scans],
             annotations=self._external_annotations,
             **self._overrides)
-        dup.peak_set = self.peak_set.clone()
-        dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()
+        if deep:
+            dup.peak_set = self.peak_set.clone() if self.peak_set is not None else None
+            dup.deconvoluted_peak_set = self.deconvoluted_peak_set.clone()\
+                if self.deconvoluted_peak_set is not None else None
+        else:
+            dup.peak_set = self.peak_set
+            dup.deconvoluted_peak_set = self.deconvoluted_peak_set
         return dup
 
 
@@ -1383,10 +1398,17 @@ class ProcessedScan(ScanBase):
         return "ProcessedScan(id=%s, ms_level=%d, %d peaks%s)" % (
             self.id, self.ms_level, len(peaks), pinfo_string)
 
-    def clone(self):
+    def clone(self, deep=True):
         dup = self.__class__(
             self.id, self.title, self.precursor_information, self.ms_level,
-            self.scan_time, self.index, self.peak_set, self.deconvoluted_peak_set,
+            self.scan_time, self.index,
+
+            self.peak_set.copy() if self.peak_set is not None else None
+            if deep else self.peak_set,
+
+            self.deconvoluted_peak_set.copy() if self.deconvoluted_peak_set is not None else None
+            if deep else self.deconvoluted_peak_set,
+
             self.polarity, self.activation, self.acquisition_information,
             self.isolation_window, self.instrument_configuration,
             list(self.product_scans), self.annotations.copy())
