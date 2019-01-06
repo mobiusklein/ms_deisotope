@@ -25,6 +25,16 @@ except ImportError:  # pragma: no cover
     def register_thermo_dll(*args, **kwargs):
         pass
 
+try:
+    from .thermo_raw_net import (
+        ThermoRawLoader as ThermoRawNetLoader, infer_reader as _check_is_thermo_raw_net,
+        register_dll as register_thermo_net_dll)
+    reader_types.append(ThermoRawNetLoader)
+    register_type_guesser(_check_is_thermo_raw_net)
+
+except ImportError:  # pragma: no cover
+    def register_thermo_net_dll(*args, **kwargs):
+        pass
 
 try:
     from .agilent_d import (

@@ -8,3 +8,7 @@ ms_peak_picker
 brain-isotopic-distribution
 dill
 python-idzip >=0.3.2
+
+comtypes[com]
+
+pythonnet[net]

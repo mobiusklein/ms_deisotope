@@ -5,15 +5,17 @@ import numpy as np
 
 from ms_deisotope.data_source.thermo_raw import (
     determine_if_available)
+from ms_deisotope.data_source.thermo_raw_net import (
+    determine_if_available as determine_if_available_net)
 from ms_deisotope.test.common import datafile
 from ms_deisotope.data_source import infer_type
 
 not_windows = not platform.platform().lower().startswith("windows")
 missing_reader_dll = not determine_if_available()
+missing_net_dll = not determine_if_available_net()
 
 
-@unittest.skipIf(not_windows or missing_reader_dll, "Requires Windows COM")
-class TestThermoRawLoaderScanBehavior(unittest.TestCase):
+class ThermoRawLoaderScanBehaviorBase(object):
     path = datafile("small.RAW")
 
     reference_mzml = datafile("small.mzML")
@@ -21,7 +23,8 @@ class TestThermoRawLoaderScanBehavior(unittest.TestCase):
 
     @property
     def reader(self):
-        return infer_type.MSFileLoader(self.path)
+        # return infer_type.MSFileLoader(self.path)
+        raise NotImplementedError()
 
     def test_iteration(self):
         reader = self.reader
@@ -90,6 +93,24 @@ class TestThermoRawLoaderScanBehavior(unittest.TestCase):
 
         self.assertEqual(raw_scan.precursor_information.precursor,
                          mzml_scan.precursor_information.precursor)
+
+
+@unittest.skipIf(not_windows or missing_reader_dll, "Requires Windows COM and MSFileReader.dll")
+class TestCOMThermoRawLoaderScanBehavior(ThermoRawLoaderScanBehaviorBase, unittest.TestCase):
+
+    @property
+    def reader(self):
+        from ms_deisotope.data_source.thermo_raw import ThermoRawLoader
+        return ThermoRawLoader(self.path)
+
+
+@unittest.skipIf(missing_net_dll, "Requires .NET Runtime and RawFileReader.dll")
+class TestNETThermoRawLoaderScanBehavior(ThermoRawLoaderScanBehaviorBase, unittest.TestCase):
+
+    @property
+    def reader(self):
+        from ms_deisotope.data_source.thermo_raw_net import ThermoRawLoader
+        return ThermoRawLoader(self.path)
 
 
 if __name__ == '__main__':
