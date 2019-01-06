@@ -2,6 +2,8 @@ recursive-include ms_deisotope *.pyx
 recursive-include ms_deisotope *.pxd
 recursive-include ms_deisotope *.c
 recursive-include ms_deisotope *.h
+recursive-include ms_deisotope/data_source/_vendor *
+
 graft ms_deisotope/test/test_data
 
 recursive-exclude ms_deisotope *.pyd
