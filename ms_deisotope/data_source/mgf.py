@@ -264,9 +264,6 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
     def __len__(self):
         return len(self.index)
 
-    def __reduce__(self):
-        return self.__class__, (self.source_file, self.encoding)
-
     def close(self):
         self._source.close()
 

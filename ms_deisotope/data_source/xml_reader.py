@@ -1,12 +1,10 @@
-import json
-import os
 import warnings
 from .common import (
     RandomAccessScanSource)
 from lxml import etree
 from lxml.etree import XMLSyntaxError
 from pyteomics import xml
-from pyteomics.xml import unitfloat, IndexSavingXML
+from pyteomics.xml import unitfloat
 
 
 def in_minutes(x):

@@ -10,7 +10,7 @@ from .common import (
     FileInformation, ScanFileMetadataBase)
 from .metadata import data_transformation
 from .xml_reader import (
-    XMLReaderBase, IndexSavingXML, iterparse_until)
+    XMLReaderBase, iterparse_until)
 
 
 class _MzXMLParser(mzxml.MzXML):

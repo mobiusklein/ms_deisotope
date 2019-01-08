@@ -16,7 +16,7 @@ from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .xml_reader import (
-    XMLReaderBase, IndexSavingXML, iterparse_until,
+    XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
 
 
