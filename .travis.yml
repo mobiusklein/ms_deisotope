@@ -8,7 +8,7 @@ cache: pip
 install:
   - pip install --upgrade pip setuptools wheel
   - pip install Cython --install-option="--no-cython-compile"
-  - pip install coverage pytest pytest-cov
+  - pip install coverage pytest pytest-cov -U
   - pip install lxml pyteomics dill
   - pip install --only-binary=numpy,scipy numpy scipy
   - pip install git+https://github.com/mobiusklein/psims.git

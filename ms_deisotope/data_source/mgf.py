@@ -1,14 +1,8 @@
-import re
-from collections import OrderedDict
-import codecs
-
 from pyteomics import mgf
 import numpy as np
 
-from ms_deisotope import mass_charge_ratio
-
 from .common import (
-    Scan, RandomAccessScanSource, PrecursorInformation,
+    RandomAccessScanSource, PrecursorInformation,
     ScanDataSource, ScanIterator, ChargeNotProvided, _FakeGroupedScanIteratorImpl)
 
 
@@ -53,7 +47,7 @@ class MGFInterface(ScanDataSource):
         -------
         str
         """
-        return scan['params']["title"]
+        return scan['params']["title"].strip('.')
 
     def _scan_id(self, scan):
         """Returns the scan's id string, a unique
@@ -70,7 +64,7 @@ class MGFInterface(ScanDataSource):
         -------
         str
         """
-        return scan['params']["title"]
+        return scan['params']["title"].strip('.')
 
     def _scan_time(self, scan):
         try:
@@ -126,7 +120,7 @@ class MGFInterface(ScanDataSource):
         int
         """
         try:
-            return tuple(self._index.keys()).index(self._scan_title(scan))
+            return tuple(self.index.keys()).index(self._scan_title(scan))
         except ValueError:
             return -1
 
@@ -146,70 +140,18 @@ class MGFInterface(ScanDataSource):
         return annots
 
 
-def _remove_bom(bstr):
-    return bstr.replace(codecs.BOM_LE, b'').lstrip(b"\x00")
+class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
 
-
-def chunk_mgf(path, encoding='latin-1', read_size=1000000):
-    with open(path, 'rb') as fh:
-        delim = _remove_bom(u"BEGIN IONS".encode(encoding))
-        pattern = re.compile(delim)
-        buff = fh.read(read_size)
-        parts = pattern.split(buff)
-        started_with_delim = buff.startswith(delim)
-        tail = parts[-1]
-        front = parts[:-1]
-        i = 0
-        for part in front:
-            i += 1
-            if part == b"":
-                continue
-            if i == 1:
-                if started_with_delim:
-                    yield delim + part
-                else:
-                    yield part
-            else:
-                yield delim + part
-        running = True
-        while running:
-            buff = fh.read(read_size)
-            if len(buff) == 0:
-                running = False
-                buff = tail
-            else:
-                buff = tail + buff
-            parts = pattern.split(buff)
-            tail = parts[-1]
-            front = parts[:-1]
-            for part in front:
-                yield delim + part
-        yield delim + tail
-
-
-def index_mgf(path, encoding='latin-1', read_size=1000000):
-    gen = chunk_mgf(path, encoding, read_size)
-    i = 0
-    index = OrderedDict()
-    pattern = re.compile(_remove_bom(u"TITLE=".encode(encoding)) + b"([^\r\n]+)\r?\n")
-    for chunk in gen:
-        match = pattern.search(chunk)
-        if match:
-            title = match.group(1)
-            index[title.decode(encoding)] = i
-        i += len(chunk)
-    return index
-
-
-class MGFLoader(MGFInterface, ScanIterator):
-
-    def __init__(self, source_file, encoding='utf-8', **kwargs):
+    def __init__(self, source_file, encoding='utf-8', use_index=True, **kwargs):
         self.source_file = source_file
         self.encoding = encoding
-        self._index = self._index_file()
+        self._use_index = use_index
         self._source = self._create_parser()
         self.initialize_scan_cache()
         self.make_iterator()
+
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self.encoding, self._use_index, )
 
     def has_msn_scans(self):
         return True
@@ -218,15 +160,12 @@ class MGFLoader(MGFInterface, ScanIterator):
         return False
 
     def _create_parser(self):
-        return mgf.read(self.source_file, read_charges=False,
-                        convert_arrays=1, encoding=self.encoding)
-
-    def _index_file(self):
-        try:
-            index = index_mgf(self.source_file, encoding=self.encoding)
-        except TypeError:
-            index = OrderedDict()
-        return index
+        if self._use_index:
+            return mgf.IndexedMGF(self.source_file, read_charges=False,
+                                  convert_arrays=1, encoding=self.encoding)
+        else:
+            return mgf.MGF(self.source_file, read_charges=False,
+                           convert_arrays=1, encoding=self.encoding)
 
     def get_scan_by_id(self, scan_id):
         try:
@@ -238,13 +177,89 @@ class MGFLoader(MGFInterface, ScanIterator):
         self.scan_cache[scan_id] = scan
         return scan
 
+    def get_scan_by_index(self, index):
+        """Retrieve the scan object for the specified scan index.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        index: int
+            The index to get the scan for
+
+        Returns
+        -------
+        Scan
+        """
+        if not self._use_index:
+            raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
+        index_keys = tuple(self.index)
+        id_str = index_keys[index]
+        return self.get_scan_by_id(id_str)
+
+    def get_scan_by_time(self, time):
+        """Retrieve the scan object for the specified scan time.
+
+        This internally calls :meth:`get_scan_by_id` which will
+        use its cache.
+
+        Parameters
+        ----------
+        time : float
+            The time to get the nearest scan from
+
+        Returns
+        -------
+        Scan
+        """
+        if not self._use_index:
+            raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
+
+        scan_ids = tuple(self.index)
+        lo = 0
+        hi = len(scan_ids)
+
+        best_match = None
+        best_error = float('inf')
+
+        if time == float('inf'):
+            return self.get_scan_by_id(scan_ids[-1])
+
+        while hi != lo:
+            mid = (hi + lo) // 2
+            sid = scan_ids[mid]
+            scan = self.get_scan_by_id(sid)
+            if not self._validate(scan):
+                sid = scan_ids[mid - 1]
+                scan = self.get_scan_by_id(sid)
+                if not self._validate(scan):
+                    sid = scan_ids[mid - 2]
+                    scan = self.get_scan_by_id(sid)
+
+            scan_time = scan.scan_time
+            err = abs(scan_time - time)
+            if err < best_error:
+                best_error = err
+                best_match = scan
+            if scan_time == time:
+                return scan
+            elif (hi - lo) == 1:
+                return best_match
+            elif scan_time > time:
+                hi = mid
+            else:
+                lo = mid
+        if hi == 0 and not self._use_index:
+            raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
+
     @property
     def source(self):
         return self._source
 
     @property
     def index(self):
-        return self._index
+        return self.source.index
 
     def __len__(self):
         return len(self.index)
@@ -287,6 +302,74 @@ class MGFLoader(MGFInterface, ScanIterator):
             or single :class:`.Scan`. Defaults to False
         """
         return super(MGFLoader, self).make_iterator(iterator, grouped)
+
+    def _yield_from_index(self, scan_source, start):
+        offset_provider = self.index
+        keys = list(offset_provider.keys())
+        if start is not None:
+            if isinstance(start, basestring):
+                start = keys.index(start)
+            elif isinstance(start, int):
+                start = start
+            else:
+                raise TypeError("Cannot start from object %r" % start)
+        else:
+            start = 0
+        for key in keys[start:]:
+            yield scan_source.get_by_id(key)
+
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        ``rt``, or ``index``. Only one may be provided.
+
+        After invoking this method, the iterator this object wraps will be changed to begin
+        yielding scan bunchs (or single scans if ``grouped`` is ``False``).
+
+        This method will trigger several random-access operations, making it prohibitively
+        expensive for normally compressed files.
+
+        Arguments
+        ---------
+        scan_id: str, optional
+            Start from the scan with the specified id.
+        rt: float, optional
+            Start from the scan nearest to specified time (in minutes) in the run. If no
+            exact match is found, the nearest scan time will be found, rounded up.
+        index: int, optional
+            Start from the scan with the specified index.
+        require_ms1: bool, optional
+            Whether the iterator must start from an MS1 scan. True by default.
+        grouped: bool, optional
+            whether the iterator should yield scan bunches or single scans. True by default.
+        '''
+        if scan_id is None:
+            if rt is not None:
+                scan = self.get_scan_by_time(rt)
+            elif index is not None:
+                try:
+                    scan = self.get_scan_by_index(index)
+                except IndexError:
+                    if index > len(self.index):
+                        index = len(self.index) - 1
+                    else:
+                        index = 0
+                    scan = self.get_scan_by_index(index)
+
+            else:
+                raise ValueError("Must provide a scan locator, one of (scan_id, rt, index)")
+
+            scan_id = scan.id
+        else:
+            scan = self.get_scan_by_id(scan_id)
+
+        # We must start at an MS1 scan, so backtrack until we reach one
+        if require_ms1:
+            scan = self._locate_ms1_scan(scan)
+            scan_id = scan.id
+
+        iterator = self._yield_from_index(self._source, scan_id)
+        self.make_iterator(iterator, grouped=grouped)
+        return self
 
     def _scan_group_iterator(self, iterator=None):
         if iterator is None:

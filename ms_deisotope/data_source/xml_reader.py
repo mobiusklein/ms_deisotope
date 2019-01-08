@@ -6,7 +6,7 @@ from .common import (
 from lxml import etree
 from lxml.etree import XMLSyntaxError
 from pyteomics import xml
-from pyteomics.xml import unitfloat
+from pyteomics.xml import unitfloat, IndexSavingXML
 
 
 def in_minutes(x):
@@ -161,7 +161,6 @@ class XMLReaderBase(RandomAccessScanSource):
         while hi != lo:
             mid = (hi + lo) // 2
             sid = scan_ids[mid]
-            sid = sid.decode('utf-8')
             scan = self.get_scan_by_id(sid)
             if not self._validate(scan):
                 sid = scan_ids[mid - 1]
@@ -204,8 +203,7 @@ class XMLReaderBase(RandomAccessScanSource):
         if not self._use_index:
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
         index_keys = tuple(self.index)
-        id_bytes = index_keys[index]
-        id_str = id_bytes.decode("utf-8")
+        id_str = index_keys[index]
         return self.get_scan_by_id(id_str)
 
     def _yield_from_index(self, scan_source, start):
@@ -269,109 +267,6 @@ class XMLReaderBase(RandomAccessScanSource):
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index)
-
-
-def save_byte_index(index, fp):
-    """Write the byte offset index to the provided
-    file
-
-    Parameters
-    ----------
-    index : ByteEncodingOrderedDict
-        The byte offset index to be saved
-    fp : file
-        The file to write the index to
-
-    Returns
-    -------
-    file
-    """
-    encoded_index = dict()
-    for key, offset in index.items():
-        encoded_index[key.decode("utf8")] = offset
-    json.dump(encoded_index, fp)
-    return fp
-
-
-def load_byte_index(fp):
-    """Read a byte offset index from a file
-
-    Parameters
-    ----------
-    fp : file
-        The file to read the index from
-
-    Returns
-    -------
-    ByteEncodingOrderedDict
-    """
-    data = json.load(fp)
-    index = xml.ByteEncodingOrderedDict()
-    for key, value in sorted(data.items(), key=lambda x: x[1]):
-        index[key] = value
-    return index
-
-
-class PrebuiltOffsetIndex(xml.FlatTagSpecificXMLByteIndex):
-    """An Offset Index class which just holds offsets
-    and performs no extra scanning effort.
-
-    Attributes
-    ----------
-    offsets : ByteEncodingOrderedDict
-    """
-
-    def __init__(self, offsets):
-        self.offsets = offsets
-
-
-class IndexSavingXML(xml.IndexedXML):
-    """An extension to the IndexedXML type which
-    adds facilities to read and write the byte offset
-    index externally.
-    """
-
-    _save_byte_index_to_file = staticmethod(save_byte_index)
-    _load_byte_index_from_file = staticmethod(load_byte_index)
-
-    @property
-    def _byte_offset_filename(self):
-        try:
-            path = self._source.name
-        except AttributeError:
-            return None
-        byte_offset_filename = os.path.splitext(path)[0] + '-byte-offsets.json'
-        return byte_offset_filename
-
-    def _check_has_byte_offset_file(self):
-        path = self._byte_offset_filename
-        if path is None:
-            return False
-        return os.path.exists(path)
-
-    def _read_byte_offsets(self):
-        with open(self._byte_offset_filename, 'r') as f:
-            index = PrebuiltOffsetIndex(self._load_byte_index_from_file(f))
-            self._offset_index = index
-
-    def _write_byte_offsets(self):
-        with open(self._byte_offset_filename, 'w') as f:
-            self._save_byte_index_to_file(self._offset_index, f)
-
-    @xml._keepstate
-    def _build_index(self):
-        try:
-            self._read_byte_offsets()
-        except (IOError, TypeError):
-            try:
-                super(IndexSavingXML, self)._build_index()
-            except TypeError:
-                xml.IndexedXML._build_index(self)
-
-    @classmethod
-    def prebuild_byte_offset_file(cls, path):
-        inst = cls(path, use_index=True)
-        inst._write_byte_offsets()
 
 
 @xml._keepstate

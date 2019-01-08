@@ -1,4 +1,4 @@
-pyteomics < 4.0
+pyteomics >= 4.0
 lxml
 psims
 six

@@ -20,7 +20,7 @@ from .xml_reader import (
     get_tag_attributes, _find_section, in_minutes)
 
 
-class _MzMLParser(IndexSavingXML, mzml.MzML):
+class _MzMLParser(mzml.MzML):
     # we do not care about chromatograms
     _indexed_tags = {'spectrum', }
 
@@ -566,6 +566,10 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def has_ms1_scans(self):
         return self._has_ms1_scans()
 
+    @property
+    def index(self):
+        return self._source.index['spectrum']
+
     def make_iterator(self, iterator=None, grouped=True):
         """Configure the iterator's behavior.
 
@@ -589,12 +593,10 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         return "m/z array" in scan._data
 
     def _yield_from_index(self, scan_source, start):
-        offset_provider = scan_source._offset_index.offsets
+        offset_provider = scan_source._offset_index['spectrum']
         keys = list(offset_provider.keys())
         if start is not None:
             if isinstance(start, basestring):
-                if isinstance(start, str):
-                    start = start.encode("utf8")
                 start = keys.index(start)
             elif isinstance(start, int):
                 start = start
@@ -603,8 +605,6 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         else:
             start = 0
         for key in keys[start:]:
-            if isinstance(key, bytes):
-                key = key.decode("utf8")
             yield scan_source.get_by_id(key)
 
     def __reduce__(self):

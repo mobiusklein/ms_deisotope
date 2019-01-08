@@ -1,8 +1,9 @@
 import unittest
+import os
 
 from ms_deisotope.data_source import MzMLLoader
 from ms_deisotope.test.common import datafile
-from ms_deisotope.data_source import infer_type, xml_reader
+from ms_deisotope.data_source import infer_type
 
 scan_ids = [
     "controllerType=0 controllerNumber=1 scan=10014",
@@ -17,17 +18,32 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
 
     @property
     def reader(self):
-        return infer_type.MSFileLoader(self.path)
+        reader = infer_type.MSFileLoader(self.path)
+        assert len(reader.index) == 3
+        assert reader.index.from_index(0) == scan_ids[0]
+        assert list(reader.index.index_sequence) == sorted(
+            reader.index.index_sequence, key=lambda x: x[1])
+        return reader
 
     def test_index_building(self):
+        MzMLLoader.prebuild_byte_offset_file(self.path)
+        parser = MzMLLoader._parser_cls(self.path)
+        assert parser._check_has_byte_offset_file()
+        index = parser.index
+        offsets = index['spectrum']
+        key_list = list(offsets.keys())
+        assert key_list == scan_ids
+        offset_file_name = parser._byte_offset_filename
         try:
-            MzMLLoader.prebuild_byte_offset_file(self.path)
-            parser = MzMLLoader._parser_cls(self.path)
-            assert parser._check_has_byte_offset_file()
-            assert isinstance(parser._offset_index,
-                              xml_reader.PrebuiltOffsetIndex)
+            os.remove(offset_file_name)
         except OSError:
             pass
+
+    def test_index_integrity(self):
+        reader = self.reader
+        reader.make_iterator(grouped=False)
+        for i, scan in enumerate(reader):
+            assert i == scan.index
 
     def test_iteration(self):
         reader = self.reader

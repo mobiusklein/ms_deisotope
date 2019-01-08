@@ -13,7 +13,7 @@ from .xml_reader import (
     XMLReaderBase, IndexSavingXML, iterparse_until)
 
 
-class _MzXMLParser(IndexSavingXML, mzxml.MzXML):
+class _MzXMLParser(mzxml.MzXML):
     pass
 
 
@@ -388,6 +388,10 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         self.reset()
         self.make_iterator()
 
+    @property
+    def index(self):
+        return self._source.index['scan']
+
     def _get_scan_by_id_raw(self, scan_id):
         return self._source.get_by_id(scan_id, "num")
 
@@ -397,10 +401,6 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         index = dict()
         i = 0
         for scan, offset in self.index.items():
-            try:
-                scan = scan.decode("utf8")
-            except AttributeError:
-                pass
             index[scan] = i
             i += 1
         self._scan_index_lookup = index
@@ -409,12 +409,10 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         return "m/z array" in scan._data
 
     def _yield_from_index(self, scan_source, start=None):
-        offset_provider = scan_source._offset_index.offsets
+        offset_provider = scan_source._offset_index['scan']
         keys = list(offset_provider.keys())
         if start is not None:
             if isinstance(start, basestring):
-                if isinstance(start, str):
-                    start = start.encode("utf8")
                 start = keys.index(start)
             elif isinstance(start, int):
                 start = start
@@ -423,7 +421,5 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         else:
             start = 0
         for key in keys[start:]:
-            if isinstance(key, bytes):
-                key = key.decode("utf8")
             scan = scan_source.get_by_id(key, "num")
             yield scan

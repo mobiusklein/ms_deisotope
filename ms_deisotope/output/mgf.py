@@ -67,8 +67,12 @@ class ProcessedMGFDeserializer(MGFLoader):
         super(ProcessedMGFDeserializer, self).__init__(source_file, encoding)
 
     def _create_parser(self):
-        return pymgf.read(self.source_file, read_charges=True,
-                          convert_arrays=1, encoding=self.encoding)
+        if self._use_index:
+            return pymgf.IndexedMGF(self.source_file, read_charges=True,
+                                    convert_arrays=1, encoding=self.encoding)
+        else:
+            return pymgf.MGF(self.source_file, read_charges=True,
+                             convert_arrays=1, encoding=self.encoding)
 
     def _build_peaks(self, scan):
         mz_array = scan['m/z array']
