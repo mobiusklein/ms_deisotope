@@ -232,7 +232,8 @@ def run_setup(include_cext=True):
         entry_points={
             'console_scripts': [
                 "ms-index = ms_deisotope.tools.indexing:main",
-                "ms-view = ms_deisotope.tools.view:main"
+                "ms-view = ms_deisotope.tools.view:main",
+                "ms-deisotope = ms_deisotope.tools.deisotoper.main:deisotope",
             ],
         },
         classifiers=[

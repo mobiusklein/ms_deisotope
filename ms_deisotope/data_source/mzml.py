@@ -372,6 +372,7 @@ class MzMLDataInterface(ScanDataSource):
                     window['scan window lower limit'],
                     window['scan window upper limit']))
             struct['window_list'] = windows
+            scan.pop("instrumentConfigurationRef", None)
             struct['traits'] = scan
             scan_info_scan_list.append(ScanEventInformation(**struct))
         scan_info['scan_list'] = scan_info_scan_list
