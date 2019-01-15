@@ -210,7 +210,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
 
         self._deconv_helpers = []
 
-        for i in range(self.number_of_helpers):
+        for _ in range(self.number_of_helpers):
             self._deconv_helpers.append(self._make_transforming_process())
         self._deconv_process.start()
 

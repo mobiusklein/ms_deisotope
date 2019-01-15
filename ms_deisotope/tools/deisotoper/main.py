@@ -299,4 +299,4 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
 
 
 if __name__ == '__main__':
-    deisotope()
+    deisotope.main()

@@ -48,7 +48,7 @@ class ScanIDYieldingProcess(Process):
     def _make_scan_batch(self):
         batch = []
         scan_ids = []
-        for i in range(self.batch_size):
+        for _ in range(self.batch_size):
             try:
                 bunch = next(self.loader)
                 scan, products = bunch

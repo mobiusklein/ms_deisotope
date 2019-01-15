@@ -102,7 +102,7 @@ class TaskBase(LogUtilsMixin):
         self._end(*args, **kwargs)
         return out
 
-    def run(self, *args, **kwargs):
+    def run(self):
         raise NotImplementedError()
 
     def summarize(self):

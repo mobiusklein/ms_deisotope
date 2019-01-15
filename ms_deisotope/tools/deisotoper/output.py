@@ -60,7 +60,6 @@ class ScanStorageHandlerBase(TaskBase):
 
     def commit(self):
         self.save()
-        pass
 
     def sync(self):
         self.commit()

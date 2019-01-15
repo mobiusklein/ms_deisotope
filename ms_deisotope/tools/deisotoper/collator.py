@@ -7,8 +7,7 @@ from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope.task import TaskBase, CallInterval
 
 from .process import (
-    SCAN_STATUS_GOOD, SCAN_STATUS_SKIP, DONE,
-    ScanTransformingProcess, ScanIDYieldingProcess)
+    SCAN_STATUS_SKIP, DONE)
 
 
 class ScanCollator(TaskBase):
@@ -118,11 +117,11 @@ class ScanCollator(TaskBase):
         """
         blocking = timeout != 0
         try:
-            item, index, ms_level = self.queue.get(blocking, timeout)
+            item, index, _ = self.queue.get(blocking, timeout)
             self.queue.task_done()
             # DONE message may be sent many times.
             while item == DONE:
-                item, index, ms_level = self.queue.get(blocking, timeout)
+                item, index, _ = self.queue.get(blocking, timeout)
                 self.queue.task_done()
             self.store_item(item, index)
             return True
@@ -252,5 +251,3 @@ class ScanCollator(TaskBase):
                 if self.count_since_last % 1000 == 0:
                     self.print_state()
         status_monitor.stop()
-
-
