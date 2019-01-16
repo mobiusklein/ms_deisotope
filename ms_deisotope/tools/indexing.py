@@ -10,7 +10,10 @@ import click
 from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
 from ms_deisotope.data_source import _compression
+from ms_deisotope.data_source.scan import RandomAccessScanSource
+from ms_deisotope.data_source.metadata.file_information import SourceFile
 from ms_deisotope.tools import conversion
+from ms_deisotope.tools.utils import processes_option
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -19,6 +22,65 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
     pass
+
+
+@cli.command("describe")
+@click.argument('path', type=click.Path(exists=True))
+def describe(path):
+    click.echo("Describing \"%s\"" % (path,))
+    try:
+        sf = SourceFile.from_path(path)
+    except IOError:
+        click.echo("Could not open", err=True)
+    if sf.file_format is None:
+        click.echo("It doesn't appear to be a mass spectrometry data file")
+        return -1
+    click.echo("File Format: %s" % (sf.file_format, ))
+    click.echo("ID Format: %s" % (sf.id_format, ))
+    reader = ms_deisotope.MSFileLoader(path)
+    if isinstance(reader, RandomAccessScanSource):
+        click.echo("Format Supports Random Access: True")
+        first_scan = reader[0]
+        last_scan = reader[-1]
+        click.echo("First Scan: %s at %0.3f minutes" % (first_scan.id, first_scan.scan_time))
+        click.echo("Last Scan: %s at %0.3f minutes" % (last_scan.id, last_scan.scan_time))
+    else:
+        click.echo("Format Supports Random Access: False")
+
+    index_file_name = quick_index.ExtendedScanIndex.index_file_name(path)
+    # Extra introspection if the extended index is available
+    if os.path.exists(index_file_name):
+        with open(index_file_name, 'rt') as fh:
+            index = quick_index.ExtendedScanIndex.deserialize(fh)
+        ms1_scans = len(index.ms1_ids)
+        msn_scans = len(index.msn_ids)
+        click.echo("MS1 Scans: %d" % (ms1_scans, ))
+        click.echo("MSn Scans: %d" % (msn_scans, ))
+        n_defaulted = 0
+        n_orphan = 0
+
+        charges = Counter()
+        first_msn = float('inf')
+        last_msn = 0
+        for scan_info in index.msn_ids.values():
+            n_defaulted += scan_info.get('defaulted', False)
+            n_orphan += scan_info.get('orphan', False)
+            charges[scan_info['charge']] += 1
+            rt = scan_info['scan_time']
+            if rt < first_msn:
+                first_msn = rt
+            if rt > last_msn:
+                last_msn = rt
+        click.echo("First MSn Scan: %0.2f minutes" % (first_msn,))
+        click.echo("Last MSn Scan: %0.2f minutes" % (last_msn,))
+        for charge, count in sorted(charges.items()):
+            if not isinstance(charge, int):
+                continue
+            click.echo("Precursors with Charge State %d: %d" % (charge, count))
+        if n_defaulted > 0:
+            click.echo("Defaulted MSn Scans: %d" % (n_defaulted,))
+        if n_orphan > 0:
+            click.echo("Orphan MSn Scans: %d" % (n_orphan,))
 
 
 @cli.command("byte-index", short_help='Build an external byte offset index for a mass spectrometry data file')
@@ -36,6 +98,7 @@ def byte_index(paths):
 
 @cli.command("metadata-index", short_help='Build an external scan metadata index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
+@processes_option
 def metadata_index(paths, processes=4):
     for path in paths:
         reader = ms_deisotope.MSFileLoader(path)
@@ -78,6 +141,7 @@ class MSMSIntervalTask(object):
     'Build an interval tree over precursor isolation events in time and m/z space'))
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
+@processes_option
 def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3., output=None):
     interval_extraction = MSMSIntervalTask(time_radius, mz_lower, mz_higher)
     interval_set = []
