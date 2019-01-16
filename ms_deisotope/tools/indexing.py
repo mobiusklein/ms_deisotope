@@ -24,7 +24,8 @@ def cli():
     pass
 
 
-@cli.command("describe")
+@cli.command("describe", short_help=("Produce a minimal textual description"
+                                     " of a mass spectrometry data file"))
 @click.argument('path', type=click.Path(exists=True))
 def describe(path):
     click.echo("Describing \"%s\"" % (path,))
@@ -46,7 +47,13 @@ def describe(path):
         click.echo("Last Scan: %s at %0.3f minutes" % (last_scan.id, last_scan.scan_time))
     else:
         click.echo("Format Supports Random Access: False")
-
+    try:
+        finfo = reader.file_description()
+        click.echo("Contents:")
+        for key in finfo.contents:
+            click.echo("    %s" % (key, ))
+    except AttributeError:
+        pass
     index_file_name = quick_index.ExtendedScanIndex.index_file_name(path)
     # Extra introspection if the extended index is available
     if os.path.exists(index_file_name):
@@ -71,8 +78,8 @@ def describe(path):
                 first_msn = rt
             if rt > last_msn:
                 last_msn = rt
-        click.echo("First MSn Scan: %0.2f minutes" % (first_msn,))
-        click.echo("Last MSn Scan: %0.2f minutes" % (last_msn,))
+        click.echo("First MSn Scan: %0.3f minutes" % (first_msn,))
+        click.echo("Last MSn Scan: %0.3f minutes" % (last_msn,))
         for charge, count in sorted(charges.items()):
             if not isinstance(charge, int):
                 continue
