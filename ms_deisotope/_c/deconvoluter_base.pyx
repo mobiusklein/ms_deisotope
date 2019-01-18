@@ -677,7 +677,7 @@ cdef class ChargeIterator(object):
 
 
 @cython.cdivision
-cpdef np.ndarray[int, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t index, int min_charge, int max_charge):
+cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t index, int min_charge, int max_charge):
     """An implementation of Hoopman's QuickCharge [1] algorithm for quickly capping charge
     state queries
 
@@ -707,7 +707,7 @@ cpdef np.ndarray[int, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t
     cdef:
         PeakSet peaks
         int[1000] charges
-        np.ndarray[int, ndim=1] result
+        np.ndarray[np.int32_t, ndim=1] result
         double min_intensity, diff, raw_charge, remain
         int charge
         int max_charge_found, min_charge_found, result_size
@@ -740,7 +740,7 @@ cpdef np.ndarray[int, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t
             result_size += 1
         charges[charge] = 1
     if result_size == 0:
-        result = np.empty(0, dtype=int)
+        result = np.empty(0, dtype=np.int32)
         return result
     for j in range(index - 1, -1, -1):
         diff = peaks.getitem(index).mz - peaks.getitem(j).mz
@@ -757,8 +757,8 @@ cpdef np.ndarray[int, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t
             result_size += 1
         charges[charge] = 1
     if result_size <= 0:
-        return np.zeros(0, dtype=int)
-    result = np.zeros(result_size, dtype=int)
+        return np.zeros(0, dtype=np.int32)
+    result = np.zeros(result_size, dtype=np.int32)
 
     i = 0
     for j in range(n):

@@ -12,7 +12,8 @@ from ms_deisotope.deconvolution import (
     AveraginePeakDependenceGraphDeconvoluter,
     CompositionListDeconvoluter,
     CompositionListPeakDependenceGraphDeconvoluter,
-    count_placeholders, drop_placeholders)
+    count_placeholders, drop_placeholders,
+    ChargeIterator)
 from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 from brainpy import neutral_mass
 
@@ -44,6 +45,15 @@ class TestAveragineDeconvolution(unittest.TestCase):
         for point in points:
             self.assertIsNotNone(scan.peak_set.has_peak(point[0]))
         return scan
+
+    def test_quick_charge(self):
+        scan = self.make_scan()
+        peaks = scan.peak_set
+        peak = peaks[0]
+        charge_states = ChargeIterator(1, 8)
+        charge_states.sequence_from_quickcharge(peaks, peak)
+        states = list(charge_states)
+        self.assertEqual(states, [1, 3])
 
     def test_deconvolution(self):
         scan = self.make_scan()
