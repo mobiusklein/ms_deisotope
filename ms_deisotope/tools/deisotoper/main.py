@@ -64,7 +64,8 @@ def check_if_profile(loader):
 
 @click.command("deisotope", short_help=(
     "Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML."
-    " Can accept mzML or mzXML with either profile or centroided scans."))
+    " Can accept mzML, mzXML, MGF with either profile or centroided scans."),
+    context_settings=dict(help_option_names=['-h', '--help']))
 @click.argument("ms-file", type=click.Path(exists=True))
 @click.argument("outfile-path", type=click.Path(writable=True))
 @click.option("-a", "--averagine", default=["peptide"],
@@ -81,7 +82,7 @@ def check_if_profile(loader):
 @click.option("-c", "--maximum-charge", type=int, default=8,
               help=('Highest absolute charge state to consider'))
 @click.option("-n", "--name", default=None,
-              help="Name for the sample run to be stored. Defaults to the base name of the input mzML file")
+              help="Name for the sample run to be stored. Defaults to the base name of the input data file")
 @click.option("-t", "--score-threshold", type=float, default=workflow.SampleConsumer.MS1_SCORE_THRESHOLD,
               help="Minimum score to accept an isotopic pattern fit in an MS1 scan")
 @click.option("-tn", "--msn-score-threshold", type=float, default=workflow.SampleConsumer.MSN_SCORE_THRESHOLD,
