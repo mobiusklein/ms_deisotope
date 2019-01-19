@@ -1,9 +1,12 @@
 # cython: embedsignature=True
 
 cimport cython
+from cpython.ref cimport Py_INCREF
 from cpython cimport PyObject
 from cpython.float cimport PyFloat_AsDouble
-from cpython.list cimport PyList_New, PyList_GET_ITEM, PyList_SET_ITEM, PyList_GET_SIZE, PyList_Append, PyList_SetItem
+from cpython.list cimport (
+    PyList_New, PyList_GET_ITEM, PyList_SET_ITEM,
+    PyList_GET_SIZE, PyList_Append, PyList_SetItem)
 from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 
 from libc.math cimport floor
@@ -230,13 +233,16 @@ cdef class Averagine(object):
 
 cdef list clone_peak_list(list peaklist):
     cdef:
-        size_t i
+        size_t i, n
         list result
         TheoreticalPeak peak
 
-    result = []
-    for i in range(PyList_GET_SIZE(peaklist)):
-        result.append((<TheoreticalPeak>PyList_GET_ITEM(peaklist, i)).clone())
+    n = PyList_GET_SIZE(peaklist)
+    result = PyList_New(n)
+    for i in range(n):
+        peak = (<TheoreticalPeak>PyList_GET_ITEM(peaklist, i)).clone()
+        Py_INCREF(peak)
+        PyList_SET_ITEM(result, i, peak)
     return result
 
 
@@ -304,11 +310,13 @@ cdef class TheoreticalIsotopicPattern(object):
             size_t i, n
             TheoreticalPeak p
             list peaklist
-        peaklist = []
         n = self.get_size()
+        peaklist = PyList_New(n)
         for i in range(n):
             p = self.get(i)
-            peaklist.append(TheoreticalPeak._create(p.mz, p.intensity, p.charge))
+            p = TheoreticalPeak._create(p.mz, p.intensity, p.charge)
+            Py_INCREF(p)
+            PyList_SET_ITEM(peaklist, i, p)
         return TheoreticalIsotopicPattern._create(peaklist, self.origin, self.offset)
 
     def __reduce__(self):
@@ -404,11 +412,13 @@ cdef class TheoreticalIsotopicPattern(object):
             double delta
 
         delta = mz - self.origin
-        peaklist = []
         n = self.get_size()
+        peaklist = PyList_New(n)
         for i in range(n):
             p = self.get(i)
-            peaklist.append(TheoreticalPeak._create(p.mz + delta, p.intensity, p.charge))
+            p = TheoreticalPeak._create(p.mz + delta, p.intensity, p.charge)
+            Py_INCREF(p)
+            PyList_SET_ITEM(peaklist, i, p)
         return TheoreticalIsotopicPattern._create(peaklist, mz, self.offset)
 
     @cython.cdivision
