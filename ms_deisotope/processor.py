@@ -10,6 +10,7 @@ from .data_source.common import Scan, ScanBunch, ChargeNotProvided
 from .utils import Base
 from .peak_dependency_network import NoIsotopicClustersError
 from .envelope_statistics import PrecursorPurityEstimator
+from .task import LogUtilsMixin
 
 logger = logging.getLogger("deconvolution_scan_processor")
 
@@ -111,7 +112,7 @@ def _loader_creator(specification):
         raise ValueError("Cannot determine how to get a ScanIterator from %r" % (specification,))
 
 
-class ScanProcessor(Base):
+class ScanProcessor(Base, LogUtilsMixin):
     """Orchestrates the deconvolution of a :class:`~.ScanIterator` scan by scan. This process will
     apply different rules for MS1 scans and MSn scans. This type itself is an Iterator,
     consuming (raw) mass spectral data and producing deisotoped and charge deconvolved spectra.
@@ -163,8 +164,6 @@ class ScanProcessor(Base):
         Whether or not  to stop processing on an error. Defaults to `True`
     """
 
-    logger = logger
-
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None,
@@ -200,9 +199,6 @@ class ScanProcessor(Base):
         self._signal_source = self.loader_type(data_source)
         self.envelope_selector = envelope_selector
         self.terminate_on_error = terminate_on_error
-
-    def log(self, *args, **kwargs):
-        self.logger.info(*args, **kwargs)
 
     def _reject_candidate_precursor_peak(self, peak, product_scan):
         isolation = product_scan.isolation_window
@@ -380,7 +376,13 @@ class ScanProcessor(Base):
 
         for scan in product_scans:
             precursor_ion = scan.precursor_information
-            peak, err = prec_peaks.get_nearest_peak(precursor_ion.mz)
+            peak = prec_peaks.has_peak(precursor_ion.mz)
+            if peak is not None:
+                err = abs(peak.mz - precursor_ion.mz)
+            else:
+                peak, err = prec_peaks.get_nearest_peak(precursor_ion.mz)
+            self.debug("For Precursor at %0.4f, found Peak at %0.4f with error %0.4f" % (
+                precursor_ion.mz, peak.mz, err))
             precursor_ion.peak = peak
             target = PriorityTarget(
                 peak, precursor_ion, self.trust_charge_hint,
@@ -429,8 +431,8 @@ class ScanProcessor(Base):
         if priorities is None:
             priorities = []
 
-        self.log("Deconvoluting Precursor Scan %r", precursor_scan)
-        self.log("Priorities: %r", priorities)
+        self.log("Deconvoluting Precursor Scan %r" % precursor_scan)
+        self.log("Priorities: %r" % priorities)
 
         ms1_deconvolution_args = self.ms1_deconvolution_args.copy()
 
@@ -447,12 +449,11 @@ class ScanProcessor(Base):
             if self.terminate_on_error:
                 raise e
             else:
-                logger.warn("No isotopic clusters found in %r" % precursor_scan.id)
+                self.log("No isotopic clusters found in %r" % precursor_scan.id)
 
         dec_peaks, priority_results = decon_result
-
         if decon_result.errors:
-            logger.error("Errors occurred during deconvolution of %s, %r" % (
+            self.error("Errors occurred during deconvolution of %s, %r" % (
                 precursor_scan.id, decon_result.errors))
         precursor_scan.deconvoluted_peak_set = dec_peaks
         for pr in priority_results:
@@ -468,6 +469,10 @@ class ScanProcessor(Base):
         # should always be FittedPeak or Peak-like instances
 
         coisolation_detection = PrecursorPurityEstimator(default_width=self.default_precursor_ion_selection_window)
+        self.debug("Priority Targets for %s: %r" % (
+            precursor_scan.id, [
+                (p.mz, p.charge) if p is not None else None for p in priorities
+            ]))
         for product_scan in precursor_scan.product_scans:
             precursor_information = product_scan.precursor_information
 
@@ -479,8 +484,8 @@ class ScanProcessor(Base):
             # This should never happen in the current implementation. If it did, then we forgot
             # to pass the priority list to this function.
             if i is None:
-                logger.warning(
-                    "Could not find deconvolution for %r (No nearby peak in the priority list)",
+                self.log(
+                    "Could not find deconvolution for %r (No nearby peak in the priority list)" %
                     precursor_information)
                 precursor_information.default(orphan=True)
                 continue
@@ -488,16 +493,16 @@ class ScanProcessor(Base):
             peak = priority_results[i]
             # If the deconvolution result is None, then we have no answer
             if peak is None:
-                logger.warning(
-                    "Could not find deconvolution for %r (No solution was found for this region)",
+                self.log(
+                    "Could not find deconvolution for %r (No solution was found for this region)" %
                     precursor_information)
                 precursor_information.default(orphan=True)
 
                 continue
             elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
                 if precursor_information.charge != ChargeNotProvided:
-                    logger.warning(
-                        "Could not find deconvolution for %r (Unacceptable solution was proposed: %r)",
+                    self.log(
+                        "Could not find deconvolution for %r (Unacceptable solution was proposed: %r)" %
                         precursor_information, peak)
                     precursor_information.default()
                     continue
@@ -506,6 +511,12 @@ class ScanProcessor(Base):
             if peak is not None:
                 precursor_purity, coisolation = coisolation_detection(precursor_scan, peak)
                 precursor_information.coisolation = coisolation
+                self.debug(
+                    "Precursor m/z %f\nExperimental = %r\nTheoretical = %r" % (
+                        peak.mz,
+                        ', '.join(["(%0.4f, %0.1f)" % (p.mz, p.intensity) for p in peak.envelope]),
+                        ', '.join(["(%0.4f, %0.1f)" % (p.mz, p.intensity) for p in peak.fit.theoretical]))
+                )
 
             product_scan.annotations['precursor purity'] = precursor_purity
             precursor_information.extract(peak)
@@ -643,6 +654,9 @@ class ScanProcessor(Base):
         """
         self.reader.start_from_scan(*args, **kwargs)
         return self
+
+
+ScanProcessor.log_with_logger(logger)
 
 
 class EmptyScanError(ValueError):

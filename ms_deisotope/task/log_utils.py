@@ -127,6 +127,7 @@ class LogUtilsMixin(object):
     print_fn = printer
     debug_print_fn = debug_printer
     error_print_fn = printer
+    warn_print_fn = printer
 
     @classmethod
     def log_with_logger(cls, logger):
@@ -134,6 +135,7 @@ class LogUtilsMixin(object):
         cls.print_fn = logger.info
         cls.debug_print_fn = logger.debug
         cls.error_print_fn = logger.error
+        cls.warn_print_fn = logger.warn
 
     def in_debug_mode(self):
         if self._debug_enabled is None:
@@ -144,6 +146,9 @@ class LogUtilsMixin(object):
 
     def log(self, *message):
         self.print_fn(', '.join(map(str, message)))
+
+    def warn(self, *message):
+        self.warn_print_fn(', '.join(map(str, message)))
 
     def debug(self, *message):
         self.debug_print_fn(', '.join(map(str, message)))

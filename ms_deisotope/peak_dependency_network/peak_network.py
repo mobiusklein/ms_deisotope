@@ -1,10 +1,14 @@
 import operator
-import warnings
+import logging
+
 from collections import defaultdict
 
 from .subgraph import ConnectedSubgraph
 from .intervals import SpanningMixin, IntervalTreeNode
 from ..utils import Base, TargetedDeconvolutionResultBase
+from ..task import LogUtilsMixin
+
+logger = logging.getLogger("deconvolution_scan_processor")
 
 
 def ident(x):
@@ -171,7 +175,7 @@ class DependenceCluster(SpanningMixin):
         return self.dependencies[i]
 
 
-class PeakDependenceGraph(object):
+class PeakDependenceGraph(LogUtilsMixin):
     def __init__(self, peaklist, nodes=None, dependencies=None, max_missed_peaks=1,
                  use_monoisotopic_superceded_filtering=True, maximize=True):
         if nodes is None:
@@ -256,12 +260,14 @@ class PeakDependenceGraph(object):
             acc.extend(fits)
         best_fits = acc
 
+        self.debug("For query m/z %f has candidates %r" % (peak.mz, best_fits))
+
         # Extract only fits that use the query peak
         common = tuple(set(best_fits) & set(peak_node.links))
 
         if len(common) > 1 or len(common) == 0:
             if len(common) > 1:
-                warnings.warn("Too many solutions exist for %r" % peak)
+                self.debug("There is not exactly one solution for %r (%d)" % (peak, len(common)))
             # If there were no fits for this peak, then it may be that this peak
             # was not included in a fit. Try to find the nearest solution.
             i = 0
@@ -417,6 +423,9 @@ class PeakDependenceGraph(object):
 
     def __repr__(self):
         return "PeakDependenceNetwork(%s, %d)" % (self.peaklist, len(self.dependencies))
+
+
+PeakDependenceGraph.log_with_logger(logger)
 
 
 class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):
