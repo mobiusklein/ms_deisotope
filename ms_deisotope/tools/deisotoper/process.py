@@ -1,3 +1,4 @@
+import os
 import logging
 import multiprocessing
 import traceback
@@ -352,11 +353,22 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
         if not self.deconvolute:
             nologs.append("deconvolution")
 
+        debug_mode = os.getenv("MS_DEISOTOPE_DEBUG")
+        if debug_mode:
+            handler = logging.FileHandler("ms-deisotope-deconvolution-debug-%s.log" % (os.getpid()), 'w')
+            fmt = logging.Formatter(
+                "%(asctime)s - %(name)s:%(filename)s:%(lineno)-4d - %(levelname)s - %(message)s",
+                "%H:%M:%S")
+            handler.setFormatter(fmt)
         for logname in nologs:
             logger_to_silence = logging.getLogger(logname)
-            logger_to_silence.propagate = False
-            # logger_to_silence.setLevel("CRITICAL")
-            logger_to_silence.addHandler(logging.NullHandler())
+            if debug_mode:
+                logger_to_silence.setLevel("DEBUG")
+                logger_to_silence.addHandler(handler)
+            else:
+                logger_to_silence.propagate = False
+                logger_to_silence.setLevel("CRITICAL")
+                logger_to_silence.addHandler(logging.NullHandler())
 
     def run(self):
         loader = MSFileLoader(self.ms_file_path)

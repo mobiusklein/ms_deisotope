@@ -1,6 +1,4 @@
-import multiprocessing
 import os
-import re
 
 import click
 

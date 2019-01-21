@@ -168,15 +168,7 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
 
     def complete(self):
         self.save()
-        self.serializer.complete()
-        try:
-            self.serializer.format()
-        except OSError as e:
-            if e.errno == 32:
-                self.log("Could not reformat the file in-place")
-        except Exception:
-            import traceback
-            traceback.print_exc()
+        self.serializer.close()
 
 
 class ThreadedMzMLScanStorageHandler(MzMLScanStorageHandler):
@@ -210,7 +202,7 @@ class ThreadedMzMLScanStorageHandler(MzMLScanStorageHandler):
                     current_work.append(self.queue.get_nowait())
             except QueueEmptyException:
                 pass
-            if len(current_work) > 5:
+            if len(current_work) > 50:
                 self.log("Drained Write Queue of %d items" % (len(current_work),))
             return current_work
 
