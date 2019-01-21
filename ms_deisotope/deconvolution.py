@@ -1645,7 +1645,10 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
         begin_signal = sum([p.intensity for p in self.peaklist])
         for i in range(iterations):
-            self.peak_dependency_network.reset()
+            # The first iteration doesn't need to have the entire graph
+            # rebuilt and might have been seeded with targeted queries
+            if i != 0:
+                self.peak_dependency_network.reset()
             self.populate_graph(
                 error_tolerance=error_tolerance, charge_range=charge_range,
                 left_search_limit=left_search_limit, right_search_limit=right_search_limit,
