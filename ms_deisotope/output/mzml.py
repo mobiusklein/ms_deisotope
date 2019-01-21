@@ -898,23 +898,17 @@ class MzMLSerializer(ScanSerializerBase):
             pass
 
     def format(self):
-        """Formats the output mzML document to be well indented
-        and wraps it in an :obj:`<indexedmzML>` structure.
-
-        This method calls :meth:`psims.mzml.writer.MzMLWriter.format`
-        which reads the entire document into memory, which may be
-        prohibitive for large documents.
+        """This method is no longer needed.
         """
-        try:
-            self.writer.format()
-        except OSError as e:
-            if on_windows and e.errno == 32:
-                pass
+        pass
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
         self.complete()
         if hasattr(self.handle, "closed"):
             if not self.handle.closed:
@@ -922,7 +916,6 @@ class MzMLSerializer(ScanSerializerBase):
                     self.handle.close()
                 except AttributeError:
                     pass
-        self.format()
 
 
 MzMLScanSerializer = MzMLSerializer
