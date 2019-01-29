@@ -213,36 +213,49 @@ cdef class IntervalTreeNode(object):
         return result
 
     cpdef list overlaps(self, double start, double end):
-        cdef:
-            list result
-        result = []
-        if (start < self.start and end >= self.end):
+        """Returns the list of all contained intervals which
+        overlap with the interval described by `start` and `end`
+
+        Parameters
+        ----------
+        start : float
+            The start of the query interval
+        end : float
+            The end of the query interval
+
+        Returns
+        -------
+        list
+            A list of all objects which overlap the argument interval
+            from all spanning nodes' `contained` list.
+        """
+        cdef list result = []
+        if start > self.end:
+            return result
+        if end < self.start:
+            return result
+        elif start <= self.start:
+            if end < self.start:
+                return result
+            else:
+                if self.left is not None:
+                    result.extend(self.left.overlaps(start, end))
+                result.extend(self._overlaps_interval(start, end))
+                if self.right is not None and end >= self.right.start:
+                    result.extend(self.right.overlaps(start, end))
+        elif start > self.start:
+            if self.left is not None and self.left.end >= start:
+                result.extend(self.left.overlaps(start, end))
+            result.extend(self._overlaps_interval(start, end))
+            if self.right is not None and end >= self.right.start:
+                result.extend(self.right.overlaps(start, end))
+        elif end > self.start:
             if self.left is not None:
                 result.extend(self.left.overlaps(start, end))
             result.extend(self._overlaps_interval(start, end))
-            return result
-        elif start >= self.start and end >= self.end:
-            if self.right is not None:
+            if self.right is not None and end >= self.right.start:
                 result.extend(self.right.overlaps(start, end))
-            result.extend(self._overlaps_interval(start, end))
-            return result
-        elif start > self.start and end <= self.end:
-            return self._overlaps_interval(start, end)
-        elif self.start > end:
-            if self.left is not None:
-                return self.left.overlaps(start, end)
-            return result
-        elif self.end < start:
-            if self.right is not None:
-                return self.right.overlaps(start, end)
-            return result
-        else:
-            if self.left is not None:
-                result.extend(self.left.overlaps(start, end))
-            result.extend(self._overlaps_interval(start, end))
-            if self.right is not None:
-                result.extend(self.right.overlaps(start, end))
-            return result
+        return result
 
     def __repr__(self):
         return "IntervalTreeNode(level=%d, center=%0.4f, start=%0.4f, end=%0.4f)" % (

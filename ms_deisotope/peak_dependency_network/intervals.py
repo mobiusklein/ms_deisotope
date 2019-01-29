@@ -244,33 +244,32 @@ class IntervalTreeNode(object):
             from all spanning nodes' `contained` list.
         """
         result = []
-        if (start < self.start and end >= self.end):
+        if start > self.end:
+            return result
+        if end < self.start:
+            return result
+        elif start <= self.start:
+            if end < self.start:
+                return result
+            else:
+                if self.left is not None:
+                    result.extend(self.left.overlaps(start, end))
+                result.extend(self._overlaps_interval(start, end))
+                if self.right is not None and end >= self.right.start:
+                    result.extend(self.right.overlaps(start, end))
+        elif start > self.start:
+            if self.left is not None and self.left.end >= start:
+                result.extend(self.left.overlaps(start, end))
+            result.extend(self._overlaps_interval(start, end))
+            if self.right is not None and end >= self.right.start:
+                result.extend(self.right.overlaps(start, end))
+        elif end > self.start:
             if self.left is not None:
                 result.extend(self.left.overlaps(start, end))
             result.extend(self._overlaps_interval(start, end))
-            return result
-        elif start >= self.start and end >= self.end:
-            if self.right is not None:
+            if self.right is not None and end >= self.right.start:
                 result.extend(self.right.overlaps(start, end))
-            result.extend(self._overlaps_interval(start, end))
-            return result
-        elif start > self.start and end <= self.end:
-            return self._overlaps_interval(start, end)
-        elif self.start > end:
-            if self.left is not None:
-                return self.left.overlaps(start, end)
-            return result
-        elif self.end < start:
-            if self.right is not None:
-                return self.right.overlaps(start, end)
-            return result
-        else:
-            if self.left is not None:
-                result.extend(self.left.overlaps(start, end))
-            result.extend(self._overlaps_interval(start, end))
-            if self.right is not None:
-                result.extend(self.right.overlaps(start, end))
-            return result
+        return result
 
     def node_contains(self, point):
         return self.start <= point <= self.end
