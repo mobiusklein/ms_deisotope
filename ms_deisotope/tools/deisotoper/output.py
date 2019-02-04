@@ -13,6 +13,7 @@ from ms_deisotope.data_source.metadata.file_information import (
     SourceFile as MetadataSourceFile, FileInformation)
 
 from ms_deisotope.output.mzml import MzMLScanSerializer
+from ms_deisotope.output.mgf import MGFSerializer
 
 from ms_deisotope.task import TaskBase
 
@@ -75,6 +76,83 @@ class ScanStorageHandlerBase(TaskBase):
 class NullScanStorageHandler(ScanStorageHandlerBase):
     def save_bunch(self, precursor, products):
         pass
+
+
+class ThreadedScanStorageHandlerMixin(object):
+    def __init__(self, *args, **kwargs):
+        queue_size = int(kwargs.get("queue_size", 200))
+        self.queue = Queue(queue_size)
+        self.worker_thread = threading.Thread(target=self._worker_loop)
+        self.worker_thread.start()
+        super(ThreadedScanStorageHandlerMixin, self).__init__(*args, **kwargs)
+
+    def _save_bunch(self, precursor, products):
+        self.serializer.save(ScanBunch(precursor, products))
+        try:
+            precursor.clear()
+            for product in products:
+                product.clear()
+        except AttributeError:
+            pass
+
+    def save_bunch(self, precursor, products):
+        self.queue.put((precursor, products))
+
+    def _worker_loop(self):
+        has_work = True
+        i = 0
+
+        def drain_queue():
+            current_work = []
+            try:
+                while len(current_work) < 300:
+                    current_work.append(self.queue.get_nowait())
+            except QueueEmptyException:
+                pass
+            if len(current_work) > 50:
+                self.log("Drained Write Queue of %d items" % (len(current_work),))
+            return current_work
+
+        while has_work:
+            try:
+                next_bunch = self.queue.get(True, 1)
+                i += 1
+                if next_bunch == DONE:
+                    has_work = False
+                    continue
+                self._save_bunch(*next_bunch)
+                if self.queue.qsize() > 0:
+                    current_work = drain_queue()
+                    for next_bunch in current_work:
+                        i += 1
+                        if next_bunch == DONE:
+                            has_work = False
+                        else:
+                            self._save_bunch(*next_bunch)
+                            i += 1
+            except QueueEmptyException:
+                continue
+            except Exception as e:
+                self.error("An error occurred while writing scans to disk", e)
+
+    def sync(self):
+        self._end_thread()
+        self.worker_thread = threading.Thread(target=self._worker_loop)
+        self.worker_thread.start()
+
+    def _end_thread(self):
+        self.queue.put(DONE)
+        if self.worker_thread is not None:
+            self.worker_thread.join()
+
+    def commit(self):
+        super(ThreadedScanStorageHandlerMixin, self).save()
+        self._end_thread()
+
+    def complete(self):
+        self.save()
+        self._end_thread()
+        super(ThreadedScanStorageHandlerMixin, self).complete()
 
 
 class MzMLScanStorageHandler(ScanStorageHandlerBase):
@@ -171,78 +249,52 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
         self.serializer.close()
 
 
-class ThreadedMzMLScanStorageHandler(MzMLScanStorageHandler):
+class ThreadedMzMLScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLScanStorageHandler):
     def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
         super(ThreadedMzMLScanStorageHandler, self).__init__(
             path, sample_name, n_spectra, deconvoluted=deconvoluted)
-        self.queue = Queue(200)
-        self.worker_thread = threading.Thread(target=self._worker_loop)
-        self.worker_thread.start()
 
-    def _save_bunch(self, precursor, products):
-        self.serializer.save(ScanBunch(precursor, products))
-        try:
-            precursor.clear()
-            for product in products:
-                product.clear()
-        except AttributeError:
-            pass
+
+class MGFScanStorageHandler(ScanStorageHandlerBase):
+    def __init__(self, path, sample_name, deconvoluted=True, **kwargs):
+        super(MGFScanStorageHandler, self).__init__()
+        self.path = path
+        self.handle = open(path, "wb")
+        self.serializer = MGFSerializer(
+            self.handle, sample_name=sample_name,
+            deconvoluted=deconvoluted)
+
+    def _get_sample_run(self):
+        return self.serializer.sample_run
+
+    def register_parameter(self, name, value):
+        self.serializer.add_global_parameter(name, value)
+
+    @classmethod
+    def configure_storage(cls, path=None, name=None, source=None):
+        if path is not None:
+            if name is None:
+                sample_name = os.path.basename(path)
+            else:
+                sample_name = name
+        else:
+            path = "processed.mgf"
+        if source is not None:
+            deconvoluting = source.deconvoluting
+            inst = cls(path, sample_name, deconvoluted=deconvoluting)
+        else:
+            inst = cls(path, sample_name)
+        return inst
 
     def save_bunch(self, precursor, products):
-        self.queue.put((precursor, products))
-
-    def _worker_loop(self):
-        has_work = True
-        i = 0
-
-        def drain_queue():
-            current_work = []
-            try:
-                while len(current_work) < 300:
-                    current_work.append(self.queue.get_nowait())
-            except QueueEmptyException:
-                pass
-            if len(current_work) > 50:
-                self.log("Drained Write Queue of %d items" % (len(current_work),))
-            return current_work
-
-        while has_work:
-            try:
-                next_bunch = self.queue.get(True, 1)
-                i += 1
-                if next_bunch == DONE:
-                    has_work = False
-                    continue
-                self._save_bunch(*next_bunch)
-                if self.queue.qsize() > 0:
-                    current_work = drain_queue()
-                    for next_bunch in current_work:
-                        i += 1
-                        if next_bunch == DONE:
-                            has_work = False
-                        else:
-                            self._save_bunch(*next_bunch)
-                            i += 1
-            except QueueEmptyException:
-                continue
-            except Exception as e:
-                self.error("An error occurred while writing scans to disk", e)
-
-    def sync(self):
-        self._end_thread()
-        self.worker_thread = threading.Thread(target=self._worker_loop)
-        self.worker_thread.start()
-
-    def _end_thread(self):
-        self.queue.put(DONE)
-        if self.worker_thread is not None:
-            self.worker_thread.join()
-
-    def commit(self):
-        super(ThreadedMzMLScanStorageHandler, self).save()
-        self._end_thread()
+        self.serializer.save_scan_bunch(ScanBunch(precursor, products))
 
     def complete(self):
         self.save()
-        self._end_thread()
-        super(ThreadedMzMLScanStorageHandler, self).complete()
+        self.serializer.close()
+
+
+class ThreadedMGFScanStorageHandler(ThreadedScanStorageHandlerMixin, MGFScanStorageHandler):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+        super(ThreadedMGFScanStorageHandler, self).__init__(
+            path, sample_name, n_spectra, deconvoluted=deconvoluted)

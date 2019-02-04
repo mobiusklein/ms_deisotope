@@ -77,7 +77,7 @@ class PrecursorPurityEstimator(object):
         purity = 1 - (assigned / total)
         return purity
 
-    def coisolation(self, scan, precursor_peak, relative_intensity_threshold=0.1, ignore_singly_charged=True):
+    def coisolation(self, scan, precursor_peak, relative_intensity_threshold=0.1, ignore_singly_charged=False):
         peak_set = scan.deconvoluted_peak_set
         mz = precursor_peak.mz
 
