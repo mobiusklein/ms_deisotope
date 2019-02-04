@@ -503,7 +503,7 @@ class ScanProcessor(Base, LogUtilsMixin):
                 if precursor_information.charge != ChargeNotProvided:
                     self.log(
                         "Could not find deconvolution for %r (Unacceptable solution was proposed: %r)" %
-                        precursor_information, peak)
+                        (precursor_information, peak))
                     precursor_information.default()
                     continue
 
