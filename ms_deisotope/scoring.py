@@ -550,9 +550,9 @@ def percentile(N, percent):
 
 
 class DotProductFitter(IsotopicFitterBase):
-    def evaluate(self, peaklist, experimental, theoretical, **kwargs):
+    def evaluate(self, peaklist, observed, expected, **kwargs):
         total = 0
-        for e, t in zip(experimental, theoretical):
+        for e, t in zip(observed, expected):
             total += e.intensity * t.intensity
         return total
 

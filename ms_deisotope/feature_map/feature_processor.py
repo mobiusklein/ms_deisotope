@@ -387,8 +387,6 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 mz,
                 error_tolerance=error_tolerance,
                 charge=charge,
-                left_search=left_search,
-                right_search=right_search,
                 charge_carrier=charge_carrier,
                 truncate_after=truncate_after,
                 max_missed_peaks=max_missed_peaks,
