@@ -2120,7 +2120,7 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(_APDGD, Comp
             peaklist, composition_list=composition_list, *args, **kwargs)
 
     def deconvolute_composition(self, composition, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
-                                truncate_after=TRUNCATE_AFTER, charge_carrier=PROTON, ignore_below=IGNORE_BELOW,
+                                charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
                                 mass_shift=None):
         for charge in charge_range_(*charge_range):
             fit = self.fit_composition_at_charge(

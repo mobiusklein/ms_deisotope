@@ -48,13 +48,13 @@ class LCMSFeatureSetFit(object):
         return self.__class__(
             self.features, self.theoretical, self.score, self.charge,
             self.missing_features, self.supporters, self.data,
-            self.neutral_mass, self.n_points, self.scores, self.times)
+            self.neutral_mass, self.scores, self.times)
 
     def __reduce__(self):
         return self.__class__, (
             self.features, self.theoretical, self.score, self.charge,
             self.missing_features, self.supporters, self.data, self.neutral_mass,
-            self.n_points, self.scores, self.times)
+            self.scores, self.times)
 
     def __eq__(self, other):
         val = (self.score == other.score and
@@ -155,9 +155,11 @@ class DeconvolutedLCMSFeature(LCMSFeature):
             self._precursor_information = tuple(pinfo)
         return self._precursor_information
 
-    def clone(self):
-        return DeconvolutedLCMSFeature(
-            self.nodes, self.charge, self.adducts, self.used_as_adduct, self.score,
+    def clone(self, deep=False, cls=None):
+        if cls is None:
+            cls = self.__class__
+        return cls(
+            self.nodes.clone(deep=deep), self.charge, self.adducts, self.used_as_adduct, self.score,
             self.n_features, self.feature_id, list(self.supporters))
 
     def _invalidate(self, reaverage=False):

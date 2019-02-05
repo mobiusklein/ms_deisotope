@@ -25,7 +25,7 @@ class MS2Serializer(TextScanSerializerBase):
     def add_parameter(self, name, value, symbol="I"):
         self._add_parameter(name, value, symbol)
 
-    def save_scan_bunch(self, bunch):
+    def save_scan_bunch(self, bunch, **kwargs):
         for scan in bunch.products:
             self.write_scan(*self.prepare_scan_data(scan))
 

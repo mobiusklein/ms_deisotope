@@ -80,8 +80,8 @@ class ProcessedMGFDeserializer(MGFLoader):
         charge_array = scan['charge array']
         return build_deconvoluted_peak_set_from_arrays(mz_array, intensity_array, charge_array)
 
-    def _make_scan(self, scan):
-        scan = super(ProcessedMGFDeserializer, self)._make_scan(scan)
+    def _make_scan(self, data):
+        scan = super(ProcessedMGFDeserializer, self)._make_scan(data)
         scan.peak_set = None
         scan.deconvoluted_peak_set = self._build_peaks(scan._data)
         return scan.pack()
