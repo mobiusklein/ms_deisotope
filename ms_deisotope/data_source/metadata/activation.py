@@ -35,6 +35,9 @@ class ActivationInformation(object):
     def __str__(self):
         return str(self.method)
 
+    def __hash__(self):
+        return hash(str(self))
+
     def is_multiple_dissociation(self):
         """Determine if multiple dissociation methods were
         used.
