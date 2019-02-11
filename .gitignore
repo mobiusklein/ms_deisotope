@@ -5,6 +5,9 @@ ms_deisotope/_c/**/*.html
 .coverage
 .noseids
 /*sublime-*
+.ipynb_checkpoints*
+.vscode*
+Untitled*
 /test_reports
 *egg-info
 .cache
