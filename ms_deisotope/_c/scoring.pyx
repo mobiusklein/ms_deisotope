@@ -178,6 +178,9 @@ cdef class FitSelectorBase(object):
     cpdef IsotopicFitRecord best(self, object results):
         raise NotImplementedError()
 
+    cdef IsotopicFitRecord _best_from_set(self, set results):
+        raise NotImplementedError()
+
     def __call__(self, *args, **kwargs):
         return self.best(*args, **kwargs)
 
@@ -210,7 +213,25 @@ cdef class MinimizeFitSelector(FitSelectorBase):
         IsotopicFitRecord
             The most optimal fit
         """
+        if isinstance(results, set):
+            return self._best_from_set(<set>results)
         return min(results, key=operator.attrgetter("score"))
+
+    cdef IsotopicFitRecord _best_from_set(self, set results):
+        cdef:
+            IsotopicFitRecord fit, best_fit
+            object obj
+            double best_score
+
+        best_fit = None
+        best_score = INFINITY
+        for obj in results:
+            fit = <IsotopicFitRecord>obj
+            if fit.score < best_score:
+                best_score = fit.score
+                best_fit = fit
+        return best_fit
+
 
     cpdef bint reject(self, IsotopicFitRecord fit):
         """Decide whether the fit should be discarded for having too
@@ -255,7 +276,23 @@ cdef class MaximizeFitSelector(FitSelectorBase):
         IsotopicFitRecord
             The most optimal fit
         """
+        if isinstance(results, set):
+            return self._best_from_set(<set>results)
         return max(results, key=operator.attrgetter("score"))
+
+    cdef IsotopicFitRecord _best_from_set(self, set results):
+        cdef:
+            IsotopicFitRecord fit, best_fit
+            double best_score
+
+        best_fit = None
+        best_score = -INFINITY
+        for obj in results:
+            fit = <IsotopicFitRecord>obj
+            if fit.score > best_score:
+                best_score = fit.score
+                best_fit = fit
+        return best_fit
 
     cpdef bint reject(self, IsotopicFitRecord fit):
         """Decide whether the fit should be discarded for having too
@@ -330,7 +367,6 @@ cdef class IsotopicFitterBase(object):
 
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
         raise NotImplementedError()
-        return 0
 
     def __call__(self, *args, **kwargs):
         """Invokes :meth:`evaluate`

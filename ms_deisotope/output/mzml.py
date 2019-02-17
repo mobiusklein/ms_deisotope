@@ -473,7 +473,7 @@ class MzMLSerializer(ScanSerializerBase):
             new_entry_id = 'ms_deisotope_%s' % str(uuid4())
 
         software_list.append({
-            "id": "ms_deisotope_1",
+            "id": new_entry_id,
             'version': lib_version,
             'ms_deisotope': "",
         })

@@ -8,16 +8,20 @@ from ms_peak_picker._c.peak_index cimport PeakIndex
 
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 
-from ms_deisotope.constants import ERROR_TOLERANCE as _ERROR_TOLERANCE
+from ms_deisotope.constants import (
+    ERROR_TOLERANCE as _ERROR_TOLERANCE,
+    IGNORE_BELOW as _IGNORE_BELOW,
+    TRUNCATE_AFTER as _TRUNCATE_AFTER)
 from ms_deisotope._c.scoring cimport IsotopicFitterBase, IsotopicFitRecord
 from ms_deisotope._c.averagine cimport (AveragineCache, isotopic_shift, PROTON,
                                         TheoreticalIsotopicPattern, neutral_mass)
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
+from ms_deisotope._c.peak_dependency_network.peak_network cimport PeakDependenceGraphBase
 
-from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE
+from cpython cimport Py_INCREF
+from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM
 from cpython.tuple cimport PyTuple_GET_ITEM
-from cpython.int cimport PyInt_AsLong, PyInt_Check
-from cpython.long cimport PyLong_Check
+from cpython.int cimport PyInt_AsLong
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
 from cpython.object cimport PyObject
 from cpython.set cimport PySet_Add
@@ -31,6 +35,8 @@ import operator
 
 
 cdef double ERROR_TOLERANCE = _ERROR_TOLERANCE
+cdef double IGNORE_BELOW = _IGNORE_BELOW
+cdef double TRUNCATE_AFTER = _TRUNCATE_AFTER
 
 
 cdef size_t count_missed_peaks(list peaklist):
@@ -165,15 +171,18 @@ cdef class DeconvoluterBase(object):
     cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=2e-5):
         cdef:
             list experimental_distribution
-            size_t i
+            size_t i, n
             double mz
+            FittedPeak peak
 
-        experimental_distribution = []
+        n = PyList_GET_SIZE(theoretical_distribution)
+        experimental_distribution = PyList_New(n)
 
-        for i in range(PyList_GET_SIZE(theoretical_distribution)):
+        for i in range(n):
             mz = (<TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)).mz
-            experimental_distribution.append(self._has_peak(mz, error_tolerance))
-
+            peak = self._has_peak(mz, error_tolerance)
+            Py_INCREF(peak)
+            PyList_SET_ITEM(experimental_distribution, i, peak)
 
         return experimental_distribution
 
@@ -422,9 +431,8 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
             int charge
             list peak_charge_list
         results = set()
-        peak_charge_list = list(peak_charge_set)
-        for i in range(PyList_GET_SIZE(peak_charge_list)):
-            peak_charge = <tuple>PyList_GET_ITEM(peak_charge_list, i)
+        for obj in peak_charge_set:
+            peak_charge = <tuple>obj
             peak = <FittedPeak>PyTuple_GET_ITEM(peak_charge, 0)
             charge = PyInt_AsLong(<object>PyTuple_GET_ITEM(peak_charge, 1))
 
@@ -435,7 +443,6 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
                      peak, error_tolerance, charge,
                      charge_carrier, truncate_after=truncate_after,
                      ignore_below=ignore_below)
-            # fit.missed_peaks = count_missed_peaks(fit.experimental)
             if not self._check_fit(fit):
                 continue
             results.add(fit)
@@ -856,6 +863,127 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
                     self._find_next_putative_peak_inplace(peak.mz, charge, target_peaks, step=i, tolerance=2 * error_tolerance)
 
         return target_peaks
+
+
+@cython.binding(True)
+cpdef int _explore_local(DeconvoluterBase self, peak, error_tolerance=ERROR_TOLERANCE,
+                         charge_range=(1, 8), left_search_limit=1, right_search_limit=0,
+                         charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                         ignore_below=IGNORE_BELOW):
+    """Given a peak, explore the local neighborhood for candidate isotopic fits and add each
+    fit above a threshold to the peak dependence graph.
+
+    The threshold assumes that a single peak's neighborhood will contain many, many fits, but
+    that only the top `n` scoring fits are worth considering. For now, `n` is fixed at 100 or
+    the half number of fits returned, whichever is larger. This is to prevent the fit graph
+    from growing out of control and wasting time storing impractical fits. Any fit added to
+    the graph will have to pass :attr:`scorer.select` as well, so weak fits will never be added,
+    regardless of how many fits are allowed to be inserted.
+
+    Parameters
+    ----------
+    peak : :class:`~.FittedPeak`
+        The peak to start the search from
+    error_tolerance : float, optional
+        The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
+    charge_range : tuple, optional
+        The range of charge states to consider. Defaults to (1, 8)
+    left_search_limit : int, optional
+        The number of steps to search to the left of `peak`. Defaults to 1
+    right_search_limit : int, optional
+        The number of steps to search to the right of `peak`. Defaults to 0
+    charge_carrier : float, optional
+        The mass of the charge carrier. Defaults to |PROTON|
+    truncate_after : float, optional
+        The percent of intensity to ensure is included in a theoretical isotopic pattern
+        starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+        to be truncated, excluding trailing peaks which do not contribute substantially to
+        the overall shape of the isotopic pattern.
+
+    Returns
+    -------
+    int
+        The number of fits added to the graph
+    """
+    cdef:
+        set hold
+        set results
+        IsotopicFitRecord fit
+        size_t n, i, stop
+        object fit_saver
+        PeakDependenceGraphBase peak_graph
+
+    results = self._fit_all_charge_states(
+        peak, error_tolerance=error_tolerance, charge_range=charge_range, left_search_limit=left_search_limit,
+        charge_carrier=charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
+
+    peak_graph = <PeakDependenceGraphBase>self.peak_dependency_network 
+    
+    hold = set()
+    for obj in results:
+        fit = <IsotopicFitRecord>obj
+        if fit.charge > 1 and PyList_GET_SIZE(drop_placeholders(fit.experimental)) == 1:
+            continue
+        hold.add(fit)
+
+    results = hold
+    n = len(results)
+
+    stop = max(min(n // 2, 100), 10)
+    if n == 0:
+        return 0
+
+    for i in range(stop):
+        if len(results) == 0:
+            break
+        candidate = self.scorer.select.best(results)
+        peak_graph.add_fit_dependence(candidate)
+        results.discard(candidate)
+
+    return i
+
+
+@cython.binding(True)
+cpdef populate_graph(DeconvoluterBase self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
+                     left_search_limit=1, right_search_limit=0, charge_carrier=PROTON,
+                     truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+    """Visit each experimental peak and execute :meth:`_explore_local` on it with the provided
+    parameters, populating the peak dependence graph with all viable candidates.
+
+    Parameters
+    ----------
+    peak : :class:`~.FittedPeak`
+    error_tolerance : float, optional
+        The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
+    charge_range : tuple, optional
+        The range of charge states to consider. Defaults to (1, 8)
+    left_search_limit : int, optional
+        The number of steps to search to the left of `peak`. Defaults to 1
+    right_search_limit : int, optional
+        The number of steps to search to the right of `peak`. Defaults to 0
+    charge_carrier : float, optional
+        The mass of the charge carrier. Defaults to |PROTON|
+    truncate_after : float, optional
+        The percent of intensity to ensure is included in a theoretical isotopic pattern
+        starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+        to be truncated, excluding trailing peaks which do not contribute substantially to
+        the overall shape of the isotopic pattern.
+    """
+    cdef:
+        size_t i, n
+        FittedPeak peak
+        dict _priority_map
+    _priority_map = self._priority_map
+    n = self.peaklist.get_size()
+    for i in range(n):
+        peak = self.peaklist.getitem(i)
+        if peak in _priority_map or peak.intensity < self.minimum_intensity:
+            continue
+        n = _explore_local(self,
+            peak, error_tolerance=error_tolerance, charge_range=charge_range,
+            left_search_limit=left_search_limit, right_search_limit=right_search_limit,
+            charge_carrier=charge_carrier,
+            truncate_after=truncate_after, ignore_below=ignore_below)
 
 
 @cython.binding(True)

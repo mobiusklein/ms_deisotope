@@ -182,7 +182,33 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             mid = int((hi + lo) // 2)
             y = self.mz[mid]
             err = y - mz
-            if hi - lo == 1:
+            if abs(err) < 0.1:
+                best_index = mid
+                best_err = abs(err)
+                i = mid
+                while i >= 0:
+                    y = self.mz[i]
+                    err = y - mz
+                    if err <= -0.1:
+                        break
+                    abs_err = abs(err)
+                    if abs_err < best_err:
+                        best_err = abs_err
+                        best_index = i
+                    i -= 1
+                i = mid
+                while i <= n:
+                    y = self.mz[i]
+                    err = y - mz
+                    if err >= 0.1:
+                        break
+                    abs_err = abs(err)
+                    if abs_err < best_err:
+                        best_err = abs_err
+                        best_index = i
+                    i += 1
+                return best_index
+            elif hi - lo == 1:
                 return mid
             elif err > 0:
                 hi = mid
@@ -207,6 +233,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         """
         i = self.find_mz(low)
         j = self.find_mz(high) + 1
+        if not (low <= self.mz[i] <= high):
+            i += 1
         return self.__class__(self.mz[i:j], self.intensity[i:j])
 
 

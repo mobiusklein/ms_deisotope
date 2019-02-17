@@ -20,6 +20,9 @@ from brainpy._speedup cimport calculate_mass
 from ms_peak_picker._c.peak_set cimport FittedPeak
 
 
+from ms_deisotope.constants import (TRUNCATE_AFTER, IGNORE_BELOW)
+
+
 cdef double PROTON
 PROTON = _PROTON
 
@@ -100,6 +103,11 @@ cdef class Averagine(object):
         composition, mass = state
         self.base_composition = dict(composition)
         self.base_mass = float(mass)
+
+    def __call__(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+                 double ignore_below=0.0):
+        out = self.isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
+        return out
 
     @cython.cdivision
     cpdef dict scale(self, double mz, int charge=1, double charge_carrier=PROTON):
@@ -258,6 +266,7 @@ cdef double sum_intensity(list peaklist):
 
 
 @cython.freelist(1000000)
+@cython.final
 cdef class TheoreticalIsotopicPattern(object):
     """Represent a theoretical isotopic peak list
 
@@ -509,8 +518,7 @@ cdef class TheoreticalIsotopicPattern(object):
         if method == "sum":
             total_abundance = sum_intensity(experimental_distribution)
             for i in range(n):
-                peak = self.get(i)
-                peak.intensity *= total_abundance
+                (<TheoreticalPeak>self.get(i)).intensity *= total_abundance
         elif method == "max":
             i = 0
             maximum = 0
@@ -696,6 +704,7 @@ cdef class AveragineCache(object):
         if isinstance(averagine, AveragineCache):
             self.averagine = averagine.averagine
             self.cache_truncation = averagine.cache_truncation
+            self.backend = averagine.backend.copy()
         else:
             self.averagine = Averagine(averagine)
         self.cache_truncation = cache_truncation
@@ -714,6 +723,18 @@ cdef class AveragineCache(object):
         self.cache_truncation = trunc
 
     @cython.cdivision
+    cdef double _make_cache_key(self, double mz):
+        cdef double key_mz
+        if self.cache_truncation == 0.0:
+            key_mz = mz
+        else:
+            key_mz = _round(mz / self.cache_truncation) * self.cache_truncation
+        return key_mz
+
+    def make_cache_key(self, double mz):
+        return self._make_cache_key(mz)
+
+    @cython.cdivision
     cdef TheoreticalIsotopicPattern has_mz_charge_pair(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
                                  double ignore_below=0.0):
         cdef:
@@ -722,10 +743,7 @@ cdef class AveragineCache(object):
             PyObject* pvalue
             TheoreticalIsotopicPattern tid
         if self.enabled:
-            if self.cache_truncation == 0.0:
-                key_mz = mz
-            else:
-                key_mz = _round(mz / self.cache_truncation) * self.cache_truncation
+            key_mz = self._make_cache_key(mz)
 
             # Attempting to replace this tuple construction (which in turn necessitates packing each
             # numeric argument as a Python object) with a hand-written extension class that can compute
@@ -776,6 +794,11 @@ cdef class AveragineCache(object):
         """
         return self.has_mz_charge_pair(mz, charge, charge_carrier, truncate_after, ignore_below)
 
+    def __call__(self, double mz, int charge=1, double charge_carrier=PROTON, double truncate_after=0.95,
+                 double ignore_below=0.0):
+        out = self.isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
+        return out
+
     def __getitem__(self, key):
         return self.averagine[key]
 
@@ -796,6 +819,13 @@ cdef class AveragineCache(object):
 
     def clear(self):
         self.backend.clear()
+
+    def populate(self, min_mz=10, max_mz=3000, min_charge=1, max_charge=8, charge_carrier=PROTON,
+                 truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+        for i in range(int(min_mz), int(max_mz)):
+            for j in range(min(max_charge, min_charge), max(min_charge, max_charge)):
+                self.isotopic_cluster(i, j, PROTON, TRUNCATE_AFTER, IGNORE_BELOW)
+        return self
 
 
 cdef double _neutron_shift

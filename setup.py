@@ -94,6 +94,9 @@ def make_extensions():
             Extension(name='ms_deisotope._c.peak_dependency_network.subgraph',
                       sources=['ms_deisotope/_c/peak_dependency_network/subgraph.pyx'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
+                      sources=['ms_deisotope/_c/peak_dependency_network/peak_network.pyx'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
         ], compiler_directives=cython_directives, force=force_cythonize)
     except ImportError:
         extensions = ([
@@ -131,6 +134,9 @@ def make_extensions():
                       include_dirs=[numpy.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.peak_dependency_network.subgraph',
                       sources=['ms_deisotope/_c/peak_dependency_network/subgraph.c'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
+                      sources=['ms_deisotope/_c/peak_dependency_network/peak_network.c'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
         ])
     return extensions

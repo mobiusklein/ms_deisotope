@@ -509,6 +509,8 @@ try:
     has_c = True
     _SpanningMixin = SpanningMixin
     _Interval = Interval
-    from ms_deisotope._c.peak_dependency_network.intervals import SpanningMixin, Interval
+    _IntervalTreeNode = IntervalTreeNode
+    from ms_deisotope._c.peak_dependency_network.intervals import (
+        SpanningMixin, Interval, IntervalTreeNode)
 except ImportError:
     has_c = False

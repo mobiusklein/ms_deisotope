@@ -70,6 +70,7 @@ cdef class TheoreticalIsotopicPattern(object):
     cpdef size_t _basepeak_index(self)
 
 
+@cython.final
 cdef class AveragineCache(object):
     cdef:
         public dict backend
@@ -77,6 +78,8 @@ cdef class AveragineCache(object):
         public double cache_truncation
         public bint enabled
     
+    cdef double _make_cache_key(self, double mz)
+
     cdef TheoreticalIsotopicPattern has_mz_charge_pair(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
     cpdef TheoreticalIsotopicPattern isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
 

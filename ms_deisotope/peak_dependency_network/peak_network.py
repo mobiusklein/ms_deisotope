@@ -175,7 +175,48 @@ class DependenceCluster(SpanningMixin):
         return self.dependencies[i]
 
 
-class PeakDependenceGraph(LogUtilsMixin):
+try:
+    _has_c = True
+    from ms_deisotope._c.peak_dependency_network.peak_network import (
+        PeakNode, DependenceCluster, PeakDependenceGraphBase)
+except ImportError:
+    _has_c = False
+
+    class PeakDependenceGraphBase(object):
+
+        def reset(self):
+            # Keep a record of all clusters from previous iterations
+            self._all_clusters.extend(
+                self.clusters if self.clusters is not None else [])
+            self.nodes = dict()
+            self.dependencies = set()
+            self._interval_tree = None
+            self._populate_initial_graph()
+
+        def _populate_initial_graph(self):
+            for peak in self.peaklist:
+                self.nodes[peak.index] = PeakNode(peak)
+
+        def add_fit_dependence(self, fit_record):
+            for peak in fit_record.experimental:
+                if peak.index == 0:
+                    continue
+                self.nodes[peak.index].links[fit_record] = fit_record.score
+            self.dependencies.add(fit_record)
+
+        def nodes_for(self, fit_record, cache=None):
+            if cache is None:
+                return [self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
+            else:
+                try:
+                    return cache[fit_record]
+                except KeyError:
+                    cache[fit_record] = value = [
+                        self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
+                    return value
+
+
+class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
     def __init__(self, peaklist, nodes=None, dependencies=None, max_missed_peaks=1,
                  use_monoisotopic_superceded_filtering=True, maximize=True):
         if nodes is None:
@@ -194,15 +235,6 @@ class PeakDependenceGraph(LogUtilsMixin):
         self._interval_tree = None
         self._solution_map = {}
         self._all_clusters = []
-
-    def reset(self):
-        # Keep a record of all clusters from previous iterations
-        self._all_clusters.extend(
-            self.clusters if self.clusters is not None else [])
-        self.nodes = dict()
-        self.dependencies = set()
-        self._interval_tree = None
-        self._populate_initial_graph()
 
     def add_solution(self, key, solution):
         self._solution_map[key] = solution
@@ -285,28 +317,6 @@ class PeakDependenceGraph(LogUtilsMixin):
         else:
             fit = common[0]
         return self._solution_map[fit]
-
-    def _populate_initial_graph(self):
-        for peak in self.peaklist:
-            self.nodes[peak.index] = PeakNode(peak)
-
-    def add_fit_dependence(self, fit_record):
-        for peak in fit_record.experimental:
-            if peak.index == 0:
-                continue
-            self.nodes[peak.index].links[fit_record] = fit_record.score
-        self.dependencies.add(fit_record)
-
-    def nodes_for(self, fit_record, cache=None):
-        if cache is None:
-            return [self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
-        else:
-            try:
-                return cache[fit_record]
-            except KeyError:
-                cache[fit_record] = value = [
-                    self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
-                return value
 
     def drop_fit_dependence(self, fit_record):
         for node in self.nodes_for(fit_record):
