@@ -936,7 +936,7 @@ class Scan(ScanBase):
                            (mzs, intensities), list(self.product_scans),
                            annotations=self._external_annotations)
 
-    def _average_with(self, scans, dx=0.01, weight_sigma=None):
+    def average_with(self, scans, dx=0.01, weight_sigma=None):
         scans = [self] + list(scans)
         arrays = []
         for scan in scans:

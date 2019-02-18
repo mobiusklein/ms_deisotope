@@ -209,7 +209,35 @@ class TheoreticalIsotopicPattern(object):
             scale_factor = scales / weights
             for peak in self:
                 peak.intensity *= scale_factor
-
+        elif method == 'top3':
+            top1 = 0
+            top2 = 0
+            top3 = 0
+            top1_index = 0
+            top2_index = 0
+            top3_index = 0
+            for i, peak in enumerate(self):
+                if peak.intensity > top1:
+                    top3 = top2
+                    top3_index = top2_index
+                    top2 = top1
+                    top2_index = top1_index
+                    top1 = peak.intensity
+                    top1_index = i
+                elif peak.intensity > top2:
+                    top3 = top2
+                    top3_index = top2_index
+                    top2 = peak.intensity
+                    top2_index = i
+                elif peak.intensity > top3:
+                    top3 = peak.intensity
+                    top3_index = i
+            scale = experimental_distribution[top1_index].intensity / self[top1_index].intensity
+            scale += experimental_distribution[top2_index].intensity / self[top2_index].intensity
+            scale += experimental_distribution[top3_index].intensity / self[top3_index].intensity
+            scale /= 3
+            for peak in self:
+                peak.intensity *= scale
         return self
 
     def scale_raw(self, scale_factor):

@@ -265,6 +265,44 @@ cdef double sum_intensity(list peaklist):
     return total
 
 
+cdef double top3_scale_factor(TheoreticalIsotopicPattern self, list experimental_distribution):
+    cdef:
+        double top1, top2, top3, scale
+        size_t i, n, top1_index, top2_index, top3_index
+        TheoreticalPeak peak
+    n = self.get_size()
+
+    top1 = 0
+    top2 = 0
+    top3 = 0
+    top1_index = 0
+    top2_index = 0
+    top3_index = 0
+    for i in range(n):
+        peak = self.get(i)
+        if peak.intensity > top1:
+            top3 = top2
+            top3_index = top2_index
+            top2 = top1
+            top2_index = top1_index
+            top1 = peak.intensity
+            top1_index = i
+        elif peak.intensity > top2:
+            top3 = top2
+            top3_index = top2_index
+            top2 = peak.intensity
+            top2_index = i
+        elif peak.intensity > top3:
+            top3 = peak.intensity
+            top3_index = i
+    scale = experimental_distribution[top1_index].intensity / self[top1_index].intensity
+    scale += experimental_distribution[top2_index].intensity / self[top2_index].intensity
+    scale += experimental_distribution[top3_index].intensity / self[top3_index].intensity
+    scale /= 3
+    return scale
+
+
+
 @cython.freelist(1000000)
 @cython.final
 cdef class TheoreticalIsotopicPattern(object):
@@ -561,6 +599,11 @@ cdef class TheoreticalIsotopicPattern(object):
                                 experimental_distribution, j - 1)).intensity / self.get(j - 1).intensity
                 i += 1
             scale_factor /= i
+            for i in range(n):
+                peak = self.get(i)
+                peak.intensity *= scale_factor
+        elif method == 'top3':
+            scale_factor = top3_scale_factor(self, experimental_distribution)
             for i in range(n):
                 peak = self.get(i)
                 peak.intensity *= scale_factor
