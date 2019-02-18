@@ -8,7 +8,7 @@ cache: pip
 install:
   - pip install --upgrade pip setuptools wheel
   - pip install Cython --install-option="--no-cython-compile"
-  - pip install coverage pytest pytest-cov dill -U
+  - pip install coverage pytest pytest-cov -U
   - pip install lxml pyteomics dill
   - pip install --only-binary=numpy,scipy numpy scipy
   - pip install git+https://github.com/mobiusklein/psims.git
@@ -17,7 +17,7 @@ install:
   - pip install git+https://github.com/mobiusklein/brainpy.git
   - pip install --upgrade coverage
   - pip install python-idzip >=0.3.2
-  - pip install -e .
+  - python setup.py develop
   # - pip install -r requirements.txt
 # command to run tests
 script: make test
