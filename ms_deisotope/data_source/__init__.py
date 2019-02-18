@@ -10,6 +10,8 @@ from .common import (
     ScanDataSource, ScanIterator, ScanBunch,
     ScanWindow, RandomAccessScanSource, ChargeNotProvided)
 
+from .scan import ScanProxyContext
+
 from ._compression import get_opener
 
 __all__ = [
@@ -21,5 +23,5 @@ __all__ = [
     "ScanAcquisitionInformation", "ScanEventInformation",
     "ScanDataSource", "ScanIterator", "ScanBunch",
     "ScanWindow", "RandomAccessScanSource", "ChargeNotProvided",
-    "get_opener"
+    "get_opener", "ScanProxyContext",
 ]

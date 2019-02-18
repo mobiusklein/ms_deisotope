@@ -1,12 +1,15 @@
 import abc
+import weakref
 from weakref import WeakValueDictionary
+
+from collections import OrderedDict
 
 from ms_deisotope.utils import add_metaclass
 
 from ms_deisotope.data_source.metadata.file_information import FileInformation
 
 
-from .scan import Scan
+from .scan import Scan, ScanBase
 from .scan_iterator import (
     _SingleScanIteratorImpl,
     _GroupedScanIteratorImpl)
@@ -562,3 +565,122 @@ class IteratorFacadeBase(DataAccessProxy, ScanIterator):  # pragma: no cover
 
     def next(self):
         return self._transform(next(self._producer))
+
+
+class ScanProxyContext(object):
+    """A memory-conserving wrapper around an existing :class:`RandomAccessScanSource`
+    object for serving :class:`ScanProxy` objects.
+
+    Attributes
+    ----------
+    cache : :class:`collections.OrderedDict`
+        A strong-reference maintaining cache from scan ID to :class:`ScanBase`
+    cache_size : int
+        The number of scans to keep strong references to.
+    loader : :class:`RandomAccessScanSource`
+        The source to load scans from.
+    """
+
+    def __init__(self, loader, cache_size=24):
+        self.loader = loader
+        self.cache_size = cache_size
+        self.cache = OrderedDict()
+
+    def get_scan_by_id(self, scan_id):
+        if scan_id in self.cache:
+            return self.cache[scan_id]
+        scan = self.loader.get_scan_by_id(scan_id)
+        self._save_scan(scan_id, scan)
+        return scan
+
+    def _save_scan(self, scan_id, scan):
+        if len(self.cache) > self.cache_size:
+            self.cache.popitem()
+        self.cache[scan_id] = scan
+
+    def __call__(self, scan_id):
+        """Create a proxy for the scan referenced by scan_id
+
+        Parameters
+        ----------
+        scan_id: :class:`str`
+
+        Returns
+        -------
+        :class:`ScanProxy`
+        """
+        return ScanProxy(scan_id, self)
+
+    def clear(self):
+        self.cache.clear()
+
+
+class proxyproperty(object):
+    '''An descriptor that integrates with :class:`ScanProxy` to retrieve attributes
+    from a wrapped :class:`~.ScanBase` object referenced by :class:`ScanProxy`,
+    potentially loading the scan from disk if it has been purged from the memory
+    cache.
+
+    Attributes
+    ----------
+    name: :class:`str`
+        The name of the attribute to retrieve from the wrapped scan
+    '''
+
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, obj, cls):
+        obj._require_scan()
+        return getattr(obj.scan, self.name)
+
+
+class ScanProxy(ScanBase):
+    """A proxy for a :class:`ScanBase` object, allowing transparent access to the
+    scan, potentially loading it from disk through the attached :class:`ScanProxyContext`
+    :attrib:`context`.
+
+    Attributes
+    ----------
+    context : :class:`ScanProxyContext`
+        The context to use to retrieve scans from, whose cache layer will keep the
+        scan objects alive.
+    scan : :class:`weakref.ProxyType`
+        A weakref proxy to the :class:`~.ScanBase` object.
+    """
+
+    _names = [
+        "arrays",
+        "peak_set",
+        "deconvoluted_peak_set",
+        "id",
+        "title",
+        "ms_level",
+        "scan_time",
+        "precursor_information",
+        "index",
+        "is_profile",
+        "polarity",
+        "activation",
+        "acquisition_information",
+        "isolation_window",
+        "instrument_configuration"
+    ]
+
+    def __init__(self, scan_id, context):
+        self._target_scan_id = scan_id
+        self.context = context
+        self.scan = None
+
+    def _clear_scan(self, *args, **kwargs):
+        self.scan = None
+
+    def _require_scan(self):
+        if self.scan is None:
+            self.scan = weakref.proxy(
+                self.context.get_scan_by_id(self._target_scan_id),
+                self._clear_scan)
+
+
+for name in ScanProxy._names:
+    setattr(ScanProxy, name, proxyproperty(name))

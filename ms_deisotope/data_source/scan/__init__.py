@@ -11,7 +11,7 @@ from .scan_iterator import (
 
 from .loader import (
     ScanDataSource, ScanIterator, RandomAccessScanSource,
-    ScanFileMetadataBase)
+    ScanFileMetadataBase, ScanProxyContext)
 
 
 __all__ = [
@@ -24,5 +24,5 @@ __all__ = [
     "_FakeGroupedScanIteratorImpl", "_GroupedScanIteratorImpl",
 
     "ScanDataSource", "ScanIterator", "RandomAccessScanSource",
-    "ScanFileMetadataBase",
+    "ScanFileMetadataBase", "ScanProxyContext",
 ]
