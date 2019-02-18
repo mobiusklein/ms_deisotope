@@ -207,6 +207,19 @@ install_requires = [
 ]
 
 
+extra_requires = {
+    "com": [
+        "comtypes"
+    ],
+    "net": [
+        "pythonnet"
+    ]
+}
+
+
+extra_requires['all'] = [dep for feature_reqs in extra_requires.values() for dep in feature_reqs]
+
+
 def run_setup(include_cext=True):
     with open("ms_deisotope/version.py") as version_file:
         version = None
