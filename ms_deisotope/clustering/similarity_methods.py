@@ -1,10 +1,12 @@
 import math
 from collections import defaultdict
 
+import numpy as np
+
 
 def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
-    """Computes the cosine distance between two peak sets, a similarity metric
-    ranging between 0 (dissimilar) to 1.0 (similar).
+    """Computes the normalized dot product, also called cosine similarity between
+    two peak sets, a similarity metric ranging between 0 (dissimilar) to 1.0 (similar).
 
     Parameters
     ----------
@@ -36,10 +38,28 @@ def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
         bin_b[mz] += peak.intensity
         positions.add(mz)
 
-    return cosine_distance(positions, bin_a, bin_b)
+    return dot_product(positions, bin_a, bin_b)
 
 
-def cosine_distance(positions, bin_a, bin_b):
+def bin_peaks(peak_set_a, peak_set_b, precision):
+    bin_a = defaultdict(float)
+    bin_b = defaultdict(float)
+
+    positions = set()
+
+    for peak in peak_set_a:
+        mz = round(peak.mz, precision)
+        bin_a[mz] += peak.intensity
+        positions.add(mz)
+
+    for peak in peak_set_b:
+        mz = round(peak.mz, precision)
+        bin_b[mz] += peak.intensity
+        positions.add(mz)
+    return positions, bin_a, bin_b
+
+
+def dot_product(positions, bin_a, bin_b, normalize=True):
     z = 0
     n_a = 0
     n_b = 0
@@ -51,8 +71,30 @@ def cosine_distance(positions, bin_a, bin_b):
         n_a += a ** 2
         n_b += b ** 2
 
+    if not normalize:
+        return z
+
     n_ab = math.sqrt(n_a) * math.sqrt(n_b)
     if n_ab == 0.0:
         return 0.0
     else:
         return z / n_ab
+
+
+sparse_similarity = peak_set_similarity
+
+
+try:
+    _has_c = True
+    from ms_deisotope._c import similarity_methods as csimilarity_methods
+
+    def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
+        if precision > 2:
+            return sparse_similarity(peak_set_a, peak_set_b, precision)
+        else:
+            return csimilarity_methods.peak_set_similarity(peak_set_a, peak_set_b, precision)
+
+    peak_set_similarity.__doc__ = sparse_similarity.__doc__
+
+except ImportError:
+    _has_c = False

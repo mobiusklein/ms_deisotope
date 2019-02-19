@@ -1,7 +1,7 @@
 import functools
 import bisect
 
-from .peak_set_similarity import peak_set_similarity
+from .similarity_methods import peak_set_similarity
 
 
 def ppm_error(x, y):

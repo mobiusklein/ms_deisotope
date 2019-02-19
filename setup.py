@@ -1,6 +1,8 @@
 import sys
 import traceback
 import os
+import platform
+
 from setuptools import setup, Extension, find_packages
 
 from distutils.command.build_ext import build_ext
@@ -23,6 +25,26 @@ def has_option(name):
 
 include_diagnostics = has_option("include-diagnostics")
 force_cythonize = has_option("force-cythonize")
+no_openmp = has_option('no-openmp')
+
+with_openmp = not no_openmp
+
+
+def configure_openmp(ext):
+    # http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092 was required.
+    if os.name == 'nt' and with_openmp:
+        ext.extra_compile_args.append("/openmp")
+    elif platform.system() == 'Darwin':
+        pass
+    elif with_openmp:
+        ext.extra_compile_args.append("-fopenmp")
+        ext.extra_link_args.append("-fopenmp")
+
+
+def OpenMPExtension(*args, **kwargs):
+    ext = Extension(*args, **kwargs)
+    configure_openmp(ext)
+    return ext
 
 
 def make_extensions():
@@ -97,6 +119,9 @@ def make_extensions():
             Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
                       sources=['ms_deisotope/_c/peak_dependency_network/peak_network.pyx'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            OpenMPExtension(
+                name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.pyx"],
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
         ], compiler_directives=cython_directives, force=force_cythonize)
     except ImportError:
         extensions = ([
@@ -138,6 +163,9 @@ def make_extensions():
             Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
                       sources=['ms_deisotope/_c/peak_dependency_network/peak_network.c'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            OpenMPExtension(
+                name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.c"],
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()])
         ])
     return extensions
 
