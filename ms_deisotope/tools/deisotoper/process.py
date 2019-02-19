@@ -277,24 +277,7 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
         self._work_complete = multiprocessing.Event()
         self.log_handler = log_handler
 
-    def _prepopulate_averagine_cache(self):
-        if 'averagine' in self.ms1_deconvolution_args:
-            averagine = self.ms1_deconvolution_args['averagine']
-            if isinstance(averagine, list):
-                averagine = [AveragineCache(a).populate() for a in averagine]
-            else:
-                averagine = AveragineCache(averagine).populate()
-            self.ms1_deconvolution_args['averagine'] = averagine
-        if 'averagine' in self.msn_deconvolution_args:
-            averagine = self.msn_deconvolution_args['averagine']
-            if isinstance(averagine, list):
-                averagine = [AveragineCache(a).populate() for a in averagine]
-            else:
-                averagine = AveragineCache(averagine).populate()
-            self.msn_deconvolution_args['averagine'] = averagine
-
     def make_scan_transformer(self, loader=None):
-        self._prepopulate_averagine_cache()
         transformer = ScanProcessor(
             loader,
             ms1_peak_picking_args=self.ms1_peak_picking_args,

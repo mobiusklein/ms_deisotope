@@ -4,6 +4,7 @@ from six import string_types as basestring
 
 from ms_peak_picker import pick_peaks
 
+from .averagine import AveragineCache
 from .deconvolution import deconvolute_peaks
 from .data_source import MSFileLoader, ScanIterator
 from .data_source.common import Scan, ScanBunch, ChargeNotProvided
@@ -199,6 +200,23 @@ class ScanProcessor(Base, LogUtilsMixin):
         self._signal_source = self.loader_type(data_source)
         self.envelope_selector = envelope_selector
         self.terminate_on_error = terminate_on_error
+        self._prepopulate_averagine_cache()
+
+    def _prepopulate_averagine_cache(self):
+        if 'averagine' in self.ms1_deconvolution_args:
+            averagine = self.ms1_deconvolution_args['averagine']
+            if isinstance(averagine, list):
+                averagine = [AveragineCache(a).populate() for a in averagine]
+            else:
+                averagine = AveragineCache(averagine).populate()
+            self.ms1_deconvolution_args['averagine'] = averagine
+        if 'averagine' in self.msn_deconvolution_args:
+            averagine = self.msn_deconvolution_args['averagine']
+            if isinstance(averagine, list):
+                averagine = [AveragineCache(a).populate() for a in averagine]
+            else:
+                averagine = AveragineCache(averagine).populate()
+            self.msn_deconvolution_args['averagine'] = averagine
 
     def _reject_candidate_precursor_peak(self, peak, product_scan):
         isolation = product_scan.isolation_window
