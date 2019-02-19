@@ -29,4 +29,7 @@ class TestScanClustering(unittest.TestCase):
         reader = self.reader
         scans = self.load_msms_scans(reader)
         clusters = self.cluster_scans(scans)
-        assert len(clusters) == 1123
+        assert len(clusters) == 1124
+
+if __name__ == "__main__":
+    unittest.main()

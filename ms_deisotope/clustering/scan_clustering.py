@@ -225,9 +225,10 @@ class ScanClusterBuilder(LogUtilsMixin):
         self.peak_getter = peak_getter
 
     def peak_set_similarity(self, scan_i, scan_j):
+        peak_set_a = self.peak_getter(scan_i)
+        peak_set_b = self.peak_getter(scan_j)
         return peak_set_similarity(
-            self.peak_getter(scan_i),
-            self.peak_getter(scan_j))
+            peak_set_a, peak_set_b)
 
     def find_best_cluster_for_scan(self, scan):
         best_cluster = None

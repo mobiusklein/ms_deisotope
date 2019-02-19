@@ -1,7 +1,8 @@
 cimport cython
 from cython.parallel cimport prange
 from libc.math cimport floor, sqrt
-from libc.stdlib cimport calloc, free
+from libc.stdlib cimport malloc, free
+from cpython cimport PyErr_SetString
 from cpython.tuple cimport PyTuple_GET_ITEM
 from ms_peak_picker._c.peak_index cimport PeakIndex
 from ms_peak_picker._c.peak_set cimport PeakBase, FittedPeak, PeakSet
@@ -27,7 +28,7 @@ cpdef enum SimilarityMetrics:
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection peak_set_b, int precision=0):
+cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection peak_set_b, int precision=0) except -1:
     """Computes the normalized dot product, also called cosine similarity between
     two peak sets, a similarity metric ranging between 0 (dissimilar) to 1.0 (similar).
 
@@ -63,20 +64,34 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         peak = peak_set_b.peaks.getitem(peak_set_b.get_size() - 1)
         hi = max(peak.mz, hi)
     elif peak_collection is object:
-        peak = peak_set_a[-1]
-        hi = peak.mz
-        peak = peak_set_b[-1]
-        hi = max(peak.mz, hi)
-    else:
+        hi = 0
+        for obj in peak_set_a:
+            peak = <PeakBase>obj
+            if peak.mz > hi:
+                hi = peak.mz
+        for obj in peak_set_b:
+            peak = <PeakBase>obj
+            if peak.mz > hi:
+                hi = peak.mz
+    elif peak_collection is PeakSet:
         peak = peak_set_a.getitem(peak_set_a.get_size() - 1)
         hi = peak.mz
         peak = peak_set_b.getitem(peak_set_b.get_size() - 1)
         hi = max(peak.mz, hi)
+    elif peak_collection is DeconvolutedPeakSet:
+        peak = peak_set_a._mz_ordered[-1]
+        hi = peak.mz
+        peak = peak_set_b._mz_ordered[-1]
+        hi = max(peak.mz, hi)
     scaler = 10 ** precision
     k = <long>((hi * scaler) + 1)
-    bin_a = <double*>calloc(sizeof(double), k)
-    bin_b = <double*>calloc(sizeof(double), k)
-
+    bin_a = <double*>malloc(k * sizeof(double))
+    bin_b = <double*>malloc(k * sizeof(double))
+    if bin_a == NULL or bin_b == NULL:
+        PyErr_SetString(MemoryError, "Could not allocate bins")
+        return -1
+    for i in range(k):
+        bin_a[i] = bin_b[i] = 0
     if peak_collection is object:
         n = len(peak_set_a)
     else:
@@ -89,6 +104,7 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         else:
             peak = peak_set_a.getitem(i)
         index = int(peak.mz * scaler)
+        assert index  < k
         bin_a[index] += peak.intensity
 
     if peak_collection is object:
@@ -103,6 +119,7 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         else:
             peak = peak_set_b.getitem(i)
         index = int(peak.mz * scaler)
+        assert index  < k
         bin_b[index] += peak.intensity
 
     n_a = 0
@@ -138,9 +155,19 @@ cpdef tuple bin_peaks(peak_collection peak_set_a, peak_collection peak_set_b, in
         peak = peak_set_b.peaks.getitem(peak_set_b.get_size() - 1)
         hi = max(peak.mz, hi)
     elif peak_collection is object:
-        peak = peak_set_a[-1]
+        hi = 0
+        for obj in peak_set_a:
+            peak = <PeakBase>obj
+            if peak.mz > hi:
+                hi = peak.mz
+        for obj in peak_set_b:
+            peak = <PeakBase>obj
+            if peak.mz > hi:
+                hi = peak.mz
+    elif peak_collection is DeconvolutedPeakSet:
+        peak = peak_set_a._mz_ordered[-1]
         hi = peak.mz
-        peak = peak_set_b[-1]
+        peak = peak_set_b._mz_ordered[-1]
         hi = max(peak.mz, hi)
     else:
         hi = 0
