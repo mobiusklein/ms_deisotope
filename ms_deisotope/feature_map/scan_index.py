@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided,
-    ActivationInformation, MultipleActivationInformation)
+    ActivationInformation)
 from ms_deisotope.utils import Base
 from ms_deisotope.envelope_statistics import CoIsolation
 

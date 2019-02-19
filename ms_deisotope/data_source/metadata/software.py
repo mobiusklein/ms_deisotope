@@ -1374,14 +1374,6 @@ software_names = TermSet([
                   u'Scientific.'),
                  'software',
                  [u'small molecule analysis software', u'analysis software', u'software']),
-    SoftwareName(u'TopPIC:proteoform-level FDR', u'MS:1002930',
-                 (u'TopPIC proteoform-level FDR.'),
-                 'software',
-                 [u'proteoform-level local FDR', u'search engine specific score for proteoforms', u'proteoform-level identification statistic', u'proteoform-level identification attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
-    SoftwareName(u'TopMG:proteoform-level FDR', u'MS:1002952',
-                 (u'TopMG proteoform-level FDR.'),
-                 'software',
-                 [u'proteoform-level local FDR', u'search engine specific score for proteoforms', u'proteoform-level identification statistic', u'proteoform-level identification attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
     SoftwareName(u'ASAPRatio', u'MS:1002574',
                  (u'A program in the TPP that calculates PSM, peptide, and'
                   u'protein-level abundances based on 2-channel isotope-labelled'

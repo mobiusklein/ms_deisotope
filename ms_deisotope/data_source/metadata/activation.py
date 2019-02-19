@@ -14,7 +14,7 @@ class ActivationInformation(object):
         The dissociation method used
     """
 
-    def __init__(self, method, energy, data=None):
+    def __init__(self, method, energy, data=None):  # pylint: disable=redefined-outer-name
         if data is None:
             data = dict()
         self.method = dissociation_methods_map.get(str(method).lower(), None)
@@ -30,7 +30,7 @@ class ActivationInformation(object):
             "data": self.data
         }
         return d
-    
+
     @classmethod
     def from_dict(cls, d):
         if 'methods' in d and 'energies' in d:
@@ -39,7 +39,7 @@ class ActivationInformation(object):
             return ActivationInformation(**d)
 
     @staticmethod
-    def _make_unknown_method(method):
+    def _make_unknown_method(method):  # pylint: disable=redefined-outer-name
         return DissociationMethod(UnknownDissociation.name, method, method, method, [method])
 
     def __repr__(self):
@@ -80,7 +80,7 @@ class ActivationInformation(object):
         return (self.method == other.method) and abs(self.energy - other.energy) < 1e-3
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
     def has_dissociation_type(self, dissociation_type):
         return self.method.is_a(dissociation_type)
@@ -100,18 +100,18 @@ class MultipleActivationInformation(ActivationInformation):
         A list of dissociation methods used. Parallel to :attr:`energies`
     """
 
-    def __init__(self, methods, energies, data=None):
+    def __init__(self, methods, energies, data=None):  # pylint: disable=super-init-not-called
         if data is None:
             data = dict()
         self.methods = []
-        for method in methods:
+        for method in methods:  # pylint: disable=redefined-outer-name
             self.methods.append(
                 dissociation_methods_map.get(
                     str(method).lower(), method))
         self.energies = list(energies)
         self.data = data
 
-    def _to_dict(self):
+    def to_dict(self):
         d = {
             "methods": [str(m) for m in self.methods],
             "energies": self.energies,

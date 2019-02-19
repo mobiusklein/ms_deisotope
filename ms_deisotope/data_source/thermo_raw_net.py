@@ -1,21 +1,30 @@
+'''Thermo RAW file reading implementation using the pure .NET
+RawFileReader library released in 2017.
+
+Depends upon the ``pythonnet`` project which provides the :mod:`clr`
+module, enabling nearly seamless interoperation with the Common Language
+Runtime.
+
+The public interface of this module should be identical to
+:mod:`ms_deisotope.data_source.thermo_raw`.
+'''
+
 import sys
 import os
-import numpy as np
 
 from collections import OrderedDict
 
+import numpy as np
+
+from pyteomics.auxiliary import unitfloat
 
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided, Scan,
     ActivationInformation, MultipleActivationInformation,
     IsolationWindow, ScanDataSource, ScanEventInformation,
     ScanAcquisitionInformation, ScanWindow, RandomAccessScanSource)
-
-from pyteomics.auxiliary import unitfloat
-
 from ms_deisotope.data_source.metadata.activation import (
     supplemental_term_map, dissociation_methods_map)
-
 from ms_deisotope.data_source._thermo_helper import (
     _InstrumentMethod, ThermoRawScanPtr, FilterString,
     _make_id, _id_template, _RawFileMetadataLoader, analyzer_map)
@@ -45,6 +54,19 @@ except NameError:
 
 
 def is_thermo_raw_file(path):
+    '''Detect whether or not the file referenced by ``path``
+    is a Thermo RAW file.
+
+    Parameters
+    ----------
+    path: :class:`str`
+        The path to test
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the file is a Thermo RAW file.
+    '''
     if not _test_dll_loaded():
         try:
             register_dll()
@@ -54,17 +76,48 @@ def is_thermo_raw_file(path):
         source = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
         source.SelectInstrument(Business.Device.MS, 1)
         return True
-    except (NullReferenceException):
+    except NullReferenceException:   # pylint: disable=broad-except
         return False
 
 
 def infer_reader(path):
+    '''If the file referenced by ``path`` is a Thermo RAW
+    file, return the callable (:class:`ThermoRawLoader`) to
+    open it, otherwise raise an exception.
+
+    Parameters
+    ----------
+    path: :class:`str`
+        The path to test
+
+    Returns
+    -------
+    :class:`type`:
+        The type to use to open the file
+
+    Raises
+    ------
+    :class:`ValueError`:
+        If the file is not a Thermo RAW file
+    '''
     if is_thermo_raw_file(path):
         return ThermoRawLoader
     raise ValueError("Not Thermo Raw File")
 
 
 def determine_if_available():
+    '''Checks whether or not the COM-based Thermo
+    RAW file reading feature is available.
+
+    This is done by attempting to instantiate the
+    COM-provided object, which queries the Windows
+    registry for the MSFileReader.dll.
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the feature is enabled.
+    '''
     try:
         return _register_dll([_DEFAULT_DLL_PATH])
     except (OSError, ImportError):
@@ -72,19 +125,34 @@ def determine_if_available():
 
 
 def _register_dll(search_paths=None):
+    '''Start the Common Language Runtime interop service by importing
+    the :mod:`clr` module from Pythonnet, and then populate the global
+    names referring to .NET entities, and finally attempt to locate the
+    ThermoRawFileReader DLLs by searching alogn ``search_paths``.
+
+    Parameters
+    ----------
+    search_paths: list
+        The paths to check along for the ThermoRawFileReader DLL bundle.
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the .NET library successfully loaded
+    '''
     if search_paths is None:
         search_paths = []
-    global _RawFileReader, Business, clr, NullReferenceException
-    global Marshal, IntPtr
+    global _RawFileReader, Business, clr, NullReferenceException   # pylint: disable=global-statement
+    global Marshal, IntPtr   # pylint: disable=global-statement
     if _test_dll_loaded():
         return True
     try:
-        import clr
-        from System import NullReferenceException
+        import clr  # pylint: disable=redefined-outer-name
+        from System import NullReferenceException  # pylint: disable=redefined-outer-name
         clr.AddReference("System.Runtime")
         clr.AddReference("System.Runtime.InteropServices")
-        from System import IntPtr
-        from System.Runtime.InteropServices import Marshal
+        from System import IntPtr  # pylint: disable=redefined-outer-name
+        from System.Runtime.InteropServices import Marshal  # pylint: disable=redefined-outer-name
     except ImportError:
         return False
     for path in search_paths:
@@ -95,14 +163,24 @@ def _register_dll(search_paths=None):
         except OSError:
             continue
         try:
-            import ThermoFisher.CommonCore.Data.Business as Business
-            import ThermoFisher.CommonCore.RawFileReader as _RawFileReader
+            import ThermoFisher.CommonCore.Data.Business as Business  # pylint: disable=redefined-outer-name
+            import ThermoFisher.CommonCore.RawFileReader as _RawFileReader  # pylint: disable=redefined-outer-name
         except ImportError:
             continue
     return _test_dll_loaded()
 
 
 def register_dll(search_paths=None):
+    '''Register the location of the Thermo RawFileReader DLL bundle with
+    the Common Language Runtime interop system and load the .NET symbols
+    used by this feature.
+
+    Parameters
+    ----------
+    search_paths: list
+        The paths to check along for the ThermoRawFileReader DLL bundle.
+
+    '''
     if search_paths is None:
         search_paths = []
     search_paths = list(search_paths)
@@ -123,8 +201,8 @@ def _copy_double_array(src):
     copying a .NET Array[Double] to a NumPy ndarray[np.float64] via a raw
     memory copy.
 
-    int_ptr_tp must be an integer type that can hold a pointer. On Python 2
-    this is `long`, and on Python 3 it is `int`.
+    ``int_ptr_tp`` must be an integer type that can hold a pointer. On Python 2
+    this is :class:`long`, and on Python 3 it is :class:`int`.
     '''
     dest = np.empty(len(src), dtype=np.float64)
     Marshal.Copy(
@@ -135,6 +213,9 @@ def _copy_double_array(src):
 
 
 class RawReaderInterface(ScanDataSource):
+    ''':class:`~.ScanDataSource` implementation for Thermo's RawFileReader API.
+    Not intended for direct instantiation.
+    '''
 
     def _scan_arrays(self, scan):
         scan_number = scan.scan_number + 1
@@ -188,7 +269,7 @@ class RawReaderInterface(ScanDataSource):
     def _trailer_values(self, scan):
         scan_number = scan.scan_number
         trailers = self._source.GetTrailerExtraInformation(scan_number + 1)
-        return OrderedDict(zip(map(lambda x: x.strip(":"), trailers.Labels), trailers.Values))
+        return OrderedDict(zip([label.strip(":") for label in trailers.Labels], trailers.Values))
 
     def _infer_precursor_scan_number(self, scan):
         precursor_scan_number = None
@@ -329,6 +410,10 @@ class RawReaderInterface(ScanDataSource):
 
 
 class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetadataLoader):
+    '''Reads scans from Thermo Fisher RAW files directly. Provides both iterative and
+    random access.
+    '''
+
     def __init__(self, source_file, _load_metadata=True, **kwargs):
         if not _test_dll_loaded():
             register_dll()
@@ -340,7 +425,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         self.make_iterator()
         self.initialize_scan_cache()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
-        self._last_scan_time = self.get_scan_by_index(self._source.RunHeaderEx.LastSpectrum - 1).scan_time
+        self._last_scan_time = self.get_scan_by_index(
+            self._source.RunHeaderEx.LastSpectrum - 1).scan_time
         self._index = self._pack_index()
 
         if _load_metadata:
@@ -373,6 +459,13 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     @property
     def index(self):
+        '''Accesses the scan index
+
+        Returns
+        -------
+        :class:`collections.OrderedDict`
+            Maps scan ID to index
+        '''
         return self._index
 
     def __len__(self):
@@ -382,6 +475,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return "ThermoRawLoader(%r)" % (self.source_file)
 
     def close(self):
+        '''Close the underlying file reader.
+        '''
         if self._source is not None:
             self._source.Close()
             self._source = None
@@ -395,14 +490,15 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     def _pack_index(self):
         index = OrderedDict()
-        for sn in range(self._source.RunHeaderEx.FirstSpectrum - 1, self._source.RunHeaderEx.LastSpectrum):
+        for sn in range(self._source.RunHeaderEx.FirstSpectrum - 1,
+                        self._source.RunHeaderEx.LastSpectrum):
             index[_make_id(sn)] = sn
         return index
 
     def _parse_method(self):
         try:
             return _InstrumentMethod(self._source.GetInstrumentMethod(0))
-        except NullReferenceException:
+        except NullReferenceException:   # pylint: disable=broad-except
             return _InstrumentMethod('')
 
     def _scan_time_to_scan_number(self, scan_time):
