@@ -9,9 +9,16 @@ import click
 
 from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
+
+from ms_deisotope.clustering.scan_clustering import (
+    iterative_clustering, ScanClusterWriter)
+
 from ms_deisotope.data_source import _compression
 from ms_deisotope.data_source.scan import RandomAccessScanSource
 from ms_deisotope.data_source.metadata.file_information import SourceFile
+
+from ms_deisotope.output import ProcessedMzMLDeserializer
+
 from ms_deisotope.tools import conversion
 from ms_deisotope.tools.utils import processes_option
 
@@ -264,6 +271,52 @@ def precursor_clustering(path, grouping_error=2e-5):
     for centroid, obs in centroids:
         click.echo("%f: %d" % (centroid, len(obs)))
     click.echo("MS/MS Precursor Mass Std. Dev.: %f Da" % (math.sqrt(acc / nt),))
+
+
+@cli.command("spectrum-clustering", short_help=("Cluster MSn spectra in a mass spectrometry data file using"
+                                                " cosine similarity"))
+@click.argument('paths', type=click.Path(exists=True), nargs=-1)
+@click.option("-m", "--precursor-error-tolerance", type=float, default=1e-5)
+@click.option("-t", "--similarity-threshold", "similarity_thresholds", multiple=True, type=float)
+@click.option("-o", "--output", "output_path", type=click.Path(writable=True, file_okay=True, dir_okay=False),
+              required=False)
+@click.option("-D", "--deconvoluted", is_flag=True, default=False, help=(
+    "Whether to assume the spectrum is deconvoluted or not"))
+def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
+                        deconvoluted=False):
+    if not similarity_thresholds:
+        similarity_thresholds = [0.1, 0.4, 0.7]
+    else:
+        similarity_thresholds = sorted(similarity_thresholds)
+    if output_path is None:
+        output_path = "-"
+    msn_scans = []
+    n_spectra = 0
+
+    with click.progressbar(paths, label="Indexing", item_show_func=str) as bar:
+        key_seqs = []
+        for path in bar:
+            if deconvoluted:
+                reader = ProcessedMzMLDeserializer(path)
+                index = reader.extended_index
+            else:
+                reader, index = _ensure_metadata_index(path)
+            key_seqs.append((reader, index))
+            n_spectra += len(index.msn_ids)
+
+    with click.progressbar(label="Loading Spectra", length=n_spectra,
+                           item_show_func=str) as bar:
+        for reader, index in key_seqs:
+            for i in index.msn_ids:
+                bar.current_item = i
+                bar.update(1)
+                msn_scans.append(reader.get_scan_by_id(i).pick_peaks())
+    clusters = iterative_clustering(
+        msn_scans, precursor_error_tolerance, similarity_thresholds)
+    with click.open_file(output_path, mode='w') as outfh:
+        writer = ScanClusterWriter(outfh)
+        for cluster in clusters:
+            writer.save(cluster)
 
 
 if _compression.has_idzip:

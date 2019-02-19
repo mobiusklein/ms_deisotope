@@ -7,16 +7,14 @@ from ms_deisotope.clustering import scan_clustering
 
 from ms_deisotope.test.common import datafile
 
-import idzip
 
-
-@unittest.skip("Long Test")
+# @unittest.skip("Long Test")
 class TestScanClustering(unittest.TestCase):
     path = datafile("AGP_tryptic_300ng_2microscans_glycoproteomics_nCE_27-30.preprocessed.mzML.gz")
 
     @property
     def reader(self):
-        reader = ProcessedMzMLDeserializer(idzip.open(self.path))
+        reader = ProcessedMzMLDeserializer(get_opener(self.path))
         return reader
 
     def load_msms_scans(self, reader):
@@ -31,4 +29,4 @@ class TestScanClustering(unittest.TestCase):
         reader = self.reader
         scans = self.load_msms_scans(reader)
         clusters = self.cluster_scans(scans)
-        assert len(clusters) == 1122
+        assert len(clusters) == 1123
