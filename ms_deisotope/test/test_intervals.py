@@ -56,5 +56,34 @@ class TestIntervals(unittest.TestCase):
         assert iv2.contains_interval(iv10)
 
 
+class TestIntervalTreeNode(unittest.TestCase):
+    def make_intervals(self):
+        intervals = [
+            Interval(10, 15),
+            Interval(7, 12),
+            Interval(22, 36),
+            Interval(3, 5),
+            Interval(4, 9)
+        ]
+        return intervals
+
+    def test_build(self):
+        # generate many redundant intervals to force
+        # the interval tree to branch out.
+        intervals = self.make_intervals() * 30
+        ivt = IntervalTreeNode.build(intervals)
+
+        assert ivt.start == 3
+        assert ivt.end == 36
+
+        assert ivt.left is not None
+        assert ivt.left.start == 3
+        assert ivt.left.end == 12
+
+        assert ivt.right is not None
+        assert ivt.right.end == 36
+        assert ivt.right.start == 22
+
+
 if __name__ == '__main__':
     unittest.main()
