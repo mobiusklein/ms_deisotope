@@ -11,6 +11,8 @@ from ms_deisotope.data_source.common import (
     IsolationWindow, ScanDataSource, ScanEventInformation,
     ScanAcquisitionInformation, ScanWindow, RandomAccessScanSource)
 
+from pyteomics.auxiliary import unitfloat
+
 from ms_deisotope.data_source.metadata.activation import (
     supplemental_term_map, dissociation_methods_map)
 
@@ -33,6 +35,13 @@ Business = None
 _RawFileReader = None
 clr = None
 NullReferenceException = Exception
+Marshal = None
+IntPtr = None
+
+try:
+    int_ptr_tp = long
+except NameError:
+    int_ptr_tp = int
 
 
 def is_thermo_raw_file(path):
@@ -66,11 +75,16 @@ def _register_dll(search_paths=None):
     if search_paths is None:
         search_paths = []
     global _RawFileReader, Business, clr, NullReferenceException
+    global Marshal, IntPtr
     if _test_dll_loaded():
         return True
     try:
         import clr
         from System import NullReferenceException
+        clr.AddReference("System.Runtime")
+        clr.AddReference("System.Runtime.InteropServices")
+        from System import IntPtr
+        from System.Runtime.InteropServices import Marshal
     except ImportError:
         return False
     for path in search_paths:
@@ -103,14 +117,31 @@ def _test_dll_loaded():
     return _RawFileReader is not None
 
 
+def _copy_double_array(src):
+    '''A quick and dirty implementation of the fourth technique shown in
+    https://mail.python.org/pipermail/pythondotnet/2014-May/001525.html for
+    copying a .NET Array[Double] to a NumPy ndarray[np.float64] via a raw
+    memory copy.
+
+    int_ptr_tp must be an integer type that can hold a pointer. On Python 2
+    this is `long`, and on Python 3 it is `int`.
+    '''
+    dest = np.empty(len(src), dtype=np.float64)
+    Marshal.Copy(
+        src, 0,
+        IntPtr.__overloads__[int_ptr_tp](dest.__array_interface__['data'][0]),
+        len(src))
+    return dest
+
+
 class RawReaderInterface(ScanDataSource):
 
     def _scan_arrays(self, scan):
         scan_number = scan.scan_number + 1
         stats = self._source.GetScanStatsForScanNumber(scan_number)
         segscan = self._source.GetSegmentedScanFromScanNumber(scan_number, stats)
-        mzs = np.array(list(segscan.Positions), dtype=np.float64)
-        inten = np.array(list(segscan.Intensities), dtype=np.float64)
+        mzs = _copy_double_array(segscan.Positions)
+        inten = _copy_double_array(segscan.Intensities)
         return mzs, inten
 
     def _scan_id(self, scan):
@@ -249,9 +280,12 @@ class RawReaderInterface(ScanDataSource):
     def _acquisition_information(self, scan):
         fline = self._filter_string(scan)
         event = self._get_scan_event(scan)
+        trailer_extras = self._trailer_values(scan)
         traits = {
             'preset scan configuration': event,
             'filter string': fline,
+            'ion injection time': unitfloat(
+                trailer_extras.get('Ion Injection Time (ms)', 0.0), 'millisecond')
         }
         event = ScanEventInformation(
             self._scan_time(scan),
@@ -271,7 +305,7 @@ class RawReaderInterface(ScanDataSource):
         fline = self._filter_string(scan)
         trailer_extras = self._trailer_values(scan)
         annots = {
-            "filter_string": fline,
+            "filter string": fline,
         }
         microscans = trailer_extras.get("Micro Scan Count")
         if microscans is not None:
@@ -396,7 +430,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
             if not package.validate(self):
-                raise KeyError(index)
+                raise IndexError(index)
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan

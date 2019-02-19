@@ -1,11 +1,12 @@
 # pragma: no cover
-import re
 import warnings
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 
 import logging
 
 import numpy as np
+
+from pyteomics.auxiliary import unitfloat
 
 from ms_deisotope.data_source.common import (
     ScanDataSource, RandomAccessScanSource,
@@ -249,20 +250,32 @@ class ThermoRawDataInterface(ScanDataSource):
         except KeyError:
             return None
 
+    def _trailer_values(self, scan):
+        trailer_extras = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        return trailer_extras
+
     def _acquisition_information(self, scan):
         fline = self._filter_string(scan)
-
+        event = self._get_scan_event(scan)
+        trailer_extras = self._trailer_values(scan)
+        traits = {
+            'preset scan configuration': event,
+            'filter string': fline,
+            'ion injection time': unitfloat(
+                trailer_extras.get('Ion Injection Time (ms)', 0.0), 'millisecond')
+        }
         event = ScanEventInformation(
             self._scan_time(scan),
             window_list=[ScanWindow(
-                fline.get("scan_window")[0], fline.get("scan_window")[1])])
+                fline.get("scan_window")[0], fline.get("scan_window")[1])],
+            traits=traits)
         return ScanAcquisitionInformation("no combination", [event])
 
     def _annotations(self, scan):
         fline = self._filter_string(scan)
         trailer_extras = self._source.GetTrailerExtraForScanNum(scan.scan_number)
         annots = {
-            "filter_string": fline,
+            "filter string": fline,
         }
         microscans = trailer_extras.get("Micro Scan Count")
         if microscans is not None:
@@ -404,7 +417,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
             if not package.validate(self):
-                raise KeyError(index)
+                raise IndexError(index)
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan
