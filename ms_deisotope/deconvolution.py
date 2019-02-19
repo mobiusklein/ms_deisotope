@@ -299,6 +299,8 @@ class DeconvoluterBase(Base):
     merge_isobaric_peaks = True
     minimum_intensity = 5.
     verbose = False
+    peaklist = None
+    scorer = None
 
     def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
                  minimum_intensity=5., *args, **kwargs):

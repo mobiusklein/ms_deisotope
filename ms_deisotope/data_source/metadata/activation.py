@@ -23,6 +23,21 @@ class ActivationInformation(object):
         self.energy = energy
         self.data = data
 
+    def to_dict(self):
+        d = {
+            "method": str(self.method),
+            "energy": self.energy,
+            "data": self.data
+        }
+        return d
+    
+    @classmethod
+    def from_dict(cls, d):
+        if 'methods' in d and 'energies' in d:
+            return MultipleActivationInformation(**d)
+        else:
+            return ActivationInformation(**d)
+
     @staticmethod
     def _make_unknown_method(method):
         return DissociationMethod(UnknownDissociation.name, method, method, method, [method])
@@ -95,6 +110,14 @@ class MultipleActivationInformation(ActivationInformation):
                     str(method).lower(), method))
         self.energies = list(energies)
         self.data = data
+
+    def _to_dict(self):
+        d = {
+            "methods": [str(m) for m in self.methods],
+            "energies": self.energies,
+            "data": self.data
+        }
+        return d
 
     @property
     def method(self):
