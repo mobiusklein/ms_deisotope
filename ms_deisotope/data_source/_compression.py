@@ -8,9 +8,11 @@ GzipFile = _GzipFile = gzip.GzipFile
 try:
     import idzip
     GzipFile = idzip.IdzipFile
+    WRITE_BUFFER_SIZE = idzip.MAX_MEMBER_SIZE
     has_idzip = True
 except (ImportError, AttributeError):
     GzipFile = gzip.GzipFile
+    WRITE_BUFFER_SIZE = 2 ** 16
     has_idzip = False
 
 
