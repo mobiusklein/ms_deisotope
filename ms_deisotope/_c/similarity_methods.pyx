@@ -21,6 +21,48 @@ ctypedef fused peak_collection:
     object
 
 
+cdef struct bin_cell:
+    size_t start
+    size_t end
+    double* bins
+    size_t size
+    int modified
+
+
+cdef struct bin_list:
+    bin_cell* bins
+    size_t size
+
+
+cdef int free_bin_cell(bin_cell* cell):
+    if cell.bins != NULL:
+        free(cell.bins)
+    free(cell)
+
+
+cdef int initialize_bin_list(bin_list* bl, size_t bin_count, size_t bin_size):
+    cdef:
+        size_t i, j, coord
+
+    bl.size = bin_count
+    bl.bins = <bin_cell*>malloc(sizeof(bin_cell) * bin_count)
+    if bl.bins == NULL:
+        return 1
+    coord = 0
+    for i in range(bin_count):
+        bl.bins[i].start = coord
+        coord += bin_size
+        bl.bins[i].end = coord
+        bl.bins[i].modified = 0
+        bl.bins[i].size = bin_size
+        bl.bins[i].bins = <double*>malloc(sizeof(double) * bin_size)
+        if bl.bins[i].bins == NULL:
+            return 2
+        for j in range(bin_size):
+            bl.bins[i].bins[j] = 0.0
+    return 0
+
+
 cpdef enum SimilarityMetrics:
     dot_product
     normalized_dot_product
@@ -57,6 +99,13 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         double *bin_b
         long i, n, k, index
 
+    n_a = 0
+    n_b = 0
+    a = 0
+    b = 0
+    z = 0
+
+    # Determine maximum value
     hi = 0
     if peak_collection is PeakIndex:
         peak = peak_set_a.peaks.getitem(peak_set_a.get_size() - 1)
@@ -83,6 +132,8 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         hi = peak.mz
         peak = peak_set_b._mz_ordered[-1]
         hi = max(peak.mz, hi)
+    
+    # Calculate bin array size and allocate memory
     scaler = 10 ** precision
     k = <long>((hi * scaler) + 1)
     bin_a = <double*>malloc(k * sizeof(double))
@@ -92,6 +143,8 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         return -1
     for i in range(k):
         bin_a[i] = bin_b[i] = 0
+
+    # Fill bins
     if peak_collection is object:
         n = len(peak_set_a)
     else:
@@ -104,7 +157,6 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         else:
             peak = peak_set_a.getitem(i)
         index = int(peak.mz * scaler)
-        assert index  < k
         bin_a[index] += peak.intensity
 
     if peak_collection is object:
@@ -119,12 +171,9 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         else:
             peak = peak_set_b.getitem(i)
         index = int(peak.mz * scaler)
-        assert index  < k
         bin_b[index] += peak.intensity
 
-    n_a = 0
-    n_b = 0
-    z = 0
+    # Calculate dot product and normalizers in parallel
     n = k
     for i in prange(n, nogil=True, schedule='static', num_threads=4):
         a = bin_a[i]
@@ -132,6 +181,7 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         n_a += a * a
         n_b += b * b
         z += a * b
+
     free(bin_a)
     free(bin_b)
     n_ab = sqrt(n_a) * sqrt(n_b)

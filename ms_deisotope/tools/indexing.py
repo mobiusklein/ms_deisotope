@@ -3,9 +3,9 @@ import math
 
 from collections import Counter
 
-import ms_deisotope
-
 import click
+
+import ms_deisotope
 
 from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
@@ -13,7 +13,8 @@ from ms_deisotope.feature_map import scan_interval_tree
 from ms_deisotope.clustering.scan_clustering import (
     iterative_clustering, ScanClusterWriter)
 
-from ms_deisotope.data_source import _compression
+from ms_deisotope.data_source import (
+    _compression, ScanProxyContext, MSFileLoader)
 from ms_deisotope.data_source.scan import RandomAccessScanSource
 from ms_deisotope.data_source.metadata.file_information import SourceFile
 
@@ -45,7 +46,7 @@ def describe(path):
         return -1
     click.echo("File Format: %s" % (sf.file_format, ))
     click.echo("ID Format: %s" % (sf.id_format, ))
-    reader = ms_deisotope.MSFileLoader(path)
+    reader = MSFileLoader(path)
     if isinstance(reader, RandomAccessScanSource):
         click.echo("Format Supports Random Access: True")
         first_scan = reader[0]
@@ -115,7 +116,7 @@ def byte_index(paths):
 @processes_option
 def metadata_index(paths, processes=4):
     for path in paths:
-        reader = ms_deisotope.MSFileLoader(path)
+        reader = MSFileLoader(path)
         try:
             fn = reader.prebuild_byte_offset_file
             if not reader.source._check_has_byte_offset_file():
@@ -163,7 +164,7 @@ def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3.,
 
     def run():
         for path in paths:
-            reader = ms_deisotope.MSFileLoader(path)
+            reader = MSFileLoader(path)
             chunk_out_of_order = quick_index.run_task_in_chunks(
                 reader, processes, processes * 4, task=interval_extraction)
             for chunk in chunk_out_of_order:
@@ -310,7 +311,12 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
             for i in index.msn_ids:
                 bar.current_item = i
                 bar.update(1)
-                msn_scans.append(reader.get_scan_by_id(i).pick_peaks())
+                scan = reader.get_scan_by_id(i)
+                if scan.peak_set is None:
+                    scan.pick_peaks()
+                if hasattr(scan, 'pack'):
+                    scan = scan.pack()
+                msn_scans.append(scan)
     clusters = iterative_clustering(
         msn_scans, precursor_error_tolerance, similarity_thresholds)
     with click.open_file(output_path, mode='w') as outfh:

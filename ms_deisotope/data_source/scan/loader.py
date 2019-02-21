@@ -577,19 +577,35 @@ class ScanProxyContext(object):
         A strong-reference maintaining cache from scan ID to :class:`ScanBase`
     cache_size : int
         The number of scans to keep strong references to.
-    loader : :class:`RandomAccessScanSource`
+    source : :class:`RandomAccessScanSource`
         The source to load scans from.
     """
 
-    def __init__(self, loader, cache_size=24):
-        self.loader = loader
+    def __init__(self, source, cache_size=24):
+        self.source = source
         self.cache_size = cache_size
         self.cache = OrderedDict()
 
     def get_scan_by_id(self, scan_id):
+        '''Retrieve a real scan by its identifier.
+
+        This method first checks the in-memory cache for the scan identifier
+        and returns it if already loaded. If not, the scan is retrieved from
+        :attr:`source`, usually from disk and saved to the cache using
+        :meth:`_save_scan`. This may cause the cache eviction.
+
+        Parameters
+        ----------
+        scan_id: :class:`str`
+            The scan to retrieve
+        
+        Returns
+        -------
+        :class:`~.Scan`
+        '''
         if scan_id in self.cache:
             return self.cache[scan_id]
-        scan = self.loader.get_scan_by_id(scan_id)
+        scan = self.source.get_scan_by_id(scan_id)
         self._save_scan(scan_id, scan)
         return scan
 
@@ -627,12 +643,20 @@ class proxyproperty(object):
         The name of the attribute to retrieve from the wrapped scan
     '''
 
-    def __init__(self, name):
+    def __init__(self, name, caching=False):
         self.name = name
+        self.caching = caching
 
-    def __get__(self, obj, cls):
-        obj._require_scan()
-        return getattr(obj.scan, self.name)
+    def __get__(self, instance, owner):
+        instance._require_scan()
+        if self.caching:
+            try:
+                value = getattr(instance, "_" + self.name)
+            except AttributeError:
+                value = getattr(instance.scan, self.name)
+                setattr(instance, "_" + self.name, value)
+                return value
+        return getattr(instance.scan, self.name)
 
 
 class ScanProxy(ScanBase):
@@ -657,20 +681,23 @@ class ScanProxy(ScanBase):
         "title",
         "ms_level",
         "scan_time",
-        "precursor_information",
         "index",
         "is_profile",
         "polarity",
         "activation",
         "acquisition_information",
         "isolation_window",
-        "instrument_configuration"
+        "instrument_configuration",
     ]
 
     def __init__(self, scan_id, context):
         self._target_scan_id = scan_id
         self.context = context
         self.scan = None
+    
+    @property
+    def source(self):
+        return self.context.source
 
     def _clear_scan(self, *args, **kwargs):
         self.scan = None
@@ -680,6 +707,8 @@ class ScanProxy(ScanBase):
             self.scan = weakref.proxy(
                 self.context.get_scan_by_id(self._target_scan_id),
                 self._clear_scan)
+
+    precursor_information = proxyproperty("precursor_information", True)
 
 
 for name in ScanProxy._names:

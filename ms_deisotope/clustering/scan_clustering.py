@@ -1,11 +1,16 @@
+'''Implements algorithms for clustering scans by
+spectral similarity.
+'''
+
 import operator
 import functools
 import bisect
 import json
 
+from ms_deisotope.task import LogUtilsMixin
+
 from .similarity_methods import peak_set_similarity
 
-from ms_deisotope.task import LogUtilsMixin
 
 peak_set_getter = operator.attrgetter("peak_set")
 deconvoluted_peak_set_getter = operator.attrgetter("deconvoluted_peak_set")
@@ -79,12 +84,23 @@ class SpectrumCluster(object):
 
 
 class SpectrumClusterCollection(object):
+    '''A sorted :class:`~.Sequence` of :class:`SpectrumCluster` instances
+    that supports searching by precursor mass.
+    '''
     def __init__(self, clusters=None):
         if clusters is None:
             clusters = []
         self.clusters = list(clusters)
 
     def add(self, cluster):
+        '''Add a new :class:`SpectrumCluster` to the collection,
+        preserving sorted order.
+
+        Parameters
+        ----------
+        cluster: :class:`SpectrumCluster`
+            The cluster to add
+        '''
         bisect.insort(self.clusters, cluster)
 
     def __getitem__(self, i):
@@ -147,38 +163,47 @@ class SpectrumClusterCollection(object):
         return 0, 0, 0
 
     def find(self, mass, error_tolerance=1e-5):
-        target_ix, lo_ix, hi_ix = self._binary_search(mass, error_tolerance)
+        '''Finds the cluster whose precursor mass is closest to
+        ``mass`` within ``error_tolerance`` ppm error.
+
+        Parameters
+        ----------
+        mass: :class:`float`
+            The mass to search for.
+        error_tolerance: :class:`float`
+            The PPM error tolerance to use. Defaults to 1e-5.
+
+        Returns
+        -------
+        :class:`SpectrumCluster` or :const:`None`
+        '''
+        target_ix, _, _ = self._binary_search(mass, error_tolerance)
         target = self[target_ix]
         if abs(target.neutral_mass - mass) / mass > error_tolerance:
             return None
         return target
 
     def find_all(self, mass, error_tolerance=1e-5):
-        target_ix, lo_ix, hi_ix = self._binary_search(mass, error_tolerance)
+        '''Finds all clusters whose precursor mass is within ``error_tolerance``
+        ppm of ``mass``.
+
+        Parameters
+        ----------
+        mass: :class:`float`
+            The mass to search for.
+        error_tolerance: :class:`float`
+            The PPM error tolerance to use. Defaults to 1e-5.
+
+        Returns
+        -------
+        :class:`list`
+        '''
+        _, lo_ix, hi_ix = self._binary_search(mass, error_tolerance)
         result = [
             target for target in self[lo_ix:hi_ix]
             if abs(target.neutral_mass - mass) / mass <= error_tolerance
         ]
         return result
-
-
-def binsearch_simple(array, x):
-    n = len(array)
-    lo = 0
-    hi = n
-
-    while hi != lo:
-        mid = (hi + lo) // 2
-        y = array[mid].neutral_mass
-        err = y - x
-        # Do refinement in :func:`cluster_scans`
-        if hi - lo == 1:
-            return mid
-        elif err > 0:
-            hi = mid
-        else:
-            lo = mid
-    return 0
 
 
 class ScanClusterBuilder(LogUtilsMixin):
@@ -224,6 +249,24 @@ class ScanClusterBuilder(LogUtilsMixin):
         self.minimum_similarity = minimum_similarity
         self.peak_getter = peak_getter
 
+    def _binsearch_simple(self, x):
+        n = len(self)
+        lo = 0
+        hi = n
+
+        while hi != lo:
+            mid = (hi + lo) // 2
+            y = self[mid].neutral_mass
+            err = y - x
+            # Do refinement in `find_best_cluster_for_scan`
+            if hi - lo == 1:
+                return mid
+            elif err > 0:
+                hi = mid
+            else:
+                lo = mid
+        return 0
+
     def peak_set_similarity(self, scan_i, scan_j):
         peak_set_a = self.peak_getter(scan_i)
         peak_set_b = self.peak_getter(scan_j)
@@ -233,11 +276,11 @@ class ScanClusterBuilder(LogUtilsMixin):
     def find_best_cluster_for_scan(self, scan):
         best_cluster = None
         best_similarity = 0.0
-
-        if len(self) == 0:
+        n = len(self.clusters)
+        if n == 0:
             return best_cluster
 
-        center_i = binsearch_simple(self.clusters, scan.precursor_information.neutral_mass)
+        center_i = self._binsearch_simple(scan.precursor_information.neutral_mass)
         i = center_i
 
         while i >= 0:
@@ -251,7 +294,6 @@ class ScanClusterBuilder(LogUtilsMixin):
                 best_similarity = similarity
                 best_cluster = cluster
 
-        n = len(self.clusters)
         i = center_i + 1
         while i < n:
             cluster = self.clusters[i]

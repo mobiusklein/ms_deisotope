@@ -49,7 +49,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         from it.
     """
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):  # pylint: disable=super-on-old-class
         inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
         inst._id_map = {}
         if inst.precursor is not None:
@@ -970,7 +970,7 @@ class Scan(ScanBase):
         if index_interval is not None:
             before = []
             current_index = self.index
-            for i in range(index_interval):
+            for _ in range(index_interval):
                 next_scan = self.source.find_previous_ms1(current_index)
                 if next_scan is None:
                     break
@@ -979,7 +979,7 @@ class Scan(ScanBase):
             before = before[::-1]
             after = []
             current_index = self.index
-            for i in range(index_interval):
+            for _ in range(index_interval):
                 try:
                     next_scan = self.source.find_next_ms1(current_index)
                 except ValueError:
