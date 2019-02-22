@@ -1421,7 +1421,6 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         list of :class:`~DeconvolutedPeak`
             The solved deconvolution solutions
         """
-        # if cluster.start <= 1354 and cluster.end >= 1356:
         fit = cluster[0]
         score, charge, eid, tid = fit
         rep_eid = drop_placeholders(eid)

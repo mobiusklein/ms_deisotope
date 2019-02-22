@@ -280,10 +280,23 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
             return self._solution_map[fit]
 
     def find_solution_for(self, peak):
+        '''Find the best isotopic pattern fit which includes ``peak``
+        or is close enough to ``peak`` that it might have been selected
+        instead.
+
+        Parameters
+        ----------
+        peak: :class:`~.FittedPeak`
+            The peak to find the best fit for.
+
+        Returns
+        -------
+        :class:`~.DeconvolutedPeak`
+        '''
         peak_node = self.nodes[peak.index]
         tree = self.interval_tree
         clusters = tree.contains_point(peak.mz)
-        if len(clusters) == 0:
+        if not clusters:
             return self._find_fuzzy_solution_for(peak)
         best_fits = [cluster.disjoint_best_fits() for cluster in clusters]
 
@@ -297,28 +310,60 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         # Extract only fits that use the query peak
         common = tuple(set(best_fits) & set(peak_node.links))
 
-        if len(common) > 1 or len(common) == 0:
+        used_common = False
+        if len(common) > 1 or not common:
             if len(common) > 1:
                 self.debug("There is not exactly one solution for %r (%d)" % (peak, len(common)))
             # If there were no fits for this peak, then it may be that this peak
             # was not included in a fit. Try to find the nearest solution.
-            i = 0
-            err = float('inf')
-            for j, case in enumerate(best_fits):
-                case_err = abs(case.monoisotopic_peak.mz - peak.mz)
-                if self.maximize:
-                    case_err /= case.score
-                else:
-                    case_err /= (1. / (case.score + 1e-6))
-                if case_err < err:
-                    i = j
-                    err = case_err
-            fit = best_fits[i]
+            fit = self._find_best_fit_by_weighted_distance(peak, best_fits)
         else:
+            used_common = True
             fit = common[0]
-        return self._solution_map[fit]
+        try:
+            return self._solution_map[fit]
+        except KeyError:
+            self.debug(
+                "The closest common fit was not chosen. The closest fit was common? %r" % (
+                    used_common))
+            candidates = list(set(best_fits) & set(self._solution_map))
+            fit = self._find_best_fit_by_weighted_distance(peak, candidates)
+            return self._solution_map[fit]
+
+    def _find_best_fit_by_weighted_distance(self, peak, candidates):
+        '''Locate the fit that is nearest to ``peak`` in m/z space, weighted by
+        the score of the fit such that given two fits with the same m/z, the better
+        scoring fit is chosen.
+
+        Parameters
+        ----------
+        peak: :class:`~.FittedPeak`
+            The peak to find solutions with reference to.
+        candidates: :class:`list`
+            A set of candidate :class:`~.IsotopicFitRecord` to compare between
+
+        Returns
+        -------
+        :class:`~.IsotopicFitRecord`
+        '''
+        i = 0
+        err = float('inf')
+        for j, case in enumerate(candidates):
+            case_err = abs(case.monoisotopic_peak.mz - peak.mz)
+            if self.maximize:
+                case_err /= case.score
+            else:
+                case_err /= (1. / (case.score + 1e-6))
+            if case_err < err:
+                i = j
+                err = case_err
+        fit = candidates[i]
+        return fit
 
     def drop_fit_dependence(self, fit_record):
+        '''Remove this fit from the graph, deleting all
+        hyper-edges.
+        '''
         for node in self.nodes_for(fit_record):
             try:
                 del node.links[fit_record]
@@ -326,6 +371,13 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
                 pass
 
     def claimed_nodes(self):
+        '''Return all nodes with at least one
+        fit connecting it.
+
+        Returns
+        -------
+        :class:`set`
+        '''
         peaks = set()
         for fit in self.dependencies:
             for peak in fit.experimental:
@@ -335,6 +387,10 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         return peaks
 
     def drop_superceded_fits(self):
+        '''Drop all fits where there is a better fit
+        using the first fit's monoisotopic peak at the
+        same charge state.
+        '''
         suppressed = []
         keep = []
 
@@ -364,6 +420,9 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         self.dependencies = set(keep)
 
     def best_exact_fits(self):
+        '''For each distinct group of experimental peaks, retain only
+        the best scoring fit using exactly those peaks.
+        '''
         by_peaks = defaultdict(list)
         best_fits = []
         for fit in self.dependencies:
@@ -376,6 +435,9 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         self.dependencies = set(best_fits)
 
     def drop_gapped_fits(self, n=None):
+        '''Discard any fit with more missed peaks than
+        :attr:`max_missed_peaks`.
+        '''
         if n is None:
             n = self.max_missed_peaks
         keep = []

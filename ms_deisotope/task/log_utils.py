@@ -160,6 +160,7 @@ class LogUtilsMixin(object):
 
     def ipc_logger(self, handler=None):
         if handler is None:
-            def handler(message):
+            def default_handler(message):
                 self.log(message)
+            handler = default_handler
         return MessageSpooler(handler)
