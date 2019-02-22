@@ -101,6 +101,11 @@ def describe(path):
 @cli.command("byte-index", short_help='Build an external byte offset index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 def byte_index(paths):
+    '''Build an external byte offset index for a mass spectrometry data file, saving time when
+    opening the file with indexing enabled.
+
+    Supported Formats: mzML, mzXML
+    '''
     for path in paths:
         reader = ms_deisotope.MSFileLoader(path, use_index=False)
         try:
@@ -115,6 +120,13 @@ def byte_index(paths):
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 @processes_option
 def metadata_index(paths, processes=4):
+    '''Build an external scan metadata index for a mass spectrometry data file
+
+    This extended index is saved in a separate JSON file that can be loaded with
+    :class:`~.ExtendedScanIndex`. It includes the scan time of all scans, the precursor
+    mass of MSn scans, as well as the relationships between precursor and product ion
+    scans, as well as other details. See :class:`~.ExtendedScanIndex` for more information
+    '''
     for path in paths:
         reader = MSFileLoader(path)
         try:
@@ -189,7 +201,7 @@ def _ensure_metadata_index(path):
     name = path
     index_file_name = quick_index.ExtendedScanIndex.index_file_name(name)
     if not os.path.exists(index_file_name):
-        click.secho("Building Index", fg='yellow', err=True)
+        click.secho("Building Index For %s" % (path, ), fg='yellow', err=True)
         index = quick_index.ExtendedScanIndex()
         reader.reset()
         for bunch in reader:
@@ -236,18 +248,18 @@ def binsearch(array, x):
 @cli.command("precursor-clustering", short_help='Cluster precursor masses in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def precursor_clustering(path, grouping_error=2e-5):
-    reader, index = _ensure_metadata_index(path)
+    _, index = _ensure_metadata_index(path)
     points = []
-    for msn_id, msn_info in index.msn_ids.items():
+    for _, msn_info in index.msn_ids.items():
         points.append((msn_info.neutral_mass, msn_info.intensity))
     points.sort(key=lambda x: x[1], reverse=1)
     centroids = []
-    if len(points) == 0:
+    if not points:
         click.secho("No MS/MS detected", fg='yellow', err=True)
         return
 
     for point in points:
-        if len(centroids) == 0:
+        if not centroids:
             centroids.append((point[0], [point]))
             continue
         i = binsearch(centroids, point[0])
@@ -294,9 +306,9 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
     msn_scans = []
     n_spectra = 0
 
-    with click.progressbar(paths, label="Indexing", item_show_func=str) as bar:
+    with click.progressbar(paths, label="Indexing", item_show_func=lambda x: str(x) if x else '') as progbar:
         key_seqs = []
-        for path in bar:
+        for path in progbar:
             if deconvoluted:
                 reader = ProcessedMzMLDeserializer(path)
                 index = reader.extended_index
@@ -306,17 +318,20 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
             n_spectra += len(index.msn_ids)
 
     with click.progressbar(label="Loading Spectra", length=n_spectra,
-                           item_show_func=str) as bar:
+                           item_show_func=lambda x: str(x) if x else '') as progbar:
         for reader, index in key_seqs:
+            proxy_context = ScanProxyContext(reader)
+            pinfo_map = {
+                pinfo.product_scan_id: pinfo for pinfo in
+                index.get_precursor_information()
+            }
             for i in index.msn_ids:
-                bar.current_item = i
-                bar.update(1)
-                scan = reader.get_scan_by_id(i)
-                if scan.peak_set is None:
-                    scan.pick_peaks()
-                if hasattr(scan, 'pack'):
-                    scan = scan.pack()
+                progbar.current_item = i
+                progbar.update(1)
+                scan = proxy_context(i)
+                scan.precursor_information = pinfo_map[i]
                 msn_scans.append(scan)
+    click.echo("Begin Clustering", err=True)
     clusters = iterative_clustering(
         msn_scans, precursor_error_tolerance, similarity_thresholds)
     with click.open_file(output_path, mode='w') as outfh:

@@ -323,12 +323,39 @@ class ScanClusterBuilder(LogUtilsMixin):
     def __getitem__(self, i):
         return self.clusters[i]
 
+    def _get_tic(self, scan):
+        return sum(p.intensity for p in self.peak_getter(scan))
+
     @classmethod
     def cluster_scans(cls, scans, precursor_error_tolerance=1e-5, minimum_similarity=0.1,
-                      peak_getter=None):
+                      peak_getter=None, sort=True):
+        '''Cluster scans by precursor mass and peak set similarity.
+
+        Parameters
+        ----------
+        scans: :class:`Iterable`
+            An iterable of :class:`Scan`-like objects
+        precursor_error_tolerance: :class:`float`
+            The PPM mass accuracy threshold for precursor mass differences to
+            tolerate when deciding whether to compare spectra. Defaults to 1e-5.
+        minimum_similarity: :class:`float`
+            The minimum peak set similarity required to consider adding a spectrum
+            to a cluster. Defaults to 0.1
+        peak_getter: :class:`Callable`
+            A callable object used to get peaks from elements of ``scans``.
+        sort: :class:`bool`
+            Whether or not to sort spectra by their total ion current before clustering.
+        '''
         self = cls([], precursor_error_tolerance, minimum_similarity, peak_getter)
-        scans = sorted(scans, key=lambda x: sum(p.intensity for p in self.peak_getter(x)), reverse=True)
-        for scan in scans:
+        if sort:
+            if len(scans) > 100:
+                self.log("Sorting Scans By TIC")
+            scans = sorted(scans, key=self._get_tic, reverse = True)
+        if len(scans) > 10:
+            self.log("Clustering (%d Scans)" % (len(scans), ))
+        for i, scan in enumerate(scans):
+            if i % 100 == 0 and i:
+                self.log("... Handled %d Scans (%0.2f%%)" % (i, i * 100.0 / len(scans)))
             self.add_scan(scan)
         return self.clusters
 
@@ -340,18 +367,30 @@ class ScanClusterBuilder(LogUtilsMixin):
             similarity_thresholds = [0.1, .4, 0.7]
         singletons = []
         to_bisect = [scans]
+        logger = LogUtilsMixin()
         for similarity_threshold in similarity_thresholds:
+            logger.log("Clustering with Threshold %0.2f" % (similarity_threshold, ))
             next_to_bisect = []
-            for group in to_bisect:
+            if len(to_bisect) > 1:
+                logger.log("Refining %d Clusters" % (len(to_bisect)))
+            elif to_bisect:
+                logger.log("Clustering %d Scans" % (len(to_bisect[0])))
+            else:
+                logger.log("Nothing to cluster...")
+                return SpectrumClusterCollection([])
+            for i, group in enumerate(to_bisect):
+                if i % 1000 == 0:
+                    logger.log("... Handling Batch %d (%d Scans)" % (i, len(group)))
                 clusters = cls.cluster_scans(
                     group, precursor_error_tolerance,
                     minimum_similarity=similarity_threshold,
-                    peak_getter=peak_getter)
+                    peak_getter=peak_getter, sort=True)
                 for cluster in clusters:
                     if len(cluster) == 1:
                         singletons.append(cluster)
                     else:
                         next_to_bisect.append(cluster)
+            logger.log("%d Singletons and %d Groups" % (len(singletons), len(next_to_bisect)))
             to_bisect = next_to_bisect
         return SpectrumClusterCollection(sorted(list(singletons) + list(to_bisect)))
 

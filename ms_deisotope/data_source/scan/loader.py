@@ -1,4 +1,5 @@
 import abc
+import gc
 import weakref
 from weakref import WeakValueDictionary
 
@@ -581,7 +582,7 @@ class ScanProxyContext(object):
         The source to load scans from.
     """
 
-    def __init__(self, source, cache_size=24):
+    def __init__(self, source, cache_size=2 ** 10):
         self.source = source
         self.cache_size = cache_size
         self.cache = OrderedDict()
@@ -611,7 +612,9 @@ class ScanProxyContext(object):
 
     def _save_scan(self, scan_id, scan):
         if len(self.cache) > self.cache_size:
-            self.cache.popitem()
+            _, evicted_scan = self.cache.popitem()
+            self.source._scan_cleared(evicted_scan)
+
         self.cache[scan_id] = scan
 
     def __call__(self, scan_id):
@@ -649,12 +652,28 @@ class proxyproperty(object):
 
     def __get__(self, instance, owner):
         if self.caching:
+            is_null_slot = "_%s_null" % self.name
             try:
-                value = getattr(instance, "_" + self.name)
+                is_null = getattr(instance, is_null_slot)
             except AttributeError:
+                setattr(instance, is_null_slot, None)
+                is_null = None
+            try:
+                if is_null:
+                    return None
+                value = getattr(instance, "_" + self.name)
+                return value
+            except AttributeError:
+                # print("Cache Missed %s for %s" % (self.name, instance))
                 value = getattr(instance.scan, self.name)
+                if is_null is None:
+                    if value is None:
+                        setattr(instance, is_null_slot, True)
+                    else:
+                        setattr(instance, is_null_slot, False)
                 setattr(instance, "_" + self.name, value)
                 return value
+        # print("Retrieving %s for %s" % (self.name, instance))
         return getattr(instance.scan, self.name)
 
     def __set__(self, instance, value):
@@ -680,7 +699,6 @@ class ScanProxy(ScanBase):
 
     _names = [
         "arrays",
-        "deconvoluted_peak_set",
         "id",
         "title",
         "ms_level",
@@ -692,53 +710,113 @@ class ScanProxy(ScanBase):
         "acquisition_information",
         "isolation_window",
         "instrument_configuration",
+        "annotations",
     ]
 
     def __init__(self, scan_id, context):
         self._target_scan_id = scan_id
         self.context = context
         self._scan = None
+        self._precursor_information = None
+        self._peak_set = None
 
     @property
     def source(self):
+        '''The source of the scan data this proxy is bound to.
+
+        Returns
+        -------
+        :class:`RandomAccessScanSource`
+        '''
         return self.context.source
 
     def _clear_scan(self, *args, **kwargs):
-        self.scan = None
+        self._scan = None
+        self._peak_set = None
+        self._deconvoluted_peak_set = None
 
     def _require_scan(self):
-        if self.scan is None:
-            self.scan = weakref.proxy(
+        if self._scan is None:
+
+            self._scan = weakref.proxy(
                 self.context.get_scan_by_id(self._target_scan_id),
                 self._clear_scan)
 
     @property
     def scan(self):
+        '''The proxied scan.
+
+        Accessing this property may require loading the scan's data
+        from disk and/or triggering a cache reset in the 
+        '''
         self._require_scan()
         return self._scan
 
     def pick_peaks(self, *args, **kwargs):
+        '''Request the proxied scan picked peaks if they are not
+        already available and then cache them in memory.
+        '''
         self._require_scan()
         peaks = self.peak_set
         if peaks is None:
-            peaks = self.scan.pick_peaks(*args, **kwargs)
+            peaks = self.scan.pick_peaks(*args, **kwargs).peak_set
         self.peak_set = peaks
         return self
 
+    def _resolve_sequence(self):
+        deconvoluted_peak_set = self.deconvoluted_peak_set
+        if deconvoluted_peak_set is not None:
+            print("Deconvoluted Peaks: %s for %s" % (deconvoluted_peak_set, self))
+            return deconvoluted_peak_set
+        peak_set = self.peak_set
+        if peak_set is not None:
+            return peak_set
+        self.pick_peaks()
+        return self.peak_set
+
     def __getitem__(self, i):
-        return self.scan[i]
+        return self._resolve_sequence()[i]
 
     def __iter__(self):
-        if self.deconvoluted_peak_set:
-            return iter(self.deconvoluted_peak_set)
-        if self.peak_set:
-            return iter(self.peak_set)
-        else:
-            self.pick_peaks()
-            return iter(self.peak_set)
+        return iter(self._resolve_sequence())
+
+    def __len__(self):
+        return len(self._resolve_sequence())
+
+    def has_peak(self, *args, **kwargs):
+        '''Query the wrapped scan's peaks using it's :meth:`Scan.has_peak`
+        method. If no peaks are available, this will call :meth:`pick_peaks`
+        first to resolve the peak set and then query its peaks instead.
+
+        Parameters
+        ----------
+        mz: float
+            The m/z to search for
+        error_tolerance: float
+            The parts per million mass error tolerance to use
+
+        Returns
+        -------
+        ms_peak_picker.FittedPeak or None
+            The peak closest to the query m/z within the error tolerance window or None
+            if there are no peaks satisfying the requirements
+
+        See Also
+        --------
+        :meth:`Scan.has_peak`
+        '''
+        try:
+            return self.scan.has_peak(*args, **kwargs)
+        except ValueError:
+            return self.pick_peaks().has_peak(*args, **kwargs)
 
     peak_set = proxyproperty('peak_set', True)
+    deconvoluted_peak_set = proxyproperty('deconvoluted_peak_set', True)
     precursor_information = proxyproperty("precursor_information", True)
+
+    def __repr__(self):
+        template = "{self.__class__.__name__}({self._target_scan_id!r})"
+        return template.format(self=self)
 
 
 for name in ScanProxy._names:
