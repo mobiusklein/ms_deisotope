@@ -598,7 +598,7 @@ class ScanProxyContext(object):
         ----------
         scan_id: :class:`str`
             The scan to retrieve
-        
+
         Returns
         -------
         :class:`~.Scan`
@@ -648,7 +648,6 @@ class proxyproperty(object):
         self.caching = caching
 
     def __get__(self, instance, owner):
-        instance._require_scan()
         if self.caching:
             try:
                 value = getattr(instance, "_" + self.name)
@@ -657,6 +656,12 @@ class proxyproperty(object):
                 setattr(instance, "_" + self.name, value)
                 return value
         return getattr(instance.scan, self.name)
+
+    def __set__(self, instance, value):
+        if self.caching:
+            setattr(instance, "_" + self.name, value)
+        else:
+            raise TypeError("Cannot set attribute \"%s\"" % (self.name, ))
 
 
 class ScanProxy(ScanBase):
@@ -675,7 +680,6 @@ class ScanProxy(ScanBase):
 
     _names = [
         "arrays",
-        "peak_set",
         "deconvoluted_peak_set",
         "id",
         "title",
@@ -693,8 +697,8 @@ class ScanProxy(ScanBase):
     def __init__(self, scan_id, context):
         self._target_scan_id = scan_id
         self.context = context
-        self.scan = None
-    
+        self._scan = None
+
     @property
     def source(self):
         return self.context.source
@@ -708,6 +712,32 @@ class ScanProxy(ScanBase):
                 self.context.get_scan_by_id(self._target_scan_id),
                 self._clear_scan)
 
+    @property
+    def scan(self):
+        self._require_scan()
+        return self._scan
+
+    def pick_peaks(self, *args, **kwargs):
+        self._require_scan()
+        peaks = self.peak_set
+        if peaks is None:
+            peaks = self.scan.pick_peaks(*args, **kwargs)
+        self.peak_set = peaks
+        return self
+
+    def __getitem__(self, i):
+        return self.scan[i]
+
+    def __iter__(self):
+        if self.deconvoluted_peak_set:
+            return iter(self.deconvoluted_peak_set)
+        if self.peak_set:
+            return iter(self.peak_set)
+        else:
+            self.pick_peaks()
+            return iter(self.peak_set)
+
+    peak_set = proxyproperty('peak_set', True)
     precursor_information = proxyproperty("precursor_information", True)
 
 

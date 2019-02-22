@@ -12,7 +12,6 @@ except ImportError:
 
 import ms_deisotope
 
-from ms_deisotope.averagine import AveragineCache
 from ms_deisotope.processor import (
     ScanProcessor, MSFileLoader,
     NoIsotopicClustersError, EmptyScanError)
