@@ -350,7 +350,7 @@ class ScanClusterBuilder(LogUtilsMixin):
         if sort:
             if len(scans) > 100:
                 self.log("Sorting Scans By TIC")
-            scans = sorted(scans, key=self._get_tic, reverse = True)
+            scans = sorted(scans, key=self._get_tic, reverse=True)
         if len(scans) > 10:
             self.log("Clustering (%d Scans)" % (len(scans), ))
         for i, scan in enumerate(scans):

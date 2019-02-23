@@ -8,7 +8,6 @@ from ms_deisotope.clustering import scan_clustering
 from ms_deisotope.test.common import datafile
 
 
-# @unittest.skip("Long Test")
 class TestScanClustering(unittest.TestCase):
     path = datafile("AGP_tryptic_300ng_2microscans_glycoproteomics_nCE_27-30.preprocessed.mzML.gz")
 
@@ -18,7 +17,7 @@ class TestScanClustering(unittest.TestCase):
         return reader
 
     def load_msms_scans(self, reader):
-        products = map(reader.get_scan_by_id, reader.extended_index.msn_ids.keys())
+        products = list(map(reader.get_scan_by_id, reader.extended_index.msn_ids.keys()))
         return products
 
     def cluster_scans(self, scans):
@@ -30,6 +29,7 @@ class TestScanClustering(unittest.TestCase):
         scans = self.load_msms_scans(reader)
         clusters = self.cluster_scans(scans)
         assert len(clusters) == 1124
+
 
 if __name__ == "__main__":
     unittest.main()

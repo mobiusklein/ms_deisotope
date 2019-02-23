@@ -1,5 +1,4 @@
 import abc
-import gc
 import weakref
 from weakref import WeakValueDictionary
 
@@ -747,7 +746,7 @@ class ScanProxy(ScanBase):
         '''The proxied scan.
 
         Accessing this property may require loading the scan's data
-        from disk and/or triggering a cache reset in the 
+        from disk and/or triggering a cache eviction.
         '''
         self._require_scan()
         return self._scan
