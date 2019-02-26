@@ -1320,6 +1320,8 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             if len(results) == 0:
                 break
             candidate = self.scorer.select(results)
+            if candidate is None:
+                break
             self.peak_dependency_network.add_fit_dependence(candidate)
             results.discard(candidate)
 
