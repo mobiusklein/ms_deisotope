@@ -429,7 +429,7 @@ cdef class DeconvolutedPeakSet:
         return self.__class__(tuple(p.clone() for p in self))
 
     def __reduce__(self):
-        return DeconvolutedPeakSet, (self.peaks, )
+        return self.__class__, (self.peaks, )
 
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
         '''Find the peak that best matches ``neutral_mass`` within ``error_tolerance`` mass accuracy ppm.
@@ -933,6 +933,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
     def __init__(self, peaks):
         self.neutral_mass_array = NULL
         self.mz_array = NULL
+        self.interval_index = NULL
         super(DeconvolutedPeakSetIndexed, self).__init__(peaks)
 
     def __dealloc__(self):
