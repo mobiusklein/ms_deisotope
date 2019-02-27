@@ -937,6 +937,8 @@ cpdef int _explore_local(DeconvoluterBase self, peak, error_tolerance=ERROR_TOLE
         if len(results) == 0:
             break
         candidate = self.scorer.select.best(results)
+        if candidate is None:
+                break
         peak_graph.add_fit_dependence(candidate)
         results.discard(candidate)
 
