@@ -1,17 +1,32 @@
+'''Represent controlled vocabulary (CV) terms and provides the machinery used
+for building compile-time collections of CV terms from the PSI-MS controlled
+vocabulary.
+'''
 import sys
 import textwrap
 
 from six import string_types as basestring
 
 
-def clean_definition(text):
-    if text.startswith('"'):
-        text = text.rsplit(" ", 1)[0]
-        text = text[1:-1]
-    return text
-
-
 class Term(object):
+    '''Represents a single controlled vocabulary term.
+
+    :class:`Term` objects are comparable and hashable.
+
+    Attributes
+    ----------
+    name: str
+        The human-readable name for the term
+    id: str
+        A namespace-qualified unique alphanumeric identifier for the term
+    description: str
+        A longer description of the concept the term represents.
+    category: str
+        The name of the broad class of terms this term belongs to
+    specialization: list
+        A sequence of increasingly specific categories that this term
+        belongs to
+    '''
     __slots__ = ("name", "id", "description", "category", "specialization")
 
     def __init__(self, name, id, description, category, specialization):
@@ -126,9 +141,26 @@ class TermSet(object):
         return term in self.terms or term in self.by_id or term in self.by_name
 
     def keys(self):
+        '''Returns the list of keys that this collection recognizes, over
+        all of its wrapped mappings.
+        '''
         return set(self.by_id.keys()) | set(self.by_name.keys())
 
     def get(self, key, default=None):
+        '''Return the value of ``key`` or ``default`` if it is not
+        found
+
+        Parameters
+        ----------
+        key: str
+            The key to look for
+        default: object
+            The value to return if ``key`` is not found. Defaults to :const:`None`.
+
+        Returns
+        -------
+        object
+        '''
         try:
             return self[key]
         except (KeyError, IndexError):
@@ -160,6 +192,9 @@ def _unique_list(items):  # pragma: no cover
 
 
 class MappingProxy(object):
+    '''An object that proxies :meth:`__getitem__` to another object
+    which is loaded lazily through a callable :attr:`loader`
+    '''
     def __init__(self, loader):
         assert callable(loader)
         self.loader = loader
@@ -177,16 +212,38 @@ class MappingProxy(object):
 def _lazy_load_psims():
     try:
         from psims.controlled_vocabulary.controlled_vocabulary import load_psims
-        cv_psims = load_psims()
+        cv = load_psims()
     except Exception:  # pragma: no cover
-        cv_psims = None
-    return cv_psims
+        cv = None
+    return cv
 
 
 cv_psims = MappingProxy(_lazy_load_psims)
 
 
+def _clean_definition(text):
+    if text.startswith('"'):
+        text = text.rsplit(" ", 1)[0]
+        text = text[1:-1]
+    return text
+
+
 def type_path(term, seed):  # pragma: no cover
+    '''Traverse is-a relationships from more specialized to
+    less specialized until the root term type has been found,
+    accumulating types along the way.
+
+    Parameters
+    ----------
+    term: :class:`psims.controlled_vocabulary.Term`
+        The term to traverse
+    seed: object
+        Unused
+
+    Returns
+    -------
+    list
+    '''
     path = []
     i = 0
     steps = []
@@ -211,6 +268,9 @@ def type_path(term, seed):  # pragma: no cover
 
 
 def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pragma: no cover
+    '''A code generator for rendering static lists of :class:`Term`-like objects
+    from PSI-MS.
+    '''
     if writer is None:
         writer = sys.stdout.write
     component_type_list = [seed]
@@ -236,7 +296,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
                 continue
             seen.add(term.name)
             writer(template % (
-                term_cls_name, term.name, term.id, _wraplines(clean_definition(term.get("def", ''))),
+                term_cls_name, term.name, term.id, _wraplines(_clean_definition(term.get("def", ''))),
                 component_type_list[0], type_path(term, seed)))
             if term.children:
                 component_type_list.append(term.name)
