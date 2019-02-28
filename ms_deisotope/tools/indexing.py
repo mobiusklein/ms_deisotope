@@ -1,3 +1,6 @@
+'''A collection of little command line utilities for inspecting mass
+spectrum data.
+'''
 import os
 import math
 
@@ -29,6 +32,9 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
+    '''A collection of utilities for inspecting and manipulating
+    mass spectrometry data.
+    '''
     pass
 
 
@@ -36,6 +42,8 @@ def cli():
                                      " of a mass spectrometry data file"))
 @click.argument('path', type=click.Path(exists=True))
 def describe(path):
+    '''Produces a minimal textual description of a mass spectrometry data file.
+    '''
     click.echo("Describing \"%s\"" % (path,))
     try:
         sf = SourceFile.from_path(path)
@@ -135,21 +143,21 @@ def metadata_index(paths, processes=4):
                 fn(path)
         except AttributeError:
             pass
-        index, interval_tree = quick_index.index(reader, processes)
+        index, _ = quick_index.index(reader, processes)
         name = path
         index_file_name = index.index_file_name(name)
         with open(index_file_name, 'w') as fh:
             index.serialize(fh)
 
 
-def partial_ms_file_iterator(reader, start, end):
+def _partial_ms_file_iterator(reader, start, end):
     for scan_bunch in reader.start_from_scan(index=start):
         if scan_bunch.precursor.index > end:
             break
         yield scan_bunch
 
 
-class MSMSIntervalTask(object):
+class _MSMSIntervalTask(object):
     def __init__(self, time_radius, mz_lower, mz_higher):
         self.time_radius = time_radius
         self.mz_lower = mz_lower
@@ -157,7 +165,7 @@ class MSMSIntervalTask(object):
 
     def __call__(self, payload):
         reader, start, end = payload
-        iterator = partial_ms_file_iterator(reader, start, end)
+        iterator = _partial_ms_file_iterator(reader, start, end)
         intervals = scan_interval_tree.extract_intervals(
             iterator, time_radius=self.time_radius,
             mz_lower=self.mz_lower, mz_higher=self.mz_higher)
@@ -170,11 +178,14 @@ class MSMSIntervalTask(object):
 @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
 @processes_option
 def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3., output=None):
-    interval_extraction = MSMSIntervalTask(time_radius, mz_lower, mz_higher)
+    '''Construct an interval tree spanning time and m/z domains where MSn spectra were acquired
+    in the LC-MS map. The interval tree is serialized to JSON.
+    '''
+    interval_extraction = _MSMSIntervalTask(time_radius, mz_lower, mz_higher)
     interval_set = []
     total_work_items = len(paths) * processes * 4
 
-    def run():
+    def _run():
         for path in paths:
             reader = MSFileLoader(path)
             chunk_out_of_order = quick_index.run_task_in_chunks(
@@ -182,7 +193,7 @@ def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3.,
             for chunk in chunk_out_of_order:
                 interval_set.extend(chunk)
                 yield 0
-    work_iterator = run()
+    work_iterator = _run()
     with click.progressbar(work_iterator, length=total_work_items, label='Extracting Intervals') as g:
         for _ in g:
             pass
@@ -218,16 +229,20 @@ def _ensure_metadata_index(path):
 @cli.command("charge-states", short_help='Count the different precursor charge states in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def charge_states(path):
-    reader, index = _ensure_metadata_index(path)
+    '''Count the different precursor charge states in a mass spectrometry data file.
+
+    This command will construct a metadata index if it is not found.
+    '''
+    _, index = _ensure_metadata_index(path)
 
     charges = Counter()
-    for msn_id, msn_info in index.msn_ids.items():
+    for _, msn_info in index.msn_ids.items():
         charges[msn_info.charge] += 1
     for charge in sorted(charges, key=abs):
         click.echo("%d: %d" % (charge, charges[charge]))
 
 
-def binsearch(array, x):
+def _binsearch(array, x):
     n = len(array)
     lo = 0
     hi = n
@@ -248,6 +263,10 @@ def binsearch(array, x):
 @cli.command("precursor-clustering", short_help='Cluster precursor masses in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def precursor_clustering(path, grouping_error=2e-5):
+    '''Cluster precursor masses in a mass spectrometry data file.
+
+    This command will construct a metadata index if it is not found.
+    '''
     _, index = _ensure_metadata_index(path)
     points = []
     for _, msn_info in index.msn_ids.items():
@@ -262,7 +281,7 @@ def precursor_clustering(path, grouping_error=2e-5):
         if not centroids:
             centroids.append((point[0], [point]))
             continue
-        i = binsearch(centroids, point[0])
+        i = _binsearch(centroids, point[0])
         centroid = centroids[i]
         err = (centroid[0] - point[0]) / point[0]
         if abs(err) < grouping_error:
@@ -343,9 +362,12 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
 if _compression.has_idzip:
 
     @cli.command("idzip", short_help='Compress a file with idzip, a gzip-compatible format with random access support')
-    @click.argument('path', type=str)
-    @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
+    @click.argument('path', type=click.Path(allow_dash=True, readable=True))
+    @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False),
+                  required=False, help="The output stream to write to. Defaults to STDOUT if omitted.")
     def idzip_compression(path, output):
+        '''Compress a file using  idzip, a gzip-compatible format with random access support.
+        '''
         if output is None:
             output = '-'
         with click.open_file(output, mode='wb') as outfh:
@@ -359,11 +381,16 @@ if _compression.has_idzip:
             writer.close()
 
 
-try:
-    for name, command in conversion.ms_conversion.commands.items():
-        cli.add_command(command, name)
-except Exception as e:
-    click.secho("%r occurred while loading conversion tools" % (e, ), err=True, fg='yellow')
+
+def _mount_group(group):
+    try:
+        for name, command in group.commands.items():
+            cli.add_command(command, name)
+    except Exception as e:
+        click.secho("%r occurred while loading additional tools from %r" % (e, group), err=True, fg='yellow')
+
+
+_mount_group(conversion.ms_conversion)
 
 main = cli.main
 
