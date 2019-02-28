@@ -46,11 +46,7 @@ clr = None
 NullReferenceException = Exception
 Marshal = None
 IntPtr = None
-
-try:
-    int_ptr_tp = long
-except NameError:
-    int_ptr_tp = int
+Int64 = None
 
 
 def is_thermo_raw_file(path):
@@ -143,7 +139,7 @@ def _register_dll(search_paths=None):
     if search_paths is None:
         search_paths = []
     global _RawFileReader, Business, clr, NullReferenceException   # pylint: disable=global-statement
-    global Marshal, IntPtr   # pylint: disable=global-statement
+    global Marshal, IntPtr, Int64   # pylint: disable=global-statement
     if _test_dll_loaded():
         return True
     try:
@@ -151,7 +147,7 @@ def _register_dll(search_paths=None):
         from System import NullReferenceException  # pylint: disable=redefined-outer-name
         clr.AddReference("System.Runtime")
         clr.AddReference("System.Runtime.InteropServices")
-        from System import IntPtr  # pylint: disable=redefined-outer-name
+        from System import IntPtr, Int64  # pylint: disable=redefined-outer-name
         from System.Runtime.InteropServices import Marshal  # pylint: disable=redefined-outer-name
     except ImportError:
         return False
@@ -207,7 +203,7 @@ def _copy_double_array(src):
     dest = np.empty(len(src), dtype=np.float64)
     Marshal.Copy(
         src, 0,
-        IntPtr.__overloads__[int_ptr_tp](dest.__array_interface__['data'][0]),
+        IntPtr.__overloads__[Int64](dest.__array_interface__['data'][0]),
         len(src))
     return dest
 
