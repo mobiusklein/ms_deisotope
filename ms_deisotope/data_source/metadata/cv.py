@@ -41,7 +41,14 @@ class Term(object):
         if isinstance(other, basestring):
             return self.name == other or self.id == other
         else:
-            return tuple(self) == tuple(other)
+            if (self.name != other.name) or (self.id != other.id) or\
+                    (self.description != other.description) or\
+                    (self.category != other.category) or\
+                    (self.specialization != other.specialization):
+                result = False
+            else:
+                result = True
+            return result
 
     def __str__(self):
         return str(self.name)

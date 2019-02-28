@@ -331,8 +331,12 @@ dissociation_methods_map = {
 }
 
 
+method = None
 for method in dissociation_methods:
     dissociation_methods_map[method.name] = method
+del method
+
+
 
 CID = dissociation_methods_map.get("collision-induced dissociation")
 HCD = dissociation_methods_map.get("beam-type collision-induced dissociation")
