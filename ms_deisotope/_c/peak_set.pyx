@@ -929,6 +929,8 @@ def decode_envelopes(np.ndarray[cython.floating, ndim=1, mode='c'] array):
     return envelope_list
 
 
+INTERVAL_INDEX_SIZE = 0
+
 cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
     def __init__(self, peaks):
         self.neutral_mass_array = NULL
@@ -949,6 +951,11 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         if self.interval_index != NULL:
             free_index_list(self.interval_index)
             self.interval_index = NULL
+    
+    def set_interval_index_size(self, index_size):
+        global INTERVAL_INDEX_SIZE
+        INTERVAL_INDEX_SIZE = index_size
+        self.reindex()
 
     cdef void _build_index_arrays(self):
         cdef:
@@ -965,6 +972,8 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             self.neutral_mass_array[i] = peak.neutral_mass
             self.mz_array[peak._index.mz] = peak.mz
 
+        # The interpolating interval index is just a bit slower than
+        # the normal binary search, likely due to cache friendliness.
         if n > 2:
             if self.interval_index != NULL:
                 free_index_list(self.interval_index)
@@ -1272,7 +1281,7 @@ cdef int build_interval_index(DeconvolutedPeakSet peaks, index_list* index, size
                 end_i = i
         else:
             start_i = 0
-            end_i = 0
+            end_i = 0        
         index.index[index_i].center_value = current_value
         index.index[index_i].start = start_i
         index.index[index_i].end = end_i

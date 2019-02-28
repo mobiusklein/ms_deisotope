@@ -103,7 +103,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
     cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) nogil
 
 
-cdef size_t INTERVAL_INDEX_SIZE = 10000
+cdef size_t INTERVAL_INDEX_SIZE
 
 cdef struct index_cell:
     double center_value

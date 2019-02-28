@@ -11,6 +11,7 @@ Untitled*
 /test_reports
 *egg-info
 .cache
+.pytest_cache
 /build/
 /dist/
 /htmlcov/
