@@ -1,3 +1,6 @@
+'''A collection of common base classes for types that
+load data for :class:`~.Scan` objects.
+'''
 import abc
 import weakref
 from weakref import WeakValueDictionary
@@ -250,6 +253,8 @@ class ScanIterator(ScanDataSource):
         return self
 
     def reset(self):
+        '''Reset the iterator, if possible, and clear any caches.
+        '''
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -306,10 +311,19 @@ class ScanIterator(ScanDataSource):
         self.scan_cache.pop(self._make_cache_key(scan), None)
 
     def initialize_scan_cache(self):
+        '''Initialize a cache which keeps track of which :class:`~.Scan`
+        objects are still in memory using a :class:`weakref.WeakValueDictionary`.
+
+        When a scan is requested, if the scan object is found in the cahce, the
+        existing object is returned rather than re-read from disk.
+        '''
         self._scan_cache = WeakValueDictionary()
 
     @property
     def scan_cache(self):
+        '''A :class:`weakref.WeakValueDictionary` mapping used to retrieve
+        scans from memory if available before re-reading them from disk.
+        '''
         return self._scan_cache
 
     @scan_cache.setter
@@ -538,6 +552,13 @@ class ScanFileMetadataBase(object):
 
     @abc.abstractmethod
     def file_description(self):
+        '''Describe the file and its components, as well
+        as any content types it has.
+
+        Returns
+        -------
+        :class:`~.FileInformation`
+        '''
         return FileInformation()
 
     @abc.abstractmethod
@@ -630,6 +651,12 @@ class ScanProxyContext(object):
         return ScanProxy(scan_id, self)
 
     def clear(self):
+        '''Clear the reference cache.
+
+        If the scans that were previously held in the cache were not
+        strong-referenced anywhere else, any extant proxies which depend
+        upon this context will have to reload their spectra from disk.
+        '''
         self.cache.clear()
 
 
@@ -663,7 +690,6 @@ class proxyproperty(object):
                 value = getattr(instance, "_" + self.name)
                 return value
             except AttributeError:
-                # print("Cache Missed %s for %s" % (self.name, instance))
                 value = getattr(instance.scan, self.name)
                 if is_null is None:
                     if value is None:
@@ -672,7 +698,6 @@ class proxyproperty(object):
                         setattr(instance, is_null_slot, False)
                 setattr(instance, "_" + self.name, value)
                 return value
-        # print("Retrieving %s for %s" % (self.name, instance))
         return getattr(instance.scan, self.name)
 
     def __set__(self, instance, value):
@@ -765,7 +790,6 @@ class ScanProxy(ScanBase):
     def _resolve_sequence(self):
         deconvoluted_peak_set = self.deconvoluted_peak_set
         if deconvoluted_peak_set is not None:
-            print("Deconvoluted Peaks: %s for %s" % (deconvoluted_peak_set, self))
             return deconvoluted_peak_set
         peak_set = self.peak_set
         if peak_set is not None:
@@ -817,6 +841,9 @@ class ScanProxy(ScanBase):
         template = "{self.__class__.__name__}({self._target_scan_id!r})"
         return template.format(self=self)
 
+    @classmethod
+    def _configure_proxy_attributes(cls):
+        for name in cls._names:
+            setattr(cls, name, proxyproperty(name))
 
-for name in ScanProxy._names:
-    setattr(ScanProxy, name, proxyproperty(name))
+ScanProxy._configure_proxy_attributes()

@@ -316,6 +316,12 @@ def precursor_clustering(path, grouping_error=2e-5):
     "Whether to assume the spectrum is deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
                         deconvoluted=False):
+    '''Cluster spectra by precursor mass and cosine similarity.
+
+    Spectrum clusters are written out to a text file recording
+    cluster precursor mass, within-cluster similarity, and the
+    source file and scan ID for each cluster member.
+    '''
     if not similarity_thresholds:
         similarity_thresholds = [0.1, 0.4, 0.7]
     else:
