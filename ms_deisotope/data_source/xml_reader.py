@@ -1,13 +1,32 @@
+'''A common set of methods that are shared by
+all :mod:`pyteomics`-based XML file readers.
+'''
+
 import warnings
-from .common import (
-    RandomAccessScanSource)
+
 from lxml import etree
 from lxml.etree import XMLSyntaxError
+
 from pyteomics import xml
 from pyteomics.xml import unitfloat
 
+from .common import (
+    RandomAccessScanSource)
+
 
 def in_minutes(x):
+    '''Convert a time quantity to minutes
+
+    Parameters
+    ----------
+    x: unitfloat
+        A float representing a quantity of time annotated with a time unit
+
+    Returns
+    -------
+    unitfloat:
+        The time after conversion to minutes
+    '''
     try:
         unit = x.unit_info
     except AttributeError:

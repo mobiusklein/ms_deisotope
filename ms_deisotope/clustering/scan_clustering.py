@@ -74,6 +74,14 @@ class SpectrumCluster(object):
         d['average_similarity'] = self.average_similarity()
         scans = []
         for scan in self:
+            scan_source = scan.source
+            if scan_source is not None:
+                source_name = scan_source.source_file
+                if not isinstance(source_name, basestring):
+                    if hasattr(source_name, 'name'):
+                        source_name = source_name.name
+            else:
+                source_name = ":detatched:"
             scans.append({
                 "id": scan.id,
                 "source": scan.source.source_file if scan.source is not None else ":detatched:",
@@ -351,8 +359,8 @@ class ScanClusterBuilder(LogUtilsMixin):
             if len(scans) > 100:
                 self.log("Sorting Scans By TIC")
             scans = sorted(scans, key=self._get_tic, reverse=True)
-        if len(scans) > 10:
-            self.log("Clustering (%d Scans)" % (len(scans), ))
+        if len(scans) > 100:
+            self.log("Clustering %d Scans" % (len(scans), ))
         for i, scan in enumerate(scans):
             if i % 100 == 0 and i:
                 self.log("... Handled %d Scans (%0.2f%%)" % (i, i * 100.0 / len(scans)))
@@ -412,6 +420,9 @@ class ScanClusterWriter(object):
             member_source = member.source
             if member_source is not None:
                 source_name = member_source.source_file
+                if not isinstance(source_name, basestring):
+                    if hasattr(source_name, 'name'):
+                        source_name = source_name.name
             else:
                 source_name = ":detatched:"
             self.write("\t%s\t%s\n" % (source_name, member.id))
