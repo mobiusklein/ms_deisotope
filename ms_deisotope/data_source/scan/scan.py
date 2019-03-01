@@ -1513,6 +1513,17 @@ class ProcessedScan(ScanBase):
             self.id, self.ms_level, len(peaks), pinfo_string)
 
     def clone(self, deep=True):
+        """Return a copy of the :class:`ProcessedScan` object, potentially a deep
+        one
+
+        Parameters
+        ----------
+        deep: :class:`bool`
+
+        Returns
+        -------
+        :class:`Scan`
+        """
         dup = self.__class__(
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index,
