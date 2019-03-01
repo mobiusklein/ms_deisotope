@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided,
-    ActivationInformation)
+    ActivationInformation, ScanBase)
 from ms_deisotope.utils import Base
 from ms_deisotope.envelope_statistics import CoIsolation
 
@@ -18,6 +18,12 @@ class MSRecordBase(Base):
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+    def __eq__(self, other):
+        return self.to_dict() == other.to_dict()
+
+    def __ne__(self, other):
+        return not self == other
 
     def to_dict(self):
         package = {
@@ -145,6 +151,12 @@ class ExtendedScanIndex(object):
         return package
 
     def add_scan(self, scan):
+        '''Add ``scan`` to the index.
+
+        Parameters
+        ----------
+        scan: :class:`~.ScanBase`
+        '''
         if scan.ms_level == 1:
             package = {
                 "scan_time": scan.scan_time,
@@ -162,6 +174,12 @@ class ExtendedScanIndex(object):
             self.msn_ids[scan.id] = MSnRecord(**self._package_precursor_information(scan))
 
     def add_scan_bunch(self, bunch):
+        '''Add each scan object in ``bunch`` to the index.
+
+        Parameters
+        ----------
+        scan: :class:`~.ScanBunch`
+        '''
         if bunch.precursor is not None:
             package = {
                 "scan_time": bunch.precursor.scan_time,
@@ -180,10 +198,26 @@ class ExtendedScanIndex(object):
             self.msn_ids[product.id] = MSnRecord(**self._package_precursor_information(product))
 
     def update_from_reader(self, reader):
-        for bunch in reader:
-            self.add_scan_bunch(bunch)
+        '''Iterate over ``reader``, accumulating scans in the index.
 
-    def serialize(self, handle):
+        Parameters
+        ----------
+        reader: :class:`~.ScanIterator`
+        '''
+        for bunch in reader:
+            if isinstance(bunch, ScanBase):
+                self.add_scan(bunch)
+            else:
+                self.add_scan_bunch(bunch)
+
+    def dump(self, handle):
+        '''Serialize the index to JSON.
+
+        Parameters
+        ----------
+        handle: file-like
+            The file-like object to write the index to
+        '''
         mapping = {
             "ms1_ids": [(k, v.to_dict()) for k, v in self.ms1_ids.items()],
             "msn_ids": [(k, v.to_dict()) for k, v in self.msn_ids.items()],
@@ -191,7 +225,20 @@ class ExtendedScanIndex(object):
         }
         json.dump(mapping, handle)
 
+    serialize = dump
+
     def merge(self, other):
+        '''Combine the indices in ``other`` with those in ``self``,
+        return a copy containing both collections' data.
+
+        Parameters
+        ----------
+        other: :class:`ExtendedScanIndex`
+        
+        Returns
+        -------
+        :class:`ExtendedScanIndex`
+        '''
         dup = ExtendedScanIndex(self.ms1_ids, self.msn_ids)
         dup.ms1_ids.update(other.ms1_ids)
         dup.msn_ids.update(other.msn_ids)
@@ -199,10 +246,33 @@ class ExtendedScanIndex(object):
 
     @staticmethod
     def index_file_name(name):
+        '''Create a standard file name based on source file name ``name``
+        for storing the index
+
+        Parameters
+        ----------
+        name: str
+            The path to the source file to create an adjacent index file
+            name for.
+
+        Returns
+        -------
+        str
+        '''
         return name + '-idx.json'
 
     @classmethod
-    def deserialize(cls, handle):
+    def load(cls, handle):
+        '''Construct a :class:`ExtendedScanIndex` instance from a file object
+
+        Parameters
+        ----------
+        handle: file-like
+        
+        Returns
+        -------
+        :class:`ExtendedScanIndex`
+        '''
         mapping = json.load(handle)
         ms1_ids = mapping.get("ms1_ids", [])
         mapping['ms1_ids'] = [(k, MS1Record(**v)) for k, v in ms1_ids]
@@ -210,7 +280,16 @@ class ExtendedScanIndex(object):
         mapping['msn_ids'] = [(k, MSnRecord(**v)) for k, v in msn_ids]
         return cls(**mapping)
 
+    deserialize = load
+
     def get_precursor_information(self, bind=None):
+        '''Create a list of :class:`~.PrecursorInformation` objects
+        from :attr:`msn_ids`'s records.
+
+        Returns
+        -------
+        list
+        '''
         out = []
         for _, info in self.msn_ids.items():
             mz = info['mz']
@@ -230,6 +309,15 @@ class ExtendedScanIndex(object):
         return out
 
     def find_msms_by_precursor_mass(self, neutral_mass, mass_error_tolerance=1e-5, bind=None):
+        '''Find all entries in :attr:`msn_ids` which are within ``mass_error_tolerance`` of
+        ``neutral_mass``.
+
+        This method is slow because it reconstructs the search vector on each call.
+
+        Returns
+        -------
+        list
+        '''
         m = neutral_mass
         w = neutral_mass * mass_error_tolerance
         lo = m - w

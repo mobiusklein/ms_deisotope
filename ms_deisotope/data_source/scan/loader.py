@@ -706,6 +706,14 @@ class proxyproperty(object):
         else:
             raise TypeError("Cannot set attribute \"%s\"" % (self.name, ))
 
+    def __delete__(self, instance):
+        if self.caching:
+            is_null_slot = "_%s_null" % self.name
+            try:
+                delattr(instance, is_null_slot)
+            except AttributeError:
+                pass
+
 
 class ScanProxy(ScanBase):
     """A proxy for a :class:`ScanBase` object, allowing transparent access to the
@@ -845,5 +853,10 @@ class ScanProxy(ScanBase):
     def _configure_proxy_attributes(cls):
         for name in cls._names:
             setattr(cls, name, proxyproperty(name))
+
+    def _refresh(self):
+        del self.peak_set
+        del self.deconvoluted_peak_set
+        del self.precursor_information
 
 ScanProxy._configure_proxy_attributes()
