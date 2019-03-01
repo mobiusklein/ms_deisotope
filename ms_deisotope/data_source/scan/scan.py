@@ -142,7 +142,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         try:
             return np.allclose(
                 self[0], other[0]) and np.allclose(
-                self[1], other[1])
+                    self[1], other[1])
         except ValueError:
             return False
 
@@ -239,7 +239,8 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
 
 class ScanBase(object):
-
+    '''Abstract base class for Scan-like objects
+    '''
     def has_ion_mobility(self):
         '''Check whether this scan has drift time information associated with
         it.
@@ -255,6 +256,13 @@ class ScanBase(object):
 
     @property
     def drift_time(self):
+        '''A convenience method to access the first
+        scan event to retrieve its drift time.
+
+        Returns
+        -------
+        float or None
+        '''
         acq = self.acquisition_information
         if acq is None:
             return None
@@ -263,6 +271,8 @@ class ScanBase(object):
 
     @property
     def scan_id(self):
+        '''An alias for :attr:`id`
+        '''
         return self.id
 
     def copy(self, deep=True):
@@ -286,8 +296,8 @@ class ScanBase(object):
         try:
             eq = (self.scan_id == other.scan_id) and (
                 abs(self.scan_time - other.scan_time) < 1e-3) and (
-                self.index == other.index) and (
-                self.ms_level == other.ms_level)
+                    self.index == other.index) and (
+                        self.ms_level == other.ms_level)
             if not eq:
                 return False
         except AttributeError:
@@ -356,6 +366,9 @@ class ScanBase(object):
         return not (self == other)
 
     def bind(self, source):
+        '''Attach this object and its other referent members
+        to ``source``, letting them load information.
+        '''
         if self.precursor_information is not None:
             self.precursor_information.bind(source)
         return self
@@ -453,6 +466,18 @@ class Scan(ScanBase):
         self.product_scans = product_scans
 
     def clone(self, deep=True):
+        """Return a copy of the :class:`Scan` object
+        wrapping the same reference data, potentially a deep
+        one
+
+        Parameters
+        ----------
+        deep: :class:`bool`
+
+        Returns
+        -------
+        :class:`Scan`
+        """
         dup = self.__class__(
             self._data, self.source,
 
@@ -839,6 +864,13 @@ class Scan(ScanBase):
         return self
 
     def pack(self):
+        '''Pack the (dispersed) representation of the data in this :class:`Scan`
+        into a packed :class:`ProcessedScan` object.
+
+        Returns
+        -------
+        :class:`ProcessedScan`
+        '''
         precursor_info = self.precursor_information
         return ProcessedScan(
             self.id, self.title, precursor_info,
@@ -886,7 +918,7 @@ class Scan(ScanBase):
             raise ValueError("Cannot reprofile a scan that has not been centroided")
         elif self.peak_set is None and not self.is_profile:
             self.pick_peaks()
-        if len(self.peak_set) == 0:
+        if not self.peak_set:
             arrays = (np.array([], dtype=float), np.array([], dtype=float))
         else:
             arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
@@ -928,6 +960,19 @@ class Scan(ScanBase):
                            annotations=self._external_annotations)
 
     def transform(self, filters=None):
+        '''Applies a series of :class:`ms_peak_picker.scan_filter.FilterBase`,
+        or strings that are recognized by :func:`ms_peak_picker.scan_filter.transform`
+
+        Arguments
+        ---------
+        filters: :class:`Iterable`
+            An iterable of transformations of :class:`ms_peak_picker.scan_filter.FilterBase`
+            or strings.
+
+        Returns
+        -------
+        :class:`WrappedScan`
+        '''
         mzs, intensities = self.arrays
         mzs = mzs.astype(float)
         intensities = intensities.astype(float)
@@ -936,7 +981,31 @@ class Scan(ScanBase):
                            (mzs, intensities), list(self.product_scans),
                            annotations=self._external_annotations)
 
-    def average_with(self, scans, dx=0.01, weight_sigma=None):
+    def average_with(self, scans, dx=None, weight_sigma=None):
+        r"""Average together multiple scans' raw data arrays to create a composite intensity
+        profile for a common m/z axis.
+
+        Parameters
+        ----------
+        scans: list:
+            A list of :class:`Scan` objects
+        dx : float, optional
+            The distance between each point in the generated common m/z axis.
+        weight_sigma : float, optional
+            When this value is not None, scans are weighted according to a
+            gaussian distribution with a $\sigma$ equal to this value
+
+        Returns
+        -------
+        :class:`AveragedScan`
+            A shallow copy of this scan with its :attr:`arrays` attribute replaced
+            with the averaged array
+        """
+        if dx is None:
+            dx = 0.01
+            default_dx = True
+        else:
+            default_dx = False
         scans = [self] + list(scans)
         arrays = []
         for scan in scans:
@@ -951,6 +1020,13 @@ class Scan(ScanBase):
                 scans, mean=self.scan_time, sigma=weight_sigma)
         else:
             weights = None
+        if default_dx:
+            if len(arrays) > 2:
+                reference = arrays[len(arrays) // 2 + 1]
+            else:
+                reference = arrays[0]
+            empirical_dx = decimal_shift(2 * np.median(np.diff(reference.mz)))
+            dx = min(dx, empirical_dx)
         new_arrays = average_signal(arrays, dx=dx, weights=weights)
         indices = [scan.index for scan in scans]
         return AveragedScan(
@@ -1050,7 +1126,7 @@ class Scan(ScanBase):
 
         Returns
         -------
-        Scan
+        :class:`AveragedScan`
             A shallow copy of this scan with its :attr:`arrays` attribute replaced
             with the averaged array
         """
@@ -1093,6 +1169,8 @@ class Scan(ScanBase):
 
 
 class WrappedScan(Scan):
+    '''A wrapper around a :class:`Scan` object with one or more attributes overridden.
+    '''
     overridable_keys = [
         "_arrays",
         "_id",
@@ -1142,6 +1220,14 @@ class WrappedScan(Scan):
 
 
 class AveragedScan(WrappedScan):
+    '''An averaged :class:`Scan` object, storing additional information for retrieving
+    the spectra that were averaged together.
+
+    Attributes
+    ----------
+    scan_indices: list
+        The :attr:`index` values for all of the scans that were averaged together
+    '''
     def __init__(self, data, source, array_data, scan_indices, product_scans=None, annotations=None, **overrides):
         super(AveragedScan, self).__init__(
             data, source, array_data,
