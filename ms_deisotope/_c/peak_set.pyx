@@ -974,7 +974,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
 
         # The interpolating interval index is just a bit slower than
         # the normal binary search, likely due to cache friendliness.
-        if n > 2:
+        if n > 2 and INTERVAL_INDEX_SIZE > 0:
             if self.interval_index != NULL:
                 free_index_list(self.interval_index)
                 self.interval_index = NULL

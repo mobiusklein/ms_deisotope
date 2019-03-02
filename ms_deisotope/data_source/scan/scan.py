@@ -2,9 +2,9 @@ import warnings
 from collections import namedtuple
 
 try:
-    from collections.abc import Sequence
-except ImportError:
     from collections import Sequence
+except ImportError:
+    from collections.abc import Sequence
 
 import numpy as np
 
@@ -37,14 +37,15 @@ ChargeNotProvided = Constant("ChargeNotProvided")
 
 
 class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
-    """Represents a single MS1 scan and all MSn scans derived from it
+    """Represents a single MS1 scan and all MSn scans derived from it,
+    or a collection of related MSn scans.
 
     Attributes
     ----------
-    precursor: :class:`.Scan`
+    precursor: :class:`~.ScanBase`
         A single MS1 scan which may have undergone MSn
     products: list
-        A list of 0 or more :class:`Scan` objects which were derived
+        A list of 0 or more :class:`~.ScanBase` objects which were derived
         from :attr:`precursor` or another element of this list derived
         from it.
     """
@@ -59,17 +60,17 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         return inst
 
     def precursor_for(self, scan):
-        """Find the precursor :class:`Scan` instance
+        """Find the precursor :class:`~.ScanBase` instance
         for the given scan object
 
         Parameters
         ----------
-        scan : Scan
+        scan : :class:`~.ScanBase`
             The MSn scan to look for the MSn-1 scan for
 
         Returns
         -------
-        Scan
+        :class:`~.ScanBase`
         """
         if scan.precursor_information is not None:
             scan_id = scan.precursor_information.precursor_scan_id
@@ -77,9 +78,39 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         return None
 
     def get_scan_by_id(self, scan_id):
+        """Retrieve the scan object for the specified scan id from this
+        group in memory.
+
+        Parameters
+        ----------
+        scan_id : str
+            The unique scan id value to be retrieved
+
+        Returns
+        -------
+        :class:`~.ScanBase`
+        """
         return self._id_map[scan_id]
 
     def annotate_precursors(self, nperrow=4, ax=None):
+        '''Plot the spectra in this group as a grid, with the full
+        MS1 spectrum in profile in the top row, and each MSn spectrum's
+        precursor ion revealed in a grid panel below, with isolation
+        window and selected ion/monoisotopic peak annotated.
+
+        Parameters
+        ----------
+        nperrow: :class:`int`
+            The number of precursors to annotate per row
+            in the grid.
+        ax: :class:`matplotlib._axes.Axes`, optional
+            The axis to draw on. If not provided, a new figure
+            will be created, along with a new axis.
+
+        Returns
+        -------
+        :class:`matplotlib._axes.Axes`
+        '''
         return _annotate_precursors(
             self.precursor, self.products, nperrow=nperrow, ax=ax)
 
@@ -96,6 +127,13 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         p.text(")")
 
     def pack(self):
+        '''Build a new :class:`ScanBunch` where each scan in it is returned by calling
+        :meth:`~.Scan.pack`
+
+        Returns
+        -------
+        :class:`ScanBunch`
+        '''
         return self.__class__(self.precursor.pack(), [
             p.pack() for p in self.products
         ])
