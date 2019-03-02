@@ -1,3 +1,6 @@
+'''Represent the basic structures of a mass spectrum and its processed contents,
+and provide an interface for manipulating that data.
+'''
 import warnings
 from collections import namedtuple
 
@@ -1417,16 +1420,42 @@ class PrecursorInformation(object):
         return not (self == other)
 
     def bind(self, source):
+        '''Attach this object and its other referent members
+        to ``source``, letting them load information.
+        '''
         self.source = source
         return self
 
     def extract(self, peak, override_charge=None):
+        '''Populate the extracted attributes of this object from the attributes
+        of a :class:`~.DeconvolutedPeak` instance.
+
+        Parameters
+        ----------
+        peak: :class:`~.DeconvolutedPeak`
+            The peak to copy attributes from
+        override_charge: :class:`int`, optional
+            If provided, this charge will be used instead of the charge of ``peak``
+        '''
         self.extracted_neutral_mass = peak.neutral_mass
         self.extracted_charge = int(peak.charge) if override_charge is None else override_charge
         self.extracted_intensity = peak.intensity
         self.extracted_peak = peak
 
     def default(self, orphan=False):
+        '''Populate the extracted attributes of this object from the matching
+        original attributes.
+
+        This usually reflects a failure to find an acceptable deconvolution solution,
+        and may indicate that there was no peak at the specified location when ``orphan``
+        is :const:`True`
+
+        Parameters
+        ----------
+        orphan: :class:`bool`
+            Whether or not to set :attr:`orphan` to :const:`True`, indicating no peak was
+            found near :attr:`mz`.
+        '''
         if self.charge == ChargeNotProvided:
             warnings.warn("A precursor has been defaulted with an unknown charge state.")
             self.extracted_charge = ChargeNotProvided
@@ -1481,6 +1510,66 @@ class PrecursorInformation(object):
 
 
 class ProcessedScan(ScanBase):
+    """Container for mass spectral data and associated descriptive information that has been
+    processed and reduced.
+
+    A :class:`ProcessedScan` object has been processed and compacted. It does not carry a
+    :class:`~.RawDataArrays` :attr:`arrays` attribute, only at least one of :attr:`peak_set`
+    and :attr:`deconvoluted_peak_set`. The rest of its attributes are all loaded in memory
+    directly without needing to reconstruct them from a specific format lazily through a
+    :class:`~.ScanDataSource`.
+
+    Attributes
+    ----------
+    deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None
+        Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will
+        be `None` if deconvolution has not been done.
+    peak_set : :class:`ms_peak_picker.PeakSet` or None
+        Picked peaks and (possibly) associated raw data points as produced by :meth:`pick_peaks`.
+        Will be `None` if peak picking has not been done.
+    product_scans : list
+        A list of :class:`Scan` instances which were produced by fragmenting ions from this one.
+        This attribute is not guaranteed to be populated depending upon how the scan is loaded.
+    source : :class:`ScanDataSource`
+        The object which produced this scan and which defines the methods for retrieving common
+        attributes from the underlying data structures.
+    precursor_information: :class:`PrecursorInformation` or None
+        Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
+        the precursor scan
+    id: str
+        The unique identifier for this scan as given by the source
+    title: str
+        The human-readable display string for this scan as shown in some external software
+    ms_level: int
+        The degree of fragmentation performed. 1 corresponds to a MS1 or "Survey" scan, 2 corresponds
+        to MS/MS, and so on. If :attr:`ms_level` > 1, the scan is considered a "tandem scan" or "MS^n" scan
+    scan_time: float
+        The time the scan was acquired during data acquisition. The unit of time will always be minutes.
+    drift_time: float or None
+        The time measured by the ion mobility spectrometer for this scan or frame. This quantity is None
+        if the scan does not have ion mobility information associated with it, which is usually recorded
+        in :attr:`acquisition_information`
+    index: int
+        The integer number indicating how many scans were acquired prior to this scan.
+    is_profile: bool
+        Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
+        pre-centroided.
+    polarity: int
+        If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
+        mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.
+    activation: :class:`.ActivationInformation` or None
+        If this scan is an MS^n scan, this attribute will contain information about the process
+        used to produce it from its parent ion.
+    instrument_configuration: :class:`~.InstrumentInformation`
+        The instrument configuration used to acquire this scan.
+    acquisition_information: :class:`.ScanAcquisitionInformation` or None
+        Describes the type of event that produced this scan, as well as the scanning method
+        used.
+    isolation_window: :class:`.IsolationWindow` or None
+        Describes the range of m/z that were isolated from a parent scan to create this scan
+    annotations: dict
+        A set of key-value pairs describing the scan not part of the standard interface
+    """
     def __init__(self, id, title, precursor_information,
                  ms_level, scan_time, index, peak_set,
                  deconvoluted_peak_set, polarity=None, activation=None,
@@ -1508,6 +1597,8 @@ class ProcessedScan(ScanBase):
         self.annotations = annotations
 
     def clear(self):
+        '''Clear storage-heavy attribute values
+        '''
         self.peak_set = None
         self.deconvoluted_peak_set = None
         self.activation = None
@@ -1522,6 +1613,9 @@ class ProcessedScan(ScanBase):
 
     @property
     def is_profile(self):
+        '''Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
+        pre-centroided.
+        '''
         return False
 
     def __iter__(self):
@@ -1531,7 +1625,28 @@ class ProcessedScan(ScanBase):
         return self.deconvoluted_peak_set[index]
 
     def has_peak(self, mass, error_tolerance=2e-5):
-        return self.deconvoluted_peak_set.has_peak(mass, error_tolerance)
+        """A wrapper around :meth:`~.DeconvolutedPeakSet.has_peak` to query the
+        :class:`~.DeconvolutedPeak` objects picked for this scan. If no deconvoluted
+        peaks are available, but centroided peaks are, this method will instead
+        behave like :class:`Scan.has_peak`
+
+        Parameters
+        ----------
+        mass: float
+            The mass to search for
+        error_tolerance: float
+            The parts per million mass error tolerance to use
+
+        Returns
+        -------
+        :class:`~.PeakBase`
+        """
+        if self.deconvoluted_peak_set is not None:
+            return self.deconvoluted_peak_set.has_peak(mass, error_tolerance)
+        elif self.peak_set is not None:
+            return self.peak_set.has_peak(mass, error_tolerance)
+        else:
+            raise ValueError("No peaks available")
 
     def __repr__(self):
         if self.deconvoluted_peak_set is not None:
