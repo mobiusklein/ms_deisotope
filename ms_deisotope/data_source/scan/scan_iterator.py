@@ -1,4 +1,7 @@
-from .scan import ScanBunch
+'''A collection of different strategies for iterating over streams
+of :class:`~.Scan`-like objects.
+'''
+from . import ScanBunch
 
 
 def _null_scan_validator(scan):
