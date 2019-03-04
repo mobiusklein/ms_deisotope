@@ -68,7 +68,7 @@ cdef class _Index(object):
 
 
 @cython.freelist(1000000)
-cdef class EnvelopePair:
+cdef class EnvelopePair(object):
 
     def __init__(self, mz, intensity):
         self.mz = mz
@@ -951,7 +951,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         if self.interval_index != NULL:
             free_index_list(self.interval_index)
             self.interval_index = NULL
-    
+
     def set_interval_index_size(self, index_size):
         global INTERVAL_INDEX_SIZE
         INTERVAL_INDEX_SIZE = index_size
@@ -1281,7 +1281,7 @@ cdef int build_interval_index(DeconvolutedPeakSet peaks, index_list* index, size
                 end_i = i
         else:
             start_i = 0
-            end_i = 0        
+            end_i = 0
         index.index[index_i].center_value = current_value
         index.index[index_i].start = start_i
         index.index[index_i].end = end_i
