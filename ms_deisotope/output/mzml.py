@@ -1182,6 +1182,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             scan.peak_set = self.deserialize_peak_set(data)
             scan.deconvoluted_peak_set = None
         packed = scan.pack()
+        packed.bind(self)
         return packed
 
     def convert_scan_id_to_retention_time(self, scan_id):

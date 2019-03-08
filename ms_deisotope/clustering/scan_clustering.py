@@ -7,6 +7,8 @@ import functools
 import bisect
 import json
 
+from collections import deque
+
 from ms_deisotope.task import LogUtilsMixin
 
 from .similarity_methods import peak_set_similarity
@@ -16,20 +18,37 @@ peak_set_getter = operator.attrgetter("peak_set")
 deconvoluted_peak_set_getter = operator.attrgetter("deconvoluted_peak_set")
 
 
-def ppm_error(x, y):
+def _ppm_error(x, y):
     return (x - y) / y
 
 
 @functools.total_ordering
 class SpectrumCluster(object):
-    def __init__(self, scans=None):
+    '''A collection of similar spectra.
+
+    A :class:`SpectrumCluster` is compare-able by :attr:`neutral_mass`
+    and acts as a :class:`collections.Sequence` over its members stored
+    in :attr:`scans`.
+
+    Attributes
+    ----------
+    scans: :class:`list`
+        A list of spectra which are similar to each other.
+    neutral_mass: :class:`float`
+        The neutral mass of the representative spectrum's precursor.
+    '''
+    def __init__(self, scans=None, neutral_mass=None, average_similarity=None):
         if scans is None:
             scans = []
         self.scans = scans
-
-    @property
-    def neutral_mass(self):
-        return self.scans[0].precursor_information.neutral_mass
+        self.neutral_mass = None
+        if self.scans:
+            self.neutral_mass = self.scans[0].precursor_information.neutral_mass
+        elif neutral_mass:
+            self.neutral_mass = neutral_mass
+        else:
+            self.neutral_mass = 0.0
+        self._average_similarity = average_similarity
 
     def __lt__(self, other):
         return self.neutral_mass < other.neutral_mass
@@ -52,22 +71,55 @@ class SpectrumCluster(object):
     def __getitem__(self, i):
         return self.scans[i]
 
+    def _invalidate(self):
+        self._average_similarity = None
+
     def append(self, item):
+        '''Add a new spectrum to the cluster.
+
+        Parameters
+        ----------
+        item: :class:`~.ScanBase`
+        '''
+        if not self.neutral_mass:
+            self.neutral_mass = item.precursor_information.neutral_mass
+        self._invalidate()
         self.scans.append(item)
 
     def average_similarity(self, *args, **kwargs):
+        '''Calculate the within-cluster similarity among all cluster members
+        and returns the average.
+
+        All arguments are forwarded to :func:`~.peak_set_similarity`.
+
+        If the cluster is a singleton or smaller, by definition its similarity
+        is ``1.0``.
+
+        Returns
+        -------
+        :class:`float`
+        '''
         n = len(self)
-        if n == 1:
+        if n <= 1:
             return 1.0
+        if self._average_similarity is not None:
+            return self._average_similarity
         ratings = []
         for i in range(n):
             scan_i = self[i]
             for j in range(i + 1, n):
                 scan_j = self[j]
                 ratings.append(peak_set_similarity(scan_i, scan_j, *args, **kwargs))
-        return sum(ratings) / len(ratings)
+        self._average_similarity = sum(ratings) / len(ratings)
+        return self._average_similarity
 
     def to_dict(self):
+        '''Convert the cluster to a JSON-safe :class:`dict`
+
+        Returns
+        -------
+        :class:`dict`
+        '''
         d = {}
         d['neutral_mass'] = self.neutral_mass
         d['size'] = len(self)
@@ -84,7 +136,7 @@ class SpectrumCluster(object):
                 source_name = ":detatched:"
             scans.append({
                 "id": scan.id,
-                "source": scan.source.source_file if scan.source is not None else ":detatched:",
+                "source": source_name,
                 "neutral_mass": scan.precursor_information.neutral_mass,
             })
         d['scans'] = scans
@@ -276,12 +328,36 @@ class ScanClusterBuilder(LogUtilsMixin):
         return 0
 
     def peak_set_similarity(self, scan_i, scan_j):
+        '''Calculate the similarity between the peaks of
+        ``scan_i`` and ``scan_j``, where the peaks are
+        those points given by :attr:`peak_getter`
+
+        Parameters
+        ----------
+        scan_i: :class`~.ScanBase`
+        scan_j: :class`~.ScanBase`
+
+        Returns
+        -------
+        :class:`float`
+        '''
         peak_set_a = self.peak_getter(scan_i)
         peak_set_b = self.peak_getter(scan_j)
         return peak_set_similarity(
             peak_set_a, peak_set_b)
 
     def find_best_cluster_for_scan(self, scan):
+        '''Locate the best cluster to add ``scan`` to according to
+        precursor mass and peak set similarity.
+
+        Parameters
+        ----------
+        scan: :class:`~.ScanBase`
+
+        Returns
+        -------
+        :class:`SpectrumCluster`
+        '''
         best_cluster = None
         best_similarity = 0.0
         n = len(self.clusters)
@@ -293,8 +369,8 @@ class ScanClusterBuilder(LogUtilsMixin):
 
         while i >= 0:
             cluster = self.clusters[i]
-            if abs(ppm_error(scan.precursor_information.neutral_mass,
-                             cluster.neutral_mass)) > self.precursor_error_tolerance:
+            if abs(_ppm_error(scan.precursor_information.neutral_mass,
+                              cluster.neutral_mass)) > self.precursor_error_tolerance:
                 break
             similarity = self.peak_set_similarity(scan, cluster[0])
             i -= 1
@@ -305,8 +381,8 @@ class ScanClusterBuilder(LogUtilsMixin):
         i = center_i + 1
         while i < n:
             cluster = self.clusters[i]
-            if abs(ppm_error(scan.precursor_information.neutral_mass,
-                             cluster.neutral_mass)) > self.precursor_error_tolerance:
+            if abs(_ppm_error(scan.precursor_information.neutral_mass,
+                              cluster.neutral_mass)) > self.precursor_error_tolerance:
                 break
             similarity = self.peak_set_similarity(scan, cluster[0])
             i += 1
@@ -316,6 +392,14 @@ class ScanClusterBuilder(LogUtilsMixin):
         return best_cluster
 
     def add_scan(self, scan):
+        '''Add ``scan`` to the cluster collection, adding it to the best
+        matching cluster, or starting a new cluster around it if no good
+        match can be found.
+
+        Parameters
+        ----------
+        scan: :class:`~.ScanBase`
+        '''
         best_cluster = self.find_best_cluster_for_scan(scan)
         if best_cluster:
             best_cluster.append(scan)
@@ -362,7 +446,7 @@ class ScanClusterBuilder(LogUtilsMixin):
         if len(scans) > 100:
             self.log("Clustering %d Scans" % (len(scans), ))
         for i, scan in enumerate(scans):
-            if i % 100 == 0 and i:
+            if i % 1000 == 0 and i:
                 self.log("... Handled %d Scans (%0.2f%%)" % (i, i * 100.0 / len(scans)))
             self.add_scan(scan)
         return self.clusters
@@ -370,6 +454,22 @@ class ScanClusterBuilder(LogUtilsMixin):
     @classmethod
     def iterative_clustering(cls, scans, precursor_error_tolerance=1e-5, similarity_thresholds=None,
                              peak_getter=None):
+        '''Cluster scans by precursor mass and peak set similarity, iteratively refining
+        clusters with increasing similarity threshold requirements.
+
+        Parameters
+        ----------
+        scans: :class:`Iterable`
+            An iterable of :class:`Scan`-like objects
+        precursor_error_tolerance: :class:`float`
+            The PPM mass accuracy threshold for precursor mass differences to
+            tolerate when deciding whether to compare spectra. Defaults to 1e-5.
+        similarity_thresholds: :class:`Sequence` of :class:`float`
+            A series of similarity thresholds to apply as spectra are added to clusters
+            and as clusters are iteratively refined.
+        peak_getter: :class:`Callable`
+            A callable object used to get peaks from elements of ``scans``.
+        '''
         peak_getter = cls._guess_peak_getter(peak_getter)
         if similarity_thresholds is None:
             similarity_thresholds = [0.1, .4, 0.7]
@@ -407,15 +507,106 @@ cluster_scans = ScanClusterBuilder.cluster_scans
 iterative_clustering = ScanClusterBuilder.iterative_clustering
 
 
-class ScanClusterWriter(object):
-    def __init__(self, stream):
-        self.stream = stream
+class ScanClusterWriterBase(object):
+    '''A base class for writing :class:`ScanCluster` objects to an
+    I/O stream like a file.
 
-    def write(self, data):
+    Attributes
+    ----------
+    stream: :class:`io.IOBase`
+        The stream to write the clusters to
+    metadata: :class:`dict`
+        A set of key-value pairs that describe this
+        collection.
+    '''
+
+    def __init__(self, stream, metadata=None):
+        self.stream = stream
+        self.metadata = metadata or {}
+        self._wrote_metadata = False
+
+    def _write(self, data):
         self.stream.write(data)
 
     def save(self, cluster):
-        self.write("%f\t%d\t%f\n" % (cluster.neutral_mass, len(cluster), cluster.average_similarity()))
+        '''Write ``cluster`` to the output stream, recording its
+        members and calculating it's average similarity.
+
+        Parameters
+        ----------
+        cluster: :class:`SpectrumCluster`
+            The spectrum cluster to write out
+        '''
+        if not self._wrote_metadata:
+            self.write_metadata()
+            self._wrote_metadata = True
+        self._save(cluster)
+
+    def _save(self, cluster):
+        raise NotImplementedError()
+
+    def save_all(self, clusters):
+        '''Write each :class:`SpectrumCluster` in ``clusters`` out,
+        calling :meth:`save` on each one.
+
+        Parameters
+        ----------
+        clusters: :class:`collections.Iterable` of :class:`SpectrumCluster`
+            The spectrum clusters to write out
+        '''
+        raise NotImplementedError()
+
+    def add_metadata(self, key, value):
+        '''Add metadata to the writer. That metadata will be flushed
+        out upon starting to write clusters out.
+
+        Parameters
+        ----------
+        key: :class:`str`
+            The metadata element's name
+        value: :class:`str`, :class:`float`
+            The metadata element's value
+        '''
+        if self.wrote_metadata:
+            raise TypeError(
+                "Cannot add additional metadata, the metadata has already been written")
+        self.metadata[key] = value
+
+    def write_metadata(self):
+        '''Write the accumulated metadata out in a format-appropriate
+        manner at the top of the file.
+        '''
+        if self._wrote_metadata:
+            raise TypeError("Already wrote metadata!")
+
+
+class ScanClusterWriter(ScanClusterWriterBase):
+    '''Writes :class:`ScanCluster` objects to a hierarchical text stream
+
+    Parameters
+    ----------
+    stream: :class:`io.IOBase`
+        The stream to write the clusters to
+    '''
+
+    def __init__(self, stream, metadata=None):
+        super(ScanClusterWriter, self).__init__(stream, metadata)
+
+    def write_metadata(self):
+        for key, value in self.metadata.items():
+            self._write("#%s = %s\n" % (key, value))
+        self._write("\n")
+
+    def _save(self, cluster):
+        '''Write ``cluster`` as a tab delimited tree, recording its
+        members and calculating it's average similarity.
+
+        Parameters
+        ----------
+        cluster: :class:`SpectrumCluster`
+            The spectrum cluster to write out
+        '''
+        self._write("%f\t%d\t%f\n" % (cluster.neutral_mass, len(cluster), cluster.average_similarity()))
         for member in cluster:
             member_source = member.source
             if member_source is not None:
@@ -425,21 +616,183 @@ class ScanClusterWriter(object):
                         source_name = source_name.name
             else:
                 source_name = ":detatched:"
-            self.write("\t%s\t%s\n" % (source_name, member.id))
-        self.write('\n')
+            self._write("\t%s\t%s\n" % (source_name, member.id))
+        self._write('\n')
+
+    def save_all(self, clusters):
+        '''Write each :class:`SpectrumCluster` in ``clusters`` out,
+        calling :meth:`save` on each one.
+
+        Parameters
+        ----------
+        clusters: :class:`collections.Iterable` of :class:`SpectrumCluster`
+            The spectrum clusters to write out
+        '''
+        for cluster in clusters:
+            self.save(cluster)
+
+
+class JSONScanClusterWriter(ScanClusterWriterBase):
+    '''A :class:`ScanClusterWriterBase` that uses JSON
+    lines.
+    '''
+
+    def write_metadata(self):
+        json.dump(self.metadata, self.stream)
+        self._write("\n")
+
+    def _save(self, cluster):
+        json.dump(cluster.to_dict(), self.stream)
+        self._write("\n")
 
     def save_all(self, clusters):
         for cluster in clusters:
             self.save(cluster)
 
 
-class JSONScanClusterWriter(object):
-    def __init__(self, stream):
+class ScanClusterReaderBase(object):
+    '''Base class for reading spectrum clusters from disk.
+
+    Attributes
+    ----------
+    stream: :class:`io.IOBase`
+        The stream to read the clusters from
+    resolver_map: :class:`dict`
+        A mapping from scan source name to a :class:`Callable`
+        which will return a :class:`~.ScanBase` object representing
+        that spectrum.
+    metadata: :class:`dict`
+        A set of key-value pairs that describe this
+        collection.
+    clusters: :class:`list`
+        The read clusters.
+    '''
+    def __init__(self, stream, resolver_map):
         self.stream = stream
+        self.resolver_map = resolver_map
+        self.clusters = list()
+        self.metadata = {}
+        self._generator = None
 
-    def save(self, cluster):
-        json.dump(self.stream, cluster.to_dict())
+    def _resolve(self, source, scan_id):
+        resolver = self.resolver_map[source]
+        return resolver(scan_id)
 
-    def save_all(self, clusters):
-        for cluster in clusters:
-            self.save(cluster)
+    def _parse(self):
+        '''Parse the cluster collection from :attr:`stream`
+        '''
+        self._load_metadata()
+        return self._load_clusters()
+
+    def _load_metadata(self):
+        '''Read the metadata header from :attr:`stream`.
+        '''
+        raise NotImplementedError()
+
+    def _load_clusters(self):
+        '''Read the data describing :class:`SpectrumCluster` objects from
+        :attr:`stream`.
+        '''
+        raise NotImplementedError()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        '''Advance the iterator, retrieving the next :class:`SpectrumCluster`
+
+        Returns
+        -------
+        :class:`SpectrumCluster`
+        '''
+        if self._generator is None:
+            self._generator = self._parse()
+        return next(self._generator)
+
+    def next(self):
+        '''Advance the iterator, retrieving the next :class:`SpectrumCluster`
+
+        Returns
+        -------
+        :class:`SpectrumCluster`
+        '''
+        return self.__next__()
+
+
+class ScanClusterReader(ScanClusterReaderBase):
+    '''Reads :class:`SpectrumCluster` objects from hierarchical text files written by
+    :class:`ScanClusterWriter`.
+    '''
+    def __init__(self, stream, resolver_map):
+        super(ScanClusterReader, self).__init__(stream, resolver_map)
+        self._line_buffer = deque()
+
+    def _next_line(self):
+        if self._line_buffer:
+            return self._line_buffer.popleft()
+        return self.stream.readline()
+
+    def _return_line(self, line):
+        self._line_buffer.append(line)
+
+    def _stream_lines(self):
+        line = self._next_line()
+        while line:
+            yield line
+            line = self._next_line()
+
+    def _load_metadata(self):
+        line = self._next_line()
+        while line.startswith("#"):
+            key, value = line.strip().split(" = ", 1)
+            try:
+                value = float(value)
+            except ValueError:
+                value = str(value)
+            self.metadata[key] = value
+        self._return_line(line)
+
+    def _load_clusters(self):
+        current_cluster = []
+        mass = None
+        similarity = None
+        for line in self._stream_lines():
+            line = line.rstrip()
+            if not line or not line.startswith('\t'):
+                if current_cluster:
+                    yield SpectrumCluster(current_cluster, mass, similarity)
+                    current_cluster = []
+                    mass = None
+                    similarity = None
+                if line:
+                    tokens = line.split('\t')
+                    mass = float(tokens[0])
+                    similarity = float(tokens[1])
+            elif line.startswith("\t"):
+                tokens = line.split("\t")
+                source = tokens[1]
+                scan_id = tokens[2]
+                scan = self._resolve(source, scan_id)
+                current_cluster.append(scan)
+        if current_cluster:
+            yield SpectrumCluster(current_cluster, mass, similarity)
+
+
+class JSONScanClusterReader(ScanClusterReader):
+    '''Reads :class:`SpectrumCluster` objects from hierarchical text files written by
+    :class:`JSONScanClusterWriter`.
+    '''
+    def _load_metadata(self):
+        return json.loads(self.stream.readline())
+
+    def _load_clusters(self):
+        line = self.stream.readline()
+        while line:
+            data = json.loads(line)
+            mass = data['neutral_mass']
+            similarity = data['average_similarity']
+            scans = []
+            for scan_bundle in data['scans']:
+                scans.append(self._resolve(scan_bundle['source'], scan_bundle['id']))
+            yield SpectrumCluster(scans, mass, similarity)
+            line = self.stream.readline()

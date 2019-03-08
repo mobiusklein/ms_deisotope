@@ -679,25 +679,28 @@ class proxyproperty(object):
     def __get__(self, instance, owner):
         if self.caching:
             is_null_slot = "_%s_null" % self.name
+            cache_slot = "_%s" % self.name
             try:
                 is_null = getattr(instance, is_null_slot)
             except AttributeError:
                 setattr(instance, is_null_slot, None)
                 is_null = None
+            if is_null:
+                return None
             try:
-                if is_null:
-                    return None
-                value = getattr(instance, "_" + self.name)
-                return value
+                value = getattr(instance, cache_slot)
+                has_value = value is not None
             except AttributeError:
+                has_value = False
+            if not has_value:
                 value = getattr(instance.scan, self.name)
                 if is_null is None:
                     if value is None:
                         setattr(instance, is_null_slot, True)
                     else:
                         setattr(instance, is_null_slot, False)
-                setattr(instance, "_" + self.name, value)
-                return value
+                setattr(instance, cache_slot, value)
+            return value
         return getattr(instance.scan, self.name)
 
     def __set__(self, instance, value):
@@ -716,7 +719,7 @@ class proxyproperty(object):
 
 
 class ScanProxy(ScanBase):
-    """A proxy for a :class:`ScanBase` object, allowing transparent access to the
+    """A proxy for a :class:`~.ScanBase` object, allowing transparent access to the
     scan, potentially loading it from disk through the attached :class:`ScanProxyContext`
     :attrib:`context`.
 

@@ -191,30 +191,84 @@ class Scan(ScanBase):
 
     @property
     def ms_level(self):
+        '''The degree of fragmentation performed. 1 corresponds to a MS1 or "Survey" scan, 2 corresponds
+        to MS/MS, and so on. If :attr:`ms_level` > 1, the scan is considered a "tandem scan" or "MS^n" scan
+
+        Returns
+        -------
+        :class:`int`
+        '''
         if self._ms_level is None:
             self._ms_level = self.source._ms_level(self._data)
         return self._ms_level
 
+    @ms_level.setter
+    def ms_level(self, value):
+        self._ms_level = int(value)
+
     @property
     def is_profile(self):
+        '''Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
+        pre-centroided.
+
+        Returns
+        -------
+        :class:`bool`
+        '''
         if self._is_profile is None:
             self._is_profile = self.source._is_profile(self._data)
         return self._is_profile
 
+    @is_profile.setter
+    def is_profile(self, value):
+        self._is_profile = bool(value)
+
     @property
     def polarity(self):
+        '''If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
+        mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.
+
+        Returns
+        -------
+        :class:`int`
+        '''
         if self._polarity is None:
             self._polarity = self.source._polarity(self._data)
         return self._polarity
 
+    @polarity.setter
+    def polarity(self, value):
+        self._polarity = int(value)
+
     @property
     def scan_time(self):
+        '''The time the scan was acquired during data acquisition. The unit of time will always
+        be minutes.
+
+        Returns
+        -------
+        :class:`float`
+        '''
         if self._scan_time is None:
             self._scan_time = self.source._scan_time(self._data)
         return self._scan_time
 
+    @scan_time.setter
+    def scan_time(self, value):
+        self._scan_time = float(value)
+
     @property
     def arrays(self):
+        '''A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and
+        intensity data points.
+
+        These arrays are wrapped in a :class:`~.RawDataArrays` instance, which provides
+        additional methods.
+
+        Returns
+        -------
+        :class:`~.RawDataArrays`
+        '''
         if self._arrays is None:
             self._arrays = RawDataArrays(*self.source._scan_arrays(self._data))
         return self._arrays
@@ -231,6 +285,12 @@ class Scan(ScanBase):
 
     @property
     def title(self):
+        '''The human-readable display string for this scan as shown in some external software.
+
+        Returns
+        -------
+        :class:`str`
+        '''
         if self._title is None:
             self._title = self.source._scan_title(self._data)
         return self._title
@@ -241,6 +301,12 @@ class Scan(ScanBase):
 
     @property
     def id(self):
+        '''The within run unique scan identifier.
+
+        Returns
+        -------
+        :class:`str`
+        '''
         if self._id is None:
             self._id = self.source._scan_id(self._data)
         return self._id
@@ -253,16 +319,28 @@ class Scan(ScanBase):
 
     @property
     def index(self):
+        '''The integer number indicating how many scans were acquired prior to this scan.
+
+        Returns
+        -------
+        :class:`int`
+        '''
         if self._index is None:
             self._index = self.source._scan_index(self._data)
         return self._index
 
     @index.setter
     def index(self, value):
-        self._index = value
+        self._index = int(value)
 
     @property
     def precursor_information(self):
+        '''Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
+        the precursor scan.
+
+        Returns
+        -------
+        :class:`~.PrecursorInformation`'''
         if self.ms_level < 2:
             return None
         if self._precursor_information is None:
@@ -279,6 +357,13 @@ class Scan(ScanBase):
 
     @property
     def activation(self):
+        '''If this scan is an MS^n scan, this attribute will contain information about the process
+        used to produce it from its parent ion.
+
+        Returns
+        -------
+        :class:`~.ActivationInformation`
+        '''
         if self.ms_level < 2:
             return None
         if self._activation is None:
@@ -294,6 +379,12 @@ class Scan(ScanBase):
 
     @property
     def isolation_window(self):
+        '''Describes the range of m/z that were isolated from a parent scan to create this scan.
+
+        Returns
+        -------
+        :class:`~.IsolationWindow`
+        '''
         if self.ms_level < 2:
             return None
         if self._isolation_window is None:
@@ -322,6 +413,8 @@ class Scan(ScanBase):
 
     @property
     def acquisition_information(self):
+        '''Describes the type of event that produced this scan, as well as the scanning method
+        used.'''
         if self._acquisition_information is None:
             self._acquisition_information = self.source._acquisition_information(
                 self._data)
@@ -336,6 +429,7 @@ class Scan(ScanBase):
 
     @property
     def instrument_configuration(self):
+        '''The instrument configuration used to acquire this scan.'''
         if self._instrument_configuration is None:
             self._instrument_configuration = self.source._instrument_configuration(
                 self._data)
@@ -350,6 +444,7 @@ class Scan(ScanBase):
 
     @property
     def annotations(self):
+        '''A set of key-value pairs describing the scan not part of the standard interface'''
         if self._annotations is None:
             self._annotations = self.source._annotations(self._data)
             self._annotations.update(self._external_annotations)
@@ -378,6 +473,18 @@ class Scan(ScanBase):
             raise ValueError("Cannot iterate over peaks in a scan that has not been "
                              "centroided. Call `pick_peaks` first.")
         return iter(self.peak_set)
+
+    def __getitem__(self, i):
+        if self.peak_set is None:
+            raise ValueError("Cannot retrieve peaks in a scan that has not been "
+                             "centroided. Call `pick_peaks` first.")
+        return self.peak_set[i]
+
+    def __len__(self):
+        if self.peak_set is None:
+            raise ValueError("Cannot count peaks in a scan that has not been "
+                             "centroided. Call `pick_peaks` first.")
+        return len(self.peak_set)
 
     def has_peak(self, *args, **kwargs):
         """A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the
@@ -1004,6 +1111,7 @@ class ProcessedScan(ScanBase):
         self.instrument_configuration = instrument_configuration
         self.product_scans = product_scans
         self.annotations = annotations
+        self.source = None
 
     def clear(self):
         '''Clear storage-heavy attribute values
@@ -1027,11 +1135,22 @@ class ProcessedScan(ScanBase):
         '''
         return False
 
+    def _resolve_peaks(self):
+        if self.deconvoluted_peak_set is not None:
+            return self.deconvoluted_peak_set
+        elif self.peak_set is not None:
+            return self.peak_set
+        else:
+            return []
+
     def __iter__(self):
-        return iter(self.deconvoluted_peak_set)
+        return iter(self._resolve_peaks())
 
     def __getitem__(self, index):
-        return self.deconvoluted_peak_set[index]
+        return self._resolve_peaks()[index]
+
+    def __len__(self):
+        return len(self._resolve_peaks())
 
     def has_peak(self, mass, error_tolerance=2e-5):
         """A wrapper around :meth:`~.DeconvolutedPeakSet.has_peak` to query the
@@ -1073,6 +1192,11 @@ class ProcessedScan(ScanBase):
 
         return "ProcessedScan(id=%s, ms_level=%d, %d peaks%s)" % (
             self.id, self.ms_level, len(peaks), pinfo_string)
+
+    def bind(self, source):
+        super(ProcessedScan, self).bind(source)
+        self.source = source
+        return self
 
     def clone(self, deep=True):
         """Return a copy of the :class:`ProcessedScan` object, potentially a deep
