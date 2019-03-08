@@ -486,6 +486,12 @@ class Scan(ScanBase):
                              "centroided. Call `pick_peaks` first.")
         return len(self.peak_set)
 
+    def __bool__(self):
+        return bool(self._data)
+
+    def __nonzero__(self):
+        return self.__bool__()
+
     def has_peak(self, *args, **kwargs):
         """A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the
         :class:`ms_peak_picker.FittedPeak` objects picked for this scan.
