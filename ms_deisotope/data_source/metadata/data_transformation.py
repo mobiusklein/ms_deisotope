@@ -2,10 +2,11 @@ from collections import OrderedDict
 
 from six import string_types as basestring
 
+from ms_deisotope.utils import uid
+
 from .cv import Term, TermSet
 # from .software import Software, SoftwareName
 
-from ms_deisotope.utils import uid
 
 
 class DataTransformation(Term):
@@ -224,18 +225,44 @@ data_transformations = TermSet([
 # [[[end]]]
 
 
-data_transformations_by_name = {c.name: c for c in data_transformations}
-
-
 def data_transformation(name):
+    '''Translate a given name or identifier into a :class:`DataTransformation`
+    instance.
+    
+    If no match is found in the database of known :class:`DataTransformation`
+    types, a new dummy :class:`DataTransformation` is returned with all fields
+    set to the value of ``name``
+
+    Returns
+    -------
+    DataTransformation
+    '''
     try:
-        return data_transformations_by_name[name]
+        return data_transformations[name]
     except KeyError:
         return DataTransformation(name, name, name, name, [name])
 
 
 class ProcessingMethod(object):
+    '''Describes a single action applied to the associated spectra, composed of one
+    or more data transformation operations.
 
+    Attributes
+    ----------
+    operations: :class:`~.OrderedDict`
+        The data transformations applied, mapping transformation term to any
+        parameter value or the empty string.
+    software_id: str
+        A reference to a particular version of software used to carry out the
+        transformations.
+    order: int
+        The order in which this action was performed, in the context of the
+        parent :class:`DataProcessingInformation` object
+
+    See Also
+    --------
+    :class:`DataTransformation`
+    '''
     def __init__(self, operations=None, software_id=None, order=0):
         self.operations = operations or OrderedDict()
         self.software_id = software_id
@@ -258,11 +285,30 @@ class ProcessingMethod(object):
         return template.format(self=self, names='[%s]' % ', '.join(self._get_names()))
 
     def add(self, operation, value=''):
+        '''Add a new :class:`DataTransformation` operation to this method.
+
+        Parameters
+        ----------
+        operation: :class:`DataTransformation` or :class:`str`
+            The transformation applied. If passed as a :class:`str`, it will be translated
+            into a :class:`DataTransformation`.
+        value: :class:`object`
+            A parameter value associated with the operation. Defaults to the empty string.
+        '''
         if isinstance(operation, basestring):
             operation = data_transformation(operation)
         self.operations[operation] = value
 
     def update(self, operations):
+        '''Add each operation in ``operations`` to this method.
+
+        Parameters
+        ----------
+        operations: :class:`~.Mapping` or :class:`Iterable`
+            If given a :class:`~.Mapping`, add each key-value
+            pair using :meth:`add`. Otherwise extract keys or key-value pairs
+            if :class:`Iterable` is supported, adding each in succession
+        '''
         if isinstance(operations, dict):
             for op, val in operations.items():
                 self.add(op, val)
@@ -270,12 +316,24 @@ class ProcessingMethod(object):
             for op in operations:
                 if isinstance(op, dict):
                     self.add(op['name'], op['value'])
+                elif isinstance(op, (tuple, list)) and len(op) == 2:
+                    self.add(*op)
                 else:
                     self.add(op)
 
 
 class DataProcessingInformation(object):
+    '''A :class:`Sequence` of :class:`ProcessingMethod` instances, describing the sequence
+    of data transformations applied to the spectra in the data associated with this instance.
 
+    Attributes
+    ----------
+    methods: list
+        A list of :class:`ProcessingMethod` instances describing the individual operations done
+        in an ordered fashion.
+    id: int
+        A within-source unique identifier
+    '''
     def __init__(self, methods=None, id=None):
         self.methods = methods or []
         self.id = id or uid()

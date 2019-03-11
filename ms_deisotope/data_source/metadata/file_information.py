@@ -6,23 +6,41 @@ from collections import MutableMapping
 
 from six import string_types as basestring
 
+from .cv import Term, TermSet
+
 try:
     FileNotFoundError
 except NameError:
     FileNotFoundError = OSError
 
-from .cv import Term, TermSet
-
 
 class IDFormat(Term):
+    """Describes a named spectrum identifier format, either
+    using a controlled-vocabulary term or user-defined name.
+
+    A :class:`IDFormat` is equal to its name and its controlled
+    vocabulary identifier.
+    """
     pass
 
 
 class FileFormat(Term):
+    """Describes a named mass spectrometry data file format, either
+    using a controlled-vocabulary term or user-defined name.
+
+    A :class:`FileFormat` is equal to its name and its controlled
+    vocabulary identifier.
+    """
     pass
 
 
 class FileContent(Term):
+    """Describes a named mass spectrometry data file content type,
+    either using a controlled-vocabulary term or user-defined name.
+
+    A :class:`FileContent` is equal to its name and its controlled
+    vocabulary identifier.
+    """
     pass
 
 
@@ -560,7 +578,7 @@ MS_MSn_Spectrum = content_keys.get('MSn spectrum')
 
 def id_format(name):
     try:
-        return id_formats_by_name[name]
+        return id_formats[name]
     except KeyError:
         if name is None:
             return None
