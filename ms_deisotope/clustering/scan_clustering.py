@@ -37,18 +37,21 @@ class SpectrumCluster(object):
     neutral_mass: :class:`float`
         The neutral mass of the representative spectrum's precursor.
     '''
-    def __init__(self, scans=None, neutral_mass=None, average_similarity=None):
+    def __init__(self, scans=None, neutral_mass=None, average_similarity=None, annotations=None):
         if scans is None:
             scans = []
+        if annotations is None:
+            annotations = dict()
         self.scans = scans
         self.neutral_mass = None
-        if self.scans:
-            self.neutral_mass = self.scans[0].precursor_information.neutral_mass
-        elif neutral_mass:
+        if neutral_mass:
             self.neutral_mass = neutral_mass
+        elif self.scans:
+            self.neutral_mass = self.scans[0].precursor_information.neutral_mass
         else:
             self.neutral_mass = 0.0
         self._average_similarity = average_similarity
+        self.annotations = annotations
 
     def __lt__(self, other):
         return self.neutral_mass < other.neutral_mass
@@ -195,7 +198,7 @@ class SpectrumClusterCollection(object):
                 best_error = abs(err)
                 i = mid - 1
                 while i >= 0:
-                    x = self.structures[i]
+                    x = array[i]
                     err = abs((x.neutral_mass - mass) / mass)
                     if err < best_error:
                         best_error = err
@@ -206,7 +209,7 @@ class SpectrumClusterCollection(object):
                 lo_index = i + 1
                 i = mid + 1
                 while i < n:
-                    x = self.structures[i]
+                    x = array[i]
                     err = abs((x.neutral_mass - mass) / mass)
                     if err < best_error:
                         best_error = err
