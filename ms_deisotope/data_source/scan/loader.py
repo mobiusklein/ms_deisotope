@@ -244,9 +244,23 @@ class ScanIterator(ScanDataSource):
 
     @abc.abstractmethod
     def next(self):
+        '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        depending upon iteration strategy.
+
+        Returns
+        -------
+        :class:`~.ScanBunch` or :class:`~.ScanBase`
+        '''
         raise NotImplementedError()
 
     def __next__(self):
+        '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        depending upon iteration strategy.
+
+        Returns
+        -------
+        :class:`~.ScanBunch` or :class:`~.ScanBase`
+        '''
         return self.next()
 
     def __iter__(self):
@@ -259,10 +273,13 @@ class ScanIterator(ScanDataSource):
 
     @abc.abstractmethod
     def _make_default_iterator(self):
+        '''Set up the default iterator for the :class:`ScanIterator`.
+        '''
         raise NotImplementedError()
 
     def make_iterator(self, iterator=None, grouped=True):
-        """Configure the iterator's behavior.
+        """Configure the :class:`ScanIterator`'s behavior, selecting it's iteration strategy over
+        either its default iterator or the provided ``iterator`` argument.
 
         Parameters
         ----------
@@ -422,9 +439,21 @@ class RandomAccessScanSource(ScanIterator):
         raise NotImplementedError()
 
     def has_ms1_scans(self):
+        '''Checks if this :class:`ScanDataSource` contains MS1 spectra.
+
+        Returns
+        -------
+        :class:`bool`
+        '''
         return True
 
     def has_msn_scans(self):
+        '''Checks if this :class:`ScanDataSource` contains MSn spectra.
+
+        Returns
+        -------
+        :class:`bool`
+        '''
         return True
 
     def _locate_ms1_scan(self, scan, search_range=150):
@@ -450,6 +479,13 @@ class RandomAccessScanSource(ScanIterator):
         return scan
 
     def find_previous_ms1(self, start_index):
+        '''Locate the MS1 scan preceding ``start_index``, iterating backwards through
+        scans until either the first scan is reached or an MS1 scan is found.
+
+        Returns
+        -------
+        :class:`~.ScanBase` or :const:`None` if not found
+        '''
         if not self.has_ms1_scans():
             return None
         index = start_index - 1
@@ -464,6 +500,13 @@ class RandomAccessScanSource(ScanIterator):
         return None
 
     def find_next_ms1(self, start_index):
+        '''Locate the MS1 scan following ``start_index``, iterating forwards through
+        scans until either the last scan is reached or an MS1 scan is found.
+
+        Returns
+        -------
+        :class:`~.ScanBase` or :const:`None` if not found
+        '''
         if not self.has_ms1_scans():
             return None
         index = start_index + 1
@@ -510,36 +553,6 @@ class RandomAccessScanSource(ScanIterator):
         return self.get_scan_by_index(i)
 
 
-class DetachedAccessError(Exception):
-    pass
-
-
-class DataAccessProxy(object):  # pragma: no cover
-    def __init__(self, source):
-        self.source = None
-        self.attach(source)
-
-    def attach(self, source):
-        self.source = source
-
-    def detach(self):
-        self.source = None
-
-    def __getstate__(self):
-        return ()
-
-    def __setstate__(self, state):
-        self.source = None
-
-    def raise_if_detached(self):
-        if self.source is None:
-            raise DetachedAccessError("Cannot perform operation. Instance is detached.")
-
-    def get_scan_by_id(self, scan_id):
-        self.raise_if_detached()
-        return self.source.get_scan_by_id(scan_id)
-
-
 @add_metaclass(abc.ABCMeta)
 class ScanFileMetadataBase(object):
     """Objects implementing this interface can describe the original source
@@ -563,29 +576,25 @@ class ScanFileMetadataBase(object):
 
     @abc.abstractmethod
     def instrument_configuration(self):
+        '''Describe the different instrument components and configurations used
+        to acquire scans in this run.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.InstrumentInformation`
+        '''
         return []
 
     @abc.abstractmethod
     def data_processing(self):
+        '''Describe any preprocessing steps applied to the data described by this
+        instance.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.DataProcessingInformation`
+        '''
         return []
-
-
-class IteratorFacadeBase(DataAccessProxy, ScanIterator):  # pragma: no cover
-    def __init__(self, source, **kwargs):
-        DataAccessProxy.__init__(self, source)
-        self._producer = None
-
-    def make_iterator(self, iterator=None, grouped=True):
-        if grouped:
-            self._producer = self.source._scan_group_iterator(iterator)
-        else:
-            self._producer = self.source._single_scan_iterator(iterator)
-
-    def _transform(self, scan_bunch):
-        return scan_bunch
-
-    def next(self):
-        return self._transform(next(self._producer))
 
 
 class ScanProxyContext(object):
@@ -676,10 +685,18 @@ class proxyproperty(object):
         self.name = name
         self.caching = caching
 
+    @property
+    def is_null_slot(self):
+        return "_%s_null" % self.name
+    
+    @property
+    def cache_slot(self):
+        return "_%s" % self.name
+
     def __get__(self, instance, owner):
         if self.caching:
-            is_null_slot = "_%s_null" % self.name
-            cache_slot = "_%s" % self.name
+            is_null_slot = self.is_null_slot
+            cache_slot = self.cache_slot
             try:
                 is_null = getattr(instance, is_null_slot)
             except AttributeError:
@@ -705,13 +722,14 @@ class proxyproperty(object):
 
     def __set__(self, instance, value):
         if self.caching:
-            setattr(instance, "_" + self.name, value)
+            setattr(instance, self.cache_slot, value)
+            setattr(instance, self.is_null_slot, None)
         else:
             raise TypeError("Cannot set attribute \"%s\"" % (self.name, ))
 
     def __delete__(self, instance):
         if self.caching:
-            is_null_slot = "_%s_null" % self.name
+            is_null_slot = self.is_null_slot
             try:
                 delattr(instance, is_null_slot)
             except AttributeError:

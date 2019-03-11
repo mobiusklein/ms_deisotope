@@ -505,7 +505,7 @@ class Scan(ScanBase):
 
         Returns
         -------
-        ms_peak_picker.FittedPeak or None
+        :class:`ms_peak_picker.FittedPeak` or None
             The peak closest to the query m/z within the error tolerance window or None
             if there are no peaks satisfying the requirements
 
@@ -1042,7 +1042,7 @@ class ProcessedScan(ScanBase):
 
     Attributes
     ----------
-    deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None
+    deconvoluted_peak_set : :class:`~.DeconvolutedPeakSet` or None
         Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will
         be `None` if deconvolution has not been done.
     peak_set : :class:`ms_peak_picker.PeakSet` or None
