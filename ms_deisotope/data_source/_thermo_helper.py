@@ -178,7 +178,7 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
         index = defaultdict(int)
         analyzer_counter = 1
         analyzer_confs = dict()
-        for scan in self:
+        for scan in self: # pylint: disable=not-an-iterable
             index[scan.ms_level] += 1
             fline = self._filter_string(scan._data)
             analyzer = analyzer_map[fline.data['analyzer']]

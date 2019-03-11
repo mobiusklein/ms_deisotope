@@ -53,6 +53,8 @@ class Term(object):
         }
 
     def __eq__(self, other):
+        if other is None:
+            return False
         if isinstance(other, basestring):
             return self.name == other or self.id == other
         else:

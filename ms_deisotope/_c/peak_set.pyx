@@ -109,6 +109,9 @@ cdef class EnvelopePair(object):
         inst.intensity = intensity
         return inst
 
+    def __repr__(self):
+        return "(%0.4f, %0.2f)" % (self.mz, self.intensity)
+
 
 @cython.freelist(100000)
 cdef class Envelope(object):
