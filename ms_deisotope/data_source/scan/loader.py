@@ -597,6 +597,10 @@ class ScanFileMetadataBase(object):
         return []
 
 
+UNLOAD_POLICY_FULL = "unload_policy_full"
+UNLOAD_POLICY_KEEP = "unload_policy_keep"
+
+
 class ScanProxyContext(object):
     """A memory-conserving wrapper around an existing :class:`RandomAccessScanSource`
     object for serving :class:`ScanProxy` objects.
@@ -611,10 +615,13 @@ class ScanProxyContext(object):
         The source to load scans from.
     """
 
-    def __init__(self, source, cache_size=2 ** 10):
+    def __init__(self, source, cache_size=2 ** 10, unload_policy=None):
+        if unload_policy is None:
+            unload_policy = UNLOAD_POLICY_FULL
         self.source = source
         self.cache_size = cache_size
         self.cache = OrderedDict()
+        self.unload_policy = unload_policy
 
     def get_scan_by_id(self, scan_id):
         '''Retrieve a real scan by its identifier.
@@ -785,8 +792,9 @@ class ScanProxy(ScanBase):
 
     def _clear_scan(self, *args, **kwargs):
         self._scan = None
-        self._peak_set = None
-        self._deconvoluted_peak_set = None
+        if self.context.unload_policy == UNLOAD_POLICY_FULL:
+            self._peak_set = None
+            self._deconvoluted_peak_set = None
 
     def _require_scan(self):
         if self._scan is None:
