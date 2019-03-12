@@ -1,3 +1,14 @@
+"""Defines types for describing mass spectrometry data transformations,
+data processing sequences, and a database of controlled vocabulary terms
+for them.
+
+.. note::
+    The entities in this module are only for *naming* these transformations
+    and how they were combined to process mass spectra. For implementations,
+    see other features of :mod:`ms_deisotope` and :mod:`ms_peak_picker`, or
+    other libraries.
+"""
+
 from collections import OrderedDict
 
 from six import string_types as basestring
@@ -228,7 +239,7 @@ data_transformations = TermSet([
 def data_transformation(name):
     '''Translate a given name or identifier into a :class:`DataTransformation`
     instance.
-    
+
     If no match is found in the database of known :class:`DataTransformation`
     types, a new dummy :class:`DataTransformation` is returned with all fields
     set to the value of ``name``

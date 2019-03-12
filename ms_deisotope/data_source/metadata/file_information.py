@@ -1,3 +1,8 @@
+"""Defines types for describing different kinds of mass spectrometry
+data files and their contents, and a database of controlled vocabulary
+terms for them.
+"""
+
 import os
 import hashlib
 import warnings
@@ -577,6 +582,17 @@ MS_MSn_Spectrum = content_keys.get('MSn spectrum')
 
 
 def id_format(name):
+    '''Translate a given name or identifier into a :class:`IDFormat`
+    instance.
+
+    If no match is found in the database of known :class:`IDFormat`
+    types, a new dummy :class:`IDFormat` is returned with all fields
+    set to the value of ``name``
+
+    Returns
+    -------
+    IDFormat
+    '''
     try:
         return id_formats[name]
     except KeyError:
@@ -586,6 +602,17 @@ def id_format(name):
 
 
 def file_format(name):
+    '''Translate a given name or identifier into a :class:`FileFormat`
+    instance.
+
+    If no match is found in the database of known :class:`FileFormat`
+    types, a new dummy :class:`FileFormat` is returned with all fields
+    set to the value of ``name``
+
+    Returns
+    -------
+    FileFormat
+    '''
     try:
         return file_formats[name]
     except KeyError:
@@ -595,6 +622,17 @@ def file_format(name):
 
 
 def content_key(name):
+    '''Translate a given name or identifier into a :class:`FileContent`
+    instance.
+
+    If no match is found in the database of known :class:`FileContent`
+    types, a new dummy :class:`FileContent` is returned with all fields
+    set to the value of ``name``
+
+    Returns
+    -------
+    FileContent
+    '''
     try:
         return content_keys[name]
     except KeyError:
@@ -665,7 +703,7 @@ class FileInformation(MutableMapping):
 
         Parameters
         ----------
-        key : str
+        key : str or :attr:`content`
             The content name, either a CV-term or a user-defined name
         value : object, optional
             The optional value, which should be any type of object whose
@@ -678,15 +716,37 @@ class FileInformation(MutableMapping):
 
         Parameters
         ----------
-        key : str
+        key : str or :class:`FileContent`
             The content key to remove
         """
         self.contents.pop(key, None)
 
     def get_content(self, key):
+        '''Retrieve the value of ``key`` from :attr:`contents`.
+
+        This method is aliased to :meth:`__getitem__`
+
+        Parameters
+        ----------
+        key : str or :class:`FileContent`
+
+        Returns
+        -------
+        object
+        '''
         return self.contents[key]
 
     def has_content(self, key):
+        '''Check if ``key`` is found in :attr:`content`
+
+        Parameters
+        ----------
+        key : str or :class:`FileContent`
+
+        Returns
+        -------
+        bool
+        '''
         return key in self.contents
 
     def __getitem__(self, key):
@@ -712,6 +772,12 @@ class FileInformation(MutableMapping):
         return iter(self.contents)
 
     def copy(self):
+        '''Create a deep copy of this object
+
+        Returns
+        -------
+        FileInformation
+        '''
         return self.__class__(
             self.contents.copy(), [f.copy() for f in self.source_filesr])
 
@@ -769,6 +835,18 @@ class SourceFile(object):
 
     @classmethod
     def from_path(cls, path):
+        '''Construct a new :class:`SourceFile` from a path to a real file on the local
+        file system.
+
+        Parameters
+        ----------
+        path: str
+            The path to the file to describe
+        
+        Returns
+        -------
+        SourceFile
+        '''
         path = os.path.realpath(path)
         name = os.path.basename(path)
         location = os.path.dirname(path)

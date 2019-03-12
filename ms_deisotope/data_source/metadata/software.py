@@ -9,11 +9,7 @@ class Software(object):
 
     @classmethod
     def is_name(cls, name):
-        try:
-            software_names_by_name[name]
-            return True
-        except KeyError:
-            return False
+        return name in software_names_by_name
 
     def __init__(self, name=None, id=None, version=None, **options):
         if name is None:

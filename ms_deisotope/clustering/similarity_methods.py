@@ -1,10 +1,8 @@
 import math
 from collections import defaultdict
 
-import numpy as np
 
-
-def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
+def sparse_peak_set_similarity(peak_set_a, peak_set_b, precision=0):
     """Computes the normalized dot product, also called cosine similarity between
     two peak sets, a similarity metric ranging between 0 (dissimilar) to 1.0 (similar).
 
@@ -41,25 +39,9 @@ def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
     return dot_product(positions, bin_a, bin_b)
 
 
-def bin_peaks(peak_set_a, peak_set_b, precision):
-    bin_a = defaultdict(float)
-    bin_b = defaultdict(float)
-
-    positions = set()
-
-    for peak in peak_set_a:
-        mz = round(peak.mz, precision)
-        bin_a[mz] += peak.intensity
-        positions.add(mz)
-
-    for peak in peak_set_b:
-        mz = round(peak.mz, precision)
-        bin_b[mz] += peak.intensity
-        positions.add(mz)
-    return positions, bin_a, bin_b
-
-
 def dot_product(positions, bin_a, bin_b, normalize=True):
+    '''Compute a normalzied dot product between two aligned intensity maps
+    '''
     z = 0
     n_a = 0
     n_b = 0
@@ -81,7 +63,7 @@ def dot_product(positions, bin_a, bin_b, normalize=True):
         return z / n_ab
 
 
-sparse_similarity = peak_set_similarity
+sparse_similarity = sparse_peak_set_similarity
 
 
 try:
@@ -89,6 +71,10 @@ try:
     from ms_deisotope._c import similarity_methods as csimilarity_methods
 
     def peak_set_similarity(peak_set_a, peak_set_b, precision=0):
+        '''A thin dispatching wrapper for peak_set_similarity methods
+        '''
+        if peak_set_a is None or peak_set_b is None:
+            raise TypeError("Peak sets cannot be None!")
         if precision > 2:
             return sparse_similarity(peak_set_a, peak_set_b, precision)
         else:
@@ -98,3 +84,4 @@ try:
 
 except ImportError:
     _has_c = False
+    peak_set_similarity = sparse_peak_set_similarity

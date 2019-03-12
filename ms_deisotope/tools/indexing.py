@@ -14,7 +14,7 @@ from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
 
 from ms_deisotope.clustering.scan_clustering import (
-    iterative_clustering, ScanClusterWriter)
+    iterative_clustering, ScanClusterWriter, ScanClusterReader, _DynamicallyLoadingResolver)
 
 from ms_deisotope.data_source import (
     _compression, ScanProxyContext, MSFileLoader)
@@ -359,14 +359,33 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
     click.echo("Begin Clustering", err=True)
     clusters = iterative_clustering(
         msn_scans, precursor_error_tolerance, similarity_thresholds)
+    by_size = Counter()
+    for cluster in clusters:
+        by_size[len(cluster)] += 1
+    click.echo("Clusters: {:d}".format(len(clusters)))
+    for key, value in sorted(by_size.items()):
+        click.echo("Size {:d}: {:d}".format(key, value))
     with click.open_file(output_path, mode='w') as outfh:
         writer = ScanClusterWriter(outfh)
         for cluster in clusters:
             writer.save(cluster)
 
 
-if _compression.has_idzip:
+@cli.command('cluster-statistics')
+def cluster_evaluation(path):
+    with click.open_file(path) as fh:
+        dirname = os.path.dirname(path)
+        reader = ScanClusterReader(fh, _DynamicallyLoadingResolver(dirname))
+        clusters = list(reader)
+        by_size = Counter()
+        for cluster in clusters:
+            by_size[len(cluster)] += 1
+        click.echo("Clusters: {:d}".format(len(clusters)))
+        for key, value in sorted(by_size.items()):
+            click.echo("Size {:d}: {:d}".format(key, value))
 
+
+if _compression.has_idzip:
     @cli.command("idzip", short_help='Compress a file with idzip, a gzip-compatible format with random access support')
     @click.argument('path', type=click.Path(allow_dash=True, readable=True))
     @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False),
