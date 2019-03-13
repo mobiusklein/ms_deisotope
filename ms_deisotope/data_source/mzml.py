@@ -1,3 +1,10 @@
+'''mzML is a standard rich XML-format for raw mass spectrometry data storage.
+This module provides :class:`MzMLLoader`, a :class:`~.RandomAccessScanSource`
+implementation.
+
+The parser is based on :mod:`pyteomics.mzml`.
+'''
+
 from six import string_types as basestring
 
 import numpy as np

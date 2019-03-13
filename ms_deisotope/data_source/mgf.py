@@ -1,3 +1,12 @@
+'''MGF is a simple human-readable format for MS/MS data. It
+allows storing MS/MS peak lists and exprimental parameters.
+
+This module provides :class:`MGFLoader`, a :class:`~.RandomAccessScanSource`
+implementation.
+
+The parser is based on :mod:`pyteomics.mgf`.
+'''
+
 from pyteomics import mgf
 import numpy as np
 
@@ -141,7 +150,22 @@ class MGFInterface(ScanDataSource):
 
 
 class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
+    """Reads scans from MASCOT Generic File (MGF) Format files. Provides both iterative
+    and random access.
 
+    .. note::
+        If the file is not sorted by retention time, :meth:`get_scan_by_time` and any
+        other time-based accessors will fail.
+
+    Attributes
+    ----------
+    source_file: str
+        Path to file to read from.
+    source: pyteomics.mgf.MGFBase
+        Underlying scan data source
+    header: dict
+        Any top-of-the-file parameters
+    """
     def __init__(self, source_file, encoding='utf-8', use_index=True, **kwargs):
         self.source_file = source_file
         self.encoding = encoding
@@ -149,6 +173,16 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
         self._source = self._create_parser()
         self.initialize_scan_cache()
         self.make_iterator()
+
+    @property
+    def header(self):
+        '''Any top-of-the-file parameters
+
+        Returns
+        -------
+        dict
+        '''
+        return self._source.header
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self.encoding, self._use_index, )
@@ -168,6 +202,21 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
                            convert_arrays=1, encoding=self.encoding)
 
     def get_scan_by_id(self, scan_id):
+        """Retrieve the scan object for the specified scan id.
+
+        If the scan object is still bound and in memory somewhere,
+        a reference to that same object will be returned. Otherwise,
+        a new object will be created.
+
+        Parameters
+        ----------
+        scan_id : str
+            The unique scan id value to be retrieved
+
+        Returns
+        -------
+        Scan
+        """
         try:
             return self.scan_cache[scan_id]
         except KeyError:

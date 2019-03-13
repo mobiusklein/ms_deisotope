@@ -1,6 +1,9 @@
 '''Thermo RAW file reading implementation using the pure .NET
 RawFileReader library released in 2017.
 
+This module provides :class:`ThermoRawLoader`, a :class:`~.RandomAccessScanSource`
+implementation.
+
 Depends upon the ``pythonnet`` project which provides the :mod:`clr`
 module, enabling nearly seamless interoperation with the Common Language
 Runtime.

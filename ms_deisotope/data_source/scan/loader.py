@@ -691,14 +691,15 @@ class proxyproperty(object):
     def __init__(self, name, caching=False):
         self.name = name
         self.caching = caching
+        self.is_null_slot = "_%s_null" % self.name
+        self.cache_slot = "_%s" % self.name
 
-    @property
-    def is_null_slot(self):
-        return "_%s_null" % self.name
-    
-    @property
-    def cache_slot(self):
-        return "_%s" % self.name
+    def _refresh(self, instance):
+        setattr(instance, self.is_null_slot, None)
+
+    def _clear(self, instance):
+        setattr(instance, self.is_null_slot, None)
+        setattr(instance, self.cache_slot, None)
 
     def __get__(self, instance, owner):
         if self.caching:
@@ -736,11 +737,7 @@ class proxyproperty(object):
 
     def __delete__(self, instance):
         if self.caching:
-            is_null_slot = self.is_null_slot
-            try:
-                delattr(instance, is_null_slot)
-            except AttributeError:
-                pass
+            self._clear(instance)
 
 
 class ScanProxy(ScanBase):
@@ -884,8 +881,8 @@ class ScanProxy(ScanBase):
             setattr(cls, name, proxyproperty(name))
 
     def _refresh(self):
-        del self.peak_set
-        del self.deconvoluted_peak_set
-        del self.precursor_information
+        self.__class__.peak_set._refresh(self)
+        self.__class__.deconvoluted_peak_set._refresh(self)
+        self.__class__.precursor_information._refresh(self)
 
 ScanProxy._configure_proxy_attributes()

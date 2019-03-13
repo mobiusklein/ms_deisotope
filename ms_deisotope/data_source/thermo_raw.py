@@ -1,6 +1,9 @@
 '''Thermo RAW file reading implementation using the Windows-specific COM
 interface provided by MSFileReader.dll library provided by Thermo.
 
+This module provides :class:`ThermoRawLoader`, a :class:`~.RandomAccessScanSource`
+implementation.
+
 Depends upon :mod:`comtypes` to interact with the operating system's
 COM API and to register and create COM wrapper modules on demand.
 
