@@ -55,10 +55,21 @@ class XMLReaderBase(RandomAccessScanSource):
 
     @property
     def index(self):
+        '''The byte offset index used to achieve fast random access.
+
+        Maps :class:`~.ScanBase` IDs to the byte offsets, implying
+        the order the scans reside in the file.
+
+        Returns
+        -------
+        :class:`pyteomics.xml.ByteEncodingOrderedDict`
+        '''
         return self._source._offset_index
 
     @property
     def source(self):
+        '''The file parser that this reader consumes.
+        '''
         return self._source
 
     @source.setter
@@ -66,6 +77,8 @@ class XMLReaderBase(RandomAccessScanSource):
         self._source = value
 
     def close(self):
+        '''Close the underlying reader.
+        '''
         if self.source is not None:
             self.source.close()
             self.source = None
@@ -294,6 +307,21 @@ def _find_section(source, section):
 
 @xml._keepstate
 def get_tag_attributes(source, tag_name):
+    '''Iteratively parse XML stream in ``source`` until encountering ``tag_name``
+    at which point parsing terminates and return the attributes of the matched
+    tag.
+
+    Parameters
+    ----------
+    source: file-like
+        A file-like object over an XML document
+    tag_name: str
+        The name of the XML tag to parse until
+
+    Returns
+    -------
+    dict
+    '''
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:
         if event == 'start':
@@ -308,6 +336,23 @@ def get_tag_attributes(source, tag_name):
 
 @xml._keepstate
 def iterparse_until(source, target_name, quit_name):
+    '''Iteratively parse XML stream in ``source``, yielding XML elements
+    matching ``target_name``. If at any point a tag matching ``quit_name``
+    is encountered, stop parsing.
+
+    Parameters
+    ----------
+    source: file-like
+        A file-like object over an XML document
+    tag_name: str
+        The name of the XML tag to parse until
+    quit_name: str
+        The name to stop parsing at.
+
+    Yields
+    ------
+    lxml.etree.Element
+    '''
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:
         if event == 'start':
