@@ -543,9 +543,6 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
 
     _parser_cls = _MzMLParser
 
-    @staticmethod
-    def prebuild_byte_offset_file(path):
-        return _MzMLParser.prebuild_byte_offset_file(path)
 
     def __init__(self, source_file, use_index=True, decode_binary=True, **kwargs):
         self.source_file = source_file

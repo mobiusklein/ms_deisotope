@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+'''This module defines a collection of isotopic envelope search strategies for
+deisotoping and charge state deconvolution. Each strategy is implemented through
+a subtype of :class:`~.DeconvoluterBase` and provide a common set of methods for
+deconvolving a peak list.
+'''
 import operator
 import logging
 import numpy as np
@@ -29,6 +34,21 @@ error = logger.error
 
 
 def prepare_peaklist(peaks):
+    '''Ensure ``peaks`` is a :class:`~.PeakSet` object,
+    converting from other compatible types as needed. Additionally, make a deep
+    copy of the peaks as signal subtraction methods will modify peaks in place.
+
+    Parameters
+    ----------
+    peaks: Sequence
+        Any sequence of :class:`~.FittedPeak` objects, objects
+        with ``mz`` and ``intensity`` attributes, or :class`list`/:class:`tuple`
+        objects containing paired values for ``mz`` and ``intensity``
+    
+    Returns
+    -------
+    :class:`~.PeakSet`
+    '''
     if isinstance(peaks, PeakIndex):
         peaks = PeakSet(peaks.peaks).clone()
     else:
@@ -49,6 +69,17 @@ def prepare_peaklist(peaks):
 
 
 def mean(numbers):
+    '''quick and dirty mean calculation
+    without converting to a NumPy array
+
+    Parameters
+    ----------
+    numbers: Iterable
+
+    Returns
+    -------
+    float
+    '''
     n = 0.
     total = 0
     for x in numbers:
@@ -417,7 +448,7 @@ class DeconvoluterBase(Base):
         :class:`~.IsotopicFitRecord`
         """
         self.scale_theoretical_distribution(theoretical, experimental)
-        score = self.scorer(self.peaklist, experimental, theoretical)
+        score = self.scorer(self.peaklist, experimental, theoretical) # pylint: disable=not-callable
         return IsotopicFitRecord(peak, score, charge, theoretical, experimental)
 
     def subtraction(self, isotopic_cluster, error_tolerance=ERROR_TOLERANCE):
@@ -895,7 +926,7 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
             ignore_below=ignore_below)
 
         if self.verbose:
-            info("Fits for %r" % peak)
+            info("Fits for %r", peak)
             for rec in sorted(results)[-10:]:
                 info(rec)
         try:
@@ -1315,7 +1346,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         stop = max(min(n // 2, 100), 10)
         if n == 0:
             return 0
-
+        i = 0
         for i in range(stop):
             if len(results) == 0:
                 break
@@ -1355,7 +1386,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         for peak in self.peaklist:
             if peak in self._priority_map or peak.intensity < self.minimum_intensity:
                 if self.verbose:
-                    debug("Skipping %r (%r)" % (peak, peak.intensity < self.minimum_intensity))
+                    debug("Skipping %r (%r)", peak, peak.intensity < self.minimum_intensity)
                 continue
             n = self._explore_local(
                 peak, error_tolerance=error_tolerance, charge_range=charge_range,
@@ -1363,7 +1394,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                 charge_carrier=charge_carrier,
                 truncate_after=truncate_after, ignore_below=ignore_below)
             if self.verbose:
-                debug("Exlporing Area Around %r Yielded %d Fits" % (peak, n))
+                debug("Exlporing Area Around %r Yielded %d Fits", peak, n)
 
     def postprocess_fits(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                          charge_carrier=PROTON, *args, **kwargs):
@@ -1424,7 +1455,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             The solved deconvolution solutions
         """
         fit = cluster[0]
-        score, charge, eid, tid = fit
+        _, _, eid, tid = fit
         rep_eid = drop_placeholders(eid)
         if len(rep_eid) == 0:
             return []
@@ -1457,7 +1488,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         i = 0
         solutions = []
         for fit in disjoint_best_fits:
-            score, charge, eid, tid = fit
+            _, _, eid, tid = fit
             rep_eid = drop_placeholders(eid)
             if len(rep_eid) == 0:
                 continue
@@ -1640,9 +1671,10 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
             iterations = 1
 
         begin_signal = sum([p.intensity for p in self.peaklist])
+        i = 0
         for i in range(iterations):
             if self.verbose:
-                info("<== Starting Iteration %d ===================>" % (i, ))
+                info("<== Starting Iteration %d ===================>", (i, ))
             # The first iteration doesn't need to have the entire graph
             # rebuilt and might have been seeded with targeted queries
             if i != 0:
@@ -1662,15 +1694,15 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
             if (begin_signal - end_signal) / end_signal < convergence:
                 if self.verbose:
-                    info("(%0.4e - %0.4e) / %0.4e < %0.2g, Converged!" % (
-                        begin_signal, end_signal, end_signal, convergence))
+                    info("(%0.4e - %0.4e) / %0.4e < %0.2g, Converged!",
+                        begin_signal, end_signal, end_signal, convergence)
                 break
             begin_signal = end_signal
         else:
             if self.verbose:
                 info("Did Not Converge.")
         if self.verbose:
-            info("Finished Deconvolution in %d Iterations" % (i + 1, ))
+            info("Finished Deconvolution in %d Iterations", (i + 1, ))
         if self.merge_isobaric_peaks:
             self._deconvoluted_peaks = self._merge_peaks(
                 self._deconvoluted_peaks)
@@ -2109,7 +2141,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
         if not self.use_subtraction:
             iterations = 1
         begin_signal = sum([p.intensity for p in self.peaklist])
-        for i in range(iterations):
+        for _ in range(iterations):
             self.populate_graph(error_tolerance, charge_range, charge_carrier=charge_carrier,
                                 truncate_after=truncate_after, ignore_below=ignore_below,
                                 mass_shift=mass_shift)

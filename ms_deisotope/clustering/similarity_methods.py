@@ -1,3 +1,9 @@
+'''A collection of methods for comparing two peak sets for similarity.
+
+Provides an adaptive cosine similarity implementation for both sparse and
+dense spectra.
+'''
+
 import math
 from collections import defaultdict
 

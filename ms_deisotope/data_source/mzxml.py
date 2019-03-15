@@ -376,9 +376,8 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         Underlying scan data source
     """
 
-    @staticmethod
-    def prebuild_byte_offset_file(path):
-        return _MzXMLParser.prebuild_byte_offset_file(path)
+    _parser_cls = _MzXMLParser
+
 
     def __init__(self, source_file, use_index=True, **kwargs):
         self.source_file = source_file

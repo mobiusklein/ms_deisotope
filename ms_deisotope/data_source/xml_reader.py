@@ -12,6 +12,7 @@ from pyteomics.xml import unitfloat
 
 from .common import (
     RandomAccessScanSource)
+from ._compression import get_opener
 
 
 def in_minutes(x):
@@ -52,6 +53,13 @@ class XMLReaderBase(RandomAccessScanSource):
     index: :class:`pyteomics.xml.ByteEncodingOrderedDict`
         The byte offset index used to achieve fast random access
     '''
+
+    _parser_cls = None
+
+
+    @classmethod
+    def prebuild_byte_offset_file(cls, path):
+        return cls._parser_cls.prebuild_byte_offset_file(get_opener(path))
 
     @property
     def index(self):
