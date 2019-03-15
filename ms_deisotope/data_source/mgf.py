@@ -221,7 +221,10 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
             return self.scan_cache[scan_id]
         except KeyError:
             pass
-        scan = self.source.get_spectrum(scan_id)
+        try:
+            scan = self.source.get_spectrum(scan_id)
+        except KeyError:
+            scan = self.source.get_spectrum(scan_id + '.')
         scan = self._make_scan(scan)
         self.scan_cache[scan_id] = scan
         return scan

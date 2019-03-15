@@ -13,42 +13,6 @@ def register_type_guesser(reader_guesser):
     return reader_guesser
 
 
-try:
-    from .thermo_raw import (
-        ThermoRawLoader, infer_reader as _check_is_thermo_raw,
-        register_dll as register_thermo_dll)
-
-    reader_types.append(ThermoRawLoader)
-    register_type_guesser(_check_is_thermo_raw)
-
-except ImportError:  # pragma: no cover
-    def register_thermo_dll(*args, **kwargs):
-        pass
-
-try:
-    from .thermo_raw_net import (
-        ThermoRawLoader as ThermoRawNetLoader, infer_reader as _check_is_thermo_raw_net,
-        register_dll as register_thermo_net_dll)
-    reader_types.append(ThermoRawNetLoader)
-    register_type_guesser(_check_is_thermo_raw_net)
-
-except ImportError:  # pragma: no cover
-    def register_thermo_net_dll(*args, **kwargs):
-        pass
-
-try:
-    from .agilent_d import (
-        AgilentDLoader,
-        infer_reader as _check_is_agilent_d,
-        register_dll_dir as register_agilent_dll_dir)
-
-    reader_types.append(AgilentDLoader)
-    register_type_guesser(_check_is_agilent_d)
-except ImportError:  # pragma: no cover
-    def register_agilent_dll_dir(*args, **kwargs):
-        pass
-
-
 @register_type_guesser
 def guess_type_from_path(file_path):
     if hasattr(file_path, 'name'):
@@ -127,3 +91,39 @@ def MSFileLoader(file_path, *args, **kwargs):
 
 def is_random_access(fp):
     return hasattr(fp, 'read') and hasattr(fp, 'seek')
+
+
+try:
+    from .thermo_raw import (
+        ThermoRawLoader, infer_reader as _check_is_thermo_raw,
+        register_dll as register_thermo_dll)
+
+    reader_types.append(ThermoRawLoader)
+    register_type_guesser(_check_is_thermo_raw)
+
+except ImportError:  # pragma: no cover
+    def register_thermo_dll(*args, **kwargs):
+        pass
+
+try:
+    from .thermo_raw_net import (
+        ThermoRawLoader as ThermoRawNetLoader, infer_reader as _check_is_thermo_raw_net,
+        register_dll as register_thermo_net_dll)
+    reader_types.append(ThermoRawNetLoader)
+    register_type_guesser(_check_is_thermo_raw_net)
+
+except ImportError:  # pragma: no cover
+    def register_thermo_net_dll(*args, **kwargs):
+        pass
+
+try:
+    from .agilent_d import (
+        AgilentDLoader,
+        infer_reader as _check_is_agilent_d,
+        register_dll_dir as register_agilent_dll_dir)
+
+    reader_types.append(AgilentDLoader)
+    register_type_guesser(_check_is_agilent_d)
+except ImportError:  # pragma: no cover
+    def register_agilent_dll_dir(*args, **kwargs):
+        pass
