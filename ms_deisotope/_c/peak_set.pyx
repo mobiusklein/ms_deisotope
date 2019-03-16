@@ -3,8 +3,13 @@
 import operator
 
 cimport cython
-from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice, PyTuple_GET_SIZE
+from cpython.tuple cimport (PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice,
+                            PyTuple_GET_SIZE, PyTuple_New, PyTuple_SetItem)
 from cpython.list cimport PyList_Append, PyList_AsTuple
+from cpython.ref cimport Py_INCREF
+from cpython.bytearray cimport PyByteArray_FromStringAndSize
+
+from libc.string cimport memcpy
 from libc.math cimport fabs
 from libc.stdlib cimport malloc, free
 
@@ -113,6 +118,68 @@ cdef class EnvelopePair(object):
         return "(%0.4f, %0.2f)" % (self.mz, self.intensity)
 
 
+@cython.boundscheck(False)
+cpdef bytearray Envelope_to_bytes(Envelope self):
+    cdef:
+        size_t i, j, m
+        EnvelopePair pair
+        char* buff
+        np.uint32_t n
+        np.float64_t val
+        bytearray out
+
+    n = self.get_size()
+    m = sizeof(np.uint32_t) + sizeof(np.float64_t) * n * 2
+    buff = <char*>malloc(sizeof(char) * m)
+    j = 0
+    memcpy(&buff[j], &n, sizeof(np.uint32_t))
+    j += sizeof(np.uint32_t)
+    for i in range(n):
+        pair = self.getitem(i)
+        val = pair.mz
+        memcpy(&buff[j], &val, sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+        val = pair.intensity
+        memcpy(&buff[j], &val, sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+    out = PyByteArray_FromStringAndSize(<char*>buff, m)
+    free(buff)
+    return out
+
+
+cpdef Envelope_from_bytes(bytearray view):
+    cdef:
+        size_t i, j, m
+        EnvelopePair pair
+        np.uint32_t n
+        np.float64_t val
+        char* buff
+        tuple result
+    j = 0
+    buff = view
+    memcpy(&n, &buff[j], sizeof(np.uint32_t))
+    j += sizeof(np.uint32_t)
+    result = PyTuple_New(n)
+    for i in range(n):
+        pair = EnvelopePair._create(0, 0)
+        memcpy(&pair.mz, &buff[j], sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+        memcpy(&pair.intensity, &buff[j], sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+        Py_INCREF(pair)
+        PyTuple_SetItem(result, i, pair)
+    return Envelope._create(result)
+
+@cython.boundscheck(False)
+cpdef Envelope_reconstructor(object value):
+    if isinstance(value, tuple):
+        return Envelope._create(value)
+    elif isinstance(value, np.ndarray):
+        return Envelope_from_bytes(value)
+    else:
+        raise TypeError(type(value))
+
+
 @cython.freelist(100000)
 cdef class Envelope(object):
     """
@@ -171,11 +238,25 @@ cdef class Envelope(object):
         elif code == 3:
             return not (self._eq(other))
 
-    def clone(self):
-        return self.__class__(self)
+    cpdef Envelope clone(self):
+        cdef:
+            tuple duplicate
+            size_t i, n
+            EnvelopePair pair, dup_pair
+        n = self.get_size()
+        duplicate = PyTuple_New(n)
+        for i in range(n):
+            pair = self.getitem(i)
+            dup_pair = EnvelopePair._create(pair.mz, pair.intensity)
+            Py_INCREF(dup_pair)
+            PyTuple_SetItem(duplicate, i, dup_pair)
+        return Envelope._create(duplicate)
 
     def __reduce__(self):
-        return Envelope, (self.pairs,)
+        return (
+            Envelope_reconstructor,
+            (Envelope_to_bytes(self),))
+            # (self.pairs, ))
 
     @staticmethod
     cdef Envelope _create(tuple pairs):
