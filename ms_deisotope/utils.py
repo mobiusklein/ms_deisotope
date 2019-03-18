@@ -1,7 +1,6 @@
 from __future__ import print_function
 import operator
 import random
-import math
 from datetime import datetime
 from collections import OrderedDict
 from six import add_metaclass
@@ -43,6 +42,13 @@ def debug_printer(message):
 
 
 def simple_repr(self):  # pragma: no cover
+    '''A convenient function for automatically generating a ``__repr__``-like
+    string for arbitrary objects.
+
+    Returns
+    -------
+    str
+    '''
     template = "{self.__class__.__name__}({d})"
 
     def formatvalue(v):
@@ -66,6 +72,9 @@ def simple_repr(self):  # pragma: no cover
 
 
 class Base(object):
+    '''A convenience base class for non-critical code to provide types
+    with automatic :meth:`__repr__` methods using :func:`simple_repr`
+    '''
     __repr__ = simple_repr
 
 
@@ -248,6 +257,18 @@ def dict_proxy(attribute):
 
 
 def uid(n=128):
+    '''Generate a random "universally unique" ID number with ``n``
+    bits of entropy.
+
+    Parameters
+    ----------
+    n: int
+        The number of random bits to generate
+
+    Returns
+    -------
+    int
+    '''
     int_ = random.getrandbits(n)
     return int_
 
