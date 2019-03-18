@@ -16,22 +16,6 @@ class Component(Term):
     pass
 
 
-def __generate_list_code():
-    '''Prints the code to generate these static lists
-    '''
-    import sys
-    render_list('ionization type', term_cls_name="Component")
-    sys.stdout.write("\n\n")
-    render_list('detector type', term_cls_name="Component")
-    sys.stdout.write("\n\n")
-    render_list('mass analyzer type', 'analyzer_types',
-                term_cls_name="Component")
-    sys.stdout.write("\n\n")
-    render_list('inlet type', term_cls_name="Component")
-
-
-ionization_types = []
-
 # [[[cog
 # import cog
 # from ms_deisotope.data_source.metadata.cv import render_list
@@ -328,8 +312,6 @@ ionization_types = TermSet([
 # [[[end]]]
 
 
-detector_types = []
-
 # [[[cog
 # import cog
 # from ms_deisotope.data_source.metadata.cv import render_list
@@ -480,9 +462,6 @@ detector_types = TermSet([
 # [[[end]]]
 
 
-analyzer_types = []
-
-
 # [[[cog
 # import cog
 # from ms_deisotope.data_source.metadata.cv import render_list
@@ -589,9 +568,6 @@ analyzer_types = TermSet([
               [u'linear ion trap', u'ion trap', u'mass analyzer type']),
 ])
 # [[[end]]]
-
-
-inlet_types = []
 
 
 # [[[cog
@@ -710,6 +686,19 @@ def component(name):
 
 
 class ComponentGroup(object):
+    """Represent a collection of :class:`Component` objects which are
+    part of a single instrument subsystem.
+
+    Attributes
+    ----------
+    type: str
+        The name of the instrument subsystem
+    members: list
+        The components contained
+    order: int
+        The position of this group in the sequence of steps
+        that analytes take when passing through the instrument.
+    """
 
     def __init__(self, type, members, order):
         self.type = type
@@ -734,6 +723,17 @@ class ComponentGroup(object):
 
 
 class InstrumentInformation(object):
+    '''Describes a single configuration of an instrument for acquiring spectra.
+
+    Parameters
+    ----------
+    id: object
+        The within-run unique identifier of this configuration. May be an integer or string
+    groups: :class:`list` of :class:`ComponentGroup`
+        The component groups, sorted by :attr:`ComponentGroup.order`, in this configuraton
+    analyzers: list
+        A convenience list for storing the :class:`Component` objects which are ``analyzer``s
+    '''
 
     def __init__(self, id=None, groups=None):
         self.id = id or uid()
