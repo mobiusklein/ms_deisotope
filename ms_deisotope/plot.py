@@ -1,9 +1,13 @@
+'''A collection of tools for drawing and annotating mass spectra
+'''
 # pragma: no cover
 import math
 import itertools
 
-from ms_peak_picker.plot import draw_peaklist, draw_raw
+import numpy as np
 from matplotlib import pyplot as plt, gridspec
+
+from ms_peak_picker.plot import draw_peaklist, draw_raw
 has_plot = True
 
 
@@ -27,6 +31,30 @@ def _default_color_cycle():
 
 
 def annotate_scan(scan, products, nperrow=4, ax=None):
+    '''Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of
+    :class:`~.ScanBase` product scans, draw the MS1 spectrum in full profile,
+    and then in a subplot grid below it, draw a zoomed-in view of the MS1 spectrum
+    surrounding the area around each precursor ion that gave rise to the scans in
+    ``products``, with monoisotopic peaks and isolation windows marked.
+
+    Parameters
+    ----------
+    scan: ScanBase
+        The precursor MS1 scan
+    products: :class:`~.Sequence` of :class:`~.ScanBase`
+        The collection of MSn scans based upon ``scan``
+    nperrow: int
+        The number of precursor ion subplots to draw per row
+        of the grid. Defaults to :const:`4`.
+    ax: :class:`matplotlib._axes.Axes`
+        An :class:`~.Axes` object to use to find the figure to
+        draw the plot on.
+
+    Returns
+    -------
+    :class:`matplotlib._axes.Axes`:
+        The axes of the full MS1 profile plot
+    '''
     if ax is None:
         figure = plt.figure()
     else:
@@ -124,8 +152,25 @@ def annotate_scan(scan, products, nperrow=4, ax=None):
 
 
 def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
+    '''Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the
+    area around each precursor ion that gave rise to ``product_scan``
+    with monoisotopic peaks and isolation windows marked.
+
+    Parameters
+    ----------
+    scan: ScanBase
+        The MS1 scan to annotate
+    product_scan: ScanBase
+        The product scan to annotate the precursor ion of
+    ax: :class:`matplotlib._axes.Axes`
+        An :class:`~.Axes` object to draw the plot on
+
+    Returns
+    -------
+    :class:`matplotlib._axes.Axes`
+    '''
     if ax is None:
-        fig, ax = plt.subplots(1)
+        _, ax = plt.subplots(1)
 
     if scan.is_profile:
         draw_raw(scan.arrays, ax=ax)
@@ -193,10 +238,26 @@ def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
 
 
 def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
+    '''Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
+    in ``scan``.
+
+    Parameters
+    ----------
+    scan: ScanBase
+        The scan to annotate
+    color_cycle: :class:`~.Iterable`
+        An iterable to draw isotopic cluster colors from
+    ax: :class:`matplotlib._axes.Axes`
+        An :class:`~.Axes` object to draw the plot on
+
+    Returns
+    -------
+    :class:`matplotlib._axes.Axes`
+    '''
     from .peak_set import DeconvolutedPeakSet
 
     if ax is None:
-        fig, ax = plt.subplots(1)
+        _, ax = plt.subplots(1)
     if color_cycle is None:
         color_cycle = _default_color_cycle()
     color_cycle = itertools.cycle(color_cycle)
@@ -209,3 +270,64 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
         draw_peaklist(peak.envelope, ax=ax, color=color, alpha=0.75, **kwargs)
         ax.scatter(*zip(*peak.envelope), color=color, alpha=0.75)
     return ax
+
+
+def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, threshold=None):
+    if ax is None:
+        _, ax = plt.subplots(1)
+        if scan.is_profile:
+            draw_raw(scan, ax)
+        if scan.peak_set is not None:
+            draw_peaklist(scan.peak_set, ax)
+        if scan.deconvoluted_peak_set is not None:
+            draw_peaklist(scan.deconvoluted_peak_set, ax)
+    if is_deconvoluted is None:
+        is_deconvoluted = scan.deconvoluted_peak_set is not None
+    if min_mz is None:
+        min_mz = 0
+    if max_mz is None:
+        if is_deconvoluted:
+            max_mz = max(peak.mz for peak in scan.deconvoluted_peak_set)
+        else:
+            max_mz = max(peak.mz for peak in scan.peak_set)
+    annotations = []
+    if is_deconvoluted:
+        subset = scan.deconvoluted_peak_set.between(
+            min_mz, max_mz, use_mz=True)
+    else:
+        subset = scan.peak_set.between(
+            min_mz, max_mz)
+    if not subset:
+        return
+    if threshold is None:
+        threshold = 0.0
+        if is_deconvoluted:
+            threshold_list = ([max(i.intensity for i in p.envelope)
+                               for p in subset])
+        else:
+            threshold_list = ([p.intensity for p in subset])
+        if threshold_list:
+            threshold = np.mean(threshold_list)
+        threshold_list = [v > threshold for v in threshold_list]
+        if threshold_list:
+            threshold = np.mean(threshold_list)
+    if is_deconvoluted:
+        for peak in subset:
+            if peak.intensity > threshold:
+                label = '%0.2f (%d)' % (peak.neutral_mass, peak.charge)
+                pt = max(peak.envelope, key=lambda x: x.intensity)
+                y = pt.intensity * 1.05
+                x = np.average(
+                    [p.mz for p in peak.envelope],
+                    weights=[p.intensity for p in peak.envelope])
+                annotations.append(
+                    ax.text(x, y, label, ha='center', clip_on=True, fontsize=10))
+    else:
+        for peak in subset:
+            if peak.intensity > threshold:
+                label = "%0.2f" % (peak.mz, )
+                y = pt.intensity * 1.05
+                x = peak.mz
+                annotations.append(
+                    ax.text(x, y, label, ha='center', clip_on=True, fontsize=10))
+    return annotations, ax
