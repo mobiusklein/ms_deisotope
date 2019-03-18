@@ -36,6 +36,53 @@ neutral_mass_getter = operator.attrgetter("neutral_mass")
 mz_getter = operator.attrgetter('mz')
 
 
+cpdef _Index_reconstructor(object neutral_mass, object mz=None):
+    if isinstance(neutral_mass, int):
+        return _Index._create(neutral_mass, mz)
+    elif isinstance(neutral_mass, bytearray):
+        return _Index_from_bytes(neutral_mass)
+    else:
+        raise TypeError(type(neutral_mass))
+
+
+cpdef _Index_to_bytes(_Index index):
+    cdef:
+        size_t j, m
+        char* buff
+        np.uint64_t n
+        bytearray out
+
+    m = sizeof(np.uint64_t) * 2
+    buff = <char*>malloc(sizeof(char) * m)
+    j = 0
+    n = index.neutral_mass
+    memcpy(&buff[j], &n, sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    n = index.mz
+    memcpy(&buff[j], &n, sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    out = PyByteArray_FromStringAndSize(<char*>buff, m)
+    free(buff)
+    return out
+
+
+cpdef _Index_from_bytes(bytearray view):
+    cdef:
+        size_t j
+        np.uint64_t val
+        char* buff
+        _Index inst
+    inst = _Index._create(0, 0)
+    j = 0
+    buff = view
+    memcpy(&val, &buff[j], sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    inst.neutral_mass = val
+    memcpy(&val, &buff[j], sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    inst.mz = val
+    return inst
+
 @cython.freelist(100000)
 cdef class _Index(object):
     """
@@ -60,7 +107,7 @@ cdef class _Index(object):
         return _Index._create(self.neutral_mass, self.mz)
 
     def __reduce__(self):
-        return _Index, (self.neutral_mass, self.mz)
+        return _Index_reconstructor, (self.neutral_mass, self.mz)
 
     @staticmethod
     cdef _Index _create(size_t neutral_mass, size_t mz):
@@ -174,7 +221,7 @@ cpdef Envelope_from_bytes(bytearray view):
 cpdef Envelope_reconstructor(object value):
     if isinstance(value, tuple):
         return Envelope._create(value)
-    elif isinstance(value, np.ndarray):
+    elif isinstance(value, bytearray):
         return Envelope_from_bytes(value)
     else:
         raise TypeError(type(value))
@@ -320,7 +367,10 @@ cdef class DeconvolutedPeak(PeakBase):
         self.most_abundant_mass = most_abundant_mass
         self.average_mass = average_mass
         self.score = score
-        self.envelope = Envelope(envelope)
+        if not isinstance(envelope, Envelope):
+            self.envelope = Envelope(envelope)
+        else:
+            self.envelope = envelope
         self.mz = mz or mass_charge_ratio(self.neutral_mass, self.charge)
         self.fit = fit
         self.chosen_for_msms = chosen_for_msms
