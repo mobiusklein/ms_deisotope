@@ -211,7 +211,12 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
         configs = []
         for analyzer, counter in sorted(self._analyzer_to_configuration_index.items(), key=lambda x: x[1]):
             analyzer_group = ComponentGroup('analyzer', [analyzer], 2)
-            configs.append(InstrumentInformation(counter, [source_group, analyzer_group]))
+            # this is the most common Thermo detector, but it is not universal. To get this right,
+            # we'd need to reproduce the Proteowizard conversion table @
+            # Thermo::(Reader_Thermo_Detail::)createInstrumentConfigurations
+            detector_group = ComponentGroup("detector", ['inductive detector'], 3)
+            configs.append(InstrumentInformation(
+                counter, [source_group, analyzer_group, detector_group]))
         self._instrument_config = {
             c.id: c for c in configs
         }

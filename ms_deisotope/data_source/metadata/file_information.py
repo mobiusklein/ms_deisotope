@@ -842,7 +842,7 @@ class SourceFile(object):
         ----------
         path: str
             The path to the file to describe
-        
+
         Returns
         -------
         SourceFile

@@ -14,11 +14,13 @@ from .common import (
     ChargeNotProvided, ActivationInformation,
     ScanAcquisitionInformation, ScanEventInformation,
     ScanWindow, IsolationWindow,
-    InstrumentInformation, ComponentGroup, component,
     FileInformation, SourceFile, MultipleActivationInformation,
     ScanFileMetadataBase)
 from .metadata.activation import (
     supplemental_energy, UnknownDissociation)
+from .metadata.instrument_components import (
+    InstrumentInformation, ComponentGroup, component,
+    instrument_models)
 from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
@@ -471,7 +473,13 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
                     parts = [component(key) for key in group]
                     group_collection.append(ComponentGroup(category, parts, order))
         conf_id = configuration['id']
-        config = InstrumentInformation(conf_id, group_collection)
+        serial_number = configuration.get("instrument serial number")
+        potential_models = [k for k in configuration if instrument_models.get(k) is not None]
+        if potential_models:
+            instrument_model = potential_models[0]
+        else:
+            instrument_model = None
+        config = InstrumentInformation(conf_id, group_collection, serial_number=serial_number, model=instrument_model)
         return config
 
     def instrument_configuration(self):

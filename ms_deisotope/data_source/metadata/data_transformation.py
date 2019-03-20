@@ -19,7 +19,6 @@ from .cv import Term, TermSet
 # from .software import Software, SoftwareName
 
 
-
 class DataTransformation(Term):
     """Describes a named data transformation, either
     using a controlled-vocabulary term or user-defined name.
@@ -274,6 +273,7 @@ class ProcessingMethod(object):
     --------
     :class:`DataTransformation`
     '''
+
     def __init__(self, operations=None, software_id=None, order=0):
         self.operations = operations or OrderedDict()
         self.software_id = software_id
@@ -345,6 +345,7 @@ class DataProcessingInformation(object):
     id: int
         A within-source unique identifier
     '''
+
     def __init__(self, methods=None, id=None):
         self.methods = methods or []
         self.id = id or uid()

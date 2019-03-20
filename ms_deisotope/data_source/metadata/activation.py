@@ -337,7 +337,6 @@ for method in dissociation_methods:
 del method
 
 
-
 CID = dissociation_methods_map.get("collision-induced dissociation")
 HCD = dissociation_methods_map.get("beam-type collision-induced dissociation")
 ETD = dissociation_methods_map.get("electron transfer dissociation")
