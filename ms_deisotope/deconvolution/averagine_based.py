@@ -6,9 +6,12 @@ from ms_deisotope.constants import IGNORE_BELOW, TRUNCATE_AFTER
 from ms_deisotope.scoring import penalized_msdeconv
 
 from .base import (
-    DeconvoluterBase,
+    DeconvoluterBase)
+
+from .exhaustive import (
     ExhaustivePeakSearchDeconvoluterBase,
     PeakDependenceGraphDeconvoluterBase)
+
 from .utils import count_placeholders, prepare_peaklist
 
 
@@ -144,17 +147,11 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
         super(AveragineDeconvoluter, self).__init__(
             use_subtraction, scale_method, merge_isobaric_peaks=True, **kwargs)
 
-    def config(self):
-        return {
-            "scale_method": self.scale_method,
-            "use_subtraction": self.use_subtraction,
-            "verbose": self.verbose,
-            "scorer": self.scorer,
-            "averagine": self.averagine
-        }
-
 
 class MultiAveragineDeconvoluterBase(DeconvoluterBase):
+    """A base class derived from :class:`DeconvoluterBase` which provides some common methods
+    for fitting isotopic patterns using multiple Averagine models.
+    """
 
     def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON,
                               truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):

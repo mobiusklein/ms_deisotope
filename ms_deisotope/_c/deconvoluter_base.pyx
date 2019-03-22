@@ -188,7 +188,7 @@ cdef class DeconvoluterBase(object):
 
     cpdef scale_theoretical_distribution(self, TheoreticalIsotopicPattern theoretical_distribution,
                                          list experimental_distribution):
-        return theoretical_distribution.scale(experimental_distribution, self.scale_method)    
+        return theoretical_distribution.scale(experimental_distribution, self.scale_method)
 
     cpdef IsotopicFitRecord _evaluate_theoretical_distribution(self, list experimental,
                                                                TheoreticalIsotopicPattern theoretical,
@@ -400,6 +400,9 @@ cdef bint has_multiple_real_peaks(list peaklist):
 
 
 cdef class AveragineDeconvoluterBase(DeconvoluterBase):
+    """A base class derived from :class:`DeconvoluterBase` which provides some common methods
+    for fitting isotopic patterns using an Averagine model.
+    """
 
     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
                  double minimum_intensity=5., *args, **kwargs):
@@ -450,7 +453,9 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
 
 
 cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
-
+    """A base class derived from :class:`DeconvoluterBase` which provides some common methods
+    for fitting isotopic patterns using multiple Averagine models.
+    """
     def __init__(self, bint use_subtraction=False, str scale_method="sum", bint merge_isobaric_peaks=True,
                  double minimum_intensity=5., *args, **kwargs):
         super(MultiAveragineDeconvoluterBase, self).__init__(
@@ -917,8 +922,8 @@ cpdef int _explore_local(DeconvoluterBase self, peak, error_tolerance=ERROR_TOLE
         peak, error_tolerance=error_tolerance, charge_range=charge_range, left_search_limit=left_search_limit,
         charge_carrier=charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
 
-    peak_graph = <PeakDependenceGraphBase>self.peak_dependency_network 
-    
+    peak_graph = <PeakDependenceGraphBase>self.peak_dependency_network
+
     hold = set()
     for obj in results:
         fit = <IsotopicFitRecord>obj

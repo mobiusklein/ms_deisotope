@@ -18,7 +18,9 @@ from .utils import (
     count_placeholders)
 
 from .base import (
-    DeconvoluterBase,
+    DeconvoluterBase)
+
+from .exhaustive import (
     ExhaustivePeakSearchDeconvoluterBase,
     PeakDependenceGraphDeconvoluterBase)
 
