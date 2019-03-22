@@ -335,8 +335,8 @@ class DeconvoluterBase(Base):
 try:
     _DeconvoluterBase = DeconvoluterBase
     from ms_deisotope._c.deconvoluter_base import DeconvoluterBase
-except ImportError:
-    pass
+except ImportError as e:
+    print(e)
 
 
 class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
@@ -714,7 +714,7 @@ try:
     ExhaustivePeakSearchDeconvoluterBase._get_all_peak_charge_pairs = _c_get_all_peak_charge_pairs
     ExhaustivePeakSearchDeconvoluterBase._make_deconvoluted_peak = _c_make_deconvoluted_peak
 except ImportError as e:
-    pass
+    print(e)
 
 
 class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
@@ -1017,7 +1017,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
                     node.fit.experimental)
                 total_peaks = len(node.fit.experimental)
                 invalid_peak_count = (missed_peaks >= total_peaks - 1 and abs(node.fit.charge) > 1
-                                      ) or missed_peaks == total_peaks
+                                     ) or missed_peaks == total_peaks
                 if invalid_peak_count or missed_peaks > self.max_missed_peaks:
                     mask.add(node.index)
                     print("Masking %d (%0.3f, %d). Invalidated Peak Count %r | Missed Peaks %d" % (
@@ -1194,4 +1194,4 @@ try:
     PeakDependenceGraphDeconvoluterBase._explore_local = _c_explore_local
     PeakDependenceGraphDeconvoluterBase.populate_graph = cpopulate_graph
 except ImportError as e:
-    pass
+    print(e)
