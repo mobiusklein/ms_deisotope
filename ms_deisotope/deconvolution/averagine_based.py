@@ -1,7 +1,21 @@
 # -*- coding: utf-8 -*-
+'''Implementations of averagine-based deconvoluters.
+
+Averagine-based deconvoluters use an "average monomer" isotopic model
+to interpolate the isotopic patterns for any peak in the experimental
+spectrum. The term "averagine" comes from the name Senko gave to the
+"average amino acid" when introducing the concept in [1].
+
+References
+----------
+[1] Senko, M. W., Beu, S. C., & McLafferty, F. W. (1995). Determination of monoisotopic
+    masses and ion populations for large biomolecules from resolved isotopic distributions.
+    Journal of the American Society for Mass Spectrometry, 6(4), 229–233.
+    http://doi.org/10.1016/1044-0305(95)00017-8
+'''
 
 from ms_deisotope.averagine import PROTON, AveragineCache, peptide, glycopeptide, glycan
-from ms_deisotope.constants import IGNORE_BELOW, TRUNCATE_AFTER
+from ms_deisotope.constants import IGNORE_BELOW, TRUNCATE_AFTER, SCALE_METHOD
 
 from ms_deisotope.scoring import penalized_msdeconv
 
@@ -20,7 +34,7 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
     for fitting isotopic patterns using an Averagine model.
     """
 
-    def __init__(self, use_subtraction=False, scale_method="sum", merge_isobaric_peaks=True,
+    def __init__(self, use_subtraction=False, scale_method=SCALE_METHOD, merge_isobaric_peaks=True,
                  minimum_intensity=5., *args, **kwargs):
         super(AveragineDeconvoluterBase, self).__init__(
             use_subtraction, scale_method, merge_isobaric_peaks,
@@ -131,7 +145,7 @@ class AveragineDeconvoluter(AveragineDeconvoluterBase, ExhaustivePeakSearchDecon
     """
 
     def __init__(self, peaklist, averagine=None, scorer=penalized_msdeconv,
-                 use_subtraction=True, scale_method='sum',
+                 use_subtraction=True, scale_method=SCALE_METHOD,
                  verbose=False, **kwargs):
         if averagine is None:
             averagine = AveragineCache(peptide, dict())
@@ -207,7 +221,7 @@ class MultiAveragineDeconvoluter(MultiAveragineDeconvoluterBase, ExhaustivePeakS
     """
 
     def __init__(self, peaklist, averagines=None, scorer=penalized_msdeconv,
-                 use_subtraction=True, scale_method='sum',
+                 use_subtraction=True, scale_method=SCALE_METHOD,
                  merge_isobaric_peaks=True, minimum_intensity=5.,
                  verbose=False, *args, **kwargs):
         self.peaklist = prepare_peaklist(peaklist)

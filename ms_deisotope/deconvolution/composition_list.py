@@ -1,3 +1,6 @@
+'''Deconvolution strategies using a list of compositions.
+'''
+
 from ms_deisotope.averagine import (
     PROTON, isotopic_variants,
     TheoreticalIsotopicPattern,
@@ -207,7 +210,11 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
 
 
 class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
-    '''
+    '''Fit exact isotopic patterns from a list of compositions.
+
+    Fits are accepted as they are made, making this algorithm unsuitable for
+    complex spectra where isotopic patterns will share peaks.
+
     Attributes
     ----------
     composition_list : list of :class:`~.Mapping`
@@ -257,7 +264,11 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
 
 
 class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter):
-    '''
+    '''Fit exact isotopic patterns from a list of compositions.
+
+    Fits are added to a peak dependence graph, and the best fit is chosen after
+    all fits are calculated at each iteration.
+
     Attributes
     ----------
     composition_list : list of :class:`~.Mapping`

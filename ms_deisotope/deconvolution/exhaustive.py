@@ -1,3 +1,11 @@
+'''A collection of base classes for "exhaustive" search strategies.
+These strategies attempt to assign *every* peak, but they are not meant
+to be used on their own.
+
+For complete implementations see :class:`~.AveragineDeconvoluter` and
+:class:`~.AveraginePeakDependenceGraphDeconvoluter`.
+'''
+
 import operator
 
 from ms_deisotope.constants import (
@@ -572,6 +580,19 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
     def postprocess_fits(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                          charge_carrier=PROTON, *args, **kwargs):
+        """Postprocesses fits before solving the peak dependence graph.
+
+        Currently a no-op.
+
+        Parameters
+        ----------
+        error_tolerance : float, optional
+            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|
+        charge_range : tuple, optional
+            The range of charge states to consider. Defaults to (1, 8)
+        charge_carrier : float, optional
+            The mass of the charge carrier. Defaults to |PROTON|
+        """
         if self.fit_postprocessor is None:
             return
 
