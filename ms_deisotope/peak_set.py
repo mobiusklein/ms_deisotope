@@ -326,6 +326,36 @@ class DeconvolutedPeakSet(Base):
         return self.__class__(acc)._reindex()
 
 
+def merge(peaks_a, peaks_b, copy=True):
+    '''Combine two :class:`DeconvolutedPeakSet` objects.
+
+    Parameters
+    ----------
+    peaks_a: :class:`DeconvolutedPeakSet`
+    peaks_b: :class:`DeconvolutedPeakSet`
+    copy: bool
+        Whether or not to copy the peaks first. If not,
+        the two input peak sets should not be used again
+        as their indices will have been corrupted.
+
+    Returns
+    -------
+    :class:`DeconvolutedPeakSet`
+    '''
+    tp = peaks_a.__class__
+    if copy:
+        peaks = tp(
+            tuple(p.clone() for p in peaks_a) +
+            tuple(p.clone() for p in peaks_b))
+    else:
+        peaks = tp(tuple(peaks_a) + tuple(peaks_b))
+    try:
+        peaks.reindex()
+    except AttributeError:
+        pass
+    return peaks
+
+
 mz_getter = operator.attrgetter('mz')
 neutral_mass_getter = operator.attrgetter("neutral_mass")
 
