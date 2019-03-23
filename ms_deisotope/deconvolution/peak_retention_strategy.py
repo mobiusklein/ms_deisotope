@@ -6,8 +6,9 @@ import abc
 
 from six import add_metaclass
 
-from ms_deisotope.deconvolution import from_fitted_peak
 from ms_deisotope.averagine import neutral_mass
+
+from .utils import from_fitted_peak
 
 intensity_getter = operator.attrgetter("intensity")
 
