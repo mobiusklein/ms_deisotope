@@ -52,7 +52,7 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 
 
-rst_epilog = open("./definitions").read()
+rst_epilog = open("./definitions.rst").read()
 
 # The master toctree document.
 master_doc = 'index'

@@ -115,7 +115,7 @@ def _loader_creator(specification):
 
 class ScanProcessor(Base, LogUtilsMixin):
     """Orchestrates the deconvolution of a :class:`~.ScanIterator` scan by scan. This process will
-    apply different rules for MS1 scans and MSn scans. This type itself is an Iterator,
+    apply different rules for MS1 scans and MSn scans. This type itself mimics a :class:`~.ScanIterator`,
     consuming (raw) mass spectral data and producing deisotoped and charge deconvolved spectra.
 
     The algorithms used for each task are independent and can be specified in the appropriate
@@ -124,44 +124,46 @@ class ScanProcessor(Base, LogUtilsMixin):
     arguments, and the selected charge state is used to limit the charge range used in the matching
     MSn scan. These are described by :class:`PriorityTarget` objects.
 
+    If an averagine-based deconvoluter is used, the averagine cache will be pre-populated.
+
     At the moment, MSn assumes only MS2. Until MS3 data become available for testing, this limit
     will remain.
 
     Attributes
     ----------
-    data_source : str or file-like
+    data_source : :class:`str` or file-like
         Any valid object to be passed to the `loader_type` callable to produce
-        a :class:`ScanIterator` instance. A path to an mzML file will work for the
-        default loader. Used to populate :attr:`reader`
+        a :class:`~.ScanIterator` instance. A path to a mass spectrometry data file,
+        a file-like object, or an instance of :class:`~.ScanIterator`. Used to populate :attr:`reader`
     loader_type : callable
-        A callable, which when passed `data_source` returns an instance of :class:`~.ScanIterator`.
+        A callable, which when passed :attr:`data_source` returns an instance of :class:`~.ScanIterator`.
         By default, this is :func:`~.MSFileLoader`. Used to populate :attr:`reader`
     reader: ScanIterator
         Any object implementing the :class:`~.ScanIterator` interface, produced by calling
         :attr:`loader_type` on :attr:`data_source`.
-    ms1_deconvolution_args : dict
+    ms1_deconvolution_args : :class:`dict`
         The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MS1
         scans.
-    ms1_peak_picking_args : dict
+    ms1_peak_picking_args : :class:`dict`
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS1 scans.
-    msn_deconvolution_args : dict
+    msn_deconvolution_args : :class:`dict`
         The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MSn
         scans.
-    msn_peak_picking_args : dict
+    msn_peak_picking_args : :class:`dict`
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MSn scans.
-    pick_only_tandem_envelopes : bool
+    pick_only_tandem_envelopes : :class:`bool`
         Whether or not to process whole MS1 scans or just the regions around those peaks
         chosen for MSn
-    default_precursor_ion_selection_window : float
-        Size of the selection window to use when `pick_only_tandem_envelopes` is `True`
+    default_precursor_ion_selection_window : :class:`float`
+        Size of the selection window to use when :attr:`pick_only_tandem_envelopes` is `True`
         and the information is not available in the scan.
-    trust_charge_hint : bool
+    trust_charge_hint : :class:`bool`
         Whether or not to trust the charge provided by the data source when determining
         the charge state of precursor isotopic patterns. Defaults to `True`
-    respect_isolation_window: bool
+    respect_isolation_window: :class:`bool`
         Whether to use the bounds of the isolation window to reject a monoisotopic peak
         solution
-    terminate_on_error: bool
+    terminate_on_error: :class:`bool`
         Whether or not  to stop processing on an error. Defaults to `True`
     """
 
@@ -424,14 +426,15 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     def deconvolute_precursor_scan(self, precursor_scan, priorities=None):
         """Deconvolute the given precursor scan, giving priority to its product ions,
-        correcting the :attr:`precursor_information` attributes of priority targets.
+        correcting the :attr:`precursor_information` attributes of priority targets,
+        as well as calculating the degree of precursor purity and coisolating ions.
 
         Parameters
         ----------
         precursor_scan : :class:`~.Scan`
             The precursor scan to deconvolute
         priorities : :class:`list` of :class:`PriorityTarget`, optional
-            The priority targets for the product ions derived from ``precursor_scan``
+            The priority targets for the product ions derived from `precursor_scan`
 
         Returns
         -------

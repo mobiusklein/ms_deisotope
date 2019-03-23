@@ -2,8 +2,8 @@ Deconvolution Pipeline
 ----------------------
 
 The deconvolution process from start to finish can be pipelined from start to finish
-using the :class:`~.ScanProcessor` class.
-
+using the :class:`~.ScanProcessor` class. This includes precursor recalculation and
+coisolation detection.
 
 .. code:: python
 
@@ -22,17 +22,21 @@ using the :class:`~.ScanProcessor` class.
     })
 
     bunch = next(proc)
-
+    print(bunch)
+    print(bunch.precursor.deconvoluted_peak_set)
 
 
 .. automodule:: ms_deisotope.processor
 
-
     .. autoclass:: ScanProcessor
         :members: pick_precursor_scan_peaks, pick_product_scan_peaks, process_scan_group,
-                  process, next, start_from_scan, _get_envelopes, _average_ms1, deconvolute_precursor_scan,
-                  deconvolute_product_scan
+                  process, next, start_from_scan, deconvolute_precursor_scan, deconvolute_product_scan
 
+Supporting Types
+================
+
+When an ion has been selected with a known m/z and charge, it may be wrapped in an
+instance of :class:`PriorityTarget`.
 
     .. autoclass:: PriorityTarget
         :members: charge_range_hint
