@@ -828,7 +828,7 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
         self._priority_map[peak] = result
         return result
 
-    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
+    def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),   # pylint: disable=arguments-differ
                     left_search_limit=1, right_search_limit=0, iterations=MAX_ITERATION,
                     charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW,
                     convergence=CONVERGENCE, **kwargs):
