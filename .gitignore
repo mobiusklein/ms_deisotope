@@ -15,3 +15,6 @@ Untitled*
 /build/
 /dist/
 /htmlcov/
+cythonize.py
+test.py
+experiment/
