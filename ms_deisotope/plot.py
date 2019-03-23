@@ -273,7 +273,34 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
 
 
 def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, threshold=None):
+    """Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
+    of `scan` have been deconvoluted, the most abundant peak will be annotated with
+    "<neutral mass> (<charge>)", otherwise just "<m/z>".
+
+    Parameters
+    ----------
+    scan : :class:`~.ScanBase`
+        The scan to annotate
+    min_mz : float, optional
+        The minimum m/z to annotate
+    max_mz : float, optional
+        The maximum m/z to annotate
+    ax: :class:`matplotlib._axes.Axes`
+        An :class:`~.Axes` object to draw the plot on
+    is_deconvoluted : bool, optional
+        Whether or not to always use :attr:`Scan.deconvoluted_peak_set`
+    threshold : float, optional
+        The intensity threshold under which peaks will be ignored
+
+    Returns
+    -------
+    ax: :class:`matplotlib._axes.Axes`
+        The axes the plot was drawn on
+    annotations: :class:`list` of :class:`matplotlib.text.Text`
+        The list of :class:`matplotlib.text.Text` annotations
+    """
     if ax is None:
+        # when no axes are provided, draw all the peak data
         _, ax = plt.subplots(1)
         if scan.is_profile:
             draw_raw(scan, ax)
@@ -291,6 +318,7 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
         else:
             max_mz = max(peak.mz for peak in scan.peak_set)
     annotations = []
+    # select the peak sub range
     if is_deconvoluted:
         subset = scan.deconvoluted_peak_set.between(
             min_mz, max_mz, use_mz=True)
@@ -299,6 +327,7 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
             min_mz, max_mz)
     if not subset:
         return
+    # guess the threshold
     if threshold is None:
         threshold = 0.0
         if is_deconvoluted:
@@ -311,6 +340,7 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
         threshold_list = [v > threshold for v in threshold_list]
         if threshold_list:
             threshold = np.mean(threshold_list)
+    # draw the actual labels
     if is_deconvoluted:
         for peak in subset:
             if peak.intensity > threshold:
