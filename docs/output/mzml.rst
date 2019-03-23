@@ -13,7 +13,7 @@ metadata that :class:`~.MzMLSerializer` writes to an external file.
 
 
 .. code:: python
-    
+
     import ms_deisotope
     from ms_deisotope.test.common import datafile
     from ms_deisotope.output.mzml import MzMLSerializer
@@ -31,13 +31,11 @@ metadata that :class:`~.MzMLSerializer` writes to an external file.
                 product.deconvolute()
             writer.save(bunch)
 
-        writer.complete()
-        writer.format()
-
+        writer.close()
 
 
 .. automodule:: ms_deisotope.output.mzml
-    
+
     .. autoclass:: ms_deisotope.output.mzml.MzMLSerializer
         :members: save_scan_bunch, add_sample, add_instrument_configuration, add_source_file,
                   add_file_information, add_software, add_file_contents, add_processing_parameter,

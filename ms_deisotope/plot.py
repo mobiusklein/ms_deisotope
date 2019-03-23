@@ -37,6 +37,26 @@ def annotate_scan(scan, products, nperrow=4, ax=None):
     surrounding the area around each precursor ion that gave rise to the scans in
     ``products``, with monoisotopic peaks and isolation windows marked.
 
+    .. plot::
+        :include-source:
+
+        import ms_deisotope
+        from ms_deisotope import plot
+        from ms_deisotope.test.common import datafile
+
+        reader = ms_deisotope.MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+        bunch = next(reader)
+
+        bunch.precursor.pick_peaks()
+        bunch.precursor.deconvolute(
+            scorer=ms_deisotope.PenalizedMSDeconVFitter(20., 2.0),
+            averagine=ms_deisotope.glycopeptide, use_quick_charge=True)
+
+        ax = plot.annotate_scan(bunch.precursor, bunch.products, nperrow=2)
+        ax.figure.set_figwidth(12)
+        ax.figure.set_figheight(16)
+
+
     Parameters
     ----------
     scan: ScanBase
@@ -156,6 +176,26 @@ def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
     area around each precursor ion that gave rise to ``product_scan``
     with monoisotopic peaks and isolation windows marked.
 
+    .. plot::
+        :include-source:
+
+        import ms_deisotope
+        from ms_deisotope import plot
+        from ms_deisotope.test.common import datafile
+
+        reader = ms_deisotope.MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+        bunch = next(reader)
+
+        bunch.precursor.pick_peaks()
+        bunch.precursor.deconvolute(
+            scorer=ms_deisotope.PenalizedMSDeconVFitter(20., 2.0),
+            averagine=ms_deisotope.glycopeptide, use_quick_charge=True)
+
+        ax = plot.annotate_scan_single(bunch.precursor, bunch.products[0])
+        ax.figure.set_figwidth(12)
+
+
+
     Parameters
     ----------
     scan: ScanBase
@@ -241,6 +281,27 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
     '''Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
     in ``scan``.
 
+    .. plot::
+        :include-source:
+
+        import ms_deisotope
+        from ms_deisotope import plot
+        from ms_deisotope.test.common import datafile
+
+        reader = ms_deisotope.MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+        bunch = next(reader)
+
+        bunch.precursor.pick_peaks()
+        bunch.precursor.deconvolute(
+            scorer=ms_deisotope.PenalizedMSDeconVFitter(20., 2.0),
+            averagine=ms_deisotope.glycopeptide, use_quick_charge=True)
+
+        ax = plot.draw_peaklist(bunch.precursor, color='black')
+        ax = plot.annotate_isotopic_peaks(bunch.precursor, ax=ax)
+        ax.set_xlim(1160, 1165)
+        ax.figure.set_figwidth(12)
+
+
     Parameters
     ----------
     scan: ScanBase
@@ -272,7 +333,7 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
     return ax
 
 
-def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, threshold=None):
+def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, threshold=None, **kwargs):
     """Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
     of `scan` have been deconvoluted, the most abundant peak will be annotated with
     "<neutral mass> (<charge>)", otherwise just "<m/z>".
@@ -341,17 +402,23 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
         if threshold_list:
             threshold = np.mean(threshold_list)
     # draw the actual labels
+    kwargs.setdefault("clip_in", True)
+    kwargs.setdefault("fontsize", 10)
     if is_deconvoluted:
         for peak in subset:
             if peak.intensity > threshold:
                 label = '%0.2f (%d)' % (peak.neutral_mass, peak.charge)
+                # set the y-position to the highest peak in the isotopic
+                # pattern
                 pt = max(peak.envelope, key=lambda x: x.intensity)
                 y = pt.intensity * 1.05
+                # set the x-position to the weighted average m/z in the
+                # isotopic pattern
                 x = np.average(
                     [p.mz for p in peak.envelope],
                     weights=[p.intensity for p in peak.envelope])
                 annotations.append(
-                    ax.text(x, y, label, ha='center', clip_on=True, fontsize=10))
+                    ax.text(x, y, label, ha='center', **kwargs))
     else:
         for peak in subset:
             if peak.intensity > threshold:
@@ -359,5 +426,5 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
                 y = pt.intensity * 1.05
                 x = peak.mz
                 annotations.append(
-                    ax.text(x, y, label, ha='center', clip_on=True, fontsize=10))
+                    ax.text(x, y, label, ha='center', **kwargs))
     return annotations, ax

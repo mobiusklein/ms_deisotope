@@ -6,6 +6,12 @@ class ScanSerializerBase(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
     def save_scan_bunch(self, bunch, **kwargs):
         self.save_scan(bunch.precursor, **kwargs)
         for prod in bunch.products:
