@@ -1,5 +1,10 @@
 '''A set of strategies for retaining peaks following deconvolution to
-recover from low quality spectra.
+recover from low quality spectra. These methods are not recommended for
+use on spectra where most ions are multiply charged.
+
+These objects are meant to be provided to :func:`~.deconvolut_peaks`'s
+`retention_strategy` argument, which will take care of calling them with
+the appropriate arguments.
 '''
 import operator
 import abc
@@ -170,6 +175,7 @@ class TopNRetentionStrategy(PeakRetentionStrategyBase):
         except ValueError:
             return []
         min_charge = self.infer_minimum_charge(charge_range)
+        min_charge /= abs(min_charge)
         threshold = self.base_peak_coefficient * base_peak
         peaklist = sorted(peaklist, key=intensity_getter, reverse=True)
         result = []

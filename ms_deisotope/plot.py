@@ -119,7 +119,6 @@ def annotate_scan(scan, products, nperrow=4, ax=None):
             else:
                 lower = pinfo.mz - 4
                 upper = pinfo.mz + 4
-
             try:
                 peak = max(scan.peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
                 local_intensity = peak.intensity
@@ -139,7 +138,8 @@ def annotate_scan(scan, products, nperrow=4, ax=None):
                     scan.deconvoluted_peak_set.between(
                         lower - 1.2, upper + 1.2, use_mz=True),
                     ax=ax, alpha=0.9, color='blue')
-
+            label_peaks(scan, lower, upper, ax=ax,
+                        is_deconvoluted=bool(scan.deconvoluted_peak_set))
             ax.set_ylim(0, local_intensity * 1.25)
             ax.set_xlim(lower, upper)
             upper_intensity = local_intensity
@@ -402,7 +402,7 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
         if threshold_list:
             threshold = np.mean(threshold_list)
     # draw the actual labels
-    kwargs.setdefault("clip_in", True)
+    kwargs.setdefault("clip_on", True)
     kwargs.setdefault("fontsize", 10)
     if is_deconvoluted:
         for peak in subset:

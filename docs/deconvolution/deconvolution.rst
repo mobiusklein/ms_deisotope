@@ -11,12 +11,14 @@ These strategies are implemented as large object hierarchies, but the high level
 function :func:`~.deconvolute_peaks` encapsulates the process for most use cases.
 
 .. code:: python
-    
+
     import ms_deisotope
 
     deconvoluted_peaks, targeted = ms_deisotope.deconvolute_peaks(peaks, averagine=ms_deisotope.peptide,
                                                                   scorer=ms_deisotope.MSDeconVFitter(10.))
 
+.. contents:: Table of Contents
+    :local:
 
 .. automodule:: ms_deisotope.deconvolution
 
@@ -40,13 +42,17 @@ overlapping isotopic envelopes. The default algorithm used by all functions is
     .. autoclass:: CompositionListPeakDependenceGraphDeconvoluter
         :members: deconvolute, deconvolute_composition, populate_graph
 
+    If your data do not conform to a single averagine, :class:`MultipleAveraginePeakDependenceGraphDeconvoluter`
+    can take a :class:`list` of :class:`~.Averagine` objects, selecting the best averagine
+    for each experimental isotopic pattern.
+
 Algorithms for Simple Spectra
 =============================
 
 These algorithms do not take into account the optimal peak assignment across fits
 and should be used only for spot-checks or for simple spectra where best fit resolution
 across multiple fits is not required.
-    
+
     .. autoclass:: AveragineDeconvoluter
         :members: deconvolute, charge_state_determination, targeted_deconvolution
 
@@ -70,6 +76,25 @@ Base Classes
 
     .. autoclass:: PeakDependenceGraphDeconvoluterBase
         :members:
+
+
+Accounting For Lower Quality Data
+=================================
+
+.. automodule:: ms_deisotope.deconvolution.peak_retention_strategy
+
+    .. autoclass:: PeakRetentionStrategyBase
+        :members:
+
+        .. automethod:: __call__
+
+
+    .. autoclass:: TopNRetentionStrategy
+        :members:
+
+    :object:`ms_deisotope.deconvolution.peak_retention_strategy.simple_peak_retention` is an instance of
+    :class:`TopNRetentionStrategy` with `n_peaks=50, base_peak_coefficient=0.05, max_mass=850.0`, the default
+    values.
 
 
 Utilities and Implementation Details

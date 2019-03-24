@@ -22,6 +22,7 @@ def deconvolute_peaks(peaklist, decon_config=None,
                       truncate_after=TRUNCATE_AFTER, iterations=MAX_ITERATION,
                       deconvoluter_type=AveraginePeakDependenceGraphDeconvoluter,
                       retention_strategy=None,
+                      use_quick_charge=False,
                       **kwargs):
     """Deconvolute a centroided mass spectrum
 
@@ -71,6 +72,9 @@ def deconvolute_peaks(peaklist, decon_config=None,
         A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`
     retention_strategy: :class:`~.PeakRetentionStrategyBase` or callable, optional
         A callable that may compute additional peaks to include in the output deconvoluted peaks.
+    use_quick_charge: :class:`bool`
+        Whether or not to use the :title-reference:`QuickCharge` algorithm to quickly filter
+        theoretical charge states to consider for each peak.
     **kwargs
         Additional keywords included in ``decon_config``
 
@@ -89,6 +93,7 @@ def deconvolute_peaks(peaklist, decon_config=None,
     decon_config.update(kwargs)
     decon_config.setdefault("use_subtraction", True)
     decon_config.setdefault("scale_method", SCALE_METHOD)
+    decon_config.setdefault("use_quick_charge", use_quick_charge)
     decon = deconvoluter_type(peaklist=peaklist, **decon_config)
 
     if verbose_priorities or verbose:

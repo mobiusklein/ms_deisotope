@@ -86,6 +86,15 @@ class ProcessedMGFDeserializer(MGFLoader):
         scan.deconvoluted_peak_set = self._build_peaks(scan._data)
         return scan.pack()
 
+    def _precursor_information(self, scan):
+        pinfo = super(ProcessedMGFDeserializer, self)._precursor_information(scan)
+        defaulted = pinfo.defaulted
+        orphan = pinfo.orphan
+        pinfo.default()
+        pinfo.defaulted = defaulted
+        pinfo.orphan = orphan
+        return pinfo
+
 
 def build_deconvoluted_peak_set_from_arrays(mz_array, intensity_array, charge_array):
     peaks = []

@@ -258,14 +258,15 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
 
     def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',
-                 verbose=False):
+                 verbose=False, **kwargs):
         self.peaklist = prepare_peaklist(peaklist)
         self.scorer = scorer
         self.verbose = verbose
         self._deconvoluted_peaks = []
         super(CompositionListDeconvoluter, self).__init__(
             composition_list,
-            use_subtraction=use_subtraction, scale_method=scale_method, merge_isobaric_peaks=True)
+            use_subtraction=use_subtraction, scale_method=scale_method,
+            merge_isobaric_peaks=True, **kwargs)
 
     def deconvolute(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), charge_carrier=PROTON,
                     truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW, mass_shift=None, **kwargs):

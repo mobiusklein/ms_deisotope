@@ -3,8 +3,10 @@ import logging
 from six import string_types as basestring
 
 from ms_peak_picker import pick_peaks
+from ms_peak_picker.scan_filter import FTICRBaselineRemoval
 
-from .averagine import AveragineCache
+from .averagine import AveragineCache, peptide
+from .scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 from .deconvolution import deconvolute_peaks
 from .data_source import MSFileLoader, ScanIterator
 from .data_source.common import Scan, ScanBunch, ChargeNotProvided
@@ -131,7 +133,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     Attributes
     ----------
-    data_source : :class:`str` or file-like
+    data_source : :class:`str`, :class:`~.ScanIterator` or file-like
         Any valid object to be passed to the `loader_type` callable to produce
         a :class:`~.ScanIterator` instance. A path to a mass spectrometry data file,
         a file-like object, or an instance of :class:`~.ScanIterator`. Used to populate :attr:`reader`
@@ -165,6 +167,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         solution
     terminate_on_error: :class:`bool`
         Whether or not  to stop processing on an error. Defaults to `True`
+    ms1_averaging: :class:`int`
+        The number of adjacent MS1 scans to average prior to picking peaks.
     """
 
     def __init__(self, data_source, ms1_peak_picking_args=None,
@@ -530,7 +534,10 @@ class ScanProcessor(Base, LogUtilsMixin):
 
             precursor_purity = -1.0
             if peak is not None:
-                precursor_purity, coisolation = coisolation_detection(precursor_scan, peak)
+                precursor_purity, coisolation = coisolation_detection(
+                    precursor_scan,
+                    peak,
+                    product_scan.isolation_window)
                 precursor_information.coisolation = coisolation
                 self.debug(
                     "Precursor m/z %f\nExperimental = %r\nTheoretical = %r" % (
@@ -606,10 +613,8 @@ class ScanProcessor(Base, LogUtilsMixin):
 
         Returns
         -------
-        precursor_scan: :class:`~.Scan`
-            The fully processed version of `precursor`
-        product_scans: :class:`list` of :class:`~.Scan`
-            The fully processed version of `products`
+        :class:`~.ScanBunch`
+            The fully processed version of `precursor` and `products`
         """
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
         if precursor_scan is not None:
@@ -678,6 +683,93 @@ class ScanProcessor(Base, LogUtilsMixin):
 
 
 ScanProcessor.log_with_logger(logger)
+
+
+def process(data_source, ms1_averagine=peptide, msn_averagine=peptide,
+            ms1_score_threshold=20, msn_score_threshold=5, denoise=False,
+            ms1_max_missed_peaks=1, pick_only_tandem_envelopes=False,
+            trust_charge_hint=True, envelope_selector=None, terminate_on_error=True,
+            ms1_averaging=0, respect_isolation_window=False, use_quick_charge=True):
+    """Construct a deconvolution pipeline for common applications.
+
+    Parameters
+    ----------
+    data_source : :class:`str` or :class:`~.ScanIterator` or file-like object
+        The scan data source to read raw spectra from
+    ms1_averagine : :class:`~.Averagine` or :class:`~.AveragineCache`, optional
+        The :class:`~.Averagine` model to use for MS1 scans. Defaults to
+        :object:`ms_deisotope.averagine.peptide`.
+    msn_averagine : :class:`~.Averagine` or :class:`~.AveragineCache`, optional
+        The :class:`~.Averagine` model to use for MSn scans. Defaults to
+        :object:`ms_deisotope.averagine.peptide`.
+    ms1_score_threshold : float, optional
+        The score threshold to use to reject isotopic pattern fits for MS1 scans.
+        The default is 20.0.
+    msn_score_threshold : float, optional
+        The score threshold to use to reject isotopic pattern fits for MS1 scans.
+        The default is 5.0.
+    denoise : :class:`bool` or :class:`float`, optional
+        Whether to denoise MS1 scans. If the value is not false-y, it may either be
+        a float to set the scale of the denoising process, or 5.0 if the value is
+        :const:`True`.
+    ms1_max_missed_peaks : :class:`int`, optional
+        The maximum number of missed peaks to permit for MS1 scans. The default is 1.
+    pick_only_tandem_envelopes : :class:`bool`
+        Whether or not to process whole MS1 scans or just the regions around those peaks
+        chosen for MSn
+    default_precursor_ion_selection_window : :class:`float`
+        Size of the selection window to use when :attr:`pick_only_tandem_envelopes` is `True`
+        and the information is not available in the scan.
+    trust_charge_hint : :class:`bool`
+        Whether or not to trust the charge provided by the data source when determining
+        the charge state of precursor isotopic patterns. Defaults to `True`
+    terminate_on_error: :class:`bool`
+        Whether or not  to stop processing on an error. Defaults to `True`
+    ms1_averaging: :class:`int`
+        The number of adjacent MS1 scans to average prior to picking peaks.
+    respect_isolation_window: :class:`bool`
+        Whether to use the bounds of the isolation window to reject a monoisotopic peak
+        solution
+    use_quick_charge : :class:`bool`, optional
+        Whether or not to used the QuickCharge algorithm for expediting charge calculation.
+
+    Returns
+    -------
+    :class:`ScanProcessor`
+    """
+    if denoise:
+        ms1_peak_picking_args = {
+            "filters": [
+                FTICRBaselineRemoval(
+                    scale=denoise if denoise is not True else 5., window_length=2)
+            ]
+        }
+    else:
+        ms1_peak_picking_args = None
+
+    ms1_deconvolution_args = {
+        "averagine": ms1_averagine,
+        "scorer": PenalizedMSDeconVFitter(ms1_score_threshold, 2.0),
+        "use_quick_charge": use_quick_charge,
+        "max_missed_peaks": ms1_max_missed_peaks,
+        "truncate_after": 0.95,
+    }
+    msn_deconvolution_args = {
+        "averagine": msn_averagine,
+        "scorer": MSDeconVFitter(msn_score_threshold),
+        "use_quick_charge": use_quick_charge,
+        "truncate_after": 0.8,
+    }
+    processor = ScanProcessor(
+        data_source, ms1_peak_picking_args,
+        None, ms1_deconvolution_args,
+        msn_deconvolution_args, pick_only_tandem_envelopes,
+        trust_charge_hint=trust_charge_hint,
+        envelope_selector=envelope_selector,
+        terminate_on_error=terminate_on_error,
+        ms1_averaging=ms1_averaging,
+        respect_isolation_window=respect_isolation_window)
+    return processor
 
 
 class EmptyScanError(ValueError):
