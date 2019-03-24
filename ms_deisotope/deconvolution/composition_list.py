@@ -258,7 +258,7 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
 
     def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',
-                 verbose=False, **kwargs):
+                 verbose=False, use_quick_charge=False, **kwargs):
         self.peaklist = prepare_peaklist(peaklist)
         self.scorer = scorer
         self.verbose = verbose
@@ -340,12 +340,12 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
 
     def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',
-                 verbose=False, **kwargs):
+                 verbose=False, use_quick_charge=False, **kwargs):
         max_missed_peaks = kwargs.get("max_missed_peaks", 1)
         super(CompositionListPeakDependenceGraphDeconvoluter, self).__init__(
             peaklist, composition_list, scorer=scorer, use_subtraction=use_subtraction,
-            scale_method=scale_method,
-            verbose=verbose, **kwargs)
+            scale_method=scale_method, verbose=verbose, use_quick_charge=use_quick_charge,
+            **kwargs)
 
         self.peak_dependency_network = PeakDependenceGraph(
             self.peaklist, maximize=self.scorer.is_maximizing(), **kwargs)
