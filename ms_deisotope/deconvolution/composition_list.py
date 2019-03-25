@@ -263,6 +263,7 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
         self.scorer = scorer
         self.verbose = verbose
         self._deconvoluted_peaks = []
+        self.use_quick_charge = use_quick_charge
         super(CompositionListDeconvoluter, self).__init__(
             composition_list,
             use_subtraction=use_subtraction, scale_method=scale_method,

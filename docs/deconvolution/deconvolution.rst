@@ -92,7 +92,7 @@ Accounting For Lower Quality Data
     .. autoclass:: TopNRetentionStrategy
         :members:
 
-    :object:`ms_deisotope.deconvolution.peak_retention_strategy.simple_peak_retention` is an instance of
+    :data:`ms_deisotope.deconvolution.peak_retention_strategy.simple_peak_retention` is an instance of
     :class:`TopNRetentionStrategy` with `n_peaks=50, base_peak_coefficient=0.05, max_mass=850.0`, the default
     values.
 

@@ -1,10 +1,11 @@
 # pragma: no cover
-from ..data_source.common import Scan, ScanBunch, ProcessedScan, PrecursorInformation, ScanIterator
+from ms_deisotope.utils import Base
+from ms_deisotope.data_source.common import ScanBunch, ScanIterator
 
 
 class ScanSerializerBase(object):
     def __init__(self, *args, **kwargs):
-        pass
+        super(ScanSerializerBase, self).__init__(*args, **kwargs)
 
     def __enter__(self):
         return self
@@ -32,7 +33,7 @@ class ScanSerializerBase(object):
 
 class ScanDeserializerBase(object):
     def __init__(self, *args, **kwargs):
-        pass
+        super(ScanDeserializerBase, self).__init__(*args, **kwargs)
 
     def __next__(self):
         return self.next()
@@ -51,3 +52,13 @@ class ScanDeserializerBase(object):
 
 
 ScanIterator.register(ScanDeserializerBase)
+
+
+class SampleRun(Base):
+
+    def __init__(self, name, uuid, completed=True, sample_type=None, **kwargs):
+        self.name = name
+        self.uuid = uuid
+        self.sample_type = sample_type
+        self.completed = completed
+        self.parameters = kwargs

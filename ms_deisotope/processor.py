@@ -352,7 +352,7 @@ class ScanProcessor(Base, LogUtilsMixin):
             precursor_ion = scan.precursor_information
             if peaks is None:
                 peaks = self.pick_precursor_scan_peaks(precursor_scan)
-            peak, err = peaks.get_nearest_peak(precursor_ion.mz)
+            peak, _ = peaks.get_nearest_peak(precursor_ion.mz)
             precursor_ion.peak = peak
             target = PriorityTarget(
                 peak,
@@ -667,8 +667,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         return ScanBunch(precursor_scan.pack() if precursor_scan else None, [p.pack() for p in product_scans])
 
     def start_from_scan(self, *args, **kwargs):
-        """A wrapper around :meth:`start_from_scan` provided by
-        :attr:`reader`.
+        """A wrapper around :meth:`~.RandomAccessScanSource.start_from_scan` provided by
+        :attr:`reader`, if available.
 
         Returns
         -------
@@ -676,7 +676,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
         See Also
         --------
-        ms_deisotope.data_source.common.start_from_scan
+        :meth:`~.RandomAccessScanSource.start_from_scan`
         """
         self.reader.start_from_scan(*args, **kwargs)
         return self
@@ -698,10 +698,10 @@ def process(data_source, ms1_averagine=peptide, msn_averagine=peptide,
         The scan data source to read raw spectra from
     ms1_averagine : :class:`~.Averagine` or :class:`~.AveragineCache`, optional
         The :class:`~.Averagine` model to use for MS1 scans. Defaults to
-        :object:`ms_deisotope.averagine.peptide`.
+        :data:`ms_deisotope.averagine.peptide`.
     msn_averagine : :class:`~.Averagine` or :class:`~.AveragineCache`, optional
         The :class:`~.Averagine` model to use for MSn scans. Defaults to
-        :object:`ms_deisotope.averagine.peptide`.
+        :data:`ms_deisotope.averagine.peptide`.
     ms1_score_threshold : float, optional
         The score threshold to use to reject isotopic pattern fits for MS1 scans.
         The default is 20.0.

@@ -3,7 +3,14 @@ Deconvolution Pipeline
 
 The deconvolution process from start to finish can be pipelined from start to finish
 using the :class:`~.ScanProcessor` class. This includes precursor recalculation and
-coisolation detection.
+coisolation detection. :class:`~.ScanProcessor` is intended to be used either as a
+replacement for :class:`~.ScanIterator` when deconvolution is desired, or that the
+:meth:`~.ScanProcessor.process` will be used to handle individual :class:`~.ScanBunch`
+objects/pairs of precursor :class:`~.Scan` objects and a :class:`list` of product :class:`~.Scan`
+objects.
+
+The free-function :func:`~.process` is a convenience wrapper around :class:`~.ScanProcessor`,
+with fewer configurable parameters.
 
 .. code:: python
 
@@ -31,6 +38,9 @@ coisolation detection.
     .. autoclass:: ScanProcessor
         :members: pick_precursor_scan_peaks, pick_product_scan_peaks, process_scan_group,
                   process, next, start_from_scan, deconvolute_precursor_scan, deconvolute_product_scan
+
+    .. autofunction:: process
+
 
 Supporting Types
 ================

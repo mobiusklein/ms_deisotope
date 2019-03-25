@@ -249,6 +249,9 @@ def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
                 lower - 1.2, upper + 1.2, use_mz=True),
             ax=ax, alpha=0.9, color='blue')
 
+    label_peaks(scan, lower, upper, ax=ax,
+                is_deconvoluted=bool(scan.deconvoluted_peak_set))
+
     ax.set_ylim(0, local_intensity * 1.25)
     ax.set_xlim(lower, upper)
     upper_intensity = local_intensity

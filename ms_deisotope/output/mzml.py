@@ -1,3 +1,40 @@
+'''
+Writing mzML
+------------
+
+Using the :mod:`psims` library, :mod:`ms_deisotope.output.mzml` can write an mzML
+file with all associated metadata, including deconvoluted peak arrays, chromatograms,
+and data transformations. The :class:`~.MzMLSerializer` class handles all facets of
+this process.
+
+This module also contains a specialized version of :class:`~.MzMLLoader`,
+:class:`~.ProcessedMzMLDeserializer`, which can directly reconstruct each
+deconvoluted peak list and provides fast access to an extended index of
+metadata that :class:`~.MzMLSerializer` writes to an external file.
+
+
+.. code:: python
+
+    import ms_deisotope
+    from ms_deisotope.test.common import datafile
+    from ms_deisotope.output.mzml import MzMLSerializer
+
+    reader = ms_deisotope.MSFileLoader(datafile("small.mzML"))
+    with open("small.deconvoluted.mzML", 'wb') as fh:
+        writer = MzMLSerializer(fh, n_spectra=len(reader))
+
+        writer.copy_metadata_from(reader)
+        for bunch in reader:
+            bunch.precursor.pick_peaks()
+            bunch.precursor.deconvolute()
+            for product in bunch.products:
+                product.pick_peaks()
+                product.deconvolute()
+            writer.save(bunch)
+
+        writer.close()
+
+'''
 import os
 from collections import OrderedDict
 try:
@@ -18,29 +55,27 @@ try:
 except ImportError:
     writer = None
 
-try:
-    WindowsError
-    on_windows = True
-except NameError:
-    on_windows = False
-
-from .common import ScanSerializerBase, ScanDeserializerBase
-from .text_utils import (envelopes_to_array, decode_envelopes)
-from ms_deisotope import peak_set, version as lib_version
-from ms_deisotope.utils import Base
+from ms_deisotope import version as lib_version
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.envelope_statistics import CoIsolation
 from ms_deisotope.data_source.common import (
-    PrecursorInformation, ScanBunch, ChargeNotProvided,
+    PrecursorInformation, ChargeNotProvided,
     _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
 from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.feature_map import ExtendedScanIndex
 
+from .common import ScanSerializerBase, ScanDeserializerBase, SampleRun
+from .text_utils import (envelopes_to_array, decode_envelopes)
+
 
 class SpectrumDescription(Sequence):
-
+    '''A helper class to calculate properties of a spectrum derived from
+    their peak data or raw signal
+    '''
     def __init__(self, attribs=None):
+        Sequence.__init__(self)
         self.descriptors = list(attribs or [])
 
     def __getitem__(self, i):
@@ -132,16 +167,6 @@ class SpectrumDescription(Sequence):
         return descriptors
 
 
-class SampleRun(Base):
-
-    def __init__(self, name, uuid, completed=True, sample_type=None, **kwargs):
-        self.name = name
-        self.uuid = uuid
-        self.sample_type = sample_type
-        self.completed = completed
-        self.parameters = kwargs
-
-
 class MzMLSerializer(ScanSerializerBase):
 
     """Write :mod:`ms_deisotope` data structures to a file in mzML format.
@@ -207,6 +232,7 @@ class MzMLSerializer(ScanSerializerBase):
                 "Cannot write mzML without psims. Please install psims to use this feature.")
         if compression is None:
             compression = writer.COMPRESSION_ZLIB
+        super(MzMLSerializer, self).__init__()
         self.handle = handle
         self.writer = writer.MzMLWriter(handle)
         self.n_spectra = n_spectra
@@ -290,6 +316,14 @@ class MzMLSerializer(ScanSerializerBase):
         self.software_list.append(software_description)
 
     def add_file_information(self, file_information):
+        '''Add the information of a :class:`~.FileInformation` to the
+        output document.
+
+        Parameters
+        ----------
+        file_information: :class:`~.FileInformation`
+            The information to add.
+        '''
         for key, value in file_information.contents.items():
             if value is None:
                 value = ''
@@ -309,6 +343,20 @@ class MzMLSerializer(ScanSerializerBase):
         self.file_contents_list.append(file_contents)
 
     def remove_file_contents(self, name):
+        """Remove a key to the resulting :obj:`<fileDescription>`
+        of the output document.
+
+        Parameters
+        ----------
+        file_contents: :class:`str` or :class:`Mapping`
+            The parameter to remove
+
+        Raises
+        ------
+        KeyError:
+            When the content is not found.
+        """
+        i = None
         for i, content in enumerate(self.file_contents_list):
             if isinstance(content, Mapping):
                 if 'name' in content:
@@ -320,6 +368,8 @@ class MzMLSerializer(ScanSerializerBase):
             if content == name:
                 break
         else:
+            raise KeyError(name)
+        if i is None:
             raise KeyError(name)
         self.file_contents_list.pop(i)
 
@@ -902,12 +952,6 @@ class MzMLSerializer(ScanSerializerBase):
         """
         pass
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
-
     def close(self):
         self.complete()
         if hasattr(self.handle, "closed"):
@@ -916,6 +960,11 @@ class MzMLSerializer(ScanSerializerBase):
                     self.handle.close()
                 except AttributeError:
                     pass
+        else:
+            try:
+                self.handle.close()
+            except (AttributeError, ValueError, TypeError, OSError):
+                pass
 
 
 MzMLScanSerializer = MzMLSerializer
@@ -932,13 +981,13 @@ def deserialize_deconvoluted_peak_set(scan_dict):
     for i in range(n):
         mz = mz_array[i]
         charge = charge_array[i]
-        peak = peak_set.DeconvolutedPeak(
+        peak = DeconvolutedPeak(
             neutral_mass(mz, charge), intensity_array[i], charge=charge, signal_to_noise=score_array[i],
             index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
             average_mass=0, score=score_array[i], envelope=envelopes[i], mz=mz
         )
         peaks.append(peak)
-    peaks = peak_set.DeconvolutedPeakSet(peaks)
+    peaks = DeconvolutedPeakSet(peaks)
     peaks._reindex()
     return peaks
 
@@ -973,7 +1022,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
     """
 
     def __init__(self, source_file, use_index=True, use_extended_index=True):
-        MzMLLoader.__init__(self, source_file, use_index=use_index, decode_binary=True)
+        super(ProcessedMzMLDeserializer, self).__init__(source_file, use_index=use_index, decode_binary=True)
         self.extended_index = None
         self._scan_id_to_rt = dict()
         self._sample_run = None
@@ -1206,7 +1255,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     def precursor_information(self):
         out = []
-        for key, info in self.extended_index.msn_ids.items():
+        for _, info in self.extended_index.msn_ids.items():
             mz = info['mz']
             neutral_mass = info['neutral_mass']
             charge = info['charge']
