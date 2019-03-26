@@ -426,7 +426,7 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
         for peak in subset:
             if peak.intensity > threshold:
                 label = "%0.2f" % (peak.mz, )
-                y = pt.intensity * 1.05
+                y = peak.intensity * 1.05
                 x = peak.mz
                 annotations.append(
                     ax.text(x, y, label, ha='center', **kwargs))
