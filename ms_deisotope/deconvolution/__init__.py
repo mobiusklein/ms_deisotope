@@ -15,7 +15,8 @@ from .utils import (
     drop_placeholders,
     first_peak,
     from_fitted_peak,
-    count_placeholders)
+    count_placeholders,
+    mean)
 
 from .base import (
     DeconvoluterBase)
