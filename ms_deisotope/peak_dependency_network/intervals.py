@@ -7,6 +7,11 @@ class SpanningMixin(object):
     dimension contains or overlaps with another entity in
     that same dimension.
     """
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
     def __contains__(self, i):
         """Tests for point inclusion, `start <= i <= end`
 

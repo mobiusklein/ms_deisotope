@@ -1,10 +1,12 @@
 import json
-
 from collections import OrderedDict
 
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided,
     ActivationInformation, ScanBase)
+
+from .feature_map import NeutralMassIndex
+
 from ms_deisotope.utils import Base
 from ms_deisotope.envelope_statistics import CoIsolation
 
@@ -100,6 +102,9 @@ class ExtendedScanIndex(object):
         self.ms1_ids = OrderedDict(ms1_ids)
         self.msn_ids = OrderedDict(msn_ids)
         self.schema_version = schema_version
+
+        self._index_bind = None
+        self._mass_search_index = None
 
     def get_scan_dict(self, key):
         try:
@@ -234,7 +239,7 @@ class ExtendedScanIndex(object):
         Parameters
         ----------
         other: :class:`ExtendedScanIndex`
-        
+
         Returns
         -------
         :class:`ExtendedScanIndex`
@@ -268,7 +273,7 @@ class ExtendedScanIndex(object):
         Parameters
         ----------
         handle: file-like
-        
+
         Returns
         -------
         :class:`ExtendedScanIndex`
@@ -308,6 +313,15 @@ class ExtendedScanIndex(object):
             out.append(pinfo)
         return out
 
+    def _get_mass_search_index(self, bind=None):
+        if self._mass_search_index is not None and (bind is self._index_bind or bind is None):
+            return self._mass_search_index
+        pinfos = self.get_precursor_information(bind)
+        index = NeutralMassIndex(pinfos)
+        self._index_bind = bind
+        self._mass_search_index = index
+        return index
+
     def find_msms_by_precursor_mass(self, neutral_mass, mass_error_tolerance=1e-5, bind=None):
         '''Find all entries in :attr:`msn_ids` which are within ``mass_error_tolerance`` of
         ``neutral_mass``.
@@ -318,12 +332,6 @@ class ExtendedScanIndex(object):
         -------
         list
         '''
-        m = neutral_mass
-        w = neutral_mass * mass_error_tolerance
-        lo = m - w
-        hi = m + w
-        out = []
-        for pinfo in self.get_precursor_information(bind):
-            if lo <= pinfo.neutral_mass <= hi:
-                out.append(pinfo)
+        index = self._get_mass_search_index(bind)
+        out = index.find_all(neutral_mass, mass_error_tolerance)
         return out
