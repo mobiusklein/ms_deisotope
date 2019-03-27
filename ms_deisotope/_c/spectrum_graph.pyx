@@ -652,7 +652,7 @@ cdef class PathFinder(object):
     def merge_paths(self, paths):
         path_groups = self.collect_paths(paths)
         merged_paths = [collect_edges(group) for group in path_groups]
-        merge_paths.sort(key=lambda x: x.total_signal, reverse=True)
+        merged_paths.sort(key=lambda x: x.total_signal, reverse=True)
         return merged_paths
 
     def paths(self, scan, limit=200, merge=False):
