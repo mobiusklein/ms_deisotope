@@ -4,6 +4,7 @@ from collections import defaultdict
 cimport cython
 from cpython cimport PyObject
 from cpython cimport PyList_Append, PyList_Size, PyList_GetItem
+from cpython cimport PyTuple_Size, PyTuple_GetItem
 from cpython cimport PySet_Add
 from cpython cimport PyDict_GetItem, PyDict_SetItem
 from cpython cimport PyInt_AsLong
@@ -11,14 +12,14 @@ from cpython cimport PyInt_AsLong
 import numpy as np
 cimport numpy as np
 
-from ms_deisotope._c.peak_set cimport DeconvolutedPeak
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak, DeconvolutedPeakSet
 
 np.import_array()
 
 
 cdef class NodeBase(object):
     def __init__(self):
-        self.key = self.make_key()
+        self.key = self.get_index()
 
     cdef double get_neutral_mass(self):
         return 0
@@ -26,8 +27,8 @@ cdef class NodeBase(object):
     cdef double get_intensity(self):
         return 0
 
-    cdef long make_key(self):
-        return 1
+    cdef size_t get_index(self):
+        return 0
 
     cdef bint _eq(self, NodeBase other):
         if other is None:
@@ -39,6 +40,10 @@ cdef class NodeBase(object):
         elif self.key != other.key:
             return False
         return True
+
+    @property
+    def index(self):
+        return self.get_index()
 
     @property
     def neutral_mass(self):
@@ -59,14 +64,14 @@ cdef class PeakNode(NodeBase):
         self.peak = peak
         super(PeakNode, self).__init__()
 
+    cdef size_t get_index(self):
+        return self.peak._index.neutral_mass
+
     cdef double get_neutral_mass(self):
         return self.peak.neutral_mass
 
     cdef double get_intensity(self):
         return self.peak.intensity
-
-    cdef long make_key(self):
-        return self.peak._index.neutral_mass
 
     def __iter__(self):
         yield self.peak
@@ -79,6 +84,19 @@ cdef class PeakGroupNode(NodeBase):
 
     cdef size_t get_size(self):
         return len(self.peaks)
+
+    cdef size_t get_index(self):
+        cdef:
+            size_t i, n
+            size_t index
+            DeconvolutedPeak peak
+        n = self.get_size()
+        index = -1
+        for i in range(n):
+            peak = <DeconvolutedPeak>PyList_GetItem(self.peaks, i)
+            if peak._index.neutral_mass < index:
+                index = peak._index.neutral_mass
+        return index
 
     cdef double get_neutral_mass(self):
         cdef:
@@ -106,19 +124,6 @@ cdef class PeakGroupNode(NodeBase):
         for i in range(n):
             peak = self.peaks[i]
             acc += (peak.intensity)
-        return acc
-
-    cdef long make_key(self):
-        cdef:
-            size_t i, n
-            long acc
-            DeconvolutedPeak peak
-        n = self.get_size()
-        acc = 123823903
-        for i in range(n):
-            peak = self.peaks[i]
-            acc += (peak._index.neutral_mass)
-            acc = acc << 1
         return acc
 
     def __iter__(self):
@@ -156,8 +161,6 @@ cdef class Edge(object):
             return False
         else:
             typed_other = <Edge?>other
-        # if self.key != typed_other.key:
-        #     return False
         if not self.start._eq(typed_other.start):
             return False
         elif not self.end._eq(typed_other.end):
@@ -326,7 +329,7 @@ cdef class SpectrumGraph(object):
                 # set of nodes on this path
                 # node_set.update(node.key)
                 if j == 0:
-                    conv = node.start._index.neutral_mass
+                    conv = node.start.get_index()
                     node_set.add(conv)
                     tmp = PyDict_GetItem(by_node, conv)
                     if tmp == NULL:
@@ -335,7 +338,7 @@ cdef class SpectrumGraph(object):
                     else:
                         index_list = <list>tmp
                     index_list.append(i)
-                conv = node.end._index.neutral_mass
+                conv = node.end.get_index()
                 node_set.add(conv)
                 tmp = PyDict_GetItem(by_node, conv)
                 if tmp == NULL:
@@ -354,7 +357,7 @@ cdef class SpectrumGraph(object):
             node_set = <set>PyList_GetItem(node_sets, i)
             n = len(node_set)
             node = <Edge>PyList_GetItem(path, 0)
-            conv = node.start._index.neutral_mass
+            conv = node.start.get_index()
             index_list = <list>PyDict_GetItem(by_node, conv)
             for q in range(PyList_Size(index_list)):
                 j = PyInt_AsLong(<object>PyList_GetItem(index_list, q))
@@ -391,6 +394,7 @@ cdef class SpectrumGraph(object):
                     break
         return paths
 
+
 @cython.final
 @cython.freelist(1000)
 cdef class MassWrapper(object):
@@ -409,14 +413,17 @@ cdef class MassWrapper(object):
         The mass of :attr:`obj`
     '''
 
-    def __init__(self, obj):
+    def __init__(self, obj, mass=None):
         self.obj = obj
-        try:
-            # object's mass is a method
-            self.mass = obj.mass()
-        except TypeError:
-            # object's mass is a plain attribute
-            self.mass = obj.mass
+        if mass is not None:
+            self.mass = mass
+        else:
+            try:
+                # object's mass is a method
+                self.mass = obj.mass()
+            except TypeError:
+                # object's mass is a plain attribute
+                self.mass = obj.mass
 
     def __repr__(self):
         return "{self.__class__.__name__}({self.obj})".format(self=self)
@@ -430,10 +437,10 @@ cdef class MassWrapper(object):
 
 cdef class Path(object):
     def __init__(self, edge_list):
-        self.transitions = edge_list
+        self.transitions = list(edge_list)
         self.total_signal = self._total_signal()
-        self.start_mass = self[0].start.neutral_mass
-        self.end_mass = self[-1].end.neutral_mass
+        self.start_mass = self.get(0).start.neutral_mass
+        self.end_mass = self.get(-1).end.neutral_mass
         self._peaks_used = None
         self._edges_used = None
 
@@ -521,3 +528,136 @@ cdef class Path(object):
             '->'.join(str(e.annotation) for e in self),
             self.total_signal, self.start_mass, self.end_mass
         )
+
+
+def create_edge_group(edges):
+    if not edges:
+        return None
+    starts = []
+    ends = []
+    annotations = []
+    for edge in edges:
+        starts.extend(edge.start)
+        ends.extend(edge.end)
+        annotations.append(edge.annotation)
+    start = PeakGroupNode(starts)
+    end = PeakGroupNode(ends)
+    annotation = annotations[0]
+    return Edge(start, end, annotation)
+
+
+def collect_edges(paths):
+    edges = []
+    n = len(paths)
+    if n == 0:
+        return []
+    m = len(paths[0])
+    for i in range(m):
+        group = []
+        for j in range(n):
+            group.append(paths[j][i])
+        edges.append(group)
+    return Path([create_edge_group(g) for g in edges])
+
+
+cdef class PathFinder(object):
+    cdef:
+        public list components
+        public double product_error_tolerance
+
+    def __init__(self, components, product_error_tolerance=1e-5):
+        self.components = sorted(map(MassWrapper, components), key=lambda x: x.mass)
+        self.product_error_tolerance = product_error_tolerance
+
+    def _find_edges(self, scan):
+        cdef:
+            SpectrumGraph graph
+            size_t pi, pn
+            size_t ci, cn
+            size_t oi, on
+            DeconvolutedPeakSet deconvoluted_peak_set
+            DeconvolutedPeak peak, other_peak
+            MassWrapper component
+            tuple complements
+
+        graph = SpectrumGraph()
+        if not isinstance(scan, DeconvolutedPeakSet):
+            deconvoluted_peak_set = scan.deconvoluted_peak_set
+        else:
+            deconvoluted_peak_set = scan
+
+        cn = PyList_Size(self.components)
+        pn = deconvoluted_peak_set.get_size()
+        for pi in range(pn):
+            peak = <DeconvolutedPeak>deconvoluted_peak_set.getitem(pi)
+            for ci in range(cn):
+                component = <MassWrapper>PyList_GetItem(self.components, ci)
+                complements = deconvoluted_peak_set.all_peaks_for(
+                    peak.neutral_mass + component.mass, self.product_error_tolerance)
+                on = PyTuple_Size(complements)
+                for oi in range(on):
+                    other_peak = <DeconvolutedPeak>PyTuple_GetItem(complements, oi)
+                    graph.add(peak, other_peak, component.obj)
+        return graph
+
+    def _init_paths(self, graph, limit=200):
+        cdef:
+            double min_start_mass
+            list paths, edge_list
+            Path path
+
+        paths = []
+        min_start_mass = (<MassWrapper>PyList_GetItem(self.components, 0)).mass + 1
+        for edge_list in graph.longest_paths(limit=limit):
+            path = Path(edge_list)
+            if path.start_mass < min_start_mass:
+                continue
+            paths.append(path)
+        return paths
+
+    def collect_paths(self, paths):
+        '''Group together paths which share the same annotation sequence and approximate
+        start and end masses.
+
+        Parameters
+        ----------
+        paths: :class:`list`
+            A list of :class:`Path` objects to group
+
+        Returns
+        -------
+        :class:`list` of :class:`list` of :class:`Path` objects
+        '''
+        groups = defaultdict(list)
+        if not paths:
+            return []
+        for path in paths:
+            key = tuple(e.annotation for e in path)
+            groups[key].append(path)
+        result = []
+        for key, block_members in groups.items():
+            block_members = sorted(block_members, key=lambda x: x.start_mass)
+            current_path = block_members[0]
+            members = [current_path]
+            for path in block_members[1:]:
+                if abs(current_path.start_mass - path.start_mass) / path.start_mass < self.product_error_tolerance:
+                    members.append(path)
+                else:
+                    result.append(members)
+                    current_path = path
+                    members = [current_path]
+            result.append(members)
+        return result
+
+    def merge_paths(self, paths):
+        path_groups = self.collect_paths(paths)
+        merged_paths = [collect_edges(group) for group in path_groups]
+        merge_paths.sort(key=lambda x: x.total_signal, reverse=True)
+        return merged_paths
+
+    def paths(self, scan, limit=200, merge=False):
+        graph = self._find_edges(scan)
+        paths = self._init_paths(graph, limit)
+        if merge:
+            paths = self.merge_paths(paths)
+        return paths

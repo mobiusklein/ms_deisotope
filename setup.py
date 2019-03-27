@@ -119,6 +119,9 @@ def make_extensions():
             Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
                       sources=['ms_deisotope/_c/peak_dependency_network/peak_network.pyx'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.spectrum_graph',
+                      sources=['ms_deisotope/_c/spectrum_graph.pyx'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             OpenMPExtension(
                 name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.pyx"],
                 include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
@@ -162,6 +165,9 @@ def make_extensions():
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
                       sources=['ms_deisotope/_c/peak_dependency_network/peak_network.c'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.spectrum_graph',
+                      sources=['ms_deisotope/_c/spectrum_graph.c'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             OpenMPExtension(
                 name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.c"],

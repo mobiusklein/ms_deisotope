@@ -6,12 +6,11 @@ from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 cdef class NodeBase(object):
 
     cdef:
-        public long key
+        public size_t key
 
     cdef double get_neutral_mass(self)
     cdef double get_intensity(self)
-    cdef long make_key(self)
-
+    cdef size_t get_index(self)
     cdef bint _eq(self, NodeBase other)
 
 
@@ -35,7 +34,7 @@ cdef class Edge(object):
         public NodeBase start
         public NodeBase end
         public object annotation
-        public (long, long) key
+        public (size_t, size_t) key
         public Py_hash_t _hash
 
     @staticmethod
