@@ -79,7 +79,7 @@ cdef class PeakNode(NodeBase):
 
 cdef class PeakGroupNode(NodeBase):
     def __init__(self, peaks):
-        self.peaks = sorted(peaks, key=lambda x: x.neutral_mass)
+        self.peaks = sorted(set(peaks), key=lambda x: x.neutral_mass)
         super(PeakGroupNode, self).__init__()
 
     cdef size_t get_size(self):
