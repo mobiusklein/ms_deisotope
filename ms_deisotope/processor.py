@@ -1,3 +1,38 @@
+'''
+Deconvolution Pipeline
+----------------------
+
+The deconvolution process from start to finish can be pipelined from start to finish
+using the :class:`~.ScanProcessor` class. This includes precursor recalculation and
+coisolation detection. :class:`~.ScanProcessor` is intended to be used either as a
+replacement for :class:`~.ScanIterator` when deconvolution is desired, or that the
+:meth:`~.ScanProcessor.process` will be used to handle individual :class:`~.ScanBunch`
+objects/pairs of precursor :class:`~.Scan` objects and a :class:`list` of product :class:`~.Scan`
+objects.
+
+The free-function :func:`~.process` is a convenience wrapper around :class:`~.ScanProcessor`,
+with fewer configurable parameters.
+
+.. code:: python
+
+    from ms_deisotope import ScanProcessor, glycopeptide, peptide
+    from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
+    from ms_deisotope.test.common import datafile
+
+    proc = processor.ScanProcessor(datafile("20150710_3um_AGP_001_29_30.mzML.gz"), ms1_deconvolution_args={
+        "averagine": glycopeptide,
+        "scorer": PenalizedMSDeconVFitter(20., 2.),
+        "truncate_after": 0.95
+    }, msn_deconvolution_args={
+        "averagine": peptide,
+        "scorer": MSDeconVFitter(10.),
+        "truncate_after": 0.8
+    })
+
+    bunch = next(proc)
+    print(bunch)
+    print(bunch.precursor.deconvoluted_peak_set)
+'''
 import logging
 
 from six import string_types as basestring
@@ -18,7 +53,7 @@ from .task import LogUtilsMixin
 logger = logging.getLogger("deconvolution_scan_processor")
 
 
-def get_nearest_index(query_mz, peak_list):
+def _get_nearest_index(query_mz, peak_list):
     best_index = None
     best_error = float('inf')
 
@@ -69,10 +104,24 @@ class PriorityTarget(Base):
 
     @property
     def mz(self):
+        '''
+        The m/z of the matched peak
+
+        Returns
+        -------
+        float
+        '''
         return self.peak.mz
 
     @property
     def charge(self):
+        '''
+        The charge state of the precursor ion reported by the source.
+
+        Returns
+        -------
+        int
+        '''
         try:
             return int(self.info.charge)
         except TypeError:
@@ -235,6 +284,13 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     @property
     def reader(self):
+        '''The :class:`~.ScanIterator` which generates the raw scans that will
+        be processed.
+
+        Returns
+        -------
+        :class:`~.ScanIterator`
+        '''
         return self._signal_source
 
     def _get_envelopes(self, precursor_scan):
@@ -331,6 +387,17 @@ class ScanProcessor(Base, LogUtilsMixin):
         return prec_peaks
 
     def pick_product_scan_peaks(self, product_scan):
+        """Pick the peaks of product scan
+
+        Parameter
+        ---------
+        product_scan: :class:`~.Scan`
+            The scan to pick peaks from.
+
+        Returns
+        -------
+        PeakSet
+        """
         if product_scan.is_profile:
             peak_mode = 'profile'
         else:
@@ -346,6 +413,18 @@ class ScanProcessor(Base, LogUtilsMixin):
         return peaks
 
     def get_precursor_peak_for_product_scans(self, precursor_scan):  # pragma: no cover
+        """A utility method to obtain :class:`PriorityTarget` objects for
+        each product scan of `precursor_scan`.
+
+        Parameters
+        ----------
+        precursor_scan: :class:`~.Scan`
+            The scan to extract.
+
+        Returns
+        -------
+        :class:`list` of :class:`PriorityTarget`
+        """
         priorities = []
         peaks = precursor_scan.peak_set
         for scan in precursor_scan.product_scans:
@@ -503,7 +582,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
             # unknown precursor purity
             product_scan.annotations['precursor purity'] = 0.0
-            i = get_nearest_index(precursor_information.mz, priorities)
+            i = _get_nearest_index(precursor_information.mz, priorities)
 
             # If no peak is found in the priority list, it means the priority list is empty.
             # This should never happen in the current implementation. If it did, then we forgot
@@ -551,9 +630,35 @@ class ScanProcessor(Base, LogUtilsMixin):
         return dec_peaks, priority_results
 
     def deconvolute_product_scan(self, product_scan):
+        """Deconvolute the peaks of `product_scan`.
+
+        This method will override the upper limit "charge_range" of
+        :attr:`msn_deconvolution_args` to the charge information of
+        the precursor ion.
+
+        This method sets the :attr:`~.Scan.deconvoluted_peak_set` of
+        `product_scan`.
+
+        Parameters
+        ----------
+        product_scan : :class:`~.Scan`
+            The scan to deconvolute.
+
+        Returns
+        -------
+        :class:`~.DeconvolutedPeakSet`
+
+        Raises
+        ------
+        Exception
+            Any errors which are thrown during the deconvolution process may be thrown
+            if :attr:`terminate_on_error` is `True`.
+        """
         self.log("Deconvoluting Product Scan %r" % (product_scan, ))
         precursor_ion = product_scan.precursor_information
         top_charge_state = precursor_ion.extracted_charge
+        if not top_charge_state:
+            top_charge_state = precursor_ion.charge
         deconargs = dict(self.msn_deconvolution_args)
         charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
         if top_charge_state is not None and top_charge_state is not ChargeNotProvided and\
@@ -773,6 +878,9 @@ def process(data_source, ms1_averagine=peptide, msn_averagine=peptide,
 
 
 class EmptyScanError(ValueError):
+    """A sub-type of :class:`ValueError` which is used to indicate
+    that a spectrum is empty and could not be manipulated.
+    """
     def __init__(self, msg, scan_id=None):
         ValueError.__init__(self, msg)
         self.scan_id = scan_id

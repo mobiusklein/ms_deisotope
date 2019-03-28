@@ -1,4 +1,6 @@
 '''A collection of simple statistics describing isotopic envelopes.
+These functions are primarily used during deconvolution to calculate
+properties of :class:`~.DeconvolutedPeak` objects.
 '''
 import operator
 
