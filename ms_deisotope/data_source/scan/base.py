@@ -226,7 +226,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
                         best_index = i
                     i -= 1
                 i = mid
-                while i <= n:
+                while i < n:
                     y = self.mz[i]
                     err = y - mz
                     if err >= 0.1:
