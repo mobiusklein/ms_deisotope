@@ -37,7 +37,7 @@ from ms_deisotope.data_source._thermo_helper import (
 try:
     from ms_deisotope.data_source._vendor.MSFileReader import (  # pylint: disable=unused-import
         ThermoRawfile as _ThermoRawFileAPI, register_dll,
-        log as _api_logger)
+        log as _api_logger, safearray_as_ndarray)
 
     comtypes_logger = logging.getLogger("comtypes")
     comtypes_logger.setLevel("INFO")
@@ -212,9 +212,12 @@ class ThermoRawDataInterface(ScanDataSource):
         return "%s %r" % (self._scan_id(scan), self._filter_string(scan))
 
     def _scan_arrays(self, scan):
-        arrays, _ = self._source.GetMassListFromScanNum(
-            scan.scan_number)
+        with safearray_as_ndarray:
+            arrays, _ = self._source.GetMassListFromScanNum(
+                scan.scan_number)
         mz, intensity = arrays
+        if isinstance(mz, np.ndarray):
+            return mz.copy(), intensity.copy()
         return np.array(mz), np.array(intensity)
 
     def _precursor_information(self, scan):

@@ -59,6 +59,7 @@ except NameError:
 try:
     import comtypes
     from comtypes.client import GetModule, CreateObject
+    from comtypes.safearray import safearray_as_ndarray
 except (ImportError, NameError) as e:
     raise ImportError("Could not import comtypes")
 
@@ -68,6 +69,28 @@ try:
     DLL_IS_LOADED = True
 except (ImportError, TypeError):
     DLL_IS_LOADED = False
+
+
+def _check_numpy():
+    import numpy as np
+    from numpy import ctypeslib
+    try:
+        from numpy.ctypeslib import _typecodes
+    except ImportError:
+        from numpy.ctypeslib import as_ctypes_type
+
+        ctypes_to_dtypes = {}
+
+        for tp in set(np.sctypeDict.values()):
+            try:
+                ctype_for = as_ctypes_type(tp)
+                ctypes_to_dtypes[ctype_for] = tp
+            except NotImplementedError:
+                continue
+        ctypeslib._typecodes = ctypes_to_dtypes
+
+
+_check_numpy()
 
 
 _default_paths = [
@@ -1252,10 +1275,11 @@ class ThermoRawfile(object):
         peakList = comtypes.automation.VARIANT()
         peakFlags = comtypes.automation.VARIANT()
         pnArraySize = c_long()
-        error = self.source.GetMassListFromScanNum(
-            c_long(scanNumber), filter, intensityCutoffType,
-            intensityCutoffValue, maxNumberOfPeaks, centroidResult,
-            c_double(centroidPeakWidth), peakList, peakFlags, byref(pnArraySize))
+        with safearray_as_ndarray:
+            error = self.source.GetMassListFromScanNum(
+                c_long(scanNumber), filter, intensityCutoffType,
+                intensityCutoffValue, maxNumberOfPeaks, centroidResult,
+                c_double(centroidPeakWidth), peakList, peakFlags, byref(pnArraySize))
         if error:
             raise IOError("GetMassListFromScanNum error : ", error)
         return peakList.value, peakFlags.value

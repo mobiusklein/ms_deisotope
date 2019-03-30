@@ -28,7 +28,9 @@ amino_acids = [
     MassWrapper('W', 186.07931294986),
 ]
 
-def find_paths(peaks, components, error_tolerance=1e-5, merge=False):
+def find_paths(peaks, components=None, error_tolerance=1e-5, merge=False):
+    if components is None:
+        components = amino_acids
     sequencer = PathFinder(components, error_tolerance)
     paths = sequencer.paths(peaks, merge=merge)
     return paths
