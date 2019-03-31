@@ -409,7 +409,7 @@ class ScanBase(object):
 
         This may cause errors if more information is requested but is not
         cached, or if requesting another :class:`ScanBase` be loaded.
-        ''''
+        '''
         if self.precursor_information is not None:
             self.precursor_information.unbind()
         return self
