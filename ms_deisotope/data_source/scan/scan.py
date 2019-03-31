@@ -1230,10 +1230,10 @@ class ProcessedScan(ScanBase):
             self.id, self.title, self.precursor_information, self.ms_level,
             self.scan_time, self.index,
 
-            self.peak_set.copy() if self.peak_set is not None else None
+            self.peak_set.clone() if self.peak_set is not None else None
             if deep else self.peak_set,
 
-            self.deconvoluted_peak_set.copy() if self.deconvoluted_peak_set is not None else None
+            self.deconvoluted_peak_set.clone() if self.deconvoluted_peak_set is not None else None
             if deep else self.deconvoluted_peak_set,
 
             self.polarity, self.activation, self.acquisition_information,
