@@ -1210,7 +1210,7 @@ class ProcessedScan(ScanBase):
         return self
 
     def unbind(self):
-        super(Scan, self).unbind()
+        super(ProcessedScan, self).unbind()
         self.source = None
         return self
 
