@@ -460,6 +460,11 @@ class Scan(ScanBase):
         self.source = source
         return self
 
+    def unbind(self):
+        super(Scan, self).unbind()
+        self.source = None
+        return self
+
     def __repr__(self):
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
             self.id, (self.index if self.index is not None else -1), (
@@ -1202,6 +1207,11 @@ class ProcessedScan(ScanBase):
     def bind(self, source):
         super(ProcessedScan, self).bind(source)
         self.source = source
+        return self
+
+    def unbind(self):
+        super(Scan, self).unbind()
+        self.source = None
         return self
 
     def clone(self, deep=True):

@@ -403,6 +403,17 @@ class ScanBase(object):
             self.precursor_information.bind(source)
         return self
 
+    def unbind(self):
+        '''Detattch this object and its other referent members
+        from their currently bound :attr:`source`.
+
+        This may cause errors if more information is requested but is not
+        cached, or if requesting another :class:`ScanBase` be loaded.
+        ''''
+        if self.precursor_information is not None:
+            self.precursor_information.unbind()
+        return self
+
 
 class PrecursorInformation(object):
     """Store information relating a tandem MS scan to its precursor MS scan.
@@ -493,6 +504,7 @@ class PrecursorInformation(object):
         return self.__class__, (0, 0, 0), self.__getstate__()
 
     def __getstate__(self):
+        # explicitly do not propagate :attr:`source` when serializing.
         return (self.mz, self.intensity, self.charge, self.precursor_scan_id, None, self.extracted_neutral_mass,
                 self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
                 self.defaulted, self.orphan, self.product_scan_id, self.annotations, self.coisolation)
@@ -538,6 +550,9 @@ class PrecursorInformation(object):
         '''
         self.source = source
         return self
+
+    def unbind(self):
+        self.source = None
 
     def extract(self, peak, override_charge=None):
         '''Populate the extracted attributes of this object from the attributes
