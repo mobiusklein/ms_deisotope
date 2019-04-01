@@ -12,7 +12,7 @@ from ms_deisotope.utils import add_metaclass
 from ms_deisotope.data_source.metadata.file_information import FileInformation
 
 
-from .scan import ScanBase
+from .scan import Scan
 from .scan_iterator import (
     _SingleScanIteratorImpl,
     _GroupedScanIteratorImpl)
