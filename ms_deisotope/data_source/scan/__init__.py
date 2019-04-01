@@ -15,7 +15,9 @@ from .scan_iterator import (
 
 from .loader import (
     ScanDataSource, ScanIterator, RandomAccessScanSource,
-    ScanFileMetadataBase, ScanProxyContext)
+    ScanFileMetadataBase)
+
+from .proxy import ScanProxyContext
 
 
 __all__ = [
