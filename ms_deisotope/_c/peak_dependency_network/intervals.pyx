@@ -1,6 +1,9 @@
 from cpython.list cimport PyList_GetItem, PyList_Size
 from cpython.tuple cimport PyTuple_GetItem
 
+from collections import deque
+
+
 cdef class SpanningMixin(object):
     """Provides methods for checking whether an entity
     which has a defined start and end point over a single
@@ -328,7 +331,7 @@ cdef class IntervalTreeNode(object):
             parent = <IntervalTreeNode>PyTuple_GetItem(bunch, 0)
             members = <list>PyTuple_GetItem(bunch, 1)
             side = <str>PyTuple_GetItem(bunch, 2)
-            n = PyList_Size(members) 
+            n = PyList_Size(members)
             if n > 0:
                 accumulator = 0.
                 j = 0
@@ -380,3 +383,81 @@ cdef class IntervalTreeNode(object):
                 stack.append((node, left, "left"))
                 stack.append((node, right, "right"))
         return root.left
+
+    def _update_bounds(self):
+        changed = False
+        if self.left is not None and self.left.start < self.start:
+            changed = True
+            self.start = self.left.start
+        if self.right is not None and self.right.end > self.end:
+            changed = True
+            self.end = self.right.end
+        if self.parent is not None:
+            self.parent._update_bounds()
+        return changed
+
+    def insert(self, interval):
+        insert_in_self = False
+        if self.node_contains(interval.start):
+            if self.left is not None and self.left.node_contains(interval.end):
+                return self.left.insert(interval)
+            elif (self.right is not None and self.right.node_contains(interval.end) and
+                  self.right.node_contains(interval.start)):
+                return self.right.insert(interval)
+            else:
+                insert_in_self = True
+        elif self.node_contains(interval.end):
+            if self.right is not None and self.right.node_contains(interval.start):
+                return self.right.insert(interval)
+            else:
+                insert_in_self = True
+        if not insert_in_self and self.parent is None:
+            insert_in_self = True
+        if insert_in_self:
+            self.contained.append(interval)
+            changed = False
+            if interval.start < self.start:
+                self.start = interval.start
+                changed = True
+            if interval.end > self.end:
+                self.end = interval.end
+                changed = True
+            if changed:
+                self._update_bounds()
+
+    def flatten(self):
+        # perform an infix traversal of the tree and collect
+        # the elements
+        items = []
+        stack = deque([])
+        current = self
+        done = False
+        while not done:
+            if current is not None:
+                stack.append(current)
+                current = current.left
+            else:
+                if stack:
+                    current = stack.pop()
+                    items.extend(current.contained)
+                    current = current.right
+                else:
+                    done = True
+        return items
+
+    def balance(self):
+        items = self.flatten()
+        tree = self.build(items)
+        self.left = tree.left
+        self.right = tree.right
+        self.contained = tree.contained
+        self.start = tree.start
+        self.end = tree.end
+        self.center = tree.center
+        self.left.parent = self
+        self.right.parent = self
+        self._update_bounds()
+
+    def __iter__(self):
+        flat = self.flatten()
+        return iter(flat)
