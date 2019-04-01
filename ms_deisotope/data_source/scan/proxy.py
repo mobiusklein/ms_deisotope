@@ -1,5 +1,4 @@
 import weakref
-from weakref import WeakValueDictionary
 
 from collections import OrderedDict
 
