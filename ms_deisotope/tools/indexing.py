@@ -143,7 +143,14 @@ def metadata_index(paths, processes=4):
                 fn(path)
         except AttributeError:
             pass
-        index, _ = quick_index.index(reader, processes)
+        if processes > 1:
+            index, _ = quick_index.index(reader, processes)
+        else:
+            index = quick_index.ExtendedScanIndex()
+            reader.reset()
+            for bunch in reader:
+                index.add_scan_bunch(bunch)
+
         name = path
         index_file_name = index.index_file_name(name)
         with open(index_file_name, 'w') as fh:
