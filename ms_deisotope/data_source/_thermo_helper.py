@@ -214,7 +214,7 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
             # this is the most common Thermo detector, but it is not universal. To get this right,
             # we'd need to reproduce the Proteowizard conversion table @
             # Thermo::(Reader_Thermo_Detail::)createInstrumentConfigurations
-            detector_group = ComponentGroup("detector", ['inductive detector'], 3)
+            detector_group = ComponentGroup("detector", [component('inductive detector')], 3)
             configs.append(InstrumentInformation(
                 counter, [source_group, analyzer_group, detector_group]))
         self._instrument_config = {
