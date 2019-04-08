@@ -218,7 +218,7 @@ class MzMLSerializer(ScanSerializerBase):
         The lower level writer implementation
     """
 
-    def __init__(self, handle, n_spectra=2e4, compression=None,
+    def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
                  data_encoding=None):
         if data_encoding is None:
