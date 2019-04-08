@@ -212,6 +212,16 @@ def ppm_error(x, y):
     return (x - y) / y
 
 
+def ppm2da(mass, error_tolerance):
+    x = mass + mass * error_tolerance
+    return x - mass
+
+
+def da2ppm(mass, error_tolerance):
+    x = mass + error_tolerance
+    return (x - mass) / mass
+
+
 def dict_proxy(attribute):
     """Return a decorator for a class to give it a `dict`-like API proxied
     from one of its attributes
