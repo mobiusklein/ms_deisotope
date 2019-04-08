@@ -76,6 +76,9 @@ cdef class DeconvolutedPeakSet(object):
 
     cpdef reindex(self)
 
+    cpdef DeconvolutedPeakSet clone(self)
+    cpdef DeconvolutedPeakSet copy(self)
+
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)
 
     cpdef DeconvolutedPeak has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)

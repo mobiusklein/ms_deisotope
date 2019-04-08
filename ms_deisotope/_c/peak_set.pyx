@@ -559,7 +559,10 @@ cdef class DeconvolutedPeakSet:
     def __iter__(self):
         return iter(self.peaks)
 
-    def clone(self):
+    cpdef DeconvolutedPeakSet clone(self):
+        return self.copy()
+
+    cpdef DeconvolutedPeakSet copy(self):
         return self.__class__(tuple(p.clone() for p in self))
 
     def __reduce__(self):
