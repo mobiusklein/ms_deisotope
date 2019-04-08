@@ -1,5 +1,8 @@
 import multiprocessing
+import os
 import re
+import sys
+import warnings
 
 import click
 
@@ -64,3 +67,33 @@ class AveragineParamType(click.types.StringParamType):
 
     def get_missing_message(self, param):
         return 'Choose from %s, or provide a formula.' % ', '.join(self.choices)
+
+
+def register_debug_hook():
+    import traceback
+
+    def info(type, value, tb):
+        if hasattr(sys, 'ps1') or not sys.stderr.isatty():
+            sys.__excepthook__(type, value, tb)
+        else:
+            try:
+                import ipdb as pdb_api
+            except ImportError
+                import pdb as pdb_api
+            traceback.print_exception(type, value, tb)
+            pdb_api.post_mortem(tb)
+
+    sys.excepthook = info
+
+
+def is_debug_mode():
+    env_val = os.environ.get('MS_DEISOTOPE_DEBUG', '').lower()
+    if not env_val:
+        return False
+    if env_val in ('0', 'no', 'false', 'off'):
+        return False
+    elif env_val in ('1', 'yes', 'true', 'on'):
+        return True
+    else:
+        warnings.warn("MS_DEISOTOPE_DEBUG value %r was not recognized. Enabling debug mode" % (env_val, ))
+        return True

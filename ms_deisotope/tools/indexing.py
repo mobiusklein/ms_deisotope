@@ -24,7 +24,7 @@ from ms_deisotope.data_source.metadata.file_information import SourceFile
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
 from ms_deisotope.tools import conversion
-from ms_deisotope.tools.utils import processes_option
+from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -426,5 +426,10 @@ _mount_group(conversion.ms_conversion)
 
 main = cli.main
 
+if is_debug_mode():
+    register_debug_hook()
+
 if __name__ == '__main__':
+    click.secho("Running Debug Mode", fg='yellow')
+    register_debug_hook()
     main()

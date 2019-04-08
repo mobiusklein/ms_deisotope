@@ -48,7 +48,7 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
     if msn_filters is None:
         msn_filters = []
     reader.make_iterator(grouped=True)
-    writer = MzMLSerializer(outstream, deconvoluted=False)
+    writer = MzMLSerializer(outstream, len(reader), deconvoluted=False)
     writer.copy_metadata_from(reader)
     method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
     if pick_peaks:
