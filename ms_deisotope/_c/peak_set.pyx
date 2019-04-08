@@ -563,7 +563,18 @@ cdef class DeconvolutedPeakSet:
         return self.copy()
 
     cpdef DeconvolutedPeakSet copy(self):
-        return self.__class__(tuple(p.clone() for p in self))
+        cdef:
+            tuple duplicate_peaks
+            DeconvolutedPeak peak
+            size_t i, n
+        n = self.get_size()
+        duplicate_peaks = PyTuple_New(n)
+        for i in range(n):
+            peak = self.getitem(i)
+            peak = peak.clone()
+            Py_INCREF(peak)
+            PyTuple_SetItem(duplicate_peaks, i, peak)
+        return self.__class__(duplicate_peaks)
 
     def __reduce__(self):
         return self.__class__, (self.peaks, )

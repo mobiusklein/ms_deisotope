@@ -293,6 +293,9 @@ class DeconvolutedPeakSet(Base):
     def clone(self):
         return self.__class__(tuple(p.clone() for p in self))
 
+    def copy(self):
+        return self.clone()
+
     def __eq__(self, other):
         try:
             return self.peaks == other.peaks
