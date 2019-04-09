@@ -8,6 +8,10 @@ UNLOAD_POLICY_FULL = "unload_policy_full"
 UNLOAD_POLICY_KEEP = "unload_policy_keep"
 
 
+LOAD_METHOD_ID = 'id'
+LOAD_METHOD_INDEX = 'index'
+
+
 class ScanProxyContext(object):
     """A memory-conserving wrapper around an existing :class:`RandomAccessScanSource`
     object for serving :class:`ScanProxy` objects.
@@ -53,6 +57,29 @@ class ScanProxyContext(object):
         self._save_scan(scan_id, scan)
         return scan
 
+    def get_scan_by_index(self, index):
+        '''Retrieve a real scan by its index.
+
+        This method first checks the in-memory cache for the scan index
+        and returns it if already loaded. If not, the scan is retrieved from
+        :attr:`source`, usually from disk and saved to the cache using
+        :meth:`_save_scan`. This may cause the cache eviction.
+
+        Parameters
+        ----------
+        index: :class:`int`
+            The scan to retrieve
+
+        Returns
+        -------
+        :class:`~.Scan`
+        '''
+        if index in self.cache:
+            return self.cache[index]
+        scan = self.source.get_scan_by_index(index)
+        self._save_scan(index, scan)
+        return scan
+
     def _save_scan(self, scan_id, scan):
         if len(self.cache) > self.cache_size:
             _, evicted_scan = self.cache.popitem()
@@ -60,7 +87,7 @@ class ScanProxyContext(object):
 
         self.cache[scan_id] = scan
 
-    def __call__(self, scan_id):
+    def __call__(self, scan_id, method=LOAD_METHOD_ID):
         """Create a proxy for the scan referenced by scan_id
 
         Parameters
@@ -71,7 +98,7 @@ class ScanProxyContext(object):
         -------
         :class:`ScanProxy`
         """
-        return ScanProxy(scan_id, self)
+        return ScanProxy(scan_id, self, method=method)
 
     def clear(self):
         '''Clear the reference cache.
@@ -177,9 +204,10 @@ class ScanProxy(ScanBase):
         "annotations",
     ]
 
-    def __init__(self, scan_id, context):
+    def __init__(self, scan_id, context, method=LOAD_METHOD_ID):
         self._target_scan_id = scan_id
         self.context = context
+        self.load_method = method
         self._scan = None
         self._precursor_information = None
         self._peak_set = None
@@ -202,9 +230,15 @@ class ScanProxy(ScanBase):
 
     def _require_scan(self):
         if self._scan is None:
-
+            scan = None
+            if self.load_method == LOAD_METHOD_ID:
+                scan = self.context.get_scan_by_id(self._target_scan_id)
+            elif self.load_method == LOAD_METHOD_INDEX:
+                scan = self.context.get_scan_by_index(self._target_scan_id)
+            else:
+                raise TypeError("Cannot resolve scan loading method {!r}".format(self.load_method))
             self._scan = weakref.proxy(
-                self.context.get_scan_by_id(self._target_scan_id),
+                scan,
                 self._clear_scan)
 
     @property

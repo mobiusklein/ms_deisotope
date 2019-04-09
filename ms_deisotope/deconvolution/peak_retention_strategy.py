@@ -179,7 +179,7 @@ class TopNRetentionStrategy(PeakRetentionStrategyBase):
         threshold = self.base_peak_coefficient * base_peak
         peaklist = sorted(peaklist, key=intensity_getter, reverse=True)
         result = []
-        for peak in enumerate(peaklist):
+        for peak in peaklist:
             if neutral_mass(peak.mz, min_charge) > self.max_mass:
                 continue
             if peak.intensity >= threshold:
