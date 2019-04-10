@@ -78,7 +78,7 @@ def register_debug_hook():
         else:
             try:
                 import ipdb as pdb_api
-            except ImportError
+            except ImportError:
                 import pdb as pdb_api
             traceback.print_exception(type, value, tb)
             pdb_api.post_mortem(tb)
