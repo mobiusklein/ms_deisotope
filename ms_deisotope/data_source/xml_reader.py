@@ -242,7 +242,10 @@ class XMLReaderBase(RandomAccessScanSource):
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
         index_keys = tuple(self.index)
         id_str = index_keys[index]
-        return self.get_scan_by_id(id_str)
+        scan = self.get_scan_by_id(id_str)
+        if not self._validate(scan):
+            warnings.warn("index %d, id=%r does not appear to be a mass spectrum. Most behaviors will fail." % (index, id_str), stacklevel=2)
+        return scan
 
     def _yield_from_index(self, scan_source, start):
         raise NotImplementedError()
