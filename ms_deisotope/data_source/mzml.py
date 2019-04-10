@@ -61,6 +61,14 @@ class _MzMLParser(mzml.MzML):
         return dtype
 
 
+def _find_arrays(data_dict, decode=False):
+    arrays = dict()
+    for key, value in data_dict.items():
+        if " array" in key:
+            arrays[key] = value.decode() if decode else value
+    return arrays
+
+
 class MzMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the
     :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.
@@ -89,10 +97,9 @@ class MzMLDataInterface(ScanDataSource):
             decode = not self._decode_binary
         except AttributeError:
             decode = False
+        arrays = _find_arrays(scan, decode=decode)
         try:
-            if decode:
-                return scan['m/z array'].decode(), scan["intensity array"].decode()
-            return scan['m/z array'], scan["intensity array"]
+            return arrays.pop('m/z array'), arrays.pop("intensity array"), arrays
         except KeyError:
             return np.array([]), np.array([])
 
