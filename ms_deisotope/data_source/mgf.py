@@ -246,8 +246,7 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
         """
         if not self._use_index:
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
-        index_keys = tuple(self.index)
-        id_str = index_keys[index]
+        id_str = self.index.from_index(index)
         return self.get_scan_by_id(id_str)
 
     def get_scan_by_time(self, time):
@@ -411,10 +410,9 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
         else:
             scan = self.get_scan_by_id(scan_id)
 
-        # We must start at an MS1 scan, so backtrack until we reach one
+        # MGF files do not contain MS1 scans
         if require_ms1:
-            scan = self._locate_ms1_scan(scan)
-            scan_id = scan.id
+            pass
 
         iterator = self._yield_from_index(self._source, scan_id)
         self.make_iterator(iterator, grouped=grouped)
