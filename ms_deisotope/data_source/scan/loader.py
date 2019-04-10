@@ -296,6 +296,7 @@ class ScanIterator(ScanDataSource):
         else:
             self._producer = self._single_scan_iterator(iterator)
             self.iteration_mode = 'single'
+        return self
 
     def _make_cache_key(self, scan):
         return scan.id
