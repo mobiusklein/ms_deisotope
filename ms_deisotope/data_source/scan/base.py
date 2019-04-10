@@ -147,6 +147,22 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         The intensity measured at the corresponding m/z of a mass spectrum
     """
 
+    def __new__(cls, mz, intensity, arrays=None):
+        inst = super(RawDataArrays, cls).__new__(cls, mz, intensity)
+        inst.data_arrays = dict()
+        if arrays:
+            inst.data_arrays.update(arrays)
+        return inst
+
+    def __copy__(self):
+        inst = self.__class__(mz.copy(), intensity.copy(), {
+            k: v.copy() for k, v in self.data_arrays.items()
+        })
+        return inst
+
+    def copy(self):
+        return self.__copy__()
+
     def plot(self, *args, **kwargs):
         """Draw the profile spectrum described by the
         contained arrays.
