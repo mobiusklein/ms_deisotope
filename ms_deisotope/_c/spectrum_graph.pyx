@@ -129,6 +129,31 @@ cdef class PeakGroupNode(NodeBase):
     def __iter__(self):
         return iter(self.peaks)
 
+cdef class PlaceHolderNode(NodeBase):
+
+    def __init__(self, str label, double mass, double intensity=0, size_t index=0):
+        self.label = label
+        self._mass = mass
+        self._intensity = intensity
+        self._index = index
+        super(PlaceHolderNode, self).__init__()
+
+    cdef size_t get_index(self):
+        return self._index
+
+    cdef double get_neutral_mass(self):
+        return self._mass
+
+    cdef double get_intensity(self):
+        return self._intensity
+
+    def __iter__(self):
+        return iter([])
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.label!r}, {mass}, {intensity})".format(
+            self=self, mass=self.neutral_mass, intensity=self.intensity)
+
 
 @cython.final
 @cython.freelist(1000000)
@@ -569,7 +594,7 @@ cdef class PathFinder(object):
         self.components = sorted(map(MassWrapper, components), key=lambda x: x.mass)
         self.product_error_tolerance = product_error_tolerance
 
-    def _find_edges(self, scan):
+    def _find_edges(self, scan, max_mass=None):
         cdef:
             SpectrumGraph graph
             size_t pi, pn
@@ -579,21 +604,37 @@ cdef class PathFinder(object):
             DeconvolutedPeak peak, other_peak
             MassWrapper component
             tuple complements
+            double upper_limit, query_mass
 
         graph = SpectrumGraph()
         if not isinstance(scan, DeconvolutedPeakSet):
             deconvoluted_peak_set = scan.deconvoluted_peak_set
+            if max_mass is not None:
+                upper_limit = max_mass
+            elif scan.precursor_information is not None:
+                upper_limit = scan.precursor_information.neutral_mass
+            else:
+                upper_limit = float('inf')
         else:
             deconvoluted_peak_set = scan
+            if max_mass is not None:
+                upper_limit = max_mass
+            else:
+                upper_limit = float('inf')
 
         cn = PyList_Size(self.components)
         pn = deconvoluted_peak_set.get_size()
         for pi in range(pn):
             peak = <DeconvolutedPeak>deconvoluted_peak_set.getitem(pi)
+            if peak.neutral_mass > upper_limit:
+                break
             for ci in range(cn):
                 component = <MassWrapper>PyList_GetItem(self.components, ci)
+                query_mass = peak.neutral_mass + component.mass
+                if (query_mass - upper_limit) / upper_limit > self.product_error_tolerance:
+                    break
                 complements = deconvoluted_peak_set.all_peaks_for(
-                    peak.neutral_mass + component.mass, self.product_error_tolerance)
+                    query_mass, self.product_error_tolerance)
                 on = PyTuple_Size(complements)
                 for oi in range(on):
                     other_peak = <DeconvolutedPeak>PyTuple_GetItem(complements, oi)

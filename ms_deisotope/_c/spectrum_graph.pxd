@@ -14,6 +14,14 @@ cdef class NodeBase(object):
     cdef bint _eq(self, NodeBase other)
 
 
+cdef class PlaceHolderNode(NodeBase):
+    cdef:
+        public str label
+        public double _mass
+        public double _intensity
+        public size_t _index
+
+
 cdef class PeakNode(NodeBase):
     cdef:
         public DeconvolutedPeak peak

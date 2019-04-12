@@ -4,7 +4,8 @@ from ms_deisotope._c.spectrum_graph import (
     PeakGroupNode,
     PeakNode,
     NodeBase,
-    Path)
+    Path,
+    SpectrumGraph)
 
 amino_acids = [
     MassWrapper('G', 57.02146372057),
