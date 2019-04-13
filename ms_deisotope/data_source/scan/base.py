@@ -434,7 +434,7 @@ class ScanBase(object):
 class PrecursorInformation(object):
     """Store information relating a tandem MS scan to its precursor MS scan.
 
-    .. note:
+    .. note::
         The attributes prefixed with `extracted_` refer to the quantities estimated
         from the data, while those unprefixed are the values read directly from the
         data source. These values regularly do not agree. When available, the extracted
@@ -656,3 +656,28 @@ class PrecursorInformation(object):
 
     def clone(self):
         return self.copy()
+
+    def correct_mz(self, error_tolerance=2e-5):
+        """Find the peak nearest to :attr:`mz` in :attr:`precursor` and
+        update :attr:`mz` from it.
+
+        .. note::
+            The peak selected may still not be the monoisotopic peak. This requires
+            a deconvolution procedure.
+
+        Parameters
+        ----------
+        error_tolerance: float, optional
+            The error tolerance in PPM to use when searching for the nearest peak (the default is 2e-5).
+        """
+        if self.precursor_scan_id is None:
+            return
+        precursor_scan = self.precursor
+        if precursor_scan is None:
+            return
+        if precursor_scan.peak_set is None:
+            precursor_scan.pick_peaks()
+        peaks = precursor_scan.peak_set
+        peak = peaks.has_peak(self.mz, error_tolerance)
+        if peak is not None:
+            self.mz = peak.mz
