@@ -198,7 +198,21 @@ except ImportError:
                 self.nodes[peak.index] = PeakNode(peak)
 
         def add_fit_dependence(self, fit_record):
+            '''Add the relatoinship between the experimental peaks
+            in `fit_record` to the graph, expressed as a hyper-edge
+            denoted by `fit_record`.
+
+            This adds `fit_record` to :attr:`PeakNode.links` for each
+            node corresponding to the :class:`~.FittedPeak` instance in
+            :attr:`IsotopicFitRecord.experimental` of `fit_record`. It also
+            adds `fit_record to :attr:`dependencies`
+
+            Parameters
+            ----------
+            fit_record: :class:`~.IsotopicFitRecord`
+            '''
             for peak in fit_record.experimental:
+                # Check for null peak
                 if peak.index == 0:
                     continue
                 self.nodes[peak.index].links[fit_record] = fit_record.score
@@ -241,6 +255,18 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
 
     @property
     def interval_tree(self):
+        '''An :class:`~.IntervalTreeNode` built over all dependency clusters that
+        the :class:`PeakDependenceGraph` has seen over the course of all iterations.
+
+        Raises
+        ------
+        NoIsotopicClustersError:
+            When no isotopic clusters, and in turn no :class:`DependenceCluster`s are found
+
+        Returns
+        -------
+        :class:`~.IntervalTreeNode`
+        '''
         if self._interval_tree is None:
             # Build tree from both the current set of clusters
             # and all clusters from previous iterations
@@ -252,13 +278,11 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
                         self.clusters), self)
         return self._interval_tree
 
-    def _deep_fuzzy_solution_for(self, peak, shift=0.5):
-        pass
-
     def _find_fuzzy_solution_for(self, peak, shift=0.5):
         tree = self.interval_tree
         clusters = tree.contains_point(peak.mz + shift)
         if len(clusters) == 0:
+            # No dependency clusters span this point. No signal?
             return None
         else:
             best_fits = [cluster.disjoint_best_fits() for cluster in clusters]
@@ -277,7 +301,20 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
                     error = err
                     index = i
             fit = best_fits[index]
-            return self._solution_map[fit]
+            try:
+                return self._solution_map[fit]
+            except KeyError:
+                best_fits.sort(key=lambda f: abs(f.monoisotopic_peak.mz - peak.mz))
+                # The first index is the minimum error, which the loop above found,
+                # but by virtue of the KeyError getting us here, we know it is not
+                # present in the solution map.
+                for f in  best_fits[1:]:
+                    try:
+                        return self._solution_map[f]
+                    except KeyError:
+                        continue
+                # No solution could be found
+                return None
 
     def find_solution_for(self, peak):
         '''Find the best isotopic pattern fit which includes ``peak``
@@ -457,9 +494,9 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
 
         nodes_for_cache = {}
 
-        for node in self.nodes.values():
+        for seed_node in self.nodes.values():
             # This peak is depended upon by each fit in `dependencies`
-            dependencies = set(node.links.keys())
+            dependencies = set(seed_node.links.keys())
 
             if len(dependencies) == 0:
                 continue

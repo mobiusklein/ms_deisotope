@@ -153,7 +153,8 @@ class LogUtilsMixin(object):
     def debug(self, *message):
         self.debug_print_fn(', '.join(map(str, message)))
 
-    def error(self, message, exception=None):
+    def error(self, *message, **kwargs):
+        exception = kwargs.get("exception")
         self.error_print_fn(', '.join(map(str, message)))
         if exception is not None:
             self.error_print_fn(traceback.format_exc(exception))

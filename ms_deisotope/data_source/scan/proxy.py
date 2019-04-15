@@ -1,8 +1,14 @@
+'''Defines proxy objects which appear to be :class:`~.Scan` objects without
+issueing any I/O operations until a scan's attributes are requested, and the a
+LRU cache for keeping only recently used full scans in memory. This allows
+a large number of scans to be "loaded" at once without requiring storing all of
+the backing information.
+'''
 import weakref
 
 from collections import OrderedDict
 
-from .scan import Scan, ScanBase
+from .scan import ScanBase
 
 UNLOAD_POLICY_FULL = "unload_policy_full"
 UNLOAD_POLICY_KEEP = "unload_policy_keep"

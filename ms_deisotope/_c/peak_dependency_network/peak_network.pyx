@@ -214,6 +214,19 @@ cdef class PeakDependenceGraphBase(object):
             self.nodes[peak.index] = PeakNode(peak)
 
     cpdef add_fit_dependence(self, IsotopicFitRecord fit_record):
+        '''Add the relatoinship between the experimental peaks
+        in `fit_record` to the graph, expressed as a hyper-edge
+        denoted by `fit_record`.
+
+        This adds `fit_record` to :attr:`PeakNode.links` for each
+        node corresponding to the :class:`~.FittedPeak` instance in
+        :attr:`IsotopicFitRecord.experimental` of `fit_record`. It also
+        adds `fit_record to :attr:`dependencies`
+
+        Parameters
+        ----------
+        fit_record: :class:`~.IsotopicFitRecord`
+        '''
         cdef:
             size_t i, n
             FittedPeak peak
