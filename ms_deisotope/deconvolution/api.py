@@ -1,3 +1,12 @@
+'''
+High Level Deconvolution API
+----------------------------
+
+A high-level wrapper around the deconvolution machinery, orchestrating the
+process of constructing a deconvoluter instance, performing deconvolution, and
+extracting targets of interest from the result.
+'''
+
 from ms_peak_picker import FittedPeak
 
 from ms_deisotope.peak_set import merge
@@ -132,7 +141,7 @@ def deconvolute_peaks(peaklist, decon_config=None,
     for pr in priority_list_results:
         try:
             result = pr.get()
-        except ValueError as e:
+        except Exception as e:
             result = None
             errors.append(e)
             logger.error("Could not extract a solution for %r",
