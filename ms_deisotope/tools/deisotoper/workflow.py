@@ -25,7 +25,7 @@ class ScanSink(object):
         except AttributeError:
             return None
 
-    def configure_cache(self, storage_path=None, name=None, source=None):
+    def configure_storage(self, storage_path=None, name=None, source=None):
         self.scan_store = self._scan_store_type.configure_storage(
             storage_path, name, source)
 
@@ -163,8 +163,8 @@ class SampleConsumer(TaskBase):
         self.scan_generator.configure_iteration(self.start_scan_id, self.end_scan_id)
         self.log("Setting Sink")
         sink = ScanSink(self.scan_generator, self.storage_type)
-        self.log("Initializing Cache")
-        sink.configure_cache(self.storage_path, self.sample_name, self.scan_generator)
+        self.log("Initializing Storage")
+        sink.configure_storage(self.storage_path, self.sample_name, self.scan_generator)
 
         self.log("Begin Processing")
         last_scan_time = 0
