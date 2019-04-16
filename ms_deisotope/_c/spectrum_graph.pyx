@@ -696,8 +696,8 @@ cdef class PathFinder(object):
         merged_paths.sort(key=lambda x: x.total_signal, reverse=True)
         return merged_paths
 
-    def paths(self, scan, limit=200, merge=False):
-        graph = self._find_edges(scan)
+    def paths(self, scan, limit=200, merge=False, max_mass=None):
+        graph = self._find_edges(scan, max_mass=max_mass)
         paths = self._init_paths(graph, limit)
         if merge:
             paths = self.merge_paths(paths)
