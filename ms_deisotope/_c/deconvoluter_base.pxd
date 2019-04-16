@@ -16,6 +16,12 @@ ctypedef fused FittedPeakCollection:
     PeakIndex
 
 
+ctypedef fused FittedPeakOrPosition:
+    FittedPeak
+    size_t
+    long
+
+
 cdef class DeconvoluterBase(object):
     cdef:
         public bint use_subtraction
@@ -78,7 +84,7 @@ cpdef set _get_all_peak_charge_pairs(DeconvoluterBase self, FittedPeak peak, dou
                                      int left_search_limit=*, int right_search_limit=*,
                                      bint recalculate_starting_peak=*, bint use_quick_charge=*)
 
-cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t index, int min_charge, int max_charge)
+cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set, FittedPeakOrPosition position_spec, int min_charge, int max_charge)
 
 
 cdef class ChargeIterator(object):

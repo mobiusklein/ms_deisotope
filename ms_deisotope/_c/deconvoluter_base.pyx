@@ -689,7 +689,7 @@ cdef class ChargeIterator(object):
 
 
 @cython.cdivision
-cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set, size_t index, int min_charge, int max_charge):
+cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set, FittedPeakOrPosition position_spec, int min_charge, int max_charge):
     """An implementation of Hoopman's QuickCharge [1] algorithm for quickly capping charge
     state queries
 
@@ -697,8 +697,10 @@ cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set,
     ----------
     peak_set : :class:`ms_peak_picker.PeakSet
         The centroided peak set to search
-    index : int
-        The index of the peak to start the search from
+    position_spec : :class:`ms_peak_picker.FittedPeak` or int
+        The position of the peak to start the search from. :attr:`ms_peak_picker.FittedPeak.peak_count`
+        holds the value that will be used if a peak is passed, otherwise the value is assumed to be an
+        index into the `peak_set`.
     min_charge : int
         The minimum charge state to consider
     max_charge : int
@@ -718,6 +720,7 @@ cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set,
     """
     cdef:
         PeakSet peaks
+        size_t index
         int[1000] charges
         np.ndarray[np.int32_t, ndim=1] result
         double min_intensity, diff, raw_charge, remain
@@ -726,10 +729,16 @@ cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set,
         ssize_t j
         size_t i, n
         bint matched
+    if FittedPeakOrPosition is FittedPeak:
+        index = position_spec.peak_count
+    else:
+        index = position_spec
     if FittedPeakCollection is PeakSet:
         peaks = peak_set
     else:
         peaks = peak_set.peaks
+    if index > peaks.get_size():
+        raise IndexError("%d is out of bounds for peak list of size %d in quick_charge" % (index, peaks.get_size()))
     n = 1000
     result_size = 0
     min_intensity = peaks.getitem(index).intensity / 4.
