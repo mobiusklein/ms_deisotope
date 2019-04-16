@@ -16,6 +16,14 @@ from .common import (
 
 
 class MGFInterface(ScanDataSource):
+    '''Provides a basic set of widely used MASCOT Generic File (MGF)
+    data accessor mechanisms. Because MGF files lack any form of standardization,
+    no strong guarantees of correctness can be made.
+
+    This dialect does not know how to use the charge column of the peak data
+    section, see :class:`~.ProcessedMGFLoader`.
+    '''
+
     def _scan_arrays(self, scan):
         """Returns raw data arrays for m/z and intensity
 
@@ -306,16 +314,29 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
 
     @property
     def source(self):
+        '''The file parser that this reader consumes.
+        '''
         return self._source
 
     @property
     def index(self):
+        '''The byte offset index used to achieve fast random access.
+
+        Maps :class:`~.ScanBase` IDs to the byte offsets, implying
+        the order the scans reside in the file.
+
+        Returns
+        -------
+        :class:`pyteomics.xml.ByteEncodingOrderedDict`
+        '''
         return self.source.index
 
     def __len__(self):
         return len(self.index)
 
     def close(self):
+        '''Close the underlying reader.
+        '''
         self._source.close()
 
     def reset(self):

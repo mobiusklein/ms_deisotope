@@ -91,6 +91,21 @@ class SpectrumDescription(Sequence):
         return len(self.descriptors)
 
     def append(self, desc):
+        """Add the descriptor `desc` to the collection
+
+        Adds a descriptor which conforms to any of :mod:`psims`'s
+        cvParam specification patterns.
+
+        Parameters
+        ----------
+        desc : :class:`dict`, :class:`tuple`, or :class:`str`
+            The descriptor to add.
+
+        Returns
+        -------
+        int:
+            The current size of the description list
+        """
         i = len(self)
         self.descriptors.append(desc)
         return i
@@ -100,6 +115,18 @@ class SpectrumDescription(Sequence):
 
     @classmethod
     def from_peak_set(cls, peak_list):
+        """Calculate the spectrum's descriptors from a :class:`Sequence` of :class:`~.PeakLike`
+        objects.
+
+        Parameters
+        ----------
+        peak_list : :class:`Sequence`
+            The peaks to calculate properties from.
+
+        Returns
+        -------
+        :class:`SpectrumDescription`
+        """
         descriptors = cls()
         try:
             base_peak = max(peak_list, key=lambda x: x.intensity)
@@ -134,6 +161,18 @@ class SpectrumDescription(Sequence):
 
     @classmethod
     def from_arrays(cls, arrays):
+        """Calculate the spectrum's descriptors from a :class:`RawDataArrays`
+        instance.
+
+        Parameters
+        ----------
+        arrays : :class:`RawDataArrays`
+            The signal to calculate properties from.
+
+        Returns
+        -------
+        :class:`SpectrumDescription`
+        """
         descriptors = cls()
         try:
             base_peak_i = np.argmax(arrays.intensity)
@@ -168,7 +207,6 @@ class SpectrumDescription(Sequence):
 
 
 class MzMLSerializer(ScanSerializerBase):
-
     """Write :mod:`ms_deisotope` data structures to a file in mzML format.
 
     Attributes
@@ -1257,7 +1295,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         out = []
         for _, info in self.extended_index.msn_ids.items():
             mz = info['mz']
-            neutral_mass = info['neutral_mass']
+            prec_neutral_mass = info['neutral_mass']
             charge = info['charge']
             if charge == 'ChargeNotProvided':
                 charge = ChargeNotProvided
@@ -1268,7 +1306,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             defaulted = info.get('defaulted', False)
             pinfo = PrecursorInformation(
                 mz, intensity, charge, precursor_scan_id,
-                self, neutral_mass, charge, intensity,
+                self, prec_neutral_mass, charge, intensity,
                 product_scan_id=product_scan_id, orphan=orphan,
                 defaulted=defaulted)
             out.append(pinfo)
@@ -1297,9 +1335,9 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             current.append(header.arrays[1].sum())
         return np.array(current)
 
-    def msms_for(self, neutral_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
-        m = neutral_mass
-        w = neutral_mass * mass_error_tolerance
+    def msms_for(self, query_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
+        m = query_mass
+        w = query_mass * mass_error_tolerance
         lo = m - w
         hi = m + w
         out = []

@@ -59,6 +59,25 @@ class XMLReaderBase(RandomAccessScanSource):
 
     @classmethod
     def prebuild_byte_offset_file(cls, path):
+        """Parse the file given by `path`, generating a byte offset index in
+        JSON format and save it to disk for future use.
+
+        This method is intended to provide a way to save time during repeated
+        instantiation of this type over the same file by removing the need to
+        do a full scan of the file to rebuild of the offset index each time.
+
+        .. note::
+
+            This assumes that `path` is either a path to a file in a directory
+            which the invoking user has read and write access to, or that it is
+            a file-like object whose `name` attribute gives a path that satisfies
+            the same requirements.
+
+        Parameters
+        ----------
+        path : :class:`str` or file-like
+            The path to the file to index, or a file-like object with a name attribute.
+        """
         return cls._parser_cls.prebuild_byte_offset_file(get_opener(path))
 
     @property
@@ -244,7 +263,8 @@ class XMLReaderBase(RandomAccessScanSource):
         id_str = index_keys[index]
         scan = self.get_scan_by_id(id_str)
         if not self._validate(scan):
-            warnings.warn("index %d, id=%r does not appear to be a mass spectrum. Most behaviors will fail." % (index, id_str), stacklevel=2)
+            warnings.warn("index %d, id=%r does not appear to be a mass spectrum. Most behaviors will fail." % (
+                index, id_str), stacklevel=2)
         return scan
 
     def _yield_from_index(self, scan_source, start):
@@ -304,7 +324,7 @@ class XMLReaderBase(RandomAccessScanSource):
         return self
 
     def __repr__(self):
-        return "{self.__class__.__name__}({self.source_file!r})".format(self=self)
+        return "{self.__class__.__name__}({self.source_file!r})".format(self=self) # pylint: disable=missing-format-attribute
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index)

@@ -61,7 +61,7 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self.stream.write('END IONS\n')
 
 
-class ProcessedMGFDeserializer(MGFLoader):
+class ProcessedMGFLoader(MGFLoader):
 
     def __init__(self, source_file, encoding='ascii'):
         super(ProcessedMGFDeserializer, self).__init__(source_file, encoding)
@@ -94,6 +94,9 @@ class ProcessedMGFDeserializer(MGFLoader):
         pinfo.defaulted = defaulted
         pinfo.orphan = orphan
         return pinfo
+
+
+ProcessedMGFDeserializer = ProcessedMGFLoader
 
 
 def build_deconvoluted_peak_set_from_arrays(mz_array, intensity_array, charge_array):
