@@ -136,10 +136,15 @@ class MGFInterface(ScanDataSource):
         -------
         int
         """
+        index = tuple(self.index.keys())
         try:
-            return tuple(self.index.keys()).index(self._scan_title(scan))
+            return index.index(self._scan_title(scan))
         except ValueError:
-            return -1
+            try:
+                return index.index(self._scan_title(scan) + '.')
+            except ValueError:
+                return -1
+        return -1
 
     def _annotations(self, scan):
         annots = dict()
@@ -289,13 +294,6 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
             mid = (hi + lo) // 2
             sid = scan_ids[mid]
             scan = self.get_scan_by_id(sid)
-            if not self._validate(scan):
-                sid = scan_ids[mid - 1]
-                scan = self.get_scan_by_id(sid)
-                if not self._validate(scan):
-                    sid = scan_ids[mid - 2]
-                    scan = self.get_scan_by_id(sid)
-
             scan_time = scan.scan_time
             err = abs(scan_time - time)
             if err < best_error:
@@ -377,7 +375,10 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
         keys = list(offset_provider.keys())
         if start is not None:
             if isinstance(start, basestring):
-                start = keys.index(start)
+                try:
+                    start = keys.index(start)
+                except ValueError:
+                    start = keys.index(start + '.')
             elif isinstance(start, int):
                 start = start
             else:

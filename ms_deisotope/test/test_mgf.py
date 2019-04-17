@@ -19,6 +19,20 @@ class TestMGFLoaderScanBehavior(unittest.TestCase):
             'small.10.10')
         assert scan.id ==\
             'small.10.10'
+        scan = reader[10]
+        assert scan.index == 10
+
+    def test_get_time(self):
+        reader = self.reader
+        scan = reader.get_scan_by_time(0.3)
+        assert scan.id == 'small.31.31'
+        scan = next(reader.start_from_scan(rt=0.3, grouped=False))
+        assert scan.id == 'small.31.31'
+
+    def test_annotations(self):
+        scan = self.reader[10]
+        assert scan.annotations == {}
+
 
     def test_scan_interface(self):
         reader = self.reader
