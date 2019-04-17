@@ -14,6 +14,22 @@ from ms_deisotope._c.averagine cimport neutral_mass
 np.import_array()
 
 
+@cython.cdivision(True)
+cdef double ppm_error(double x, double y):
+    return (x - y) / y
+
+
+cdef double ppm2da(double mass, double error_tolerance):
+    x = mass + mass * error_tolerance
+    return x - mass
+
+
+@cython.cdivision(True)
+cdef double da2ppm(double mass, double error_tolerance):
+    x = mass + error_tolerance
+    return (x - mass) / mass
+
+
 @cython.boundscheck(False)
 cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
     cdef:
