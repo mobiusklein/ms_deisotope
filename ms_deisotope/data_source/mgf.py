@@ -10,6 +10,8 @@ The parser is based on :mod:`pyteomics.mgf`.
 from pyteomics import mgf
 import numpy as np
 
+from six import string_types as basestring
+
 from .common import (
     RandomAccessScanSource, PrecursorInformation,
     ScanDataSource, ScanIterator, ChargeNotProvided, _FakeGroupedScanIteratorImpl)
