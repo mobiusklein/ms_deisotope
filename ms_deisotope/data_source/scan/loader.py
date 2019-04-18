@@ -2,10 +2,7 @@
 load data for :class:`~.Scan` objects.
 '''
 import abc
-import weakref
 from weakref import WeakValueDictionary
-
-from collections import OrderedDict
 
 from ms_deisotope.utils import add_metaclass
 

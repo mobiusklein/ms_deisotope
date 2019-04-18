@@ -24,6 +24,7 @@ from .metadata.instrument_components import (
 from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
+from .metadata.sample import Sample
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
@@ -538,7 +539,19 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         return processing_list
 
     def samples(self):
-        return _find_section(self._source, "sampleList")
+        """Describe the sample(s) used to generate the mass spectrometry
+        data contained in this file.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Sample`
+        """
+        sample_list = _find_section(self._source, "sampleList")
+        result = []
+        for sample_ in sample_list:
+            name = sample_.pop("sampleName", None)
+            result.append(Sample(name=name, **sample_))
+        return result
 
     def _get_run_attributes(self):
         return get_tag_attributes(self.source, "run")
