@@ -603,25 +603,6 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def index(self):
         return self._source.index['spectrum']
 
-    def make_iterator(self, iterator=None, grouped=True):
-        """Configure the iterator's behavior.
-
-        Parameters
-        ----------
-        iterator : Iterator, optional
-            The iterator to manipulate. If missing, the default
-            iterator will be used.
-        grouped : bool, optional
-            Whether the iterator should be grouped and produce scan bunches
-            or single scans. Defaults to True
-        """
-        try:
-            if not self._has_ms1_scans():
-                grouped = False
-        except Exception:
-            pass
-        return super(MzMLLoader, self).make_iterator(iterator, grouped=grouped)
-
     def _validate(self, scan):
         return "m/z array" in scan._data
 

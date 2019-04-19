@@ -293,7 +293,7 @@ class ScanIterator(ScanDataSource):
         '''
         raise NotImplementedError()
 
-    def make_iterator(self, iterator=None, grouped=True):
+    def make_iterator(self, iterator=None, grouped=None):
         """Configure the :class:`ScanIterator`'s behavior, selecting it's iteration strategy over
         either its default iterator or the provided ``iterator`` argument.
 
@@ -304,8 +304,12 @@ class ScanIterator(ScanDataSource):
             iterator will be used.
         grouped : bool, optional
             Whether the iterator should be grouped and produce :class:`.ScanBunch` objects
-            or single :class:`.Scan`. Defaults to True
+            or single :class:`.Scan`. If :const:`None` is passed, :meth:`has_ms1_scans` will be
+            be used instead. Defaults to :const:`None`.
         """
+        if grouped is None:
+            grouped = self.has_ms1_scans()
+
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
             self.iteration_mode = 'group'
