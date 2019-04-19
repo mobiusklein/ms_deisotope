@@ -30,7 +30,7 @@ def _default_color_cycle():
     return colors
 
 
-def annotate_scan(scan, products, nperrow=4, ax=None):
+def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
     '''Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of
     :class:`~.ScanBase` product scans, draw the MS1 spectrum in full profile,
     and then in a subplot grid below it, draw a zoomed-in view of the MS1 spectrum
@@ -138,8 +138,10 @@ def annotate_scan(scan, products, nperrow=4, ax=None):
                     scan.deconvoluted_peak_set.between(
                         lower - 1.2, upper + 1.2, use_mz=True),
                     ax=ax, alpha=0.9, color='blue')
-            label_peaks(scan, lower, upper, ax=ax,
-                        is_deconvoluted=bool(scan.deconvoluted_peak_set))
+
+            if label:
+                label_peaks(scan, lower, upper, ax=ax,
+                            is_deconvoluted=bool(scan.deconvoluted_peak_set))
             ax.set_ylim(0, local_intensity * 1.25)
             ax.set_xlim(lower, upper)
             upper_intensity = local_intensity
@@ -171,7 +173,7 @@ def annotate_scan(scan, products, nperrow=4, ax=None):
     return ax
 
 
-def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
+def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=True):
     '''Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the
     area around each precursor ion that gave rise to ``product_scan``
     with monoisotopic peaks and isolation windows marked.
@@ -249,8 +251,9 @@ def annotate_scan_single(scan, product_scan, ax=None, standalone=True):
                 lower - 1.2, upper + 1.2, use_mz=True),
             ax=ax, alpha=0.9, color='blue')
 
-    label_peaks(scan, lower, upper, ax=ax,
-                is_deconvoluted=bool(scan.deconvoluted_peak_set))
+    if label:
+        label_peaks(scan, lower, upper, ax=ax,
+                    is_deconvoluted=bool(scan.deconvoluted_peak_set))
 
     ax.set_ylim(0, local_intensity * 1.25)
     ax.set_xlim(lower, upper)
@@ -431,3 +434,81 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
                 annotations.append(
                     ax.text(x, y, label, ha='center', **kwargs))
     return annotations, ax
+
+
+def draw_spectrum_paths(graph, edge_color='red', peak_color='orange', alpha=0.8, fontsize=12, ax=None, **kwargs):
+    """Draw all the paths given by `graph` over a rendered peak list.
+
+    This function will draw all peaks which an edge connects in `peak_color`, and
+    draws edges as lines connecting peaks in `edge_color`, with their annotations
+    written across them.
+
+    If a peak is not connected to an edge, it will not be drawn.
+
+    Parameters
+    ----------
+    graph : :class:`~.SpectrumGraph` or :class:`list` of :class:`~.spectrum_graph.Path`
+        The paths to annotate. If a :class:`~.SpectrumGraph` is given, the top 100 longest
+        paths will be enumerated from it.
+    edge_color : str, optional
+        The color to draw the edge lines in (the default is 'red')
+    peak_color : str, optional
+        The color to draw the connected peaks in (the default is 'orange')
+    alpha : float, optional
+        The alpha channel value for peaks (the default is 0.8)
+    fontsize : int, optional
+        The font size to use for edge annotations (the default is 12)
+    ax : :class:`matplotlib._axes.Axes`, optional
+        The axes to draw the plot on (the default is None, which will cause a new figure with a
+        single axes to be created)
+
+    Returns
+    -------
+    :class:`matplotlib._axes.Axes`
+    """
+    if ax is None:
+        _, ax = plt.subplots(1)
+    try:
+        paths = graph.longest_paths(limit=100)
+    except AttributeError:
+        paths = list(graph)
+
+    for path in paths:
+        for edge in path:
+            for p1 in edge.start:
+                for p2 in edge.end:
+                    _draw_peak_pair(
+                        (p1, p2), edge_color, peak_color, alpha, fontsize,
+                        label=edge.annotation, ax=ax, **kwargs)
+
+
+def _draw_peak_pair(pair, edge_color='red', peak_color='orange', alpha=0.8, fontsize=12, label=None, rotation=45,
+                    ax=None, **kwargs):
+    p1, p2 = pair
+    ax.plot((p1.mz, p2.mz), (p1.intensity, p2.intensity),
+            color=edge_color, alpha=alpha, **kwargs)
+    kwargs.setdefault("clip_on", False)
+    clip_on = kwargs['clip_on']
+    draw_peaklist(pair, ax=ax, alpha=0.4, color=peak_color)
+    if label:
+        midx = (p1.mz + p2.mz) / 2
+        # interpolate the midpoint's height
+        midy = (p1.intensity * (p2.mz - midx) +
+                p2.intensity * (midx - p1.mz)) / (p2.mz - p1.mz)
+
+        # find the angle of the line connecting the two peaks
+        xlo = min(p1.mz, p2.mz)
+        xhi = max(p1.mz, p2.mz)
+        adj = xhi - xlo
+        ylo = min(p1.intensity, p2.intensity)
+        yhi = max(p1.intensity, p2.intensity)
+        opp = yhi - ylo
+        hypot = np.hypot(adj, opp) # pylint: disable=assignment-from-no-return
+        rotation = np.arccos(adj / hypot)  # pylint: disable=assignment-from-no-return
+
+        if isinstance(label, (list, tuple)):
+            label = '-'.join(map(str, label))
+        else:
+            label = str(label)
+        ax.text(midx, midy, label, fontsize=fontsize,
+                ha='center', va='bottom', rotation=rotation, clip_on=clip_on)
