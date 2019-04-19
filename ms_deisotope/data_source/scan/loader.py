@@ -12,7 +12,8 @@ from ms_deisotope.data_source.metadata.file_information import FileInformation
 from .scan import Scan
 from .scan_iterator import (
     _SingleScanIteratorImpl,
-    _GroupedScanIteratorImpl)
+    _GroupedScanIteratorImpl,
+    _FakeGroupedScanIteratorImpl)
 
 
 @add_metaclass(abc.ABCMeta)
@@ -239,6 +240,24 @@ class ScanIterator(ScanDataSource):
 
     iteration_mode = 'group'
 
+    def has_ms1_scans(self):
+        '''Checks if this :class:`ScanDataSource` contains MS1 spectra.
+
+        Returns
+        -------
+        :class:`bool`
+        '''
+        return True
+
+    def has_msn_scans(self):
+        '''Checks if this :class:`ScanDataSource` contains MSn spectra.
+
+        Returns
+        -------
+        :class:`bool`
+        '''
+        return True
+
     @abc.abstractmethod
     def next(self):
         '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
@@ -310,16 +329,16 @@ class ScanIterator(ScanDataSource):
         if iterator is None:
             iterator = self._make_default_iterator()
 
-        impl = _SingleScanIteratorImpl(
-            iterator, self._make_scan, self._validate, self._cache_scan)
+        impl = _SingleScanIteratorImpl.from_scan_source(iterator, self)
         return impl
 
     def _scan_group_iterator(self, iterator=None):
         if iterator is None:
             iterator = self._make_default_iterator()
-
-        impl = _GroupedScanIteratorImpl(
-            iterator, self._make_scan, self._validate, self._cache_scan)
+        if self.has_ms1_scans():
+            impl = _GroupedScanIteratorImpl.from_scan_source(iterator, self)
+        else:
+            impl = _FakeGroupedScanIteratorImpl.from_scan_source(iterator, self)
         return impl
 
     def _scan_cleared(self, scan):
@@ -435,24 +454,6 @@ class RandomAccessScanSource(ScanIterator):
             whether the iterator should yield scan bunches or single scans. True by default.
         '''
         raise NotImplementedError()
-
-    def has_ms1_scans(self):
-        '''Checks if this :class:`ScanDataSource` contains MS1 spectra.
-
-        Returns
-        -------
-        :class:`bool`
-        '''
-        return True
-
-    def has_msn_scans(self):
-        '''Checks if this :class:`ScanDataSource` contains MSn spectra.
-
-        Returns
-        -------
-        :class:`bool`
-        '''
-        return True
 
     def _locate_ms1_scan(self, scan, search_range=150):
         i = 0

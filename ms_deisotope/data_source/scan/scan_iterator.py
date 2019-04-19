@@ -55,7 +55,23 @@ class _ScanIteratorImplBase(object):
 
     @property
     def iteration_mode(self):
+        """The iteration mode of the strategy, "grouped" or "single"
+        """
         raise NotImplementedError()
+
+    @classmethod
+    def from_scan_source(cls, iterator, scan_source):
+        """Create an iterator strategy for `iterator` from `scan_source`
+
+        Parameters
+        ----------
+        iterator : :class:`Iterable`
+            The iterator over raw scan data to consume
+        scan_source : :class:`~.ScanIterator`
+            The data extraction wrapper to provide with an iteration strategy
+        """
+        return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan)
+
 
 
 class _SingleScanIteratorImpl(_ScanIteratorImplBase):
