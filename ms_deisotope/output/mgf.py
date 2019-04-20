@@ -1,7 +1,7 @@
 
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
-from ms_deisotope.data_source.mgf import MGFLoader, mgf as pymgf
+from ms_deisotope.data_source.mgf import MGFLoader, mgf as pymgf, _MGFParser
 
 from .text import HeaderedDelimitedWriter
 
@@ -68,8 +68,8 @@ class ProcessedMGFLoader(MGFLoader):
 
     def _create_parser(self):
         if self._use_index:
-            return pymgf.IndexedMGF(self.source_file, read_charges=True,
-                                    convert_arrays=1, encoding=self.encoding)
+            return _MGFParser(self.source_file, read_charges=True,
+                              convert_arrays=1, encoding=self.encoding)
         else:
             return pymgf.MGF(self.source_file, read_charges=True,
                              convert_arrays=1, encoding=self.encoding)

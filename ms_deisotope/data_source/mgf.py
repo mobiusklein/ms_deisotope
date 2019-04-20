@@ -17,6 +17,21 @@ from .common import (
     ScanDataSource, ScanIterator, ChargeNotProvided, _FakeGroupedScanIteratorImpl)
 
 
+class _MGFParser(mgf.IndexedMGF):
+
+    def parse_charge(self, charge_text, list_only=False):
+        '''Pyteomics _parse_charge is very general-purpose, and
+        can't be sped up, so we specialize it here.'''
+        try:
+            if not list_only:
+                return int(charge_text.replace('+', ''))
+            return map(self.parse_charge, charge_text.split(" "))
+        except Exception:
+            if '-' in charge_text:
+                return int(charge_text.replace("-", '')) * -1
+            raise
+
+
 class MGFInterface(ScanDataSource):
     '''Provides a basic set of widely used MASCOT Generic File (MGF)
     data accessor mechanisms. Because MGF files lack any form of standardization,
@@ -109,12 +124,9 @@ class MGFInterface(ScanDataSource):
             if pinfo.charge:
                 if pinfo.charge > 0:
                     return 1
-                else:
-                    return -1
-            else:
-                return 1
-        else:
+                return -1
             return 1
+        return 1
 
     def _activation(self, scan):
         return None
@@ -138,13 +150,12 @@ class MGFInterface(ScanDataSource):
         -------
         int
         """
-        index = tuple(self.index.keys())
         try:
-            return index.index(self._scan_title(scan))
-        except ValueError:
+            return self._title_to_index[self._scan_title(scan)]
+        except KeyError:
             try:
-                return index.index(self._scan_title(scan) + '.')
-            except ValueError:
+                return self._title_to_index[self._scan_title(scan) + '.']
+            except KeyError:
                 return -1
         return -1
 
@@ -188,6 +199,13 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
         self._source = self._create_parser()
         self.initialize_scan_cache()
         self.make_iterator()
+        self._title_to_index = self._prepare_index_lookup()
+
+    def _prepare_index_lookup(self):
+        title_to_index = dict()
+        for i, key in enumerate(self.index):
+            title_to_index[key] = i
+        return title_to_index
 
     @property
     def header(self):
@@ -210,11 +228,10 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
 
     def _create_parser(self):
         if self._use_index:
-            return mgf.IndexedMGF(self.source_file, read_charges=False,
-                                  convert_arrays=1, encoding=self.encoding)
-        else:
-            return mgf.MGF(self.source_file, read_charges=False,
-                           convert_arrays=1, encoding=self.encoding)
+            return _MGFParser(self.source_file, read_charges=False,
+                              convert_arrays=1, encoding=self.encoding)
+        return mgf.MGF(self.source_file, read_charges=False,
+                       convert_arrays=1, encoding=self.encoding)
 
     def get_scan_by_id(self, scan_id):
         """Retrieve the scan object for the specified scan id.
