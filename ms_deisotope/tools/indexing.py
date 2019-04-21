@@ -379,7 +379,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
 
 
 @cli.command('cluster-statistics')
-@cli.argument('path', type=click.Path(readable=True, dir_okay=False))
+@click.argument('path', type=click.Path(readable=True, dir_okay=False))
 def cluster_evaluation(path):
     """Calculate some statistics describing the clustered mass spectra described in
     the specified cluster file.
