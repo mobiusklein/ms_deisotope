@@ -1118,8 +1118,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     def _make_sample_run(self):
         samples = self.samples()
-        sample = samples['sample'][0]
-        return SampleRun(name=sample['name'], uuid=sample['SampleRun-UUID'])
+        sample = samples[0]
+        return SampleRun(name=sample.name, uuid=sample['SampleRun-UUID'], **dict(sample.items()))
 
     def _precursor_information(self, scan):
         """Returns information about the precursor ion,
