@@ -5,13 +5,12 @@ import operator
 import functools
 import bisect
 import json
-try:
-    from collections import Sequence, deque
-except ImportError:
-    from collections import deque
-    from collections.abc import Sequence
 
-from ms_deisotope.task import LogUtilsMixin
+from collections import deque
+
+from scipy.special import comb
+
+from ms_deisotope.task.log_utils import LogUtilsMixin
 from ms_deisotope.data_source.dispatch import (
     SubsequenceMappingProxy as _SubsequenceMappingProxy,
     DynamicallyLoadingProxyResolver as _DynamicallyLoadingResolver)
@@ -55,6 +54,8 @@ class SpectrumCluster(object):
             self.neutral_mass = self.scans[0].precursor_information.neutral_mass
         else:
             self.neutral_mass = 0.0
+        if average_similarity is None and len(self) == 1:
+            average_similarity = 1.0
         self._average_similarity = average_similarity
         self.annotations = annotations
 
@@ -82,7 +83,7 @@ class SpectrumCluster(object):
     def _invalidate(self):
         self._average_similarity = None
 
-    def append(self, item):
+    def append(self, item, incremental_similarity=False):
         '''Add a new spectrum to the cluster.
 
         Parameters
@@ -91,8 +92,30 @@ class SpectrumCluster(object):
         '''
         if not self.neutral_mass:
             self.neutral_mass = item.precursor_information.neutral_mass
-        self._invalidate()
+        if incremental_similarity:
+            self._incremental_similarity(item)
+        else:
+            self._invalidate()
         self.scans.append(item)
+
+    def _calculate_similarity_with(self, scan, from_ix=0, to_ix=None, *args, **kwargs):
+        if from_ix is None:
+            from_ix = 0
+        if to_ix is None:
+            to_ix = len(self)
+        acc = []
+        for member in self[from_ix:to_ix]:
+            acc.append(peak_set_similarity(scan, member, *args, **kwargs))
+        return acc
+
+    def _incremental_similarity(self, scan, *args, **kwargs):
+        new_sims = self._calculate_similarity_with(scan, *args, **kwargs)
+        aggregate_size = comb(len(self), 2)
+        n = (aggregate_size + len(new_sims))
+        if n == 0:
+            n = 1
+        self._average_similarity = (aggregate_size * self.average_similarity() + sum(new_sims)
+                                   ) / n
 
     def average_similarity(self, *args, **kwargs):
         '''Calculate the within-cluster similarity among all cluster members
@@ -290,6 +313,9 @@ class ScanClusterBuilder(LogUtilsMixin):
     precursor_error_tolerance : float
         The maximum precursor mass error (in PPM) to permit between
         two spectra to consider comparing them
+    track_incremental_similarity : bool
+        Whether to incrementally update a cluster's similarity when it
+        grows.
     """
 
     @classmethod
@@ -308,7 +334,7 @@ class ScanClusterBuilder(LogUtilsMixin):
         raise ValueError("Cannot infer peak set getter from %r" % (getter, ))
 
     def __init__(self, clusters=None, precursor_error_tolerance=1e-5, minimum_similarity=0.1,
-                 peak_getter=None):
+                 peak_getter=None, track_incremental_similarity=True):
         peak_getter = self._guess_peak_getter(peak_getter)
         if clusters is None:
             clusters = []
@@ -316,6 +342,7 @@ class ScanClusterBuilder(LogUtilsMixin):
         self.precursor_error_tolerance = precursor_error_tolerance
         self.minimum_similarity = minimum_similarity
         self.peak_getter = peak_getter
+        self.track_incremental_similarity = track_incremental_similarity
 
     def _binsearch_simple(self, x):
         n = len(self)
@@ -410,7 +437,7 @@ class ScanClusterBuilder(LogUtilsMixin):
         '''
         best_cluster = self.find_best_cluster_for_scan(scan)
         if best_cluster:
-            best_cluster.append(scan)
+            best_cluster.append(scan, incremental_similarity=self.track_incremental_similarity)
         else:
             self.clusters.add(SpectrumCluster([scan]))
 
@@ -428,7 +455,7 @@ class ScanClusterBuilder(LogUtilsMixin):
 
     @classmethod
     def cluster_scans(cls, scans, precursor_error_tolerance=1e-5, minimum_similarity=0.1,
-                      peak_getter=None, sort=True):
+                      peak_getter=None, sort=True, track_incremental_similarity=False):
         '''Cluster scans by precursor mass and peak set similarity.
 
         Parameters
@@ -446,7 +473,8 @@ class ScanClusterBuilder(LogUtilsMixin):
         sort: :class:`bool`
             Whether or not to sort spectra by their total ion current before clustering.
         '''
-        self = cls([], precursor_error_tolerance, minimum_similarity, peak_getter)
+        self = cls([], precursor_error_tolerance, minimum_similarity,
+                   peak_getter, track_incremental_similarity)
         if sort:
             if len(scans) > 100:
                 self.log("Sorting Scans By TIC")
@@ -484,7 +512,9 @@ class ScanClusterBuilder(LogUtilsMixin):
         singletons = []
         to_bisect = [scans]
         logger = LogUtilsMixin()
-        for similarity_threshold in similarity_thresholds:
+        track_similarity = [False] * (len(similarity_thresholds) - 1)
+        track_similarity.append(True)
+        for similarity_threshold, track in zip(similarity_thresholds, track_similarity):
             logger.log("Clustering with Threshold %0.2f" % (similarity_threshold, ))
             next_to_bisect = []
             if len(to_bisect) > 1:
@@ -500,7 +530,7 @@ class ScanClusterBuilder(LogUtilsMixin):
                 clusters = cls.cluster_scans(
                     group, precursor_error_tolerance,
                     minimum_similarity=similarity_threshold,
-                    peak_getter=peak_getter, sort=True)
+                    peak_getter=peak_getter, sort=True, track_incremental_similarity=track)
                 for cluster in clusters:
                     if len(cluster) == 1:
                         singletons.append(cluster)
@@ -775,7 +805,8 @@ class ScanClusterReader(ScanClusterReaderBase):
                 if line:
                     tokens = line.split('\t')
                     mass = float(tokens[0])
-                    similarity = float(tokens[1])
+                    # size = int(tokens[1])
+                    similarity = float(tokens[2])
             elif line.startswith("\t"):
                 tokens = line.split("\t")
                 source = tokens[1]

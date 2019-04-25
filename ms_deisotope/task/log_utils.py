@@ -137,6 +137,12 @@ class LogUtilsMixin(object):
         cls.error_print_fn = logger.error
         cls.warn_print_fn = logger.warn
 
+    def pipe_from(self, task):
+        task.print_fn = self.log
+        task.debug_print_fn = self.debug
+        task.error_print_fn = self.error
+        task.warn_print_fn = self.warn
+
     def in_debug_mode(self):
         if self._debug_enabled is None:
             logger_state = self.logger_state
@@ -165,3 +171,63 @@ class LogUtilsMixin(object):
                 self.log(message)
             handler = default_handler
         return MessageSpooler(handler)
+
+
+class ProgressUpdater(LogUtilsMixin):
+    def __init__(self, *args, **kwargs):
+        kwargs['item_show_func'] = self._prepare_message
+        try:
+            import click
+            self.progress_bar = click.progressbar(*args, **kwargs)
+        except ImportError:
+            self.progress_bar = None
+
+    def _prepare_message(self, *message):
+        if len(message) == 1:
+            if message[0] is None:
+                return ""
+        return ', '.join(map(str, message))
+
+    def log(self, *message):
+        if self.progress_bar is not None:
+            if not self.progress_bar.is_hidden:
+                self.progress_bar.current_item = self._prepare_message(
+                    *message)
+                return
+        super(ProgressUpdater, self).log(*message)
+
+    def warn(self, *message):
+        if self.progress_bar is not None:
+            if not self.progress_bar.is_hidden:
+                self.progress_bar.current_item = "WARN: " + self._prepare_message(
+                    *message)
+                return
+        super(ProgressUpdater, self).warn(*message)
+
+    def debug(self, *message):
+        if self.progress_bar is not None:
+            if not self.progress_bar.is_hidden:
+                self.progress_bar.current_item = "DEBUG: " + self._prepare_message(
+                    *message)
+                return
+        super(ProgressUpdater, self).debug(*message)
+
+    def begin(self):
+        if self.progress_bar is not None:
+            self.progress_bar.__enter__()
+
+    def end(self, exc_type=None, exc_value=None, tb=None):
+        if self.progress_bar is not None:
+            self.progress_bar.__exit__(exc_type, exc_value, tb)
+
+    def __enter__(self):
+        return self.begin()
+
+    def __exit__(self, exc_type, exc_value, tb):
+        return self.end(exc_type, exc_value, tb)
+
+    def update(self, i, *message):
+        if self.progress_bar is not None:
+            self.progress_bar.update(i)
+        if message:
+            self.log(*message)

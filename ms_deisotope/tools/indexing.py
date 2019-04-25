@@ -319,10 +319,12 @@ def precursor_clustering(path, grouping_error=2e-5):
 @click.option("-t", "--similarity-threshold", "similarity_thresholds", multiple=True, type=float)
 @click.option("-o", "--output", "output_path", type=click.Path(writable=True, file_okay=True, dir_okay=False),
               required=False)
+@click.option("-M", "--in-memory", is_flag=True, default=False, help=(
+    "Whether to load the entire dataset into memory for better performance"))
 @click.option("-D", "--deconvoluted", is_flag=True, default=False, help=(
     "Whether to assume the spectrum is deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
-                        deconvoluted=False):
+                        in_memory=False, deconvoluted=False):
     '''Cluster spectra by precursor mass and cosine similarity.
 
     Spectrum clusters are written out to a text file recording
@@ -352,17 +354,27 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
     with click.progressbar(label="Loading Spectra", length=n_spectra,
                            item_show_func=lambda x: str(x) if x else '') as progbar:
         for reader, index in key_seqs:
-            proxy_context = ScanProxyContext(reader)
-            pinfo_map = {
-                pinfo.product_scan_id: pinfo for pinfo in
-                index.get_precursor_information()
-            }
-            for i in index.msn_ids:
-                progbar.current_item = i
-                progbar.update(1)
-                scan = proxy_context(i)
-                scan.precursor_information = pinfo_map[i]
-                msn_scans.append(scan)
+            if not in_memory:
+                proxy_context = ScanProxyContext(reader)
+                pinfo_map = {
+                    pinfo.product_scan_id: pinfo for pinfo in
+                    index.get_precursor_information()
+                }
+                for i in index.msn_ids:
+                    progbar.current_item = i
+                    progbar.update(1)
+                    scan = proxy_context(i)
+                    scan.precursor_information = pinfo_map[i]
+                    msn_scans.append(scan)
+            else:
+                for i in index.msn_ids:
+                    progbar.current_item = i
+                    progbar.update(1)
+                    scan = reader.get_scan_by_id(i)
+                    if scan.peak_set is None and not deconvoluted:
+                        scan.pick_peaks()
+                    msn_scans.append(scan)
+
     click.echo("Begin Clustering", err=True)
     clusters = iterative_clustering(
         msn_scans, precursor_error_tolerance, similarity_thresholds)
