@@ -166,6 +166,13 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         assert source_file.name == "three_test_scans.mzML"
         assert "location" not in source_file.parameters
 
+    def test_sample_list(self):
+        ms2_reader = MzMLLoader(self.only_ms2_path)
+        samples = ms2_reader.samples()
+        sample = samples[0]
+        assert sample.name == ""
+        assert sample['SampleDescription'] == "REACTION VOLT_-0.2 _Mirror RF_125V Reagent accu_150 ms accu time_100 ms"
+
     def test_acquisition_information(self):
         reader = self.reader
         bunch = next(reader)

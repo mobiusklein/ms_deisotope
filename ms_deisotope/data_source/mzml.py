@@ -548,9 +548,10 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         """
         sample_list = _find_section(self._source, "sampleList")
         result = []
-        for sample_ in sample_list:
+        for sample_ in sample_list.get("sample", []):
             name = sample_.pop("sampleName", None)
-            result.append(Sample(name=name, **sample_))
+            sample_.setdefault("name", name)
+            result.append(Sample(**sample_))
         return result
 
     def _get_run_attributes(self):
