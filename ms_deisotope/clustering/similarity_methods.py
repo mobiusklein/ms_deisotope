@@ -8,6 +8,25 @@ import math
 from collections import defaultdict
 
 
+def top_n_filter(peak_set, n=40):
+    """Keep only the top `n` most abundant peaks in the spectrum.
+
+    Parameters
+    ----------
+    peak_set : :class:`Iterable` of :class:`~.PeakBase`
+        The peaks to filter
+    n : int, optional
+        The maximum number of peaks to retain, by default 40
+
+    Returns
+    -------
+    list
+    """
+    reduced_peaks = sorted(peak_set, key=lambda x: x.intensity, reverse=True)[:n]
+    reduced_peaks.sort(key=lambda x: x.mz)
+    return reduced_peaks
+
+
 def sparse_peak_set_similarity(peak_set_a, peak_set_b, precision=0):
     """Computes the normalized dot product, also called cosine similarity between
     two peak sets, a similarity metric ranging between 0 (dissimilar) to 1.0 (similar).

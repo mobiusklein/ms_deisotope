@@ -7,7 +7,7 @@ import numpy as np
 cimport numpy as np
 
 from ms_deisotope._c.peak_set cimport (
-    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSetIndexed)
+    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSetIndexed, PeakBase)
 from ms_deisotope._c.averagine cimport neutral_mass
 
 
@@ -28,6 +28,19 @@ cdef double ppm2da(double mass, double error_tolerance):
 cdef double da2ppm(double mass, double error_tolerance):
     x = mass + error_tolerance
     return (x - mass) / mass
+
+
+cpdef intensity_getter(peak):
+    return (<PeakBase>peak).intensity
+
+
+cpdef mz_getter(peak):
+    return (<PeakBase>peak).mz
+
+
+cpdef mass_getter(peak):
+    return (<DeconvolutedPeak>peak).neutral_mass
+
 
 
 @cython.boundscheck(False)

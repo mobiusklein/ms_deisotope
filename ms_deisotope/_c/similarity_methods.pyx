@@ -132,13 +132,17 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         hi = peak.mz
         peak = peak_set_b._mz_ordered[-1]
         hi = max(peak.mz, hi)
-    
+
     # Calculate bin array size and allocate memory
     scaler = 10 ** precision
     k = <long>((hi * scaler) + 1)
     bin_a = <double*>malloc(k * sizeof(double))
     bin_b = <double*>malloc(k * sizeof(double))
     if bin_a == NULL or bin_b == NULL:
+        if bin_a != NULL:
+            free(bin_a)
+        if bin_b != NULL:
+            free(bin_b)
         PyErr_SetString(MemoryError, "Could not allocate bins")
         return -1
     for i in range(k):
@@ -229,7 +233,7 @@ cpdef tuple bin_peaks(peak_collection peak_set_a, peak_collection peak_set_b, in
     hi = (hi * scaler) + 1
     bin_a = zeros(<int>hi)
     bin_b = zeros(<int>hi)
-    
+
     if peak_collection is object:
         n = len(peak_set_a)
     else:
