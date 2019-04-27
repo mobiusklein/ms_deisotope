@@ -77,7 +77,17 @@ class ActivationInformation(object):
             return False
         if self.is_multiple_dissociation() != other.is_multiple_dissociation():
             return False
-        return (self.method == other.method) and abs(self.energy - other.energy) < 1e-3
+        if self.energy is not None:
+            if other.energy is not None:
+                energy_match = abs(self.energy - other.energy) < 1e-3
+            else:
+                energy_match = False
+        else:
+            if other.energy is not None:
+                energy_match = False
+            else:
+                energy_match = True
+        return (self.method == other.method) and energy_match
 
     def __ne__(self, other):
         return not self == other
@@ -149,9 +159,17 @@ class MultipleActivationInformation(ActivationInformation):
             return False
         if self.is_multiple_dissociation() != other.is_multiple_dissociation():
             return False
-        return (self.methods == other.methods) and all(
-            abs(self_energy - other_energy) < 1e-3 for self_energy, other_energy in zip(
-                self.energies, other.energies))
+        if len(self.energies) != len(other.energies):
+            return False
+        energies_equal = []
+        for se, oe in zip(self.energies, other.energies):
+            if se is None and oe is None:
+                energies_equal.append(True)
+            elif se is None or oe is None:
+                energies_equal.append(False)
+            else:
+                energies_equal.append(abs(se - oe) < 1e-3)
+        return (self.methods == other.methods) and all(energies_equal)
 
     def has_dissociation_type(self, dissociation_type):
         return any(method.is_a(dissociation_type) for method in self.methods)
