@@ -100,6 +100,10 @@ Accounting For Lower Quality Data
 Utilities and Implementation Details
 ====================================
 
+.. automodule:: ms_deisotope.deconvolution.utils
+
+    .. autofunction:: prepare_peaklist
+
 .. automodule:: ms_deisotope.utils
 
     .. autoclass:: DeconvolutionProcessResult

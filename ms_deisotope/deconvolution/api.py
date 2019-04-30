@@ -45,7 +45,7 @@ def deconvolute_peaks(peaklist, decon_config=None,
 
     Parameters
     ----------
-    peaklist : :class:`~.PeakSet` or list of Peak-like objects
+    peaklist : :class:`~.PeakSet` or list of Peak-like objects, see :func:`~.prepare_peaklist`
         The centroided mass spectrum to deconvolute.
     decon_config : dict, optional
         Parameters to use to initialize the deconvoluter instance produced by
