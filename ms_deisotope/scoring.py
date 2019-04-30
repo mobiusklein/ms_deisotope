@@ -549,10 +549,10 @@ def percentile(N, percent):
     return d0 + d1
 
 
-class XCorrFitter(IsotopicFitterBase):
-    def evaluate(self, peaklist, experimental, theoretical):
+class DotProductFitter(IsotopicFitterBase):
+    def evaluate(self, peaklist, observed, expected, **kwargs):
         total = 0
-        for e, t in zip(experimental, theoretical):
+        for e, t in zip(observed, expected):
             total += e.intensity * t.intensity
         return total
 
@@ -565,11 +565,12 @@ try:
     _ScaledGTestFitter = ScaledGTestFitter
     _PenalizedMSDeconVFitter = PenalizedMSDeconVFitter
     _DistinctPatternFitter = DistinctPatternFitter
+    _DotProductFitter = DotProductFitter
 
     from ._c.scoring import (
         IsotopicFitRecord, LeastSquaresFitter, MSDeconVFitter,
         ScaledGTestFitter, PenalizedMSDeconVFitter, DistinctPatternFitter,
-        ScaledPenalizedMSDeconvFitter)
+        DotProductFitter)
 except ImportError as e:
     print(e)
     _c = False

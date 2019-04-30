@@ -151,11 +151,41 @@ class LCMSFeatureForest(LCMSFeatureMap):
 
     def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf')):
         for scan in scans:
+            peak_set = scan.peak_set
+            if peak_set is None:
+                scan.pick_peaks()
+                peak_set = scan.peak_set
             for peak in scan.peak_set:
                 if peak.mz < minimum_mz or peak.mz > maximum_mz or peak.intensity < minimum_intensity:
                     continue
                 self.handle_peak(peak, scan.scan_time)
         self.features = smooth_overlaps(self.features, self.error_tolerance)
+
+    @classmethod
+    def from_reader(cls, reader, error_tolerance=1e-5, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf'),
+                    start_time=None, end_time=None):
+
+        def generate():
+            if start_time is not None:
+                reader.start_from_scan(rt=start_time, grouped=False)
+            else:
+                reader.reset()
+                reader.make_iterator(grouped=False)
+            i = 0
+            n = len(reader)
+            for i, scan in enumerate(reader):
+                if i % 1000 == 0 and i:
+                    print("Processed %d/%d Scans (%0.2f%%)" % (i, n, i * 100.0 / n))
+                if scan.ms_level == 1:
+                    yield scan
+
+        self = cls(error_tolerance=error_tolerance)
+        self.aggregate_peaks(
+            generate(),
+            minimum_mz=minimum_mz,
+            minimum_intensity=minimum_intensity,
+            maximum_mz=maximum_mz)
+        return self
 
 
 def smooth_overlaps(feature_list, error_tolerance=1e-5):
@@ -224,7 +254,7 @@ def binary_search_with_flag(array, mz, error_tolerance=1e-5):
 
 def binary_search(array, mz, error_tolerance=1e-5):
     """Binary search an ordered array of objects with :attr:`mz`
-    using a PPM error tolerance of `error_toler
+    using a PPM error tolerance of `error_tolerance`
 
     Parameters
     ----------
@@ -311,44 +341,44 @@ def search_sweep(array, mz, error_tolerance=1e-5):
 
 
 def binary_search_with_flag_neutral(array, neutral_mass, error_tolerance=1e-5):
-        lo = 0
-        n = hi = len(array)
-        while hi != lo:
-            mid = (hi + lo) // 2
-            x = array[mid]
-            err = (x.neutral_mass - neutral_mass) / neutral_mass
-            if abs(err) <= error_tolerance:
-                i = mid - 1
-                # Begin Sweep forward
-                while i > 0:
-                    x = array[i]
-                    err = (x.neutral_mass - neutral_mass) / neutral_mass
-                    if abs(err) <= error_tolerance:
-                        i -= 1
-                        continue
-                    else:
-                        break
-                low_end = i
-                i = mid + 1
+    lo = 0
+    n = hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) // 2
+        x = array[mid]
+        err = (x.neutral_mass - neutral_mass) / neutral_mass
+        if abs(err) <= error_tolerance:
+            i = mid - 1
+            # Begin Sweep forward
+            while i > 0:
+                x = array[i]
+                err = (x.neutral_mass - neutral_mass) / neutral_mass
+                if abs(err) <= error_tolerance:
+                    i -= 1
+                    continue
+                else:
+                    break
+            low_end = i
+            i = mid + 1
 
-                # Begin Sweep backward
-                while i < n:
-                    x = array[i]
-                    err = (x.neutral_mass - neutral_mass) / neutral_mass
-                    if abs(err) <= error_tolerance:
-                        i += 1
-                        continue
-                    else:
-                        break
-                high_end = i
-                return list(range(low_end, high_end)), True
-            elif (hi - lo) == 1:
-                return [mid], False
-            elif err > 0:
-                hi = mid
-            elif err < 0:
-                lo = mid
-        return 0, False
+            # Begin Sweep backward
+            while i < n:
+                x = array[i]
+                err = (x.neutral_mass - neutral_mass) / neutral_mass
+                if abs(err) <= error_tolerance:
+                    i += 1
+                    continue
+                else:
+                    break
+            high_end = i
+            return list(range(low_end, high_end)), True
+        elif (hi - lo) == 1:
+            return [mid], False
+        elif err > 0:
+            hi = mid
+        elif err < 0:
+            lo = mid
+    return 0, False
 
 
 def binary_search_neutral(array, neutral_mass, error_tolerance=1e-5):

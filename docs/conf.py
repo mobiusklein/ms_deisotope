@@ -18,6 +18,12 @@
 #
 import os
 import sys
+try:
+    import faulthandler
+    faulthandler.disable()
+    faulthandler.enable = lambda: 1
+except ImportError:
+    pass
 # sys.path.insert(0, os.path.abspath('.'))
 
 sys.path.append(os.path.abspath("_ext"))
@@ -38,7 +44,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.githubpages',
-    'exec_directive'
+    'exec_directive',
+    'matplotlib.sphinxext.plot_directive',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,7 +57,8 @@ templates_path = ['_templates']
 # source_suffix = ['.rst', '.md']
 source_suffix = '.rst'
 
-rst_epilog = open("./definitions").read()
+
+rst_epilog = open("./definitions.rst").read()
 
 # The master toctree document.
 master_doc = 'index'

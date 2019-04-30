@@ -1,4 +1,4 @@
-pyteomics
+pyteomics >= 4.0
 lxml
 psims
 six
@@ -7,4 +7,8 @@ scipy
 ms_peak_picker
 brain-isotopic-distribution
 dill
-idzip-python>=0.3.2
+python-idzip >=0.3.2
+
+comtypes[com]
+
+pythonnet[net]

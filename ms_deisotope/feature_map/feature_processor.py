@@ -19,11 +19,15 @@ from .feature_fit import (
 from .dependence_network import FeatureDependenceGraph
 from .profile_transform import binsearch, smooth_leveled
 from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
-from ms_deisotope.averagine import AveragineCache, PROTON, isotopic_shift
+from ms_deisotope.averagine import (
+    AveragineCache, PROTON, isotopic_shift,
+    neutral_mass)
+from ms_deisotope.peak_set import DeconvolutedPeak
+from ms_deisotope.envelope_statistics import (
+    most_abundant_mz, average_mz, a_to_a2_ratio)
 from ms_deisotope.deconvolution import (
-    charge_range_, DeconvolutedPeak, drop_placeholders,
-    neutral_mass, average_mz, a_to_a2_ratio, first_peak,
-    most_abundant_mz, mean)
+    charge_range_, drop_placeholders, first_peak,
+    mean)
 from ms_deisotope.utils import printer
 
 
@@ -387,8 +391,6 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 mz,
                 error_tolerance=error_tolerance,
                 charge=charge,
-                left_search=left_search,
-                right_search=right_search,
                 charge_carrier=charge_carrier,
                 truncate_after=truncate_after,
                 max_missed_peaks=max_missed_peaks,

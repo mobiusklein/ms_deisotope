@@ -254,3 +254,13 @@ class ConnectedSubgraph(object):
             return solution
         else:
             raise NotImplementedError(method)
+
+
+try:
+    has_c = True
+    _ConnectedSubgraph = ConnectedSubgraph
+    _FitNode = FitNode
+
+    from ms_deisotope._c.peak_dependency_network.subgraph import ConnectedSubgraph, FitNode
+except ImportError:
+    has_c = False

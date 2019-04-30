@@ -1,3 +1,10 @@
+'''mzML is a standard rich XML-format for raw mass spectrometry data storage.
+This module provides :class:`MzMLLoader`, a :class:`~.RandomAccessScanSource`
+implementation.
+
+The parser is based on :mod:`pyteomics.mzml`.
+'''
+
 from six import string_types as basestring
 
 import numpy as np
@@ -7,19 +14,23 @@ from .common import (
     ChargeNotProvided, ActivationInformation,
     ScanAcquisitionInformation, ScanEventInformation,
     ScanWindow, IsolationWindow,
-    InstrumentInformation, ComponentGroup, component,
-    FileInformation, SourceFile, MultipleActivationInformation)
+    FileInformation, SourceFile, MultipleActivationInformation,
+    ScanFileMetadataBase)
 from .metadata.activation import (
-    supplemental_energy, energy_terms)
+    supplemental_energy, UnknownDissociation)
+from .metadata.instrument_components import (
+    InstrumentInformation, ComponentGroup, component,
+    instrument_models)
 from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
+from .metadata.sample import Sample
 from .xml_reader import (
-    XMLReaderBase, IndexSavingXML, iterparse_until,
+    XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
 
 
-class _MzMLParser(IndexSavingXML, mzml.MzML):
+class _MzMLParser(mzml.MzML):
     # we do not care about chromatograms
     _indexed_tags = {'spectrum', }
 
@@ -51,6 +62,14 @@ class _MzMLParser(IndexSavingXML, mzml.MzML):
         return dtype
 
 
+def _find_arrays(data_dict, decode=False):
+    arrays = dict()
+    for key, value in data_dict.items():
+        if " array" in key:
+            arrays[key] = value.decode() if decode else value
+    return arrays
+
+
 class MzMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the
     :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.
@@ -76,7 +95,12 @@ class MzMLDataInterface(ScanDataSource):
             An array of intensity values for this scan
         """
         try:
-            return scan['m/z array'], scan["intensity array"]
+            decode = not self._decode_binary
+        except AttributeError:
+            decode = False
+        arrays = _find_arrays(scan, decode=decode)
+        try:
+            return arrays.pop('m/z array'), arrays.pop("intensity array"), arrays
         except KeyError:
             return np.array([]), np.array([])
 
@@ -105,17 +129,19 @@ class MzMLDataInterface(ScanDataSource):
             precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
         except KeyError:
             precursor_scan_id = None
-            last_index = self._scan_index(scan) - 1
-            current_level = self._ms_level(scan)
-            i = 0
-            while last_index > 0 and i < 100:
-                prev_scan = self.get_scan_by_index(last_index)
-                if prev_scan.ms_level >= current_level:
-                    last_index -= 1
-                else:
-                    precursor_scan_id = self._scan_id(prev_scan._data)
-                    break
-                i += 1
+            # only attempt to scan if there are supposed to be MS1 scans in the file
+            if self._has_ms1_scans() and self._use_index:
+                last_index = self._scan_index(scan) - 1
+                current_level = self._ms_level(scan)
+                i = 0
+                while last_index > 0 and i < 100:
+                    prev_scan = self.get_scan_by_index(last_index)
+                    if prev_scan.ms_level >= current_level:
+                        last_index -= 1
+                    else:
+                        precursor_scan_id = self._scan_id(prev_scan._data)
+                        break
+                    i += 1
         pinfo = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),
@@ -289,7 +315,7 @@ class MzMLDataInterface(ScanDataSource):
                 activation = activation_methods[0]
                 activation_methods = activation_methods[1:]
             else:
-                activation = "unknown dissociation method"
+                activation = UnknownDissociation
             energy = struct.pop("collision energy", -1)
             if energy == -1:
                 energy = struct.pop("activation energy", -1)
@@ -363,6 +389,7 @@ class MzMLDataInterface(ScanDataSource):
                     window['scan window lower limit'],
                     window['scan window upper limit']))
             struct['window_list'] = windows
+            scan.pop("instrumentConfigurationRef", None)
             struct['traits'] = scan
             scan_info_scan_list.append(ScanEventInformation(**struct))
         scan_info['scan_list'] = scan_info_scan_list
@@ -397,7 +424,7 @@ class MzMLDataInterface(ScanDataSource):
         return annot
 
 
-class _MzMLMetadataLoader(object):
+class _MzMLMetadataLoader(ScanFileMetadataBase):
 
     def _collect_reference_groups(self):
         params = next(iterparse_until(self._source, "referenceableParamGroupList", "run"))
@@ -454,7 +481,13 @@ class _MzMLMetadataLoader(object):
                     parts = [component(key) for key in group]
                     group_collection.append(ComponentGroup(category, parts, order))
         conf_id = configuration['id']
-        config = InstrumentInformation(conf_id, group_collection)
+        serial_number = configuration.get("instrument serial number")
+        potential_models = [k for k in configuration if instrument_models.get(k) is not None]
+        if potential_models:
+            instrument_model = potential_models[0]
+        else:
+            instrument_model = None
+        config = InstrumentInformation(conf_id, group_collection, serial_number=serial_number, model=instrument_model)
         return config
 
     def instrument_configuration(self):
@@ -506,7 +539,20 @@ class _MzMLMetadataLoader(object):
         return processing_list
 
     def samples(self):
-        return _find_section(self._source, "sampleList")
+        """Describe the sample(s) used to generate the mass spectrometry
+        data contained in this file.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Sample`
+        """
+        sample_list = _find_section(self._source, "sampleList")
+        result = []
+        for sample_ in sample_list.get("sample", []):
+            name = sample_.pop("sampleName", None)
+            sample_.setdefault("name", name)
+            result.append(Sample(**sample_))
+        return result
 
     def _get_run_attributes(self):
         return get_tag_attributes(self.source, "run")
@@ -526,16 +572,15 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
 
     _parser_cls = _MzMLParser
 
-    @staticmethod
-    def prebuild_byte_offset_file(path):
-        return _MzMLParser.prebuild_byte_offset_file(path)
 
-    def __init__(self, source_file, use_index=True, **kwargs):
+    def __init__(self, source_file, use_index=True, decode_binary=True, **kwargs):
         self.source_file = source_file
         self._source = self._parser_cls(source_file, read_schema=True, iterative=True,
-                                        huge_tree=True, use_index=use_index)
+                                        huge_tree=True, decode_binary=decode_binary,
+                                        use_index=use_index)
         self.initialize_scan_cache()
         self._use_index = use_index
+        self._decode_binary = decode_binary
         self._run_information = self._get_run_attributes()
         self._instrument_config = {
             k.id: k for k in self.instrument_configuration()
@@ -549,35 +594,24 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     def _has_ms1_scans(self):
         return file_information.MS_MS1_Spectrum in self._file_description
 
-    def make_iterator(self, iterator=None, grouped=True):
-        """Configure the iterator's behavior.
+    def has_msn_scans(self):
+        return self._has_msn_scans()
 
-        Parameters
-        ----------
-        iterator : Iterator, optional
-            The iterator to manipulate. If missing, the default
-            iterator will be used.
-        grouped : bool, optional
-            Whether the iterator should be grouped and produce scan bunches
-            or single scans. Defaults to True
-        """
-        try:
-            if not self._has_ms1_scans():
-                grouped = False
-        except Exception:
-            pass
-        return super(MzMLLoader, self).make_iterator(iterator, grouped=grouped)
+    def has_ms1_scans(self):
+        return self._has_ms1_scans()
+
+    @property
+    def index(self):
+        return self._source.index['spectrum']
 
     def _validate(self, scan):
         return "m/z array" in scan._data
 
     def _yield_from_index(self, scan_source, start):
-        offset_provider = scan_source._offset_index.offsets
+        offset_provider = scan_source._offset_index['spectrum']
         keys = list(offset_provider.keys())
         if start is not None:
             if isinstance(start, basestring):
-                if isinstance(start, str):
-                    start = start.encode("utf8")
                 start = keys.index(start)
             elif isinstance(start, int):
                 start = start
@@ -586,6 +620,7 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         else:
             start = 0
         for key in keys[start:]:
-            if isinstance(key, bytes):
-                key = key.decode("utf8")
             yield scan_source.get_by_id(key)
+
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self._use_index, self._decode_binary)

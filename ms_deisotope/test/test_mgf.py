@@ -6,19 +6,33 @@ from ms_deisotope.data_source import infer_type
 
 
 class TestMGFLoaderScanBehavior(unittest.TestCase):
-    path = datafile("test_utf_16.mgf")
+    path = datafile("small.mgf")
 
     @property
     def reader(self):
-        return infer_type.MSFileLoader(self.path, encoding='utf-16')
+        return infer_type.MSFileLoader(self.path)
 
     def test_index(self):
         reader = self.reader
-        assert len(reader.index) == 287
+        assert len(reader.index) == 34
         scan = reader.get_scan_by_id(
-            '20150710_3um_AGP_001.1700581.1700581.4 File:"20150710_3um_AGP_001.d", NativeID:"scanId=1700581"')
+            'small.10.10')
         assert scan.id ==\
-            '20150710_3um_AGP_001.1700581.1700581.4 File:"20150710_3um_AGP_001.d", NativeID:"scanId=1700581"'
+            'small.10.10'
+        scan = reader[10]
+        assert scan.index == 10
+
+    def test_get_time(self):
+        reader = self.reader
+        scan = reader.get_scan_by_time(0.3)
+        assert scan.id == 'small.31.31'
+        scan = next(reader.start_from_scan(rt=0.3, grouped=False))
+        assert scan.id == 'small.31.31'
+
+    def test_annotations(self):
+        scan = self.reader[10]
+        assert scan.annotations == {}
+
 
     def test_scan_interface(self):
         reader = self.reader

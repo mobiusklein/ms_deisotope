@@ -1,7 +1,7 @@
 
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
-from ms_deisotope.data_source.mgf import MGFLoader, mgf as pymgf
+from ms_deisotope.data_source.mgf import MGFLoader, mgf as pymgf, _MGFParser
 
 from .text import HeaderedDelimitedWriter
 
@@ -27,9 +27,9 @@ class MGFSerializer(HeaderedDelimitedWriter):
     def add_parameter(self, name, value):
         self._add_parameter(name, value)
 
-    def save_scan_bunch(self, bunch):
+    def save_scan_bunch(self, bunch, **kwargs):
         for scan in bunch.products:
-            self.write_scan(*self.prepare_scan_data(scan))
+            self.save_scan(scan, **kwargs)
 
     def format_peak_vectors(self, scan):
         if self.deconvoluted:
@@ -43,7 +43,7 @@ class MGFSerializer(HeaderedDelimitedWriter):
         return (mz_array, intensity_array, charge_array)
 
     def write_header(self, header_dict):
-        pepmass = header_dict['precursor_neutral_mass']
+        pepmass = header_dict['precursor_mz']
         charge = header_dict['precursor_charge']
         intensity = header_dict['precursor_intensity']
         self.add_parameter("pepmass", "%f %f" % (pepmass, intensity))
@@ -61,14 +61,18 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self.stream.write('END IONS\n')
 
 
-class ProcessedMGFDeserializer(MGFLoader):
+class ProcessedMGFLoader(MGFLoader):
 
     def __init__(self, source_file, encoding='ascii'):
         super(ProcessedMGFDeserializer, self).__init__(source_file, encoding)
 
     def _create_parser(self):
-        return pymgf.read(self.source_file, read_charges=True,
-                          convert_arrays=1, encoding=self.encoding)
+        if self._use_index:
+            return _MGFParser(self.source_file, read_charges=True,
+                              convert_arrays=1, encoding=self.encoding)
+        else:
+            return pymgf.MGF(self.source_file, read_charges=True,
+                             convert_arrays=1, encoding=self.encoding)
 
     def _build_peaks(self, scan):
         mz_array = scan['m/z array']
@@ -76,11 +80,23 @@ class ProcessedMGFDeserializer(MGFLoader):
         charge_array = scan['charge array']
         return build_deconvoluted_peak_set_from_arrays(mz_array, intensity_array, charge_array)
 
-    def _make_scan(self, scan):
-        scan = super(ProcessedMGFDeserializer, self)._make_scan(scan)
+    def _make_scan(self, data):
+        scan = super(ProcessedMGFDeserializer, self)._make_scan(data)
         scan.peak_set = None
         scan.deconvoluted_peak_set = self._build_peaks(scan._data)
         return scan.pack()
+
+    def _precursor_information(self, scan):
+        pinfo = super(ProcessedMGFDeserializer, self)._precursor_information(scan)
+        defaulted = pinfo.defaulted
+        orphan = pinfo.orphan
+        pinfo.default()
+        pinfo.defaulted = defaulted
+        pinfo.orphan = orphan
+        return pinfo
+
+
+ProcessedMGFDeserializer = ProcessedMGFLoader
 
 
 def build_deconvoluted_peak_set_from_arrays(mz_array, intensity_array, charge_array):

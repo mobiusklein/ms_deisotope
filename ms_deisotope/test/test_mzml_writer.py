@@ -1,6 +1,7 @@
 import unittest
 import os
 import tempfile
+import gzip
 
 import ms_deisotope
 from ms_deisotope.data_source import MzMLLoader
@@ -16,7 +17,7 @@ class TestMzMLSerializer(unittest.TestCase):
     def test_writer(self):
         source_reader = MzMLLoader(self.source_data_path)
         fd, name = tempfile.mkstemp()
-        with _compression.GzipFile(name, 'wb') as fh:
+        with open(name, 'wb') as fh:
             writer = MzMLSerializer(fh, n_spectra=len(source_reader.index), deconvoluted=True)
             description = source_reader.file_description()
             writer.add_file_information(description)
@@ -66,6 +67,7 @@ class TestMzMLSerializer(unittest.TestCase):
         sf = description.source_files[0]
         assert 'location' not in sf.parameters
         assert sf.parameters['SHA-1'] == 'a2a091b82f27676da87a6c7d17cc90d2d90b8fbf'
+        assert processed_reader.sample_run.name == "sample_1"
         index = processed_reader.extended_index
         pinfo = index.find_msms_by_precursor_mass(ms_deisotope.neutral_mass(562.7397, 2))
         assert len(pinfo) > 0

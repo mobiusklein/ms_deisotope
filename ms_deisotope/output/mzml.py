@@ -1,3 +1,40 @@
+'''
+Writing mzML
+------------
+
+Using the :mod:`psims` library, :mod:`ms_deisotope.output.mzml` can write an mzML
+file with all associated metadata, including deconvoluted peak arrays, chromatograms,
+and data transformations. The :class:`~.MzMLSerializer` class handles all facets of
+this process.
+
+This module also contains a specialized version of :class:`~.MzMLLoader`,
+:class:`~.ProcessedMzMLDeserializer`, which can directly reconstruct each
+deconvoluted peak list and provides fast access to an extended index of
+metadata that :class:`~.MzMLSerializer` writes to an external file.
+
+
+.. code:: python
+
+    import ms_deisotope
+    from ms_deisotope.test.common import datafile
+    from ms_deisotope.output.mzml import MzMLSerializer
+
+    reader = ms_deisotope.MSFileLoader(datafile("small.mzML"))
+    with open("small.deconvoluted.mzML", 'wb') as fh:
+        writer = MzMLSerializer(fh, n_spectra=len(reader))
+
+        writer.copy_metadata_from(reader)
+        for bunch in reader:
+            bunch.precursor.pick_peaks()
+            bunch.precursor.deconvolute()
+            for product in bunch.products:
+                product.pick_peaks()
+                product.deconvolute()
+            writer.save(bunch)
+
+        writer.close()
+
+'''
 import os
 from collections import OrderedDict
 try:
@@ -13,32 +50,32 @@ from six import string_types as basestring
 
 from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
-
 try:
     from psims.mzml import writer
 except ImportError:
     writer = None
 
-try:
-    WindowsError
-    on_windows = True
-except NameError:
-    on_windows = False
-
-from .common import ScanSerializerBase, ScanDeserializerBase
-from .text_utils import (envelopes_to_array, decode_envelopes)
-from ms_deisotope import peak_set
-from ms_deisotope.utils import Base
+from ms_deisotope import version as lib_version
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.averagine import neutral_mass
-from ms_deisotope.data_source.common import PrecursorInformation, ScanBunch, ChargeNotProvided
+from ms_deisotope.qc.isolation import CoIsolation
+from ms_deisotope.data_source.common import (
+    PrecursorInformation, ChargeNotProvided,
+    _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
 from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.feature_map import ExtendedScanIndex
 
+from .common import ScanSerializerBase, ScanDeserializerBase, SampleRun
+from .text_utils import (envelopes_to_array, decode_envelopes)
+
 
 class SpectrumDescription(Sequence):
-
+    '''A helper class to calculate properties of a spectrum derived from
+    their peak data or raw signal
+    '''
     def __init__(self, attribs=None):
+        Sequence.__init__(self)
         self.descriptors = list(attribs or [])
 
     def __getitem__(self, i):
@@ -54,6 +91,21 @@ class SpectrumDescription(Sequence):
         return len(self.descriptors)
 
     def append(self, desc):
+        """Add the descriptor `desc` to the collection
+
+        Adds a descriptor which conforms to any of :mod:`psims`'s
+        cvParam specification patterns.
+
+        Parameters
+        ----------
+        desc : :class:`dict`, :class:`tuple`, or :class:`str`
+            The descriptor to add.
+
+        Returns
+        -------
+        int:
+            The current size of the description list
+        """
         i = len(self)
         self.descriptors.append(desc)
         return i
@@ -63,6 +115,18 @@ class SpectrumDescription(Sequence):
 
     @classmethod
     def from_peak_set(cls, peak_list):
+        """Calculate the spectrum's descriptors from a :class:`Sequence` of :class:`~.PeakLike`
+        objects.
+
+        Parameters
+        ----------
+        peak_list : :class:`Sequence`
+            The peaks to calculate properties from.
+
+        Returns
+        -------
+        :class:`SpectrumDescription`
+        """
         descriptors = cls()
         try:
             base_peak = max(peak_list, key=lambda x: x.intensity)
@@ -97,6 +161,18 @@ class SpectrumDescription(Sequence):
 
     @classmethod
     def from_arrays(cls, arrays):
+        """Calculate the spectrum's descriptors from a :class:`RawDataArrays`
+        instance.
+
+        Parameters
+        ----------
+        arrays : :class:`RawDataArrays`
+            The signal to calculate properties from.
+
+        Returns
+        -------
+        :class:`SpectrumDescription`
+        """
         descriptors = cls()
         try:
             base_peak_i = np.argmax(arrays.intensity)
@@ -130,18 +206,7 @@ class SpectrumDescription(Sequence):
         return descriptors
 
 
-class SampleRun(Base):
-
-    def __init__(self, name, uuid, completed=True, sample_type=None, **kwargs):
-        self.name = name
-        self.uuid = uuid
-        self.sample_type = sample_type
-        self.completed = completed
-        self.parameters = kwargs
-
-
 class MzMLSerializer(ScanSerializerBase):
-
     """Write :mod:`ms_deisotope` data structures to a file in mzML format.
 
     Attributes
@@ -191,7 +256,7 @@ class MzMLSerializer(ScanSerializerBase):
         The lower level writer implementation
     """
 
-    def __init__(self, handle, n_spectra=2e4, compression=None,
+    def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
                  data_encoding=None):
         if data_encoding is None:
@@ -205,6 +270,7 @@ class MzMLSerializer(ScanSerializerBase):
                 "Cannot write mzML without psims. Please install psims to use this feature.")
         if compression is None:
             compression = writer.COMPRESSION_ZLIB
+        super(MzMLSerializer, self).__init__()
         self.handle = handle
         self.writer = writer.MzMLWriter(handle)
         self.n_spectra = n_spectra
@@ -288,6 +354,14 @@ class MzMLSerializer(ScanSerializerBase):
         self.software_list.append(software_description)
 
     def add_file_information(self, file_information):
+        '''Add the information of a :class:`~.FileInformation` to the
+        output document.
+
+        Parameters
+        ----------
+        file_information: :class:`~.FileInformation`
+            The information to add.
+        '''
         for key, value in file_information.contents.items():
             if value is None:
                 value = ''
@@ -307,6 +381,20 @@ class MzMLSerializer(ScanSerializerBase):
         self.file_contents_list.append(file_contents)
 
     def remove_file_contents(self, name):
+        """Remove a key to the resulting :obj:`<fileDescription>`
+        of the output document.
+
+        Parameters
+        ----------
+        file_contents: :class:`str` or :class:`Mapping`
+            The parameter to remove
+
+        Raises
+        ------
+        KeyError:
+            When the content is not found.
+        """
+        i = None
         for i, content in enumerate(self.file_contents_list):
             if isinstance(content, Mapping):
                 if 'name' in content:
@@ -318,6 +406,8 @@ class MzMLSerializer(ScanSerializerBase):
             if content == name:
                 break
         else:
+            raise KeyError(name)
+        if i is None:
             raise KeyError(name)
         self.file_contents_list.pop(i)
 
@@ -404,6 +494,14 @@ class MzMLSerializer(ScanSerializerBase):
         self.sample_list.append(sample)
 
     def copy_metadata_from(self, reader):
+        """Copies the file-level metadata from an instance of :class:`~.ScanFileMetadataBase`
+        into the metadata of the file to be written
+
+        Parameters
+        ----------
+        reader : :class:`~.ScanFileMetadataBase`
+            The source to copy metadata from
+        """
         try:
             description = reader.file_description()
             self.add_file_information(description)
@@ -437,6 +535,7 @@ class MzMLSerializer(ScanSerializerBase):
 
     def _create_software_list(self):
         software_list = []
+        ms_deisotope_entries = []
         for sw in self.software_list:
             d = {
                 'id': sw.id,
@@ -447,11 +546,24 @@ class MzMLSerializer(ScanSerializerBase):
             else:
                 d['MS:1000799'] = sw.name
             d['params'] = list(sw.options.items())
+            if 'ms_deisotope' in str(sw.id):
+                ms_deisotope_entries.append(str(sw.id))
             software_list.append(d)
 
+        for i in range(1, 100):
+            query = 'ms_deisotope_%d' % i
+            if query in ms_deisotope_entries:
+                continue
+            else:
+                new_entry_id = query
+                break
+        else:
+            new_entry_id = 'ms_deisotope_%s' % str(uuid4())
+
         software_list.append({
-            "id": "ms_deisotope_1",
-            'MS:1000799': "ms_deisotope"
+            "id": new_entry_id,
+            'version': lib_version,
+            'ms_deisotope': "",
         })
         self.writer.software_list(software_list)
 
@@ -541,10 +653,21 @@ class MzMLSerializer(ScanSerializerBase):
             "unitName": "electron volt"
         })
         if activation_information.is_multiple_dissociation():
-            for energy in activation_information.energies[1:]:
+            energies = activation_information.energies[1:]
+            supplemental_energy = None
+            if activation_information.has_supplemental_dissociation():
+                supplemental_energy = energies[-1]
+                energies = energies[:-1]
+            for energy in energies:
                 params.append({
                     "name": "collision energy",
                     "value": energy,
+                    "unitName": "electron volt"
+                })
+            if supplemental_energy is not None:
+                params.append({
+                    "name": 'supplemental collision energy',
+                    "value": supplemental_energy,
                     "unitName": "electron volt"
                 })
 
@@ -579,7 +702,8 @@ class MzMLSerializer(ScanSerializerBase):
         # If the scan bunch has been fully deconvoluted and it's PrecursorInformation
         # filled in, its extracted fields will be populated and should be used, otherwise
         # use the default read values.
-        if precursor_information.extracted_neutral_mass != 0:
+        extracted_neutral_mass = precursor_information.extracted_neutral_mass
+        if (extracted_neutral_mass != 0):
             package = {
                 "mz": precursor_information.extracted_mz,
                 "intensity": precursor_information.extracted_intensity,
@@ -590,6 +714,12 @@ class MzMLSerializer(ScanSerializerBase):
                     {"ms_deisotope:orphan": precursor_information.orphan}
                 ]
             }
+            if precursor_information.coisolation:
+                for p in precursor_information.coisolation:
+                    package['params'].append({
+                        "name": "ms_deisotope:coisolation",
+                        "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
+                    })
         else:
             package = {
                 "mz": precursor_information.mz,
@@ -622,6 +752,109 @@ class MzMLSerializer(ScanSerializerBase):
             extra_arrays.append(("isotopic envelopes array", envelope_array))
         return extra_arrays
 
+    def _get_annotations(self, scan):
+        skip = {'filter string', 'base peak intensity', 'base peak m/z', 'lowest observed m/z',
+                'highest observed m/z', 'total ion current', }
+        annotations = []
+        for key, value in scan.annotations.items():
+            if key in skip:
+                continue
+            annotations.append({
+                key: value
+            })
+        return annotations
+
+    def save_scan(self, scan, **kwargs):
+        """Write a :class:`~.Scan` to the output document
+        as a collection of related :obj:`<spectrum>` tags.
+
+        .. note::
+
+            If no spectra have been written to the output document
+            yet, this method will call :meth:`_add_spectrum_list` and
+            writes all of the metadata lists out. After this point,
+            no new document-level metadata can be added.
+
+        Parameters
+        ----------
+        scan: :class:`~.Scan`
+            The scan to write.
+        deconvoluted: :class:`bool`
+            Whether the scan to write out should include deconvolution information
+        """
+        if not self._has_started_writing_spectra:
+            self._add_spectrum_list()
+            self._has_started_writing_spectra = True
+
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
+        if deconvoluted:
+            centroided = True
+            precursor_peaks = scan.deconvoluted_peak_set
+        elif scan.peak_set:
+            centroided = True
+            precursor_peaks = scan.peak_set
+        else:
+            centroided = False
+            precursor_peaks = scan.arrays
+        polarity = scan.polarity
+        if deconvoluted:
+            charge_array = [p.charge for p in precursor_peaks]
+        else:
+            charge_array = None
+
+        if centroided:
+            descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
+            mz_array = [p.mz for p in precursor_peaks]
+            intensity_array = [p.intensity for p in precursor_peaks]
+        else:
+            descriptors = SpectrumDescription.from_arrays(precursor_peaks)
+            mz_array = precursor_peaks.mz
+            intensity_array = precursor_peaks.intensity
+
+        instrument_config = scan.instrument_configuration
+        if instrument_config is None:
+            instrument_config_id = None
+        else:
+            instrument_config_id = instrument_config.id
+
+        scan_parameters, scan_window_list = self.extract_scan_event_parameters(
+            scan)
+
+        if scan.precursor_information:
+            precursor_information = self._pack_precursor_information(
+                scan.precursor_information,
+                scan.activation,
+                scan.isolation_window)
+        else:
+            precursor_information = None
+
+        spectrum_params = [
+            {"name": "ms level", "value": scan.ms_level},
+            {"name": "MS1 spectrum"} if scan.ms_level == 1 else {"name": "MSn spectrum"},
+        ] + list(descriptors)
+
+        spectrum_params.extend(self._get_annotations(scan))
+
+        self.writer.write_spectrum(
+            mz_array, intensity_array,
+            charge_array,
+            id=scan.id, params=spectrum_params,
+            centroided=centroided,
+            polarity=polarity,
+            scan_start_time=scan.scan_time,
+            compression=self.compression,
+            other_arrays=self._prepare_extra_arrays(scan),
+            instrument_configuration_id=instrument_config_id,
+            precursor_information=precursor_information,
+            scan_params=scan_parameters,
+            scan_window_list=scan_window_list,
+            encoding=self.data_encoding)
+
+        self.total_ion_chromatogram_tracker[
+            scan.scan_time] = (descriptors["total ion current"])
+        self.base_peak_chromatogram_tracker[
+            scan.scan_time] = (descriptors["base peak intensity"])
+
     def save_scan_bunch(self, bunch, **kwargs):
         """Write a :class:`~.ScanBunch` to the output document
         as a collection of related :obj:`<spectrum>` tags.
@@ -638,130 +871,11 @@ class MzMLSerializer(ScanSerializerBase):
         bunch : :class:`~.ScanBunch`
             The scan set to write.
         """
-        if not self._has_started_writing_spectra:
-            self._add_spectrum_list()
-            self._has_started_writing_spectra = True
-
         if bunch.precursor is not None:
-            if self.deconvoluted:
-                centroided = True
-                precursor_peaks = bunch.precursor.deconvoluted_peak_set
-            elif bunch.precursor.peak_set:
-                centroided = True
-                precursor_peaks = bunch.precursor.peak_set
-            else:
-                centroided = False
-                precursor_peaks = bunch.precursor.arrays
-
-            if len(precursor_peaks) == 0:
-                return
-
-            polarity = bunch.precursor.polarity
-            if self.deconvoluted:
-                charge_array = [p.charge for p in precursor_peaks]
-            else:
-                charge_array = None
-
-            if centroided:
-                descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
-                mz_array = [p.mz for p in precursor_peaks]
-                intensity_array = [p.intensity for p in precursor_peaks]
-            else:
-                descriptors = SpectrumDescription.from_arrays(precursor_peaks)
-                mz_array = precursor_peaks.mz
-                intensity_array = precursor_peaks.intensity
-
-            instrument_config = bunch.precursor.instrument_configuration
-            if instrument_config is None:
-                instrument_config_id = None
-            else:
-                instrument_config_id = instrument_config.id
-
-            scan_parameters, scan_window_list = self.extract_scan_event_parameters(
-                bunch.precursor)
-
-            self.writer.write_spectrum(
-                mz_array, intensity_array,
-                charge_array,
-                id=bunch.precursor.id, params=[
-                    {"name": "ms level", "value": bunch.precursor.ms_level},
-                    {"name": "MS1 spectrum"}] + list(descriptors),
-                centroided=centroided,
-                polarity=polarity,
-                scan_start_time=bunch.precursor.scan_time,
-                compression=self.compression,
-                other_arrays=self._prepare_extra_arrays(bunch.precursor),
-                instrument_configuration_id=instrument_config_id,
-                scan_params=scan_parameters,
-                scan_window_list=scan_window_list,
-                encoding=self.data_encoding)
-
-            self.total_ion_chromatogram_tracker[
-                bunch.precursor.scan_time] = (descriptors["total ion current"])
-            self.base_peak_chromatogram_tracker[
-                bunch.precursor.scan_time] = (descriptors["base peak intensity"])
+            self.save_scan(bunch.precursor)
 
         for prod in bunch.products:
-            if self.deconvoluted:
-                centroided = True
-                product_peaks = prod.deconvoluted_peak_set
-            elif prod.peak_set:
-                centroided = True
-                product_peaks = prod.peak_set
-            else:
-                centroided = False
-                product_peaks = prod.arrays
-
-            if centroided:
-                descriptors = SpectrumDescription.from_peak_set(product_peaks)
-                mz_array = [p.mz for p in product_peaks]
-                intensity_array = [p.intensity for p in product_peaks]
-            else:
-                descriptors = SpectrumDescription.from_arrays(product_peaks)
-                mz_array = product_peaks.mz
-                intensity_array = product_peaks.intensity
-
-            self.total_ion_chromatogram_tracker[
-                prod.scan_time] = (descriptors["total ion current"])
-            self.base_peak_chromatogram_tracker[
-                prod.scan_time] = (descriptors["base peak intensity"])
-
-            if self.deconvoluted:
-                charge_array = [p.charge for p in product_peaks]
-            else:
-                charge_array = None
-
-            instrument_config = prod.instrument_configuration
-            if instrument_config is None:
-                instrument_config_id = None
-            else:
-                instrument_config_id = instrument_config.id
-
-            scan_parameters, scan_window_list = self.extract_scan_event_parameters(
-                prod)
-            spectrum_params = [
-                {"name": "ms level", "value": prod.ms_level},
-                {"name": "MSn spectrum"},
-            ] + list(descriptors)
-            if 'precursor purity' in prod.annotations:
-                spectrum_params.append({'name': 'precursor purity',
-                                        'value': prod.annotations['precursor purity']})
-            self.writer.write_spectrum(
-                mz_array, intensity_array, charge_array,
-                id=prod.id, params=spectrum_params,
-                centroided=centroided,
-                polarity=prod.polarity,
-                scan_start_time=prod.scan_time,
-                precursor_information=self._pack_precursor_information(
-                    prod.precursor_information,
-                    prod.activation,
-                    prod.isolation_window),
-                compression=self.compression,
-                other_arrays=self._prepare_extra_arrays(prod),
-                instrument_configuration_id=instrument_config_id,
-                scan_params=scan_parameters,
-                scan_window_list=scan_window_list,
-                encoding=self.data_encoding)
+            self.save_scan(prod)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)
@@ -784,9 +898,9 @@ class MzMLSerializer(ScanSerializerBase):
         scan_parameters = []
         scan_window_list = []
         acquisition_info = scan.acquisition_information
-        filter_line = scan.annotations.get("filter_line")
-        if filter_line is not None:
-            scan_parameters.append({"name": "filter line", "value": filter_line})
+        filter_string = scan.annotations.get("filter_string")
+        if filter_string is not None:
+            scan_parameters.append({"name": "filter string", "value": filter_string})
         if acquisition_info is not None and len(acquisition_info) > 0:
             scan_event = acquisition_info[0]
             if scan_event.has_ion_mobility():
@@ -846,10 +960,13 @@ class MzMLSerializer(ScanSerializerBase):
         This closes the open list tags, empties the chromatogram accumulator,
         and closes the :obj:`<mzML>` tag, and attempts to flush the output file.
         """
-        self._spectrum_list_tag.__exit__(None, None, None)
-        self._make_default_chromatograms()
-        self.write_chromatograms()
-        self._run_tag.__exit__(None, None, None)
+        if self._spectrum_list_tag is not None:
+            self._spectrum_list_tag.__exit__(None, None, None)
+        if self._run_tag is not None:
+            self._make_default_chromatograms()
+            self.write_chromatograms()
+        if self._run_tag is not None:
+            self._run_tag.__exit__(None, None, None)
         self.writer.__exit__(None, None, None)
         if self.indexer is not None:
             try:
@@ -869,23 +986,11 @@ class MzMLSerializer(ScanSerializerBase):
             pass
 
     def format(self):
-        """Formats the output mzML document to be well indented
-        and wraps it in an :obj:`<indexedmzML>` structure.
-
-        This method calls :meth:`psims.mzml.writer.MzMLWriter.format`
-        which reads the entire document into memory, which may be
-        prohibitive for large documents.
+        """This method is no longer needed.
         """
-        try:
-            self.writer.format()
-        except OSError as e:
-            if on_windows and e.errno == 32:
-                pass
+        pass
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
+    def close(self):
         self.complete()
         if hasattr(self.handle, "closed"):
             if not self.handle.closed:
@@ -893,7 +998,11 @@ class MzMLSerializer(ScanSerializerBase):
                     self.handle.close()
                 except AttributeError:
                     pass
-        self.format()
+        else:
+            try:
+                self.handle.close()
+            except (AttributeError, ValueError, TypeError, OSError):
+                pass
 
 
 MzMLScanSerializer = MzMLSerializer
@@ -910,13 +1019,13 @@ def deserialize_deconvoluted_peak_set(scan_dict):
     for i in range(n):
         mz = mz_array[i]
         charge = charge_array[i]
-        peak = peak_set.DeconvolutedPeak(
+        peak = DeconvolutedPeak(
             neutral_mass(mz, charge), intensity_array[i], charge=charge, signal_to_noise=score_array[i],
             index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
             average_mass=0, score=score_array[i], envelope=envelopes[i], mz=mz
         )
         peaks.append(peak)
-    peaks = peak_set.DeconvolutedPeakSet(peaks)
+    peaks = DeconvolutedPeakSet(peaks)
     peaks._reindex()
     return peaks
 
@@ -950,12 +1059,27 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     """
 
-    def __init__(self, source_file, use_index=True):
-        MzMLLoader.__init__(self, source_file, use_index=use_index)
+    def __init__(self, source_file, use_index=True, use_extended_index=True):
+        super(ProcessedMzMLDeserializer, self).__init__(source_file, use_index=use_index, decode_binary=True)
         self.extended_index = None
         self._scan_id_to_rt = dict()
         self._sample_run = None
+        self._use_extended_index = use_extended_index
         if self._use_index:
+            if self._use_extended_index:
+                try:
+                    if self.has_index_file():
+                        self.read_index_file()
+                    else:
+                        self.build_extended_index()
+                except IOError:
+                    pass
+                except ValueError:
+                    pass
+                self._build_scan_id_to_rt_cache()
+
+    def require_extended_index(self):
+        if not self.has_extended_index():
             try:
                 if self.has_index_file():
                     self.read_index_file()
@@ -966,9 +1090,18 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             except ValueError:
                 pass
             self._build_scan_id_to_rt_cache()
+        return self.extended_index
 
-    def read_index_file(self):
-        with open(self._index_file_name) as handle:
+    def has_extended_index(self):
+        return self.extended_index is not None
+
+    def __reduce__(self):
+        return self.__class__, (self.source_file, self._use_index, self._use_extended_index)
+
+    def read_index_file(self, index_path=None):
+        if index_path is None:
+            index_path = self._index_file_name
+        with open(index_path) as handle:
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
@@ -978,12 +1111,44 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         return deserialize_peak_set(scan_dict)
 
     def has_index_file(self):
-        return os.path.exists(self._index_file_name)
+        try:
+            return os.path.exists(self._index_file_name)
+        except (TypeError, AttributeError):
+            return False
 
     def _make_sample_run(self):
         samples = self.samples()
-        sample = samples['sample'][0]
-        return SampleRun(name=sample['name'], uuid=sample['SampleRun-UUID'])
+        sample = samples[0]
+        return SampleRun(name=sample.name, uuid=sample['SampleRun-UUID'], **dict(sample.items()))
+
+    def _precursor_information(self, scan):
+        """Returns information about the precursor ion,
+        if any, that this scan was derived form.
+
+        Returns `None` if this scan has no precursor ion
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        PrecursorInformation
+        """
+        precursor = super(ProcessedMzMLDeserializer, self)._precursor_information(scan)
+        pinfo_dict = self._get_selected_ion(scan)
+        coisolation_params = pinfo_dict.get("ms_deisotope:coisolation", [])
+        if not isinstance(coisolation_params, list):
+            coisolation_params = [coisolation_params]
+        coisolation = []
+        for entry in coisolation_params:
+            mass, intensity, charge = entry.split(" ")
+            coisolation.append(
+                CoIsolation(float(mass), float(intensity), int(charge)))
+        precursor.coisolation = coisolation
+        return precursor
 
     @property
     def sample_run(self):
@@ -1003,40 +1168,27 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         except Exception:
             return {}
 
-    def iter_scan_headers(self, iterator=None):
+    def iter_scan_headers(self, iterator=None, grouped=True):
+        try:
+            if not self._has_ms1_scans():
+                grouped = False
+        except Exception:
+            pass
         self.reset()
         if iterator is None:
             iterator = iter(self._source)
-        precursor_scan = None
-        product_scans = []
 
         _make_scan = super(ProcessedMzMLDeserializer, self)._make_scan
         _validate = super(ProcessedMzMLDeserializer, self)._validate
 
-        current_level = 1
-        for scan in iterator:
-            packed = _make_scan(scan)
-            if not _validate(packed):
-                continue
-            if scan['ms level'] == 2:
-                if current_level < 2:
-                    current_level = 2
-                product_scans.append(packed)
-            elif scan['ms level'] == 1:
-                if current_level > 1:
-                    precursor_scan.product_scans = list(product_scans)
-                    yield ScanBunch(precursor_scan, product_scans)
-                else:
-                    if precursor_scan is not None:
-                        precursor_scan.product_scans = list(product_scans)
-                        yield ScanBunch(precursor_scan, product_scans)
-                precursor_scan = packed
-                product_scans = []
-            else:
-                raise Exception(
-                    "This object is not able to handle MS levels higher than 2")
-        if precursor_scan is not None:
-            yield ScanBunch(precursor_scan, product_scans)
+        if grouped:
+            impl = _GroupedScanIteratorImpl(iterator, _make_scan, _validate)
+        else:
+            impl = _SingleScanIteratorImpl(iterator, _make_scan, _validate)
+
+        for x in impl:
+            yield x
+
         self.reset()
 
     def get_scan_header_by_id(self, scan_id):
@@ -1067,7 +1219,10 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         if isinstance(self.source_file, basestring):
             return ExtendedScanIndex.index_file_name(self.source_file)
         else:
-            return ExtendedScanIndex.index_file_name(self.source_file.name)
+            try:
+                return ExtendedScanIndex.index_file_name(self.source_file.name)
+            except AttributeError:
+                return None
 
     def build_extended_index(self, header_only=True):
         self.reset()
@@ -1075,14 +1230,19 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         iterator = self
         if header_only:
             iterator = self.iter_scan_headers()
-        for bunch in iterator:
-            indexer.add_scan_bunch(bunch)
+        if self._has_ms1_scans():
+            for bunch in iterator:
+                indexer.add_scan_bunch(bunch)
+        else:
+            for scan in iterator:
+                indexer.add_scan(scan)
+
         self.reset()
         self.extended_index = indexer
         try:
             with open(self._index_file_name, 'w') as handle:
                 indexer.serialize(handle)
-        except (IOError, OSError, AttributeError) as err:
+        except (IOError, OSError, AttributeError, TypeError) as err:
             print(err)
 
     def _make_scan(self, data):
@@ -1100,7 +1260,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
             scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
                 data)
-            if scan.id in self.extended_index.ms1_ids:
+            if self.has_extended_index() and scan.id in self.extended_index.ms1_ids:
                 chosen_indices = self.extended_index.ms1_ids[
                     scan.id]['msms_peaks']
                 for ix in chosen_indices:
@@ -1109,6 +1269,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             scan.peak_set = self.deserialize_peak_set(data)
             scan.deconvoluted_peak_set = None
         packed = scan.pack()
+        packed.bind(self)
         return packed
 
     def convert_scan_id_to_retention_time(self, scan_id):
@@ -1120,7 +1281,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             return header.scan_time
 
     def _build_scan_id_to_rt_cache(self):
-        if self.extended_index:
+        if self.has_extended_index():
             for key in self.extended_index.ms1_ids:
                 self._scan_id_to_rt[key] = self.extended_index.ms1_ids[
                     key]['scan_time']
@@ -1132,9 +1293,9 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     def precursor_information(self):
         out = []
-        for key, info in self.extended_index.msn_ids.items():
+        for _, info in self.extended_index.msn_ids.items():
             mz = info['mz']
-            neutral_mass = info['neutral_mass']
+            prec_neutral_mass = info['neutral_mass']
             charge = info['charge']
             if charge == 'ChargeNotProvided':
                 charge = ChargeNotProvided
@@ -1145,7 +1306,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             defaulted = info.get('defaulted', False)
             pinfo = PrecursorInformation(
                 mz, intensity, charge, precursor_scan_id,
-                self, neutral_mass, charge, intensity,
+                self, prec_neutral_mass, charge, intensity,
                 product_scan_id=product_scan_id, orphan=orphan,
                 defaulted=defaulted)
             out.append(pinfo)
@@ -1174,9 +1335,9 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             current.append(header.arrays[1].sum())
         return np.array(current)
 
-    def msms_for(self, neutral_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
-        m = neutral_mass
-        w = neutral_mass * mass_error_tolerance
+    def msms_for(self, query_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
+        m = query_mass
+        w = query_mass * mass_error_tolerance
         lo = m - w
         hi = m + w
         out = []

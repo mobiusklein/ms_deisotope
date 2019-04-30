@@ -1,3 +1,10 @@
+'''**mzXML** is a standard XML-format for raw mass spectrometry data storage created
+by the Institute for Systems Biology, intended to be replaced with **mzML**.
+This module provides :class:`MzXMLLoader`, a :class:`~.RandomAccessScanSource`
+implementation.
+
+The parser is based on :mod:`pyteomics.mzxml`.
+'''
 from six import string_types as basestring
 
 import numpy as np
@@ -7,17 +14,17 @@ from .common import (
     ActivationInformation, IsolationWindow, ScanAcquisitionInformation,
     ScanEventInformation, ScanWindow,
     ComponentGroup, component, InstrumentInformation,
-    FileInformation, SourceFile)
+    FileInformation, ScanFileMetadataBase)
 from .metadata import data_transformation
 from .xml_reader import (
-    XMLReaderBase, IndexSavingXML, iterparse_until)
+    XMLReaderBase, iterparse_until)
 
 
-class _MzXMLParser(IndexSavingXML, mzxml.MzXML):
+class _MzXMLParser(mzxml.MzXML):
     pass
 
 
-class _MzXMLMetadataLoader(object):
+class _MzXMLMetadataLoader(ScanFileMetadataBase):
     def file_description(self):
         """Read the file provenance from the ``<parentFile>`` tags
         if any are present.
@@ -369,9 +376,8 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         Underlying scan data source
     """
 
-    @staticmethod
-    def prebuild_byte_offset_file(path):
-        return _MzXMLParser.prebuild_byte_offset_file(path)
+    _parser_cls = _MzXMLParser
+
 
     def __init__(self, source_file, use_index=True, **kwargs):
         self.source_file = source_file
@@ -388,6 +394,10 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         self.reset()
         self.make_iterator()
 
+    @property
+    def index(self):
+        return self._source.index['scan']
+
     def _get_scan_by_id_raw(self, scan_id):
         return self._source.get_by_id(scan_id, "num")
 
@@ -397,7 +407,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         index = dict()
         i = 0
         for scan, offset in self.index.items():
-            index[scan.decode("utf8")] = i
+            index[scan] = i
             i += 1
         self._scan_index_lookup = index
 
@@ -405,12 +415,10 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         return "m/z array" in scan._data
 
     def _yield_from_index(self, scan_source, start=None):
-        offset_provider = scan_source._offset_index.offsets
+        offset_provider = scan_source._offset_index['scan']
         keys = list(offset_provider.keys())
         if start is not None:
             if isinstance(start, basestring):
-                if isinstance(start, str):
-                    start = start.encode("utf8")
                 start = keys.index(start)
             elif isinstance(start, int):
                 start = start
@@ -419,7 +427,5 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
         else:
             start = 0
         for key in keys[start:]:
-            if isinstance(key, bytes):
-                key = key.decode("utf8")
             scan = scan_source.get_by_id(key, "num")
             yield scan

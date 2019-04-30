@@ -4,6 +4,15 @@ from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 from ms_deisotope._c.deconvoluter_base cimport DeconvoluterBase
 from ms_deisotope._c.averagine cimport TheoreticalIsotopicPattern
 
+ctypedef fused fit_collection:
+    list
+    set
+    object
+
+
+cdef double INFINITY = float('inf')
+
+
 cdef class IsotopicFitRecord(object):
     cdef:
         public FittedPeak seed_peak
@@ -14,7 +23,7 @@ cdef class IsotopicFitRecord(object):
         public FittedPeak monoisotopic_peak
         public int missed_peaks
         public object data
-        public long _hash
+        public Py_hash_t _hash
 
     @staticmethod
     cdef IsotopicFitRecord _create(FittedPeak seed_peak, double score, int charge, TheoreticalIsotopicPattern theoretical,
@@ -31,6 +40,8 @@ cdef class FitSelectorBase(object):
         public double minimum_score
 
     cpdef IsotopicFitRecord best(self, object results)
+    cdef IsotopicFitRecord _best_from_set(self, set results)
+
     cpdef bint reject(self, IsotopicFitRecord result)
     cpdef bint reject_score(self, double score)
     cpdef bint is_maximizing(self)
@@ -96,3 +107,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
     cpdef double _calculate_scale_factor(self, PeakSet peaklist)
     cdef void scale_fitted_peaks(self, list experimental, double factor)
     cdef void scale_theoretical_peaks(self, list theoretical, double factor)
+
+
+cdef class DotProductFitter(IsotopicFitterBase):
+    pass

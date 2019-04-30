@@ -31,6 +31,8 @@ cdef class Envelope:
 
     cpdef bint _eq(self, Envelope other)
 
+    cpdef Envelope clone(self)
+
     @staticmethod
     cdef Envelope _create(tuple pairs)
 
@@ -54,7 +56,7 @@ cdef class DeconvolutedPeak(PeakBase):
         public bint chosen_for_msms
 
     cpdef bint _eq(self, DeconvolutedPeak other)
-    
+
     @staticmethod
     cdef DeconvolutedPeak _create_simple(
         double neutral_mass, double intensity, int charge, double score,
@@ -73,6 +75,9 @@ cdef class DeconvolutedPeakSet(object):
 
 
     cpdef reindex(self)
+
+    cpdef DeconvolutedPeakSet clone(self)
+    cpdef DeconvolutedPeakSet copy(self)
 
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=*, bint use_mz=*)
 
@@ -96,14 +101,14 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         double* neutral_mass_array
         double* mz_array
         index_list* interval_index
-        
+
         size_t _size
 
     cdef void _build_index_arrays(self)
     cdef int _interval_for(self, double neutral_mass, double tolerance, size_t* start, size_t* end) nogil
 
 
-cdef size_t INTERVAL_INDEX_SIZE = 10000
+cdef size_t INTERVAL_INDEX_SIZE
 
 cdef struct index_cell:
     double center_value

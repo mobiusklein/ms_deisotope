@@ -2,7 +2,17 @@
 import numpy as np
 cimport numpy as np
 
-from ms_deisotope._c.peak_set cimport DeconvolutedPeakSetIndexed
+from ms_deisotope._c.peak_set cimport DeconvolutedPeakSetIndexed, PeakBase
+
+
+cdef double ppm_error(double x, double y)
+cdef double ppm2da(double mass, double error_tolerance)
+cdef double da2ppm(double mass, double error_tolerance)
+
+
+cpdef intensity_getter(peak)
+cpdef mz_getter(peak)
+cpdef mass_getter(peak)
 
 
 cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array)

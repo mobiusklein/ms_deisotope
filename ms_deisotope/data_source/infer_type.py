@@ -13,32 +13,6 @@ def register_type_guesser(reader_guesser):
     return reader_guesser
 
 
-try:
-    from .thermo_raw import (
-        ThermoRawLoader, infer_reader as _check_is_thermo_raw,
-        register_dll as register_thermo_dll)
-
-    reader_types.append(ThermoRawLoader)
-    register_type_guesser(_check_is_thermo_raw)
-
-except ImportError:  # pragma: no cover
-    def register_thermo_dll(*args, **kwargs):
-        pass
-
-
-try:
-    from .agilent_d import (
-        AgilentDLoader,
-        infer_reader as _check_is_agilent_d,
-        register_dll_dir as register_agilent_dll_dir)
-
-    reader_types.append(AgilentDLoader)
-    register_type_guesser(_check_is_agilent_d)
-except ImportError:  # pragma: no cover
-    def register_agilent_dll_dir(*args, **kwargs):
-        pass
-
-
 @register_type_guesser
 def guess_type_from_path(file_path):
     if hasattr(file_path, 'name'):
@@ -56,12 +30,23 @@ def guess_type_from_path(file_path):
 
 @register_type_guesser
 def guess_type_from_file_sniffing(file_path):
-    with open(file_path, 'rb') as handle:
+    is_random_access_file = is_random_access(file_path)
+    if is_random_access_file:
+        handle = file_path
         header = handle.read(1000)
+        handle.seek(0)
+    else:
+        with open(file_path, 'rb') as handle:
+            header = handle.read(1000)
 
     if _compression.starts_with_gz_magic(header):
-        with _compression.GzipFile(file_path, mode='rb') as handle:
+        if is_random_access_file:
+            handle = _compression.GzipFile(fileobj=file_path, mode='rb')
             header = handle.read(1000)
+            handle.seek(0)
+        else:
+            with _compression.GzipFile(file_path, mode='rb') as handle:
+                header = handle.read(1000)
 
     if b"mzML" in header:
         return MzMLLoader
@@ -89,7 +74,11 @@ def MSFileLoader(file_path, *args, **kwargs):
     random access.
     """
     reader_type = guess_type(file_path)
-    if os.path.isfile(file_path):
+    try:
+        is_file = os.path.isfile(file_path)
+    except TypeError:
+        is_file = False
+    if is_file:
         is_gz_compressed = _compression.test_gzipped(file_path)
         if is_gz_compressed:
             fobj = _compression.get_opener(file_path)
@@ -98,3 +87,43 @@ def MSFileLoader(file_path, *args, **kwargs):
     else:
         fobj = file_path
     return reader_type(fobj, *args, **kwargs)
+
+
+def is_random_access(fp):
+    return hasattr(fp, 'read') and hasattr(fp, 'seek')
+
+
+try:
+    from .thermo_raw import (
+        ThermoRawLoader, infer_reader as _check_is_thermo_raw,
+        register_dll as register_thermo_dll)
+
+    reader_types.append(ThermoRawLoader)
+    register_type_guesser(_check_is_thermo_raw)
+
+except ImportError:  # pragma: no cover
+    def register_thermo_dll(*args, **kwargs):
+        pass
+
+try:
+    from .thermo_raw_net import (
+        ThermoRawLoader as ThermoRawNetLoader, infer_reader as _check_is_thermo_raw_net,
+        register_dll as register_thermo_net_dll)
+    reader_types.append(ThermoRawNetLoader)
+    register_type_guesser(_check_is_thermo_raw_net)
+
+except ImportError:  # pragma: no cover
+    def register_thermo_net_dll(*args, **kwargs):
+        pass
+
+try:
+    from .agilent_d import (
+        AgilentDLoader,
+        infer_reader as _check_is_agilent_d,
+        register_dll_dir as register_agilent_dll_dir)
+
+    reader_types.append(AgilentDLoader)
+    register_type_guesser(_check_is_agilent_d)
+except ImportError:  # pragma: no cover
+    def register_agilent_dll_dir(*args, **kwargs):
+        pass

@@ -10,6 +10,7 @@ np.import_array()
 cdef:
     double sqrt2pi = sqrt(2 * pi)
     double sqrt2 = sqrt(2)
+    double SIGMA_EPSILON = 1e-3
 
 
 cdef double erf(double x):
@@ -38,47 +39,43 @@ cdef double erf(double x):
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cpdef skewed_gaussian_shape(np.ndarray[np.float64_t, ndim=1] xs, double center,
-                          double amplitude, double sigma, double gamma):
+                            double amplitude, double sigma, double gamma):
     cdef:
         np.ndarray[np.float64_t, ndim=1] temp
         size_t i, n
         double sigma_squared_2, xi, t, amp_over_sigma_sqrt2pi, sigma_sqrt2
 
     if sigma == 0:
-        sigma = 1e-3
+        sigma = SIGMA_EPSILON
 
-    sigma_squared_2 = (sigma * sqrt(2))
+    sigma_squared_2 = 2 * (sigma ** (2))
     amp_over_sigma_sqrt2pi = (amplitude) / (sigma * sqrt(2 * pi))
     sigma_sqrt2 = (sigma * sqrt(2))
 
-    temp = (xs - center)
+    temp = xs * 0
 
     n = temp.shape[0]
     for i in range(n):
         xi = xs[i]
-        t = -(xi ** 2) / (sigma_squared_2)
-        temp[i] *=  amp_over_sigma_sqrt2pi * exp(t)
-
-    for i in range(n):
-        xi = xs[i]
-        t = 1 + erf((gamma * (xi - center)) / sigma_sqrt2)
-        temp[i] *= t
+        t = -((xi - center) ** 2) / (sigma_squared_2)
+        temp[i] =  (amp_over_sigma_sqrt2pi * exp(t)) * (
+            1 + erf((gamma * (xi - center)) / sigma_sqrt2))
 
     return temp
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cpdef bigaussian_shape(np.ndarray[np.float64_t, ndim=1] xs, double center,
-                     double amplitude, double sigma_left, double sigma_right):
+                       double amplitude, double sigma_left, double sigma_right):
     cdef:
         np.ndarray[np.float64_t, ndim=1] temp
         size_t i, n, center_index
         double xi, t, two_sigma_left_squared, two_sigma_right_squared
 
     if sigma_left == 0:
-        sigma_left = 1e-3
+        sigma_left = SIGMA_EPSILON
     if sigma_right == 0:
-        sigma_right = 1e-3
+        sigma_right = SIGMA_EPSILON
 
     temp = xs * 0
     n = temp.shape[0]
@@ -90,10 +87,10 @@ cpdef bigaussian_shape(np.ndarray[np.float64_t, ndim=1] xs, double center,
         xi = xs[i]
         # left side
         if xi < center:
-            t = amplitude * exp(-(xi - center) ** 2 / two_sigma_left_squared) * sqrt2pi
+            t = amplitude / sqrt2pi * exp(-(xi - center) ** 2 / two_sigma_left_squared)
         # right side
         else:
-            t = amplitude * exp(-(xi - center) ** 2 / two_sigma_right_squared) * sqrt2pi
+            t = amplitude / sqrt2pi * exp(-(xi - center) ** 2 / two_sigma_right_squared)
         temp[i] = t
     return temp
 
@@ -101,14 +98,14 @@ cpdef bigaussian_shape(np.ndarray[np.float64_t, ndim=1] xs, double center,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cpdef gaussian_shape(np.ndarray[np.float64_t, ndim=1] xs, double center,
-                   double amplitude, double sigma):
+                     double amplitude, double sigma):
     cdef:
         np.ndarray[np.float64_t, ndim=1] temp
         size_t i, n
         double xi, t, two_sigma_squared
 
     if sigma == 0:
-        sigma = 1e-3
+        sigma = SIGMA_EPSILON
 
     two_sigma_squared = (2 * sigma ** 2)
 
@@ -117,7 +114,7 @@ cpdef gaussian_shape(np.ndarray[np.float64_t, ndim=1] xs, double center,
 
     for i in range(n):
         xi = xs[i]
-        t = amplitude * exp(-(xi - center) ** 2 / two_sigma_squared) * sqrt2pi
+        t = (amplitude / (sigma * sqrt2pi)) * exp(-(xi - center) ** 2 / two_sigma_squared)
         temp[i] = t
 
     return temp

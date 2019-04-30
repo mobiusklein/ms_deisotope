@@ -1,3 +1,9 @@
+'''
+ms_deisotope
+------------
+A deisotoping and charge state deconvolution library for high resolution mass spectra
+with integrated support for reading and writing common mass spectrometry data formats.
+'''
 try:
     import dill
 except ImportError:
@@ -22,6 +28,12 @@ from .data_source import MzMLLoader, MzXMLLoader, MSFileLoader
 
 
 def get_include():
+    """Get the include path for C extension headers.
+
+    Returns
+    -------
+    :class:`str`
+    """
     import os
     return os.path.join(
         os.path.dirname(__file__),

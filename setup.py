@@ -1,6 +1,8 @@
 import sys
 import traceback
 import os
+import platform
+
 from setuptools import setup, Extension, find_packages
 
 from distutils.command.build_ext import build_ext
@@ -23,6 +25,26 @@ def has_option(name):
 
 include_diagnostics = has_option("include-diagnostics")
 force_cythonize = has_option("force-cythonize")
+no_openmp = has_option('no-openmp')
+
+with_openmp = not no_openmp
+
+
+def configure_openmp(ext):
+    # http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092 was required.
+    if os.name == 'nt' and with_openmp:
+        ext.extra_compile_args.append("/openmp")
+    elif platform.system() == 'Darwin':
+        pass
+    elif with_openmp:
+        ext.extra_compile_args.append("-fopenmp")
+        ext.extra_link_args.append("-fopenmp")
+
+
+def OpenMPExtension(*args, **kwargs):
+    ext = Extension(*args, **kwargs)
+    configure_openmp(ext)
+    return ext
 
 
 def make_extensions():
@@ -91,6 +113,18 @@ def make_extensions():
             Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
                       sources=['ms_deisotope/_c/peak_dependency_network/intervals.pyx'],
                       include_dirs=[numpy.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.peak_dependency_network.subgraph',
+                      sources=['ms_deisotope/_c/peak_dependency_network/subgraph.pyx'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
+                      sources=['ms_deisotope/_c/peak_dependency_network/peak_network.pyx'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.spectrum_graph',
+                      sources=['ms_deisotope/_c/spectrum_graph.pyx'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            OpenMPExtension(
+                name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.pyx"],
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
         ], compiler_directives=cython_directives, force=force_cythonize)
     except ImportError:
         extensions = ([
@@ -126,6 +160,18 @@ def make_extensions():
             Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
                       sources=['ms_deisotope/_c/peak_dependency_network/intervals.c'],
                       include_dirs=[numpy.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.peak_dependency_network.subgraph',
+                      sources=['ms_deisotope/_c/peak_dependency_network/subgraph.c'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
+                      sources=['ms_deisotope/_c/peak_dependency_network/peak_network.c'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.spectrum_graph',
+                      sources=['ms_deisotope/_c/spectrum_graph.c'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            OpenMPExtension(
+                name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.c"],
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()])
         ])
     return extensions
 
@@ -184,11 +230,28 @@ def status_msgs(*msgs):
 
 install_requires = [
     "numpy",
+    "scipy",
+    "six",
+    "dill",
     "ms_peak_picker",
     "brain-isotopic-distribution",
-    "pyteomics",
+    "pyteomics >= 4.0",
     "lxml",
+    "psims >= 0.1.19",
 ]
+
+
+extra_requires = {
+    "com": [
+        "comtypes"
+    ],
+    "net": [
+        "pythonnet"
+    ]
+}
+
+
+extra_requires['all'] = [dep for feature_reqs in extra_requires.values() for dep in feature_reqs]
 
 
 def run_setup(include_cext=True):
@@ -222,13 +285,14 @@ def run_setup(include_cext=True):
         entry_points={
             'console_scripts': [
                 "ms-index = ms_deisotope.tools.indexing:main",
-                "ms-view = ms_deisotope.tools.view:main"
+                "ms-view = ms_deisotope.tools.view:main",
+                "ms-deisotope = ms_deisotope.tools.deisotoper.main:deisotope",
             ],
         },
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Science/Research',
-            'License :: OSI Approved :: BSD License',
+            'License :: OSI Approved :: Apache Software License',
             'Topic :: Scientific/Engineering :: Bio-Informatics'],
         install_requires=install_requires,
         include_package_data=True,

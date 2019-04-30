@@ -7,7 +7,26 @@ class SpanningMixin(object):
     dimension contains or overlaps with another entity in
     that same dimension.
     """
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
     def __contains__(self, i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : Number
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
+        return self.contains(i)
+
+    def contains(self, i):
         """Tests for point inclusion, `start <= i <= end`
 
         Parameters
@@ -230,33 +249,32 @@ class IntervalTreeNode(object):
             from all spanning nodes' `contained` list.
         """
         result = []
-        if (start < self.start and end >= self.end):
+        if start > self.end:
+            return result
+        if end < self.start:
+            return result
+        elif start <= self.start:
+            if end < self.start:
+                return result
+            else:
+                if self.left is not None:
+                    result.extend(self.left.overlaps(start, end))
+                result.extend(self._overlaps_interval(start, end))
+                if self.right is not None and end >= self.right.start:
+                    result.extend(self.right.overlaps(start, end))
+        elif start > self.start:
+            if self.left is not None and self.left.end >= start:
+                result.extend(self.left.overlaps(start, end))
+            result.extend(self._overlaps_interval(start, end))
+            if self.right is not None and end >= self.right.start:
+                result.extend(self.right.overlaps(start, end))
+        elif end > self.start:
             if self.left is not None:
                 result.extend(self.left.overlaps(start, end))
             result.extend(self._overlaps_interval(start, end))
-            return result
-        elif start >= self.start and end >= self.end:
-            if self.right is not None:
+            if self.right is not None and end >= self.right.start:
                 result.extend(self.right.overlaps(start, end))
-            result.extend(self._overlaps_interval(start, end))
-            return result
-        elif start > self.start and end <= self.end:
-            return self._overlaps_interval(start, end)
-        elif self.start > end:
-            if self.left is not None:
-                return self.left.overlaps(start, end)
-            return result
-        elif self.end < start:
-            if self.right is not None:
-                return self.right.overlaps(start, end)
-            return result
-        else:
-            if self.left is not None:
-                result.extend(self.left.overlaps(start, end))
-            result.extend(self._overlaps_interval(start, end))
-            if self.right is not None:
-                result.extend(self.right.overlaps(start, end))
-            return result
+        return result
 
     def node_contains(self, point):
         return self.start <= point <= self.end
@@ -394,6 +412,8 @@ def iterative_build_interval_tree(cls, intervals):
     """
     stack = []
     root = cls(0, None, [], None, -1)
+    if not intervals:
+        return root
 
     stack.append((root, intervals, "left"))
 
@@ -494,6 +514,8 @@ try:
     has_c = True
     _SpanningMixin = SpanningMixin
     _Interval = Interval
-    from ms_deisotope._c.peak_dependency_network.intervals import SpanningMixin, Interval
+    _IntervalTreeNode = IntervalTreeNode
+    from ms_deisotope._c.peak_dependency_network.intervals import (
+        SpanningMixin, Interval, IntervalTreeNode)
 except ImportError:
     has_c = False

@@ -1,15 +1,33 @@
-import json
-import os
+'''A common set of methods that are shared by
+all :mod:`pyteomics`-based XML file readers.
+'''
+
 import warnings
-from .common import (
-    RandomAccessScanSource)
+
 from lxml import etree
 from lxml.etree import XMLSyntaxError
+
 from pyteomics import xml
 from pyteomics.xml import unitfloat
 
+from .common import (
+    RandomAccessScanSource)
+from ._compression import get_opener
+
 
 def in_minutes(x):
+    '''Convert a time quantity to minutes
+
+    Parameters
+    ----------
+    x: unitfloat
+        A float representing a quantity of time annotated with a time unit
+
+    Returns
+    -------
+    unitfloat:
+        The time after conversion to minutes
+    '''
     try:
         unit = x.unit_info
     except AttributeError:
@@ -36,12 +54,49 @@ class XMLReaderBase(RandomAccessScanSource):
         The byte offset index used to achieve fast random access
     '''
 
+    _parser_cls = None
+
+
+    @classmethod
+    def prebuild_byte_offset_file(cls, path):
+        """Parse the file given by `path`, generating a byte offset index in
+        JSON format and save it to disk for future use.
+
+        This method is intended to provide a way to save time during repeated
+        instantiation of this type over the same file by removing the need to
+        do a full scan of the file to rebuild of the offset index each time.
+
+        .. note::
+
+            This assumes that `path` is either a path to a file in a directory
+            which the invoking user has read and write access to, or that it is
+            a file-like object whose `name` attribute gives a path that satisfies
+            the same requirements.
+
+        Parameters
+        ----------
+        path : :class:`str` or file-like
+            The path to the file to index, or a file-like object with a name attribute.
+        """
+        return cls._parser_cls.prebuild_byte_offset_file(get_opener(path))
+
     @property
     def index(self):
+        '''The byte offset index used to achieve fast random access.
+
+        Maps :class:`~.ScanBase` IDs to the byte offsets, implying
+        the order the scans reside in the file.
+
+        Returns
+        -------
+        :class:`pyteomics.xml.ByteEncodingOrderedDict`
+        '''
         return self._source._offset_index
 
     @property
     def source(self):
+        '''The file parser that this reader consumes.
+        '''
         return self._source
 
     @source.setter
@@ -49,6 +104,8 @@ class XMLReaderBase(RandomAccessScanSource):
         self._source = value
 
     def close(self):
+        '''Close the underlying reader.
+        '''
         if self.source is not None:
             self.source.close()
             self.source = None
@@ -161,7 +218,6 @@ class XMLReaderBase(RandomAccessScanSource):
         while hi != lo:
             mid = (hi + lo) // 2
             sid = scan_ids[mid]
-            sid = sid.decode('utf-8')
             scan = self.get_scan_by_id(sid)
             if not self._validate(scan):
                 sid = scan_ids[mid - 1]
@@ -204,9 +260,12 @@ class XMLReaderBase(RandomAccessScanSource):
         if not self._use_index:
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
         index_keys = tuple(self.index)
-        id_bytes = index_keys[index]
-        id_str = id_bytes.decode("utf-8")
-        return self.get_scan_by_id(id_str)
+        id_str = index_keys[index]
+        scan = self.get_scan_by_id(id_str)
+        if not self._validate(scan):
+            warnings.warn("index %d, id=%r does not appear to be a mass spectrum. Most behaviors will fail." % (
+                index, id_str), stacklevel=2)
+        return scan
 
     def _yield_from_index(self, scan_source, start):
         raise NotImplementedError()
@@ -265,110 +324,10 @@ class XMLReaderBase(RandomAccessScanSource):
         return self
 
     def __repr__(self):
-        return "{self.__class__.__name__}({self.source_file!r})".format(self=self)
+        return "{self.__class__.__name__}({self.source_file!r})".format(self=self) # pylint: disable=missing-format-attribute
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index)
-
-
-def save_byte_index(index, fp):
-    """Write the byte offset index to the provided
-    file
-
-    Parameters
-    ----------
-    index : ByteEncodingOrderedDict
-        The byte offset index to be saved
-    fp : file
-        The file to write the index to
-
-    Returns
-    -------
-    file
-    """
-    encoded_index = dict()
-    for key, offset in index.items():
-        encoded_index[key.decode("utf8")] = offset
-    json.dump(encoded_index, fp)
-    return fp
-
-
-def load_byte_index(fp):
-    """Read a byte offset index from a file
-
-    Parameters
-    ----------
-    fp : file
-        The file to read the index from
-
-    Returns
-    -------
-    ByteEncodingOrderedDict
-    """
-    data = json.load(fp)
-    index = xml.ByteEncodingOrderedDict()
-    for key, value in sorted(data.items(), key=lambda x: x[1]):
-        index[key] = value
-    return index
-
-
-class PrebuiltOffsetIndex(xml.FlatTagSpecificXMLByteIndex):
-    """An Offset Index class which just holds offsets
-    and performs no extra scanning effort.
-
-    Attributes
-    ----------
-    offsets : ByteEncodingOrderedDict
-    """
-
-    def __init__(self, offsets):
-        self.offsets = offsets
-
-
-class IndexSavingXML(xml.IndexedXML):
-    """An extension to the IndexedXML type which
-    adds facilities to read and write the byte offset
-    index externally.
-    """
-
-    _save_byte_index_to_file = staticmethod(save_byte_index)
-    _load_byte_index_from_file = staticmethod(load_byte_index)
-
-    @property
-    def _byte_offset_filename(self):
-        try:
-            path = self._source.name
-        except AttributeError:
-            return None
-        byte_offset_filename = os.path.splitext(path)[0] + '-byte-offsets.json'
-        return byte_offset_filename
-
-    def _check_has_byte_offset_file(self):
-        path = self._byte_offset_filename
-        if path is None:
-            return False
-        return os.path.exists(path)
-
-    def _read_byte_offsets(self):
-        with open(self._byte_offset_filename, 'r') as f:
-            index = PrebuiltOffsetIndex(self._load_byte_index_from_file(f))
-            self._offset_index = index
-
-    def _write_byte_offsets(self):
-        with open(self._byte_offset_filename, 'w') as f:
-            self._save_byte_index_to_file(self._offset_index, f)
-
-    @xml._keepstate
-    def _build_index(self):
-        try:
-            self._read_byte_offsets()
-        except (IOError, TypeError):
-            super(IndexSavingXML, self)._build_index()
-
-    @classmethod
-    def prebuild_byte_offset_file(cls, path):
-        inst = cls(path, use_index=True)
-        inst._write_byte_offsets()
 
 
 @xml._keepstate
@@ -379,6 +338,21 @@ def _find_section(source, section):
 
 @xml._keepstate
 def get_tag_attributes(source, tag_name):
+    '''Iteratively parse XML stream in ``source`` until encountering ``tag_name``
+    at which point parsing terminates and return the attributes of the matched
+    tag.
+
+    Parameters
+    ----------
+    source: file-like
+        A file-like object over an XML document
+    tag_name: str
+        The name of the XML tag to parse until
+
+    Returns
+    -------
+    dict
+    '''
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:
         if event == 'start':
@@ -393,6 +367,23 @@ def get_tag_attributes(source, tag_name):
 
 @xml._keepstate
 def iterparse_until(source, target_name, quit_name):
+    '''Iteratively parse XML stream in ``source``, yielding XML elements
+    matching ``target_name``. If at any point a tag matching ``quit_name``
+    is encountered, stop parsing.
+
+    Parameters
+    ----------
+    source: file-like
+        A file-like object over an XML document
+    tag_name: str
+        The name of the XML tag to parse until
+    quit_name: str
+        The name to stop parsing at.
+
+    Yields
+    ------
+    lxml.etree.Element
+    '''
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:
         if event == 'start':

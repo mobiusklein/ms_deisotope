@@ -3,8 +3,13 @@
 import operator
 
 cimport cython
-from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice, PyTuple_GET_SIZE
+from cpython.tuple cimport (PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice,
+                            PyTuple_GET_SIZE, PyTuple_New, PyTuple_SetItem)
 from cpython.list cimport PyList_Append, PyList_AsTuple
+from cpython.ref cimport Py_INCREF
+from cpython.bytearray cimport PyByteArray_FromStringAndSize
+
+from libc.string cimport memcpy
 from libc.math cimport fabs
 from libc.stdlib cimport malloc, free
 
@@ -31,6 +36,53 @@ neutral_mass_getter = operator.attrgetter("neutral_mass")
 mz_getter = operator.attrgetter('mz')
 
 
+cpdef _Index_reconstructor(object neutral_mass, object mz=None):
+    if isinstance(neutral_mass, int):
+        return _Index._create(neutral_mass, mz)
+    elif isinstance(neutral_mass, bytearray):
+        return _Index_from_bytes(neutral_mass)
+    else:
+        raise TypeError(type(neutral_mass))
+
+
+cpdef _Index_to_bytes(_Index index):
+    cdef:
+        size_t j, m
+        char* buff
+        np.uint64_t n
+        bytearray out
+
+    m = sizeof(np.uint64_t) * 2
+    buff = <char*>malloc(sizeof(char) * m)
+    j = 0
+    n = index.neutral_mass
+    memcpy(&buff[j], &n, sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    n = index.mz
+    memcpy(&buff[j], &n, sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    out = PyByteArray_FromStringAndSize(<char*>buff, m)
+    free(buff)
+    return out
+
+
+cpdef _Index_from_bytes(bytearray view):
+    cdef:
+        size_t j
+        np.uint64_t val
+        char* buff
+        _Index inst
+    inst = _Index._create(0, 0)
+    j = 0
+    buff = view
+    memcpy(&val, &buff[j], sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    inst.neutral_mass = val
+    memcpy(&val, &buff[j], sizeof(np.uint64_t))
+    j += sizeof(np.uint64_t)
+    inst.mz = val
+    return inst
+
 @cython.freelist(100000)
 cdef class _Index(object):
     """
@@ -55,7 +107,7 @@ cdef class _Index(object):
         return _Index._create(self.neutral_mass, self.mz)
 
     def __reduce__(self):
-        return _Index, (self.neutral_mass, self.mz)
+        return _Index_reconstructor, (self.neutral_mass, self.mz)
 
     @staticmethod
     cdef _Index _create(size_t neutral_mass, size_t mz):
@@ -68,7 +120,7 @@ cdef class _Index(object):
 
 
 @cython.freelist(1000000)
-cdef class EnvelopePair:
+cdef class EnvelopePair(object):
 
     def __init__(self, mz, intensity):
         self.mz = mz
@@ -108,6 +160,71 @@ cdef class EnvelopePair:
         inst.mz = mz
         inst.intensity = intensity
         return inst
+
+    def __repr__(self):
+        return "(%0.4f, %0.2f)" % (self.mz, self.intensity)
+
+
+@cython.boundscheck(False)
+cpdef bytearray Envelope_to_bytes(Envelope self):
+    cdef:
+        size_t i, j, m
+        EnvelopePair pair
+        char* buff
+        np.uint32_t n
+        np.float64_t val
+        bytearray out
+
+    n = self.get_size()
+    m = sizeof(np.uint32_t) + sizeof(np.float64_t) * n * 2
+    buff = <char*>malloc(sizeof(char) * m)
+    j = 0
+    memcpy(&buff[j], &n, sizeof(np.uint32_t))
+    j += sizeof(np.uint32_t)
+    for i in range(n):
+        pair = self.getitem(i)
+        val = pair.mz
+        memcpy(&buff[j], &val, sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+        val = pair.intensity
+        memcpy(&buff[j], &val, sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+    out = PyByteArray_FromStringAndSize(<char*>buff, m)
+    free(buff)
+    return out
+
+
+cpdef Envelope_from_bytes(bytearray view):
+    cdef:
+        size_t i, j, m
+        EnvelopePair pair
+        np.uint32_t n
+        np.float64_t val
+        char* buff
+        tuple result
+    j = 0
+    buff = view
+    memcpy(&n, &buff[j], sizeof(np.uint32_t))
+    j += sizeof(np.uint32_t)
+    result = PyTuple_New(n)
+    for i in range(n):
+        pair = EnvelopePair._create(0, 0)
+        memcpy(&pair.mz, &buff[j], sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+        memcpy(&pair.intensity, &buff[j], sizeof(np.float64_t))
+        j += sizeof(np.float64_t)
+        Py_INCREF(pair)
+        PyTuple_SetItem(result, i, pair)
+    return Envelope._create(result)
+
+@cython.boundscheck(False)
+cpdef Envelope_reconstructor(object value):
+    if isinstance(value, tuple):
+        return Envelope._create(value)
+    elif isinstance(value, bytearray):
+        return Envelope_from_bytes(value)
+    else:
+        raise TypeError(type(value))
 
 
 @cython.freelist(100000)
@@ -168,11 +285,25 @@ cdef class Envelope(object):
         elif code == 3:
             return not (self._eq(other))
 
-    def clone(self):
-        return self.__class__(self)
+    cpdef Envelope clone(self):
+        cdef:
+            tuple duplicate
+            size_t i, n
+            EnvelopePair pair, dup_pair
+        n = self.get_size()
+        duplicate = PyTuple_New(n)
+        for i in range(n):
+            pair = self.getitem(i)
+            dup_pair = EnvelopePair._create(pair.mz, pair.intensity)
+            Py_INCREF(dup_pair)
+            PyTuple_SetItem(duplicate, i, dup_pair)
+        return Envelope._create(duplicate)
 
     def __reduce__(self):
-        return Envelope, (self.pairs,)
+        return (
+            Envelope_reconstructor,
+            (Envelope_to_bytes(self),))
+            # (self.pairs, ))
 
     @staticmethod
     cdef Envelope _create(tuple pairs):
@@ -224,6 +355,8 @@ cdef class DeconvolutedPeak(PeakBase):
             index = _Index._create(0, 0)
         elif index == -1:
             index = _Index._create(0, 0)
+        if envelope is None:
+            envelope = ()
         self.neutral_mass = neutral_mass
         self.intensity = intensity
         self.signal_to_noise = signal_to_noise
@@ -234,7 +367,10 @@ cdef class DeconvolutedPeak(PeakBase):
         self.most_abundant_mass = most_abundant_mass
         self.average_mass = average_mass
         self.score = score
-        self.envelope = Envelope(envelope)
+        if not isinstance(envelope, Envelope):
+            self.envelope = Envelope(envelope)
+        else:
+            self.envelope = envelope
         self.mz = mz or mass_charge_ratio(self.neutral_mass, self.charge)
         self.fit = fit
         self.chosen_for_msms = chosen_for_msms
@@ -423,11 +559,25 @@ cdef class DeconvolutedPeakSet:
     def __iter__(self):
         return iter(self.peaks)
 
-    def clone(self):
-        return self.__class__(tuple(p.clone() for p in self))
+    cpdef DeconvolutedPeakSet clone(self):
+        return self.copy()
+
+    cpdef DeconvolutedPeakSet copy(self):
+        cdef:
+            tuple duplicate_peaks
+            DeconvolutedPeak peak
+            size_t i, n
+        n = self.get_size()
+        duplicate_peaks = PyTuple_New(n)
+        for i in range(n):
+            peak = self.getitem(i)
+            peak = peak.clone()
+            Py_INCREF(peak)
+            PyTuple_SetItem(duplicate_peaks, i, peak)
+        return self.__class__(duplicate_peaks)
 
     def __reduce__(self):
-        return DeconvolutedPeakSet, (self.peaks, )
+        return self.__class__, (self.peaks, )
 
     cdef DeconvolutedPeak _has_peak(self, double neutral_mass, double error_tolerance=1e-5, bint use_mz=False):
         '''Find the peak that best matches ``neutral_mass`` within ``error_tolerance`` mass accuracy ppm.
@@ -927,10 +1077,13 @@ def decode_envelopes(np.ndarray[cython.floating, ndim=1, mode='c'] array):
     return envelope_list
 
 
+INTERVAL_INDEX_SIZE = 0
+
 cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
     def __init__(self, peaks):
         self.neutral_mass_array = NULL
         self.mz_array = NULL
+        self.interval_index = NULL
         super(DeconvolutedPeakSetIndexed, self).__init__(peaks)
 
     def __dealloc__(self):
@@ -947,6 +1100,11 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             free_index_list(self.interval_index)
             self.interval_index = NULL
 
+    def set_interval_index_size(self, index_size):
+        global INTERVAL_INDEX_SIZE
+        INTERVAL_INDEX_SIZE = index_size
+        self.reindex()
+
     cdef void _build_index_arrays(self):
         cdef:
             size_t i, n
@@ -962,7 +1120,9 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
             self.neutral_mass_array[i] = peak.neutral_mass
             self.mz_array[peak._index.mz] = peak.mz
 
-        if n > 2:
+        # The interpolating interval index is just a bit slower than
+        # the normal binary search, likely due to cache friendliness.
+        if n > 2 and INTERVAL_INDEX_SIZE > 0:
             if self.interval_index != NULL:
                 free_index_list(self.interval_index)
                 self.interval_index = NULL

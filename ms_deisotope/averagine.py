@@ -10,6 +10,7 @@ from brainpy.composition import (
     PyComposition)
 
 from .utils import dict_proxy
+from .constants import IGNORE_BELOW, TRUNCATE_AFTER
 
 
 class TheoreticalIsotopicPattern(object):
@@ -208,12 +209,57 @@ class TheoreticalIsotopicPattern(object):
             scale_factor = scales / weights
             for peak in self:
                 peak.intensity *= scale_factor
-
+        elif method == 'top3':
+            top1 = 0
+            top2 = 0
+            top3 = 0
+            top1_index = 0
+            top2_index = 0
+            top3_index = 0
+            for i, peak in enumerate(self):
+                if peak.intensity > top1:
+                    top3 = top2
+                    top3_index = top2_index
+                    top2 = top1
+                    top2_index = top1_index
+                    top1 = peak.intensity
+                    top1_index = i
+                elif peak.intensity > top2:
+                    top3 = top2
+                    top3_index = top2_index
+                    top2 = peak.intensity
+                    top2_index = i
+                elif peak.intensity > top3:
+                    top3 = peak.intensity
+                    top3_index = i
+            scale = experimental_distribution[top1_index].intensity / self[top1_index].intensity
+            scale += experimental_distribution[top2_index].intensity / self[top2_index].intensity
+            scale += experimental_distribution[top3_index].intensity / self[top3_index].intensity
+            scale /= 3
+            for peak in self:
+                peak.intensity *= scale
         return self
 
     def scale_raw(self, scale_factor):
         for peak in self:
             peak.intensity *= scale_factor
+        return self
+
+    def drop_last_peak(self):
+        tail = self[-1]
+        scaler = 1 - tail.intensity
+        for p in self[:-1]:
+            p.intensity /= scaler
+        return scaler
+
+    def total(self):
+        return sum(p.intensity for p in self)
+
+    def normalize(self):
+        total = self.total()
+        for peak in self:
+            peak.intensity /= total
+        return self
 
 
 @dict_proxy("base_composition")
@@ -279,7 +325,8 @@ class Averagine(object):
 
         return scaled
 
-    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
+    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                         ignore_below=IGNORE_BELOW):
         """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
         by theoretical peak height and density.
 
@@ -312,6 +359,9 @@ class Averagine(object):
         if ignore_below > 0:
             tid.ignore_below(ignore_below)
         return tid
+
+    def __call__(self, mz, charge=1, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+        return self.isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
 
     def __repr__(self):
         return "Averagine(%r)" % self.base_composition
@@ -405,7 +455,11 @@ class AveragineCache(object):
         self.averagine = Averagine(averagine)
         self.cache_truncation = cache_truncation
 
-    def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
+    def __call__(self, mz, charge=1, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+        return self.isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
+
+    def has_mz_charge_pair(self, mz, charge=1, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                           ignore_below=IGNORE_BELOW):
         if self.cache_truncation == 0.0:
             key_mz = mz
         else:
@@ -418,7 +472,8 @@ class AveragineCache(object):
             self.backend[key_mz, charge, charge_carrier] = tid.clone()
             return tid
 
-    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=0.95, ignore_below=0.0):
+    def isotopic_cluster(self, mz, charge=1, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,
+                         ignore_below=IGNORE_BELOW):
         """Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
         by theoretical peak height and density.
 
@@ -435,7 +490,7 @@ class AveragineCache(object):
             The mass of the charge carrier. Defaults to the mass of a proton.
         truncate_after : float, optional
             The percentage of the signal in the theoretical isotopic pattern to include.
-            Defaults to 0.95, including the first 95% of the signal in the generated pattern
+            Defaults to TRUNCATE_AFTER, including the first 95% of the signal in the generated pattern
         ignore_below : float, optional
             Omit theoretical peaks whose intensity is below this number.
             Defaults to 0.0
@@ -452,6 +507,13 @@ class AveragineCache(object):
 
     def clear(self):
         self.backend.clear()
+
+    def populate(self, min_mz=10, max_mz=3000, min_charge=1, max_charge=8, charge_carrier=PROTON,
+                 truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+        for i in range(int(min_mz), int(max_mz)):
+            for j in range(min(max_charge, min_charge), max(min_charge, max_charge)):
+                self.isotopic_cluster(i, j, PROTON, TRUNCATE_AFTER, IGNORE_BELOW)
+        return self
 
 
 try:

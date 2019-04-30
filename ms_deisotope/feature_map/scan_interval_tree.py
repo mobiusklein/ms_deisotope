@@ -32,31 +32,6 @@ def extract_intervals(scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
     return intervals
 
 
-def combine_intervals(a, b):
-    min_mz = min(a[0].start, b[0].start)
-    max_mz = max(a[0].end, b[0].end)
-    min_rt = min(a[1].start, b[1].start)
-    max_rt = max(a[1].end, b[1].end)
-    return (Interval(min_mz, max_mz), Interval(min_rt, max_rt))
-
-
-def overlaps_2d(a, b):
-    return a[0].overlaps(b[0]) and a[1].overlaps(b[1])
-
-
-def merge_interval_set(intervals, minimum_overlap_size=0.3):
-    merged_intervals = []
-    for interval in intervals:
-        for i, candidate in enumerate(merged_intervals):
-            if interval.overlaps(candidate) and interval.mz.overlap_size(candidate.mz) > (
-                    (interval.mz.end - interval.mz.start) * minimum_overlap_size):
-                merged_intervals[i] = interval.merge(candidate)
-                break
-        else:
-            merged_intervals.append(interval)
-    return merged_intervals
-
-
 def nest_2d_intervals(intervals):
     out = []
     for interval in intervals:

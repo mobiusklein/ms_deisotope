@@ -3,17 +3,44 @@
 cimport cython
 from cpython.list cimport PyList_Append, PyList_GET_ITEM
 
-from libc.math cimport sqrt, exp, pi
-
 import numpy as np
 cimport numpy as np
 
 from ms_deisotope._c.peak_set cimport (
-    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSetIndexed)
+    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSetIndexed, PeakBase)
 from ms_deisotope._c.averagine cimport neutral_mass
 
 
 np.import_array()
+
+
+@cython.cdivision(True)
+cdef double ppm_error(double x, double y):
+    return (x - y) / y
+
+
+cdef double ppm2da(double mass, double error_tolerance):
+    x = mass + mass * error_tolerance
+    return x - mass
+
+
+@cython.cdivision(True)
+cdef double da2ppm(double mass, double error_tolerance):
+    x = mass + error_tolerance
+    return (x - mass) / mass
+
+
+cpdef intensity_getter(peak):
+    return (<PeakBase>peak).intensity
+
+
+cpdef mz_getter(peak):
+    return (<PeakBase>peak).mz
+
+
+cpdef mass_getter(peak):
+    return (<DeconvolutedPeak>peak).neutral_mass
+
 
 
 @cython.boundscheck(False)

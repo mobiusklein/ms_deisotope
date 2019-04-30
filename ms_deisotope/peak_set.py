@@ -136,8 +136,11 @@ class DeconvolutedPeak(Base):
         self.area = area
 
     def __eq__(self, other):
-        return (abs(self.neutral_mass - other.neutral_mass) < 1e-4) and (
-            abs(self.intensity - other.intensity) < 1e-4)
+        epsilon = 1e-3
+        return (abs(self.neutral_mass - other.neutral_mass) < epsilon) and (
+            abs(self.intensity - other.intensity) < epsilon) and (
+            self.charge == other.charge) and (
+            abs(self.score - other.score) < epsilon)
 
     def __ne__(self, other):
         return not (self == other)
@@ -229,7 +232,7 @@ class DeconvolutedPeakSet(Base):
         -------
         self: DeconvolutedPeakSet
         """
-        self._reindex()
+        return self._reindex()
 
     def _reindex(self):
         """
@@ -290,6 +293,9 @@ class DeconvolutedPeakSet(Base):
     def clone(self):
         return self.__class__(tuple(p.clone() for p in self))
 
+    def copy(self):
+        return self.clone()
+
     def __eq__(self, other):
         try:
             return self.peaks == other.peaks
@@ -321,6 +327,36 @@ class DeconvolutedPeakSet(Base):
                 acc.append(peak.clone())
 
         return self.__class__(acc)._reindex()
+
+
+def merge(peaks_a, peaks_b, copy=True):
+    '''Combine two :class:`DeconvolutedPeakSet` objects.
+
+    Parameters
+    ----------
+    peaks_a: :class:`DeconvolutedPeakSet`
+    peaks_b: :class:`DeconvolutedPeakSet`
+    copy: bool
+        Whether or not to copy the peaks first. If not,
+        the two input peak sets should not be used again
+        as their indices will have been corrupted.
+
+    Returns
+    -------
+    :class:`DeconvolutedPeakSet`
+    '''
+    tp = peaks_a.__class__
+    if copy:
+        peaks = tp(
+            tuple(p.clone() for p in peaks_a) +
+            tuple(p.clone() for p in peaks_b))
+    else:
+        peaks = tp(tuple(peaks_a) + tuple(peaks_b))
+    try:
+        peaks.reindex()
+    except AttributeError:
+        pass
+    return peaks
 
 
 mz_getter = operator.attrgetter('mz')

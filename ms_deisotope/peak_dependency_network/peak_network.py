@@ -1,10 +1,14 @@
 import operator
-import warnings
+import logging
+
 from collections import defaultdict
 
 from .subgraph import ConnectedSubgraph
 from .intervals import SpanningMixin, IntervalTreeNode
 from ..utils import Base, TargetedDeconvolutionResultBase
+from ..task import LogUtilsMixin
+
+logger = logging.getLogger("deconvolution_scan_processor")
 
 
 def ident(x):
@@ -97,12 +101,16 @@ class DependenceCluster(SpanningMixin):
 
         """
         self.dependencies.append(fit)
-        self.dependencies.sort(key=lambda x: x.score)
+        self.dependencies.sort(key=lambda x: x.score, reverse=self.maximize)
         self._reset()
 
     def disjoint_subset(self):
-        graph = ConnectedSubgraph(self.dependencies, maximize=self.maximize)
+        graph = self.build_graph()
         return graph.find_heaviest_path()
+
+    def build_graph(self):
+        graph = ConnectedSubgraph(self.dependencies, maximize=self.maximize)
+        return graph
 
     def _best_fit(self):
         """
@@ -147,9 +155,6 @@ class DependenceCluster(SpanningMixin):
         """
         return max([member.experimental[-1].mz for member in self.dependencies])
 
-    def interval_contains_point(self, point):
-        return self.start <= point < self.end
-
     def __len__(self):
         return len(self.dependencies)
 
@@ -170,7 +175,62 @@ class DependenceCluster(SpanningMixin):
         return self.dependencies[i]
 
 
-class PeakDependenceGraph(object):
+try:
+    _has_c = True
+    from ms_deisotope._c.peak_dependency_network.peak_network import (
+        PeakNode, DependenceCluster, PeakDependenceGraphBase)
+except ImportError:
+    _has_c = False
+
+    class PeakDependenceGraphBase(object):
+
+        def reset(self):
+            # Keep a record of all clusters from previous iterations
+            self._all_clusters.extend(
+                self.clusters if self.clusters is not None else [])
+            self.nodes = dict()
+            self.dependencies = set()
+            self._interval_tree = None
+            self._populate_initial_graph()
+
+        def _populate_initial_graph(self):
+            for peak in self.peaklist:
+                self.nodes[peak.index] = PeakNode(peak)
+
+        def add_fit_dependence(self, fit_record):
+            '''Add the relatoinship between the experimental peaks
+            in `fit_record` to the graph, expressed as a hyper-edge
+            denoted by `fit_record`.
+
+            This adds `fit_record` to :attr:`PeakNode.links` for each
+            node corresponding to the :class:`~.FittedPeak` instance in
+            :attr:`IsotopicFitRecord.experimental` of `fit_record`. It also
+            adds `fit_record to :attr:`dependencies`
+
+            Parameters
+            ----------
+            fit_record: :class:`~.IsotopicFitRecord`
+            '''
+            for peak in fit_record.experimental:
+                # Check for null peak
+                if peak.index == 0:
+                    continue
+                self.nodes[peak.index].links[fit_record] = fit_record.score
+            self.dependencies.add(fit_record)
+
+        def nodes_for(self, fit_record, cache=None):
+            if cache is None:
+                return [self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
+            else:
+                try:
+                    return cache[fit_record]
+                except KeyError:
+                    cache[fit_record] = value = [
+                        self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
+                    return value
+
+
+class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
     def __init__(self, peaklist, nodes=None, dependencies=None, max_missed_peaks=1,
                  use_monoisotopic_superceded_filtering=True, maximize=True):
         if nodes is None:
@@ -190,20 +250,23 @@ class PeakDependenceGraph(object):
         self._solution_map = {}
         self._all_clusters = []
 
-    def reset(self):
-        # Keep a record of all clusters from previous iterations
-        self._all_clusters.extend(
-            self.clusters if self.clusters is not None else [])
-        self.nodes = dict()
-        self.dependencies = set()
-        self._interval_tree = None
-        self._populate_initial_graph()
-
     def add_solution(self, key, solution):
         self._solution_map[key] = solution
 
     @property
     def interval_tree(self):
+        '''An :class:`~.IntervalTreeNode` built over all dependency clusters that
+        the :class:`PeakDependenceGraph` has seen over the course of all iterations.
+
+        Raises
+        ------
+        NoIsotopicClustersError:
+            When no isotopic clusters, and in turn no :class:`DependenceCluster`s are found
+
+        Returns
+        -------
+        :class:`~.IntervalTreeNode`
+        '''
         if self._interval_tree is None:
             # Build tree from both the current set of clusters
             # and all clusters from previous iterations
@@ -215,13 +278,11 @@ class PeakDependenceGraph(object):
                         self.clusters), self)
         return self._interval_tree
 
-    def _deep_fuzzy_solution_for(self, peak, shift=0.5):
-        pass
-
     def _find_fuzzy_solution_for(self, peak, shift=0.5):
         tree = self.interval_tree
         clusters = tree.contains_point(peak.mz + shift)
         if len(clusters) == 0:
+            # No dependency clusters span this point. No signal?
             return None
         else:
             best_fits = [cluster.disjoint_best_fits() for cluster in clusters]
@@ -240,13 +301,39 @@ class PeakDependenceGraph(object):
                     error = err
                     index = i
             fit = best_fits[index]
-            return self._solution_map[fit]
+            try:
+                return self._solution_map[fit]
+            except KeyError:
+                best_fits.sort(key=lambda f: abs(f.monoisotopic_peak.mz - peak.mz))
+                # The first index is the minimum error, which the loop above found,
+                # but by virtue of the KeyError getting us here, we know it is not
+                # present in the solution map.
+                for f in  best_fits[1:]:
+                    try:
+                        return self._solution_map[f]
+                    except KeyError:
+                        continue
+                # No solution could be found
+                return None
 
     def find_solution_for(self, peak):
+        '''Find the best isotopic pattern fit which includes ``peak``
+        or is close enough to ``peak`` that it might have been selected
+        instead.
+
+        Parameters
+        ----------
+        peak: :class:`~.FittedPeak`
+            The peak to find the best fit for.
+
+        Returns
+        -------
+        :class:`~.DeconvolutedPeak`
+        '''
         peak_node = self.nodes[peak.index]
         tree = self.interval_tree
         clusters = tree.contains_point(peak.mz)
-        if len(clusters) == 0:
+        if not clusters:
             return self._find_fuzzy_solution_for(peak)
         best_fits = [cluster.disjoint_best_fits() for cluster in clusters]
 
@@ -255,53 +342,65 @@ class PeakDependenceGraph(object):
             acc.extend(fits)
         best_fits = acc
 
+        self.debug("For query m/z %f has candidates %r" % (peak.mz, best_fits))
+
         # Extract only fits that use the query peak
         common = tuple(set(best_fits) & set(peak_node.links))
 
-        if len(common) > 1 or len(common) == 0:
+        used_common = False
+        if len(common) > 1 or not common:
             if len(common) > 1:
-                warnings.warn("Too many solutions exist for %r" % peak)
+                self.debug("There is not exactly one solution for %r (%d)" % (peak, len(common)))
             # If there were no fits for this peak, then it may be that this peak
             # was not included in a fit. Try to find the nearest solution.
-            i = 0
-            err = float('inf')
-            for j, case in enumerate(best_fits):
-                case_err = abs(case.monoisotopic_peak.mz - peak.mz)
-                if self.maximize:
-                    case_err /= case.score
-                else:
-                    case_err /= (1. / case.score)
-                if case_err < err:
-                    i = j
-                    err = case_err
-            fit = best_fits[i]
+            fit = self._find_best_fit_by_weighted_distance(peak, best_fits)
         else:
+            used_common = True
             fit = common[0]
-        return self._solution_map[fit]
+        try:
+            return self._solution_map[fit]
+        except KeyError:
+            self.debug(
+                "The closest common fit was not chosen. The closest fit was common? %r" % (
+                    used_common))
+            candidates = list(set(best_fits) & set(self._solution_map))
+            fit = self._find_best_fit_by_weighted_distance(peak, candidates)
+            return self._solution_map[fit]
 
-    def _populate_initial_graph(self):
-        for peak in self.peaklist:
-            self.nodes[peak.index] = PeakNode(peak)
+    def _find_best_fit_by_weighted_distance(self, peak, candidates):
+        '''Locate the fit that is nearest to ``peak`` in m/z space, weighted by
+        the score of the fit such that given two fits with the same m/z, the better
+        scoring fit is chosen.
 
-    def add_fit_dependence(self, fit_record):
-        for peak in fit_record.experimental:
-            if peak.index == 0:
-                continue
-            self.nodes[peak.index].links[fit_record] = fit_record.score
-        self.dependencies.add(fit_record)
+        Parameters
+        ----------
+        peak: :class:`~.FittedPeak`
+            The peak to find solutions with reference to.
+        candidates: :class:`list`
+            A set of candidate :class:`~.IsotopicFitRecord` to compare between
 
-    def nodes_for(self, fit_record, cache=None):
-        if cache is None:
-            return [self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
-        else:
-            try:
-                return cache[fit_record]
-            except KeyError:
-                cache[fit_record] = value = [
-                    self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
-                return value
+        Returns
+        -------
+        :class:`~.IsotopicFitRecord`
+        '''
+        i = 0
+        err = float('inf')
+        for j, case in enumerate(candidates):
+            case_err = abs(case.monoisotopic_peak.mz - peak.mz)
+            if self.maximize:
+                case_err /= case.score
+            else:
+                case_err /= (1. / (case.score + 1e-6))
+            if case_err < err:
+                i = j
+                err = case_err
+        fit = candidates[i]
+        return fit
 
     def drop_fit_dependence(self, fit_record):
+        '''Remove this fit from the graph, deleting all
+        hyper-edges.
+        '''
         for node in self.nodes_for(fit_record):
             try:
                 del node.links[fit_record]
@@ -309,6 +408,13 @@ class PeakDependenceGraph(object):
                 pass
 
     def claimed_nodes(self):
+        '''Return all nodes with at least one
+        fit connecting it.
+
+        Returns
+        -------
+        :class:`set`
+        '''
         peaks = set()
         for fit in self.dependencies:
             for peak in fit.experimental:
@@ -318,6 +424,10 @@ class PeakDependenceGraph(object):
         return peaks
 
     def drop_superceded_fits(self):
+        '''Drop all fits where there is a better fit
+        using the first fit's monoisotopic peak at the
+        same charge state.
+        '''
         suppressed = []
         keep = []
 
@@ -347,6 +457,9 @@ class PeakDependenceGraph(object):
         self.dependencies = set(keep)
 
     def best_exact_fits(self):
+        '''For each distinct group of experimental peaks, retain only
+        the best scoring fit using exactly those peaks.
+        '''
         by_peaks = defaultdict(list)
         best_fits = []
         for fit in self.dependencies:
@@ -359,6 +472,9 @@ class PeakDependenceGraph(object):
         self.dependencies = set(best_fits)
 
     def drop_gapped_fits(self, n=None):
+        '''Discard any fit with more missed peaks than
+        :attr:`max_missed_peaks`.
+        '''
         if n is None:
             n = self.max_missed_peaks
         keep = []
@@ -378,9 +494,9 @@ class PeakDependenceGraph(object):
 
         nodes_for_cache = {}
 
-        for node in self.nodes.values():
+        for seed_node in self.nodes.values():
             # This peak is depended upon by each fit in `dependencies`
-            dependencies = set(node.links.keys())
+            dependencies = set(seed_node.links.keys())
 
             if len(dependencies) == 0:
                 continue
@@ -416,6 +532,9 @@ class PeakDependenceGraph(object):
 
     def __repr__(self):
         return "PeakDependenceNetwork(%s, %d)" % (self.peaklist, len(self.dependencies))
+
+
+PeakDependenceGraph.log_with_logger(logger)
 
 
 class NetworkedTargetedDeconvolutionResult(TargetedDeconvolutionResultBase):

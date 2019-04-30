@@ -178,6 +178,9 @@ cdef class FitSelectorBase(object):
     cpdef IsotopicFitRecord best(self, object results):
         raise NotImplementedError()
 
+    cdef IsotopicFitRecord _best_from_set(self, set results):
+        raise NotImplementedError()
+
     def __call__(self, *args, **kwargs):
         return self.best(*args, **kwargs)
 
@@ -210,7 +213,25 @@ cdef class MinimizeFitSelector(FitSelectorBase):
         IsotopicFitRecord
             The most optimal fit
         """
+        if isinstance(results, set):
+            return self._best_from_set(<set>results)
         return min(results, key=operator.attrgetter("score"))
+
+    cdef IsotopicFitRecord _best_from_set(self, set results):
+        cdef:
+            IsotopicFitRecord fit, best_fit
+            object obj
+            double best_score
+
+        best_fit = None
+        best_score = INFINITY
+        for obj in results:
+            fit = <IsotopicFitRecord>obj
+            if fit.score < best_score:
+                best_score = fit.score
+                best_fit = fit
+        return best_fit
+
 
     cpdef bint reject(self, IsotopicFitRecord fit):
         """Decide whether the fit should be discarded for having too
@@ -255,7 +276,23 @@ cdef class MaximizeFitSelector(FitSelectorBase):
         IsotopicFitRecord
             The most optimal fit
         """
+        if isinstance(results, set):
+            return self._best_from_set(<set>results)
         return max(results, key=operator.attrgetter("score"))
+
+    cdef IsotopicFitRecord _best_from_set(self, set results):
+        cdef:
+            IsotopicFitRecord fit, best_fit
+            double best_score
+
+        best_fit = None
+        best_score = -INFINITY
+        for obj in results:
+            fit = <IsotopicFitRecord>obj
+            if fit.score > best_score:
+                best_score = fit.score
+                best_fit = fit
+        return best_fit
 
     cpdef bint reject(self, IsotopicFitRecord fit):
         """Decide whether the fit should be discarded for having too
@@ -329,7 +366,7 @@ cdef class IsotopicFitterBase(object):
         return self._evaluate(peaklist, observed, expected)
 
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
-        return 0
+        raise NotImplementedError()
 
     def __call__(self, *args, **kwargs):
         """Invokes :meth:`evaluate`
@@ -453,7 +490,7 @@ cdef class GTestFitter(IsotopicFitterBase):
             obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity
             theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity
 
-            log_ratio = log(obs / theo)
+            log_ratio = log(obs) - log(theo)
             g_score += obs * log_ratio
 
         return g_score * 2.
@@ -486,7 +523,7 @@ cdef class ScaledGTestFitter(IsotopicFitterBase):
             obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_observed
             theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_expected
 
-            log_ratio = log(obs / theo)
+            log_ratio = log(obs) - log(theo)
             g_score += obs * log_ratio
 
         return g_score * 2.
@@ -570,6 +607,23 @@ cdef class LeastSquaresFitter(IsotopicFitterBase):
 cdef LeastSquaresFitter least_squares
 
 least_squares = LeastSquaresFitter()
+
+
+cdef class ChiSquareFitter(IsotopicFitterBase):
+
+    @cython.cdivision
+    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+        cdef:
+            double running_total
+            size_t i
+            TheoreticalPeak t
+            FittedPeak e
+        running_total = 0
+        for i in range(PyList_GET_SIZE(observed)):
+            e = <FittedPeak>PyList_GetItem(observed, i)
+            t = <TheoreticalPeak>PyList_GetItem(expected, i)
+            running_total += ((e - t) ** 2) / t
+        return running_total
 
 
 @cython.cdivision
@@ -680,6 +734,9 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
             double score, total_intensity_observed, total_intensity_expected
             double penalty, _obs, _theo, log_ratio
 
+        total_intensity_observed = 0
+        total_intensity_expected = 0
+
         n = PyList_GET_SIZE(observed)
         score = 0
         for i in range(n):
@@ -693,7 +750,7 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
             _obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_intensity_observed
             _theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_intensity_expected
 
-            log_ratio = log(_obs / (_theo))
+            log_ratio = log(_obs) - log(_theo)
             penalty += _obs * log_ratio
         penalty = abs(2 * penalty)
         score *= ((1 - penalty * self.penalty_factor))
@@ -885,4 +942,24 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
         score = self.scorer._evaluate(peaklist, experimental, theoretical)
         self.scale_fitted_peaks(experimental, self.scale_factor)
         self.scale_theoretical_peaks(theoretical, self.scale_factor)
+        return score
+
+
+cdef class DotProductFitter(IsotopicFitterBase):
+
+    def __init__(self,  minimum_score=100):
+        self.select = MaximizeFitSelector(minimum_score)
+
+    cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
+        cdef:
+            size_t i, n
+            FittedPeak obs
+            TheoreticalPeak theo
+            double score
+        n = PyList_GET_SIZE(experimental)
+        score = 0
+        for i in range(n):
+            obs = <FittedPeak>PyList_GET_ITEM(experimental, i)
+            theo = <TheoreticalPeak>PyList_GET_ITEM(theoretical, i)
+            score += obs.intensity * theo.intensity
         return score
