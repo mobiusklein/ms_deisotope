@@ -4,10 +4,6 @@ properties of :class:`~.DeconvolutedPeak` objects.
 '''
 import operator
 
-from collections import namedtuple
-
-from ms_deisotope.averagine import mass_charge_ratio
-
 intensity_getter = operator.attrgetter("intensity")
 mz_getter = operator.attrgetter("mz")
 snr_getter = operator.attrgetter("signal_to_noise")
@@ -116,6 +112,3 @@ def weighted_average(values, weights):
     # as a generator (i.e. py3's map) would always have sum(weights) == 0
     weights = list(weights)
     return sum(v * w for v, w in zip(values, weights)) / float(sum(weights))
-
-# re-located import
-from ms_deisotope.qc.isolation import (CoIsolation, PrecursorPurityEstimator)
