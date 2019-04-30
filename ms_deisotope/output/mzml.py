@@ -58,7 +58,7 @@ except ImportError:
 from ms_deisotope import version as lib_version
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.averagine import neutral_mass
-from ms_deisotope.envelope_statistics import CoIsolation
+from ms_deisotope.qc.isolation import CoIsolation
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided,
     _SingleScanIteratorImpl, _GroupedScanIteratorImpl)

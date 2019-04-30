@@ -8,7 +8,7 @@ from ms_deisotope.data_source.common import (
 from .feature_map import NeutralMassIndex
 
 from ms_deisotope.utils import Base
-from ms_deisotope.envelope_statistics import CoIsolation
+from ms_deisotope.qc.isolation import CoIsolation
 
 
 class MSRecordBase(Base):

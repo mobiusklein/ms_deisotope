@@ -47,7 +47,7 @@ from .data_source import MSFileLoader, ScanIterator
 from .data_source.common import Scan, ScanBunch, ChargeNotProvided
 from .utils import Base
 from .peak_dependency_network import NoIsotopicClustersError
-from .envelope_statistics import PrecursorPurityEstimator
+from .qc.isolation import PrecursorPurityEstimator
 from .task import LogUtilsMixin
 
 logger = logging.getLogger("deconvolution_scan_processor")
