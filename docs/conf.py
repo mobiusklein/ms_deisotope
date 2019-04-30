@@ -18,6 +18,12 @@
 #
 import os
 import sys
+try:
+    import faulthandler
+    faulthandler.disable()
+    faulthandler.enable = lambda: 1
+except ImportError:
+    pass
 # sys.path.insert(0, os.path.abspath('.'))
 
 sys.path.append(os.path.abspath("_ext"))
