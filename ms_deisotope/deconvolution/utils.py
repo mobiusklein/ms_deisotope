@@ -23,11 +23,23 @@ def prepare_peaklist(peaks):
     converting from other compatible types as needed. Additionally, make a deep
     copy of the peaks as signal subtraction methods will modify peaks in place.
 
+    This function ensures that any of the following common input types are coerced
+    to the appropriate type:
+
+    1. :class:`ms_peak_picker.PeakSet` will be copied and indexed
+    2. :class:`ms_peak_picker.PeakIndex` will have its peaks extracted and copied
+    3. Any other *sequence* of :class:`PeakLike` objects (objects having an mz and
+       intensity attribute) will be converted into a :class:`ms_peak_picker.PeakSet`
+    4. Any *sequence* of :class:`tuple` or :class:`list` having at least two entries
+       will be converted into a :class:`ms_peak_picker.PeakSet` with the m/z value
+       of each peak being the the `p[0]` of each entry and the intensity `p[1]`. Any
+       other entries will be ignored.
+
     Parameters
     ----------
     peaks: Sequence
         Any sequence of :class:`~.FittedPeak` objects, objects
-        with ``mz`` and ``intensity`` attributes, or :class`list`/:class:`tuple`
+        with ``mz`` and ``intensity`` attributes, or :class:`list` / :class:`tuple`
         objects containing paired values for ``mz`` and ``intensity``
 
     Returns

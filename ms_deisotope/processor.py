@@ -389,8 +389,8 @@ class ScanProcessor(Base, LogUtilsMixin):
     def pick_product_scan_peaks(self, product_scan):
         """Pick the peaks of product scan
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         product_scan: :class:`~.Scan`
             The scan to pick peaks from.
 
