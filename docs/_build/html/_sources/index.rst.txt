@@ -25,6 +25,7 @@ common formats, including instrument information and and file metadata.
    Deconvolution <deconvolution/index>
    Data Access <data_source/index>
    Data Storage <output/index>
+   Visualization <visualization>
 
 
 

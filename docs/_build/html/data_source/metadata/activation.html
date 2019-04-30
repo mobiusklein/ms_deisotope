@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Controlled Vocabulary Interface" href="cv.html" />
@@ -46,19 +48,43 @@
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.data">
 <code class="descname">data</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.data" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> – Additional metadata describing the dissociation</p>
+<dd><p>Additional metadata describing the dissociation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.energy">
 <code class="descname">energy</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.energy" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – The quantity of energy used</p>
+<dd><p>The quantity of energy used</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.activation.ActivationInformation.method">
 <code class="descname">method</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.ActivationInformation.method" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod" title="ms_deisotope.data_source.metadata.activation.DissociationMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">DissociationMethod</span></code></a> – The dissociation method used</p>
+<dd><p>The dissociation method used</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod" title="ms_deisotope.data_source.metadata.activation.DissociationMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">DissociationMethod</span></code></a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -104,19 +130,43 @@ scan with multiple types of activation.</p>
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.data">
 <code class="descname">data</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.data" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> – Additional metadata describing the dissociation</p>
+<dd><p>Additional metadata describing the dissociation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies">
 <code class="descname">energies</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of float – A list of dissociation energies used. Parallel to <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods" title="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods"><code class="xref py py-attr docutils literal notranslate"><span class="pre">methods</span></code></a></p>
+<dd><p>A list of dissociation energies used. Parallel to <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods" title="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods"><code class="xref py py-attr docutils literal notranslate"><span class="pre">methods</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods">
 <code class="descname">methods</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.methods" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod" title="ms_deisotope.data_source.metadata.activation.DissociationMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">DissociationMethod</span></code></a> – A list of dissociation methods used. Parallel to <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies" title="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies"><code class="xref py py-attr docutils literal notranslate"><span class="pre">energies</span></code></a></p>
+<dd><p>A list of dissociation methods used. Parallel to <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies" title="ms_deisotope.data_source.metadata.activation.MultipleActivationInformation.energies"><code class="xref py py-attr docutils literal notranslate"><span class="pre">energies</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="#ms_deisotope.data_source.metadata.activation.DissociationMethod" title="ms_deisotope.data_source.metadata.activation.DissociationMethod"><code class="xref py py-class docutils literal notranslate"><span class="pre">DissociationMethod</span></code></a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -195,48 +245,40 @@ the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>sustained off-resonance irradiation</td>
-<td>MS:1000282</td>
+<tr class="row-even"><td>unknown dissociation</td>
+<td>None</td>
 <td>dissociation method</td>
 </tr>
 <tr class="row-odd"><td>pulsed q dissociation</td>
 <td>MS:1000599</td>
 <td>dissociation method</td>
 </tr>
-<tr class="row-even"><td>collision-induced dissociation</td>
-<td>MS:1000133</td>
-<td>dissociation method</td>
+<tr class="row-even"><td>supplemental beam-type collision-induced dissociation</td>
+<td>MS:1002678</td>
+<td>beam-type collision-induced dissociation</td>
 </tr>
-<tr class="row-odd"><td>plasma desorption</td>
-<td>MS:1000134</td>
-<td>dissociation method</td>
-</tr>
-<tr class="row-even"><td>post-source decay</td>
-<td>MS:1000135</td>
-<td>dissociation method</td>
-</tr>
-<tr class="row-odd"><td>electron transfer dissociation</td>
-<td>MS:1000598</td>
-<td>dissociation method</td>
-</tr>
-<tr class="row-even"><td>surface-induced dissociation</td>
+<tr class="row-odd"><td>surface-induced dissociation</td>
 <td>MS:1000136</td>
-<td>dissociation method</td>
-</tr>
-<tr class="row-odd"><td>in-source collision-induced dissociation</td>
-<td>MS:1001880</td>
 <td>dissociation method</td>
 </tr>
 <tr class="row-even"><td>infrared multiphoton dissociation</td>
 <td>MS:1000262</td>
 <td>dissociation method</td>
 </tr>
-<tr class="row-odd"><td>blackbody infrared radiative dissociation</td>
+<tr class="row-odd"><td>in-source collision-induced dissociation</td>
+<td>MS:1001880</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>blackbody infrared radiative dissociation</td>
 <td>MS:1000242</td>
 <td>dissociation method</td>
 </tr>
-<tr class="row-even"><td>low-energy collision-induced dissociation</td>
+<tr class="row-odd"><td>low-energy collision-induced dissociation</td>
 <td>MS:1000433</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>post-source decay</td>
+<td>MS:1000135</td>
 <td>dissociation method</td>
 </tr>
 <tr class="row-odd"><td>photodissociation</td>
@@ -255,13 +297,29 @@ the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
 <td>MS:1000250</td>
 <td>dissociation method</td>
 </tr>
-<tr class="row-odd"><td>trap-type collision-induced dissociation</td>
+<tr class="row-odd"><td>sustained off-resonance irradiation</td>
+<td>MS:1000282</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>trap-type collision-induced dissociation</td>
 <td>MS:1002472</td>
 <td>collision-induced dissociation</td>
 </tr>
-<tr class="row-even"><td>beam-type collision-induced dissociation</td>
+<tr class="row-odd"><td>collision-induced dissociation</td>
+<td>MS:1000133</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-even"><td>plasma desorption</td>
+<td>MS:1000134</td>
+<td>dissociation method</td>
+</tr>
+<tr class="row-odd"><td>beam-type collision-induced dissociation</td>
 <td>MS:1000422</td>
 <td>collision-induced dissociation</td>
+</tr>
+<tr class="row-even"><td>electron transfer dissociation</td>
+<td>MS:1000598</td>
+<td>dissociation method</td>
 </tr>
 <tr class="row-odd"><td>supplemental collision-induced dissociation</td>
 <td>MS:1002679</td>
@@ -270,14 +328,6 @@ the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
 <tr class="row-even"><td>higher energy beam-type collision-induced dissociation</td>
 <td>MS:1002481</td>
 <td>beam-type collision-induced dissociation</td>
-</tr>
-<tr class="row-odd"><td>supplemental beam-type collision-induced dissociation</td>
-<td>MS:1002678</td>
-<td>beam-type collision-induced dissociation</td>
-</tr>
-<tr class="row-even"><td>unknown dissociation</td>
-<td>None</td>
-<td>dissociation method</td>
 </tr>
 </tbody>
 </table>
@@ -301,7 +351,7 @@ the <cite>HUPO PSI-MS</cite> controlled vocabulary.</p>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

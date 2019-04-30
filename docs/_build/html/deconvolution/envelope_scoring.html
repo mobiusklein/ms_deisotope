@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Deconvolution Pipeline" href="pipeline.html" />
@@ -228,51 +230,115 @@ pattern.</p>
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.charge">
 <code class="descname">charge</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.charge" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> – The charge state used to generate the theoretical pattern</p>
+<dd><p>The charge state used to generate the theoretical pattern</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.data">
 <code class="descname">data</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.data" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>object</em> – An arbitrary Python object containing extra information</p>
+<dd><p>An arbitrary Python object containing extra information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">object</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.experimental">
 <code class="descname">experimental</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.experimental" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list of FittedPeak</em> – The observed experimental peaks to be fitted</p>
+<dd><p>The observed experimental peaks to be fitted</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list of FittedPeak</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.missed_peaks">
 <code class="descname">missed_peaks</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.missed_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> – The number of peaks in the theoretical pattern that do not
+<dd><p>The number of peaks in the theoretical pattern that do not
 have a matching experimental peak</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak">
 <code class="descname">monoisotopic_peak</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>FittedPeak</em> – The fitted peak which corresponds to the monoisotopic peak</p>
+<dd><p>The fitted peak which corresponds to the monoisotopic peak</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">FittedPeak</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.score">
 <code class="descname">score</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.score" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – The score assigned to the fit by an IsotopicFitter object</p>
+<dd><p>The score assigned to the fit by an IsotopicFitter object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.seed_peak">
 <code class="descname">seed_peak</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.seed_peak" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>FittedPeak</em> – The peak that was used to initiate the fit. This may be unused
+<dd><p>The peak that was used to initiate the fit. This may be unused
 if not using an Averagine method</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">FittedPeak</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.IsotopicFitRecord.theoretical">
 <code class="descname">theoretical</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.theoretical" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>TheoreticalIsotopicPattern</em> – The theoretical isotopic pattern being fitted on the experimental data</p>
+<dd><p>The theoretical isotopic pattern being fitted on the experimental data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="averagine.html#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern">TheoreticalIsotopicPattern</a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -285,8 +351,16 @@ selection of IsotopicFitRecord</p>
 <dl class="attribute">
 <dt id="ms_deisotope.scoring.FitSelectorBase.minimum_score">
 <code class="descname">minimum_score</code><a class="headerlink" href="#ms_deisotope.scoring.FitSelectorBase.minimum_score" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> – The minimum score needed to be a candidate for selection. If the
+<dd><p>The minimum score needed to be a candidate for selection. If the
 FitSelector is <cite>minimizing</cite> it is the maximal score to be a candidate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -323,7 +397,7 @@ FitSelector is <cite>minimizing</cite> it is the maximal score to be a candidate
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

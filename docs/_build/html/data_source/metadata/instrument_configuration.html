@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Activation" href="activation.html" />
@@ -75,12 +77,71 @@ of <strong>term</strong></p>
 <dl class="class">
 <dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup">
 <em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">ComponentGroup</code><span class="sig-paren">(</span><em>type</em>, <em>members</em>, <em>order</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/instrument_components.html#ComponentGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Represent a collection of <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.Component" title="ms_deisotope.data_source.metadata.instrument_components.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a> objects which are
+part of a single instrument subsystem.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.type">
+<code class="descname">type</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the instrument subsystem</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.members">
+<code class="descname">members</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.members" title="Permalink to this definition">¶</a></dt>
+<dd><p>The components contained</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order">
+<code class="descname">order</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order" title="Permalink to this definition">¶</a></dt>
+<dd><p>The position of this group in the sequence of steps
+that analytes take when passing through the instrument.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation">
-<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">InstrumentInformation</code><span class="sig-paren">(</span><em>id=None</em>, <em>groups=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/instrument_components.html#InstrumentInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">InstrumentInformation</code><span class="sig-paren">(</span><em>id=None</em>, <em>groups=None</em>, <em>model=None</em>, <em>serial_number=None</em>, <em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/instrument_components.html#InstrumentInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes a single configuration of an instrument for acquiring spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>id</strong> (<em>object</em>) – The within-run unique identifier of this configuration. May be an integer or string</li>
+<li><strong>groups</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup" title="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComponentGroup</span></code></a>) – The component groups, sorted by <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order" title="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ComponentGroup.order</span></code></a>, in this configuraton</li>
+<li><strong>analyzers</strong> (<em>list</em>) – A convenience list for storing the <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.Component" title="ms_deisotope.data_source.metadata.instrument_components.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a> objects which are <a href="#id1"><span class="problematic" id="id2">``</span></a>analyzer``s</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="data">
 <dt id="ms_deisotope.data_source.metadata.instrument_components.ionization_types">
@@ -580,7 +641,7 @@ of <strong>term</strong></p>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Envelope Scoring" href="envelope_scoring.html" />
@@ -40,7 +42,7 @@
   <div class="section" id="isotopic-pattern-generation">
 <h1>Isotopic Pattern Generation<a class="headerlink" href="#isotopic-pattern-generation" title="Permalink to this headline">¶</a></h1>
 <p>The <a class="reference internal" href="#module-ms_deisotope.averagine" title="ms_deisotope.averagine"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.averagine</span></code></a> module contains several pre-created isotopic models whose
-name is derived from the original peptide <cite>averagine</cite> <a class="reference internal" href="index.html#senko" id="id1">[Senko]</a>, as well
+name is derived from the original peptide <cite>averagine</cite> <a class="reference internal" href="deconvolution.html#senko" id="id1">[Senko]</a>, as well
 as isotopic models for other common molecular classes. Isotopic patterns are generated from
 a chemical composition using <code class="xref py py-mod docutils literal notranslate"><span class="pre">brainpy</span></code>, which is an implementation of the
 <cite>Baffling Recursive Algorithm for Isotopic distributioN calculations</cite> <a class="reference internal" href="#dittwald2014" id="id2">[Dittwald2014]</a>.</p>
@@ -62,14 +64,30 @@ polymer mass</p>
 <dl class="attribute">
 <dt id="ms_deisotope.averagine.Averagine.base_composition">
 <code class="descname">base_composition</code><a class="headerlink" href="#ms_deisotope.averagine.Averagine.base_composition" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Mapping</em> – A mapping from element symbol to average count (float) of that element
+<dd><p>A mapping from element symbol to average count (float) of that element
 for the average monomer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">Mapping</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.averagine.Averagine.base_mass">
 <code class="descname">base_mass</code><a class="headerlink" href="#ms_deisotope.averagine.Averagine.base_mass" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – The base mass of the average monomer. Calculated from <a class="reference internal" href="#ms_deisotope.averagine.Averagine.base_composition" title="ms_deisotope.averagine.Averagine.base_composition"><code class="xref py py-attr docutils literal notranslate"><span class="pre">base_composition</span></code></a></p>
+<dd><p>The base mass of the average monomer. Calculated from <a class="reference internal" href="#ms_deisotope.averagine.Averagine.base_composition" title="ms_deisotope.averagine.Averagine.base_composition"><code class="xref py py-attr docutils literal notranslate"><span class="pre">base_composition</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -142,13 +160,29 @@ Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.or
 <dl class="attribute">
 <dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.peaklist">
 <code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.peaklist" title="Permalink to this definition">¶</a></dt>
-<dd><p>list of <code class="xref py py-class docutils literal notranslate"><span class="pre">brainpy.TheoreticalPeak</span></code> – The theoretical isotopic pattern peak list</p>
+<dd><p>The theoretical isotopic pattern peak list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list of <code class="xref py py-class docutils literal notranslate"><span class="pre">brainpy.TheoreticalPeak</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.origin">
 <code class="descname">origin</code><a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.origin" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – The monoisotopic peak’s m/z</p>
+<dd><p>The monoisotopic peak’s m/z</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -261,13 +295,29 @@ produced for new (m/z, charge) pairs and reuses it for nearby m/z values</p>
 <dl class="attribute">
 <dt id="ms_deisotope.averagine.AveragineCache.averagine">
 <code class="descname">averagine</code><a class="headerlink" href="#ms_deisotope.averagine.AveragineCache.averagine" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference internal" href="#ms_deisotope.averagine.Averagine" title="ms_deisotope.averagine.Averagine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Averagine</span></code></a> – The averagine to use to generate new isotopic patterns</p>
+<dd><p>The averagine to use to generate new isotopic patterns</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.averagine.Averagine" title="ms_deisotope.averagine.Averagine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Averagine</span></code></a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.averagine.AveragineCache.cache_truncation">
 <code class="descname">cache_truncation</code><a class="headerlink" href="#ms_deisotope.averagine.AveragineCache.cache_truncation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – Number of decimal places to round off the m/z for caching purposes</p>
+<dd><p>Number of decimal places to round off the m/z for caching purposes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -336,7 +386,7 @@ Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.or
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="File Metadata" href="metadata/index.html" />
@@ -56,7 +58,7 @@ built into the type hierarchy.</p>
 <a class="reference internal" href="#ms_deisotope.data_source.common.RandomAccessScanSource" title="ms_deisotope.data_source.common.RandomAccessScanSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAccessScanSource</span></code></a>.</p>
 <dl class="class">
 <dt id="ms_deisotope.data_source.common.ScanDataSource">
-<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ScanDataSource</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#ScanDataSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanDataSource" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ScanDataSource</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanDataSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanDataSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>An Abstract Base Class describing an object
 which can provide a consistent set of accessors
 for a particular format of mass spectrometry data.</p>
@@ -68,15 +70,57 @@ of <a class="reference internal" href="common_scan.html#ms_deisotope.data_source
 
 <dl class="class">
 <dt id="ms_deisotope.data_source.common.ScanIterator">
-<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ScanIterator</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#ScanIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">ScanIterator</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>An Abstract Base Class that extends ScanDataSource
 with additional requirements that enable clients of the
 class to treat the object as an iterator over the underlying
 data file.</p>
 <dl class="method">
+<dt id="ms_deisotope.data_source.common.ScanIterator.has_ms1_scans">
+<code class="descname">has_ms1_scans</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.has_ms1_scans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.has_ms1_scans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if this <a class="reference internal" href="#ms_deisotope.data_source.common.ScanDataSource" title="ms_deisotope.data_source.common.ScanDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code></a> contains MS1 spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ScanIterator.has_msn_scans">
+<code class="descname">has_msn_scans</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.has_msn_scans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.has_msn_scans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if this <a class="reference internal" href="#ms_deisotope.data_source.common.ScanDataSource" title="ms_deisotope.data_source.common.ScanDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code></a> contains MSn spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ScanIterator.initialize_scan_cache">
+<code class="descname">initialize_scan_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.initialize_scan_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.initialize_scan_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a cache which keeps track of which <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>
+objects are still in memory using a <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code>.</p>
+<p>When a scan is requested, if the scan object is found in the cahce, the
+existing object is returned rather than re-read from disk.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="ms_deisotope.data_source.common.ScanIterator.make_iterator">
-<code class="descname">make_iterator</code><span class="sig-paren">(</span><em>iterator=None</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#ScanIterator.make_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.make_iterator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Configure the iterator’s behavior.</p>
+<code class="descname">make_iterator</code><span class="sig-paren">(</span><em>iterator=None</em>, <em>grouped=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.make_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.make_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure the <a class="reference internal" href="#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a>’s behavior, selecting it’s iteration strategy over
+either its default iterator or the provided <code class="docutils literal notranslate"><span class="pre">iterator</span></code> argument.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -85,7 +129,8 @@ data file.</p>
 <li><strong>iterator</strong> (<em>Iterator</em><em>, </em><em>optional</em>) – The iterator to manipulate. If missing, the default
 iterator will be used.</li>
 <li><strong>grouped</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the iterator should be grouped and produce <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> objects
-or single <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>. Defaults to True</li>
+or single <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>. If <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code> is passed, <a class="reference internal" href="#ms_deisotope.data_source.common.ScanIterator.has_ms1_scans" title="ms_deisotope.data_source.common.ScanIterator.has_ms1_scans"><code class="xref py py-meth docutils literal notranslate"><span class="pre">has_ms1_scans()</span></code></a> will be
+be used instead. Defaults to <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -93,18 +138,82 @@ or single <a class="reference internal" href="common_scan.html#ms_deisotope.data
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ScanIterator.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advance the iterator, fetching the next <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>
+depending upon iteration strategy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ScanIterator.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the iterator, if possible, and clear any caches.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ScanIterator.scan_cache">
+<code class="descname">scan_cache</code><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.scan_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code> mapping used to retrieve
+scans from memory if available before re-reading them from disk.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="ms_deisotope.data_source.common.RandomAccessScanSource">
-<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">RandomAccessScanSource</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RandomAccessScanSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.common.</code><code class="descname">RandomAccessScanSource</code><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>An Abstract Base Class that extends ScanIterator
 with additional requirements that the implementation support
 random access to individual scans. This should be doable by unique
 identifier, sequential index, or by scan time.</p>
 <dl class="method">
+<dt id="ms_deisotope.data_source.common.RandomAccessScanSource.find_next_ms1">
+<code class="descname">find_next_ms1</code><span class="sig-paren">(</span><em>start_index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource.find_next_ms1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.find_next_ms1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Locate the MS1 scan following <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating forwards through
+scans until either the last scan is reached or an MS1 scan is found.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code> if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.RandomAccessScanSource.find_previous_ms1">
+<code class="descname">find_previous_ms1</code><span class="sig-paren">(</span><em>start_index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource.find_previous_ms1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.find_previous_ms1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Locate the MS1 scan preceding <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating backwards through
+scans until either the first scan is reached or an MS1 scan is found.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code> if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id">
-<code class="descname">get_scan_by_id</code><span class="sig-paren">(</span><em>scan_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RandomAccessScanSource.get_scan_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_scan_by_id</code><span class="sig-paren">(</span><em>scan_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource.get_scan_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the scan object for the specified scan id.</p>
 <p>If the scan object is still bound and in memory somewhere,
 a reference to that same object will be returned. Otherwise,
@@ -125,7 +234,7 @@ a new object will be created.</p>
 
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_index">
-<code class="descname">get_scan_by_index</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RandomAccessScanSource.get_scan_by_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_index" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_scan_by_index</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource.get_scan_by_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the scan object for the specified scan index.</p>
 <p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id" title="ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
 use its cache.</p>
@@ -145,7 +254,7 @@ use its cache.</p>
 
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_time">
-<code class="descname">get_scan_by_time</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RandomAccessScanSource.get_scan_by_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_time" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_scan_by_time</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource.get_scan_by_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the scan object for the specified scan time.</p>
 <p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id" title="ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
 use its cache.</p>
@@ -165,7 +274,7 @@ use its cache.</p>
 
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan">
-<code class="descname">start_from_scan</code><span class="sig-paren">(</span><em>scan_id=None</em>, <em>rt=None</em>, <em>index=None</em>, <em>require_ms1=True</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/common.html#RandomAccessScanSource.start_from_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan" title="Permalink to this definition">¶</a></dt>
+<code class="descname">start_from_scan</code><span class="sig-paren">(</span><em>scan_id=None</em>, <em>rt=None</em>, <em>index=None</em>, <em>require_ms1=True</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource.start_from_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reconstruct an iterator which will start from the scan matching one of <code class="docutils literal notranslate"><span class="pre">scan_id</span></code>,
 <code class="docutils literal notranslate"><span class="pre">rt</span></code>, or <code class="docutils literal notranslate"><span class="pre">index</span></code>. Only one may be provided.</p>
 <p>After invoking this method, the iterator this object wraps will be changed to begin
@@ -211,7 +320,7 @@ exact match is found, the nearest scan time will be found, rounded up.</li>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

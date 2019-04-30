@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Writing MGF" href="mgf.html" />
@@ -37,7 +39,7 @@
       <div class="content">
         
         
-  <div class="section" id="writing-mzml">
+  <span class="target" id="module-ms_deisotope.output.mzml"></span><div class="section" id="writing-mzml">
 <h1>Writing mzML<a class="headerlink" href="#writing-mzml" title="Permalink to this headline">¶</a></h1>
 <p>Using the <code class="xref py py-mod docutils literal notranslate"><span class="pre">psims</span></code> library, <a class="reference internal" href="#module-ms_deisotope.output.mzml" title="ms_deisotope.output.mzml"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.output.mzml</span></code></a> can write an mzML
 file with all associated metadata, including deconvoluted peak arrays, chromatograms,
@@ -64,131 +66,282 @@ metadata that <a class="reference internal" href="#ms_deisotope.output.mzml.MzML
             <span class="n">product</span><span class="o">.</span><span class="n">deconvolute</span><span class="p">()</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span>
 
-    <span class="n">writer</span><span class="o">.</span><span class="n">complete</span><span class="p">()</span>
-    <span class="n">writer</span><span class="o">.</span><span class="n">format</span><span class="p">()</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
 </div>
-<span class="target" id="module-ms_deisotope.output.mzml"></span><dl class="class">
+<dl class="class">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer">
-<em class="property">class </em><code class="descclassname">ms_deisotope.output.mzml.</code><code class="descname">MzMLSerializer</code><span class="sig-paren">(</span><em>handle</em>, <em>n_spectra=20000.0</em>, <em>compression=None</em>, <em>deconvoluted=True</em>, <em>sample_name=None</em>, <em>build_extra_index=True</em>, <em>data_encoding=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">ms_deisotope.output.mzml.</code><code class="descname">MzMLSerializer</code><span class="sig-paren">(</span><em>handle</em>, <em>n_spectra=200000</em>, <em>compression=None</em>, <em>deconvoluted=True</em>, <em>sample_name=None</em>, <em>build_extra_index=True</em>, <em>data_encoding=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write <code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope</span></code> data structures to a file in mzML format.</p>
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.base_peak_chromatogram_tracker">
 <code class="descname">base_peak_chromatogram_tracker</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.base_peak_chromatogram_tracker" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code> – Accumulated mapping of scan time to base peak intensity. This is
+<dd><p>Accumulated mapping of scan time to base peak intensity. This is
 used to write the <em>base peak chromatogram</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.chromatogram_queue">
 <code class="descname">chromatogram_queue</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.chromatogram_queue" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – Accumulate chromatogram data structures which will be written out
+<dd><p>Accumulate chromatogram data structures which will be written out
 after all spectra have been written to file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.compression">
 <code class="descname">compression</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.compression" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> – The compression type to use for binary data arrays. Should be one of
+<dd><p>The compression type to use for binary data arrays. Should be one of
 <code class="xref py py-obj docutils literal notranslate"><span class="pre">&quot;zlib&quot;</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code>, or <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.data_encoding">
 <code class="descname">data_encoding</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.data_encoding" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy.dtype</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> – The encoding specification to specify the binary encoding of numeric data arrays
+<dd><p>The encoding specification to specify the binary encoding of numeric data arrays
 that is passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">write_spectrum()</span></code> and related methods.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy.dtype</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.data_processing_list">
 <code class="descname">data_processing_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.data_processing_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – List of packaged <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code> to write out</p>
+<dd><p>List of packaged <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code> to write out</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.deconvoluted">
 <code class="descname">deconvoluted</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.deconvoluted" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>bool</em> – Indicates whether the translation should include extra deconvolution information</p>
+<dd><p>Indicates whether the translation should include extra deconvolution information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.file_contents_list">
 <code class="descname">file_contents_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.file_contents_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – List of terms to include in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;fileContents&gt;</span></code> tag</p>
+<dd><p>List of terms to include in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;fileContents&gt;</span></code> tag</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.handle">
 <code class="descname">handle</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.handle" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>file-like</em> – The file-like object being written to</p>
+<dd><p>The file-like object being written to</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">file-like</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.indexer">
 <code class="descname">indexer</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.indexer" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtendedScanIndex</span></code> – The external index builder</p>
+<dd><p>The external index builder</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtendedScanIndex</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.instrument_configuration_list">
 <code class="descname">instrument_configuration_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.instrument_configuration_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – List of packaged <a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a> to write out</p>
+<dd><p>List of packaged <a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a> to write out</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.n_spectra">
 <code class="descname">n_spectra</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.n_spectra" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> – The number of spectra to provide a size for in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrumList&gt;</span></code></p>
+<dd><p>The number of spectra to provide a size for in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrumList&gt;</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.processing_parameters">
 <code class="descname">processing_parameters</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.processing_parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – List of additional terms to include in a newly created <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code></p>
+<dd><p>List of additional terms to include in a newly created <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.sample_list">
 <code class="descname">sample_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – List of <code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code> objects to write out</p>
+<dd><p>List of <code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code> objects to write out</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.sample_name">
 <code class="descname">sample_name</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_name" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> – Default sample name</p>
+<dd><p>Default sample name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.sample_run">
 <code class="descname">sample_run</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_run" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code> – Description</p>
+<dd><p>Description</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.software_list">
 <code class="descname">software_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.software_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – List of packaged <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code> objects to write out</p>
+<dd><p>List of packaged <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code> objects to write out</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.source_file_list">
 <code class="descname">source_file_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.source_file_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> – List of packaged <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> objects to write out</p>
+<dd><p>List of packaged <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> objects to write out</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.total_ion_chromatogram_tracker">
 <code class="descname">total_ion_chromatogram_tracker</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.total_ion_chromatogram_tracker" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code> – Accumulated mapping of scan time to total intensity. This is
+<dd><p>Accumulated mapping of scan time to total intensity. This is
 used to write the <em>total ion chromatogram</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrderedDict</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.writer">
 <code class="descname">writer</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.writer" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">MzMLWriter</span></code> – The lower level writer implementation</p>
+<dd><p>The lower level writer implementation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">MzMLWriter</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -218,6 +371,21 @@ of the output document.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_contents</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>) – The parameter to add</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_file_information">
+<code class="descname">add_file_information</code><span class="sig-paren">(</span><em>file_information</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_file_information"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_file_information" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the information of a <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileInformation</span></code></a> to the
+output document.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_information</strong> (<a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileInformation</span></code></a>) – The information to add.</td>
 </tr>
 </tbody>
 </table>
@@ -300,21 +468,57 @@ the output document.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.complete">
-<code class="descname">complete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.complete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.complete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finish writing to the output document.</p>
-<p>This closes the open list tags, empties the chromatogram accumulator,
-and closes the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;mzML&gt;</span></code> tag, and attempts to flush the output file.</p>
+<dt id="ms_deisotope.output.mzml.MzMLSerializer.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finish writing scan data, write any pending metadata
+and close the file stream.</p>
+<p>May call <code class="xref py py-meth docutils literal notranslate"><span class="pre">complete()</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.format">
-<code class="descname">format</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.format" title="Permalink to this definition">¶</a></dt>
-<dd><p>Formats the output mzML document to be well indented
-and wraps it in an <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;indexedmzML&gt;</span></code> structure.</p>
-<p>This method calls <code class="xref py py-meth docutils literal notranslate"><span class="pre">psims.mzml.writer.MzMLWriter.format()</span></code>
-which reads the entire document into memory, which may be
-prohibitive for large documents.</p>
+<dt id="ms_deisotope.output.mzml.MzMLSerializer.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>bunch</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save any scan information in <cite>bunch</cite>.</p>
+<p>This method can handle <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>
+instances, dispatching to the appropriate logic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bunch</strong> (<a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>) – The scan data to save. May be a collection of related scans or a single scan.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#ms_deisotope.output.mzml.MzMLSerializer.save_scan" title="ms_deisotope.output.mzml.MzMLSerializer.save_scan"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save_scan()</span></code></a>, <a class="reference internal" href="#ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch" title="ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save_scan_bunch()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.output.mzml.MzMLSerializer.save_scan">
+<code class="descname">save_scan</code><span class="sig-paren">(</span><em>scan</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.save_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save_scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> to the output document
+as a collection of related <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrum&gt;</span></code> tags.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If no spectra have been written to the output document
+yet, this method will call <code class="xref py py-meth docutils literal notranslate"><span class="pre">_add_spectrum_list()</span></code> and
+writes all of the metadata lists out. After this point,
+no new document-level metadata can be added.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>scan</strong> (<a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>) – The scan to write.</li>
+<li><strong>deconvoluted</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether the scan to write out should include deconvolution information</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -343,21 +547,36 @@ no new document-level metadata can be added.</p>
 
 <dl class="class">
 <dt id="ms_deisotope.output.mzml.ProcessedMzMLDeserializer">
-<em class="property">class </em><code class="descclassname">ms_deisotope.output.mzml.</code><code class="descname">ProcessedMzMLDeserializer</code><span class="sig-paren">(</span><em>source_file</em>, <em>use_index=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#ProcessedMzMLDeserializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">ms_deisotope.output.mzml.</code><code class="descname">ProcessedMzMLDeserializer</code><span class="sig-paren">(</span><em>source_file</em>, <em>use_index=True</em>, <em>use_extended_index=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#ProcessedMzMLDeserializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extends <a class="reference internal" href="../data_source/mzml.html#ms_deisotope.data_source.mzml.MzMLLoader" title="ms_deisotope.data_source.mzml.MzMLLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MzMLLoader</span></code></a> to support deserializing preprocessed data
 and to take advantage of additional indexing information.</p>
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.ProcessedMzMLDeserializer.extended_index">
 <code class="descname">extended_index</code><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer.extended_index" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtendedIndex</span></code> – Holds the additional indexing information
+<dd><p>Holds the additional indexing information
 that may have been generated with the data
 file being accessed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExtendedIndex</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.ProcessedMzMLDeserializer.sample_run">
 <code class="descname">sample_run</code><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer.sample_run" title="Permalink to this definition">¶</a></dt>
-<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code></p>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -380,7 +599,7 @@ file being accessed.</p>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

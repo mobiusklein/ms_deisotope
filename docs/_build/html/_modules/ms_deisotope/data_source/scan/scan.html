@@ -1,0 +1,1295 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.data_source.scan.scan &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.data_source.scan.scan</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.data_source.scan.scan</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;Represent the basic structures of a mass spectrum and its processed contents,</span>
+<span class="sd">and provide an interface for manipulating that data.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Sequence</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="k">import</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">pick_peaks</span><span class="p">,</span> <span class="n">reprofile</span><span class="p">,</span> <span class="n">average_signal</span><span class="p">,</span>
+    <span class="n">scan_filter</span><span class="p">,</span> <span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="n">decimal_shift</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.deconvolution</span> <span class="k">import</span> <span class="n">deconvolute_peaks</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.scan_traits</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">IsolationWindow</span><span class="p">,</span>
+    <span class="n">ScanAcquisitionInformation</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.activation</span> <span class="k">import</span> <span class="n">ActivationInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.instrument_components</span> <span class="k">import</span> <span class="n">InstrumentInformation</span>
+
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="p">(</span><span class="n">ScanBase</span><span class="p">,</span> <span class="n">RawDataArrays</span><span class="p">,</span> <span class="n">PrecursorInformation</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Scan"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan">[docs]</a><span class="k">class</span> <span class="nc">Scan</span><span class="p">(</span><span class="n">ScanBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container for mass spectral data and associated descriptive information.</span>
+
+<span class="sd">    A :class:`Scan` object is a generic object intended to be created by a :class:`ScanDataSource` and describes</span>
+<span class="sd">    a mass spectrum at each level of processing (Profile --&gt; Peak Fitted --&gt; Deconvoluted). The raw object</span>
+<span class="sd">    provided by the source is wrapped and queried lazily when an attribute is requested, delegated through</span>
+<span class="sd">    :attr:`source`.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None</span>
+<span class="sd">        Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will</span>
+<span class="sd">        be `None` if deconvolution has not been done.</span>
+<span class="sd">    peak_set : :class:`ms_peak_picker.PeakSet` or None</span>
+<span class="sd">        Picked peaks and (possibly) associated raw data points as produced by :meth:`pick_peaks`.</span>
+<span class="sd">        Will be `None` if peak picking has not been done.</span>
+<span class="sd">    product_scans : list</span>
+<span class="sd">        A list of :class:`Scan` instances which were produced by fragmenting ions from this one.</span>
+<span class="sd">        This attribute is not guaranteed to be populated depending upon how the scan is loaded.</span>
+<span class="sd">    source : :class:`ScanDataSource`</span>
+<span class="sd">        The object which produced this scan and which defines the methods for retrieving common</span>
+<span class="sd">        attributes from the underlying data structures.</span>
+<span class="sd">    precursor_information: :class:`PrecursorInformation` or None</span>
+<span class="sd">        Descriptive metadata for the ion which was chosen for fragmentation, and a reference to</span>
+<span class="sd">        the precursor scan</span>
+<span class="sd">    arrays: :class:`RawDataArrays`</span>
+<span class="sd">        A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and intensity data points</span>
+<span class="sd">    id: str</span>
+<span class="sd">        The unique identifier for this scan as given by the source</span>
+<span class="sd">    title: str</span>
+<span class="sd">        The human-readable display string for this scan as shown in some external software</span>
+<span class="sd">    ms_level: int</span>
+<span class="sd">        The degree of fragmentation performed. 1 corresponds to a MS1 or &quot;Survey&quot; scan, 2 corresponds</span>
+<span class="sd">        to MS/MS, and so on. If :attr:`ms_level` &gt; 1, the scan is considered a &quot;tandem scan&quot; or &quot;MS^n&quot; scan</span>
+<span class="sd">    scan_time: float</span>
+<span class="sd">        The time the scan was acquired during data acquisition. The unit of time will always be minutes.</span>
+<span class="sd">    drift_time: float or None</span>
+<span class="sd">        The time measured by the ion mobility spectrometer for this scan or frame. This quantity is None</span>
+<span class="sd">        if the scan does not have ion mobility information associated with it, which is usually recorded</span>
+<span class="sd">        in :attr:`acquisition_information`</span>
+<span class="sd">    index: int</span>
+<span class="sd">        The integer number indicating how many scans were acquired prior to this scan.</span>
+<span class="sd">    is_profile: bool</span>
+<span class="sd">        Whether this scan&#39;s raw data points corresponds to a profile scan or whether the raw data was</span>
+<span class="sd">        pre-centroided.</span>
+<span class="sd">    polarity: int</span>
+<span class="sd">        If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative</span>
+<span class="sd">        mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.</span>
+<span class="sd">    activation: :class:`.ActivationInformation` or None</span>
+<span class="sd">        If this scan is an MS^n scan, this attribute will contain information about the process</span>
+<span class="sd">        used to produce it from its parent ion.</span>
+<span class="sd">    instrument_configuration: :class:`~.InstrumentInformation`</span>
+<span class="sd">        The instrument configuration used to acquire this scan.</span>
+<span class="sd">    acquisition_information: :class:`.ScanAcquisitionInformation` or None</span>
+<span class="sd">        Describes the type of event that produced this scan, as well as the scanning method</span>
+<span class="sd">        used.</span>
+<span class="sd">    isolation_window: :class:`.IsolationWindow` or None</span>
+<span class="sd">        Describes the range of m/z that were isolated from a parent scan to create this scan</span>
+<span class="sd">    annotations: dict</span>
+<span class="sd">        A set of key-value pairs describing the scan not part of the standard interface</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">peak_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deconvoluted_peak_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">product_scans</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">annotations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">product_scans</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">product_scans</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">annotations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">annotations</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">peak_set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="n">deconvoluted_peak_set</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_profile</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_polarity</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_activation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_information</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_configuration</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span> <span class="o">=</span> <span class="n">annotations</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span> <span class="o">=</span> <span class="n">product_scans</span>
+
+<div class="viewcode-block" id="Scan.clone"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.clone">[docs]</a>    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a copy of the :class:`Scan` object</span>
+<span class="sd">        wrapping the same reference data, potentially a deep</span>
+<span class="sd">        one</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        deep: :class:`bool`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`Scan`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">,</span>
+
+            <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="n">deep</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">dup</span></div>
+
+    <span class="k">def</span> <span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">polarity</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_information</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">isolation_window</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_profile</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">del</span> <span class="n">_</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">_unload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_profile</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_polarity</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_activation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_information</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_configuration</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Scan.clear"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Releases all associated in-memory data and clears the cached</span>
+<span class="sd">        attributes.</span>
+
+<span class="sd">        The data reference attribute :attr:`_data` is retained</span>
+<span class="sd">        and unchanged.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_scan_cleared</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unload</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ms_level</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The degree of fragmentation performed. 1 corresponds to a MS1 or &quot;Survey&quot; scan, 2 corresponds</span>
+<span class="sd">        to MS/MS, and so on. If :attr:`ms_level` &gt; 1, the scan is considered a &quot;tandem scan&quot; or &quot;MS^n&quot; scan</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`int`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_ms_level</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span>
+
+    <span class="nd">@ms_level</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">ms_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Whether this scan&#39;s raw data points corresponds to a profile scan or whether the raw data was</span>
+<span class="sd">        pre-centroided.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`bool`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_profile</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_is_profile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_is_profile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_profile</span>
+
+    <span class="nd">@is_profile</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">is_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_profile</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative</span>
+<span class="sd">        mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`int`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polarity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_polarity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_polarity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polarity</span>
+
+    <span class="nd">@polarity</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_polarity</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scan_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The time the scan was acquired during data acquisition. The unit of time will always</span>
+<span class="sd">        be minutes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`float`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_scan_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time</span>
+
+    <span class="nd">@scan_time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">scan_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and</span>
+<span class="sd">        intensity data points.</span>
+
+<span class="sd">        These arrays are wrapped in a :class:`~.RawDataArrays` instance, which provides</span>
+<span class="sd">        additional methods.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.RawDataArrays`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span> <span class="o">=</span> <span class="n">RawDataArrays</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_scan_arrays</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span>
+
+    <span class="nd">@arrays</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">RawDataArrays</span><span class="p">)</span> <span class="ow">or</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span> <span class="o">=</span> <span class="n">RawDataArrays</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asanyarray</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;arrays must be an instance of RawDataArrays or a pair of numpy arrays&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The human-readable display string for this scan as shown in some external software.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`str`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_scan_title</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title</span>
+
+    <span class="nd">@title</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The within run unique scan identifier.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`str`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+
+    <span class="nd">@id</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="n">scan_id</span> <span class="o">=</span> <span class="nb">id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The integer number indicating how many scans were acquired prior to this scan.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`int`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_scan_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span>
+
+    <span class="nd">@index</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Descriptive metadata for the ion which was chosen for fragmentation, and a reference to</span>
+<span class="sd">        the precursor scan.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.PrecursorInformation`&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_precursor_information</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span>
+
+    <span class="nd">@precursor_information</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">PrecursorInformation</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;precursor_information must be a </span><span class="si">%r</span><span class="s2"> instance&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">activation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;If this scan is an MS^n scan, this attribute will contain information about the process</span>
+<span class="sd">        used to produce it from its parent ion.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.ActivationInformation`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_activation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_activation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation</span>
+
+    <span class="nd">@activation</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ActivationInformation</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;activation must be an </span><span class="si">%r</span><span class="s2"> instance&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ActivationInformation</span><span class="p">,</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_activation</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">isolation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Describes the range of m/z that were isolated from a parent scan to create this scan.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.IsolationWindow`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_isolation_window</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span>
+
+    <span class="nd">@isolation_window</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">isolation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">IsolationWindow</span><span class="p">)</span> <span class="ow">or</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span>
+                <span class="n">center</span> <span class="o">=</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">width</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span> <span class="o">=</span> <span class="n">IsolationWindow</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span> <span class="o">=</span> <span class="n">IsolationWindow</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not convert </span><span class="si">%r</span><span class="s2"> to an </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span>
+                                 <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">IsolationWindow</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;isolation_window must be an either an </span><span class="si">%r</span><span class="s2"> instance or a sequence of two or three elements&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">IsolationWindow</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">acquisition_information</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Describes the type of event that produced this scan, as well as the scanning method</span>
+<span class="sd">        used.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_information</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_information</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_acquisition_information</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_information</span>
+
+    <span class="nd">@acquisition_information</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">acquisition_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ScanAcquisitionInformation</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;acquisition_information must be an instance of </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">ScanAcquisitionInformation</span><span class="p">,</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acquisition_information</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The instrument configuration used to acquire this scan.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_configuration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_configuration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_instrument_configuration</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_configuration</span>
+
+    <span class="nd">@instrument_configuration</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">InstrumentInformation</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;instrument_configuration must be an instance of </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">InstrumentInformation</span><span class="p">,</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_configuration</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A set of key-value pairs describing the scan not part of the standard interface&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">_annotations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span>
+
+    <span class="nd">@annotations</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Scan.bind"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.bind">[docs]</a>    <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Scan</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Scan.unbind"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.unbind">[docs]</a>    <span class="k">def</span> <span class="nf">unbind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Scan</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Scan(</span><span class="si">%r</span><span class="s2">, index=</span><span class="si">%d</span><span class="s2">, time=</span><span class="si">%0.4f</span><span class="s2">, ms_level=</span><span class="si">%r%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span><span class="p">,</span>
+            <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="c1"># peak manipulation</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot iterate over peaks in a scan that has not been &quot;</span>
+                             <span class="s2">&quot;centroided. Call `pick_peaks` first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot retrieve peaks in a scan that has not been &quot;</span>
+                             <span class="s2">&quot;centroided. Call `pick_peaks` first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot count peaks in a scan that has not been &quot;</span>
+                             <span class="s2">&quot;centroided. Call `pick_peaks` first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__bool__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Scan.has_peak"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.has_peak">[docs]</a>    <span class="k">def</span> <span class="nf">has_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the</span>
+<span class="sd">        :class:`ms_peak_picker.FittedPeak` objects picked for this scan.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mz: float</span>
+<span class="sd">            The m/z to search for</span>
+<span class="sd">        error_tolerance: float</span>
+<span class="sd">            The parts per million mass error tolerance to use</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`ms_peak_picker.FittedPeak` or None</span>
+<span class="sd">            The peak closest to the query m/z within the error tolerance window or None</span>
+<span class="sd">            if there are no peaks satisfying the requirements</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError:</span>
+<span class="sd">            If the scan has not yet had peaks picked yet</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        :meth:`.Scan.pick_peaks`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot search for peaks in a scan that has not been &quot;</span>
+                             <span class="s2">&quot;centroided. Call `pick_peaks` first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scan.pick_peaks"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.pick_peaks">[docs]</a>    <span class="k">def</span> <span class="nf">pick_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A wrapper around :func:`ms_peak_picker.pick_peaks` which will populate the</span>
+<span class="sd">        :attr:`peak_set` attribute of this scan.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fit_type : str, optional</span>
+<span class="sd">            The name of the peak model to use. One of &quot;quadratic&quot;, &quot;gaussian&quot;, &quot;lorentzian&quot;, or &quot;apex&quot;</span>
+<span class="sd">        signal_to_noise_threshold : int, optional</span>
+<span class="sd">            Minimum signal-to-noise measurement to accept a peak</span>
+<span class="sd">        intensity_threshold : int, optional</span>
+<span class="sd">            Minimum intensity measurement to accept a peak</span>
+<span class="sd">        threshold_data : bool, optional</span>
+<span class="sd">            Whether to apply thresholds to the data</span>
+<span class="sd">        target_envelopes : list, optional</span>
+<span class="sd">            A sequence of (start m/z, end m/z) pairs, limiting peak picking to only those intervals</span>
+<span class="sd">        transforms : list, optional</span>
+<span class="sd">            A list of :class:`scan_filter.FilterBase` instances or callable that</span>
+<span class="sd">            accepts (mz_array, intensity_array) and returns (mz_array, intensity_array) or</span>
+<span class="sd">            `str` matching one of the premade names in `scan_filter.filter_register`</span>
+<span class="sd">        verbose : bool, optional</span>
+<span class="sd">            Whether to log extra information while picking peaks</span>
+<span class="sd">        start_mz : float, optional</span>
+<span class="sd">            A minimum m/z value to start picking peaks from</span>
+<span class="sd">        stop_mz : float, optional</span>
+<span class="sd">            A maximum m/z value to stop picking peaks after</span>
+<span class="sd">        *args :</span>
+<span class="sd">            Passed along to :func:`ms_peak_picker.pick_peaks`</span>
+<span class="sd">        **kwargs :</span>
+<span class="sd">            Passed along to :func:`ms_peak_picker.pick_peaks`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">            Returns self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mzs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">PeakIndex</span><span class="p">(</span><span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">([]))</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_profile</span><span class="p">:</span>
+            <span class="n">peak_mode</span> <span class="o">=</span> <span class="s1">&#39;profile&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">peak_mode</span> <span class="o">=</span> <span class="s1">&#39;centroid&#39;</span>
+
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;peak_mode&#39;</span><span class="p">,</span> <span class="n">peak_mode</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">pick_peaks</span><span class="p">(</span><span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Scan.deconvolute"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.deconvolute">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A wrapper around :func:`ms_deisotope.deconvolution.deconvolute_peaks`.</span>
+
+<span class="sd">        The scan must have had its peaks picked before it can be deconvoluted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        decon_config : dict, optional</span>
+<span class="sd">            Parameters to use to initialize the deconvoluter instance produced by</span>
+<span class="sd">            ``deconvoluter_type``</span>
+<span class="sd">        charge_range : tuple of integers, optional</span>
+<span class="sd">            The range of charge states to consider.</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            PPM error tolerance to use to match experimental to theoretical peaks</span>
+<span class="sd">        priority_list : list, optional</span>
+<span class="sd">            The set of peaks to target for deconvolution to be able to enforce external</span>
+<span class="sd">            constraints on, such as selected precursors for fragmentation.</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The maximum number of neutron shifts to search to the left  (decrease) from</span>
+<span class="sd">            each query peak</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The maximum number of neutron shifts to search to the right (increase) from</span>
+<span class="sd">            each query peak</span>
+<span class="sd">        left_search_limit_for_priorities : int, optional</span>
+<span class="sd">            The maximum number of neutron shifts to search to the left (decrease) from</span>
+<span class="sd">            each query peak for priority targets</span>
+<span class="sd">        right_search_limit_for_priorities : None, optional</span>
+<span class="sd">            The maximum number of neutron shifts to search to the right (increase) from</span>
+<span class="sd">            each query peak for priority targets</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to PROTON</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percentage of the isotopic pattern to include. Defaults to TRUNCATE_AFTER</span>
+<span class="sd">        deconvoluter_type : type or callable, optional</span>
+<span class="sd">            A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Additional keywords passed to :func:`~.deconvolute_peaks`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">            Returns self</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If :attr:`peak_set` is None, a :class:`ValueError` will be raised</span>
+<span class="sd">            indicating that a scan must be centroided before it can be deconvoluted</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        :func:`~.deconvolute_peaks`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot deconvolute a scan that has not been &quot;</span>
+                             <span class="s2">&quot;centroided. Call `pick_peaks` first.&quot;</span><span class="p">)</span>
+        <span class="n">charge_range</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;charge_range&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">polarity</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="n">charge_range</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">charge_range</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">polarity</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">charge_range</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;charge_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">charge_range</span>
+        <span class="n">decon_results</span> <span class="o">=</span> <span class="n">deconvolute_peaks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="n">decon_results</span><span class="o">.</span><span class="n">peak_set</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="Scan.pack"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.pack">[docs]</a>    <span class="k">def</span> <span class="nf">pack</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Pack the (dispersed) representation of the data in this :class:`Scan`</span>
+<span class="sd">        into a packed :class:`ProcessedScan` object.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`ProcessedScan`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">precursor_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span>
+        <span class="k">return</span> <span class="n">ProcessedScan</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">precursor_info</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">polarity</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_information</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isolation_window</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">)</span></div>
+
+    <span class="c1"># signal transformation</span>
+
+<div class="viewcode-block" id="Scan.reprofile"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.reprofile">[docs]</a>    <span class="k">def</span> <span class="nf">reprofile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_fwhm</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">model_cls</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Use the picked peaks in :attr:`peak_set` to create a new</span>
+<span class="sd">        profile mass spectrum using a peak shape model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        max_fwhm : float, optional</span>
+<span class="sd">            Maximum peak width above which peaks will be ignored</span>
+<span class="sd">        dx : float, optional</span>
+<span class="sd">            The distance between each new point in m/z space in the</span>
+<span class="sd">            reprofiled spectrum</span>
+<span class="sd">        model_cls : ms_peak_picker.peak_statistics.PeakShapeModel, optional</span>
+<span class="sd">            The peak shape model to use to generate the profile data from</span>
+<span class="sd">            the centroided peaks. Defaults a Gaussian model</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">            A shallow copy of this scan with its :attr:`arrays` replaced with</span>
+<span class="sd">            the new reprofiled arrays</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            A scan that has not been centroided and is already in profile mode</span>
+<span class="sd">            must have its peaks picked before it can be reprofiled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_profile</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot reprofile a scan that has not been centroided&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_profile</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">:</span>
+            <span class="n">arrays</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arrays</span> <span class="o">=</span> <span class="n">reprofile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span> <span class="n">max_fwhm</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">model_cls</span><span class="p">)</span>
+        <span class="n">scan</span> <span class="o">=</span> <span class="n">WrappedScan</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">arrays</span><span class="p">,</span>
+            <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">),</span> <span class="n">is_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scan</span></div>
+
+<div class="viewcode-block" id="Scan.denoise"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.denoise">[docs]</a>    <span class="k">def</span> <span class="nf">denoise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">region_width</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a shallow copy of the scan with a noise reduction</span>
+<span class="sd">        transformation applied.</span>
+
+<span class="sd">        This method uses the scan filter :class:`ms_peak_picker.scan_filter.FTICRBaselineRemoval`</span>
+<span class="sd">        which uses the MasSpike noise reduction algorithm.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scale : float, optional</span>
+<span class="sd">            The multiplier of the local noise window to remove</span>
+<span class="sd">        window_length : float, optional</span>
+<span class="sd">            The width (in m/z) of each window</span>
+<span class="sd">        region_width : int, optional</span>
+<span class="sd">            The width (in m/z) of each region of windows</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">            The denoised version of this scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span>
+        <span class="n">mzs</span> <span class="o">=</span> <span class="n">mzs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">intensities</span> <span class="o">=</span> <span class="n">intensities</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">scan_filter</span><span class="o">.</span><span class="n">FTICRBaselineRemoval</span><span class="p">(</span>
+            <span class="n">window_length</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">region_width</span><span class="o">=</span><span class="n">region_width</span><span class="p">)</span>
+        <span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">WrappedScan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+                           <span class="p">(</span><span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">),</span>
+                           <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scan.transform"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Applies a series of :class:`ms_peak_picker.scan_filter.FilterBase`,</span>
+<span class="sd">        or strings that are recognized by :func:`ms_peak_picker.scan_filter.transform`</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        filters: :class:`Iterable`</span>
+<span class="sd">            An iterable of transformations of :class:`ms_peak_picker.scan_filter.FilterBase`</span>
+<span class="sd">            or strings.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`WrappedScan`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span>
+        <span class="n">mzs</span> <span class="o">=</span> <span class="n">mzs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">intensities</span> <span class="o">=</span> <span class="n">intensities</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span> <span class="o">=</span> <span class="n">scan_filter</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+            <span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">WrappedScan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+                           <span class="p">(</span><span class="n">mzs</span><span class="p">,</span> <span class="n">intensities</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">),</span>
+                           <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scan.average_with"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.average_with">[docs]</a>    <span class="k">def</span> <span class="nf">average_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scans</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Average together multiple scans&#39; raw data arrays to create a composite intensity</span>
+<span class="sd">        profile for a common m/z axis.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scans: list:</span>
+<span class="sd">            A list of :class:`Scan` objects</span>
+<span class="sd">        dx : float, optional</span>
+<span class="sd">            The distance between each point in the generated common m/z axis.</span>
+<span class="sd">        weight_sigma : float, optional</span>
+<span class="sd">            When this value is not None, scans are weighted according to a</span>
+<span class="sd">            gaussian distribution with a $\sigma$ equal to this value</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`AveragedScan`</span>
+<span class="sd">            A shallow copy of this scan with its :attr:`arrays` attribute replaced</span>
+<span class="sd">            with the averaged array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="mf">0.01</span>
+            <span class="n">default_dx</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">default_dx</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">scans</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">scans</span><span class="p">)</span>
+        <span class="n">arrays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">scans</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">is_profile</span><span class="p">:</span>
+                <span class="n">arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">arrays</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">reprofile</span><span class="p">(</span><span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">)</span><span class="o">.</span><span class="n">arrays</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weight_sigma</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">weight_sigma</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">weight_sigma</span> <span class="o">=</span> <span class="mf">0.025</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_smoothing_weights</span><span class="p">(</span>
+                <span class="n">scans</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">weight_sigma</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">default_dx</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">reference</span> <span class="o">=</span> <span class="n">arrays</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">reference</span> <span class="o">=</span> <span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">empirical_dx</span> <span class="o">=</span> <span class="n">decimal_shift</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">reference</span><span class="o">.</span><span class="n">mz</span><span class="p">)))</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">empirical_dx</span><span class="p">)</span>
+        <span class="n">new_arrays</span> <span class="o">=</span> <span class="n">average_signal</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">scan</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">scans</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">AveragedScan</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">new_arrays</span><span class="p">,</span>
+            <span class="n">indices</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">),</span> <span class="n">is_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_adjacent_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index_interval</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rt_interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;One of `index_interval` or `rt_interval` must be provided&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot average MSn scans at this time&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t average an unbound scan&quot;</span><span class="p">)</span>
+        <span class="n">before</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">after</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">index_interval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">before</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">current_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">index_interval</span><span class="p">):</span>
+                <span class="n">next_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">find_previous_ms1</span><span class="p">(</span><span class="n">current_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">next_scan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">before</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_scan</span><span class="p">)</span>
+                <span class="n">current_index</span> <span class="o">=</span> <span class="n">next_scan</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">after</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">current_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">index_interval</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">next_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">find_next_ms1</span><span class="p">(</span><span class="n">current_index</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="n">next_scan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">after</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_scan</span><span class="p">)</span>
+                <span class="n">current_index</span> <span class="o">=</span> <span class="n">next_scan</span><span class="o">.</span><span class="n">index</span>
+        <span class="k">elif</span> <span class="n">rt_interval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reference_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span>
+            <span class="n">before</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">current_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span>
+            <span class="k">while</span> <span class="nb">abs</span><span class="p">(</span><span class="n">reference_time</span> <span class="o">-</span> <span class="n">current_time</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">rt_interval</span> <span class="ow">and</span> <span class="n">current_index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">next_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">find_previous_ms1</span><span class="p">(</span><span class="n">current_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">next_scan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">before</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_scan</span><span class="p">)</span>
+                <span class="n">current_index</span> <span class="o">=</span> <span class="n">next_scan</span><span class="o">.</span><span class="n">index</span>
+                <span class="n">current_time</span> <span class="o">=</span> <span class="n">next_scan</span><span class="o">.</span><span class="n">scan_time</span>
+
+            <span class="n">before</span> <span class="o">=</span> <span class="n">before</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">after</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">current_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">current_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span>
+            <span class="k">while</span> <span class="nb">abs</span><span class="p">(</span><span class="n">reference_time</span> <span class="o">-</span> <span class="n">current_time</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">rt_interval</span> <span class="ow">and</span> <span class="n">current_index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">next_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">find_next_ms1</span><span class="p">(</span><span class="n">current_index</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="n">next_scan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">after</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_scan</span><span class="p">)</span>
+                <span class="n">current_index</span> <span class="o">=</span> <span class="n">next_scan</span><span class="o">.</span><span class="n">index</span>
+                <span class="n">current_time</span> <span class="o">=</span> <span class="n">next_scan</span><span class="o">.</span><span class="n">scan_time</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;One of `index_interval` or `rt_interval` must be provided&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">before</span><span class="p">,</span> <span class="n">after</span>
+
+    <span class="k">def</span> <span class="nf">_compute_smoothing_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scans</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.025</span><span class="p">):</span>
+        <span class="n">sigma_sqrd_2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">time_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">scan_time</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scans</span><span class="p">])</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="n">time_array</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma_sqrd_2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">weights</span>
+
+<div class="viewcode-block" id="Scan.average"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.Scan.average">[docs]</a>    <span class="k">def</span> <span class="nf">average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Average together multiple scans&#39; raw data arrays to create a composite intensity</span>
+<span class="sd">        profile for a common m/z axis.</span>
+
+<span class="sd">        Only MS1 scans will be averaged with this method</span>
+
+<span class="sd">        Either an absolute number of scans before and after can be specified using</span>
+<span class="sd">        ``index_interval`` or a time window may be specified using ``rt_interval``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index_interval : int, optional</span>
+<span class="sd">            The number of scans preceding and proceding to average with.</span>
+<span class="sd">        rt_interval : float, optional</span>
+<span class="sd">            The range of time (in minutes) preceding and proceding to</span>
+<span class="sd">            look for other scans to average with.</span>
+<span class="sd">        dx : float, optional</span>
+<span class="sd">            The distance between each point in the generated common m/z axis.</span>
+<span class="sd">        weight_sigma : float, optional</span>
+<span class="sd">            When this value is not None, scans are weighted according to a</span>
+<span class="sd">            gaussian distribution with a $\sigma$ equal to this value</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`AveragedScan`</span>
+<span class="sd">            A shallow copy of this scan with its :attr:`arrays` attribute replaced</span>
+<span class="sd">            with the averaged array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="mf">0.01</span>
+            <span class="n">default_dx</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">default_dx</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_adjacent_scans</span><span class="p">(</span><span class="n">index_interval</span><span class="p">,</span> <span class="n">rt_interval</span><span class="p">)</span>
+        <span class="n">scans</span> <span class="o">=</span> <span class="n">before</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="n">after</span>
+        <span class="n">arrays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">scans</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">is_profile</span><span class="p">:</span>
+                <span class="n">scan_arrays</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">arrays</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">scan_arrays</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">reprofile</span><span class="p">(</span><span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">)</span><span class="o">.</span><span class="n">arrays</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">scan_arrays</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scan_arrays</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weight_sigma</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">weight_sigma</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">weight_sigma</span> <span class="o">=</span> <span class="mf">0.025</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_smoothing_weights</span><span class="p">(</span>
+                <span class="n">scans</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">weight_sigma</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">default_dx</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">reference</span> <span class="o">=</span> <span class="n">arrays</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">reference</span> <span class="o">=</span> <span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">empirical_dx</span> <span class="o">=</span> <span class="n">decimal_shift</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">reference</span><span class="o">.</span><span class="n">mz</span><span class="p">)))</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">empirical_dx</span><span class="p">)</span>
+
+        <span class="n">new_arrays</span> <span class="o">=</span> <span class="n">average_signal</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">scan</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">scans</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">AveragedScan</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">new_arrays</span><span class="p">,</span>
+            <span class="n">indices</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">),</span> <span class="n">is_profile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">)</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">WrappedScan</span><span class="p">(</span><span class="n">Scan</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A wrapper around a :class:`Scan` object with one or more attributes overridden.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">overridable_keys</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;_arrays&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_title&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_ms_level&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_scan_time&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_precursor_information&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_index&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_is_profile&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_polarity&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_activation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_acquisition_information&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_isolation_window&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;_instrument_configuration&quot;</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">array_data</span><span class="p">,</span> <span class="n">product_scans</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">annotations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WrappedScan</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">peak_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">deconvoluted_peak_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
+            <span class="n">product_scans</span><span class="o">=</span><span class="n">product_scans</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arrays</span> <span class="o">=</span> <span class="n">RawDataArrays</span><span class="p">(</span><span class="o">*</span><span class="n">array_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">key</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">overridable_keys</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Cannot override attribute </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,))</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">dup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="n">deep</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">],</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_overrides</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>\
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
+        <span class="k">return</span> <span class="n">dup</span>
+
+
+<span class="k">class</span> <span class="nc">AveragedScan</span><span class="p">(</span><span class="n">WrappedScan</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An averaged :class:`Scan` object, storing additional information for retrieving</span>
+<span class="sd">    the spectra that were averaged together.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scan_indices: list</span>
+<span class="sd">        The :attr:`index` values for all of the scans that were averaged together</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">array_data</span><span class="p">,</span> <span class="n">scan_indices</span><span class="p">,</span> <span class="n">product_scans</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">annotations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AveragedScan</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">array_data</span><span class="p">,</span>
+            <span class="n">product_scans</span><span class="o">=</span><span class="n">product_scans</span><span class="p">,</span> <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_indices</span> <span class="o">=</span> <span class="n">scan_indices</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">dup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scan_indices</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="n">deep</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">],</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_external_annotations</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_overrides</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">deep</span><span class="p">:</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>\
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span>
+            <span class="n">dup</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
+        <span class="k">return</span> <span class="n">dup</span>
+
+
+<span class="k">class</span> <span class="nc">ProcessedScan</span><span class="p">(</span><span class="n">ScanBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container for mass spectral data and associated descriptive information that has been</span>
+<span class="sd">    processed and reduced.</span>
+
+<span class="sd">    A :class:`ProcessedScan` object has been processed and compacted. It does not carry a</span>
+<span class="sd">    :class:`~.RawDataArrays` :attr:`arrays` attribute, only at least one of :attr:`peak_set`</span>
+<span class="sd">    and :attr:`deconvoluted_peak_set`. The rest of its attributes are all loaded in memory</span>
+<span class="sd">    directly without needing to reconstruct them from a specific format lazily through a</span>
+<span class="sd">    :class:`~.ScanDataSource`.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    deconvoluted_peak_set : :class:`~.DeconvolutedPeakSet` or None</span>
+<span class="sd">        Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will</span>
+<span class="sd">        be `None` if deconvolution has not been done.</span>
+<span class="sd">    peak_set : :class:`ms_peak_picker.PeakSet` or None</span>
+<span class="sd">        Picked peaks and (possibly) associated raw data points as produced by :meth:`pick_peaks`.</span>
+<span class="sd">        Will be `None` if peak picking has not been done.</span>
+<span class="sd">    product_scans : list</span>
+<span class="sd">        A list of :class:`Scan` instances which were produced by fragmenting ions from this one.</span>
+<span class="sd">        This attribute is not guaranteed to be populated depending upon how the scan is loaded.</span>
+<span class="sd">    source : :class:`ScanDataSource`</span>
+<span class="sd">        The object which produced this scan and which defines the methods for retrieving common</span>
+<span class="sd">        attributes from the underlying data structures.</span>
+<span class="sd">    precursor_information: :class:`PrecursorInformation` or None</span>
+<span class="sd">        Descriptive metadata for the ion which was chosen for fragmentation, and a reference to</span>
+<span class="sd">        the precursor scan</span>
+<span class="sd">    id: str</span>
+<span class="sd">        The unique identifier for this scan as given by the source</span>
+<span class="sd">    title: str</span>
+<span class="sd">        The human-readable display string for this scan as shown in some external software</span>
+<span class="sd">    ms_level: int</span>
+<span class="sd">        The degree of fragmentation performed. 1 corresponds to a MS1 or &quot;Survey&quot; scan, 2 corresponds</span>
+<span class="sd">        to MS/MS, and so on. If :attr:`ms_level` &gt; 1, the scan is considered a &quot;tandem scan&quot; or &quot;MS^n&quot; scan</span>
+<span class="sd">    scan_time: float</span>
+<span class="sd">        The time the scan was acquired during data acquisition. The unit of time will always be minutes.</span>
+<span class="sd">    drift_time: float or None</span>
+<span class="sd">        The time measured by the ion mobility spectrometer for this scan or frame. This quantity is None</span>
+<span class="sd">        if the scan does not have ion mobility information associated with it, which is usually recorded</span>
+<span class="sd">        in :attr:`acquisition_information`</span>
+<span class="sd">    index: int</span>
+<span class="sd">        The integer number indicating how many scans were acquired prior to this scan.</span>
+<span class="sd">    is_profile: bool</span>
+<span class="sd">        Whether this scan&#39;s raw data points corresponds to a profile scan or whether the raw data was</span>
+<span class="sd">        pre-centroided.</span>
+<span class="sd">    polarity: int</span>
+<span class="sd">        If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative</span>
+<span class="sd">        mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.</span>
+<span class="sd">    activation: :class:`.ActivationInformation` or None</span>
+<span class="sd">        If this scan is an MS^n scan, this attribute will contain information about the process</span>
+<span class="sd">        used to produce it from its parent ion.</span>
+<span class="sd">    instrument_configuration: :class:`~.InstrumentInformation`</span>
+<span class="sd">        The instrument configuration used to acquire this scan.</span>
+<span class="sd">    acquisition_information: :class:`.ScanAcquisitionInformation` or None</span>
+<span class="sd">        Describes the type of event that produced this scan, as well as the scanning method</span>
+<span class="sd">        used.</span>
+<span class="sd">    isolation_window: :class:`.IsolationWindow` or None</span>
+<span class="sd">        Describes the range of m/z that were isolated from a parent scan to create this scan</span>
+<span class="sd">    annotations: dict</span>
+<span class="sd">        A set of key-value pairs describing the scan not part of the standard interface</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">precursor_information</span><span class="p">,</span>
+                 <span class="n">ms_level</span><span class="p">,</span> <span class="n">scan_time</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">peak_set</span><span class="p">,</span>
+                 <span class="n">deconvoluted_peak_set</span><span class="p">,</span> <span class="n">polarity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">acquisition_information</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">isolation_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">instrument_configuration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">product_scans</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">annotations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">product_scans</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">product_scans</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">annotations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">annotations</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span> <span class="o">=</span> <span class="n">precursor_information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">=</span> <span class="n">ms_level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span> <span class="o">=</span> <span class="n">scan_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">peak_set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="n">deconvoluted_peak_set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">polarity</span> <span class="o">=</span> <span class="n">polarity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">activation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_information</span> <span class="o">=</span> <span class="n">acquisition_information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">isolation_window</span> <span class="o">=</span> <span class="n">isolation_window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration</span> <span class="o">=</span> <span class="n">instrument_configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span> <span class="o">=</span> <span class="n">product_scans</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span> <span class="o">=</span> <span class="n">annotations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Clear storage-heavy attribute values</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_information</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">isolation_window</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Whether this scan&#39;s raw data points corresponds to a profile scan or whether the raw data was</span>
+<span class="sd">        pre-centroided.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_resolve_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolve_peaks</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_peaks</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolve_peaks</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">has_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="mf">2e-5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A wrapper around :meth:`~.DeconvolutedPeakSet.has_peak` to query the</span>
+<span class="sd">        :class:`~.DeconvolutedPeak` objects picked for this scan. If no deconvoluted</span>
+<span class="sd">        peaks are available, but centroided peaks are, this method will instead</span>
+<span class="sd">        behave like :class:`Scan.has_peak`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mass: float</span>
+<span class="sd">            The mass to search for</span>
+<span class="sd">        error_tolerance: float</span>
+<span class="sd">            The parts per million mass error tolerance to use</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.PeakBase`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span><span class="n">mass</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span><span class="n">mass</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No peaks available&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">pinfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span>
+        <span class="k">if</span> <span class="n">pinfo</span><span class="p">:</span>
+            <span class="n">pinfo_string</span> <span class="o">=</span> <span class="s2">&quot;, </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pinfo</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pinfo_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s2">&quot;ProcessedScan(id=</span><span class="si">%s</span><span class="s2">, ms_level=</span><span class="si">%d</span><span class="s2">, </span><span class="si">%d</span><span class="s2"> peaks</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">),</span> <span class="n">pinfo_string</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedScan</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">unbind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedScan</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a copy of the :class:`ProcessedScan` object, potentially a deep</span>
+<span class="sd">        one</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        deep: :class:`bool`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`Scan`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_information</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms_level</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scan_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_set</span><span class="p">,</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">deep</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">,</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">polarity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_information</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isolation_window</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration</span><span class="p">,</span>
+            <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_scans</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">dup</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
+    </div>
+  </body>
+</html>

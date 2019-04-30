@@ -1,0 +1,392 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.deconvolution.averagine_based &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.deconvolution.averagine_based</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.deconvolution.averagine_based</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;Implementations of averagine-based deconvoluters.</span>
+
+<span class="sd">Averagine-based deconvoluters use an &quot;average monomer&quot; isotopic model</span>
+<span class="sd">to interpolate the isotopic patterns for any peak in the experimental</span>
+<span class="sd">spectrum. The term &quot;averagine&quot; comes from the name Senko gave to the</span>
+<span class="sd">&quot;average amino acid&quot; when introducing the concept in [1].</span>
+
+<span class="sd">References</span>
+<span class="sd">----------</span>
+<span class="sd">[1] Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic</span>
+<span class="sd">    masses and ion populations for large biomolecules from resolved isotopic distributions.</span>
+<span class="sd">    Journal of the American Society for Mass Spectrometry, 6(4), 229–233.</span>
+<span class="sd">    http://doi.org/10.1016/1044-0305(95)00017-8</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">PROTON</span><span class="p">,</span> <span class="n">AveragineCache</span><span class="p">,</span> <span class="n">peptide</span><span class="p">,</span> <span class="n">glycopeptide</span><span class="p">,</span> <span class="n">glycan</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="k">import</span> <span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">SCALE_METHOD</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.scoring</span> <span class="k">import</span> <span class="n">penalized_msdeconv</span>
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">DeconvoluterBase</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.exhaustive</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="p">,</span>
+    <span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">count_placeholders</span><span class="p">,</span> <span class="n">prepare_peaklist</span>
+
+
+<span class="k">class</span> <span class="nc">AveragineDeconvoluterBase</span><span class="p">(</span><span class="n">DeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A base class derived from :class:`DeconvoluterBase` which provides some common methods</span>
+<span class="sd">    for fitting isotopic patterns using an Averagine model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_subtraction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="n">SCALE_METHOD</span><span class="p">,</span> <span class="n">merge_isobaric_peaks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">minimum_intensity</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AveragineDeconvoluterBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">use_subtraction</span><span class="p">,</span> <span class="n">scale_method</span><span class="p">,</span> <span class="n">merge_isobaric_peaks</span><span class="p">,</span>
+            <span class="n">minimum_intensity</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fit_theoretical_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+                                     <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit an isotopic pattern seeded at `peak` at `charge` charge.</span>
+
+<span class="sd">        Generates a theoretical isotopic pattern using :attr:`averagine`, calls</span>
+<span class="sd">        :meth:`match_theoretical_isotopic_distribution`</span>
+<span class="sd">        to extract experimental peaks matching this theoretical pattern, scales the theoretical distribution using</span>
+<span class="sd">        :meth:`scale_theoretical_distribution`, and evaluates the quality of the fit using :attr:`scorer`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The putative monoisotopic peak to use for interpolating an isotopic pattern</span>
+<span class="sd">        error_tolerance : float</span>
+<span class="sd">            Parts-per-million error tolerance for isotopic pattern matching</span>
+<span class="sd">        charge : int</span>
+<span class="sd">            The charge state to produce an isotopic pattern for</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The charge carrier mass, defaults to |PROTON|</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.IsotopicFitRecord`</span>
+<span class="sd">            The fitted isotopic pattern</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">averagine</span><span class="o">.</span><span class="n">isotopic_cluster</span><span class="p">(</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+            <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+        <span class="n">eid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_theoretical_isotopic_distribution</span><span class="p">(</span>
+            <span class="n">tid</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_theoretical_distribution</span><span class="p">(</span>
+            <span class="n">eid</span><span class="p">,</span> <span class="n">tid</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">charge</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">record</span>
+
+    <span class="k">def</span> <span class="nf">_fit_peaks_at_charges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_charge_set</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+                              <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given a set of candidate monoisotopic peaks and charge states, and a PPM error tolerance,</span>
+<span class="sd">        fit each putative isotopic pattern.</span>
+
+<span class="sd">        Calls :meth:`fit_theoretical_distribution` on each candidate.</span>
+
+<span class="sd">        If a fit does not satisfy :attr:`scorer` `.reject`, it is discarded. If a fit has only one real peak</span>
+<span class="sd">        and has a charge state greater than 1, it will also be discarded.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak_charge_set : set</span>
+<span class="sd">            The set of candidate (:class:`~.FittedPeak`, charge) tuples to try to fit</span>
+<span class="sd">        error_tolerance : float</span>
+<span class="sd">            Matching error tolerance</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The charge carrier to use. Defaults to |PROTON|</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">            The set of :class:`~.IsotopicFitRecord` instances produced</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">peak</span><span class="p">,</span> <span class="n">charge</span> <span class="ow">in</span> <span class="n">peak_charge_set</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_theoretical_distribution</span><span class="p">(</span>
+                <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="p">,</span>
+                <span class="n">ignore_below</span><span class="p">)</span>
+            <span class="n">fit</span><span class="o">.</span><span class="n">missed_peaks</span> <span class="o">=</span> <span class="n">count_placeholders</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_fit</span><span class="p">(</span><span class="n">fit</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="k">import</span> <span class="n">AveragineDeconvoluterBase</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="AveragineDeconvoluter"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.AveragineDeconvoluter">[docs]</a><span class="k">class</span> <span class="nc">AveragineDeconvoluter</span><span class="p">(</span><span class="n">AveragineDeconvoluterBase</span><span class="p">,</span> <span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Deconvoluter which uses an :title-reference:`averagine` [1] model to generate theoretical</span>
+<span class="sd">    isotopic patterns for each peak to consider. Combines :class:`AveragineDeconvoluterBase` and</span>
+<span class="sd">    :class:`ExhaustivePeakSearchDeconvoluterBase` to create a working Deconvoluter type.</span>
+
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    averagine : :class:`~.AveragineCache`</span>
+<span class="sd">        The averagine model and associated theoretical isotopic pattern cache to use</span>
+<span class="sd">        to build theoretical isotopic patterns.</span>
+<span class="sd">    peaklist : :class:`~.PeakSet`</span>
+<span class="sd">        The collection of ms_peak_picker.FittedPeak instances and possible associated</span>
+<span class="sd">        data to deconvolute.</span>
+<span class="sd">    scorer : :class:`~.IsotopicFitterBase`</span>
+<span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        How much diagnostic information to provide</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations</span>
+<span class="sd">        for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass</span>
+<span class="sd">        Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">averagine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scorer</span><span class="o">=</span><span class="n">penalized_msdeconv</span><span class="p">,</span>
+                 <span class="n">use_subtraction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="n">SCALE_METHOD</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">averagine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">averagine</span> <span class="o">=</span> <span class="n">AveragineCache</span><span class="p">(</span><span class="n">peptide</span><span class="p">,</span> <span class="nb">dict</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">averagine</span><span class="p">,</span> <span class="n">AveragineCache</span><span class="p">):</span>
+                <span class="n">averagine</span> <span class="o">=</span> <span class="n">AveragineCache</span><span class="p">(</span><span class="n">averagine</span><span class="p">,</span> <span class="nb">dict</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span> <span class="o">=</span> <span class="n">prepare_peaklist</span><span class="p">(</span><span class="n">peaklist</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averagine</span> <span class="o">=</span> <span class="n">averagine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span> <span class="o">=</span> <span class="n">scorer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">AveragineDeconvoluter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">use_subtraction</span><span class="p">,</span> <span class="n">scale_method</span><span class="p">,</span> <span class="n">merge_isobaric_peaks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">MultiAveragineDeconvoluterBase</span><span class="p">(</span><span class="n">DeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A base class derived from :class:`DeconvoluterBase` which provides some common methods</span>
+<span class="sd">    for fitting isotopic patterns using multiple Averagine models.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_fit_peaks_at_charges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_charge_set</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                              <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">peak</span><span class="p">,</span> <span class="n">charge</span> <span class="ow">in</span> <span class="n">peak_charge_set</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">averagine</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">averagines</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_theoretical_distribution</span><span class="p">(</span>
+                    <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">averagine</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                    <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+                <span class="n">fit</span><span class="o">.</span><span class="n">missed_peaks</span> <span class="o">=</span> <span class="n">count_placeholders</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">)</span>
+                <span class="n">fit</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">averagine</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_fit</span><span class="p">(</span><span class="n">fit</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="k">import</span> <span class="n">MultiAveragineDeconvoluterBase</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">MultiAveragineDeconvoluter</span><span class="p">(</span><span class="n">MultiAveragineDeconvoluterBase</span><span class="p">,</span> <span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Deconvoluter which uses multiple :title-reference:`averagine` [1] model to generate theoretical</span>
+<span class="sd">    isotopic patterns for each peak to consider. Combines :class:`MultiAveragineDeconvoluterBase` and</span>
+<span class="sd">    :class:`ExhaustivePeakSearchDeconvoluterBase` to create a working Deconvoluter type.</span>
+
+<span class="sd">    This differs from :class:`AveragineDeconvoluter`, in that it will produce multiple isotopic fits for</span>
+<span class="sd">    each (peak, charge) pair. This is advantageous when the isotopic patterns produced by different models</span>
+<span class="sd">    are sufficiently different enough that they will favor different peak sets.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    averagine : list of :class:`~.ms_deisotope.averagine.AveragineCache`</span>
+<span class="sd">        The averagine models and associated theoretical isotopic pattern caches to use</span>
+<span class="sd">        to build theoretical isotopic patterns.</span>
+<span class="sd">    peaklist : :class:`~.ms_peak_picker.PeakSet`</span>
+<span class="sd">        The collection of ms_peak_picker.FittedPeak instances and possible associated</span>
+<span class="sd">        data to deconvolute.</span>
+<span class="sd">    scorer : :class:`~.ms_deisotope.scoring.IsotopicFitterBase`</span>
+<span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        How much diagnostic information to provide</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations</span>
+<span class="sd">        for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass</span>
+<span class="sd">        Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">averagines</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scorer</span><span class="o">=</span><span class="n">penalized_msdeconv</span><span class="p">,</span>
+                 <span class="n">use_subtraction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="n">SCALE_METHOD</span><span class="p">,</span>
+                 <span class="n">merge_isobaric_peaks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">minimum_intensity</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span> <span class="o">=</span> <span class="n">prepare_peaklist</span><span class="p">(</span><span class="n">peaklist</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span> <span class="o">=</span> <span class="n">scorer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span> <span class="o">=</span> <span class="n">use_subtraction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_method</span> <span class="o">=</span> <span class="n">scale_method</span>
+
+        <span class="n">cache_backend</span> <span class="o">=</span> <span class="nb">dict</span>
+        <span class="k">if</span> <span class="n">averagines</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">averagines</span> <span class="o">=</span> <span class="p">[</span><span class="n">peptide</span><span class="p">,</span> <span class="n">glycopeptide</span><span class="p">,</span> <span class="n">glycan</span><span class="p">]</span>
+        <span class="n">averagines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">AveragineCache</span><span class="p">(</span><span class="n">avg</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">cache_backend</span><span class="p">())</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">avg</span><span class="p">,</span> <span class="n">AveragineCache</span><span class="p">)</span> <span class="k">else</span> <span class="n">avg</span>
+            <span class="k">for</span> <span class="n">avg</span> <span class="ow">in</span> <span class="n">averagines</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averagines</span> <span class="o">=</span> <span class="n">averagines</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">MultiAveragineDeconvoluter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">use_subtraction</span><span class="p">,</span> <span class="n">scale_method</span><span class="p">,</span> <span class="n">merge_isobaric_peaks</span><span class="p">,</span>
+            <span class="n">minimum_intensity</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="AveraginePeakDependenceGraphDeconvoluter"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter">[docs]</a><span class="k">class</span> <span class="nc">AveraginePeakDependenceGraphDeconvoluter</span><span class="p">(</span><span class="n">AveragineDeconvoluter</span><span class="p">,</span> <span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Deconvoluter which uses an :title-reference:`averagine` [1] model to generate theoretical</span>
+<span class="sd">    isotopic patterns for each peak to consider, using a peak dependence graph to solve complex mass</span>
+<span class="sd">    spectra.</span>
+
+<span class="sd">    Extends :class:`AveragineDeconvoluter` to include features from</span>
+<span class="sd">    :class:`PeakDependenceGraphDeconvoluterBase` making it suitable for deconvoluting complex spectra where</span>
+<span class="sd">    peak overlaps are common.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peaklist : :class:`~.PeakSet`</span>
+<span class="sd">        The centroided mass spectrum to deconvolute</span>
+<span class="sd">    scorer : :class:`~.IsotopicFitterBase`</span>
+<span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
+<span class="sd">    averagine : :class:`~.AveragineCache`</span>
+<span class="sd">        The averagine model and associated theoretical isotopic pattern cache to use</span>
+<span class="sd">        to build theoretical isotopic patterns.</span>
+<span class="sd">    max_missed_peaks : int</span>
+<span class="sd">        The maximum number of missing peaks to tolerate in an isotopic fit</span>
+<span class="sd">    peak_dependency_network : :class:`~.PeakDependenceGraph`</span>
+<span class="sd">        The peak dependence graph onto which isotopic fit dependences on peaks</span>
+<span class="sd">        are constructed and solved.</span>
+<span class="sd">    merge_isobaric_peaks : bool</span>
+<span class="sd">        If multiple passes produce peaks with identical mass values,</span>
+<span class="sd">        should those peaks be summed</span>
+<span class="sd">    minimum_intensity : float</span>
+<span class="sd">        Experimental peaks whose intensity is below this level will be ignored</span>
+<span class="sd">        by peak querying methods</span>
+<span class="sd">    scale_method : str</span>
+<span class="sd">        The name of the method to use to scale theoretical isotopic pattern intensities</span>
+<span class="sd">        to match the experimental isotopic pattern</span>
+<span class="sd">    use_subtraction : bool</span>
+<span class="sd">        Whether or not to apply a subtraction procedure to experimental peaks after they</span>
+<span class="sd">        have been fitted. This is only necessary if the same signal may be examined multiple</span>
+<span class="sd">        times as in a multi-pass method or when peak dependence is not considered</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Produce extra logging information</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations</span>
+<span class="sd">        for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass</span>
+<span class="sd">        Spectrometry, 6(4), 229–233. http://doi.org/10.1016/1044-0305(95)00017-8</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AveraginePeakDependenceGraphDeconvoluter</span><span class="p">,</span>
+              <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">MultiAveraginePeakDependenceGraphDeconvoluter</span><span class="p">(</span><span class="n">MultiAveragineDeconvoluter</span><span class="p">,</span> <span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extends :class:`MultiAveragineDeconvoluter` to include features from</span>
+<span class="sd">    :class:`PeakDependenceGraphDeconvoluterBase` making it suitable for deconvoluting complex spectra where</span>
+<span class="sd">    peak overlaps are common.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peaklist : :class:`~.ms_peak_picker.PeakSet`</span>
+<span class="sd">        The centroided mass spectrum to deconvolute</span>
+<span class="sd">    scorer : :class:`~.IsotopicFitterBase`</span>
+<span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
+<span class="sd">    averagine : list of :class:`~.ms_deisotope.averagine.AveragineCache`</span>
+<span class="sd">        The averagine model and associated theoretical isotopic pattern cache to use</span>
+<span class="sd">        to build theoretical isotopic patterns.</span>
+<span class="sd">    max_missed_peaks : int</span>
+<span class="sd">        The maximum number of missing peaks to tolerate in an isotopic fit</span>
+<span class="sd">    peak_dependency_network : :class:`~.PeakDependenceGraph`</span>
+<span class="sd">        The peak dependence graph onto which isotopic fit dependences on peaks</span>
+<span class="sd">        are constructed and solved.</span>
+<span class="sd">    merge_isobaric_peaks : bool</span>
+<span class="sd">        If multiple passes produce peaks with identical mass values,</span>
+<span class="sd">        should those peaks be summed</span>
+<span class="sd">    minimum_intensity : float</span>
+<span class="sd">        Experimental peaks whose intensity is below this level will be ignored</span>
+<span class="sd">        by peak querying methods</span>
+<span class="sd">    scale_method : str</span>
+<span class="sd">        The name of the method to use to scale theoretical isotopic pattern intensities</span>
+<span class="sd">        to match the experimental isotopic pattern</span>
+<span class="sd">    use_subtraction : bool</span>
+<span class="sd">        Whether or not to apply a subtraction procedure to experimental peaks after they</span>
+<span class="sd">        have been fitted. This is only necessary if the same signal may be examined multiple</span>
+<span class="sd">        times as in a multi-pass method or when peak dependence is not considered</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Produce extra logging information</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MultiAveraginePeakDependenceGraphDeconvoluter</span><span class="p">,</span>
+              <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
+    </div>
+  </body>
+</html>

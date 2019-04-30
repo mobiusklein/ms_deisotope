@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -32,7 +34,14 @@
         
         
   <h1>Source code for ms_deisotope.data_source.mzxml</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+<span></span><span class="sd">&#39;&#39;&#39;**mzXML** is a standard XML-format for raw mass spectrometry data storage created</span>
+<span class="sd">by the Institute for Systems Biology, intended to be replaced with **mzML**.</span>
+<span class="sd">This module provides :class:`MzXMLLoader`, a :class:`~.RandomAccessScanSource`</span>
+<span class="sd">implementation.</span>
+
+<span class="sd">The parser is based on :mod:`pyteomics.mzxml`.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">pyteomics</span> <span class="k">import</span> <span class="n">mzxml</span>
@@ -41,17 +50,17 @@
     <span class="n">ActivationInformation</span><span class="p">,</span> <span class="n">IsolationWindow</span><span class="p">,</span> <span class="n">ScanAcquisitionInformation</span><span class="p">,</span>
     <span class="n">ScanEventInformation</span><span class="p">,</span> <span class="n">ScanWindow</span><span class="p">,</span>
     <span class="n">ComponentGroup</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">InstrumentInformation</span><span class="p">,</span>
-    <span class="n">FileInformation</span><span class="p">,</span> <span class="n">SourceFile</span><span class="p">)</span>
+    <span class="n">FileInformation</span><span class="p">,</span> <span class="n">ScanFileMetadataBase</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.metadata</span> <span class="k">import</span> <span class="n">data_transformation</span>
 <span class="kn">from</span> <span class="nn">.xml_reader</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">XMLReaderBase</span><span class="p">,</span> <span class="n">IndexSavingXML</span><span class="p">,</span> <span class="n">iterparse_until</span><span class="p">)</span>
+    <span class="n">XMLReaderBase</span><span class="p">,</span> <span class="n">iterparse_until</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">_MzXMLParser</span><span class="p">(</span><span class="n">IndexSavingXML</span><span class="p">,</span> <span class="n">mzxml</span><span class="o">.</span><span class="n">MzXML</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_MzXMLParser</span><span class="p">(</span><span class="n">mzxml</span><span class="o">.</span><span class="n">MzXML</span><span class="p">):</span>
     <span class="k">pass</span>
 
 
-<span class="k">class</span> <span class="nc">_MzXMLMetadataLoader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_MzXMLMetadataLoader</span><span class="p">(</span><span class="n">ScanFileMetadataBase</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">file_description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read the file provenance from the ``&lt;parentFile&gt;`` tags</span>
 <span class="sd">        if any are present.</span>
@@ -403,9 +412,8 @@
 <span class="sd">        Underlying scan data source</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">prebuild_byte_offset_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_MzXMLParser</span><span class="o">.</span><span class="n">prebuild_byte_offset_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">_parser_cls</span> <span class="o">=</span> <span class="n">_MzXMLParser</span>
+
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
@@ -422,6 +430,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">()</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="s1">&#39;scan&#39;</span><span class="p">]</span>
+
     <span class="k">def</span> <span class="nf">_get_scan_by_id_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">)</span>
 
@@ -431,7 +443,7 @@
         <span class="n">index</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">scan</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">index</span><span class="p">[</span><span class="n">scan</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">index</span><span class="p">[</span><span class="n">scan</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
             <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scan_index_lookup</span> <span class="o">=</span> <span class="n">index</span>
 
@@ -439,12 +451,10 @@
         <span class="k">return</span> <span class="s2">&quot;m/z array&quot;</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">_data</span>
 
     <span class="k">def</span> <span class="nf">_yield_from_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_source</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">offset_provider</span> <span class="o">=</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">_offset_index</span><span class="o">.</span><span class="n">offsets</span>
+        <span class="n">offset_provider</span> <span class="o">=</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">_offset_index</span><span class="p">[</span><span class="s1">&#39;scan&#39;</span><span class="p">]</span>
         <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">offset_provider</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="n">start</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
@@ -453,8 +463,6 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">[</span><span class="n">start</span><span class="p">:]:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
             <span class="n">scan</span> <span class="o">=</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;num&quot;</span><span class="p">)</span>
             <span class="k">yield</span> <span class="n">scan</span></div>
 </pre></div>
@@ -470,7 +478,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

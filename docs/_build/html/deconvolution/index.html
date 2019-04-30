@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Envelope Search" href="deconvolution.html" />
@@ -43,7 +45,7 @@
 mass spectra. It contains several approaches to this problem class. This can be broken
 into two cooperative procedures, <em>envelope search</em> and <em>envelope scoring</em>. Envelope
 search can be targeted, using a list of compositions, or exhaustive using an average
-monomer isotopic model or <cite>averagine</cite> <a class="reference internal" href="#senko" id="id1">[Senko]</a>.</p>
+monomer isotopic model or <cite>averagine</cite> <a class="reference internal" href="deconvolution.html#senko" id="id1">[Senko]</a>.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
@@ -52,7 +54,8 @@ monomer isotopic model or <cite>averagine</cite> <a class="reference internal" h
 <li class="toctree-l2"><a class="reference internal" href="deconvolution.html#algorithms-for-complex-spectra">Algorithms for Complex Spectra</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deconvolution.html#algorithms-for-simple-spectra">Algorithms for Simple Spectra</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deconvolution.html#base-classes">Base Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#module-ms_deisotope.utils">Utilities and Implementation Details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#module-ms_deisotope.deconvolution.peak_retention_strategy">Accounting For Lower Quality Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#module-ms_deisotope.deconvolution.utils">Utilities and Implementation Details</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="averagine.html">Isotopic Pattern Generation</a></li>
@@ -66,16 +69,9 @@ monomer isotopic model or <cite>averagine</cite> <a class="reference internal" h
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline.html">Deconvolution Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html#supporting-types">Supporting Types</a></li>
 </ul>
 </div>
-<table class="docutils citation" frame="void" id="senko" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[Senko]</a></td><td>Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations
-for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
-Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.org/10.1016/1044-0305(95)00017-8">http://doi.org/10.1016/1044-0305(95)00017-8</a></td></tr>
-</tbody>
-</table>
 </div>
 
 
@@ -94,7 +90,7 @@ Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.or
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

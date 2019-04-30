@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -32,7 +34,14 @@
         
         
   <h1>Source code for ms_deisotope.data_source.mzml</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+<span></span><span class="sd">&#39;&#39;&#39;mzML is a standard rich XML-format for raw mass spectrometry data storage.</span>
+<span class="sd">This module provides :class:`MzMLLoader`, a :class:`~.RandomAccessScanSource`</span>
+<span class="sd">implementation.</span>
+
+<span class="sd">The parser is based on :mod:`pyteomics.mzml`.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">pyteomics</span> <span class="k">import</span> <span class="n">mzml</span>
@@ -41,19 +50,23 @@
     <span class="n">ChargeNotProvided</span><span class="p">,</span> <span class="n">ActivationInformation</span><span class="p">,</span>
     <span class="n">ScanAcquisitionInformation</span><span class="p">,</span> <span class="n">ScanEventInformation</span><span class="p">,</span>
     <span class="n">ScanWindow</span><span class="p">,</span> <span class="n">IsolationWindow</span><span class="p">,</span>
-    <span class="n">InstrumentInformation</span><span class="p">,</span> <span class="n">ComponentGroup</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span>
-    <span class="n">FileInformation</span><span class="p">,</span> <span class="n">SourceFile</span><span class="p">,</span> <span class="n">MultipleActivationInformation</span><span class="p">)</span>
+    <span class="n">FileInformation</span><span class="p">,</span> <span class="n">SourceFile</span><span class="p">,</span> <span class="n">MultipleActivationInformation</span><span class="p">,</span>
+    <span class="n">ScanFileMetadataBase</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.metadata.activation</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">supplemental_energy</span><span class="p">,</span> <span class="n">energy_terms</span><span class="p">)</span>
+    <span class="n">supplemental_energy</span><span class="p">,</span> <span class="n">UnknownDissociation</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.metadata.instrument_components</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">InstrumentInformation</span><span class="p">,</span> <span class="n">ComponentGroup</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span>
+    <span class="n">instrument_models</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.metadata.software</span> <span class="k">import</span> <span class="n">Software</span>
 <span class="kn">from</span> <span class="nn">.metadata</span> <span class="k">import</span> <span class="n">file_information</span>
 <span class="kn">from</span> <span class="nn">.metadata</span> <span class="k">import</span> <span class="n">data_transformation</span>
+<span class="kn">from</span> <span class="nn">.metadata.sample</span> <span class="k">import</span> <span class="n">Sample</span>
 <span class="kn">from</span> <span class="nn">.xml_reader</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">XMLReaderBase</span><span class="p">,</span> <span class="n">IndexSavingXML</span><span class="p">,</span> <span class="n">iterparse_until</span><span class="p">,</span>
+    <span class="n">XMLReaderBase</span><span class="p">,</span> <span class="n">iterparse_until</span><span class="p">,</span>
     <span class="n">get_tag_attributes</span><span class="p">,</span> <span class="n">_find_section</span><span class="p">,</span> <span class="n">in_minutes</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">_MzMLParser</span><span class="p">(</span><span class="n">IndexSavingXML</span><span class="p">,</span> <span class="n">mzml</span><span class="o">.</span><span class="n">MzML</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_MzMLParser</span><span class="p">(</span><span class="n">mzml</span><span class="o">.</span><span class="n">MzML</span><span class="p">):</span>
     <span class="c1"># we do not care about chromatograms</span>
     <span class="n">_indexed_tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;spectrum&#39;</span><span class="p">,</span> <span class="p">}</span>
 
@@ -85,6 +98,14 @@
         <span class="k">return</span> <span class="n">dtype</span>
 
 
+<span class="k">def</span> <span class="nf">_find_arrays</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">decode</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">&quot; array&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="n">arrays</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">if</span> <span class="n">decode</span> <span class="k">else</span> <span class="n">value</span>
+    <span class="k">return</span> <span class="n">arrays</span>
+
+
 <span class="k">class</span> <span class="nc">MzMLDataInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Provides implementations of all of the methods needed to implement the</span>
 <span class="sd">    :class:`ScanDataSource` for mzML files. Not intended for direct instantiation.</span>
@@ -110,7 +131,12 @@
 <span class="sd">            An array of intensity values for this scan</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">],</span> <span class="n">scan</span><span class="p">[</span><span class="s2">&quot;intensity array&quot;</span><span class="p">]</span>
+            <span class="n">decode</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_binary</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">decode</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">arrays</span> <span class="o">=</span> <span class="n">_find_arrays</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">decode</span><span class="o">=</span><span class="n">decode</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">arrays</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;m/z array&#39;</span><span class="p">),</span> <span class="n">arrays</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;intensity array&quot;</span><span class="p">),</span> <span class="n">arrays</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
 
@@ -139,17 +165,19 @@
             <span class="n">precursor_scan_id</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s2">&quot;precursorList&quot;</span><span class="p">][</span><span class="s1">&#39;precursor&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;spectrumRef&#39;</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="n">precursor_scan_id</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">last_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_index</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-            <span class="n">current_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
-            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">while</span> <span class="n">last_index</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
-                <span class="n">prev_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">last_index</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">prev_scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;=</span> <span class="n">current_level</span><span class="p">:</span>
-                    <span class="n">last_index</span> <span class="o">-=</span> <span class="mi">1</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">precursor_scan_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">prev_scan</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
-                    <span class="k">break</span>
-                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># only attempt to scan if there are supposed to be MS1 scans in the file</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ms1_scans</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+                <span class="n">last_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_index</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">current_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">while</span> <span class="n">last_index</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+                    <span class="n">prev_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">last_index</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">prev_scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;=</span> <span class="n">current_level</span><span class="p">:</span>
+                        <span class="n">last_index</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">precursor_scan_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">prev_scan</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+                        <span class="k">break</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">pinfo</span> <span class="o">=</span> <span class="n">PrecursorInformation</span><span class="p">(</span>
             <span class="n">mz</span><span class="o">=</span><span class="n">pinfo_dict</span><span class="p">[</span><span class="s1">&#39;selected ion m/z&#39;</span><span class="p">],</span>
             <span class="n">intensity</span><span class="o">=</span><span class="n">pinfo_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;peak intensity&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
@@ -323,7 +351,7 @@
                 <span class="n">activation</span> <span class="o">=</span> <span class="n">activation_methods</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">activation_methods</span> <span class="o">=</span> <span class="n">activation_methods</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">activation</span> <span class="o">=</span> <span class="s2">&quot;unknown dissociation method&quot;</span>
+                <span class="n">activation</span> <span class="o">=</span> <span class="n">UnknownDissociation</span>
             <span class="n">energy</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;collision energy&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">energy</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="n">energy</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;activation energy&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -397,6 +425,7 @@
                     <span class="n">window</span><span class="p">[</span><span class="s1">&#39;scan window lower limit&#39;</span><span class="p">],</span>
                     <span class="n">window</span><span class="p">[</span><span class="s1">&#39;scan window upper limit&#39;</span><span class="p">]))</span>
             <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;window_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">windows</span>
+            <span class="n">scan</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;instrumentConfigurationRef&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">struct</span><span class="p">[</span><span class="s1">&#39;traits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span>
             <span class="n">scan_info_scan_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ScanEventInformation</span><span class="p">(</span><span class="o">**</span><span class="n">struct</span><span class="p">))</span>
         <span class="n">scan_info</span><span class="p">[</span><span class="s1">&#39;scan_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan_info_scan_list</span>
@@ -431,7 +460,7 @@
         <span class="k">return</span> <span class="n">annot</span>
 
 
-<span class="k">class</span> <span class="nc">_MzMLMetadataLoader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_MzMLMetadataLoader</span><span class="p">(</span><span class="n">ScanFileMetadataBase</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">_collect_reference_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">params</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterparse_until</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="s2">&quot;referenceableParamGroupList&quot;</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">))</span>
@@ -488,7 +517,13 @@
                     <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">component</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">group</span><span class="p">]</span>
                     <span class="n">group_collection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ComponentGroup</span><span class="p">(</span><span class="n">category</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">order</span><span class="p">))</span>
         <span class="n">conf_id</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
-        <span class="n">config</span> <span class="o">=</span> <span class="n">InstrumentInformation</span><span class="p">(</span><span class="n">conf_id</span><span class="p">,</span> <span class="n">group_collection</span><span class="p">)</span>
+        <span class="n">serial_number</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instrument serial number&quot;</span><span class="p">)</span>
+        <span class="n">potential_models</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">configuration</span> <span class="k">if</span> <span class="n">instrument_models</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">potential_models</span><span class="p">:</span>
+            <span class="n">instrument_model</span> <span class="o">=</span> <span class="n">potential_models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">instrument_model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">InstrumentInformation</span><span class="p">(</span><span class="n">conf_id</span><span class="p">,</span> <span class="n">group_collection</span><span class="p">,</span> <span class="n">serial_number</span><span class="o">=</span><span class="n">serial_number</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">instrument_model</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">config</span>
 
     <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -540,7 +575,20 @@
         <span class="k">return</span> <span class="n">processing_list</span>
 
     <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_find_section</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="s2">&quot;sampleList&quot;</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Describe the sample(s) used to generate the mass spectrometry</span>
+<span class="sd">        data contained in this file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`list` of :class:`~.Sample`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sample_list</span> <span class="o">=</span> <span class="n">_find_section</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="s2">&quot;sampleList&quot;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sample_</span> <span class="ow">in</span> <span class="n">sample_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sample&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">sample_</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;sampleName&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">sample_</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Sample</span><span class="p">(</span><span class="o">**</span><span class="n">sample_</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">def</span> <span class="nf">_get_run_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">get_tag_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">)</span>
@@ -560,16 +608,15 @@
 
     <span class="n">_parser_cls</span> <span class="o">=</span> <span class="n">_MzMLParser</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">prebuild_byte_offset_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_MzMLParser</span><span class="o">.</span><span class="n">prebuild_byte_offset_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">decode_binary</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser_cls</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">iterative</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                        <span class="n">huge_tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">)</span>
+                                        <span class="n">huge_tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">decode_binary</span><span class="o">=</span><span class="n">decode_binary</span><span class="p">,</span>
+                                        <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize_scan_cache</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span> <span class="o">=</span> <span class="n">use_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decode_binary</span> <span class="o">=</span> <span class="n">decode_binary</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_information</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_run_attributes</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_config</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">k</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration</span><span class="p">()</span>
@@ -583,35 +630,24 @@
     <span class="k">def</span> <span class="nf">_has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">file_information</span><span class="o">.</span><span class="n">MS_MS1_Spectrum</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_description</span>
 
-<div class="viewcode-block" id="MzMLLoader.make_iterator"><a class="viewcode-back" href="../../../data_source/mzml.html#ms_deisotope.data_source.mzml.MzMLLoader.make_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">make_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Configure the iterator&#39;s behavior.</span>
+<div class="viewcode-block" id="MzMLLoader.has_msn_scans"><a class="viewcode-back" href="../../../data_source/mzml.html#ms_deisotope.data_source.mzml.MzMLLoader.has_msn_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_msn_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_msn_scans</span><span class="p">()</span></div>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        iterator : Iterator, optional</span>
-<span class="sd">            The iterator to manipulate. If missing, the default</span>
-<span class="sd">            iterator will be used.</span>
-<span class="sd">        grouped : bool, optional</span>
-<span class="sd">            Whether the iterator should be grouped and produce scan bunches</span>
-<span class="sd">            or single scans. Defaults to True</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ms1_scans</span><span class="p">():</span>
-                <span class="n">grouped</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">MzMLLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="n">grouped</span><span class="p">)</span></div>
+<div class="viewcode-block" id="MzMLLoader.has_ms1_scans"><a class="viewcode-back" href="../../../data_source/mzml.html#ms_deisotope.data_source.mzml.MzMLLoader.has_ms1_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ms1_scans</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="s1">&#39;spectrum&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;m/z array&quot;</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">_data</span>
 
     <span class="k">def</span> <span class="nf">_yield_from_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_source</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
-        <span class="n">offset_provider</span> <span class="o">=</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">_offset_index</span><span class="o">.</span><span class="n">offsets</span>
+        <span class="n">offset_provider</span> <span class="o">=</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">_offset_index</span><span class="p">[</span><span class="s1">&#39;spectrum&#39;</span><span class="p">]</span>
         <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">offset_provider</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="n">start</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
@@ -620,9 +656,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">[</span><span class="n">start</span><span class="p">:]:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
-            <span class="k">yield</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
+            <span class="k">yield</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_binary</span><span class="p">)</span></div>
 </pre></div>
 
       </div>
@@ -636,7 +673,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

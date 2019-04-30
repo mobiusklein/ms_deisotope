@@ -1,0 +1,544 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.deconvolution.composition_list &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.deconvolution.composition_list</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.deconvolution.composition_list</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;Deconvolution strategies using a list of compositions.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">PROTON</span><span class="p">,</span> <span class="n">isotopic_variants</span><span class="p">,</span>
+    <span class="n">TheoreticalIsotopicPattern</span><span class="p">,</span>
+    <span class="n">neutral_mass</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.envelope_statistics</span> <span class="k">import</span> <span class="n">average_mz</span><span class="p">,</span> <span class="n">a_to_a2_ratio</span><span class="p">,</span> <span class="n">most_abundant_mz</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">IGNORE_BELOW</span><span class="p">,</span>
+    <span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
+    <span class="n">ERROR_TOLERANCE</span><span class="p">,</span>
+    <span class="n">MAX_ITERATION</span><span class="p">,</span>
+    <span class="n">CONVERGENCE</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_dependency_network</span> <span class="k">import</span> <span class="n">PeakDependenceGraph</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.scoring</span> <span class="k">import</span> <span class="n">IsotopicFitRecord</span>
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="p">(</span><span class="n">DeconvoluterBase</span><span class="p">)</span>
+
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">count_placeholders</span><span class="p">,</span> <span class="n">prepare_peaklist</span><span class="p">,</span>
+    <span class="n">drop_placeholders</span><span class="p">,</span> <span class="n">first_peak</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">charge_range_</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="CompositionListDeconvoluterBase"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluterBase">[docs]</a><span class="k">class</span> <span class="nc">CompositionListDeconvoluterBase</span><span class="p">(</span><span class="n">DeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A mixin class to provide common features for deconvoluters which process spectra</span>
+<span class="sd">    using a list of targeted compositions.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    composition_list : list of :class:`~.Mapping`</span>
+<span class="sd">        A series of objects which represent elemental compositions and support</span>
+<span class="sd">        the :class:`~.Mapping` interface to access their individual elements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">composition_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">composition_list</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CompositionListDeconvoluterBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CompositionListDeconvoluterBase.generate_theoretical_isotopic_cluster"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.generate_theoretical_isotopic_cluster">[docs]</a>    <span class="k">def</span> <span class="nf">generate_theoretical_isotopic_cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">composition</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
+                                              <span class="n">mass_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                                              <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate a theoretical isotopic pattern for ``composition``</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        composition : :class:`~.Mapping`</span>
+<span class="sd">            An object representing an elemental composition</span>
+<span class="sd">        charge : int</span>
+<span class="sd">            The charge state to generate the isotopic pattern for</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        mass_shift : float, optional</span>
+<span class="sd">            An arbitrary mass shift to apply to the generated theoretical isotopic pattern,</span>
+<span class="sd">            moving all peaks forward by that mass charge ratio transformed mass.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.TheoreticalIsotopicPattern`</span>
+<span class="sd">            The theoretical isotopic pattern generated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tid</span> <span class="o">=</span> <span class="n">isotopic_variants</span><span class="p">(</span>
+            <span class="n">composition</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="n">charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="n">tid</span> <span class="o">=</span> <span class="n">TheoreticalIsotopicPattern</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">tid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+        <span class="n">tid</span><span class="o">.</span><span class="n">truncate_after</span><span class="p">(</span><span class="n">truncate_after</span><span class="p">)</span>
+        <span class="n">tid</span><span class="o">.</span><span class="n">ignore_below</span><span class="p">(</span><span class="n">ignore_below</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mass_shift</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tid</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">mass_shift</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">charge</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">tid</span></div>
+
+<div class="viewcode-block" id="CompositionListDeconvoluterBase.recalibrate_theoretical_mz"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.recalibrate_theoretical_mz">[docs]</a>    <span class="k">def</span> <span class="nf">recalibrate_theoretical_mz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theoretical_distribution</span><span class="p">,</span> <span class="n">experimental_mz</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Recalibrate the m/z of the theoretical isotopic pattern to start from the</span>
+<span class="sd">        peak matching the experimental monoisotopic m/z</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        theoretical_distribution : :class:`TheoreticalIsotopicPattern`</span>
+<span class="sd">            The theoretical isotopic pattern to adjust</span>
+<span class="sd">        experimental_mz : float</span>
+<span class="sd">            The experimental monoisotopic peak m/z</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        TheoreticalIsotopicPattern</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">theoretical_distribution</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">experimental_mz</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">theoretical_distribution</span></div>
+
+<div class="viewcode-block" id="CompositionListDeconvoluterBase.fit_composition_at_charge"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.fit_composition_at_charge">[docs]</a>    <span class="k">def</span> <span class="nf">fit_composition_at_charge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">composition</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                                  <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="n">mass_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Produce an isotopic fit for `composition` at `charge` against the experimental peak set.</span>
+
+<span class="sd">        This method requires that the instance also possess a method named `match_theoretical_isotopic_distribution`</span>
+<span class="sd">        such as the one implemented in :class:`DeconvoluterBase`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        composition : :class:`~.Mapping`</span>
+<span class="sd">            An object representing an elemental composition</span>
+<span class="sd">        charge : int</span>
+<span class="sd">            The charge state to generate the isotopic pattern for</span>
+<span class="sd">        error_tolerance : float</span>
+<span class="sd">            The mass accuracy required to for peak matches</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        mass_shift : float, optional</span>
+<span class="sd">            An arbitrary mass shift to apply to the generated theoretical isotopic pattern,</span>
+<span class="sd">            moving all peaks forward by that mass charge ratio transformed mass.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.IsotopicFitRecord`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_theoretical_isotopic_cluster</span><span class="p">(</span><span class="n">composition</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="n">charge</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
+                                                         <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">,</span>
+                                                         <span class="n">mass_shift</span><span class="o">=</span><span class="n">mass_shift</span><span class="p">)</span>
+        <span class="n">monoisotopic_peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span><span class="n">tid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">monoisotopic_peak</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalibrate_theoretical_mz</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+        <span class="n">eid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_theoretical_isotopic_distribution</span><span class="p">(</span>
+            <span class="n">tid</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+
+        <span class="n">missed_peaks</span> <span class="o">=</span> <span class="n">count_placeholders</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">missed_peaks</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_theoretical_distribution</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">eid</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">eid</span><span class="p">,</span> <span class="n">tid</span><span class="o">.</span><span class="n">peaklist</span><span class="p">)</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="n">IsotopicFitRecord</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">tid</span><span class="p">,</span> <span class="n">eid</span><span class="p">)</span>
+        <span class="n">fit</span><span class="o">.</span><span class="n">missed_peaks</span> <span class="o">=</span> <span class="n">missed_peaks</span>
+        <span class="k">return</span> <span class="n">fit</span></div>
+
+    <span class="k">def</span> <span class="nf">_make_deconvoluted_peak_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span> <span class="n">composition</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">):</span>
+        <span class="n">eid</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">experimental</span>
+        <span class="n">tid</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span>
+        <span class="n">charge</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">charge</span>
+        <span class="n">rep_eid</span> <span class="o">=</span> <span class="n">drop_placeholders</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+        <span class="n">total_abundance</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">eid</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">monoisotopic_mass</span> <span class="o">=</span> <span class="n">neutral_mass</span><span class="p">(</span>
+            <span class="n">tid</span><span class="o">.</span><span class="n">monoisotopic_mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="n">monoisotopic_mz</span> <span class="o">=</span> <span class="n">tid</span><span class="o">.</span><span class="n">monoisotopic_mz</span>
+
+        <span class="n">reference_peak</span> <span class="o">=</span> <span class="n">first_peak</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+        <span class="n">peak</span> <span class="o">=</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">(</span>
+            <span class="n">composition</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span>
+            <span class="n">monoisotopic_mass</span><span class="p">,</span> <span class="n">total_abundance</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span>
+            <span class="n">signal_to_noise</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">signal_to_noise</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rep_eid</span><span class="p">),</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">reference_peak</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="n">full_width_at_half_max</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">full_width_at_half_max</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rep_eid</span><span class="p">),</span>
+            <span class="n">a_to_a2_ratio</span><span class="o">=</span><span class="n">a_to_a2_ratio</span><span class="p">(</span><span class="n">tid</span><span class="p">),</span>
+            <span class="n">most_abundant_mass</span><span class="o">=</span><span class="n">neutral_mass</span><span class="p">(</span>
+                <span class="n">most_abundant_mz</span><span class="p">(</span><span class="n">eid</span><span class="p">),</span> <span class="n">charge</span><span class="p">),</span>
+            <span class="n">average_mass</span><span class="o">=</span><span class="n">neutral_mass</span><span class="p">(</span><span class="n">average_mz</span><span class="p">(</span><span class="n">eid</span><span class="p">),</span> <span class="n">charge</span><span class="p">),</span>
+            <span class="n">score</span><span class="o">=</span><span class="n">fit</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="n">envelope</span><span class="o">=</span><span class="p">[(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rep_eid</span><span class="p">],</span>
+            <span class="n">mz</span><span class="o">=</span><span class="n">monoisotopic_mz</span><span class="p">,</span> <span class="n">area</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">area</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">eid</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">peak</span>
+
+<div class="viewcode-block" id="CompositionListDeconvoluterBase.deconvolute_composition"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.deconvolute_composition">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_composition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">composition</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span>
+                                <span class="n">mass_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For each charge state under consideration, fit the theoretical isotopic pattern for this composition,</span>
+<span class="sd">        and if the fit is satisfactory, add it to the results set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        composition : :class:`~.Mapping`</span>
+<span class="sd">            An object representing an elemental composition</span>
+<span class="sd">        error_tolerance : float</span>
+<span class="sd">            The mass accuracy required to for peak matches</span>
+<span class="sd">        charge_range : tuple</span>
+<span class="sd">            The charge state range to generate the isotopic patterns for</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        mass_shift : float, optional</span>
+<span class="sd">            An arbitrary mass shift to apply to the generated theoretical isotopic pattern,</span>
+<span class="sd">            moving all peaks forward by that mass charge ratio transformed mass.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">charge</span> <span class="ow">in</span> <span class="n">charge_range_</span><span class="p">(</span><span class="o">*</span><span class="n">charge_range</span><span class="p">):</span>
+            <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_composition_at_charge</span><span class="p">(</span><span class="n">composition</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="n">charge</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
+                                                 <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                                                 <span class="n">mass_shift</span><span class="o">=</span><span class="n">mass_shift</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">reject</span><span class="p">(</span><span class="n">fit</span><span class="p">):</span>
+                <span class="n">eid</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">experimental</span>
+                <span class="n">tid</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span>
+                <span class="n">rep_eid</span> <span class="o">=</span> <span class="n">drop_placeholders</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">fit</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_deconvoluted_peak_solution</span><span class="p">(</span>
+                    <span class="n">fit</span><span class="p">,</span> <span class="n">composition</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">subtraction</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CompositionListDeconvoluter"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluter">[docs]</a><span class="k">class</span> <span class="nc">CompositionListDeconvoluter</span><span class="p">(</span><span class="n">CompositionListDeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Fit exact isotopic patterns from a list of compositions.</span>
+
+<span class="sd">    Fits are accepted as they are made, making this algorithm unsuitable for</span>
+<span class="sd">    complex spectra where isotopic patterns will share peaks.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    composition_list : list of :class:`~.Mapping`</span>
+<span class="sd">        A series of objects which represent elemental compositions and support</span>
+<span class="sd">        the :class:`~.Mapping` interface to access their individual elements.</span>
+<span class="sd">    peaklist : :class:`~ms_peak_picker.PeakSet`</span>
+<span class="sd">        The collection of :class:`~.ms_peak_picker.FittedPeak` instances and possible associated</span>
+<span class="sd">        data to deconvolute.</span>
+<span class="sd">    scorer : :class:`~.IsotopicFitterBase`</span>
+<span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
+<span class="sd">    merge_isobaric_peaks : bool</span>
+<span class="sd">        If multiple passes produce peaks with identical mass values,</span>
+<span class="sd">        should those peaks be summed</span>
+<span class="sd">    minimum_intensity : float</span>
+<span class="sd">        Experimental peaks whose intensity is below this level will be ignored</span>
+<span class="sd">        by peak querying methods</span>
+<span class="sd">    scale_method : str</span>
+<span class="sd">        The name of the method to use to scale theoretical isotopic pattern intensities</span>
+<span class="sd">        to match the experimental isotopic pattern</span>
+<span class="sd">    use_subtraction : bool</span>
+<span class="sd">        Whether or not to apply a subtraction procedure to experimental peaks after they</span>
+<span class="sd">        have been fitted. This is only necessary if the same signal may be examined multiple</span>
+<span class="sd">        times as in a multi-pass method or when peak dependence is not considered</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Produce extra logging information</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span>
+                 <span class="n">use_subtraction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span> <span class="o">=</span> <span class="n">prepare_peaklist</span><span class="p">(</span><span class="n">peaklist</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span> <span class="o">=</span> <span class="n">scorer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_quick_charge</span> <span class="o">=</span> <span class="n">use_quick_charge</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CompositionListDeconvoluter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">composition_list</span><span class="p">,</span>
+            <span class="n">use_subtraction</span><span class="o">=</span><span class="n">use_subtraction</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="n">scale_method</span><span class="p">,</span>
+            <span class="n">merge_isobaric_peaks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CompositionListDeconvoluter.deconvolute"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                    <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="n">mass_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deconvolute the spectrum, extracting isotopic patterns from the composition list.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        mass_shift: float, optional</span>
+<span class="sd">            An optional mass shift to apply to each composition</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">composition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">composition_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">deconvolute_composition</span><span class="p">(</span><span class="n">composition</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
+                                         <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                                         <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">,</span>
+                                         <span class="n">mass_shift</span><span class="o">=</span><span class="n">mass_shift</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DeconvolutedPeakSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="CompositionListPeakDependenceGraphDeconvoluter"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter">[docs]</a><span class="k">class</span> <span class="nc">CompositionListPeakDependenceGraphDeconvoluter</span><span class="p">(</span><span class="n">CompositionListDeconvoluter</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Fit exact isotopic patterns from a list of compositions.</span>
+
+<span class="sd">    Fits are added to a peak dependence graph, and the best fit is chosen after</span>
+<span class="sd">    all fits are calculated at each iteration.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    composition_list : list of :class:`~.Mapping`</span>
+<span class="sd">        A series of objects which represent elemental compositions and support</span>
+<span class="sd">        the :class:`~.Mapping` interface to access their individual elements.</span>
+<span class="sd">    peaklist : :class:`~ms_peak_picker.PeakSet`</span>
+<span class="sd">        The collection of ms_peak_picker.FittedPeak instances and possible associated</span>
+<span class="sd">        data to deconvolute.</span>
+<span class="sd">    scorer : :class:`~.IsotopicFitterBase`</span>
+<span class="sd">        The criterion for evaluating individual isotopic pattern fits</span>
+<span class="sd">    max_missed_peaks : int</span>
+<span class="sd">        The maximum number of missing peaks to tolerate in an isotopic fit</span>
+<span class="sd">    peak_dependency_network : :class:`~PeakDependenceGraph`</span>
+<span class="sd">        The peak dependence graph onto which isotopic fit dependences on peaks</span>
+<span class="sd">        are constructed and solved.</span>
+<span class="sd">    merge_isobaric_peaks : bool</span>
+<span class="sd">        If multiple passes produce peaks with identical mass values,</span>
+<span class="sd">        should those peaks be summed</span>
+<span class="sd">    minimum_intensity : float</span>
+<span class="sd">        Experimental peaks whose intensity is below this level will be ignored</span>
+<span class="sd">        by peak querying methods</span>
+<span class="sd">    scale_method : str</span>
+<span class="sd">        The name of the method to use to scale theoretical isotopic pattern intensities</span>
+<span class="sd">        to match the experimental isotopic pattern</span>
+<span class="sd">    use_subtraction : bool</span>
+<span class="sd">        Whether or not to apply a subtraction procedure to experimental peaks after they</span>
+<span class="sd">        have been fitted. This is only necessary if the same signal may be examined multiple</span>
+<span class="sd">        times as in a multi-pass method or when peak dependence is not considered</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Produce extra logging information</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span>
+                 <span class="n">use_subtraction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_missed_peaks&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CompositionListPeakDependenceGraphDeconvoluter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">peaklist</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="n">scorer</span><span class="o">=</span><span class="n">scorer</span><span class="p">,</span> <span class="n">use_subtraction</span><span class="o">=</span><span class="n">use_subtraction</span><span class="p">,</span>
+            <span class="n">scale_method</span><span class="o">=</span><span class="n">scale_method</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="n">use_quick_charge</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span> <span class="o">=</span> <span class="n">PeakDependenceGraph</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">is_maximizing</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">max_missed_peaks</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_missed_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The maximum number of missed peaks per isotopic fit record permitted.</span>
+
+<span class="sd">        This property directly mirrors :attr:`PeakDependenceGraph.max_missed_peaks`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">max_missed_peaks</span>
+
+    <span class="nd">@max_missed_peaks</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">max_missed_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">_save_peak_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solution</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_composition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">composition</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span>
+                                <span class="n">mass_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">charge</span> <span class="ow">in</span> <span class="n">charge_range_</span><span class="p">(</span><span class="o">*</span><span class="n">charge_range</span><span class="p">):</span>
+            <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_composition_at_charge</span><span class="p">(</span>
+                <span class="n">composition</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">mass_shift</span><span class="o">=</span><span class="n">mass_shift</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">rep_eid</span> <span class="o">=</span> <span class="n">drop_placeholders</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">fit</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">reject</span><span class="p">(</span><span class="n">fit</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">add_fit_dependence</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CompositionListPeakDependenceGraphDeconvoluter.populate_graph"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.populate_graph">[docs]</a>    <span class="k">def</span> <span class="nf">populate_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
+                       <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="n">mass_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For each composition, for each charge state under consideration, fit the theoretical</span>
+<span class="sd">        isotopic pattern for this composition, and if the fit is satisfactory, add it to the</span>
+<span class="sd">        peak dependence graph for later selecting the optimal solution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float</span>
+<span class="sd">            The mass accuracy required to for peak matches</span>
+<span class="sd">        charge_range : tuple</span>
+<span class="sd">            The charge state range to generate the isotopic patterns for</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
+<span class="sd">        mass_shift : float, optional</span>
+<span class="sd">            An arbitrary mass shift to apply to the generated theoretical isotopic pattern,</span>
+<span class="sd">            moving all peaks forward by that mass charge ratio transformed mass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">composition</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">composition_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">deconvolute_composition</span><span class="p">(</span><span class="n">composition</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="p">,</span>
+                                         <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                                         <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">,</span> <span class="n">mass_shift</span><span class="o">=</span><span class="n">mass_shift</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">select_best_disjoint_subgraphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct connected envelope graphs from :attr:`peak_dependency_network` and</span>
+<span class="sd">        extract the best disjoint isotopic pattern fits in each envelope graph. This in</span>
+<span class="sd">        turn produces one or more :class:`~.DeconvolutedPeakSolution` instances from each</span>
+<span class="sd">        disjoint fit, which are processed and added to the results set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The error tolerance to use when performing subtraction, if subtraction is</span>
+<span class="sd">            being performed.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier as used for the deconvolution. Required to</span>
+<span class="sd">            back-out the neutral mass of the deconvoluted result</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">disjoint_envelopes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">find_non_overlapping_intervals</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">disjoint_envelopes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="n">cluster</span><span class="o">.</span><span class="n">disjoint_best_fits</span><span class="p">():</span>
+                <span class="n">eid</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">experimental</span>
+                <span class="n">tid</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span>
+                <span class="n">composition</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">rep_eid</span> <span class="o">=</span> <span class="n">drop_placeholders</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_deconvoluted_peak_solution</span><span class="p">(</span>
+                    <span class="n">fit</span><span class="p">,</span> <span class="n">composition</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_save_peak_solution</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">subtraction</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CompositionListPeakDependenceGraphDeconvoluter.deconvolute"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">iterations</span><span class="o">=</span><span class="n">MAX_ITERATION</span><span class="p">,</span>   <span class="c1"># pylint: disable=arguments-differ</span>
+                    <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span>
+                    <span class="n">mass_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">convergence</span><span class="o">=</span><span class="n">CONVERGENCE</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Deconvolute the spectrum, extracting isotopic patterns from the composition list.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        mass_shift: float, optional</span>
+<span class="sd">            An optional mass shift to apply to each composition</span>
+<span class="sd">        convergence : float, optional</span>
+<span class="sd">            The threshold of the below which after the `(sum(intensity_before) - sum(</span>
+<span class="sd">            intensity_after)) / sum(intensity_after)`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+            <span class="n">iterations</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">begin_signal</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">populate_graph</span><span class="p">(</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                                <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">,</span>
+                                <span class="n">mass_shift</span><span class="o">=</span><span class="n">mass_shift</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">select_best_disjoint_subgraphs</span><span class="p">(</span><span class="n">error_tolerance</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_slice_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="n">end_signal</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">begin_signal</span> <span class="o">-</span> <span class="n">end_signal</span><span class="p">)</span> <span class="o">/</span> <span class="n">end_signal</span> <span class="o">&lt;</span> <span class="n">convergence</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">begin_signal</span> <span class="o">=</span> <span class="n">end_signal</span>
+        <span class="k">return</span> <span class="n">DeconvolutedPeakSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span></div></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
+    </div>
+  </body>
+</html>

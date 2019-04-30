@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -583,10 +585,10 @@
     <span class="k">return</span> <span class="n">d0</span> <span class="o">+</span> <span class="n">d1</span>
 
 
-<span class="k">class</span> <span class="nc">XCorrFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">experimental</span><span class="p">,</span> <span class="n">theoretical</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">DotProductFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">experimental</span><span class="p">,</span> <span class="n">theoretical</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
             <span class="n">total</span> <span class="o">+=</span> <span class="n">e</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="n">t</span><span class="o">.</span><span class="n">intensity</span>
         <span class="k">return</span> <span class="n">total</span>
 
@@ -599,11 +601,12 @@
     <span class="n">_ScaledGTestFitter</span> <span class="o">=</span> <span class="n">ScaledGTestFitter</span>
     <span class="n">_PenalizedMSDeconVFitter</span> <span class="o">=</span> <span class="n">PenalizedMSDeconVFitter</span>
     <span class="n">_DistinctPatternFitter</span> <span class="o">=</span> <span class="n">DistinctPatternFitter</span>
+    <span class="n">_DotProductFitter</span> <span class="o">=</span> <span class="n">DotProductFitter</span>
 
     <span class="kn">from</span> <span class="nn">._c.scoring</span> <span class="k">import</span> <span class="p">(</span>
         <span class="n">IsotopicFitRecord</span><span class="p">,</span> <span class="n">LeastSquaresFitter</span><span class="p">,</span> <span class="n">MSDeconVFitter</span><span class="p">,</span>
         <span class="n">ScaledGTestFitter</span><span class="p">,</span> <span class="n">PenalizedMSDeconVFitter</span><span class="p">,</span> <span class="n">DistinctPatternFitter</span><span class="p">,</span>
-        <span class="n">ScaledPenalizedMSDeconvFitter</span><span class="p">)</span>
+        <span class="n">DotProductFitter</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
     <span class="n">_c</span> <span class="o">=</span> <span class="kc">False</span>
@@ -646,7 +649,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

@@ -1,0 +1,976 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.deconvolution.exhaustive &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.deconvolution.exhaustive</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.deconvolution.exhaustive</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;A collection of base classes for &quot;exhaustive&quot; search strategies.</span>
+<span class="sd">These strategies attempt to assign *every* peak, but they are not meant</span>
+<span class="sd">to be used on their own.</span>
+
+<span class="sd">For complete implementations see :class:`~.AveragineDeconvoluter` and</span>
+<span class="sd">:class:`~.AveraginePeakDependenceGraphDeconvoluter`.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">operator</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="n">MAX_ITERATION</span><span class="p">,</span>
+    <span class="n">CONVERGENCE</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">DeconvolutedPeak</span><span class="p">,</span>
+    <span class="n">DeconvolutedPeakSet</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">PROTON</span><span class="p">,</span> <span class="n">neutral_mass</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.envelope_statistics</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">average_mz</span><span class="p">,</span>
+    <span class="n">a_to_a2_ratio</span><span class="p">,</span>
+    <span class="n">most_abundant_mz</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">TrivialTargetedDeconvolutionResult</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_dependency_network</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">PeakDependenceGraph</span><span class="p">,</span>
+    <span class="n">NetworkedTargetedDeconvolutionResult</span><span class="p">)</span>
+
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="n">DeconvoluterBase</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">ChargeIterator</span><span class="p">,</span>
+    <span class="n">has_previous_peak_at_charge</span><span class="p">,</span>
+    <span class="n">has_successor_peak_at_charge</span><span class="p">,</span>
+    <span class="n">drop_placeholders</span><span class="p">,</span>
+    <span class="n">count_placeholders</span><span class="p">,</span>
+    <span class="n">first_peak</span><span class="p">,</span>
+    <span class="n">mean</span><span class="p">,</span>
+    <span class="n">info</span><span class="p">,</span>
+    <span class="n">debug</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ExhaustivePeakSearchDeconvoluterBase"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase">[docs]</a><span class="k">class</span> <span class="nc">ExhaustivePeakSearchDeconvoluterBase</span><span class="p">(</span><span class="n">DeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Provides common methods for algorithms which attempt to find a deconvolution for every peak</span>
+<span class="sd">    in a spectrum. This assumes no dependence between different peaks, instead it relies on subtraction,</span>
+<span class="sd">    breadth of search, and order of encounter to avoid artefactual fits. This is usually not reasonable,</span>
+<span class="sd">    so instead please use this class&#39;s extension, :class:`PeakDependenceGraphDeconvoluterBase` which can</span>
+<span class="sd">    express dependence of fits on common resources.</span>
+
+<span class="sd">    This class is not meant to be instantiated, but instead used as a mixin for classes that also</span>
+<span class="sd">    inherit from :class:`DeconvoluterBase` and provide methods `fit_theoretical_distribution`</span>
+<span class="sd">    and `_fit_peaks_at_charges`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="p">,</span>
+              <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_quick_charge</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_quick_charge&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_all_peak_charge_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                                   <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                   <span class="n">recalculate_starting_peak</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the set of all unique candidate (monoisotopic peak, charge state) pairs using</span>
+<span class="sd">        the provided search parameters.</span>
+
+<span class="sd">        The search is performed using :func:`has_previous_peak_at_charge`, :func:`has_successor_peak_at_charge`,</span>
+<span class="sd">        :meth:`_find_previous_putative_peak`, and :meth:`_find_next_putative_peak`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to start the search from</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">        recalculate_starting_peak : bool, optional</span>
+<span class="sd">            Whether or not to re-calculate the putative starting peak m/z based upon nearby</span>
+<span class="sd">            peaks close to where isotopic peaks for `peak` should be. Defaults to True</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">            The set of all unique candidate (monoisotopic peak, charge state)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">target_peaks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="n">charges</span> <span class="o">=</span> <span class="n">ChargeIterator</span><span class="p">(</span><span class="o">*</span><span class="n">charge_range</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_quick_charge</span><span class="p">:</span>
+            <span class="n">charges</span><span class="o">.</span><span class="n">sequence_from_quickcharge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">peak</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">charge</span> <span class="ow">in</span> <span class="n">charges</span><span class="p">:</span>
+            <span class="n">target_peaks</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">peak</span><span class="p">,</span> <span class="n">charge</span><span class="p">))</span>
+
+            <span class="c1"># Look Left</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">left_search_limit</span><span class="p">):</span>
+                <span class="n">prev_peak</span> <span class="o">=</span> <span class="n">has_previous_peak_at_charge</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">prev_peak</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">target_peaks</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prev_peak</span><span class="p">,</span> <span class="n">charge</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">recalculate_starting_peak</span><span class="p">:</span>
+                    <span class="n">target_peaks</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_find_previous_putative_peak</span><span class="p">(</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">error_tolerance</span><span class="p">))</span>
+
+            <span class="c1"># Look Right</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="p">):</span>
+                <span class="n">nxt_peak</span> <span class="o">=</span> <span class="n">has_successor_peak_at_charge</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nxt_peak</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">target_peaks</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">nxt_peak</span><span class="p">,</span> <span class="n">charge</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">recalculate_starting_peak</span><span class="p">:</span>
+                    <span class="n">target_peaks</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_find_next_putative_peak</span><span class="p">(</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">error_tolerance</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">recalculate_starting_peak</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="mi">2</span><span class="p">)):</span>
+                    <span class="n">target_peaks</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_find_next_putative_peak</span><span class="p">(</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">error_tolerance</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">target_peaks</span>
+
+    <span class="k">def</span> <span class="nf">_fit_all_charge_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                               <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">recalculate_starting_peak</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                               <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Carry out the fitting process for `peak`.</span>
+
+<span class="sd">        This method calls :meth:`_get_all_peak_charge_pairs` to collect all hypothetical solutions</span>
+<span class="sd">        for `peak`, and invokes :meth:`_fit_peaks_at_charges` to evaluate them.</span>
+
+<span class="sd">        The method :meth:`_fit_peaks_at_charges` is required by this interface, but is not defined by</span>
+<span class="sd">        it, as it depends upon the underlying isotopic pattern fitting algorithm. See one of the</span>
+<span class="sd">        Averagine-based algorithms for an implementation, such as :class:`AveragineDeconvoluterBase`,</span>
+<span class="sd">        a complementary ancestor with this class.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to start the search from</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">        recalculate_starting_peak : bool, optional</span>
+<span class="sd">            Whether or not to re-calculate the putative starting peak m/z based upon nearby</span>
+<span class="sd">            peaks close to where isotopic peaks for `peak` should be. Defaults to True</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set</span>
+<span class="sd">            The set of :class:`~.IsotopicFitRecord` instances produced</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target_peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_all_peak_charge_pairs</span><span class="p">(</span>
+            <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
+            <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span>
+            <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+            <span class="n">recalculate_starting_peak</span><span class="o">=</span><span class="n">recalculate_starting_peak</span><span class="p">,</span>
+            <span class="n">use_quick_charge</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_quick_charge</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_peaks_at_charges</span><span class="p">(</span>
+            <span class="n">target_peaks</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
+            <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ExhaustivePeakSearchDeconvoluterBase.charge_state_determination"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.charge_state_determination">[docs]</a>    <span class="k">def</span> <span class="nf">charge_state_determination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                                   <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                   <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
+                                   <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine the optimal isotopic fit for `peak`, extracting it&#39;s charge state and monoisotopic peak.</span>
+
+<span class="sd">        This method invokes :meth:`_fit_all_charge_states`, and then uses :attr:`scorer`&#39;s `select` method to</span>
+<span class="sd">        choose the optimal solution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to start the search from</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.IsotopicFitRecord`</span>
+<span class="sd">            The best scoring isotopic fit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_all_charge_states</span><span class="p">(</span>
+            <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+            <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
+            <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">info</span><span class="p">(</span><span class="s2">&quot;Fits for </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">peak</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="p">)[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]:</span>
+                <span class="n">info</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">_make_deconvoluted_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">):</span>
+        <span class="n">score</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">eid</span><span class="p">,</span> <span class="n">tid</span> <span class="o">=</span> <span class="n">fit</span>
+        <span class="n">rep_eid</span> <span class="o">=</span> <span class="n">drop_placeholders</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+        <span class="n">total_abundance</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rep_eid</span><span class="p">)</span>
+        <span class="n">monoisotopic_mass</span> <span class="o">=</span> <span class="n">neutral_mass</span><span class="p">(</span>
+            <span class="n">tid</span><span class="o">.</span><span class="n">monoisotopic_mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="n">reference_peak</span> <span class="o">=</span> <span class="n">first_peak</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+
+        <span class="n">dpeak</span> <span class="o">=</span> <span class="n">DeconvolutedPeak</span><span class="p">(</span>
+            <span class="n">neutral_mass</span><span class="o">=</span><span class="n">monoisotopic_mass</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="n">total_abundance</span><span class="p">,</span> <span class="n">charge</span><span class="o">=</span><span class="n">charge</span><span class="p">,</span>
+            <span class="n">signal_to_noise</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">signal_to_noise</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rep_eid</span><span class="p">),</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">reference_peak</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="n">full_width_at_half_max</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">full_width_at_half_max</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rep_eid</span><span class="p">),</span>
+            <span class="n">a_to_a2_ratio</span><span class="o">=</span><span class="n">a_to_a2_ratio</span><span class="p">(</span><span class="n">tid</span><span class="p">),</span>
+            <span class="n">most_abundant_mass</span><span class="o">=</span><span class="n">neutral_mass</span><span class="p">(</span>
+                <span class="n">most_abundant_mz</span><span class="p">(</span><span class="n">eid</span><span class="p">),</span> <span class="n">charge</span><span class="p">),</span>
+            <span class="n">average_mass</span><span class="o">=</span><span class="n">neutral_mass</span><span class="p">(</span><span class="n">average_mz</span><span class="p">(</span><span class="n">eid</span><span class="p">),</span> <span class="n">charge</span><span class="p">),</span>
+            <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+            <span class="n">envelope</span><span class="o">=</span><span class="p">[(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">eid</span><span class="p">],</span>
+            <span class="n">mz</span><span class="o">=</span><span class="n">tid</span><span class="o">.</span><span class="n">monoisotopic_mz</span><span class="p">,</span> <span class="n">fit</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span>
+            <span class="n">area</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">area</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">eid</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">dpeak</span>
+
+<div class="viewcode-block" id="ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                         <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                         <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform a deconvolution for `peak`, generating a new :class:`ms_deisotope.peak_set.DeconvolutedPeak` instance</span>
+<span class="sd">        corresponding to the optimal solution.</span>
+
+<span class="sd">        This new peak has an m/z matching the monoisotopic peak of the pattern containing `peak`, and its intensity</span>
+<span class="sd">        is the sum of all the matched peaks in its isotopic pattern. Its charge, isotopic fit, and other qualities</span>
+<span class="sd">        are derived from the :class:`ms_deisotope.scoring.IsotopicFitRecord` instance corresponding to its best</span>
+<span class="sd">        solution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to start the search from</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier, or more specifically, the moiety which is added for</span>
+<span class="sd">            each incremental change in charge state. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.DeconvolutedPeak`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_state_determination</span><span class="p">(</span>
+            <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
+            <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+            <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
+            <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">tid</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span>
+        <span class="n">dpeak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_deconvoluted_peak</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dpeak</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subtraction</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dpeak</span></div>
+
+<div class="viewcode-block" id="ExhaustivePeakSearchDeconvoluterBase.targeted_deconvolution"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.targeted_deconvolution">[docs]</a>    <span class="k">def</span> <span class="nf">targeted_deconvolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                               <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                               <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
+                               <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Express the intent that this peak&#39;s deconvolution solution will be retrieved at a later point in the process</span>
+<span class="sd">        and that it should be deconvoluted, and return a handle to retrieve the results with.</span>
+
+<span class="sd">        This algorithm&#39;s implementation is simple enough that this is equivalent to just performing the deconvolution</span>
+<span class="sd">        now and storing the result in a :class:`~.TrivialTargetedDeconvolutionResult` instance.</span>
+
+<span class="sd">        Otherwise identical to :meth:`deconvolute_peak`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to start the search from</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.TrivialTargetedDeconvolutionResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dpeak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvolute_peak</span><span class="p">(</span>
+            <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+            <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
+            <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">TrivialTargetedDeconvolutionResult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dpeak</span><span class="p">,</span> <span class="n">peak</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="ExhaustivePeakSearchDeconvoluterBase.deconvolute"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                    <span class="n">order_chooser</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">),</span>
+                    <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                    <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Completely deconvolute the spectrum.</span>
+
+<span class="sd">        Visit each peak in the order chosen by `order_chooser`, and call :meth:`deconvolute_peak`</span>
+<span class="sd">        on it with the provided arguments. This assumes all overlaps in isotopic pattern are captured</span>
+<span class="sd">        by the search limits. This is usually not the case. For an alternative see</span>
+<span class="sd">        :class:`PeakDependenceGraphDeconvoluterBase`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        order_chooser : callable, optional:</span>
+<span class="sd">            A callable used as a key function for sorting peaks into the order they will</span>
+<span class="sd">            be visited during deconvolution. Defaults to :obj:`operator.attrgetter(&quot;index&quot;)`</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">order_chooser</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_intensity</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">deconvolute_peak</span><span class="p">(</span>
+                <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+                <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span>
+                <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_isobaric_peaks</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_peaks</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">DeconvolutedPeakSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span></div></div>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="k">import</span> <span class="p">(</span>
+        <span class="n">_get_all_peak_charge_pairs</span> <span class="k">as</span> <span class="n">_c_get_all_peak_charge_pairs</span><span class="p">,</span>
+        <span class="n">_make_deconvoluted_peak</span> <span class="k">as</span> <span class="n">_c_make_deconvoluted_peak</span><span class="p">)</span>
+    <span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="o">.</span><span class="n">_get_all_peak_charge_pairs</span> <span class="o">=</span> <span class="n">_c_get_all_peak_charge_pairs</span>
+    <span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="o">.</span><span class="n">_make_deconvoluted_peak</span> <span class="o">=</span> <span class="n">_c_make_deconvoluted_peak</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PeakDependenceGraphDeconvoluterBase"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase">[docs]</a><span class="k">class</span> <span class="nc">PeakDependenceGraphDeconvoluterBase</span><span class="p">(</span><span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extends the concept of :class:`ExhaustivePeakSearchDeconvoluterBase` to include a way to handle</span>
+<span class="sd">    conflicting solutions which claim the same experimental peak.</span>
+
+<span class="sd">    This lets the Deconvoluter assign a single peak only once, and to the &quot;best&quot; solution to use it. To</span>
+<span class="sd">    do this, the Deconvoluter constructs a graph where peaks are nodes, and isotopic fits are hyperedges</span>
+<span class="sd">    connecting multiple nodes. Rather than deconvoluting the spectrum step by step, assigning signal as</span>
+<span class="sd">    it explores the spectrum, the Deconvoluter instead inserts each considered isotopic fit into the graph.</span>
+<span class="sd">    After completely traversing the spectrum, the Deconvoluter solves the dependence graph attempting to</span>
+<span class="sd">    maximize some criterion and produce a set of disjoint isotopic fits. These fits are then assigned signal</span>
+<span class="sd">    and added to the deconvoluted spectrum as normal.</span>
+
+<span class="sd">    The criterion used is currently a greedy maximization (or minimization) of each connected component of</span>
+<span class="sd">    the peak dependence graph.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    max_missed_peaks : int</span>
+<span class="sd">        The maximum number of missing peaks to tolerate in an isotopic fit</span>
+<span class="sd">    peak_dependency_network : :class:`~.PeakDependenceGraph`</span>
+<span class="sd">        The peak dependence graph onto which isotopic fit dependences on peaks</span>
+<span class="sd">        are constructed and solved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_missed_peaks&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subgraph_solver_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subgraph_solver&quot;</span><span class="p">,</span> <span class="s1">&#39;top&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="p">,</span>
+              <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span> <span class="o">=</span> <span class="n">PeakDependenceGraph</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">is_maximizing</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">max_missed_peaks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_postprocessor</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fit_postprocessor&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_priority_map</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">max_missed_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The maximum number of missed peaks per isotopic fit record permitted.</span>
+
+<span class="sd">        This property directly mirrors :attr:`PeakDependenceGraph.max_missed_peaks`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">max_missed_peaks</span>
+
+    <span class="nd">@max_missed_peaks</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">max_missed_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">_explore_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                       <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
+                       <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given a peak, explore the local neighborhood for candidate isotopic fits and add each</span>
+<span class="sd">        fit above a threshold to the peak dependence graph.</span>
+
+<span class="sd">        The threshold assumes that a single peak&#39;s neighborhood will contain many, many fits, but</span>
+<span class="sd">        that only the top `n` scoring fits are worth considering. For now, `n` is fixed at 100 or</span>
+<span class="sd">        the half number of fits returned, whichever is larger. This is to prevent the fit graph</span>
+<span class="sd">        from growing out of control and wasting time storing impractical fits. Any fit added to</span>
+<span class="sd">        the graph will have to pass :attr:`scorer.select` as well, so weak fits will never be added,</span>
+<span class="sd">        regardless of how many fits are allowed to be inserted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to start the search from</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 1</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 0</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            The number of fits added to the graph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_all_charge_states</span><span class="p">(</span>
+            <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span> <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span>
+            <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+
+        <span class="n">hold</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fit</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">drop_placeholders</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">hold</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="n">hold</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+        <span class="n">stop</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">stop</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">add_fit_dependence</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">i</span>
+
+    <span class="k">def</span> <span class="nf">populate_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                       <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                       <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Visit each experimental peak and execute :meth:`_explore_local` on it with the provided</span>
+<span class="sd">        parameters, populating the peak dependence graph with all viable candidates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 1</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 0</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_priority_map</span> <span class="ow">or</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_intensity</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Skipping </span><span class="si">%r</span><span class="s2"> (</span><span class="si">%r</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span>
+                          <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_intensity</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_explore_local</span><span class="p">(</span>
+                <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+                <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Exlporing Area Around </span><span class="si">%r</span><span class="s2"> Yielded </span><span class="si">%d</span><span class="s2"> Fits&quot;</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PeakDependenceGraphDeconvoluterBase.postprocess_fits"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.postprocess_fits">[docs]</a>    <span class="k">def</span> <span class="nf">postprocess_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                         <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Postprocesses fits before solving the peak dependence graph.</span>
+
+<span class="sd">        Currently a no-op.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_postprocessor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs">[docs]</a>    <span class="k">def</span> <span class="nf">select_best_disjoint_subgraphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct connected envelope graphs from :attr:`peak_dependency_network` and</span>
+<span class="sd">        extract the best disjoint isotopic pattern fits in each envelope graph. This in turn</span>
+<span class="sd">        produces one or more :class:`DeconvolutedPeak` instances from each disjoint fit,</span>
+<span class="sd">        which are processed and added to the results set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The error tolerance to use when performing subtraction, if subtraction is</span>
+<span class="sd">            being performed.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier as used for the deconvolution. Required to</span>
+<span class="sd">            back-out the neutral mass of the deconvoluted result</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">disjoint_envelopes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">find_non_overlapping_intervals</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subgraph_solver_type</span> <span class="o">==</span> <span class="s1">&#39;disjoint&#39;</span><span class="p">:</span>
+            <span class="n">solver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve_subgraph_disjoint</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">subgraph_solver_type</span> <span class="o">==</span> <span class="s1">&#39;iterative&#39;</span><span class="p">:</span>
+            <span class="n">solver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve_subgraph_iterative</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">subgraph_solver_type</span> <span class="o">==</span> <span class="s1">&#39;top&#39;</span><span class="p">:</span>
+            <span class="n">solver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solve_subgraph_top</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown solver type </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subgraph_solver_type</span><span class="p">,</span> <span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">disjoint_envelopes</span><span class="p">:</span>
+            <span class="n">solutions</span> <span class="o">=</span> <span class="n">solver</span><span class="p">(</span><span class="n">cluster</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dpeak</span> <span class="ow">in</span> <span class="n">solutions</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">add_solution</span><span class="p">(</span><span class="n">dpeak</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="n">dpeak</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dpeak</span><span class="p">)</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+    <span class="k">def</span> <span class="nf">_solve_subgraph_top</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cluster</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given a :class:`~.DependenceCluster`, return the single best fit from the collection of</span>
+<span class="sd">        co-dependent fits.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cluster : :class:`~.DependenceCluster`</span>
+<span class="sd">            The connected subgraph whose nodes will be searched</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The error tolerance to use when performing subtraction, if subtraction is</span>
+<span class="sd">            being performed.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier as used for the deconvolution. Required to</span>
+<span class="sd">            back-out the neutral mass of the deconvoluted result</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of :class:`~DeconvolutedPeak`</span>
+<span class="sd">            The solved deconvolution solutions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="n">cluster</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">eid</span><span class="p">,</span> <span class="n">tid</span> <span class="o">=</span> <span class="n">fit</span>
+        <span class="n">rep_eid</span> <span class="o">=</span> <span class="n">drop_placeholders</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">dpeak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_deconvoluted_peak</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subtraction</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">dpeak</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_solve_subgraph_disjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cluster</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given a :class:`~.DependenceCluster`, find a greedy disjoint set of isotopic fits.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cluster : :class:`~.DependenceCluster`</span>
+<span class="sd">            The connected subgraph whose nodes will be searched</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The error tolerance to use when performing subtraction, if subtraction is</span>
+<span class="sd">            being performed.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier as used for the deconvolution. Required to</span>
+<span class="sd">            back-out the neutral mass of the deconvoluted result</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of :class:`~DeconvolutedPeak`</span>
+<span class="sd">            The solved deconvolution solutions</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">disjoint_best_fits</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">disjoint_best_fits</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">solutions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="n">disjoint_best_fits</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">eid</span><span class="p">,</span> <span class="n">tid</span> <span class="o">=</span> <span class="n">fit</span>
+            <span class="n">rep_eid</span> <span class="o">=</span> <span class="n">drop_placeholders</span><span class="p">(</span><span class="n">eid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rep_eid</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">dpeak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_deconvoluted_peak</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+            <span class="n">solutions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dpeak</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">subtraction</span><span class="p">(</span><span class="n">tid</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">solutions</span>
+
+    <span class="k">def</span> <span class="nf">_solve_subgraph_iterative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cluster</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given a :class:`~.DependenceCluster`, build a :class:`~.ConnectedSubgraph` and incrementally</span>
+<span class="sd">        subtract the best fitting solution and update its overlapping envelopes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cluster : :class:`~.DependencyCluster`</span>
+<span class="sd">            The connected subgraph whose nodes will be searched</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The error tolerance to use when performing subtraction, if subtraction is</span>
+<span class="sd">            being performed.</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier as used for the deconvolution. Required to</span>
+<span class="sd">            back-out the neutral mass of the deconvoluted result</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of :class:`~DeconvolutedPeak`</span>
+<span class="sd">            The solved deconvolution solutions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">cluster</span><span class="p">)</span>
+        <span class="n">subgraph</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
+        <span class="n">solutions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">best_node</span> <span class="o">=</span> <span class="n">subgraph</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_deconvoluted_peak</span><span class="p">(</span><span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="n">solutions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subtraction</span><span class="p">(</span><span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="n">mask</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">best_node</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Masking </span><span class="si">%d</span><span class="s2"> (</span><span class="si">%0.3f</span><span class="s2">, </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">best_node</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">charge</span><span class="p">))</span>
+
+        <span class="n">overlapped_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">best_node</span><span class="o">.</span><span class="n">overlap_edges</span><span class="p">)</span>
+        <span class="n">maximize</span> <span class="o">=</span> <span class="n">subgraph</span><span class="o">.</span><span class="n">maximize</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">subgraph</span><span class="p">)</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n</span><span class="p">:</span>
+            <span class="n">best_node</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">best_score</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">maximize</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+            <span class="n">retained</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">overlapped_nodes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">index</span> <span class="ow">in</span> <span class="n">mask</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">missed_peaks</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">missed_peaks</span> <span class="o">=</span> <span class="n">count_placeholders</span><span class="p">(</span>
+                    <span class="n">node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">)</span>
+                <span class="n">total_peaks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">)</span>
+                <span class="n">invalid_peak_count</span> <span class="o">=</span> <span class="p">(</span><span class="n">missed_peaks</span> <span class="o">&gt;=</span> <span class="n">total_peaks</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                                     <span class="p">)</span> <span class="ow">or</span> <span class="n">missed_peaks</span> <span class="o">==</span> <span class="n">total_peaks</span>
+                <span class="k">if</span> <span class="n">invalid_peak_count</span> <span class="ow">or</span> <span class="n">missed_peaks</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_missed_peaks</span><span class="p">:</span>
+                    <span class="n">mask</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Masking </span><span class="si">%d</span><span class="s2"> (</span><span class="si">%0.3f</span><span class="s2">, </span><span class="si">%d</span><span class="s2">). Invalidated Peak Count </span><span class="si">%r</span><span class="s2"> | Missed Peaks </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">node</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span>
+                        <span class="n">node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">invalid_peak_count</span><span class="p">,</span> <span class="n">missed_peaks</span><span class="p">))</span>
+
+                    <span class="k">continue</span>
+                <span class="n">fit</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">fit</span>
+                <span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_method</span><span class="p">)</span>
+                <span class="n">fit</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">,</span> <span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span><span class="o">.</span><span class="n">peaklist</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scorer</span><span class="o">.</span><span class="n">reject</span><span class="p">(</span><span class="n">fit</span><span class="p">):</span>
+                    <span class="n">mask</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">retained</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">maximize</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">fit</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                        <span class="n">best_node</span> <span class="o">=</span> <span class="n">node</span>
+                        <span class="n">best_score</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">score</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">fit</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">best_score</span><span class="p">:</span>
+                        <span class="n">best_node</span> <span class="o">=</span> <span class="n">node</span>
+                        <span class="n">best_score</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">score</span>
+
+            <span class="k">if</span> <span class="n">best_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_deconvoluted_peak</span><span class="p">(</span>
+                    <span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+                <span class="n">solutions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">subtraction</span><span class="p">(</span>
+                        <span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+                <span class="n">mask</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">best_node</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Masking </span><span class="si">%d</span><span class="s2"> (</span><span class="si">%0.3f</span><span class="s2">, </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">best_node</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">best_node</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">charge</span><span class="p">))</span>
+
+                <span class="n">overlapped_nodes</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">best_node</span><span class="o">.</span><span class="n">overlap_edges</span> <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">index</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mask</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">overlapped_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">overlapped_nodes</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n</span><span class="p">:</span>
+                <span class="n">overlapped_nodes</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">subgraph</span> <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">index</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mask</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">solutions</span>
+
+<div class="viewcode-block" id="PeakDependenceGraphDeconvoluterBase.targeted_deconvolution"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.targeted_deconvolution">[docs]</a>    <span class="k">def</span> <span class="nf">targeted_deconvolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+                               <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                               <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Express the intent that this peak&#39;s deconvolution solution will be retrieved at a later point in the process</span>
+<span class="sd">        and that it should be deconvoluted, and return a handle to retrieve the results with.</span>
+
+<span class="sd">        As the operation does not immediately result in a deconvoluted peak but just adds the resulting fits to</span>
+<span class="sd">        :attr:`peak_dependency_network`, this method constructs an instance of</span>
+<span class="sd">        :class:`~.NetworkedTargetedDeconvolutionResult` which holds all</span>
+<span class="sd">        the required information for recovering the best fit containing `peak`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak : :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to start the search from</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of `peak`. Defaults to 3</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of `peak`. Defaults to 3</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.NetworkedTargetedDeconvolutionResult`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_explore_local</span><span class="p">(</span>
+            <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span>
+            <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+            <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">NetworkedTargetedDeconvolutionResult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_priority_map</span><span class="p">[</span><span class="n">peak</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="PeakDependenceGraphDeconvoluterBase.deconvolute"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.deconvolute">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>   <span class="c1"># pylint: disable=arguments-differ</span>
+                    <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">MAX_ITERATION</span><span class="p">,</span>
+                    <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span>
+                    <span class="n">convergence</span><span class="o">=</span><span class="n">CONVERGENCE</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Completely deconvolute the spectrum.</span>
+
+<span class="sd">        For each iteration, clear :attr:`peak_depencency_network`, then invoke :meth:`populate_graph`</span>
+<span class="sd">        followed by :meth:`select_best_disjoint_subgraphs` to populate the resulting</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        error_tolerance : float, optional</span>
+<span class="sd">            The parts-per-million error tolerance in m/z to search with. Defaults to |ERROR_TOLERANCE|</span>
+<span class="sd">        charge_range : tuple, optional</span>
+<span class="sd">            The range of charge states to consider. Defaults to (1, 8)</span>
+<span class="sd">        order_chooser : callable, optional:</span>
+<span class="sd">            A callable used as a key function for sorting peaks into the order they will</span>
+<span class="sd">            be visited during deconvolution. Defaults to :obj:`operator.attrgetter(&quot;index&quot;)`</span>
+<span class="sd">        left_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the left of :obj:`peak`. Defaults to 1</span>
+<span class="sd">        right_search_limit : int, optional</span>
+<span class="sd">            The number of steps to search to the right of :obj:`peak`. Defaults to 0</span>
+<span class="sd">        charge_carrier : float, optional</span>
+<span class="sd">            The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">        truncate_after : float, optional</span>
+<span class="sd">            The percent of intensity to ensure is included in a theoretical isotopic pattern</span>
+<span class="sd">            starting from the monoisotopic peak. This will cause theoretical isotopic patterns</span>
+<span class="sd">            to be truncated, excluding trailing peaks which do not contribute substantially to</span>
+<span class="sd">            the overall shape of the isotopic pattern.</span>
+<span class="sd">        ignore_below : float, optional</span>
+<span class="sd">            The minimum relative abundance to consider a peak in a theoretical isotopic</span>
+<span class="sd">            pattern</span>
+<span class="sd">        convergence : float, optional</span>
+<span class="sd">            The threshold of the below which after the `(sum(intensity_before) - sum(</span>
+<span class="sd">            intensity_after)) / sum(intensity_after)`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.DeconvolutedPeakSet`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_subtraction</span><span class="p">:</span>
+            <span class="n">iterations</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">begin_signal</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">])</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;== Starting Iteration </span><span class="si">%d</span><span class="s2"> ===================&gt;&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">))</span>
+            <span class="c1"># The first iteration doesn&#39;t need to have the entire graph</span>
+            <span class="c1"># rebuilt and might have been seeded with targeted queries</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">populate_graph</span><span class="p">(</span>
+                <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+                <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_fits</span><span class="p">(</span>
+                <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+                <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">select_best_disjoint_subgraphs</span><span class="p">(</span>
+                <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_slice_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="n">end_signal</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">begin_signal</span> <span class="o">-</span> <span class="n">end_signal</span><span class="p">)</span> <span class="o">/</span> <span class="n">end_signal</span> <span class="o">&lt;</span> <span class="n">convergence</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">info</span><span class="p">(</span><span class="s2">&quot;(</span><span class="si">%0.4e</span><span class="s2"> - </span><span class="si">%0.4e</span><span class="s2">) / </span><span class="si">%0.4e</span><span class="s2"> &lt; </span><span class="si">%0.2g</span><span class="s2">, Converged!&quot;</span><span class="p">,</span>
+                         <span class="n">begin_signal</span><span class="p">,</span> <span class="n">end_signal</span><span class="p">,</span> <span class="n">end_signal</span><span class="p">,</span> <span class="n">convergence</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="n">begin_signal</span> <span class="o">=</span> <span class="n">end_signal</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">info</span><span class="p">(</span><span class="s2">&quot;Did Not Converge.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished Deconvolution in </span><span class="si">%d</span><span class="s2"> Iterations&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_isobaric_peaks</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_peaks</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">DeconvolutedPeakSet</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deconvoluted_peaks</span><span class="p">))</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span></div></div>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="k">import</span> <span class="p">(</span>
+        <span class="n">_explore_local</span> <span class="k">as</span> <span class="n">_c_explore_local</span><span class="p">,</span>
+        <span class="n">populate_graph</span> <span class="k">as</span> <span class="n">cpopulate_graph</span><span class="p">)</span>
+    <span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="o">.</span><span class="n">_explore_local</span> <span class="o">=</span> <span class="n">_c_explore_local</span>
+    <span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="o">.</span><span class="n">populate_graph</span> <span class="o">=</span> <span class="n">cpopulate_graph</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
+    </div>
+  </body>
+</html>

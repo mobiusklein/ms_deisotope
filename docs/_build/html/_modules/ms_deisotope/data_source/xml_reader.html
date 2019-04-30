@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -32,18 +34,36 @@
         
         
   <h1>Source code for ms_deisotope.data_source.xml_reader</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="sd">&#39;&#39;&#39;A common set of methods that are shared by</span>
+<span class="sd">all :mod:`pyteomics`-based XML file readers.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">.common</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">RandomAccessScanSource</span><span class="p">)</span>
+
 <span class="kn">from</span> <span class="nn">lxml</span> <span class="k">import</span> <span class="n">etree</span>
 <span class="kn">from</span> <span class="nn">lxml.etree</span> <span class="k">import</span> <span class="n">XMLSyntaxError</span>
+
 <span class="kn">from</span> <span class="nn">pyteomics</span> <span class="k">import</span> <span class="n">xml</span>
 <span class="kn">from</span> <span class="nn">pyteomics.xml</span> <span class="k">import</span> <span class="n">unitfloat</span>
 
+<span class="kn">from</span> <span class="nn">.common</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">RandomAccessScanSource</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">._compression</span> <span class="k">import</span> <span class="n">get_opener</span>
+
 
 <span class="k">def</span> <span class="nf">in_minutes</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Convert a time quantity to minutes</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: unitfloat</span>
+<span class="sd">        A float representing a quantity of time annotated with a time unit</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    unitfloat:</span>
+<span class="sd">        The time after conversion to minutes</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">unit</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">unit_info</span>
     <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
@@ -70,12 +90,49 @@
 <span class="sd">        The byte offset index used to achieve fast random access</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
+    <span class="n">_parser_cls</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">prebuild_byte_offset_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the file given by `path`, generating a byte offset index in</span>
+<span class="sd">        JSON format and save it to disk for future use.</span>
+
+<span class="sd">        This method is intended to provide a way to save time during repeated</span>
+<span class="sd">        instantiation of this type over the same file by removing the need to</span>
+<span class="sd">        do a full scan of the file to rebuild of the offset index each time.</span>
+
+<span class="sd">        .. note::</span>
+
+<span class="sd">            This assumes that `path` is either a path to a file in a directory</span>
+<span class="sd">            which the invoking user has read and write access to, or that it is</span>
+<span class="sd">            a file-like object whose `name` attribute gives a path that satisfies</span>
+<span class="sd">            the same requirements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : :class:`str` or file-like</span>
+<span class="sd">            The path to the file to index, or a file-like object with a name attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_parser_cls</span><span class="o">.</span><span class="n">prebuild_byte_offset_file</span><span class="p">(</span><span class="n">get_opener</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The byte offset index used to achieve fast random access.</span>
+
+<span class="sd">        Maps :class:`~.ScanBase` IDs to the byte offsets, implying</span>
+<span class="sd">        the order the scans reside in the file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`pyteomics.xml.ByteEncodingOrderedDict`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">_offset_index</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">source</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The file parser that this reader consumes.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span>
 
     <span class="nd">@source</span><span class="o">.</span><span class="n">setter</span>
@@ -83,6 +140,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Close the underlying reader.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="kc">None</span>
@@ -195,7 +254,6 @@
         <span class="k">while</span> <span class="n">hi</span> <span class="o">!=</span> <span class="n">lo</span><span class="p">:</span>
             <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">hi</span> <span class="o">+</span> <span class="n">lo</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
             <span class="n">sid</span> <span class="o">=</span> <span class="n">scan_ids</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span>
-            <span class="n">sid</span> <span class="o">=</span> <span class="n">sid</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
             <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">sid</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">scan</span><span class="p">):</span>
                 <span class="n">sid</span> <span class="o">=</span> <span class="n">scan_ids</span><span class="p">[</span><span class="n">mid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
@@ -238,9 +296,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;This method requires the index. Please pass `use_index=True` during initialization&quot;</span><span class="p">)</span>
         <span class="n">index_keys</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="n">id_bytes</span> <span class="o">=</span> <span class="n">index_keys</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="n">id_str</span> <span class="o">=</span> <span class="n">id_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">id_str</span><span class="p">)</span>
+        <span class="n">id_str</span> <span class="o">=</span> <span class="n">index_keys</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">id_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">scan</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;index </span><span class="si">%d</span><span class="s2">, id=</span><span class="si">%r</span><span class="s2"> does not appear to be a mass spectrum. Most behaviors will fail.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">index</span><span class="p">,</span> <span class="n">id_str</span><span class="p">),</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scan</span>
 
     <span class="k">def</span> <span class="nf">_yield_from_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_source</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
@@ -299,110 +360,10 @@
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{self.__class__.__name__}</span><span class="s2">(</span><span class="si">{self.source_file!r}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{self.__class__.__name__}</span><span class="s2">(</span><span class="si">{self.source_file!r}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span> <span class="c1"># pylint: disable=missing-format-attribute</span>
 
     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">save_byte_index</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">fp</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Write the byte offset index to the provided</span>
-<span class="sd">    file</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    index : ByteEncodingOrderedDict</span>
-<span class="sd">        The byte offset index to be saved</span>
-<span class="sd">    fp : file</span>
-<span class="sd">        The file to write the index to</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">encoded_index</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">index</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">encoded_index</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">offset</span>
-    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">encoded_index</span><span class="p">,</span> <span class="n">fp</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">fp</span>
-
-
-<span class="k">def</span> <span class="nf">load_byte_index</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Read a byte offset index from a file</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    fp : file</span>
-<span class="sd">        The file to read the index from</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    ByteEncodingOrderedDict</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
-    <span class="n">index</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">ByteEncodingOrderedDict</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
-        <span class="n">index</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-    <span class="k">return</span> <span class="n">index</span>
-
-
-<span class="k">class</span> <span class="nc">PrebuiltOffsetIndex</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">FlatTagSpecificXMLByteIndex</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An Offset Index class which just holds offsets</span>
-<span class="sd">    and performs no extra scanning effort.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    offsets : ByteEncodingOrderedDict</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offsets</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">offsets</span> <span class="o">=</span> <span class="n">offsets</span>
-
-
-<span class="k">class</span> <span class="nc">IndexSavingXML</span><span class="p">(</span><span class="n">xml</span><span class="o">.</span><span class="n">IndexedXML</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An extension to the IndexedXML type which</span>
-<span class="sd">    adds facilities to read and write the byte offset</span>
-<span class="sd">    index externally.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">_save_byte_index_to_file</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">save_byte_index</span><span class="p">)</span>
-    <span class="n">_load_byte_index_from_file</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">load_byte_index</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_byte_offset_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">name</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="n">byte_offset_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-byte-offsets.json&#39;</span>
-        <span class="k">return</span> <span class="n">byte_offset_filename</span>
-
-    <span class="k">def</span> <span class="nf">_check_has_byte_offset_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_byte_offset_filename</span>
-        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_read_byte_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_byte_offset_filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="n">PrebuiltOffsetIndex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_load_byte_index_from_file</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_offset_index</span> <span class="o">=</span> <span class="n">index</span>
-
-    <span class="k">def</span> <span class="nf">_write_byte_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_byte_offset_filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_save_byte_index_to_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_offset_index</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-
-    <span class="nd">@xml</span><span class="o">.</span><span class="n">_keepstate</span>
-    <span class="k">def</span> <span class="nf">_build_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_read_byte_offsets</span><span class="p">()</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
-            <span class="nb">super</span><span class="p">(</span><span class="n">IndexSavingXML</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_build_index</span><span class="p">()</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">prebuild_byte_offset_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">inst</span><span class="o">.</span><span class="n">_write_byte_offsets</span><span class="p">()</span>
 
 
 <span class="nd">@xml</span><span class="o">.</span><span class="n">_keepstate</span>
@@ -413,6 +374,21 @@
 
 <span class="nd">@xml</span><span class="o">.</span><span class="n">_keepstate</span>
 <span class="k">def</span> <span class="nf">get_tag_attributes</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Iteratively parse XML stream in ``source`` until encountering ``tag_name``</span>
+<span class="sd">    at which point parsing terminates and return the attributes of the matched</span>
+<span class="sd">    tag.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source: file-like</span>
+<span class="sd">        A file-like object over an XML document</span>
+<span class="sd">    tag_name: str</span>
+<span class="sd">        The name of the XML tag to parse until</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">iterparse</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">event</span><span class="p">,</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">event</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
@@ -427,6 +403,23 @@
 
 <span class="nd">@xml</span><span class="o">.</span><span class="n">_keepstate</span>
 <span class="k">def</span> <span class="nf">iterparse_until</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target_name</span><span class="p">,</span> <span class="n">quit_name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Iteratively parse XML stream in ``source``, yielding XML elements</span>
+<span class="sd">    matching ``target_name``. If at any point a tag matching ``quit_name``</span>
+<span class="sd">    is encountered, stop parsing.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source: file-like</span>
+<span class="sd">        A file-like object over an XML document</span>
+<span class="sd">    tag_name: str</span>
+<span class="sd">        The name of the XML tag to parse until</span>
+<span class="sd">    quit_name: str</span>
+<span class="sd">        The name to stop parsing at.</span>
+
+<span class="sd">    Yields</span>
+<span class="sd">    ------</span>
+<span class="sd">    lxml.etree.Element</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">iterparse</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">event</span><span class="p">,</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">event</span> <span class="o">==</span> <span class="s1">&#39;start&#39;</span><span class="p">:</span>
@@ -450,7 +443,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

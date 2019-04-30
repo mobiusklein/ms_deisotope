@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -32,7 +34,7 @@
         
         
   <h1>Source code for ms_deisotope.data_source.metadata.activation</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span>
+<span></span><span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
 
 
 <div class="viewcode-block" id="ActivationInformation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.ActivationInformation">[docs]</a><span class="k">class</span> <span class="nc">ActivationInformation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -48,12 +50,33 @@
 <span class="sd">        The dissociation method used</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">dissociation_methods_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">method</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">dissociation_methods_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_unknown_method</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="n">energy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">),</span>
+            <span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy</span><span class="p">,</span>
+            <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;methods&#39;</span> <span class="ow">in</span> <span class="n">d</span> <span class="ow">and</span> <span class="s1">&#39;energies&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MultipleActivationInformation</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ActivationInformation</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_make_unknown_method</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+        <span class="k">return</span> <span class="n">DissociationMethod</span><span class="p">(</span><span class="n">UnknownDissociation</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="p">[</span><span class="n">method</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;ActivationInformation(</span><span class="si">%r</span><span class="s2">, </span><span class="si">%r%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
@@ -62,6 +85,9 @@
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
 <div class="viewcode-block" id="ActivationInformation.is_multiple_dissociation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.ActivationInformation.is_multiple_dissociation">[docs]</a>    <span class="k">def</span> <span class="nf">is_multiple_dissociation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Determine if multiple dissociation methods were</span>
@@ -87,10 +113,23 @@
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multiple_dissociation</span><span class="p">()</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">is_multiple_dissociation</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">method</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">-</span> <span class="n">other</span><span class="o">.</span><span class="n">energy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">energy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">energy_match</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">-</span> <span class="n">other</span><span class="o">.</span><span class="n">energy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">energy_match</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">energy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">energy_match</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">energy_match</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">method</span><span class="p">)</span> <span class="ow">and</span> <span class="n">energy_match</span>
 
     <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="nf">has_dissociation_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dissociation_type</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="o">.</span><span class="n">is_a</span><span class="p">(</span><span class="n">dissociation_type</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MultipleActivationInformation"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.MultipleActivationInformation">[docs]</a><span class="k">class</span> <span class="nc">MultipleActivationInformation</span><span class="p">(</span><span class="n">ActivationInformation</span><span class="p">):</span>
@@ -107,16 +146,24 @@
 <span class="sd">        A list of dissociation methods used. Parallel to :attr:`energies`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">energies</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">energies</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pylint: disable=super-init-not-called</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">dissociation_methods_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                     <span class="nb">str</span><span class="p">(</span><span class="n">method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">method</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energies</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">energies</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">],</span>
+            <span class="s2">&quot;energies&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="p">,</span>
+            <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">d</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -125,6 +172,9 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;MultipleActivationInformation(methods=</span><span class="si">%r</span><span class="s2">, energies=</span><span class="si">%r%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
@@ -145,9 +195,20 @@
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_multiple_dissociation</span><span class="p">()</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">is_multiple_dissociation</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
-            <span class="nb">abs</span><span class="p">(</span><span class="n">self_energy</span> <span class="o">-</span> <span class="n">other_energy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span> <span class="k">for</span> <span class="n">self_energy</span><span class="p">,</span> <span class="n">other_energy</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">energies</span><span class="p">))</span></div>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">energies</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">energies_equal</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">se</span><span class="p">,</span> <span class="n">oe</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energies</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">energies</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">se</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">oe</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">energies_equal</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">se</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">oe</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">energies_equal</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">energies_equal</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">se</span> <span class="o">-</span> <span class="n">oe</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">energies_equal</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">has_dissociation_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dissociation_type</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">method</span><span class="o">.</span><span class="n">is_a</span><span class="p">(</span><span class="n">dissociation_type</span><span class="p">)</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DissociationMethod"><a class="viewcode-back" href="../../../../data_source/metadata/activation.html#ms_deisotope.data_source.common.DissociationMethod">[docs]</a><span class="k">class</span> <span class="nc">DissociationMethod</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
@@ -173,7 +234,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;dissociation method&#39;, term_cls_name=&quot;DissociationMethod&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="n">dissociation_methods</span> <span class="o">=</span> <span class="p">[</span>
+<span class="n">dissociation_methods</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;sustained off-resonance irradiation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000282&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A technique associated with Fourier transform ion cyclotron&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;resonance (FT-ICR) mass spectrometry to carry out&#39;</span>
@@ -185,67 +246,79 @@
                         <span class="sa">u</span><span class="s1">&#39;not exceed the dimensions of ion trap while the ion&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;undergoes an ion/neutral species process that produces a&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;high average translational energy for an extended time.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;post-source decay&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000135&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A technique specific to reflectron time-of-flight mass&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;spectrometers where product ions of metastable transitions&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;or collision-induced dissociations generated in the drift&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;tube prior to entering the reflectron are m/z separated to&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;yield product ion spectra.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;plasma desorption&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000134&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The ionization of material in a solid sample by bombarding&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;it with ionic or neutral atoms formed as a result of the&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;fission of a suitable nuclide, typically 252Cf. Synonymous&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;with fission fragment ionization.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;surface-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000136&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Fragmentation that results from the collision of an ion with&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;a surface.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000133&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The dissociation of an ion after collisional excitation. The&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;term collisional-activated dissociation is not recommended.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;pulsed q dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000599&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A process that involves precursor ion activation at high Q,&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;a time delay to allow the precursor to fragment, then a&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;rapid pulse to low Q where all fragment ions are trapped.&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;The product ions can then be scanned out of the ion trap and&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;detected.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electron transfer dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000598&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A process to fragment ions in a mass spectrometer by&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;inducing fragmentation of cations (e.g. peptides or&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;proteins) by transferring electrons to them.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;in-source collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001880&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The dissociation of an ion as a result of collisional&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;excitation during ion transfer from an atmospheric pressure&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;ion source and the mass spectrometer vacuum.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;infrared multiphoton dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000262&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Multiphoton ionization where the reactant ion dissociates as&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;a result of the absorption of multiple infrared photons.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;blackbody infrared radiative dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000242&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A special case of infrared multiphoton dissociation wherein&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;excitation of the reactant ion is caused by absorption of&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;infrared photons radiating from heated blackbody&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;surroundings, which are usually the walls of a vacuum&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;chamber. See also infrared multiphoton dissociation.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;low-energy collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000433&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process wherein the&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;precursor ion has the translational energy lower than&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;approximately 1000 eV. This process typically requires&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;multiple collisions and the collisional excitation is&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;cumulative.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;photodissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000435&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A process wherein the reactant ion is dissociated as a&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;result of absorption of one or more photons.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;LIFT&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002000&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s2">&quot;A Bruker&#39;s proprietary technique where molecular ions are&quot;</span>
                         <span class="sa">u</span><span class="s1">&#39;initially accelerated at lower energy, then collide with&#39;</span>
@@ -253,42 +326,50 @@
                         <span class="sa">u</span><span class="s1">&#39;potential. The use of inert gas is optional, as it could&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;lift also fragments provided by LID.&quot;&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;[DOI:10.1007/s00216-003-2057-0&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002631&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A dissociation process combining electron-transfer and&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;higher-energy collision dissociation (EThcD). It combines&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;ETD (reaction time) followed by HCD (activation energy).&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electron capture dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000250&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A process in which a multiply protonated molecules interacts&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;with a low energy electrons. Capture of the electron leads&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;the liberation of energy and a reduction in charge state of&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;the ion with the production of the (M + nH) (n-1)+ odd&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;electron ion, which readily fragments.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;trap-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002472&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process that occurs in a&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;trap-type collision cell.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000422&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process that occurs in a&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;beam-type collision cell.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;supplemental collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002679&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The dissociation of an ion after supplemental collisional&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;excitation.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;higher energy beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002481&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A collision-induced dissociation process wherein the&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;projectile ion has the translational energy higher than&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;approximately 1000 eV.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;supplemental beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002678&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A supplemental collision-induced dissociation process that&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;occurs in a beam-type collision cell in addition to another&#39;</span>
                         <span class="sa">u</span><span class="s1">&#39;primary type of dissociation.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-<span class="p">]</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+<span class="p">])</span>
 <span class="c1"># [[[end]]]</span>
 
 
@@ -304,8 +385,11 @@
 <span class="p">}</span>
 
 
+<span class="n">method</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">dissociation_methods</span><span class="p">:</span>
     <span class="n">dissociation_methods_map</span><span class="p">[</span><span class="n">method</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">method</span>
+<span class="k">del</span> <span class="n">method</span>
+
 
 <span class="n">CID</span> <span class="o">=</span> <span class="n">dissociation_methods_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collision-induced dissociation&quot;</span><span class="p">)</span>
 <span class="n">HCD</span> <span class="o">=</span> <span class="n">dissociation_methods_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;beam-type collision-induced dissociation&quot;</span><span class="p">)</span>
@@ -365,7 +449,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

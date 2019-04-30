@@ -13,7 +13,9 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Installing ms_deisotope" href="installing.html" /> 
@@ -57,7 +59,8 @@ common formats, including instrument information and and file metadata.</p>
 <li class="toctree-l3"><a class="reference internal" href="deconvolution/deconvolution.html#algorithms-for-complex-spectra">Algorithms for Complex Spectra</a></li>
 <li class="toctree-l3"><a class="reference internal" href="deconvolution/deconvolution.html#algorithms-for-simple-spectra">Algorithms for Simple Spectra</a></li>
 <li class="toctree-l3"><a class="reference internal" href="deconvolution/deconvolution.html#base-classes">Base Classes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="deconvolution/deconvolution.html#module-ms_deisotope.utils">Utilities and Implementation Details</a></li>
+<li class="toctree-l3"><a class="reference internal" href="deconvolution/deconvolution.html#module-ms_deisotope.deconvolution.peak_retention_strategy">Accounting For Lower Quality Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="deconvolution/deconvolution.html#module-ms_deisotope.deconvolution.utils">Utilities and Implementation Details</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="deconvolution/averagine.html">Isotopic Pattern Generation</a></li>
@@ -67,6 +70,7 @@ common formats, including instrument information and and file metadata.</p>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="deconvolution/pipeline.html">Deconvolution Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution/pipeline.html#supporting-types">Supporting Types</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data_source/index.html">Data Access</a><ul>
@@ -102,6 +106,11 @@ common formats, including instrument information and and file metadata.</p>
 <li class="toctree-l2"><a class="reference internal" href="output/mgf.html">Writing MGF</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#basic-spectrum-drawing">Basic Spectrum Drawing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#annotating-peaks-and-envelopes">Annotating Peaks and Envelopes</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -128,7 +137,7 @@ common formats, including instrument information and and file metadata.</p>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

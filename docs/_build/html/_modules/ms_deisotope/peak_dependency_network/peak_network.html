@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -33,12 +35,16 @@
         
   <h1>Source code for ms_deisotope.peak_dependency_network.peak_network</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">operator</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
 
 <span class="kn">from</span> <span class="nn">.subgraph</span> <span class="k">import</span> <span class="n">ConnectedSubgraph</span>
 <span class="kn">from</span> <span class="nn">.intervals</span> <span class="k">import</span> <span class="n">SpanningMixin</span><span class="p">,</span> <span class="n">IntervalTreeNode</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">Base</span><span class="p">,</span> <span class="n">TargetedDeconvolutionResultBase</span>
+<span class="kn">from</span> <span class="nn">..task</span> <span class="k">import</span> <span class="n">LogUtilsMixin</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;deconvolution_scan_processor&quot;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">ident</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
@@ -131,12 +137,16 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_reset</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">disjoint_subset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">graph</span> <span class="o">=</span> <span class="n">ConnectedSubgraph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">)</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_graph</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">graph</span><span class="o">.</span><span class="n">find_heaviest_path</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">build_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">ConnectedSubgraph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">graph</span>
 
     <span class="k">def</span> <span class="nf">_best_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -181,9 +191,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">max</span><span class="p">([</span><span class="n">member</span><span class="o">.</span><span class="n">experimental</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mz</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">interval_contains_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;=</span> <span class="n">point</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span>
-
     <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
 
@@ -204,7 +211,62 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="PeakDependenceGraph"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.peak_dependency_network.PeakDependenceGraph">[docs]</a><span class="k">class</span> <span class="nc">PeakDependenceGraph</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">_has_c</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.peak_dependency_network.peak_network</span> <span class="k">import</span> <span class="p">(</span>
+        <span class="n">PeakNode</span><span class="p">,</span> <span class="n">DependenceCluster</span><span class="p">,</span> <span class="n">PeakDependenceGraphBase</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">_has_c</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">class</span> <span class="nc">PeakDependenceGraphBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Keep a record of all clusters from previous iterations</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_all_clusters</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interval_tree</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_populate_initial_graph</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">_populate_initial_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">PeakNode</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">add_fit_dependence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;Add the relatoinship between the experimental peaks</span>
+<span class="sd">            in `fit_record` to the graph, expressed as a hyper-edge</span>
+<span class="sd">            denoted by `fit_record`.</span>
+
+<span class="sd">            This adds `fit_record` to :attr:`PeakNode.links` for each</span>
+<span class="sd">            node corresponding to the :class:`~.FittedPeak` instance in</span>
+<span class="sd">            :attr:`IsotopicFitRecord.experimental` of `fit_record`. It also</span>
+<span class="sd">            adds `fit_record to :attr:`dependencies`</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            fit_record: :class:`~.IsotopicFitRecord`</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span><span class="p">:</span>
+                <span class="c1"># Check for null peak</span>
+                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span> <span class="o">=</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">score</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fit_record</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">nodes_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">peak_count</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">cache</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">peak_count</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="n">value</span>
+
+
+<div class="viewcode-block" id="PeakDependenceGraph"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.peak_dependency_network.PeakDependenceGraph">[docs]</a><span class="k">class</span> <span class="nc">PeakDependenceGraph</span><span class="p">(</span><span class="n">PeakDependenceGraphBase</span><span class="p">,</span> <span class="n">LogUtilsMixin</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_missed_peaks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">use_monoisotopic_superceded_filtering</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -224,20 +286,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_all_clusters</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Keep a record of all clusters from previous iterations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_all_clusters</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_interval_tree</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_populate_initial_graph</span><span class="p">()</span>
-
     <span class="k">def</span> <span class="nf">add_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">solution</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">solution</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">interval_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;An :class:`~.IntervalTreeNode` built over all dependency clusters that</span>
+<span class="sd">        the :class:`PeakDependenceGraph` has seen over the course of all iterations.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        NoIsotopicClustersError:</span>
+<span class="sd">            When no isotopic clusters, and in turn no :class:`DependenceCluster`s are found</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.IntervalTreeNode`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interval_tree</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Build tree from both the current set of clusters</span>
             <span class="c1"># and all clusters from previous iterations</span>
@@ -249,13 +314,11 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interval_tree</span>
 
-    <span class="k">def</span> <span class="nf">_deep_fuzzy_solution_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
-        <span class="k">pass</span>
-
     <span class="k">def</span> <span class="nf">_find_fuzzy_solution_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
         <span class="n">tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval_tree</span>
         <span class="n">clusters</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">+</span> <span class="n">shift</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">clusters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># No dependency clusters span this point. No signal?</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">best_fits</span> <span class="o">=</span> <span class="p">[</span><span class="n">cluster</span><span class="o">.</span><span class="n">disjoint_best_fits</span><span class="p">()</span> <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">]</span>
@@ -274,13 +337,39 @@
                     <span class="n">error</span> <span class="o">=</span> <span class="n">err</span>
                     <span class="n">index</span> <span class="o">=</span> <span class="n">i</span>
             <span class="n">fit</span> <span class="o">=</span> <span class="n">best_fits</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">fit</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">fit</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">best_fits</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">))</span>
+                <span class="c1"># The first index is the minimum error, which the loop above found,</span>
+                <span class="c1"># but by virtue of the KeyError getting us here, we know it is not</span>
+                <span class="c1"># present in the solution map.</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span>  <span class="n">best_fits</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                <span class="c1"># No solution could be found</span>
+                <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">find_solution_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Find the best isotopic pattern fit which includes ``peak``</span>
+<span class="sd">        or is close enough to ``peak`` that it might have been selected</span>
+<span class="sd">        instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak: :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to find the best fit for.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.DeconvolutedPeak`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">peak_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
         <span class="n">tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval_tree</span>
         <span class="n">clusters</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">clusters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">clusters</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_fuzzy_solution_for</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
         <span class="n">best_fits</span> <span class="o">=</span> <span class="p">[</span><span class="n">cluster</span><span class="o">.</span><span class="n">disjoint_best_fits</span><span class="p">()</span> <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">]</span>
 
@@ -289,53 +378,65 @@
             <span class="n">acc</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">fits</span><span class="p">)</span>
         <span class="n">best_fits</span> <span class="o">=</span> <span class="n">acc</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;For query m/z </span><span class="si">%f</span><span class="s2"> has candidates </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">best_fits</span><span class="p">))</span>
+
         <span class="c1"># Extract only fits that use the query peak</span>
         <span class="n">common</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">best_fits</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">peak_node</span><span class="o">.</span><span class="n">links</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">used_common</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">common</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Too many solutions exist for </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">peak</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;There is not exactly one solution for </span><span class="si">%r</span><span class="s2"> (</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">common</span><span class="p">)))</span>
             <span class="c1"># If there were no fits for this peak, then it may be that this peak</span>
             <span class="c1"># was not included in a fit. Try to find the nearest solution.</span>
-            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">best_fits</span><span class="p">):</span>
-                <span class="n">case_err</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">:</span>
-                    <span class="n">case_err</span> <span class="o">/=</span> <span class="n">case</span><span class="o">.</span><span class="n">score</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">case_err</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">case</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">case_err</span> <span class="o">&lt;</span> <span class="n">err</span><span class="p">:</span>
-                    <span class="n">i</span> <span class="o">=</span> <span class="n">j</span>
-                    <span class="n">err</span> <span class="o">=</span> <span class="n">case_err</span>
-            <span class="n">fit</span> <span class="o">=</span> <span class="n">best_fits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_best_fit_by_weighted_distance</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">best_fits</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="n">used_common</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">fit</span> <span class="o">=</span> <span class="n">common</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">fit</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">fit</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;The closest common fit was not chosen. The closest fit was common? </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">used_common</span><span class="p">))</span>
+            <span class="n">candidates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">best_fits</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">))</span>
+            <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_best_fit_by_weighted_distance</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">candidates</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solution_map</span><span class="p">[</span><span class="n">fit</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_populate_initial_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">PeakNode</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_find_best_fit_by_weighted_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">candidates</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Locate the fit that is nearest to ``peak`` in m/z space, weighted by</span>
+<span class="sd">        the score of the fit such that given two fits with the same m/z, the better</span>
+<span class="sd">        scoring fit is chosen.</span>
 
-    <span class="k">def</span> <span class="nf">add_fit_dependence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span> <span class="o">=</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">score</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fit_record</span><span class="p">)</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peak: :class:`~.FittedPeak`</span>
+<span class="sd">            The peak to find solutions with reference to.</span>
+<span class="sd">        candidates: :class:`list`</span>
+<span class="sd">            A set of candidate :class:`~.IsotopicFitRecord` to compare between</span>
 
-    <span class="k">def</span> <span class="nf">nodes_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">peak_count</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="n">cache</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">peak_count</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">value</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.IsotopicFitRecord`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">candidates</span><span class="p">):</span>
+            <span class="n">case_err</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">:</span>
+                <span class="n">case_err</span> <span class="o">/=</span> <span class="n">case</span><span class="o">.</span><span class="n">score</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">case_err</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">score</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">case_err</span> <span class="o">&lt;</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">j</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">case_err</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="n">candidates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">fit</span>
 
     <span class="k">def</span> <span class="nf">drop_fit_dependence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Remove this fit from the graph, deleting all</span>
+<span class="sd">        hyper-edges.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">fit_record</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">del</span> <span class="n">node</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span>
@@ -343,6 +444,13 @@
                 <span class="k">pass</span>
 
     <span class="k">def</span> <span class="nf">claimed_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Return all nodes with at least one</span>
+<span class="sd">        fit connecting it.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`set`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">:</span>
@@ -352,6 +460,10 @@
         <span class="k">return</span> <span class="n">peaks</span>
 
     <span class="k">def</span> <span class="nf">drop_superceded_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Drop all fits where there is a better fit</span>
+<span class="sd">        using the first fit&#39;s monoisotopic peak at the</span>
+<span class="sd">        same charge state.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">suppressed</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">keep</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -381,6 +493,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">best_exact_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;For each distinct group of experimental peaks, retain only</span>
+<span class="sd">        the best scoring fit using exactly those peaks.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">by_peaks</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
         <span class="n">best_fits</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
@@ -393,6 +508,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">best_fits</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">drop_gapped_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Discard any fit with more missed peaks than</span>
+<span class="sd">        :attr:`max_missed_peaks`.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_missed_peaks</span>
         <span class="n">keep</span> <span class="o">=</span> <span class="p">[]</span>
@@ -412,9 +530,9 @@
 
         <span class="n">nodes_for_cache</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">seed_node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="c1"># This peak is depended upon by each fit in `dependencies`</span>
-            <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">seed_node</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">continue</span>
@@ -450,6 +568,9 @@
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;PeakDependenceNetwork(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">))</span></div>
+
+
+<span class="n">PeakDependenceGraph</span><span class="o">.</span><span class="n">log_with_logger</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="NetworkedTargetedDeconvolutionResult"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult">[docs]</a><span class="k">class</span> <span class="nc">NetworkedTargetedDeconvolutionResult</span><span class="p">(</span><span class="n">TargetedDeconvolutionResultBase</span><span class="p">):</span>
@@ -506,7 +627,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -35,7 +37,7 @@
 <span></span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">mass_charge_ratio</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mgf</span> <span class="k">import</span> <span class="n">MGFLoader</span><span class="p">,</span> <span class="n">mgf</span> <span class="k">as</span> <span class="n">pymgf</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mgf</span> <span class="k">import</span> <span class="n">MGFLoader</span><span class="p">,</span> <span class="n">mgf</span> <span class="k">as</span> <span class="n">pymgf</span><span class="p">,</span> <span class="n">_MGFParser</span>
 
 <span class="kn">from</span> <span class="nn">.text</span> <span class="k">import</span> <span class="n">HeaderedDelimitedWriter</span>
 
@@ -61,9 +63,9 @@
     <span class="k">def</span> <span class="nf">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_add_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">save_scan_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">):</span>
+<div class="viewcode-block" id="MGFSerializer.save_scan_bunch"><a class="viewcode-back" href="../../../output/mgf.html#ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch">[docs]</a>    <span class="k">def</span> <span class="nf">save_scan_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">write_scan</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">prepare_scan_data</span><span class="p">(</span><span class="n">scan</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">format_peak_vectors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">:</span>
@@ -77,7 +79,7 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span> <span class="n">charge_array</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">write_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header_dict</span><span class="p">):</span>
-        <span class="n">pepmass</span> <span class="o">=</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;precursor_neutral_mass&#39;</span><span class="p">]</span>
+        <span class="n">pepmass</span> <span class="o">=</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;precursor_mz&#39;</span><span class="p">]</span>
         <span class="n">charge</span> <span class="o">=</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;precursor_charge&#39;</span><span class="p">]</span>
         <span class="n">intensity</span> <span class="o">=</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;precursor_intensity&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;pepmass&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%f</span><span class="s2"> </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pepmass</span><span class="p">,</span> <span class="n">intensity</span><span class="p">))</span>
@@ -95,14 +97,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;END IONS</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ProcessedMGFDeserializer"><a class="viewcode-back" href="../../../output/mgf.html#ms_deisotope.output.mgf.ProcessedMGFDeserializer">[docs]</a><span class="k">class</span> <span class="nc">ProcessedMGFDeserializer</span><span class="p">(</span><span class="n">MGFLoader</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ProcessedMGFLoader</span><span class="p">(</span><span class="n">MGFLoader</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;ascii&#39;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_create_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">pymgf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                          <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_MGFParser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pymgf</span><span class="o">.</span><span class="n">MGF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                             <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_build_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="n">mz_array</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">]</span>
@@ -110,11 +116,23 @@
         <span class="n">charge_array</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;charge array&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">build_deconvoluted_peak_set_from_arrays</span><span class="p">(</span><span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span> <span class="n">charge_array</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_make_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
-        <span class="n">scan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_make_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">scan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_peaks</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">pinfo</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_precursor_information</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">defaulted</span> <span class="o">=</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">defaulted</span>
+        <span class="n">orphan</span> <span class="o">=</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">orphan</span>
+        <span class="n">pinfo</span><span class="o">.</span><span class="n">default</span><span class="p">()</span>
+        <span class="n">pinfo</span><span class="o">.</span><span class="n">defaulted</span> <span class="o">=</span> <span class="n">defaulted</span>
+        <span class="n">pinfo</span><span class="o">.</span><span class="n">orphan</span> <span class="o">=</span> <span class="n">orphan</span>
+        <span class="k">return</span> <span class="n">pinfo</span>
+
+
+<span class="n">ProcessedMGFDeserializer</span> <span class="o">=</span> <span class="n">ProcessedMGFLoader</span>
 
 
 <span class="k">def</span> <span class="nf">build_deconvoluted_peak_set_from_arrays</span><span class="p">(</span><span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span> <span class="n">charge_array</span><span class="p">):</span>
@@ -147,7 +165,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>

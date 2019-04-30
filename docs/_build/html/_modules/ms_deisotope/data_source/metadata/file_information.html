@@ -13,7 +13,9 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -32,7 +34,12 @@
         
         
   <h1>Source code for ms_deisotope.data_source.metadata.file_information</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="sd">&quot;&quot;&quot;Defines types for describing different kinds of mass spectrometry</span>
+<span class="sd">data files and their contents, and a database of controlled vocabulary</span>
+<span class="sd">terms for them.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">hashlib</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
@@ -40,38 +47,42 @@
 
 <span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
+<span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
+
 <span class="k">try</span><span class="p">:</span>
     <span class="ne">FileNotFoundError</span>
 <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
     <span class="ne">FileNotFoundError</span> <span class="o">=</span> <span class="ne">OSError</span>
 
-<span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">render_list</span>
-
 
 <span class="k">class</span> <span class="nc">IDFormat</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes a named spectrum identifier format, either</span>
+<span class="sd">    using a controlled-vocabulary term or user-defined name.</span>
+
+<span class="sd">    A :class:`IDFormat` is equal to its name and its controlled</span>
+<span class="sd">    vocabulary identifier.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
 
 
 <span class="k">class</span> <span class="nc">FileFormat</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes a named mass spectrometry data file format, either</span>
+<span class="sd">    using a controlled-vocabulary term or user-defined name.</span>
+
+<span class="sd">    A :class:`FileFormat` is equal to its name and its controlled</span>
+<span class="sd">    vocabulary identifier.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
 
 
 <span class="k">class</span> <span class="nc">FileContent</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes a named mass spectrometry data file content type,</span>
+<span class="sd">    either using a controlled-vocabulary term or user-defined name.</span>
+
+<span class="sd">    A :class:`FileContent` is equal to its name and its controlled</span>
+<span class="sd">    vocabulary identifier.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
-
-
-<span class="k">def</span> <span class="nf">__generate_list_code</span><span class="p">():</span>
-    <span class="sd">&#39;&#39;&#39;Prints the code to generate these static lists</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="kn">import</span> <span class="nn">sys</span>
-    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
-                <span class="s2">&quot;id_formats&quot;</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;IDFormat&quot;</span><span class="p">)</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
-                <span class="s2">&quot;file_formats&quot;</span><span class="p">,</span> <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;FileFormat&quot;</span><span class="p">)</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">render_list</span><span class="p">(</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;content_keys&#39;</span><span class="p">,</span>
-                <span class="n">term_cls_name</span><span class="o">=</span><span class="s2">&quot;FileContent&quot;</span><span class="p">)</span>
 
 
 <span class="n">id_formats</span> <span class="o">=</span> <span class="p">[]</span>
@@ -82,98 +93,123 @@
 <span class="c1"># render_list(&#39;native spectrum identifier format&#39;,</span>
 <span class="c1">#             &quot;id_formats&quot;, term_cls_name=&quot;IDFormat&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="n">id_formats</span> <span class="o">=</span> <span class="p">[</span>
+<span class="n">id_formats</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Agilent MassHunter nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001508&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by scanId=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech QTOF nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002898&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by scan=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;spectrum from database string nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001532&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by databasekey=xsd:string.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectra data details&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;search input details&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectra data details&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;search input details&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;spectrum from ProteinScape database nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001531&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by databasekey=xsd:long.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectra data details&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;search input details&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectra data details&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;search input details&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker U2 nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000823&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by declaration=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;collection=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;scan=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;no nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000824&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;No nativeID format indicates that the file tagged with this&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;term does not contain spectra that can have a nativeID&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;format.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Mascot query number&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001528&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by query=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;spectrum from database integer nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001526&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by databasekey=xsd:long.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000929&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by source=xsd:string&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;start=xsd:nonNegativeInteger end=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;UIMF nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002532&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by frame=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;scan=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;frameType=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker TDF nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002818&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by frame=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;scan=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker Container nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002303&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native identifier (UUID).&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001480&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by jobRun=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;spotLabel=xsd:string spectrum=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000768&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;controllerType=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;controllerNumber=xsd:positiveInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;scan=xsd:positiveInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Waters nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000769&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by function=xsd:positiveInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Scaffold nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001562&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Scaffold native ID format.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker FID nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000773&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by file=xsd:IDREF.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker BAF nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000772&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by scan=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker/Agilent YEP nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000771&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by scan=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;WIFF nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000770&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by sample=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;period=xsd:nonNegativeInteger cycle=xsd:nonNegativeInteger&#39;</span>
               <span class="sa">u</span><span class="s1">&#39;experiment=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;spectrum identifier nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000777&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by spectrum=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;scan number only nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000776&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by scan=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;single peak list nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000775&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by file=xsd:IDREF.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;multiple peak list nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000774&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by index=xsd:nonNegativeInteger.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF T2D nativeID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001559&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Native format defined by file=xsd:IDREF.&#39;</span><span class="p">),</span>
-             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
-<span class="p">]</span>
+             <span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">,</span>
+             <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;native spectrum identifier format&#39;</span><span class="p">]),</span>
+<span class="p">])</span>
 <span class="c1"># [[[end]]]</span>
 
 
@@ -185,133 +221,179 @@
 <span class="c1"># render_list(&#39;mass spectrometer file format&#39;,</span>
 <span class="c1">#             &quot;file_formats&quot;, term_cls_name=&quot;FileFormat&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="n">file_formats</span> <span class="o">=</span> <span class="p">[</span>
+<span class="n">file_formats</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Agilent MassHunter format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001509&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A data file format found in an Agilent MassHunter directory&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;which contains raw data acquired by an Agilent mass&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;spectrometer.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;msalign format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002899&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;msalign file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SCiLS Lab format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002385&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SCiLS Lab file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;chrom format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002966&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The Lipid Data Analyzer native chrom format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Mascot MGF format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001062&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Mascot MGF file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Andi-MS format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002441&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;AIA Analytical Data Interchange file format for mass&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;spectrometry data.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker FID format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000825&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker FID file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Proteinscape spectra&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001527&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Spectra from Bruker/Protagen Proteinscape database.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS2 format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001466&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS2 file format for MS2 spectral data.&quot; [PMID:15317041,&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;DOI:10.1002/rcm.1603&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;PerSeptive PKS format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001245&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;PerSeptive peak list file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SCIEX API III format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001246&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;PE SCIEX peak list file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker XML format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001247&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker data exchange XML format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech database entity&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000930&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+    <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech LCD format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1003009&#39;</span><span class="p">,</span>
+               <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Shimadzu Biotech LCD file format.&#39;</span><span class="p">),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mz5 format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001881&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mz5 file format, modelled after mzML.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mzMLb format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002838&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mzMLb file format, mzML encapsulated within HDF5.&quot; [PSI:PI&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;UIMF format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002531&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SQLite-based file format created at Pacific Northwest&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;National Lab. It stores an intermediate analysis of ion-&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;mobility mass spectrometry data.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker TDF format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002817&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker TDF raw file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Waters raw format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000526&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Waters data file format found in a Waters RAW directory,&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;generated from an MS acquisition.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;feature format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002900&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;TopFD feature file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker Container format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002302&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker Container raw file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Phenyx XML format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001463&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Phenyx open XML file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;intermediate analysis format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;intermediate analysis format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mzML format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000584&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Proteomics Standards Inititative mzML file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bioworks SRF format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000742&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo Finnigan SRF file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;intermediate analysis format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;intermediate analysis format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;parameter file&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000740&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Parameter file used to configure the acquisition of raw data&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;on the instrument.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+    <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Andromeda:apl file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002996&#39;</span><span class="p">,</span>
+               <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Peak list file format of the Andromeda search engine.&#39;</span><span class="p">),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;ISB mzXML format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000566&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Institute of Systems Biology mzXML file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker/Agilent YEP format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000567&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker/Agilent YEP file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;PSI mzData format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000564&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Proteomics Standards Inititative mzData file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Micromass PKL format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000565&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Micromass PKL file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;ABI WIFF format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000562&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Applied Biosystems WIFF file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo RAW format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000563&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific RAW file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF database&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001481&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Applied Biosystems/MDS Analytical Technologies TOF/TOF&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;instrument database.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;DTA format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000613&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SEQUEST DTA file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;ProteinLynx Global Server mass spectrum XML format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000614&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Peak list file format used by ProteinLynx Global Server.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;text format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001369&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Simple text file format of </span><span class="se">\\</span><span class="s1">&quot;m/z [intensity]</span><span class="se">\\</span><span class="s1">&quot; values for a&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;PMF (or single MS2) search.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SCIEX TOF/TOF T2D format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001560&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Applied Biosystems/MDS Analytical Technologies TOF/TOF&#39;</span>
                 <span class="sa">u</span><span class="s1">&#39;instrument export format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS1 format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002597&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS1 file format for MS1 spectral data.&quot; [PMID:15317041&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker U2 format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000816&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker HyStar U2 file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker BAF format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000815&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Bruker BAF raw file format.&#39;</span><span class="p">),</span>
-               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
-<span class="p">]</span>
+               <span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span>
+               <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrometer file format&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;file format&#39;</span><span class="p">]),</span>
+<span class="p">])</span>
 <span class="c1"># [[[end]]]</span>
 
 
@@ -323,35 +405,43 @@
 <span class="c1"># render_list(&#39;data file content&#39;,</span>
 <span class="c1">#             &quot;content_keys&quot;, term_cls_name=&quot;FileContent&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="n">content_keys</span> <span class="o">=</span> <span class="p">[</span>
+<span class="n">content_keys</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000804&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative intensity of electromagnetic&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;radiation as a function of the wavelength.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;total ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000235&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram obtained by plotting the total ion current&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;detected in each of a series of mass spectra recorded as a&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;function of retention time.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;absorption spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000806&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative intensity of electromagnetic&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;radiation absorbed by atoms or molecules when excited.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected reaction monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001473&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a selectively monitored reaction at each&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;time point.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected ion monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001472&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a selectively monitored ion at each time&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;consecutive reaction monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001474&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a series of monitored reactions at each time&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;emission spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000805&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative intensity of electromagnetic&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;radiation emitted by atoms or molecules when excited.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000294&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative abundance of a beam or other&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;collection of ions as a function of the mass-to-charge ratio&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;(m/z).&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;PDA spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000620&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE Spectrum generated from a photodiode array detector&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;(ultraviolet/visible spectrum).&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000810&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative abundance of a beam or other&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;collection of ions as a function of the retention time.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000811&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of electromagnetic properties as a function&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;of the retention time.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MSn spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000580&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MSn refers to multi-stage MS2 experiments designed to record&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;product ion spectra where n is the number of product ion&#39;</span>
@@ -359,18 +449,21 @@
                  <span class="sa">u</span><span class="s1">&#39;experiments can be undertaken where n &gt; 2 whereas for a&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;simple triple quadrupole system n=2. Use the term ms level&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;(MS:1000511) for specifying n.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;CRM spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000581&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Spectrum generated from MSn experiment with three or more&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;stages of m/z separation and in which a particular multi-&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;step reaction path is monitored.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SIM spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000582&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Spectrum obtained with the operation of a mass spectrometer&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;in which the abundances of one ion or several ions of&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;specific m/z values are recorded rather than the entire mass&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;spectrum (Selected Ion Monitoring).&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;SRM spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000583&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Spectrum obtained when data are acquired from specific&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;product ions corresponding to m/z values of selected&#39;</span>
@@ -383,112 +476,161 @@
                  <span class="sa">u</span><span class="s1">&#39;consitituting multiple transition pairs. Selected reaction&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;monitoring can be performed as tandem mass spectrometry in&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;time or tandem mass spectrometry in space.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;enhanced multiply charged spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000789&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS1 spectrum that is enriched in multiply-charged ions&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;compared to singly-charged ions.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS1 spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;constant neutral gain spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000325&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A spectrum formed of all product ions that have been&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;produced by gain of a pre-selected neutral mass following&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;the reaction with and addition of the gas in a collision&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;cell.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;constant neutral loss spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000326&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A spectrum formed of all product ions that have been&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;produced with a selected m/z decrement from any precursor&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;ions. The spectrum shown correlates to the precursor ion&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;spectrum. See also neutral loss spectrum.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;charge inversion mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000322&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of the relative abundance of ions that&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;result from a charge inversion reaction as a function of&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;m/z.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;time-delayed fragmentation spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000790&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MSn spectrum in which the product ions are collected after a&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;time delay, which allows the observation of lower energy&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;fragmentation processes after precursor ion activation.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MSn spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;emission spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000805&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative intensity of electromagnetic&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;radiation emitted by atoms or molecules when excited.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;product ion spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000343&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE A mass spectrum recorded from any spectrometer in&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;which the appropriate m/z separation scan function is set to&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;record the product ion or ions of selected precursor ions.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;precursor ion spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000341&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Spectrum generated by scanning precursor m/z while&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;monitoring a fixed product m/z.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000294&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative abundance of a beam or other&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;collection of ions as a function of the mass-to-charge ratio&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;(m/z).&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;basepeak chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000628&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the most&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;intense peaks at each time point.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000627&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a specific single ion current at each time&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;PDA spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000620&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE Spectrum generated from a photodiode array detector&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;(ultraviolet/visible spectrum).&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS1 spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000579&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Mass spectrum created by a single-stage MS experiment or the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;first stage of a multi-stage experiment.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;absorption chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000812&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of light absorbed by the sample as a&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;function of the retention time.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;emission chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000813&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of light emitted by the sample as a function&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;of the retention time.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000810&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative abundance of a beam or other&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;collection of ions as a function of the retention time.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000811&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of electromagnetic properties as a function&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;of the retention time.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;e/2 mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000328&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A mass spectrum obtained using a sector mass spectrometer in&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;which the electric sector field E is set to half the value&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;required to transmit the main ion-beam. This spectrum&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;records the signal from doubly charged product ions of&#39;</span>
                  <span class="sa">u</span><span class="s1">&#39;charge-stripping reactions.&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-<span class="p">]</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;constant neutral gain spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000325&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A spectrum formed of all product ions that have been&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;produced by gain of a pre-selected neutral mass following&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;the reaction with and addition of the gas in a collision&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;cell.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;constant neutral loss spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000326&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A spectrum formed of all product ions that have been&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;produced with a selected m/z decrement from any precursor&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;ions. The spectrum shown correlates to the precursor ion&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;spectrum. See also neutral loss spectrum.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;charge inversion mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000322&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of the relative abundance of ions that&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;result from a charge inversion reaction as a function of&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;m/z.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;product ion spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000343&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE A mass spectrum recorded from any spectrometer in&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;which the appropriate m/z separation scan function is set to&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;record the product ion or ions of selected precursor ions.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;precursor ion spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000341&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Spectrum generated by scanning precursor m/z while&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;monitoring a fixed product m/z.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS1 spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000579&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Mass spectrum created by a single-stage MS experiment or the&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;first stage of a multi-stage experiment.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;total ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000235&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram obtained by plotting the total ion current&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;detected in each of a series of mass spectra recorded as a&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;function of retention time.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected reaction monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001473&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;measurements of a selectively monitored reaction at each&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;time point.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected ion monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001472&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;measurements of a selectively monitored ion at each time&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;consecutive reaction monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001474&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE Chromatogram created by creating an array of the&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;measurements of a series of monitored reactions at each time&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;basepeak chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000628&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the most&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;intense peaks at each time point.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000627&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;measurements of a specific single ion current at each time&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;absorption chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000812&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of light absorbed by the sample as a&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;function of the retention time.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;emission chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000813&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of light emitted by the sample as a function&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;of the retention time.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;time-delayed fragmentation spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000790&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MSn spectrum in which the product ions are collected after a&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;time delay, which allows the observation of lower energy&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;fragmentation processes after precursor ion activation.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;MSn spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;enhanced multiply charged spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000789&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MS1 spectrum that is enriched in multiply-charged ions&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;compared to singly-charged ions.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;MS1 spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
+<span class="p">])</span>
 <span class="c1"># [[[end]]]</span>
 
 
-<span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-    <span class="n">i</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">collection</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="n">spectrum_representation</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1"># [[[cog</span>
+<span class="c1"># import cog</span>
+<span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
+<span class="c1"># render_list(&#39;spectrum representation&#39;,</span>
+<span class="c1">#             &quot;spectrum_representation&quot;, term_cls_name=&quot;FileContent&quot;, writer=cog.out)</span>
+<span class="c1"># ]]]</span>
+<span class="n">spectrum_representation</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;centroid spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000127&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Processing of profile data to produce spectra that contains&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;discrete peaks of zero width. Often used to reduce the size&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;of dataset.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;spectrum representation&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;spectrum representation&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;profile spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000128&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A profile mass spectrum is created when data is recorded&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;with ion current (counts per second) on one axis and&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;mass/charge ratio on another axis.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;spectrum representation&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;spectrum representation&#39;</span><span class="p">]),</span>
+<span class="p">])</span>
+<span class="c1"># [[[end]]]</span>
 
+
+<span class="n">content_keys</span> <span class="o">=</span> <span class="n">content_keys</span> <span class="o">+</span> <span class="n">spectrum_representation</span>
 
 <span class="n">id_formats_by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">id_formats</span><span class="p">}</span>
 <span class="n">file_formats_by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">file_formats</span><span class="p">}</span>
 <span class="n">content_keys_by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">content_keys</span><span class="p">}</span>
 
 
-<span class="n">MS_MS1_Spectrum</span> <span class="o">=</span> <span class="n">content_keys_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MS1 spectrum&#39;</span><span class="p">)</span>
-<span class="n">MS_MSn_Spectrum</span> <span class="o">=</span> <span class="n">content_keys_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MSn spectrum&#39;</span><span class="p">)</span>
+<span class="n">MS_MS1_Spectrum</span> <span class="o">=</span> <span class="n">content_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MS1 spectrum&#39;</span><span class="p">)</span>
+<span class="n">MS_MSn_Spectrum</span> <span class="o">=</span> <span class="n">content_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MSn spectrum&#39;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">id_format</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Translate a given name or identifier into a :class:`IDFormat`</span>
+<span class="sd">    instance.</span>
+
+<span class="sd">    If no match is found in the database of known :class:`IDFormat`</span>
+<span class="sd">    types, a new dummy :class:`IDFormat` is returned with all fields</span>
+<span class="sd">    set to the value of ``name``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    IDFormat</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">id_formats_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">id_formats</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -496,8 +638,19 @@
 
 
 <span class="k">def</span> <span class="nf">file_format</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Translate a given name or identifier into a :class:`FileFormat`</span>
+<span class="sd">    instance.</span>
+
+<span class="sd">    If no match is found in the database of known :class:`FileFormat`</span>
+<span class="sd">    types, a new dummy :class:`FileFormat` is returned with all fields</span>
+<span class="sd">    set to the value of ``name``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FileFormat</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">file_formats_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">file_formats</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -505,8 +658,19 @@
 
 
 <span class="k">def</span> <span class="nf">content_key</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Translate a given name or identifier into a :class:`FileContent`</span>
+<span class="sd">    instance.</span>
+
+<span class="sd">    If no match is found in the database of known :class:`FileContent`</span>
+<span class="sd">    types, a new dummy :class:`FileContent` is returned with all fields</span>
+<span class="sd">    set to the value of ``name``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FileContent</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">content_keys_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">content_keys</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -575,7 +739,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        key : str</span>
+<span class="sd">        key : str or :attr:`content`</span>
 <span class="sd">            The content name, either a CV-term or a user-defined name</span>
 <span class="sd">        value : object, optional</span>
 <span class="sd">            The optional value, which should be any type of object whose</span>
@@ -588,16 +752,38 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        key : str</span>
+<span class="sd">        key : str or :class:`FileContent`</span>
 <span class="sd">            The content key to remove</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">get_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+<div class="viewcode-block" id="FileInformation.get_content"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.get_content">[docs]</a>    <span class="k">def</span> <span class="nf">get_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Retrieve the value of ``key`` from :attr:`contents`.</span>
 
-    <span class="k">def</span> <span class="nf">has_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span>
+<span class="sd">        This method is aliased to :meth:`__getitem__`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str or :class:`FileContent`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        object</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="FileInformation.has_content"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.has_content">[docs]</a>    <span class="k">def</span> <span class="nf">has_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Check if ``key`` is found in :attr:`content`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str or :class:`FileContent`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span></div>
 
     <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
@@ -621,9 +807,15 @@
     <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="FileInformation.copy"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Create a deep copy of this object</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FileInformation</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_filesr</span><span class="p">])</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_filesr</span><span class="p">])</span></div></div>
 
 
 <span class="n">format_parameter_map</span> <span class="o">=</span> <span class="p">{</span>
@@ -631,6 +823,9 @@
                    <span class="n">file_formats_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Thermo RAW format&quot;</span><span class="p">)),</span>
     <span class="s2">&quot;agilent d&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">id_formats_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Agilent MassHunter nativeID format&quot;</span><span class="p">),</span>
                   <span class="n">file_formats_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Agilent MassHunter format&quot;</span><span class="p">)),</span>
+    <span class="s1">&#39;mgf&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">id_formats_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;no nativeID format&quot;</span><span class="p">),</span>
+            <span class="c1"># id_formats_by_name.get(&quot;multiple peak list nativeID format&quot;),</span>
+            <span class="n">file_formats_by_name</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Mascot MGF format&#39;</span><span class="p">)),</span>
 <span class="p">}</span>
 
 
@@ -674,14 +869,26 @@
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
 
-    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="SourceFile.from_path"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile.from_path">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_path</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Construct a new :class:`SourceFile` from a path to a real file on the local</span>
+<span class="sd">        file system.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: str</span>
+<span class="sd">            The path to the file to describe</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SourceFile</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">location</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">idfmt</span><span class="p">,</span> <span class="n">file_fmt</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">guess_format</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">source</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">idfmt</span><span class="p">,</span> <span class="n">file_fmt</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">source</span>
+        <span class="k">return</span> <span class="n">source</span></div>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -766,7 +973,14 @@
                         <span class="k">if</span> <span class="n">hit</span><span class="p">:</span>
                             <span class="k">break</span>
                 <span class="k">return</span> <span class="n">id_fmt</span><span class="p">,</span> <span class="n">fmt</span>
-
+            <span class="k">elif</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.mzxml&#39;</span><span class="p">:</span>
+                <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;ISB mzXML format&quot;</span>
+                <span class="n">id_fmt</span> <span class="o">=</span> <span class="s2">&quot;no nativeID format&quot;</span>
+                <span class="k">return</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">id_fmt</span>
+            <span class="k">elif</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.mgf&#39;</span><span class="p">:</span>
+                <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;Mascot MGF format&quot;</span>
+                <span class="n">id_fmt</span> <span class="o">=</span> <span class="s2">&quot;no nativeID format&quot;</span>
+                <span class="k">return</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">id_fmt</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
             <span class="n">lead_bytes</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
             <span class="c1"># looking for pattern matching b&#39;\x01\xa1F\x00i\x00n\x00n\x00i\x00g\x00a\x00n\x00&#39;</span>
@@ -880,7 +1094,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.7.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.3.
     </div>
   </body>
 </html>
