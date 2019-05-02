@@ -2,7 +2,7 @@ from collections import OrderedDict
 import bisect
 from .common import (
     ScanBunch, ScanDataSource, RandomAccessScanSource,
-    Scan, ProcessedScan)
+    Scan, ProcessedScan, WrappedScan)
 
 try:
     range = xrange
@@ -11,6 +11,76 @@ except NameError:
 
 
 class MemoryScanInterface(ScanDataSource):
+
+    @classmethod
+    def make_scan(cls, arrays, ms_level=None, id=None, index=None, scan_time=None,
+                  is_profile=False, polarity=1, precursor_information=None, activation=None,
+                  isolation_window=None, annotations=None, acquisition_information=None,
+                  instrument_configuration=None, peak_set=None, deconvoluted_peak_set=None,
+                  **kwargs):
+        '''
+        Parameters
+        ----------
+        arrays: :class:`RawDataArrays`
+            A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and intensity data points
+        ms_level: int
+            The degree of fragmentation performed. 1 corresponds to a MS1 or "Survey" scan, 2 corresponds
+            to MS/MS, and so on. If :attr:`ms_level` > 1, the scan is considered a "tandem scan" or "MS^n" scan
+        id: str
+            The unique identifier for this scan as given by the source
+        index: int
+            The integer number indicating how many scans were acquired prior to this scan.
+        scan_time: float
+            The time the scan was acquired during data acquisition. The unit of time will always be minutes.
+        is_profile: bool
+            Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
+            pre-centroided.
+        polarity: int
+            If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
+            mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.
+        precursor_information: :class:`PrecursorInformation` or None
+            Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
+            the precursor scan
+        activation: :class:`.ActivationInformation` or None
+            If this scan is an MS^n scan, this attribute will contain information about the process
+            used to produce it from its parent ion.
+        instrument_configuration: :class:`~.InstrumentInformation`
+            The instrument configuration used to acquire this scan.
+        acquisition_information: :class:`.ScanAcquisitionInformation` or None
+            Describes the type of event that produced this scan, as well as the scanning method
+            used.
+        isolation_window: :class:`.IsolationWindow` or None
+            Describes the range of m/z that were isolated from a parent scan to create this scan
+        annotations: dict
+            A set of key-value pairs describing the scan not part of the standard interface
+        peak_set : :class:`ms_peak_picker.PeakSet` or None
+            Picked peaks and (possibly) associated raw data points as produced by :meth:`pick_peaks`.
+            Will be `None` if peak picking has not been done.
+        deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None
+            Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will
+            be `None` if deconvolution has not been done.
+        '''
+        if annotations is None:
+            annotations = {}
+        annotations.update(kwargs)
+        scan = WrappedScan({}, cls(), arrays, None, annotations=annotations)
+        scan.arrays = arrays
+        scan.ms_level = ms_level
+        scan.id = id
+        scan.title = id
+        scan.index = index
+        scan.scan_time = scan_time
+        scan.is_profile = is_profile
+        scan.polarity = polarity
+        scan.activation = activation
+        scan.isolation_window = isolation_window
+        scan.acquisition_information = acquisition_information
+        scan.instrument_configuration = instrument_configuration
+        scan.peak_set = peak_set
+        scan.deconvoluted_peak_set = deconvoluted_peak_set
+        return scan
+
+
     def _scan_arrays(self, scan):
         """Returns raw data arrays for m/z and intensity
 
@@ -27,7 +97,7 @@ class MemoryScanInterface(ScanDataSource):
         intensity: np.array
             An array of intensity values for this scan
         """
-        raise NotImplementedError()
+        return None
 
     def _precursor_information(self, scan):
         """Returns information about the precursor ion,
@@ -45,7 +115,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         PrecursorInformation
         """
-        raise NotImplementedError()
+        return None
 
     def _scan_title(self, scan):
         """Returns a verbose name for this scan, if one
@@ -63,7 +133,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         str
         """
-        raise NotImplementedError()
+        return None
 
     def _scan_id(self, scan):
         """Returns the scan's id string, a unique
@@ -80,7 +150,10 @@ class MemoryScanInterface(ScanDataSource):
         -------
         str
         """
-        return self._scan_index_map[scan].id
+        try:
+            return self._scan_index_map[scan].id
+        except AttributeError:
+            return None
 
     def _scan_index(self, scan):
         """Returns the base 0 offset from the start
@@ -101,7 +174,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         int
         """
-        raise NotImplementedError()
+        return None
 
     def _ms_level(self, scan):
         """Returns the degree of exponential fragmentation
@@ -121,7 +194,10 @@ class MemoryScanInterface(ScanDataSource):
         -------
         int
         """
-        return self._scan_index_map[scan].ms_level
+        try:
+            return self._scan_index_map[scan].ms_level
+        except AttributeError:
+            return None
 
     def _scan_time(self, scan):
         """Returns the time in minutes from the start of data
@@ -137,7 +213,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         float
         """
-        raise NotImplementedError()
+        return None
 
     def _is_profile(self, scan):
         """Returns whether the scan contains profile data (`True`)
@@ -153,7 +229,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         bool
         """
-        raise NotImplementedError()
+        return None
 
     def _polarity(self, scan):
         """Returns whether this scan was acquired in positive mode (+1)
@@ -169,7 +245,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         int
         """
-        raise NotImplementedError()
+        return None
 
     def _activation(self, scan):
         """Returns information about the activation method used to
@@ -187,7 +263,7 @@ class MemoryScanInterface(ScanDataSource):
         -------
         ActivationInformation
         """
-        raise NotImplementedError()
+        return None
 
 
 class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
