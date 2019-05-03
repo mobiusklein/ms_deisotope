@@ -62,16 +62,18 @@ class MemoryScanInterface(ScanDataSource):
         '''
         if annotations is None:
             annotations = {}
+        if arrays is None:
+            arrays = [[], []]
         annotations.update(kwargs)
         scan = WrappedScan({}, cls(), arrays, None, annotations=annotations)
         scan.arrays = arrays
         scan.ms_level = ms_level
-        scan.id = id
-        scan.title = id
-        scan.index = index
-        scan.scan_time = scan_time
-        scan.is_profile = is_profile
-        scan.polarity = polarity
+        scan.id = str(id)
+        scan.title = str(id)
+        scan.index = index or -1
+        scan.scan_time = scan_time or -1
+        scan.is_profile = bool(is_profile)
+        scan.polarity = int(polarity)
         scan.activation = activation
         scan.isolation_window = isolation_window
         scan.acquisition_information = acquisition_information

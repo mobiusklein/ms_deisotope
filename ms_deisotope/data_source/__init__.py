@@ -3,12 +3,29 @@ from .mzml import MzMLLoader
 from .mzxml import MzXMLLoader
 from .mgf import MGFLoader
 from .common import (
-    Scan, ActivationInformation,
+    Scan,
     PrecursorInformation, ProcessedScan,
-    IsolationWindow, dissociation_methods,
-    ScanAcquisitionInformation, ScanEventInformation,
+    IsolationWindow,
     ScanDataSource, ScanIterator, ScanBunch,
-    ScanWindow, RandomAccessScanSource, ChargeNotProvided)
+    RandomAccessScanSource, ChargeNotProvided)
+
+from .metadata.file_information import (
+    FileInformation,
+    FileFormat, file_formats,
+    FileContent, content_keys,
+    IDFormat, id_formats)
+
+from .metadata.instrument_components import (
+    Component, ComponentGroup, InstrumentInformation,
+    components)
+
+from .metadata.scan_traits import (
+    ScanAcquisitionInformation, ScanEventInformation,
+    ScanWindow, scan_attributes)
+
+from .metadata.activation import (
+    ActivationInformation, MultipleActivationInformation,
+    DissociationMethod, dissociation_methods)
 
 from .scan import ScanProxyContext
 
@@ -17,10 +34,17 @@ from ._compression import get_opener
 __all__ = [
     "MSFileLoader", "MzMLLoader",
     "MzXMLLoader", "MGFLoader",
-    "Scan", "ActivationInformation",
-    "PrecursorInformation", "ProcessedScan",
-    "IsolationWindow", "dissociation_methods",
+
+    "Scan", "ProcessedScan",
+
+    "PrecursorInformation",
+
+    "ActivationInformation", "MultipleActivationInformation",
+    "DissociationMethod", "dissociation_methods",
+
     "ScanAcquisitionInformation", "ScanEventInformation",
+    "IsolationWindow", "ScanWindow", "scan_attributes",
+
     "ScanDataSource", "ScanIterator", "ScanBunch",
     "ScanWindow", "RandomAccessScanSource", "ChargeNotProvided",
     "get_opener", "ScanProxyContext",

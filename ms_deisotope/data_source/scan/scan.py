@@ -277,8 +277,11 @@ class Scan(ScanBase):
     def arrays(self, value):
         if isinstance(value, RawDataArrays) or value is None:
             self._arrays = value
-        elif (isinstance(value, Sequence) and len(value) == 2):
-            self._arrays = RawDataArrays(*map(np.asanyarray, value))
+        elif isinstance(value, Sequence):
+            if len(value) == 2:
+                self._arrays = RawDataArrays(*map(np.asanyarray, value))
+            elif len(value) == 3:
+                RawDataArrays(*map(np.asanyarray, value[:2]), arrays=dict(value[2]))
         else:
             raise TypeError(
                 "arrays must be an instance of RawDataArrays or a pair of numpy arrays")
@@ -402,6 +405,7 @@ class Scan(ScanBase):
                 center = lo + width
                 self._isolation_window = IsolationWindow(center, width, width)
             elif len(value) == 3:
+                lo, center, hi = value
                 self._isolation_window = IsolationWindow(lo, center, hi)
             else:
                 raise ValueError("Could not convert %r to an %r" %

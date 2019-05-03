@@ -155,7 +155,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return inst
 
     def __copy__(self):
-        inst = self.__class__(mz.copy(), intensity.copy(), {
+        inst = self.__class__(self.mz.copy(), self.intensity.copy(), {
             k: v.copy() for k, v in self.data_arrays.items()
         })
         return inst
@@ -282,6 +282,11 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             i += 1
         return self.__class__(self.mz[i:j], self.intensity[i:j])
 
+    def __getitem__(self, i):
+        if isinstance(i, int):
+            return super(RawDataArrays, self).__getitem__(i)
+        else:
+            return self.arrays[i]
 
 class ScanBase(object):
     '''Abstract base class for Scan-like objects

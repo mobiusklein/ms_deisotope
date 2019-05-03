@@ -305,5 +305,5 @@ scan_attributes = TermSet([
 
 __all__ = [
     "IsolationWindow", "ScanAcquisitionInformation", "ScanEventInformation",
-    "ScanWindow", "scan_attributes"
+    "ScanWindow", "ScanAttribute", "scan_attributes"
 ]

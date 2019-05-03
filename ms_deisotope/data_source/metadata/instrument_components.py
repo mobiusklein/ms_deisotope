@@ -675,6 +675,9 @@ inlet_types = TermSet([
 
 all_components = ionization_types + detector_types + analyzer_types + inlet_types
 
+# more consistent alias
+components = all_components
+
 all_components_by_name = {c.name: c for c in all_components}
 
 
