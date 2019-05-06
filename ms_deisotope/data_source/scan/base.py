@@ -161,6 +161,12 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return inst
 
     def copy(self):
+        """Make a deep copy of this object.
+
+        Returns
+        -------
+        :class:`RawDataArray`
+        """
         return self.__copy__()
 
     def plot(self, *args, **kwargs):
@@ -288,6 +294,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         else:
             return self.arrays[i]
 
+
 class ScanBase(object):
     '''Abstract base class for Scan-like objects
     '''
@@ -332,7 +339,7 @@ class ScanBase(object):
 
         Returns
         -------
-        :class:`Scan`
+        :class:`ScanBase`
         """
         return self.clone(deep)
 
@@ -573,6 +580,8 @@ class PrecursorInformation(object):
         return self
 
     def unbind(self):
+        '''Detattch this object the currently bound :attr:`source`.
+        '''
         self.source = None
 
     def extract(self, peak, override_charge=None):
@@ -624,6 +633,12 @@ class PrecursorInformation(object):
 
     @property
     def neutral_mass(self):
+        """Calculate the neutral mass of the precursor from the given m/z and charge.
+
+        Returns
+        -------
+        float
+        """
         if self.charge == ChargeNotProvided:
             warnings.warn(
                 "A precursor with an unknown charge state was used to compute a neutral mass.")
@@ -632,6 +647,12 @@ class PrecursorInformation(object):
 
     @property
     def extracted_mz(self):
+        """Recalculate the m/z of the precursor from the fitted neutral mass and charge
+
+        Returns
+        -------
+        float
+        """
         if self.extracted_charge == ChargeNotProvided or (
                 self.extracted_charge == 0 and self.charge == ChargeNotProvided):
             warnings.warn(
@@ -641,17 +662,35 @@ class PrecursorInformation(object):
 
     @property
     def precursor(self):
+        """The scan in which the precursor ion was isolated.
+
+        Returns
+        -------
+        :class:`ScanBase`
+        """
         if self.precursor_scan_id is None:
             return None
         return self.source.get_scan_by_id(self.precursor_scan_id)
 
     @property
     def product(self):
+        """The scan in which the precursor ion was fragmented and daughter ions were observed.
+
+        Returns
+        -------
+        :class:`ScanBase`
+        """
         if self.product_scan_id is None:
             return None
         return self.source.get_scan_by_id(self.product_scan_id)
 
     def copy(self):
+        """Make a shallow copy of this object.
+
+        Returns
+        -------
+        :class:`PrecursorInformation`
+        """
         dup = self.__class__(
             self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source,
             self.extracted_neutral_mass, self.extracted_charge, self.extracted_intensity,
@@ -660,6 +699,16 @@ class PrecursorInformation(object):
         return dup
 
     def clone(self):
+        """Make a shallow copy of this object.
+
+        .. note::
+
+            This is an alias of :meth:`copy`
+
+        Returns
+        -------
+        :class:`PrecursorInformation`
+        """
         return self.copy()
 
     def correct_mz(self, error_tolerance=2e-5):

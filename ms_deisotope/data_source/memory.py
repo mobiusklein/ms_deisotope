@@ -13,7 +13,7 @@ except NameError:
 class MemoryScanInterface(ScanDataSource):
 
     @classmethod
-    def make_scan(cls, arrays, ms_level=None, id=None, index=None, scan_time=None,
+    def make_scan(cls, arrays=None, ms_level=None, id=None, index=None, scan_time=None,
                   is_profile=False, polarity=1, precursor_information=None, activation=None,
                   isolation_window=None, annotations=None, acquisition_information=None,
                   instrument_configuration=None, peak_set=None, deconvoluted_peak_set=None,
@@ -266,6 +266,9 @@ class MemoryScanInterface(ScanDataSource):
         ActivationInformation
         """
         return None
+
+
+make_scan = MemoryScanInterface.make_scan
 
 
 class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
