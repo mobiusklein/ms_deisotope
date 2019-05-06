@@ -31,6 +31,29 @@ class ScanDataSource(object):
     def _make_scan(self, data):
         return Scan(data, self)
 
+    def _pick_peaks_vendor(self, scan, *args, **kwargs):
+        """Invoke the underlying data access library's peak picking procedure.
+
+        Not available for open format readers, where behavior will default to
+        the :mod:`ms_peak_picker` algorithm.
+
+        Parameters
+        ----------
+        scan : Mapping
+            The underlying scan information storage,
+            usually a `dict`
+
+        Returns
+        -------
+        peak_set: :class:`ms_peak_picker.PeakIndex`
+
+        Raises
+        ------
+        NotImplementedError:
+            When there is no method available for the given scan and/or data source
+        """
+        raise NotImplementedError()
+
     @abc.abstractmethod
     def _scan_arrays(self, scan):
         """Returns raw data arrays for m/z and intensity

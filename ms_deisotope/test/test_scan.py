@@ -53,6 +53,16 @@ class TestScanMachinery(unittest.TestCase):
             mzml.MzMLDataInterface())
         return scan
 
+    def make_broken_vendor_scan(self):
+        base = self.make_scan()
+
+        class BrokenVendorPeakPickingMzMLDataInterface(mzml.MzMLDataInterface):
+            def _pick_peaks_vendor(self, scan, *args, **kwargs):
+                raise ValueError("This was a horrible idea.")
+
+        scan = common.Scan(base._data, BrokenVendorPeakPickingMzMLDataInterface())
+        return scan
+
     def test_pick_peaks(self):
         scan = self.make_scan()
         self.assertIsNone(scan.peak_set)
@@ -60,6 +70,11 @@ class TestScanMachinery(unittest.TestCase):
         self.assertIsNotNone(scan.peak_set)
         self.assertEqual(len(scan.peak_set), 10)
         self.assertIsNotNone(scan.has_peak(576.5))
+
+        broken_scan = self.make_broken_vendor_scan()
+        assert broken_scan.pick_peaks().peak_set == scan.peak_set
+        with self.assertRaises(ValueError):
+            broken_scan.pick_peaks('vendor')
 
     def test_equality(self):
         scan = self.make_scan()

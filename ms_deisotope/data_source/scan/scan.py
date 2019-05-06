@@ -568,6 +568,21 @@ class Scan(ScanBase):
         Scan
             Returns self
         """
+        # Check to see if the user requested one of the ms_peak_picker fits or wanted
+        # to use the vendor peak picker if provided.
+        fit_type_k = kwargs.get("fit_type")
+        if len(args) > 0:
+            fit_type_a = args[0]
+        else:
+            fit_type_a = None
+        if fit_type_k == 'vendor' or fit_type_a == 'vendor':
+            try:
+                peaks = self.source._pick_peaks_vendor(self._data, *args, **kwargs)
+                self.peak_set = peaks
+                return self
+            except NotImplementedError:
+                pass
+        # Prepare the peak picking parameters
         mzs, intensities = self.arrays
         if len(mzs) == 0:
             self.peak_set = PeakIndex(mzs, intensities, PeakSet([]))

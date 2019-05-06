@@ -22,8 +22,8 @@ class ThermoRawLoaderScanBehaviorBase(object):
     reference_mgf = datafile("small.mgf")
 
     @property
-    def reader(self):
-        # return infer_type.MSFileLoader(self.path)
+    def reader(self):  # pragma: no cover
+        # Required for implementation
         raise NotImplementedError()
 
     def test_iteration(self):

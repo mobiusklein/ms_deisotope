@@ -21,6 +21,7 @@ import numpy as np
 
 from pyteomics.auxiliary import unitfloat
 
+from ms_peak_picker import PeakSet, PeakIndex, simple_peak
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided, Scan,
     ActivationInformation, MultipleActivationInformation,
@@ -223,6 +224,19 @@ class RawReaderInterface(ScanDataSource):
         mzs = _copy_double_array(segscan.Positions)
         inten = _copy_double_array(segscan.Intensities)
         return mzs, inten
+
+    def _pick_peaks_vendor(self, scan, *args, **kwargs):
+        scan_info = Business.Scan.FromFile(self._source, scan.scan_number + 1)
+        if scan_info.HasCentroidStream:
+            stream = self._source.GetCentroidStream(scan.scan_number + 1, 0)
+            mzs = stream.Masses
+            intens = stream.Intensities
+            peaks = PeakSet([simple_peak(mzs[i], intens[i], 0.001) for i in range(len(mzs))])
+            peaks.reindex()
+            arrays = self._scan_arrays(scan)
+            return PeakIndex(arrays[0], arrays[1], peaks)
+        else:
+            raise NotImplementedError()
 
     def _scan_id(self, scan):
         scan_number = scan.scan_number
@@ -495,7 +509,11 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     def _parse_method(self):
         try:
-            return _InstrumentMethod(self._source.GetInstrumentMethod(0))
+            method_count = self._source.InstrumentMethodsCount
+            if method_count == 0:
+                return _InstrumentMethod('')
+            # the data acquisition method should be the last method
+            return _InstrumentMethod(self._source.GetInstrumentMethod(method_count - 1))
         except NullReferenceException:   # pylint: disable=broad-except
             return _InstrumentMethod('')
 
