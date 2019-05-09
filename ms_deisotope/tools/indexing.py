@@ -378,12 +378,13 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
     click.echo("Begin Clustering", err=True)
     clusters = iterative_clustering(
         msn_scans, precursor_error_tolerance, similarity_thresholds)
+    click.echo("Clusering Finished", err=True)
     by_size = Counter()
     for cluster in clusters:
         by_size[len(cluster)] += 1
-    click.echo("Clusters: {:d}".format(len(clusters)))
+    click.echo("Clusters: {:d}".format(len(clusters)), err=True)
     for key, value in sorted(by_size.items()):
-        click.echo("Size {:d}: {:d}".format(key, value))
+        click.echo("Size {:d}: {:d}".format(key, value), err=True)
     with click.open_file(output_path, mode='w') as outfh:
         writer = ScanClusterWriter(outfh)
         for cluster in clusters:
