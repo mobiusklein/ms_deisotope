@@ -241,7 +241,7 @@ class ThermoRawDataInterface(ScanDataSource):
             charge = labels.charge[0]
         if not charge:
             charge = ChargeNotProvided
-        trailer = self._source.GetTrailerExtraForScanNum(scan_number)
+        trailer = self._trailer_values(scan)
         _mz = trailer.get('Monoisotopic M/Z', 0.0)
         # prefer the trailer m/z if available?
         if _mz > 0:
@@ -314,14 +314,14 @@ class ThermoRawDataInterface(ScanDataSource):
         return None
 
     def _get_scan_segment(self, scan):
-        trailer = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        trailer = self._trailer_values(scan)
         try:
             return int(trailer['Scan Segment'])
         except KeyError:
             return 1
 
     def _get_scan_event(self, scan):
-        trailer = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        trailer = self._trailer_values(scan)
         try:
             return int(trailer['Scan Event'])
         except KeyError:
@@ -332,7 +332,7 @@ class ThermoRawDataInterface(ScanDataSource):
         if ms_level == 1:
             return None
         isolation_width = 0
-        trailer = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        trailer = self._trailer_values(scan)
         try:
             isolation_width = trailer['MS%d Isolation Width' % ms_level]
         except KeyError:
@@ -378,7 +378,7 @@ class ThermoRawDataInterface(ScanDataSource):
 
     def _annotations(self, scan):
         fline = self._filter_string(scan)
-        trailer_extras = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        trailer_extras = self._trailer_values(scan)
         annots = {
             "filter string": fline,
         }

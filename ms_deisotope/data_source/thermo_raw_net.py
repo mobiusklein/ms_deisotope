@@ -304,6 +304,17 @@ class RawReaderInterface(ScanDataSource):
         filt = self._source.GetFilterForScanNumber(scan_number + 1)
         precursor_mz = filt.GetMass(filt.MSOrder - 2)
         trailers = self._trailer_values(scan)
+        _precursor_mz = float(trailers.get("Monoisotopic M/Z", 0))
+        if _precursor_mz > 0:
+            precursor_mz = _precursor_mz
+
+        # imitate proteowizard's firmware bug correction
+        isolation_window = self._isolation_window(scan)
+        if (isolation_window.upper + isolation_window.lower) / 2 <= 2.0:
+            if (isolation_window.target - 3.0 > precursor_mz) or (isolation_window.target + 2.5 < precursor_mz):
+                precursor_mz = isolation_window.target
+        elif precursor_mz not in isolation_window:
+            precursor_mz = isolation_window.target
         charge = int(trailers.get("Charge State", 0))
         if charge == 0:
             charge = ChargeNotProvided
