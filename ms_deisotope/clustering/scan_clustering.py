@@ -117,6 +117,16 @@ class SpectrumCluster(object):
         self._average_similarity = (aggregate_size * self.average_similarity() + sum(new_sims)
                                    ) / n
 
+    def _full_similarity(self, *args, **kwargs):
+        ratings = []
+        n = len(self)
+        for i in range(n):
+            scan_i = self[i]
+            for j in range(i + 1, n):
+                scan_j = self[j]
+                ratings.append(peak_set_similarity(scan_i, scan_j, *args, **kwargs))
+        self._average_similarity = sum(ratings) / len(ratings)
+
     def average_similarity(self, *args, **kwargs):
         '''Calculate the within-cluster similarity among all cluster members
         and returns the average.
@@ -135,13 +145,7 @@ class SpectrumCluster(object):
             return 1.0
         if self._average_similarity is not None:
             return self._average_similarity
-        ratings = []
-        for i in range(n):
-            scan_i = self[i]
-            for j in range(i + 1, n):
-                scan_j = self[j]
-                ratings.append(peak_set_similarity(scan_i, scan_j, *args, **kwargs))
-        self._average_similarity = sum(ratings) / len(ratings)
+        self._full_similarity()
         return self._average_similarity
 
     def to_dict(self):
@@ -481,9 +485,11 @@ class ScanClusterBuilder(LogUtilsMixin):
             scans = sorted(scans, key=self._get_tic, reverse=True)
         if len(scans) > 100:
             self.log("Clustering %d Scans" % (len(scans), ))
+        n = len(scans)
+        report_interval = max(min(n // 10, 1000), 50)
         for i, scan in enumerate(scans):
-            if i % 1000 == 0 and i:
-                self.log("... Handled %d Scans (%0.2f%%)" % (i, i * 100.0 / len(scans)))
+            if i % report_interval == 0 and i:
+                self.log("... Handled %d Scans (%0.2f%%)" % (i, i * 100.0 / n))
             self.add_scan(scan)
         return self.clusters
 
@@ -524,8 +530,10 @@ class ScanClusterBuilder(LogUtilsMixin):
             else:
                 logger.log("Nothing to cluster...")
                 return SpectrumClusterCollection([])
+            n = len(to_bisect)
+            report_interval = max(min(n // 10, 1000), 1)
             for i, group in enumerate(to_bisect):
-                if i % 1000 == 0:
+                if i % report_interval == 0:
                     logger.log("... Handling Batch %d (%d Scans)" % (i, len(group)))
                 clusters = cls.cluster_scans(
                     group, precursor_error_tolerance,
