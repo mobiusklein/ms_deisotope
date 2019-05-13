@@ -9,7 +9,7 @@ import numpy as np
 
 from ms_peak_picker import average_signal
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
-
+from ms_deisotope.deconvolution import deconvolute_peaks
 
 try:
     from ms_deisotope.plot import annotate_scan as _annotate_precursors, draw_raw
@@ -735,3 +735,74 @@ class PrecursorInformation(object):
         peak = peaks.has_peak(self.mz, error_tolerance)
         if peak is not None:
             self.mz = peak.mz
+
+    def find_monoisotopic_peak(self, trust_charge_state=True, **kwargs):
+        """Find the monoisotopic peak for this precursor.
+
+        This convenience method carries out a simplified procedure for finding the
+        precursor ion's monoisotpic peak and charge state in the precursor scan. It
+        follows steps similar to those found in the :class:`~.ScanProcessor` pipeline,
+        but is not as flexible or complete.
+
+        .. note::
+
+            For a full deconvolution result, please use :class:`~.ScanProcessor`, which
+            carries out a more complete error checking procedure.
+
+
+        Parameters
+        ----------
+        trust_charge_state: bool, optional
+            Whether or not to trust the original precursor charge state, which may be based
+            upon information not available in the examined mass spectrum.
+
+        Returns
+        -------
+        :class:`float`:
+            The updated m/z of the precursor ion's monoisotopic peak.
+        :class:`bool`:
+            Whether or not the deconvolution procedure was able to run successfully.
+
+        """
+        if self.precursor_scan_id is None:
+            return False
+        precursor_scan = self.precursor
+        if precursor_scan is None:
+            return False
+        if precursor_scan.peak_set is None:
+            precursor_scan.pick_peaks()
+        charge_range = kwargs.get("charge_range", (1, 8))
+        if precursor_scan.polarity < 0 and max(charge_range) > 0:
+            charge_range = tuple(c * precursor_scan.polarity for c in charge_range)
+        kwargs['charge_range'] = charge_range
+        ref_peak = precursor_scan.has_peak(self.mz, 2e-5)
+        # No experimental peak found, so mark that this precursor is an orphan and default it
+        if ref_peak is None:
+            self.default(orphan=True)
+            return self.extracted_mz, False
+
+        priority_target = [ref_peak]
+        peaks = precursor_scan.peak_set.between(self.mz - 3, self.mz + 6)
+        peaks = peaks.clone()
+        peaks.reindex()
+        result = deconvolute_peaks(peaks, priority_list=priority_target, **kwargs)
+        _, priority_results = result
+        peak = priority_results[0]
+        # No deconvoluted peak found, so mark that this precursor is an orphan and default it
+        if peak is None:
+            self.default(orphan=True)
+            return self.extracted_mz, False
+        # A peak was found, we don't know the expected charge state, so accept it
+        # and extract the updated peak fit
+        elif self.charge == ChargeNotProvided:
+            self.extract(peak)
+            return self.extracted_mz, True
+        # A peak was found, but it doesn't match the trusted charge state, so reject
+        # it and default this precursor
+        if trust_charge_state and self.charge != peak.charge:
+            self.default()
+            return self.extracted_mz, False
+        # The returned peak matches the expected charge state, so accept it and
+        # extract the updated peak fit
+        self.extract(peak)
+        return self.extracted_mz, True
