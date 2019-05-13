@@ -171,3 +171,52 @@ class PrecursorPurityEstimator(object):
         purity = self.precursor_purity(scan, precursor_peak, isolation_window)
         coisolation = self.coisolation(scan, precursor_peak, isolation_window)
         return purity, coisolation
+
+
+def isolation_window_valid(scan):
+    """Check if the isolation window and other precursor-related information
+    of `scan` are valid.
+
+    Different vendors periodically report precursor peak m/z values that fall
+    outside the reported isolation window. This function verifies that the selected
+    precursor m/z is within the isolatoin window's bounds.
+
+    This function always returns :const:`True` when the isolation window is missing or
+    empty.
+
+    Parameters
+    ----------
+    scan : :class:`~.ScanBase`
+        The scan to test.
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether the isolation window was valid or not
+    """
+    window = scan.isolation_window
+    if window is None:
+        if scan.ms_level == 1:
+            # An MS1 scan should never have an isolation window
+            return True
+        else:
+            # We have an MSn scan that does not have an isolation
+            # window, which may mean the vendor does not support
+            # retrieving this information.
+            return True
+    if window.is_empty():
+        # The vendor or the ScanDataSource populated an empty isolation
+        # window, so no analysis is possible
+        return True
+    pinfo = scan.precursor_information
+    # Get the precursor peak's mz, preferrably the corrected one if it is
+    # available and check if it is contained in the isolation window.
+    mz = pinfo.mz
+    try:
+        if pinfo.extracted_mz:
+            mz = pinfo.extracted_mz
+    except (ZeroDivisionError, ValueError):
+        pass
+    if mz in window:
+        return True
+    return False

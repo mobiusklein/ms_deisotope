@@ -16,6 +16,9 @@ from ms_deisotope.feature_map import scan_interval_tree
 from ms_deisotope.clustering.scan_clustering import (
     iterative_clustering, ScanClusterWriter, ScanClusterReader, _DynamicallyLoadingResolver)
 
+from ms_deisotope.qc.heuristic import xrea
+from ms_deisotope.qc.isolation import isolation_window_valid
+
 from ms_deisotope.data_source import (
     _compression, ScanProxyContext, MSFileLoader)
 from ms_deisotope.data_source.scan import RandomAccessScanSource
@@ -41,7 +44,9 @@ def cli():
 @cli.command("describe", short_help=("Produce a minimal textual description"
                                      " of a mass spectrometry data file"))
 @click.argument('path', type=click.Path(exists=True))
-def describe(path):
+@click.option("-d", "--diagnostics", is_flag=True,
+              help="Run more diagnostics, greatly increasing runtime but producing additional informatoin")
+def describe(path, diagnostics=False):
     '''Produces a minimal textual description of a mass spectrometry data file.
     '''
     click.echo("Describing \"%s\"" % (path,))
@@ -104,6 +109,17 @@ def describe(path):
             click.echo("Defaulted MSn Scans: %d" % (n_defaulted,))
         if n_orphan > 0:
             click.echo("Orphan MSn Scans: %d" % (n_orphan,))
+    if diagnostics:
+        reader.reset()
+        scan_ids_with_invalid_isolation_window = []
+
+        for precursor, products in reader:
+            for product in products:
+                if not isolation_window_valid(product):
+                    scan_ids_with_invalid_isolation_window.append((precursor.id, product.id))
+        click.echo("Invalid Isolation Windows: %d" % (
+            len(scan_ids_with_invalid_isolation_window), ))
+
 
 
 @cli.command("byte-index", short_help='Build an external byte offset index for a mass spectrometry data file')
