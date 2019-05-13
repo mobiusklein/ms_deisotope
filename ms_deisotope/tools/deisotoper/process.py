@@ -143,7 +143,7 @@ class ScanTransformMixin(object):
 
     def log_message(self, message):
         self.log_handler(message + ", %r" %
-                         (multiprocessing.current_process()))
+                         (multiprocessing.current_process().name))
 
     def skip_entry(self, index, ms_level):
         self.output_queue.put((SCAN_STATUS_SKIP, index, ms_level))
@@ -226,7 +226,7 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  envelope_selector=None, ms1_averaging=0, log_handler=None,
-                 deconvolute=True, verbose=False):
+                 deconvolute=True, verbose=False, too_many_peaks_threshold=7000):
         if log_handler is None:
             log_handler = show_message
 
@@ -275,6 +275,7 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
         self.no_more_event = no_more_event
         self._work_complete = multiprocessing.Event()
         self.log_handler = log_handler
+        self.too_many_peaks_threshold = too_many_peaks_threshold
 
     def make_scan_transformer(self, loader=None):
         transformer = ScanProcessor(

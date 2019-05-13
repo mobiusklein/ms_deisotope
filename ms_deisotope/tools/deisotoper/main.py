@@ -102,6 +102,7 @@ def check_if_profile(loader):
     "Scan transformations to apply to MS^n scans. May specify more than once."))
 @click.option("-v", "--extract-only-tandem-envelopes", is_flag=True, default=False,
               help='Only work on regions that will be chosen for MS/MS')
+@click.option("--verbose", is_flag=True, help="Log additional diagnostic information for each scan.")
 @click.option("-g", "--ms1-averaging", default=0, type=int, help=(
     "The number of MS1 scans before and after the current MS1 "
     "scan to average when picking peaks."))
@@ -116,7 +117,8 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               msn_missed_peaks=1, background_reduction=0., msn_background_reduction=0.,
               transform=None, msn_transform=None, processes=4, extract_only_tandem_envelopes=False,
               ignore_msn=False, isotopic_strictness=2.0, ms1_averaging=0,
-              msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0, deconvolute=True):
+              msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
+              deconvolute=True, verbose=False):
     '''Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.
     '''
     if transform is None:
@@ -239,7 +241,8 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         extract_only_tandem_envelopes=extract_only_tandem_envelopes,
         ignore_tandem_scans=ignore_msn,
         ms1_averaging=ms1_averaging,
-        deconvolute=deconvolute)
+        deconvolute=deconvolute,
+        verbose=verbose)
     consumer.start()
 
 

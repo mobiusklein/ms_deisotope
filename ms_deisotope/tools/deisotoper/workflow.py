@@ -77,7 +77,7 @@ class SampleConsumer(TaskBase):
                  msn_deconvolution_args=None, start_scan_id=None, end_scan_id=None, storage_path=None,
                  sample_name=None, storage_type=None, n_processes=5,
                  extract_only_tandem_envelopes=False, ignore_tandem_scans=False,
-                 ms1_averaging=0, deconvolute=True):
+                 ms1_averaging=0, deconvolute=True, verbose=False):
 
         if storage_type is None:
             storage_type = ThreadedMzMLScanStorageHandler
@@ -116,7 +116,8 @@ class SampleConsumer(TaskBase):
             msn_deconvolution_args=msn_deconvolution_args,
             extract_only_tandem_envelopes=extract_only_tandem_envelopes,
             ignore_tandem_scans=ignore_tandem_scans,
-            ms1_averaging=ms1_averaging, deconvolute=deconvolute)
+            ms1_averaging=ms1_averaging, deconvolute=deconvolute,
+            verbose=verbose)
 
         self.start_scan_id = start_scan_id
         self.end_scan_id = end_scan_id

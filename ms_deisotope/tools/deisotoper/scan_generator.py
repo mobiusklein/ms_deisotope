@@ -19,6 +19,8 @@ class ScanGeneratorBase(object):
     def make_iterator(self, start_scan=None, end_scan=None, max_scans=None):
         raise NotImplementedError()
 
+    _iterator = None
+
     def __iter__(self):
         return self
 
@@ -83,7 +85,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
                  ms1_peak_picking_args=None, msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  extract_only_tandem_envelopes=False, ignore_tandem_scans=False,
-                 ms1_averaging=0, deconvolute=True):
+                 ms1_averaging=0, deconvolute=True, verbose=False):
         self.ms_file = ms_file
         self.ignore_tandem_scans = ignore_tandem_scans
 
@@ -110,6 +112,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
         self.msn_deconvolution_args = msn_deconvolution_args
         self.extract_only_tandem_envelopes = extract_only_tandem_envelopes
         self._scan_interval_tree = None
+        self.verbose = verbose
         self.log_controller = self.ipc_logger()
 
     @property
@@ -176,7 +179,8 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             envelope_selector=self._scan_interval_tree,
             log_handler=self.log_controller.sender(),
             ms1_averaging=self.ms1_averaging,
-            deconvolute=self.deconvoluting)
+            deconvolute=self.deconvoluting,
+            verbose=self.verbose)
 
     def _make_collator(self):
         return ScanCollator(

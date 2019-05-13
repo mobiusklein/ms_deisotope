@@ -37,7 +37,9 @@ import logging
 
 from six import string_types as basestring
 
-from ms_peak_picker import pick_peaks
+import numpy as np
+
+from ms_peak_picker import pick_peaks, PeakSet, PeakIndex
 from ms_peak_picker.scan_filter import FTICRBaselineRemoval
 
 from .averagine import AveragineCache, peptide
@@ -164,6 +166,36 @@ def _loader_creator(specification):
         raise ValueError("Cannot determine how to get a ScanIterator from %r" % (specification,))
 
 
+def _simplify_peak_set(peaks, bin_width=5.0):
+    bin_edges = np.arange(0, peaks[-1].mz + bin_width, bin_width)
+    bins = []
+    for i, bin_edge in enumerate(bin_edges, 1):
+        if i == len(bin_edges):
+            next_edge = bin_edges[-1] + bin_width
+        else:
+            next_edge = bin_edges[i]
+        subset = peaks.between(bin_edge, next_edge)
+        bins.append(subset)
+
+    thresholds = []
+    reduced_subsets = {}
+    k = 0
+    for b in bins:
+        if len(b) > 0:
+            bin_intensities = np.array([p.intensity for p in b])
+            thresholds.append(np.max(bin_intensities) / 3.)
+            for p in b:
+                if p.intensity > thresholds[-1]:
+                    reduced_subsets[p.peak_count] = p
+            k += (bin_intensities > thresholds[-1]).sum()
+        else:
+            thresholds.append(0.0)
+    subset_peaks = PeakSet(
+        sorted(reduced_subsets.values(), key=lambda x: x.mz)).clone()
+    subset_peaks.reindex()
+    return PeakIndex(np.array([]), np.array([]), subset_peaks)
+
+
 class ScanProcessor(Base, LogUtilsMixin):
     """Orchestrates the deconvolution of a :class:`~.ScanIterator` scan by scan. This process will
     apply different rules for MS1 scans and MSn scans. This type itself mimics a :class:`~.ScanIterator`,
@@ -231,7 +263,8 @@ class ScanProcessor(Base, LogUtilsMixin):
                  envelope_selector=None,
                  terminate_on_error=True,
                  ms1_averaging=0,
-                 respect_isolation_window=False):
+                 respect_isolation_window=False,
+                 too_many_peaks_threshold=7000):
         if loader_type is None:
             loader_type = _loader_creator
 
@@ -243,6 +276,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         self.msn_deconvolution_args = msn_deconvolution_args or {}
         self.msn_deconvolution_args.setdefault("charge_range", (1, 8))
         self.pick_only_tandem_envelopes = pick_only_tandem_envelopes
+
+        self.too_many_peaks_threshold = too_many_peaks_threshold
 
         self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
         self.respect_isolation_window = respect_isolation_window
@@ -383,6 +418,10 @@ class ScanProcessor(Base, LogUtilsMixin):
             prec_peaks = self._average_ms1(precursor_scan)
         else:
             prec_peaks = self._pick_precursor_scan_peaks(precursor_scan)
+        n_peaks = len(prec_peaks)
+        if n_peaks > self.too_many_peaks_threshold:
+            self.log("%d peaks found for %r, applying local intensity threshold." % (n_peaks, precursor_scan))
+            prec_peaks = _simplify_peak_set(prec_peaks)
         precursor_scan.peak_set = prec_peaks
         return prec_peaks
 
