@@ -1,14 +1,17 @@
-from collections import namedtuple, Sequence
+from collections import namedtuple, MutableSequence
 
 from .cv import Term, TermSet
 
 
-def isclose(x, y, atol=1e-3):
+def _isclose(x, y, atol=1e-3):
     return abs(x - y) < atol
 
 
 class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
     r"""Describes the m/z interval a precursor ion was isolated from in the precursor scan
+
+    An :class:`IsolationWindow` instance is comparable, hashable, and orderable. It is based
+    on a :class:`namedtuple`, and supports the same interface and methods as a :class:`tuple`.
 
     Attributes
     ----------
@@ -22,31 +25,76 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
         The m/z coordinate of the lower bound :attr:`target` - :attr:`lower`
     upper_bound: float
         The m/z coordinate of the upper bound :attr:`target` + :attr:`upper`
+    width: float
+        The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
+        the window
     """
 
     @classmethod
     def make_empty(cls, point):
+        """A helper method for instantiating an empty isolation window centered at
+        `point`
+
+        Parameters
+        ----------
+        point : float
+            The point to center the new empty window at.
+
+        Returns
+        -------
+        :class:`IsolationWindow`
+        """
         return cls(0, point, 0)
 
     @property
     def lower_bound(self):
+        """The m/z coordinate of the lower bound :attr:`target` - :attr:`lower`
+        """
         return self.target - self.lower
 
     @property
     def upper_bound(self):
+        """The m/z coordinate of the upper bound :attr:`target` + :attr:`upper`
+        """
         return self.target + self.upper
 
     @property
     def width(self):
+        '''The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
+        the window'''
         return self.lower + self.upper
 
     def __contains__(self, x):
         return self.spans(x, 0.1)
 
     def spans(self, x, tolerance=0.1):
+        """Test whether `x` is within the interval defined by this window's bounds.
+
+        This method permits a small amount of error (controlled by `tolerance`) when
+        computing the bounds.
+
+        Equivalent to: :code:`(self.lower_bound - tolerance) <= x <= (self.upper_bound + tolerance)`
+
+        Parameters
+        ----------
+        x : float
+            The number to query
+        tolerance : float, optional
+            The amount of error to accept when computing the bounds (the default is 0.1)
+
+        Returns
+        -------
+        :class:`bool`
+        """
         return (self.lower_bound - tolerance) <= x <= (self.upper_bound + tolerance)
 
     def is_empty(self):
+        """Tests if the window is empty (e.g. its upper bound is equal to its lower bound)
+
+        Returns
+        -------
+        :class:`bool`
+        """
         if self.lower is None:
             return self.upper is None
         return self.lower == self.upper == 0.0
@@ -58,17 +106,20 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
         return self.__nonzero__()
 
     def __eq__(self, other):
-        return isclose(self.lower, other.lower) and isclose(
-            self.upper, other.upper) and isclose(
-            self.target, other.target)
+        return _isclose(self.lower, other.lower) and _isclose(
+            self.upper, other.upper) and _isclose(
+                self.target, other.target)
 
     def __ne__(self, other):
         return not (self == other)
 
 
-class ScanAcquisitionInformation(Sequence):
+class ScanAcquisitionInformation(MutableSequence):
     """Describes the set distinct scans along the measurable range by
     the instrument that were performed to produce the acquired data
+
+    :class:`ScanAcquisitionInformation` objects implement the :class:`MutableSequence`
+    interface, acting as a sequence of :class:`ScanEventInformation` objects.
 
     Attributes
     ----------
@@ -78,12 +129,32 @@ class ScanAcquisitionInformation(Sequence):
         The list of scan events performed
     """
 
-    def __init__(self, combination, scan_list):
+    def __init__(self, combination, scan_list):  # pylint: disable=super-init-not-called
         self.combination = combination
         self.scan_list = scan_list
 
     def __getitem__(self, i):
         return self.scan_list[i]
+
+    def __setitem__(self, i, value):
+        self.scan_list[i] = value
+
+    def __delitem__(self, i):
+        del self.scan_list[i]
+
+    def insert(self, index, value):
+        """Insert an event at a given position
+
+        Parameters
+        ----------
+        index : int
+            The position to add the new event
+        value : :class:`ScanEventInformation`
+            The event to insert
+        """
+        if not isinstance(value, ScanEventInformation):
+            raise TypeError("Expected ScanEventInformation but got %r" % (type(value), ))
+        self.scan_list.insert(index, value)
 
     def __len__(self):
         return len(self.scan_list)
@@ -134,13 +205,13 @@ class ScanEventInformation(object):
         return form
 
     def __eq__(self, other):
-        eq = isclose(self.start_time, other.start_time) and (
+        eq = _isclose(self.start_time, other.start_time) and (
             self.window_list == other.window_list)
         if not eq:
             return False
         if self.has_ion_mobility() != other.has_ion_mobility():
             return False
-        if self.has_ion_mobility() and not isclose(self.drift_time, other.drift_time):
+        if self.has_ion_mobility() and not _isclose(self.drift_time, other.drift_time):
             return False
         return True
 
@@ -172,7 +243,7 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
         return self.__nonzero__()
 
     def __eq__(self, other):
-        return isclose(self.lower, other.lower) and isclose(
+        return _isclose(self.lower, other.lower) and _isclose(
             self.upper, other.upper)
 
     def __ne__(self, other):
