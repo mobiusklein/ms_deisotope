@@ -736,7 +736,7 @@ class PrecursorInformation(object):
         if peak is not None:
             self.mz = peak.mz
 
-    def find_monoisotopic_peak(self, trust_charge_state=True, **kwargs):
+    def find_monoisotopic_peak(self, trust_charge_state=True, precursor_scan=None, **kwargs):
         """Find the monoisotopic peak for this precursor.
 
         This convenience method carries out a simplified procedure for finding the
@@ -755,6 +755,9 @@ class PrecursorInformation(object):
         trust_charge_state: bool, optional
             Whether or not to trust the original precursor charge state, which may be based
             upon information not available in the examined mass spectrum.
+        precursor_scan: :class:`~.ScanBase`, optional
+            The spectrum to look for the precursor peak in. If not provided,
+            :attr:`precursor` will be used.
 
         Returns
         -------
@@ -764,11 +767,12 @@ class PrecursorInformation(object):
             Whether or not the deconvolution procedure was able to run successfully.
 
         """
-        if self.precursor_scan_id is None:
-            return False
-        precursor_scan = self.precursor
         if precursor_scan is None:
-            return False
+            if self.precursor_scan_id is None:
+                return False
+            precursor_scan = self.precursor
+            if precursor_scan is None:
+                return False
         if precursor_scan.peak_set is None:
             precursor_scan.pick_peaks()
         charge_range = kwargs.get("charge_range", (1, 8))
