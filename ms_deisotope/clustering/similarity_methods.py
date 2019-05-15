@@ -61,10 +61,10 @@ def sparse_peak_set_similarity(peak_set_a, peak_set_b, precision=0):
         bin_b[mz] += peak.intensity
         positions.add(mz)
 
-    return dot_product(positions, bin_a, bin_b)
+    return bin_dot_product(positions, bin_a, bin_b)
 
 
-def dot_product(positions, bin_a, bin_b, normalize=True):
+def bin_dot_product(positions, bin_a, bin_b, normalize=True):
     '''Compute a normalzied dot product between two aligned intensity maps
     '''
     z = 0
@@ -89,6 +89,33 @@ def dot_product(positions, bin_a, bin_b, normalize=True):
 
 
 sparse_similarity = sparse_peak_set_similarity
+
+
+def ppm_peak_set_similarity(peak_set_a, peak_set_b, error_tolerance=2e-5):
+    ab = convolve_peak_sets(peak_set_a, peak_set_b, error_tolerance)
+    aa = convolve_peak_sets(peak_set_a, peak_set_a, error_tolerance)
+    bb = convolve_peak_sets(peak_set_b, peak_set_b, error_tolerance)
+    return convolved_product(ab) / (math.sqrt(convolved_product(aa)) * math.sqrt(convolved_product(bb)))
+
+
+def convolve_peak_sets(query_peaks, reference_peaks, error_tolerance=2e-5):
+    peak_pairs = []
+    for peak in query_peaks:
+        pairs_for_peak = []
+        low = peak.mz - peak.mz * error_tolerance
+        high = peak.mz + peak.mz * error_tolerance
+        for ref_peak in reference_peaks.between(low, high):
+            pairs_for_peak.append((peak, ref_peak))
+        peak_pairs.append(pairs_for_peak)
+    return peak_pairs
+
+
+def convolved_product(pairs):
+    d = 0.0
+    for pair_set in pairs:
+        for p1, p2 in pair_set:
+            d += p1.intensity * p2.intensity
+    return d
 
 
 try:

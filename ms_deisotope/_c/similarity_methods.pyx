@@ -3,8 +3,12 @@ from cython.parallel cimport prange
 from libc.math cimport floor, sqrt
 from libc.stdlib cimport malloc, free
 from cpython cimport PyErr_SetString
+
+from cpython.list cimport PyList_Size, PyList_GET_ITEM
 from cpython.tuple cimport PyTuple_GET_ITEM
+
 from ms_peak_picker._c.peak_index cimport PeakIndex
+
 from ms_peak_picker._c.peak_set cimport PeakBase, FittedPeak, PeakSet
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak, DeconvolutedPeakSet
 
@@ -288,3 +292,53 @@ cdef double calculate_dot_product(cnp.ndarray[double, ndim=1] bin_a, cnp.ndarray
             return z / n_ab
         return z
 
+
+cdef list convolve_peak_sets(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
+    cdef:
+        size_t i, n, j, m
+        FittedPeak peak
+        FittedPeak other
+        PeakSet peaks_slice
+        list peak_pairs
+        list pairs_for_peak
+
+    peak_pairs = []
+    n = peak_set_a.get_size()
+    for i in range(n):
+        pairs_for_peak = []
+        peak = peak_set_a.getitem(i)
+        peaks_slice = peak_set_b._between(
+            peak.mz - peak.mz * error_tolerance, peak.mz + peak.mz * error_tolerance)
+        m = peaks_slice.get_size()
+        for j in range(m):
+            other = peaks_slice.getitem(j)
+            pairs_for_peak.append((peak, other))
+        peak_pairs.append(pairs_for_peak)
+    return peak_pairs
+
+
+cdef double convolved_dot_product(list peak_pairs):
+    cdef:
+        size_t i, j, n, m
+        PeakBase peak, other
+        list pairs
+        tuple pair
+        double d
+
+    d = 0.0
+    n = PyList_Size(peak_pairs)
+    for i in range(n):
+        pairs = <list>PyList_GET_ITEM(peak_pairs, i)
+        m = PyList_Size(pairs)
+        for j in range(m):
+            pair = <tuple>PyList_GET_ITEM(pairs, j)
+            peak = <PeakBase>PyTuple_GET_ITEM(pair, 0)
+            other = <PeakBase>PyTuple_GET_ITEM(pair, 1)
+            d += peak.intensity * other.intensity
+    return d
+
+cpdef double ppm_peak_set_similarity(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
+    ab = convolve_peak_sets(peak_set_a, peak_set_b, error_tolerance)
+    aa = convolve_peak_sets(peak_set_a, peak_set_a, error_tolerance)
+    bb = convolve_peak_sets(peak_set_b, peak_set_b, error_tolerance)
+    return convolved_dot_product(ab) / (sqrt(convolved_dot_product(aa)) * sqrt(convolved_dot_product(bb)))
