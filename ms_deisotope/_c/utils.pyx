@@ -1,13 +1,15 @@
 # cython: embedsignature=True
 
 cimport cython
-from cpython.list cimport PyList_Append, PyList_GET_ITEM
+from cpython.list cimport PyList_Append, PyList_GET_ITEM, PyList_GET_SIZE
 
 import numpy as np
 cimport numpy as np
 
+from ms_peak_picker._c.peak_index cimport PeakIndex
+from ms_peak_picker._c.peak_set cimport PeakSet
 from ms_deisotope._c.peak_set cimport (
-    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSetIndexed, PeakBase)
+    Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSetIndexed, PeakBase)
 from ms_deisotope._c.averagine cimport neutral_mass
 
 
@@ -146,3 +148,30 @@ cpdef DeconvolutedPeakSetIndexed build_deconvoluted_peak_set_from_arrays(np.ndar
     peak_set.reindex()
     return peak_set
 
+
+@cython.binding(True)
+cpdef double _peak_sequence_tic(self, peak_collection peaks) except -1:
+    cdef:
+        size_t i, n
+        PeakBase peak
+        double tic
+        list py_peaks
+
+    tic = 0.0
+    if peak_collection is PeakSet or peak_collection is PeakIndex or peak_collection is DeconvolutedPeakSet:
+        n = peaks.get_size()
+    else:
+        py_peaks = list(peaks)
+        n = PyList_GET_SIZE(py_peaks)
+        if n > 0:
+            if not isinstance(<object>PyList_GET_ITEM(py_peaks, 0), PeakBase):
+                raise TypeError("Cannot interpret %r as a PeakBase object" % (type(py_peaks[0])))
+    for i in range(n):
+        if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet:
+            peak = peaks.getitem(i)
+        elif peak_collection is PeakIndex:
+            peak = peaks.peaks.getitem(i)
+        else:
+            peak = <PeakBase>PyList_GET_ITEM(py_peaks, i)
+        tic += peak.intensity
+    return tic

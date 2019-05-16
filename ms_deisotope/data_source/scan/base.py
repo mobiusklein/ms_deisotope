@@ -4,10 +4,13 @@ and provide an interface for manipulating that data.
 import warnings
 
 from collections import namedtuple
+from numbers import Number
 
 import numpy as np
 
 from ms_peak_picker import average_signal
+from ms_peak_picker.base import PeakLike
+
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.deconvolution import deconvolute_peaks
 
@@ -332,6 +335,46 @@ class ScanBase(object):
         '''An alias for :attr:`id`
         '''
         return self.id
+
+    @property
+    def tic(self):
+        """A facade function for calculating the total ion current (TIC) of a spectrum.
+
+        This exposes a facade object of type :class:`TICMethods` to take care of the different
+        ways in which the TIC may be calculated.
+
+        Returns
+        -------
+        :class:`TICMethods`
+
+        Examples
+        --------
+        Just directly calling the `tic` attribute will use the most refined data source
+        to calculate the TIC. This means that if the TIC is recalculated after refinement,
+        the number may change.
+
+        >>> from ms_deisotope.test.common import example_scan_bunch
+        >>> bunch = example_scan_bunch()
+        >>> bunch.precursor.tic()
+        8886549.0
+        >>> bunch.precursor.tic.raw()
+        8886549.0
+
+        The picked peaks can be used through :meth:`TICMethods.centroided`, which take
+        priority over the raw signal when calling :meth:`tic` directly.
+        >>> bunch.precursor.pick_peaks()
+        >>> bunch.precursor.tic.centroided()
+        8886548.890350103
+
+        The deconvoluted peaks can be used through :meth:`TICMethods.deconvoluted`.
+        >>> bunch.precursor.deconvolute(use_quick_charge=True)
+        >>> bunch.precursor.tic.deconvoluted()
+        8195619.241884331
+        >>> bunch.precursor.tic()
+        8195619.241884331
+
+        """
+        return TICMethods(self)
 
     def copy(self, deep=True):
         """Return a deep copy of the :class:`Scan` object
@@ -810,3 +853,91 @@ class PrecursorInformation(object):
         # extract the updated peak fit
         self.extract(peak)
         return self.extracted_mz, True
+
+
+class TICMethods(object):
+    """A helper class that will figure out the most refined signal source to
+    calculate the total ion current from.
+    """
+    def __init__(self, scan):
+        self.scan = scan
+
+    def _peak_set_tic(self, peaks):
+        total = 0
+        for peak in peaks:
+            total += peak.intensity
+        return total
+
+    def _peak_sequence_tic(self, peaks):
+        total = 0
+        for peak in peaks:
+            total += peak.intensity
+        return total
+
+    def _simple_tic(self, points):
+        return sum(points)
+
+    def _tic_raw_data_arrays(self, arrays):
+        return arrays.intensity.sum()
+
+    def __call__(self):
+        return self._guess()
+
+    def _guess(self):
+        try:
+            return self.deconvoluted()
+        except (AttributeError, TypeError):
+            pass
+        try:
+            return self.centroided()
+        except (AttributeError, TypeError):
+            pass
+        try:
+            return self.raw()
+        except (AttributeError, TypeError):
+            pass
+
+        points = list(self.scan)
+        if points:
+            if isinstance(points[0], PeakLike):
+                return self._peak_sequence_tic(points)
+            elif isinstance(points[0], Number):
+                return self._simple_tic(points)
+        else:
+            raise TypeError(
+                "Cannot determine how to calculate a TIC from %r of type %r" % (
+                    self.scan, type(self.scan)))
+
+    def raw(self):
+        """Calculate the TIC from the raw intensity signal of the spectrum with no processing.
+
+        Returns
+        -------
+        float
+        """
+        return self._tic_raw_data_arrays(self.scan.arrays)
+
+    def centroided(self):
+        """Calculate the TIC from the picked peak list of the spectrum.
+
+        Returns
+        -------
+        float
+        """
+        return self._peak_set_tic(self.scan.peak_set)
+
+    def deconvoluted(self):
+        """Calculate the TIC from the deconvoluted peak list of the spectrum.
+
+        Returns
+        -------
+        float
+        """
+        return self._peak_set_tic(self.scan.deconvoluted_peak_set)
+
+
+try:
+    from ms_deisotope._c.utils import _peak_sequence_tic
+    TICMethods._peak_set_tic = _peak_sequence_tic
+except ImportError:
+    pass

@@ -1,8 +1,11 @@
+cimport cython
 
 import numpy as np
 cimport numpy as np
 
-from ms_deisotope._c.peak_set cimport DeconvolutedPeakSetIndexed, PeakBase
+from ms_peak_picker._c.peak_index cimport PeakIndex
+from ms_peak_picker._c.peak_set cimport PeakSet
+from ms_deisotope._c.peak_set cimport DeconvolutedPeakSet, DeconvolutedPeakSetIndexed, PeakBase
 
 
 cdef double ppm_error(double x, double y)
@@ -20,3 +23,13 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
 cpdef DeconvolutedPeakSetIndexed build_deconvoluted_peak_set_from_arrays(np.ndarray[double, ndim=1] mz_array,
                                                                          np.ndarray[double, ndim=1] intensity_array,
                                                                          np.ndarray[long, ndim=1] charge_array)
+
+
+ctypedef fused peak_collection:
+    PeakSet
+    PeakIndex
+    DeconvolutedPeakSet
+    object
+
+
+cpdef double _peak_sequence_tic(self, peak_collection peaks) except -1

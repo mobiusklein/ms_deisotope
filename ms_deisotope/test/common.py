@@ -23,3 +23,10 @@ def gzload(path):
             return pickle.load(fh, encoding='latin1')
         else:
             return pickle.load(fh)
+
+
+def example_scan_bunch():
+    import ms_deisotope
+    reader = ms_deisotope.MSFileLoader(
+        datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+    return reader.next()
