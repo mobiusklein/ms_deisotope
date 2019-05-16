@@ -25,48 +25,6 @@ ctypedef fused peak_collection:
     object
 
 
-cdef struct bin_cell:
-    size_t start
-    size_t end
-    double* bins
-    size_t size
-    int modified
-
-
-cdef struct bin_list:
-    bin_cell* bins
-    size_t size
-
-
-cdef int free_bin_cell(bin_cell* cell):
-    if cell.bins != NULL:
-        free(cell.bins)
-    free(cell)
-
-
-cdef int initialize_bin_list(bin_list* bl, size_t bin_count, size_t bin_size):
-    cdef:
-        size_t i, j, coord
-
-    bl.size = bin_count
-    bl.bins = <bin_cell*>malloc(sizeof(bin_cell) * bin_count)
-    if bl.bins == NULL:
-        return 1
-    coord = 0
-    for i in range(bin_count):
-        bl.bins[i].start = coord
-        coord += bin_size
-        bl.bins[i].end = coord
-        bl.bins[i].modified = 0
-        bl.bins[i].size = bin_size
-        bl.bins[i].bins = <double*>malloc(sizeof(double) * bin_size)
-        if bl.bins[i].bins == NULL:
-            return 2
-        for j in range(bin_size):
-            bl.bins[i].bins[j] = 0.0
-    return 0
-
-
 cpdef enum SimilarityMetrics:
     dot_product
     normalized_dot_product
@@ -337,8 +295,32 @@ cdef double convolved_dot_product(list peak_pairs):
             d += peak.intensity * other.intensity
     return d
 
+
+cdef double convolve_peak_sets2(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
+    cdef:
+        size_t i, n, j, m
+        FittedPeak peak
+        FittedPeak other
+        PeakSet peaks_slice
+        double acc
+
+    acc = 0.0
+    n = peak_set_a.get_size()
+    for i in range(n):
+        peak = peak_set_a.getitem(i)
+        peaks_slice = peak_set_b._between(
+            peak.mz - peak.mz * error_tolerance, peak.mz + peak.mz * error_tolerance)
+        m = peaks_slice.get_size()
+        for j in range(m):
+            other = peaks_slice.getitem(j)
+            acc += peak.intensity * other.intensity
+    return acc
+
+
 cpdef double ppm_peak_set_similarity(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
-    ab = convolve_peak_sets(peak_set_a, peak_set_b, error_tolerance)
-    aa = convolve_peak_sets(peak_set_a, peak_set_a, error_tolerance)
-    bb = convolve_peak_sets(peak_set_b, peak_set_b, error_tolerance)
-    return convolved_dot_product(ab) / (sqrt(convolved_dot_product(aa)) * sqrt(convolved_dot_product(bb)))
+    cdef:
+        double ab, aa, bb
+    ab = convolve_peak_sets2(peak_set_a, peak_set_b, error_tolerance)
+    aa = convolve_peak_sets2(peak_set_a, peak_set_a, error_tolerance)
+    bb = convolve_peak_sets2(peak_set_b, peak_set_b, error_tolerance)
+    return (ab) / (sqrt((aa)) * sqrt((bb)))
