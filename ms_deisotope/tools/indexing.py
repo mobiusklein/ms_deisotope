@@ -16,7 +16,6 @@ from ms_deisotope.feature_map import scan_interval_tree
 from ms_deisotope.clustering.scan_clustering import (
     iterative_clustering, ScanClusterWriter, ScanClusterReader, _DynamicallyLoadingResolver)
 
-from ms_deisotope.qc.heuristic import xrea
 from ms_deisotope.qc.isolation import isolation_window_valid
 
 from ms_deisotope.data_source import (
