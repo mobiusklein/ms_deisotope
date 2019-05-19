@@ -301,6 +301,48 @@ class SpectrumClusterCollection(object):
         return result
 
 
+class _PeakGetterStrategyBase(object):
+    def __call__(self, scan):
+        return self.peaks(scan)
+
+
+class _FittedPeakAccessorStrategy(_PeakGetterStrategyBase):
+    def peaks(self, scan):
+        return scan.peak_set
+
+    def tic(self, scan):
+        return scan.tic.centroided()
+
+
+class _DeconvolutedPeakAccessorStrategy(_PeakGetterStrategyBase):
+    def peaks(self, scan):
+        return scan.deconvoluted_peak_set
+
+    def tic(self, scan):
+        return scan.tic.deconvoluted()
+
+
+class _DynamicPeakAccessorStrategy(_PeakGetterStrategyBase):
+
+    def _ensure_peak_set(self, scan):
+        if scan.peak_set is None:
+            scan.pick_peaks()
+        return scan.peak_set
+
+    def peaks(self, scan):
+        if scan.deconvoluted_peak_set is not None:
+            return scan.deconvoluted_peak_set
+        else:
+            return self._ensure_peak_set(scan)
+
+    def tic(self, scan):
+        if scan.deconvoluted_peak_set is not None:
+            return scan.tic.deconvoluted()
+        else:
+            self._ensure_peak_set(scan)
+            return scan.tic.centroided()
+
+
 class ScanClusterBuilder(LogUtilsMixin):
     """Clusters spectra based upon peak pattern similarity
 
@@ -325,17 +367,19 @@ class ScanClusterBuilder(LogUtilsMixin):
     @classmethod
     def _guess_peak_getter(cls, getter):
         if getter is None:
-            return list
+            return _DynamicPeakAccessorStrategy()
         if callable(getter):
             return getter
         if isinstance(getter, basestring):
             if getter == "d":
-                return deconvoluted_peak_set_getter
+                return _DeconvolutedPeakAccessorStrategy()
             if getter in ('p', 'c'):
-                return peak_set_getter
+                return _FittedPeakAccessorStrategy()
             else:
-                return operator.attrgetter(getter)
-        raise ValueError("Cannot infer peak set getter from %r" % (getter, ))
+                raise ValueError("Cannot infer peak getter strategy from %r" % (getter, ))
+
+        raise ValueError(
+            "Cannot infer peak set getter strategy from %r" % (getter, ))
 
     def __init__(self, clusters=None, precursor_error_tolerance=1e-5, minimum_similarity=0.1,
                  peak_getter=None, track_incremental_similarity=True):
@@ -455,7 +499,10 @@ class ScanClusterBuilder(LogUtilsMixin):
         return self.clusters[i]
 
     def _get_tic(self, scan):
-        return sum(p.intensity for p in self.peak_getter(scan))
+        try:
+            return self.peak_getter.tic(scan)
+        except AttributeError:
+            return sum(p.intensity for p in self.peak_getter(scan))
 
     @classmethod
     def cluster_scans(cls, scans, precursor_error_tolerance=1e-5, minimum_similarity=0.1,

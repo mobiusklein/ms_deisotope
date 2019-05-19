@@ -175,3 +175,34 @@ cpdef double _peak_sequence_tic(self, peak_collection peaks) except -1:
             peak = <PeakBase>PyList_GET_ITEM(py_peaks, i)
         tic += peak.intensity
     return tic
+
+
+@cython.binding(True)
+cpdef PeakBase _peak_sequence_bp(self, peak_collection peaks):
+    cdef:
+        size_t i, n
+        PeakBase peak, base_peak
+        double max_intensity
+        list py_peaks
+
+    max_intensity = 0.0
+    base_peak = None
+    if peak_collection is PeakSet or peak_collection is PeakIndex or peak_collection is DeconvolutedPeakSet:
+        n = peaks.get_size()
+    else:
+        py_peaks = list(peaks)
+        n = PyList_GET_SIZE(py_peaks)
+        if n > 0:
+            if not isinstance(<object>PyList_GET_ITEM(py_peaks, 0), PeakBase):
+                raise TypeError("Cannot interpret %r as a PeakBase object" % (type(py_peaks[0])))
+    for i in range(n):
+        if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet:
+            peak = peaks.getitem(i)
+        elif peak_collection is PeakIndex:
+            peak = peaks.peaks.getitem(i)
+        else:
+            peak = <PeakBase>PyList_GET_ITEM(py_peaks, i)
+        if max_intensity < peak.intensity:
+            base_peak = peak
+            max_intensity = peak.intensity
+    return base_peak

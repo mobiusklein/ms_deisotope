@@ -208,6 +208,8 @@ class ScanProxy(ScanBase):
         "isolation_window",
         "instrument_configuration",
         "annotations",
+        "tic",
+        "base_peak",
     ]
 
     def __init__(self, scan_id, context, method=LOAD_METHOD_ID):

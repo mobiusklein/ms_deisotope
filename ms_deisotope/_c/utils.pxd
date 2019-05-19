@@ -33,3 +33,4 @@ ctypedef fused peak_collection:
 
 
 cpdef double _peak_sequence_tic(self, peak_collection peaks) except -1
+cpdef PeakBase _peak_sequence_bp(self, peak_collection peaks)

@@ -376,6 +376,26 @@ class ScanBase(object):
         """
         return TICMethods(self)
 
+    @property
+    def base_peak(self):
+        """A facade function for calculating the base peak, the most abundant peak,
+        of a spectrum.
+
+        This exposes a facade object of type :class:`BasePeakMethods` to take care of
+        the different ways in which the base peak may be calculated. The interface of
+        this object is the same as the interface exposed by the :attr:`tic` attribute,
+        but instead of returning a scalar float, it returns a :class:`~.PeakLike` object.
+
+        Returns
+        -------
+        :class:`BasePeakMethods`
+
+        See Also
+        --------
+        :attr:`tic`
+        """
+        return BasePeakMethods(self)
+
     def copy(self, deep=True):
         """Return a deep copy of the :class:`Scan` object
         wrapping the same reference data.
@@ -754,7 +774,7 @@ class PrecursorInformation(object):
         """
         return self.copy()
 
-    def correct_mz(self, error_tolerance=2e-5):
+    def correct_mz(self, error_tolerance=2e-5, enforce_isolation_window=False):
         """Find the peak nearest to :attr:`mz` in :attr:`precursor` and
         update :attr:`mz` from it.
 
@@ -766,6 +786,8 @@ class PrecursorInformation(object):
         ----------
         error_tolerance: float, optional
             The error tolerance in PPM to use when searching for the nearest peak (the default is 2e-5).
+        enforce_isolation_window: bool, optional
+            Whether or not to force the specified m/z. Defaults to :const:`False`.
         """
         if self.precursor_scan_id is None:
             return
@@ -778,6 +800,19 @@ class PrecursorInformation(object):
         peak = peaks.has_peak(self.mz, error_tolerance)
         if peak is not None:
             self.mz = peak.mz
+        if enforce_isolation_window and self.product_scan_id is not None:
+            product_scan = self.product
+            if product_scan is not None:
+                isolation_window = product_scan.isolation_window
+            else:
+                isolation_window = None
+            if isolation_window is not None and not isolation_window.is_empty():
+                if not isolation_window.spans(self.mz):
+                    region = peaks.between(
+                        isolation_window.lower_bound, isolation_window.upper_bound)
+                    if region:
+                        peak = max(region, key=lambda x: x.intensity)
+                        self.mz = peak.mz
 
     def find_monoisotopic_peak(self, trust_charge_state=True, precursor_scan=None, **kwargs):
         """Find the monoisotopic peak for this precursor.
@@ -903,6 +938,10 @@ class TICMethods(object):
                 return self._peak_sequence_tic(points)
             elif isinstance(points[0], Number):
                 return self._simple_tic(points)
+            else:
+                raise TypeError(
+                    "Cannot determine how to calculate a TIC from %r of type %r" % (
+                        self.scan, type(self.scan)))
         else:
             raise TypeError(
                 "Cannot determine how to calculate a TIC from %r of type %r" % (
@@ -936,8 +975,93 @@ class TICMethods(object):
         return self._peak_set_tic(self.scan.deconvoluted_peak_set)
 
 
+class BasePeakMethods(object):
+    """A helper class that will figure out the most refined signal source to
+    calculate the base peak from.
+    """
+
+    base_peak_t = namedtuple("BasePeak", ("mz", "intensity"))
+
+    def __init__(self, scan):
+        self.scan = scan
+
+    def _peak_set_bp(self, peaks):
+        if not peaks:
+            return None
+        peak = max(peaks, key=lambda x: x.intensity)
+        return peak
+
+    def _peak_sequence_bp(self, peaks):
+        if not peaks:
+            return None
+        peak = max(peaks, key=lambda x: x.intensity)
+        return peak
+
+    def _bp_raw_data_arrays(self, arrays):
+        i = np.argmax(arrays.intensity)
+        return self.base_peak_t(arrays.mz[i], arrays.intensity[i])
+
+    def __call__(self):
+        return self._guess()
+
+    def _guess(self):
+        try:
+            return self.deconvoluted()
+        except (AttributeError, TypeError):
+            pass
+        try:
+            return self.centroided()
+        except (AttributeError, TypeError):
+            pass
+        try:
+            return self.raw()
+        except (AttributeError, TypeError):
+            pass
+
+        points = list(self.scan)
+        if points:
+            if isinstance(points[0], PeakLike):
+                return self._peak_sequence_bp(points)
+            raise TypeError(
+                "Cannot determine how to calculate a base peak from %r of type %r" % (
+                    self.scan, type(self.scan)))
+        else:
+            raise TypeError(
+                "Cannot determine how to calculate a base peak from %r of type %r" % (
+                    self.scan, type(self.scan)))
+
+    def raw(self):
+        """Calculate the TIC from the raw intensity signal of the spectrum with no processing.
+
+        Returns
+        -------
+        float
+        """
+        return self._bp_raw_data_arrays(self.scan.arrays)
+
+    def centroided(self):
+        """Calculate the TIC from the picked peak list of the spectrum.
+
+        Returns
+        -------
+        float
+        """
+        return self._peak_set_bp(self.scan.peak_set)
+
+    def deconvoluted(self):
+        """Calculate the TIC from the deconvoluted peak list of the spectrum.
+
+        Returns
+        -------
+        float
+        """
+        return self._peak_set_bp(self.scan.deconvoluted_peak_set)
+
 try:
-    from ms_deisotope._c.utils import _peak_sequence_tic
+    from ms_deisotope._c.utils import _peak_sequence_tic, _peak_sequence_bp
     TICMethods._peak_set_tic = _peak_sequence_tic
+    TICMethods._peak_sequence_tic = _peak_sequence_tic
+    BasePeakMethods._peak_set_bp = _peak_sequence_bp
+    BasePeakMethods._peak_sequence_bp = _peak_sequence_bp
 except ImportError:
     pass
