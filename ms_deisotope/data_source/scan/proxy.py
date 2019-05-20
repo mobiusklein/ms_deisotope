@@ -5,6 +5,7 @@ a large number of scans to be "loaded" at once without requiring storing all of
 the backing information.
 '''
 import weakref
+import logging
 
 from collections import OrderedDict
 
@@ -13,6 +14,8 @@ from .scan import ScanBase
 UNLOAD_POLICY_FULL = "unload_policy_full"
 UNLOAD_POLICY_KEEP = "unload_policy_keep"
 
+logger = logging.getLogger("ms_deisotope.scan_proxy")
+logger.addHandler(logging.NullHandler())
 
 LOAD_METHOD_ID = 'id'
 LOAD_METHOD_INDEX = 'index'
@@ -32,13 +35,15 @@ class ScanProxyContext(object):
         The source to load scans from.
     """
 
-    def __init__(self, source, cache_size=2 ** 10, unload_policy=None):
+    def __init__(self, source, cache_size=2 ** 10, unload_policy=None, track_allocations=False):
         if unload_policy is None:
             unload_policy = UNLOAD_POLICY_FULL
         self.source = source
         self.cache_size = cache_size
         self.cache = OrderedDict()
         self.unload_policy = unload_policy
+        self.track_allocations = track_allocations
+        self.allocation_map = weakref.WeakValueDictionary()
 
     def get_scan_by_id(self, scan_id):
         '''Retrieve a real scan by its identifier.
@@ -94,6 +99,23 @@ class ScanProxyContext(object):
         self.cache[scan_id] = scan
 
     def __call__(self, scan_id, method=LOAD_METHOD_ID):
+        """Forward call to :meth:`create_scan_proxy`.
+
+        Parameters
+        ----------
+        scan_id: :class:`str`
+
+        Returns
+        -------
+        :class:`ScanProxy`
+
+        See Also
+        --------
+        :meth:`create_scan_proxy`
+        """
+        return self.create_scan_proxy(scan_id, method)
+
+    def create_scan_proxy(self, scan_id, method=LOAD_METHOD_ID):
         """Create a proxy for the scan referenced by scan_id
 
         Parameters
@@ -104,7 +126,10 @@ class ScanProxyContext(object):
         -------
         :class:`ScanProxy`
         """
-        return ScanProxy(scan_id, self, method=method)
+        proxy = ScanProxy(scan_id, self, method=method)
+        if self.track_allocations:
+            self.allocation_map[scan_id] = proxy
+        return proxy
 
     def clear(self):
         '''Clear the reference cache.
@@ -219,6 +244,7 @@ class ScanProxy(ScanBase):
         self._scan = None
         self._precursor_information = None
         self._peak_set = None
+        self._unload_count = 0
 
     @property
     def source(self):
@@ -232,6 +258,8 @@ class ScanProxy(ScanBase):
 
     def _clear_scan(self, *args, **kwargs):
         self._scan = None
+        self._unload_count += 1
+        logger.debug("Unloading Scan %s | %d", self._target_scan_id, self._unload_count)
         if self.context.unload_policy == UNLOAD_POLICY_FULL:
             self._peak_set = None
             self._deconvoluted_peak_set = None

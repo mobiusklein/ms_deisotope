@@ -53,6 +53,7 @@ from .qc.isolation import PrecursorPurityEstimator
 from .task import LogUtilsMixin
 
 logger = logging.getLogger("deconvolution_scan_processor")
+logger.addHandler(logging.NullHandler())
 
 
 def _get_nearest_index(query_mz, peak_list):

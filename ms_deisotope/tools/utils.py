@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import warnings
+import logging
 
 import click
 
@@ -84,6 +85,7 @@ def register_debug_hook():
             pdb_api.post_mortem(tb)
 
     sys.excepthook = info
+    logging.basicConfig(level="DEBUG")
 
 
 def is_debug_mode():

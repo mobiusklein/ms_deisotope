@@ -897,12 +897,6 @@ class TICMethods(object):
     def __init__(self, scan):
         self.scan = scan
 
-    def _peak_set_tic(self, peaks):
-        total = 0
-        for peak in peaks:
-            total += peak.intensity
-        return total
-
     def _peak_sequence_tic(self, peaks):
         total = 0
         for peak in peaks:
@@ -934,6 +928,8 @@ class TICMethods(object):
 
         points = list(self.scan)
         if points:
+            # This may not work if PeakLike is recognizing an external peak-like object
+            # that is not derived from PeakBase and C-extensions are enabled?
             if isinstance(points[0], PeakLike):
                 return self._peak_sequence_tic(points)
             elif isinstance(points[0], Number):
@@ -963,7 +959,7 @@ class TICMethods(object):
         -------
         float
         """
-        return self._peak_set_tic(self.scan.peak_set)
+        return self._peak_sequence_tic(self.scan.peak_set)
 
     def deconvoluted(self):
         """Calculate the TIC from the deconvoluted peak list of the spectrum.
@@ -972,7 +968,7 @@ class TICMethods(object):
         -------
         float
         """
-        return self._peak_set_tic(self.scan.deconvoluted_peak_set)
+        return self._peak_sequence_tic(self.scan.deconvoluted_peak_set)
 
 
 class BasePeakMethods(object):
@@ -984,12 +980,6 @@ class BasePeakMethods(object):
 
     def __init__(self, scan):
         self.scan = scan
-
-    def _peak_set_bp(self, peaks):
-        if not peaks:
-            return None
-        peak = max(peaks, key=lambda x: x.intensity)
-        return peak
 
     def _peak_sequence_bp(self, peaks):
         if not peaks:
@@ -1046,7 +1036,7 @@ class BasePeakMethods(object):
         -------
         float
         """
-        return self._peak_set_bp(self.scan.peak_set)
+        return self._peak_sequence_bp(self.scan.peak_set)
 
     def deconvoluted(self):
         """Calculate the TIC from the deconvoluted peak list of the spectrum.
@@ -1055,13 +1045,12 @@ class BasePeakMethods(object):
         -------
         float
         """
-        return self._peak_set_bp(self.scan.deconvoluted_peak_set)
+        return self._peak_sequence_bp(self.scan.deconvoluted_peak_set)
+
 
 try:
     from ms_deisotope._c.utils import _peak_sequence_tic, _peak_sequence_bp
-    TICMethods._peak_set_tic = _peak_sequence_tic
     TICMethods._peak_sequence_tic = _peak_sequence_tic
-    BasePeakMethods._peak_set_bp = _peak_sequence_bp
     BasePeakMethods._peak_sequence_bp = _peak_sequence_bp
 except ImportError:
     pass
