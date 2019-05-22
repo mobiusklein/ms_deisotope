@@ -45,6 +45,17 @@ class ScanProxyContext(object):
         self.track_allocations = track_allocations
         self.allocation_map = weakref.WeakValueDictionary()
 
+    def allocation_statistics(self):
+        churn = {}
+        for proxy in self.allocation_map.values():
+            churn[proxy._target_scan_id] = proxy._unload_count
+        return churn
+
+    def _refresh(self, key):
+        value = self.cache.pop(key)
+        self.cache[key] = value
+        return value
+
     def get_scan_by_id(self, scan_id):
         '''Retrieve a real scan by its identifier.
 
@@ -63,7 +74,7 @@ class ScanProxyContext(object):
         :class:`~.Scan`
         '''
         if scan_id in self.cache:
-            return self.cache[scan_id]
+            return self._refresh(scan_id)
         scan = self.source.get_scan_by_id(scan_id)
         self._save_scan(scan_id, scan)
         return scan
@@ -86,7 +97,7 @@ class ScanProxyContext(object):
         :class:`~.Scan`
         '''
         if index in self.cache:
-            return self.cache[index]
+            return self._refresh(index)
         scan = self.source.get_scan_by_index(index)
         self._save_scan(index, scan)
         return scan
@@ -95,7 +106,6 @@ class ScanProxyContext(object):
         if len(self.cache) > self.cache_size:
             _, evicted_scan = self.cache.popitem()
             self.source._scan_cleared(evicted_scan)
-
         self.cache[scan_id] = scan
 
     def __call__(self, scan_id, method=LOAD_METHOD_ID):
@@ -264,18 +274,27 @@ class ScanProxy(ScanBase):
             self._peak_set = None
             self._deconvoluted_peak_set = None
 
+    def _load_scan(self):
+        scan = None
+        if self.load_method == LOAD_METHOD_ID:
+            scan = self.context.get_scan_by_id(self._target_scan_id)
+        elif self.load_method == LOAD_METHOD_INDEX:
+            scan = self.context.get_scan_by_index(self._target_scan_id)
+        else:
+            raise TypeError(
+                "Cannot resolve scan loading method {!r}".format(self.load_method))
+        return scan
+
     def _require_scan(self):
         if self._scan is None:
-            scan = None
-            if self.load_method == LOAD_METHOD_ID:
-                scan = self.context.get_scan_by_id(self._target_scan_id)
-            elif self.load_method == LOAD_METHOD_INDEX:
-                scan = self.context.get_scan_by_index(self._target_scan_id)
-            else:
-                raise TypeError("Cannot resolve scan loading method {!r}".format(self.load_method))
+            scan = self._load_scan()
             self._scan = weakref.proxy(
                 scan,
                 self._clear_scan)
+        else:
+            # remind :attr:`context`'s cache that this scan was used.
+            self._load_scan()
+
 
     @property
     def scan(self):
