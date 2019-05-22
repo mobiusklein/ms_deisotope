@@ -104,7 +104,7 @@ class ScanProxyContext(object):
 
     def _save_scan(self, scan_id, scan):
         if len(self.cache) > self.cache_size:
-            _, evicted_scan = self.cache.popitem()
+            _, evicted_scan = self.cache.popitem(last=False)
             self.source._scan_cleared(evicted_scan)
         self.cache[scan_id] = scan
 
