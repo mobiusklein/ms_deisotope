@@ -913,6 +913,13 @@ class TICMethods(object):
         return self._guess()
 
     def _guess(self):
+        """Guess which strategy to use to calculate the most refined representation of
+        the TIC.
+
+        Returns
+        -------
+        float
+        """
         try:
             return self.deconvoluted()
         except (AttributeError, TypeError):
@@ -995,6 +1002,13 @@ class BasePeakMethods(object):
         return self._guess()
 
     def _guess(self):
+        """Guess which strategy to use to produce the most refined representation
+        of the base peak.
+
+        Returns
+        -------
+        :class:`~.PeakLike`
+        """
         try:
             return self.deconvoluted()
         except (AttributeError, TypeError):
@@ -1021,29 +1035,29 @@ class BasePeakMethods(object):
                     self.scan, type(self.scan)))
 
     def raw(self):
-        """Calculate the TIC from the raw intensity signal of the spectrum with no processing.
+        """Calculate the base peak from the raw intensity signal of the spectrum with no processing.
 
         Returns
         -------
-        float
+        :class:`~.PeakLike`
         """
         return self._bp_raw_data_arrays(self.scan.arrays)
 
     def centroided(self):
-        """Calculate the TIC from the picked peak list of the spectrum.
+        """Calculate the base peak from the picked peak list of the spectrum.
 
         Returns
         -------
-        float
+        :class:`~.FittedPeak`
         """
         return self._peak_sequence_bp(self.scan.peak_set)
 
     def deconvoluted(self):
-        """Calculate the TIC from the deconvoluted peak list of the spectrum.
+        """Calculate the base peak from the deconvoluted peak list of the spectrum.
 
         Returns
         -------
-        float
+        :class:`~.DeconvolutedPeak`
         """
         return self._peak_sequence_bp(self.scan.deconvoluted_peak_set)
 
