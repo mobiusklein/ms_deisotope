@@ -25,7 +25,7 @@ class _MGFParser(mgf.IndexedMGF):
         try:
             if not list_only:
                 return int(charge_text.replace('+', ''))
-            return map(self.parse_charge, charge_text.split(" "))
+            return list(map(self.parse_charge, charge_text.split(" ")))
         except Exception:
             if '-' in charge_text:
                 return int(charge_text.replace("-", '')) * -1
