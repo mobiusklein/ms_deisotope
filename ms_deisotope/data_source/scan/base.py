@@ -1062,6 +1062,31 @@ class BasePeakMethods(object):
         return self._peak_sequence_bp(self.scan.deconvoluted_peak_set)
 
 
+class PlottingMethods(object):
+    def __init__(self, scan):
+        self.scan = scan
+        self._plot_api = None
+        from ms_deisotope import plot
+        self._plot_api = plot
+
+    def raw(self, *args, **kwargs):
+        return self._plot_api.draw_raw(self.scan.arrays, *args, **kwargs)
+
+    def centroided(self, *args, **kwargs):
+        return self._plot_api.draw_peaklist(self.peak_set, *args, **kwargs)
+
+    def deconvoluted(self, *args, **kwargs):
+        return self._plot_api.draw_peaklist(self.deconvoluted_peak_set, *args, **kwargs)
+
+    def annotate_precursor(self, *args, **kwargs):
+        pinfo = self.scan.precursor_information
+        if pinfo is None:
+            return
+        precursor = pinfo.precursor
+        return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
+
+
+
 try:
     from ms_deisotope._c.utils import _peak_sequence_tic, _peak_sequence_bp
     TICMethods._peak_sequence_tic = _peak_sequence_tic
