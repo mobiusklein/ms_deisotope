@@ -1074,12 +1074,71 @@ class PlottingMethods(object):
         self._plot_api = plot
 
     def raw(self, *args, **kwargs):
+        """Draws un-centroided profile data, visualizing continuous
+        data points
+
+        Parameters
+        ----------
+        ax : :class:`matplotlib.Axes`, optional
+            The axis to draw the plot on. If missing, a new one will be created using
+            :func:`matplotlib.pyplot.subplots`
+        pretty: bool, optional
+            If `True`, will call :func:`_beautify_axes` on `ax`
+        normalize: bool, optional
+            if `True`, will normalize the abundance dimension to be between 0 and 100%
+        **kwargs
+            Passed to :meth:`matplotlib.Axes.plot`
+
+        Returns
+        -------
+        :class:`~.Axes`
+        """
         return self._plot_api.draw_raw(self.scan.arrays, *args, **kwargs)
 
     def centroided(self, *args, **kwargs):
-        return self._plot_api.draw_peaklist(self.peak_set, *args, **kwargs)
+        """Draws centroided peak data, visualizing peak apexes.
+
+        If :attr:`scan.peak_set` is not populated, this will fail.
+
+        Parameters
+        ----------
+        ax : matplotlib.Axes, optional
+            The axis to draw the plot on. If missing, a new one will be created using
+            :func:`matplotlib.pyplot.subplots`
+        pretty: bool, optional
+            If `True`, will call :func:`_beautify_axes` on `ax`
+        normalize: bool, optional
+            if `True`, will normalize the abundance dimension to be between 0 and 100%
+        **kwargs
+            Passed to :meth:`matplotlib.Axes.plot`
+
+        Returns
+        -------
+        matplotlib.Axes
+        """
+        return self._plot_api.draw_peaklist(self.scan.peak_set, *args, **kwargs)
 
     def deconvoluted(self, *args, **kwargs):
+        """Draws deconvoluted peak data, visualizing collapsed envelope monoisotopic peaks.
+
+        If :attr:`scan.peak_set` is not populated, this will fail.
+
+        Parameters
+        ----------
+        ax : matplotlib.Axes, optional
+            The axis to draw the plot on. If missing, a new one will be created using
+            :func:`matplotlib.pyplot.subplots`
+        pretty: bool, optional
+            If `True`, will call :func:`_beautify_axes` on `ax`
+        normalize: bool, optional
+            if `True`, will normalize the abundance dimension to be between 0 and 100%
+        **kwargs
+            Passed to :meth:`matplotlib.Axes.plot`
+
+        Returns
+        -------
+        matplotlib.Axes
+        """
         return self._plot_api.draw_peaklist(self.deconvoluted_peak_set, *args, **kwargs)
 
     def annotate_precursor(self, *args, **kwargs):
@@ -1088,6 +1147,9 @@ class PlottingMethods(object):
             return
         precursor = pinfo.precursor
         return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
+
+    def label_peaks(self, *args, **kwargs):
+        return self._plot_api.label_peaks(self.scan, *args, **kwargs)
 
     def _guess(self, ax=None, **kwargs):
         try:
