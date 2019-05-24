@@ -396,6 +396,10 @@ class ScanBase(object):
         """
         return BasePeakMethods(self)
 
+    @property
+    def plot(self):
+        return PlottingMethods(self)
+
     def copy(self, deep=True):
         """Return a deep copy of the :class:`Scan` object
         wrapping the same reference data.
@@ -1085,6 +1089,23 @@ class PlottingMethods(object):
         precursor = pinfo.precursor
         return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
 
+    def _guess(self, ax=None, **kwargs):
+        try:
+            ax = self.raw(ax=ax)
+        except (AttributeError, TypeError):
+            pass
+        try:
+            ax = self.centroided(ax=ax)
+        except (AttributeError, TypeError):
+            pass
+        try:
+            ax = self.deconvoluted(ax=ax)
+        except (AttributeError, TypeError):
+            pass
+        return ax
+
+    def __call__(self, ax=None, **kwargs):
+        return self._guess()
 
 
 try:

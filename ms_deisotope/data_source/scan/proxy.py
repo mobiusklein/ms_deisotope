@@ -6,6 +6,7 @@ the backing information.
 '''
 import weakref
 import logging
+import operator
 
 from collections import OrderedDict
 
@@ -168,6 +169,9 @@ class proxyproperty(object):
         self.caching = caching
         self.is_null_slot = "_%s_null" % self.name
         self.cache_slot = "_%s" % self.name
+        self._null_getter = operator.attrgetter(self.is_null_slot)
+        self._cache_getter = operator.attrgetter(self.cache_slot)
+        self._name_getter = operator.attrgetter(self.name)
 
     def _refresh(self, instance):
         setattr(instance, self.is_null_slot, None)
@@ -181,19 +185,22 @@ class proxyproperty(object):
             is_null_slot = self.is_null_slot
             cache_slot = self.cache_slot
             try:
-                is_null = getattr(instance, is_null_slot)
+                # is_null = getattr(instance, is_null_slot)
+                is_null = self._null_getter(instance)
             except AttributeError:
                 setattr(instance, is_null_slot, None)
                 is_null = None
             if is_null:
                 return None
             try:
-                value = getattr(instance, cache_slot)
+                # value = getattr(instance, cache_slot)
+                value = self._cache_getter(instance)
                 has_value = value is not None
             except AttributeError:
                 has_value = False
             if not has_value:
-                value = getattr(instance.scan, self.name)
+                # value = getattr(instance.scan, self.name)
+                value = self._name_getter(instance.scan)
                 if is_null is None:
                     if value is None:
                         setattr(instance, is_null_slot, True)
@@ -201,7 +208,8 @@ class proxyproperty(object):
                         setattr(instance, is_null_slot, False)
                 setattr(instance, cache_slot, value)
             return value
-        return getattr(instance.scan, self.name)
+        # return getattr(instance.scan, self.name)
+        return self._name_getter(instance.scan)
 
     def __set__(self, instance, value):
         if self.caching:

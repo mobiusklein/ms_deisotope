@@ -1,4 +1,5 @@
 import operator
+import math
 from collections import namedtuple
 
 from .utils import Base, ppm_error
@@ -469,3 +470,24 @@ try:
 
 except ImportError:
     has_c = False
+
+
+def window_peak_set(peak_set, window_size=100.0, peaks_per_window=10):
+    lower_bound = math.floor(peak_set[0].neutral_mass / window_size) * window_size
+    upper_bound = math.ceil(peak_set[-1].neutral_mass / window_size) * window_size
+
+    window_count = int(math.ceil((upper_bound - lower_bound) / window_size))
+    windows = []
+
+    window_upper_bound = lower_bound + window_size
+    window_lower_bound = lower_bound
+
+    for _ in range(window_count):
+        window = peak_set.between(window_lower_bound, window_upper_bound)
+        window = sorted(
+            sorted(window, key=lambda x: x.intensity, reverse=True)[:peaks_per_window],
+            key=lambda x: x.neutral_mass)
+        windows.append(window)
+        window_lower_bound += window_size
+        window_upper_bound += window_size
+    return windows
