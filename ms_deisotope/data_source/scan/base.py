@@ -1067,6 +1067,8 @@ class BasePeakMethods(object):
 
 
 class PlottingMethods(object):
+    """A plotting method facade that knows how to draw different facets of a spectrum.
+    """
     def __init__(self, scan):
         self.scan = scan
         self._plot_api = None
@@ -1139,7 +1141,7 @@ class PlottingMethods(object):
         -------
         matplotlib.Axes
         """
-        return self._plot_api.draw_peaklist(self.deconvoluted_peak_set, *args, **kwargs)
+        return self._plot_api.draw_peaklist(self.scan.deconvoluted_peak_set, *args, **kwargs)
 
     def annotate_precursor(self, *args, **kwargs):
         pinfo = self.scan.precursor_information
