@@ -12,9 +12,13 @@ import numpy as np
 
 from six import string_types as basestring
 
-from .common import (
-    RandomAccessScanSource, PrecursorInformation,
-    ScanDataSource, ScanIterator, ChargeNotProvided, _FakeGroupedScanIteratorImpl)
+from .scan import (
+    ScanFileMetadataBase, RandomAccessScanSource, ScanDataSource,
+    PrecursorInformation, _FakeGroupedScanIteratorImpl,
+    ChargeNotProvided)
+
+from .metadata.file_information import (
+    FileInformation, MS_MSn_Spectrum)
 
 
 class _MGFParser(mgf.IndexedMGF):
@@ -30,6 +34,53 @@ class _MGFParser(mgf.IndexedMGF):
             if '-' in charge_text:
                 return int(charge_text.replace("-", '')) * -1
             raise
+
+
+class _MGFMetadata(ScanFileMetadataBase):
+    """Objects implementing this interface can describe the original source
+    files, instrument configuration, and data processing parameters used to
+    create the current spectral data file.
+
+    Patterned after the provenance features of mzML that could also be mapped
+    onto mzXML and other complete vendor readers.
+    """
+
+    def file_description(self):
+        '''Describe the file and its components, as well
+        as any content types it has.
+
+        Returns
+        -------
+        :class:`~.FileInformation`
+        '''
+        finfo = FileInformation()
+        finfo.add_content("centroid spectrum")
+        finfo.add_content(MS_MSn_Spectrum)
+        if isinstance(self.source_file, basestring):
+            finfo.add_file(self.source_file)
+        elif hasattr(self.source_file, 'name'):
+            finfo.add_file(self.source_file.name)
+        return finfo
+
+    def instrument_configuration(self):
+        '''Describe the different instrument components and configurations used
+        to acquire scans in this run.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.InstrumentInformation`
+        '''
+        return super(_MGFMetadata, self).data_processing()
+
+    def data_processing(self):
+        '''Describe any preprocessing steps applied to the data described by this
+        instance.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.DataProcessingInformation`
+        '''
+        return super(_MGFMetadata, self).data_processing()
 
 
 class MGFInterface(ScanDataSource):
@@ -175,7 +226,7 @@ class MGFInterface(ScanDataSource):
         return annots
 
 
-class MGFLoader(MGFInterface, RandomAccessScanSource, ScanIterator):
+class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
     """Reads scans from MASCOT Generic File (MGF) Format files. Provides both iterative
     and random access.
 

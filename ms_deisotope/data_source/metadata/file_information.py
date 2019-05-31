@@ -695,6 +695,8 @@ class FileInformation(MutableMapping):
                     raise ValueError(
                         "Source File %r does not exist" % (source,))
             source = SourceFile.from_path(source)
+        elif not isinstance(source, SourceFile):
+            raise TypeError("Must pass an object of type %r, could not coerce %r" % (SourceFile, type(source)))
         self.source_files.append(source)
 
     def add_content(self, key, value=None):
