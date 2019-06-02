@@ -1155,15 +1155,18 @@ class PlottingMethods(object):
 
     def _guess(self, ax=None, **kwargs):
         try:
-            ax = self.raw(ax=ax)
+            if self.scan.arrays:
+                ax = self.raw(ax=ax)
         except (AttributeError, TypeError):
             pass
         try:
-            ax = self.centroided(ax=ax)
+            if self.scan.peak_set:
+                ax = self.centroided(ax=ax)
         except (AttributeError, TypeError):
             pass
         try:
-            ax = self.deconvoluted(ax=ax)
+            if self.scan.deconvoluted_peak_set:
+                ax = self.deconvoluted(ax=ax)
         except (AttributeError, TypeError):
             pass
         return ax
