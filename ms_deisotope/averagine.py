@@ -261,6 +261,13 @@ class TheoreticalIsotopicPattern(object):
             peak.intensity /= total
         return self
 
+    def _cumulative(self):
+        cumulative_intensities = []
+        total = 0
+        for peak in self:
+            total += peak.intensity
+            cumulative_intensities.append(total)
+        return total
 
 @dict_proxy("base_composition")
 class Averagine(object):

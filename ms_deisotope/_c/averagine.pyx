@@ -23,6 +23,22 @@ from ms_peak_picker._c.peak_set cimport FittedPeak
 from ms_deisotope.constants import (TRUNCATE_AFTER, IGNORE_BELOW)
 
 
+@cython.boundscheck(False)
+cdef double* _cumulative(TheoreticalIsotopicPattern self):
+    cdef:
+        size_t i, n
+        double total
+        double* cumulative_intensities
+
+    n = self.get_size()
+    cumulative_intensities = <double*>malloc(sizeof(double) * n)
+    total = 0.0
+    for i in range(n):
+        total += self.get(i).intensity
+        cumulative_intensities[i] = total
+    return cumulative_intensities
+
+
 cdef double PROTON
 PROTON = _PROTON
 
@@ -49,7 +65,7 @@ cdef void slide(double mz, list peaklist):
 
     n = PyList_GET_SIZE(peaklist) - 1
 
-    first_peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, 0) 
+    first_peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, 0)
     for i in range(n):
         peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, i + 1)
         delta = peak.mz - first_peak.mz
@@ -726,6 +742,29 @@ cdef class TheoreticalIsotopicPattern(object):
             return not (self._eq(other))
         else:
             return NotImplemented
+
+    cpdef list incremental_truncation(TheoreticalIsotopicPattern self, double threshold):
+        cdef:
+            list accumulator
+            double* cumulative_intensities
+            size_t i, n
+            TheoreticalIsotopicPattern template, current
+
+        template = self.clone()
+        n = self.get_size()
+        cumulative_intensities = _cumulative(self)
+        accumulator = []
+
+        i = n - 1
+        while i > 0:
+            if cumulative_intensities[i] < threshold:
+                break
+            template = template.clone()
+            template.drop_last_peak()
+            accumulator.append(template)
+            i -= 1
+        free(cumulative_intensities)
+        return accumulator
 
 
 cdef class AveragineCache(object):
