@@ -660,6 +660,14 @@ cdef class TheoreticalIsotopicPattern(object):
         return self
 
     cpdef double drop_last_peak(self):
+        """Drop the last peak in the isotopic pattern and re-normalize.
+
+        Returns
+        -------
+        float:
+            The percentage of the total signal in the isotopic pattern remaining
+            following the removal of the last peak.
+        """
         cdef:
             size_t i, n
             TheoreticalPeak p, tail
@@ -667,18 +675,44 @@ cdef class TheoreticalIsotopicPattern(object):
             list peaks
 
         n = self.get_size()
-        # peaks = PyList_New(n - 1)
-        peaks = []
+        peaks = PyList_New(n - 1)
         i = 0
         tail = self.get(n - 1)
         scaler = 1 - tail.intensity
         for i in range(n - 1):
             p = self.get(i)
             p.intensity /= scaler
-            # PyList_SetItem(peaks, i, p)
-            PyList_Append(peaks, p)
+            Py_INCREF(p)
+            PyList_SetItem(peaks, i, p)
         self.peaklist = peaks
         return scaler
+
+    cdef TheoreticalIsotopicPattern clone_drop_last(self):
+        """Combines the copying traversal with the re-normalization
+        of :meth:`drop_last_peak` for efffiency.
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern:
+            A copy of `self` with the last peak removed and renormalized
+        """
+        cdef:
+            size_t i, n
+            TheoreticalPeak p, tail
+            double scaler
+            list peaks
+
+        n = self.get_size()
+        peaks = PyList_New(n - 1)
+        i = 0
+        tail = self.get(n - 1)
+        scaler = 1 - tail.intensity
+        for i in range(n - 1):
+            p = self.get(i).clone()
+            p.intensity /= scaler
+            Py_INCREF(p)
+            PyList_SetItem(peaks, i, p)
+        return TheoreticalIsotopicPattern._create(peaks, self.origin, self.offset)
 
     cpdef double total(self):
         cdef:
@@ -744,6 +778,18 @@ cdef class TheoreticalIsotopicPattern(object):
             return NotImplemented
 
     cpdef list incremental_truncation(TheoreticalIsotopicPattern self, double threshold):
+        """Create incremental truncations of `self`, dropping the last peak until
+        the the total signal in reaches `threshold`
+
+        Parameters
+        ----------
+        threshold: float
+            The minimum percentage of the isotopic pattern to retain.
+
+        Returns
+        -------
+        :class:`list` of :class:`TheoreticalIsotopicPattern`
+        """
         cdef:
             list accumulator
             double* cumulative_intensities
@@ -753,14 +799,13 @@ cdef class TheoreticalIsotopicPattern(object):
         template = self.clone()
         n = self.get_size()
         cumulative_intensities = _cumulative(self)
-        accumulator = []
+        accumulator = [template]
 
         i = n - 1
         while i > 0:
             if cumulative_intensities[i] < threshold:
                 break
-            template = template.clone()
-            template.drop_last_peak()
+            template = template.clone_drop_last()
             accumulator.append(template)
             i -= 1
         free(cumulative_intensities)

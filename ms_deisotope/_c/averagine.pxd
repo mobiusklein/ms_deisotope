@@ -72,6 +72,8 @@ cdef class TheoreticalIsotopicPattern(object):
     @cython.final
     cpdef list incremental_truncation(TheoreticalIsotopicPattern self, double threshold)
 
+    cdef TheoreticalIsotopicPattern clone_drop_last(self)
+
 
 @cython.final
 cdef class AveragineCache(object):

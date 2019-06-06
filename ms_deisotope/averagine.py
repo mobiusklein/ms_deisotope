@@ -269,6 +269,35 @@ class TheoreticalIsotopicPattern(object):
             cumulative_intensities.append(total)
         return total
 
+    def incremental_truncation(self, threshold):
+        """Create incremental truncations of `self`, dropping the last peak until
+        the the total signal in reaches `threshold`
+
+        Parameters
+        ----------
+        threshold: float
+            The minimum percentage of the isotopic pattern to retain.
+
+        Returns
+        -------
+        :class:`list` of :class:`TheoreticalIsotopicPattern`
+        """
+        template = self.clone()
+        accumulator = [template]
+        cumulative_intensities = self._cumulative()
+
+        n = len(self)
+        i = n - 1
+        while i > 0:
+            if cumulative_intensities[i] < threshold:
+                break
+            template = template.clone()
+            template.drop_last_peak()
+            accumulator.append(template)
+            i -= 1
+        return accumulator
+
+
 @dict_proxy("base_composition")
 class Averagine(object):
     """An isotopic model which can be used to interpolate the composition

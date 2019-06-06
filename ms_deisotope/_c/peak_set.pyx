@@ -7,7 +7,13 @@ from cpython.tuple cimport (PyTuple_GET_ITEM, PyTuple_GetItem, PyTuple_GetSlice,
                             PyTuple_GET_SIZE, PyTuple_New, PyTuple_SetItem)
 from cpython.list cimport PyList_Append, PyList_AsTuple
 from cpython.ref cimport Py_INCREF
-from cpython.bytearray cimport PyByteArray_FromStringAndSize
+from cpython.object cimport PyObject
+# from cpython.bytearray cimport PyByteArray_FromStringAndSize
+
+# to support older versions of Cython which do not include this header
+cdef extern from "Python.h":
+    bytearray PyByteArray_FromStringAndSize(char *string, Py_ssize_t len)
+
 
 from libc.string cimport memcpy
 from libc.math cimport fabs
