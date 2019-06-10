@@ -178,6 +178,31 @@ class DeconvoluterBase(Base):
         score = self.scorer(self.peaklist, experimental, theoretical)  # pylint: disable=not-callable
         return IsotopicFitRecord(peak, score, charge, theoretical, experimental)
 
+    def fit_incremental_truncation(self, seed_fit, lower_bound):
+        """Fit incrementally truncated versions of the seed fit to check to see if a narrower
+        theoretical fit matches the data better.
+
+        Parameters
+        ----------
+        seed_fit : :class:`~.IsotopicFitRecord`
+            The original fit to explore truncations of
+        lower_bound : float
+            The percentage of total signal remaining to stop truncating at.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.IsotopicFitRecord`
+        """
+        patterns = seed_fit.theoretical.incremental_truncation(lower_bound)
+        fits = [seed_fit]
+        for pattern in patterns[1:]:
+            k = len(pattern)
+            eid = seed_fit.experimental[:k]
+            fit = self._evaluate_theoretical_distribution(
+                eid, pattern, seed_fit.seed_peak, seed_fit.charge)
+            fits.append(fit)
+        return fits
+
     def subtraction(self, isotopic_cluster, error_tolerance=ERROR_TOLERANCE):
         """Subtract signal attributed to `isotopic_cluster` from the equivalent
         peaks in :attr:`peaklist`, mutating the peaks within.

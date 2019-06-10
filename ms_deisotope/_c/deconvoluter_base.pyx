@@ -19,7 +19,7 @@ from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 from ms_deisotope._c.peak_dependency_network.peak_network cimport PeakDependenceGraphBase
 
 from cpython cimport Py_INCREF
-from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM
+from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM, PyList_GetSlice
 from cpython.tuple cimport PyTuple_GET_ITEM
 from cpython.int cimport PyInt_AsLong
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
@@ -219,6 +219,43 @@ cdef class DeconvoluterBase(object):
         fit = IsotopicFitRecord._create(peak, score, charge, theoretical, experimental, None, 0)
         fit.missed_peaks = count_missed_peaks(fit.experimental)
         return fit
+
+    cpdef list fit_incremental_truncation(self, IsotopicFitRecord seed_fit, double lower_bound):
+        """Fit incrementally truncated versions of the seed fit to check to see if a narrower
+        theoretical fit matches the data better.
+
+        Parameters
+        ----------
+        seed_fit : :class:`~.IsotopicFitRecord`
+            The original fit to explore truncations of
+        lower_bound : float
+            The percentage of total signal remaining to stop truncating at.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.IsotopicFitRecord`
+        """
+        cdef:
+            IsotopicFitRecord fit
+            TheoreticalIsotopicPattern pattern
+            list fits, patterns, eid
+            size_t i, n
+            Py_ssize_t k
+
+        patterns = seed_fit.theoretical.incremental_truncation(lower_bound)
+        n = PyList_GET_SIZE(patterns)
+        fits = PyList_New(n)
+        Py_INCREF(seed_fit)
+        PyList_SET_ITEM(fits, 0, seed_fit)
+        for i in range(1, n):
+            pattern = <TheoreticalIsotopicPattern>PyList_GET_ITEM(patterns, i)
+            k = pattern.get_size()
+            eid = PyList_GetSlice(seed_fit.experimental, 0, k)
+            fit = self._evaluate_theoretical_distribution(eid, pattern, seed_fit.seed_peak, seed_fit.charge)
+            Py_INCREF(fit)
+            PyList_SET_ITEM(fits, i, fit)
+        return fits
+
 
     cpdef subtraction(self, TheoreticalIsotopicPattern isotopic_cluster, double error_tolerance=2e-5):
         cdef:

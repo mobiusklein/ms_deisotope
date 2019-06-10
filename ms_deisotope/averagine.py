@@ -282,7 +282,7 @@ class TheoreticalIsotopicPattern(object):
         -------
         :class:`list` of :class:`TheoreticalIsotopicPattern`
         """
-        template = self.clone()
+        template = self.clone().normalize()
         accumulator = [template]
         cumulative_intensities = self._cumulative()
 

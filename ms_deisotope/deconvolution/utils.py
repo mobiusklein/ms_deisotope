@@ -236,7 +236,7 @@ def drop_placeholders_parallel(peaks, otherpeaks):
 
 
 def quick_charge(peak_set, index, min_charge, max_charge):
-    """An implementation of Hoopman's QuickCharge [1] algorithm for quickly capping charge
+    """An implementation of Hoopman's :title-reference:`QuickCharge` [1] algorithm for quickly capping charge
     state queries
 
     Parameters

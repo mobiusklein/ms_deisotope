@@ -55,12 +55,23 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
     inherit from :class:`DeconvoluterBase` and provide methods `fit_theoretical_distribution`
     and `_fit_peaks_at_charges`
 
+    Attributes
+    ----------
+    use_quick_charge: bool
+        Whether or not to use the :title-reference:`QuickCharge` algorithm when generating
+        putative charge states.
+    incremental_truncation: float or :const:`None`
+        If not :const:`None`, the isotopic pattern truncation lower bound to contract each fit to
+        incrementally, generating new fits for each dropped peak using
+        :meth:`~.DeconvoluterBase.fit_incremental_truncation`
+
     """
 
     def __init__(self, peaklist, *args, **kwargs):
         super(ExhaustivePeakSearchDeconvoluterBase,
               self).__init__(peaklist, *args, **kwargs)
         self.use_quick_charge = kwargs.get("use_quick_charge", False)
+        self.incremental_truncation = kwargs.get("incremental_truncation", None)
 
     def _get_all_peak_charge_pairs(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
                                    left_search_limit=3, right_search_limit=3,
@@ -186,6 +197,11 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
         results = self._fit_peaks_at_charges(
             target_peaks, error_tolerance, charge_carrier=charge_carrier, truncate_after=truncate_after,
             ignore_below=ignore_below)
+        if self.incremental_truncation is not None:
+            solutions = set()
+            for result in results:
+                solutions.update(self.fit_incremental_truncation(result, self.incremental_truncation))
+            results = solutions
         return (results)
 
     def charge_state_determination(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),

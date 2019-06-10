@@ -43,6 +43,7 @@ cdef class DeconvoluterBase(object):
     cpdef scale_theoretical_distribution(self, TheoreticalIsotopicPattern theoretical_distribution, list experimental_distribution)
     cpdef IsotopicFitRecord _evaluate_theoretical_distribution(self, list experimental, TheoreticalIsotopicPattern theoretical, FittedPeak peak, int charge)
     cpdef subtraction(self, TheoreticalIsotopicPattern isotopic_cluster, double error_tolerance=*)
+    cpdef list fit_incremental_truncation(self, IsotopicFitRecord seed_fit, double lower_bound)
 
     cpdef bint _check_fit(self, IsotopicFitRecord fit)
 

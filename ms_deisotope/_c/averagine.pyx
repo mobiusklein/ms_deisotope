@@ -796,9 +796,9 @@ cdef class TheoreticalIsotopicPattern(object):
             size_t i, n
             TheoreticalIsotopicPattern template, current
 
-        template = self.clone()
+        template = self.clone().normalize()
         n = self.get_size()
-        cumulative_intensities = _cumulative(self)
+        cumulative_intensities = _cumulative(template)
         accumulator = [template]
 
         i = n - 1
@@ -879,7 +879,7 @@ cdef class AveragineCache(object):
             cache_key = (key_mz, charge, charge_carrier, truncate_after)
             pvalue = PyDict_GetItem(self.backend, cache_key)
             if pvalue == NULL:
-                tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after)
+                tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
                 PyDict_SetItem(self.backend, cache_key, tid.clone())
                 return tid
             else:
@@ -951,7 +951,7 @@ cdef class AveragineCache(object):
                  truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
         for i in range(int(min_mz), int(max_mz)):
             for j in range(min(max_charge, min_charge), max(min_charge, max_charge)):
-                self.isotopic_cluster(i, j, PROTON, TRUNCATE_AFTER, IGNORE_BELOW)
+                self.isotopic_cluster(i, j, PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW)
         return self
 
 
