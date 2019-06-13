@@ -45,14 +45,23 @@ def to_mgf(reader, outstream, msn_filters=None):
         msn_filters = []
     reader.make_iterator(grouped=False)
     writer = MGFSerializer(outstream, deconvoluted=False)
-    for scan in reader:
-        if scan.ms_level == 1:
-            continue
-        if msn_filters:
-            scan = scan.transform(msn_filters)
-        if scan.peak_set is None:
-            scan.pick_peaks()
-        writer.save_scan(scan)
+    try:
+        n_spectra = len(reader)
+    except TypeError:
+        n_spectra = None
+    progbar = click.progressbar(
+        reader,
+        label="Processed Spectra", length=n_spectra,
+        item_show_func=lambda x: str(x.id) if x else '')
+    with progbar:
+        for scan in progbar:
+            if scan.ms_level == 1:
+                continue
+            if msn_filters:
+                scan = scan.transform(msn_filters)
+            if scan.peak_set is None:
+                scan.pick_peaks()
+            writer.save_scan(scan)
 
 
 @ms_conversion.command('mgf', short_help="Convert a mass spectrometry data file to MGF")
@@ -128,31 +137,39 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
         except KeyError:
             pass
         writer.add_file_contents("centroid spectrum")
-    for bunch in reader:
-        discard_peaks = False
-        if bunch.precursor is not None:
-            if ms1_filters:
-                bunch = bunch._replace(precursor=bunch.precursor.transform(ms1_filters))
-            if (pick_peaks or not bunch.precursor.is_profile):
-                bunch.precursor.pick_peaks()
-            if correct_precursor_mz:
-                if not pick_peaks:
+    n_spectra = len(reader)
+    progbar = click.progressbar(
+        label="Loading Spectra", length=n_spectra,
+        item_show_func=lambda x: str(x.precursor.id if x.precursor else
+                                     x.products[0].id) if x else '')
+    with progbar:
+        for bunch in reader:
+            progbar.current_item = bunch
+            progbar.update((bunch.precursor is not None) + len(bunch.products))
+            discard_peaks = False
+            if bunch.precursor is not None:
+                if ms1_filters:
+                    bunch = bunch._replace(precursor=bunch.precursor.transform(ms1_filters))
+                if (pick_peaks or not bunch.precursor.is_profile):
                     bunch.precursor.pick_peaks()
-                    if bunch.precursor.is_profile:
-                        discard_peaks = True
+                if correct_precursor_mz:
+                    if not pick_peaks:
+                        bunch.precursor.pick_peaks()
+                        if bunch.precursor.is_profile:
+                            discard_peaks = True
 
-        for i, product in enumerate(bunch.products):
-            if msn_filters:
-                product = bunch.products[i] = product.transform(msn_filters)
-            if pick_peaks or not product.is_profile:
-                product.pick_peaks()
-            if product.activation is None and default_activation is not None:
-                product.activation = default_activation
-            if correct_precursor_mz:
-                product.precursor_information.correct_mz()
-        if discard_peaks:
-            bunch.precursor.peak_set = None
-        writer.save_scan_bunch(bunch)
+            for i, product in enumerate(bunch.products):
+                if msn_filters:
+                    product = bunch.products[i] = product.transform(msn_filters)
+                if pick_peaks or not product.is_profile:
+                    product.pick_peaks()
+                if product.activation is None and default_activation is not None:
+                    product.activation = default_activation
+                if correct_precursor_mz:
+                    product.precursor_information.correct_mz()
+            if discard_peaks:
+                bunch.precursor.peak_set = None
+            writer.save_scan_bunch(bunch)
     writer.complete()
     writer.format()
 

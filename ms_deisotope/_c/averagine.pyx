@@ -311,9 +311,10 @@ cdef double top3_scale_factor(TheoreticalIsotopicPattern self, list experimental
         elif peak.intensity > top3:
             top3 = peak.intensity
             top3_index = i
-    scale = experimental_distribution[top1_index].intensity / self[top1_index].intensity
-    scale += experimental_distribution[top2_index].intensity / self[top2_index].intensity
-    scale += experimental_distribution[top3_index].intensity / self[top3_index].intensity
+
+    scale = (<FittedPeak>PyList_GET_ITEM(experimental_distribution, top1_index)).intensity / self.get(top1_index).intensity
+    scale += (<FittedPeak>PyList_GET_ITEM(experimental_distribution, top2_index)).intensity / self.get(top2_index).intensity
+    scale += (<FittedPeak>PyList_GET_ITEM(experimental_distribution, top3_index)).intensity / self.get(top3_index).intensity
     scale /= 3
     return scale
 
