@@ -1,6 +1,10 @@
 [run]
+concurrency=multiprocessing
+branch = True
+parallel = True
+
 plugins = Cython.Coverage
-omit = 
+omit =
     */_vendor/*
     */feature_map/*
     */interval_viz.py
