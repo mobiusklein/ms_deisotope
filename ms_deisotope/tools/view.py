@@ -40,25 +40,8 @@ averagine_label_map = {
 
 
 def interactive_console(**kwargs):
-    try:
-        from IPython.terminal.embed import InteractiveShellEmbed, load_default_config
-        config = kwargs.get('config')
-        header = kwargs.pop('header', u'')
-        compile_flags = kwargs.pop('compile_flags', None)
-        if config is None:
-            config = load_default_config()
-            config.InteractiveShellEmbed = config.TerminalInteractiveShell
-            kwargs['config'] = config
-        frame = sys._getframe(1)
-        shell = InteractiveShellEmbed.instance(
-            _init_location_id='%s:%s' % (
-                frame.f_code.co_filename, frame.f_lineno), **kwargs)
-        shell(header=header, stack_depth=2, compile_flags=compile_flags,
-              _call_location_id='%s:%s' % (frame.f_code.co_filename, frame.f_lineno))
-        InteractiveShellEmbed.clear_instance()
-    except ImportError:
-        import code
-        code.interact(kwargs.get("local", {}))
+    import code
+    code.interact(local=kwargs)
 
 
 class Cursor(object):
@@ -123,7 +106,7 @@ class SpectrumViewer(object, ttk.Frame):
         self.figure = Figure(dpi=100)
         self.canvas = FigureCanvasTkAgg(self.figure, master=self)
         self.axis = self.figure.add_subplot(111)
-        self.canvas.show()
+        self.canvas.draw()
         canvas_widget = self.canvas.get_tk_widget()
         canvas_widget.grid(row=0, column=0, sticky=tk.N + tk.W + tk.E + tk.S)
         self.canvas_cursor = Cursor(self.axis, tk.StringVar(master=self.root))
@@ -134,13 +117,20 @@ class SpectrumViewer(object, ttk.Frame):
         self.mz_span = None
         self.scan = None
         self.annotations = []
-        self.canvas.show()
+        self.canvas.draw()
 
     def configure_toolbar(self):
         self.toolbar = tk.Menu(self)
         self.toolbar.add_command(label='Open', command=self.select_ms_file)
-        self.toolbar.add_command(label='Interact', command=lambda: interactive_console(**{'self': self}))
+        self.toolbar.add_command(label='Interact', command=self._interact)
         self.root.config(menu=self.toolbar)
+
+    def _interact(self):
+        local_vars = {
+            "self": self,
+            "scan": self.scan,
+        }
+        return interactive_console(**local_vars)
 
     def _zoom_in(self, min_mz, max_mz):
         arrays = self.scan.arrays
@@ -164,6 +154,10 @@ class SpectrumViewer(object, ttk.Frame):
             max_peak = len(arrays[0]) - 1
             self.mz_span = None
             xmin, xmax = arrays.mz[min_peak], arrays.mz[max_peak]
+            xmin = max(min(xmin, 100), 0)
+        if (xmin - 50) < 0:
+            if xmin > -20:
+                xmin = -20
         self._zoom_in(xmin, xmax)
 
     def clear_annotations(self):
@@ -207,17 +201,18 @@ class SpectrumViewer(object, ttk.Frame):
         if self.scan.ms_level == 1:
             averagine_value = self.ms1_averagine_combobox.get()
             averagine_value = averagine_label_map[averagine_value]
-            truncate_after = 0.95
+            truncate_to = 0.95
             scorer = ms_deisotope.PenalizedMSDeconVFitter(20., 2.)
         else:
             averagine_value = self.msn_averagine_combobox.get()
             averagine_value = averagine_label_map[averagine_value]
-            truncate_after = 0.8
+            truncate_to = 0.8
             scorer = ms_deisotope.MSDeconVFitter(10.)
         self.scan.deconvolute(
             averagine=averagine_value,
             scorer=scorer,
-            truncate_after=truncate_after)
+            truncate_after=1 - 1e-4,
+            incremental_truncation=truncate_to)
 
     def draw_plot(self, scan=None, children=None):
         if children is None:

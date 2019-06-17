@@ -203,7 +203,8 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, c
         write_index = True
     with stream:
         to_mzml(reader, stream, pick_peaks=pick_peaks, ms1_filters=ms1_filters,
-                msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz)
+                msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
+                write_index=write_index)
 
 
 if is_debug_mode():
