@@ -18,3 +18,4 @@ Untitled*
 cythonize.py
 test.py
 experiment/
+.coverage.*

@@ -66,7 +66,7 @@ def to_mgf(reader, outstream, msn_filters=None):
 
 @ms_conversion.command('mgf', short_help="Convert a mass spectrometry data file to MGF")
 @click.argument("source")
-@click.argument("output", type=click.File(mode='wb'))
+@click.argument("output", type=click.File(mode='w'))
 @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
 def mgf(source, output, msn_filters=None):
     """Convert a mass spectrometry data file to MGF. MGF can only represent centroid spectra

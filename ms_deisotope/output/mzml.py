@@ -971,14 +971,14 @@ class MzMLSerializer(ScanSerializerBase):
         if self.indexer is not None:
             try:
                 name = self.handle.name
+                try:
+                    with open(ExtendedScanIndex.index_file_name(name), 'w') as ixfile:
+                        self.indexer.serialize(ixfile)
+                except IOError as e:
+                    warnings.warn(
+                        "Could not write extended index file due to error %r" % (e,))
             except AttributeError:
-                name = "_detatched_mzml_index"
-            try:
-                with open(ExtendedScanIndex.index_file_name(name), 'w') as ixfile:
-                    self.indexer.serialize(ixfile)
-            except IOError as e:
-                warnings.warn(
-                    "Could not write extended index file due to error %r" % (e,))
+                warnings.warn("Could not determine name to write extended index file to")
 
         try:
             self.writer.outfile.flush()

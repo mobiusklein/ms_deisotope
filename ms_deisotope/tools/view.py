@@ -14,11 +14,12 @@ import numpy as np
 try:
     import Tkinter as tk
     from Tkinter import Tk
+    import ttk
 except ImportError:
     import tkinter as tk
     from tkinter import Tk
+    from tkinter import ttk
 
-import ttk
 
 try:
     import tkFileDialog as tkfiledialog

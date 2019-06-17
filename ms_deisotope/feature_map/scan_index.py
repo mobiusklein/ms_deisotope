@@ -15,7 +15,7 @@ class MSRecordBase(Base):
     def __init__(self, scan_time, drift_time=None, **kwargs):
         self.scan_time = scan_time
         self.drift_time = drift_time
-        self._extra_keys = kwargs.keys()
+        self._extra_keys = list(kwargs.keys())
         self.__dict__.update(kwargs)
 
     def __getitem__(self, key):
