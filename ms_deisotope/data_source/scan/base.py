@@ -44,7 +44,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         from it.
     """
 
-    def __new__(cls, *args, **kwargs):  # pylint: disable=super-on-old-class
+    def __new__(cls, *args, **kwargs):
         inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
         inst._id_map = {}
         if inst.precursor is not None:

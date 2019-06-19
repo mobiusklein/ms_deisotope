@@ -1,5 +1,4 @@
 import multiprocessing
-import pickle
 
 from .scan_index import ExtendedScanIndex
 from .scan_interval_tree import (
