@@ -159,7 +159,19 @@ def metadata_index(paths, processes=4):
         except AttributeError:
             pass
         if processes > 1:
-            index, _ = quick_index.index(reader, processes)
+            progbar = click.progressbar(label='Building Index', length=100)
+            acc = [0]
+
+            def update_bar(x):
+                x = int(x * 100)
+                x -= acc[0]
+                progbar.update(x)
+                acc[0] += x
+
+            with progbar:
+                update_bar(0.0)
+                index, _ = quick_index.index(
+                    reader, processes, progress_indicator=update_bar)
         else:
             index = quick_index.ExtendedScanIndex()
             reader.reset()

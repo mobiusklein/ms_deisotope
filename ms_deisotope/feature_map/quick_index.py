@@ -5,6 +5,9 @@ from .scan_interval_tree import (
     ScanIntervalTree, extract_intervals, make_rt_tree)
 
 
+n_cores = multiprocessing.cpu_count()
+
+
 def indexing_iterator(reader, start, end, index):
     try:
         iterator = reader.start_from_scan(index=start, grouped=True)
@@ -65,7 +68,54 @@ class _Indexer(object):
         return result
 
 
-def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None, task=None):
+class _TaskWrapper(object):
+    '''A simple wrapper for a callable to capture the index range for a chunk created by
+    :func:`run_task_in_chunks`, so that the start index of the chunk is known.
+    '''
+    def __init__(self, task):
+        self.task = task
+
+    def __call__(self, payload):
+        _reader, start, _end = payload
+        out = self.task(payload)
+        return start, out
+
+
+def run_task_in_chunks(reader, n_processes=None, n_chunks=None, scan_interval=None, task=None, progress_indicator=None):
+    """Run a :class:`~.Callable` `task` over a :class:`~.ScanIterator` in chunks across multiple processes.
+
+    This function breaks apart a :class:`~.ScanIterator`'s scans over `scan_interval`,
+    or the whole sequence if not provided.
+
+    Parameters
+    ----------
+    reader : :class:`~.ScanIterator`
+        The set of :class:`~.Scan` objects to operate on
+    n_processes : int, optional
+        The number of worker processes to use (the default is 4 or the number of cores available,
+        whichever is lower)
+    n_chunks : int, optional
+        The number of chunks to break the scan range into (the default is equal to `n_processes`)
+    scan_interval : :class:`tuple` of (:class:`int`, :class:`int`), optional
+        The start and stop scan index to apply the task over. If omitted, the entire scan range will
+        be used. If either entry is :const:`None`, then the index will be assumed to be the first or
+        last scan respectively.
+    task : :class:`~.Callable`
+        The callable object which will be executed on each chunk in a sub-process. It must take one
+        argument, a :class:`tuple` of (`reader`, `start index`, `stop index`), and it must return a pickle-able
+        object.
+    progress_indicator : :class:`~.Callable`, optional
+        A callable object which will be used to report progress as chunks finish processing. It must take
+        one argument, a :class:`float` which represents the fraction of all work completed.
+
+    Returns
+    -------
+    :class:`list`:
+        The result of `task` on each chunk of `reader` in index sorted order.
+
+    """
+    if n_processes is None:
+        n_processes = min(n_cores, 4)
     if task is None or not callable(task):
         raise ValueError("The task must be callable!")
     if scan_interval is None:
@@ -83,10 +133,16 @@ def run_task_in_chunks(reader, n_processes=4, n_chunks=None, scan_interval=None,
     pool = multiprocessing.Pool(n_processes)
     scan_ranges = partition_work(n_items, n_chunks, start_scan)
     feeder = ((reader, scan_range[0], scan_range[1]) for scan_range in scan_ranges)
-    result = list(pool.imap_unordered(task, feeder))
+    result = []
+    for i, block in enumerate(pool.imap_unordered(_TaskWrapper(task), feeder), 1):
+        result.append(block)
+        if progress_indicator is not None:
+            progress_indicator(i / float(n_chunks))
     pool.close()
     pool.terminate()
     pool.join()
+    result.sort(key=lambda x: x[0])
+    result = [x[1] for x in result]
     return result
 
 
@@ -104,7 +160,7 @@ def make_interval_tree(intervals):
     return ScanIntervalTree(make_rt_tree(concat), None)
 
 
-def index(reader, n_processes=4, scan_interval=None):
+def index(reader, n_processes=4, scan_interval=None, progress_indicator=None):
     task = _Indexer()
     # indexing a :class:`ScanIterator` without random access, have to go in sequence
     if not hasattr(reader, 'start_from_scan'):
@@ -112,7 +168,8 @@ def index(reader, n_processes=4, scan_interval=None):
         chunks = [task((reader, 0, len(reader)))]
     else:
         chunks = run_task_in_chunks(
-            reader, n_processes, scan_interval=scan_interval, task=task)
+            reader, n_processes, scan_interval=scan_interval, task=task,
+            progress_indicator=progress_indicator)
     indices = [chunk[2] for chunk in chunks]
     intervals = [chunk[3] for chunk in chunks]
     index = merge_indices(indices)
