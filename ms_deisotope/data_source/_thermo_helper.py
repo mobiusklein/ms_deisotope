@@ -1,6 +1,8 @@
 import re
 from collections import defaultdict
 
+import numpy as np
+
 from ms_deisotope.utils import Base
 
 from .metadata.instrument_components import (
@@ -313,7 +315,7 @@ def method_parser(method_text):
                 repeated_event = int(match.group(1))
                 repeat_count = int(match.group(2))
                 repeated_width = isolation_width_by_segment_and_event[scan_segment][repeated_event]
-                for i in range(repeated_width + 1, repeat_count + repeated_width):
+                for i in np.arange(repeated_width + 1, repeat_count + repeated_width):
                     isolation_width_by_segment_and_event[scan_segment][i] = repeated_width
                 continue
 

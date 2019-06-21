@@ -225,7 +225,7 @@ class SpectrumViewer(ttk.Frame):
         self.children_scans = children
         if scan.ms_level == 1:
             if scan.arrays.mz.shape[0] > 1:
-                self.scan = scan.average(3)
+                self.scan = scan.average(self.ms1_scan_averaging_var.get())
             self.scan = scan.denoise(4)
         self._process_scan()
         scan = self.scan
@@ -298,7 +298,7 @@ class SpectrumViewer(ttk.Frame):
             "glycan",
             "glycopeptide",
             "heparan sulfate",
-        ])
+        ], width=15)
         self.ms1_averagine_combobox.set("glycopeptide")
         self.ms1_averagine_combobox_label = ttk.Label(self.display_row, text="MS1 Averagine:")
         self.ms1_averagine_combobox_label.grid(row=0, column=1, padx=(10, 0))
@@ -309,11 +309,20 @@ class SpectrumViewer(ttk.Frame):
             "glycan",
             "glycopeptide",
             "heparan sulfate",
-        ])
+        ], width=15)
         self.msn_averagine_combobox.set("peptide")
         self.msn_averagine_combobox_label = ttk.Label(self.display_row, text="MSn Averagine:")
         self.msn_averagine_combobox_label.grid(row=0, column=3, padx=(10, 0))
         self.msn_averagine_combobox.grid(row=0, column=4, padx=(1, 10))
+
+        self.ms1_scan_averaging_label = ttk.Label(
+            self.display_row, text="MS1 Signal Averaging:")
+        self.ms1_scan_averaging_label.grid(row=0, column=5, padx=(10, 0))
+        self.ms1_scan_averaging_var = tk.IntVar(self, value=2)
+        self.ms1_scan_averaging = ttk.Entry(self.display_row, width=3)
+        self.ms1_scan_averaging['textvariable'] = self.ms1_scan_averaging_var
+        self.ms1_scan_averaging.grid(row=0, column=6, padx=(1, 3))
+
 
     def configure_treeview(self):
         self.treeview = ttk.Treeview(self)
