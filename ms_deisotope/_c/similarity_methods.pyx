@@ -5,7 +5,7 @@ from libc.stdlib cimport malloc, free
 from cpython cimport PyErr_SetString
 
 from cpython.list cimport PyList_Size, PyList_GET_ITEM
-from cpython.tuple cimport PyTuple_GET_ITEM
+from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_Size
 
 from ms_peak_picker._c.peak_index cimport PeakIndex
 
@@ -296,7 +296,7 @@ cdef double convolved_dot_product(list peak_pairs):
     return d
 
 
-cdef double convolve_peak_sets2(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
+cdef double convolve_peak_sets2_fitted(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
     cdef:
         size_t i, n, j, m
         FittedPeak peak
@@ -317,10 +317,42 @@ cdef double convolve_peak_sets2(PeakSet peak_set_a, PeakSet peak_set_b, double e
     return acc
 
 
-cpdef double ppm_peak_set_similarity(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
+cdef double convolve_peak_sets2_deconvoluted(DeconvolutedPeakSet peak_set_a, DeconvolutedPeakSet peak_set_b, double error_tolerance=2e-5):
+    cdef:
+        size_t i, n, j, m
+        DeconvolutedPeak peak
+        DeconvolutedPeak other
+        tuple peaks_slice
+        double acc
+
+    acc = 0.0
+    n = peak_set_a.get_size()
+    for i in range(n):
+        peak = peak_set_a.getitem(i)
+        peaks_slice = peak_set_b.all_peaks_for(peak.neutral_mass, error_tolerance)
+        m = PyTuple_Size(peaks_slice)
+        for j in range(m):
+            other = <DeconvolutedPeak>PyTuple_GET_ITEM(peaks_slice, j)
+            acc += peak.intensity * other.intensity
+    return acc
+
+
+cpdef double ppm_peak_set_similarity(peak_collection peak_set_a, peak_collection peak_set_b, double error_tolerance=2e-5):
     cdef:
         double ab, aa, bb
-    ab = convolve_peak_sets2(peak_set_a, peak_set_b, error_tolerance)
-    aa = convolve_peak_sets2(peak_set_a, peak_set_a, error_tolerance)
-    bb = convolve_peak_sets2(peak_set_b, peak_set_b, error_tolerance)
+    if peak_collection is PeakSet:
+        ab = convolve_peak_sets2_fitted(peak_set_a, peak_set_b, error_tolerance)
+        aa = convolve_peak_sets2_fitted(peak_set_a, peak_set_a, error_tolerance)
+        bb = convolve_peak_sets2_fitted(peak_set_b, peak_set_b, error_tolerance)
+    elif peak_collection is PeakIndex:
+        ab = convolve_peak_sets2_fitted(peak_set_a.peaks, peak_set_b.peaks, error_tolerance)
+        aa = convolve_peak_sets2_fitted(peak_set_a.peaks, peak_set_a.peaks, error_tolerance)
+        bb = convolve_peak_sets2_fitted(peak_set_b.peaks, peak_set_b.peaks, error_tolerance)
+    elif peak_collection is DeconvolutedPeakSet:
+        ab = convolve_peak_sets2_deconvoluted(peak_set_a, peak_set_b, error_tolerance)
+        aa = convolve_peak_sets2_deconvoluted(peak_set_a, peak_set_a, error_tolerance)
+        bb = convolve_peak_sets2_deconvoluted(peak_set_b, peak_set_b, error_tolerance)
+    elif peak_collection is object:
+        raise TypeError("Cannot handle objects of type %s" % type(peak_set_a))
+
     return (ab) / (sqrt((aa)) * sqrt((bb)))
