@@ -163,10 +163,12 @@ def metadata_index(paths, processes=4):
             acc = [0]
 
             def update_bar(x):
+                '''Progress Bar update callback for :func:`~.quick_index.index`
+                '''
                 x = int(x * 100)
-                x -= acc[0]
-                progbar.update(x)
-                acc[0] += x
+                x -= acc[0]  # pylint: disable=cell-var-from-loop
+                progbar.update(x)  # pylint: disable=cell-var-from-loop
+                acc[0] += x  # pylint: disable=cell-var-from-loop
 
             with progbar:
                 update_bar(0.0)

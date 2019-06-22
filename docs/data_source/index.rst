@@ -32,4 +32,5 @@ To read from a supported file format, do one of the following:
     metadata/index
     mzml
     mzxml
+    mgf
     formats
