@@ -757,7 +757,7 @@ cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set,
     """
     cdef:
         PeakSet peaks
-        size_t index
+        size_t index, first_index
         int[1000] charges
         np.ndarray[np.int32_t, ndim=1] result
         double min_intensity, diff, raw_charge, remain
@@ -775,7 +775,15 @@ cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set,
     else:
         peaks = peak_set.peaks
     if index > peaks.get_size():
-        raise IndexError("%d is out of bounds for peak list of size %d in quick_charge" % (index, peaks.get_size()))
+        if peaks.get_size() == 0:
+            raise IndexError("peak_set cannot be empty!")
+        # Assume we have a slice of the peak list, not the actual complete list, so
+        # adjust the index offset from the first peak in the given list.
+        first_index = peaks.getitem(0).peak_count
+        if (index - first_index) < peaks.get_size() and (index - first_index) >= 0:
+            index -= first_index
+        else:
+            raise IndexError("%d is out of bounds for peak list of size %d in quick_charge" % (index, peaks.get_size()))
     n = 1000
     result_size = 0
     min_intensity = peaks.getitem(index).intensity / 4.

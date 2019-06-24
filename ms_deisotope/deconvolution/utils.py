@@ -262,9 +262,18 @@ def quick_charge(peak_set, index, min_charge, max_charge):
         and MS/MS spectrum quality assessment of shotgun proteomics data sets using high-resolution
         Mass Spectrometry". Analytical Chemistry, 79(15), 5620–5632. https://doi.org/10.1021/ac0700833
     """
+    size = len(peak_set)
+    if size == 0:
+        raise IndexError("peak_set cannot be empty!")
+    if index > size:
+        first_index = peak_set[0].peak_count
+        if (index - first_index) < size and (index - first_index) >= 0:
+            index -= first_index
+        else:
+            raise IndexError("%d is out of bounds for peak list of size %d in quick_charge" % (index, size))
     min_intensity = peak_set[index].intensity / 4.
     charges = np.zeros(max_charge, dtype=int)
-    for j in range(index + 1, len(peak_set)):
+    for j in range(index + 1, size):
         if peak_set[j].intensity < min_intensity:
             continue
         diff = peak_set[j].mz - peak_set[index].mz
