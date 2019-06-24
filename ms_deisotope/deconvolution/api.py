@@ -20,7 +20,7 @@ from ms_deisotope.constants import (
 from ms_deisotope.averagine import PROTON
 
 from .averagine_based import AveraginePeakDependenceGraphDeconvoluter
-from .utils import logger
+from .utils import logger, prepare_peaklist
 
 
 def deconvolute_peaks(peaklist, decon_config=None,
@@ -104,6 +104,8 @@ def deconvolute_peaks(peaklist, decon_config=None,
     decon_config.setdefault("scale_method", SCALE_METHOD)
     decon_config.setdefault("use_quick_charge", use_quick_charge)
     decon = deconvoluter_type(peaklist=peaklist, **decon_config)
+
+    peaklist = prepare_peaklist(peaklist)
 
     if verbose_priorities or verbose:
         decon.verbose = True
