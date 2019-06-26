@@ -28,6 +28,10 @@ class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(_APDGD, Comp
             if not self.scorer.reject(fit):
                 fit.data = (composition, charge)
                 self.peak_dependency_network.add_fit_dependence(fit)
+            if self.incremental_truncation is not None:
+                for case in self.fit_incremental_truncation(fit, self.incremental_truncation):
+                    if not self.scorer.reject(case):
+                        self.peak_dependency_network.add_fit_dependence(case)
 
     def populate_graph(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), left_search_limit=1,
                        right_search_limit=0, charge_carrier=PROTON, truncate_after=TRUNCATE_AFTER,

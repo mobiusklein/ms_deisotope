@@ -40,6 +40,8 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
 
     def __init__(self, composition_list, *args, **kwargs):
         self.composition_list = list(composition_list)
+        self.incremental_truncation = kwargs.get(
+            "incremental_truncation", None)
         super(CompositionListDeconvoluterBase, self).__init__(*args, **kwargs)
 
     def generate_theoretical_isotopic_cluster(self, composition, charge, truncate_after=TRUNCATE_AFTER,
@@ -215,7 +217,12 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
                 rep_eid = drop_placeholders(eid)
                 if (len(rep_eid) < 2) or (len(rep_eid) < (len(tid) / 2.)) or (len(rep_eid) == 1 and fit.charge > 1):
                     continue
-
+                if self.incremental_truncation is not None:
+                    fits = [fit]
+                    for case in self.fit_incremental_truncation(fit, self.incremental_truncation):
+                        if not self.scorer.reject(case):
+                            fits.append(case)
+                    fit = self.scorer.select.best(fits)
                 peak = self._make_deconvoluted_peak_solution(
                     fit, composition, charge_carrier)
                 self._deconvoluted_peaks.append(peak)
@@ -385,6 +392,11 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
                 continue
             if not self.scorer.reject(fit):
                 self.peak_dependency_network.add_fit_dependence(fit)
+            if self.incremental_truncation is not None:
+                for case in self.fit_incremental_truncation(fit, self.incremental_truncation):
+                    if not self.scorer.reject(case):
+                        self.peak_dependency_network.add_fit_dependence(case)
+
 
     def populate_graph(self, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8), truncate_after=TRUNCATE_AFTER,
                        charge_carrier=PROTON, ignore_below=IGNORE_BELOW, mass_shift=None):
