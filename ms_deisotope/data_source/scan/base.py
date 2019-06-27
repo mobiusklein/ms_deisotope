@@ -667,6 +667,8 @@ class PrecursorInformation(object):
             peak.charge) if override_charge is None else override_charge
         self.extracted_intensity = peak.intensity
         self.extracted_peak = peak
+        self.orphan = False
+        self.defaulted = False
 
     def default(self, orphan=False):
         '''Populate the extracted attributes of this object from the matching
@@ -686,15 +688,12 @@ class PrecursorInformation(object):
             warnings.warn(
                 "A precursor has been defaulted with an unknown charge state.")
             self.extracted_charge = ChargeNotProvided
-            self.extracted_neutral_mass = neutral_mass(
-                self.mz, DEFAULT_CHARGE_WHEN_NOT_RESOLVED)
-            self.extracted_intensity = self.intensity
-            self.defaulted = True
+            self.extracted_neutral_mass = neutral_mass(self.mz, DEFAULT_CHARGE_WHEN_NOT_RESOLVED)
         else:
             self.extracted_charge = int(self.charge)
             self.extracted_neutral_mass = self.neutral_mass
-            self.extracted_intensity = self.intensity
-            self.defaulted = True
+        self.extracted_intensity = self.intensity
+        self.defaulted = True
         if orphan:
             self.orphan = True
 
@@ -861,28 +860,35 @@ class PrecursorInformation(object):
         if precursor_scan.polarity < 0 and max(charge_range) > 0:
             charge_range = tuple(c * precursor_scan.polarity for c in charge_range)
         kwargs['charge_range'] = charge_range
-        ref_peak = precursor_scan.has_peak(self.mz, 2e-5)
+
+        # Obtain the peaks around the expected precursor peak
+        peaks = precursor_scan.peak_set.between(self.mz - 3, self.mz + 6)
+        peaks = peaks.clone()
+        peaks.reindex()
+        ref_peak = peaks.has_peak(self.mz, 2e-5)
+
         # No experimental peak found, so mark that this precursor is an orphan and default it
         if ref_peak is None:
             self.default(orphan=True)
             return self.extracted_mz, False
 
         priority_target = [ref_peak]
-        peaks = precursor_scan.peak_set.between(self.mz - 3, self.mz + 6)
-        peaks = peaks.clone()
-        peaks.reindex()
+
         result = deconvolute_peaks(peaks, priority_list=priority_target, **kwargs)
         _, priority_results = result
         peak = priority_results[0]
+
         # No deconvoluted peak found, so mark that this precursor is an orphan and default it
         if peak is None:
             self.default(orphan=True)
             return self.extracted_mz, False
+
         # A peak was found, we don't know the expected charge state, so accept it
         # and extract the updated peak fit
         elif self.charge == ChargeNotProvided:
             self.extract(peak)
             return self.extracted_mz, True
+
         # A peak was found, but it doesn't match the trusted charge state, so reject
         # it and default this precursor
         if trust_charge_state and self.charge != peak.charge:
