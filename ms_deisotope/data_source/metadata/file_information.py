@@ -875,7 +875,10 @@ class SourceFile(object):
 
     @id_format.setter
     def id_format(self, value):
-        self._id_format = id_format(str(value))
+        if value is None:
+            self._id_format = None
+        else:
+            self._id_format = id_format(str(value))
 
     @property
     def file_format(self):
@@ -883,7 +886,10 @@ class SourceFile(object):
 
     @file_format.setter
     def file_format(self, value):
-        self._file_format = file_format(str(value))
+        if value is None:
+            self._file_format = None
+        else:
+            self._file_format = file_format(str(value))
 
     def _clean_parameters(self):
         self.parameters.pop("location", None)
