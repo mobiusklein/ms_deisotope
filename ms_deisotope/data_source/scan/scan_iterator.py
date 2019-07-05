@@ -12,6 +12,10 @@ def _null_scan_cacher(scan):
     return None
 
 
+ITERATION_MODE_GROUPED = "grouped"
+ITERATION_MODE_SINGLE = "single"
+
+
 class _ScanIteratorImplBase(object):
     """Internal base class for scan iteration strategies
 
@@ -82,7 +86,7 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase):
 
     @property
     def iteration_mode(self):
-        return 'single'
+        return ITERATION_MODE_SINGLE
 
     def _make_producer(self):
         _make_scan = self.scan_packer
@@ -98,27 +102,32 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase):
 
 class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl):
     '''Mimics the interface of :class:`_GroupedScanIteratorImpl` for
-    types which only support single scans
+    scan sequences which only support single scans, or which do not
+    guarantee sequential access to precursor/product collections.
     '''
     @property
     def iteration_mode(self):
-        return 'grouped'
+        return ITERATION_MODE_GROUPED
 
     def _make_producer(self):
         generator = super(_FakeGroupedScanIteratorImpl, self)._make_producer()
         for scan in generator:
-            yield ScanBunch(None, [scan])
+            if scan.ms_level == 1:
+                yield ScanBunch(scan, [])
+            else:
+                yield ScanBunch(None, [scan])
 
 
 class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
     """Iterate over related scan bunches.
 
-    The default strategy when MS1 scans are present
+    The default strategy when MS1 scans are known to be
+    present, even if MSn scans are not.
     """
 
     @property
     def iteration_mode(self):
-        return 'grouped'
+        return ITERATION_MODE_GROUPED
 
     def _make_producer(self):
         _make_scan = self.scan_packer

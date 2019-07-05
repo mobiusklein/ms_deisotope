@@ -181,6 +181,7 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
                 sample_name = name
         else:
             path = "processed.mzML"
+            sample_name = name if name is not None else ""
         if source is not None:
             reader = MSFileLoader(source.scan_source)
             n_spectra = len(reader.index)
@@ -279,6 +280,7 @@ class MGFScanStorageHandler(ScanStorageHandlerBase):
                 sample_name = name
         else:
             path = "processed.mgf"
+            sample_name = name if name is not None else ""
         if source is not None:
             deconvoluting = source.deconvoluting
             inst = cls(path, sample_name, deconvoluted=deconvoluting)

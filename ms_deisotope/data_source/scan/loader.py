@@ -268,7 +268,9 @@ class ScanIterator(ScanDataSource):
 
         Returns
         -------
-        :class:`bool`
+        :class:`bool` or :const:`None`
+            Returns a boolean value if the presence of MS1 scans is known for certain, or :const:`None`
+            if it cannot be determined in the case of missing metadata.
         '''
         return True
 
@@ -277,7 +279,9 @@ class ScanIterator(ScanDataSource):
 
         Returns
         -------
-        :class:`bool`
+        :class:`bool` or :const:`None`
+            Returns a boolean value if the presence of MSn scans is known for certain, or :const:`None`
+            if it cannot be determined in the case of missing metadata.
         '''
         return True
 
@@ -485,7 +489,7 @@ class RandomAccessScanSource(ScanIterator):
     def _locate_ms1_scan(self, scan, search_range=150):
         i = 0
         initial_scan = scan
-        if not self.has_ms1_scans():
+        if (self.has_ms1_scans() == False):
             raise IndexError('Cannot locate MS1 Scan')
         while scan.ms_level != 1 and i < search_range:
             i += 1
@@ -512,7 +516,7 @@ class RandomAccessScanSource(ScanIterator):
         -------
         :class:`~.ScanBase` or :const:`None` if not found
         '''
-        if not self.has_ms1_scans():
+        if self.has_ms1_scans() == False:
             return None
         index = start_index - 1
         while index >= 0:
@@ -533,7 +537,7 @@ class RandomAccessScanSource(ScanIterator):
         -------
         :class:`~.ScanBase` or :const:`None` if not found
         '''
-        if not self.has_ms1_scans():
+        if self.has_ms1_scans() == False:
             return None
         index = start_index + 1
         n = len(self.index)
