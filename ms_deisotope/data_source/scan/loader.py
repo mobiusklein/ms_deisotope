@@ -489,7 +489,7 @@ class RandomAccessScanSource(ScanIterator):
     def _locate_ms1_scan(self, scan, search_range=150):
         i = 0
         initial_scan = scan
-        if (self.has_ms1_scans() == False):
+        if (self.has_ms1_scans() is False):
             raise IndexError('Cannot locate MS1 Scan')
         while scan.ms_level != 1 and i < search_range:
             i += 1
@@ -516,7 +516,7 @@ class RandomAccessScanSource(ScanIterator):
         -------
         :class:`~.ScanBase` or :const:`None` if not found
         '''
-        if self.has_ms1_scans() == False:
+        if self.has_ms1_scans() is False:
             return None
         index = start_index - 1
         while index >= 0:
@@ -537,7 +537,7 @@ class RandomAccessScanSource(ScanIterator):
         -------
         :class:`~.ScanBase` or :const:`None` if not found
         '''
-        if self.has_ms1_scans() == False:
+        if self.has_ms1_scans() is False:
             return None
         index = start_index + 1
         n = len(self.index)
@@ -623,5 +623,14 @@ class ScanFileMetadataBase(object):
         Returns
         -------
         :class:`list` of :class:`~.DataProcessingInformation`
+        '''
+        return []
+
+    def software_list(self):
+        '''Describe any software used on the data described by this instance.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Software`
         '''
         return []
