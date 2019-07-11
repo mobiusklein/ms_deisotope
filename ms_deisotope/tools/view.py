@@ -61,7 +61,7 @@ class Cursor(object):
         self.binding.set(text)
 
 
-class SpectrumViewer(ttk.Frame):
+class SpectrumViewer(object, ttk.Frame):
     def __init__(self, master):
         ttk.Frame.__init__(self, master)
         self.root = master
@@ -410,6 +410,7 @@ def main():
     except IndexError:
         fname = None
         # fname = tkfiledialog.askopenfilename()
+    print("initial value", fname)
     app.ms_file_name = fname
 
     app.mainloop()

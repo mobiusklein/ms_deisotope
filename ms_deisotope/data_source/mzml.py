@@ -589,10 +589,36 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         self.make_iterator()
 
     def _has_msn_scans(self):
-        return file_information.MS_MSn_Spectrum in self._file_description
+        has_msn_key = file_information.MS_MSn_Spectrum in self._file_description
+        has_ms1_key = file_information.MS_MS1_Spectrum in self._file_description
+
+        # we know for certain, return True
+        if has_msn_key:
+            return has_msn_key
+        # if we didn't find the key in the file description, if we didn't find
+        # the complementary key either, then the metadata may not have been populated
+        # so return indeterminate :const:`None`
+        if not has_ms1_key:
+            return None
+        # We know the metadata was populated, so the absence of the key can be trusted
+        # to mean this scan type is absent
+        return False
 
     def _has_ms1_scans(self):
-        return file_information.MS_MS1_Spectrum in self._file_description
+        has_msn_key = file_information.MS_MSn_Spectrum in self._file_description
+        has_ms1_key = file_information.MS_MS1_Spectrum in self._file_description
+
+        # we know for certain, return True
+        if has_ms1_key:
+            return has_ms1_key
+        # if we didn't find the key in the file description, if we didn't find
+        # the complementary key either, then the metadata may not have been populated
+        # so return indeterminate :const:`None`
+        if not has_msn_key:
+            return None
+        # We know the metadata was populated, so the absence of the key can be trusted
+        # to mean this scan type is absent
+        return False
 
     def has_msn_scans(self):
         return self._has_msn_scans()

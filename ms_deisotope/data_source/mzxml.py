@@ -406,7 +406,7 @@ class MzXMLLoader(MzXMLDataInterface, XMLReaderBase, _MzXMLMetadataLoader):
             raise ValueError("Must index the entire file before sequential indices may computed.")
         index = dict()
         i = 0
-        for scan, offset in self.index.items():
+        for scan, _offset in self.index.items():
             index[scan] = i
             i += 1
         self._scan_index_lookup = index

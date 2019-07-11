@@ -10,7 +10,7 @@ import ms_deisotope
 from ms_deisotope import MSFileLoader
 from ms_deisotope.data_source import RandomAccessScanSource
 
-from ms_deisotope.tools.utils import processes_option, AveragineParamType
+from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_debug_mode, register_debug_hook
 from ms_deisotope.tools.deisotoper import workflow
 
 
@@ -245,6 +245,9 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         verbose=verbose)
     consumer.start()
 
+
+if is_debug_mode():
+    register_debug_hook()
 
 if __name__ == '__main__':
     deisotope.main()

@@ -11,6 +11,10 @@ omit =
     */output/db.py
     */tools/*
     ms_deisotope/clustering/peak_clustering.py
+    ms_deisotope/qc/*
+    ms_deisotope/plot.py
+    ms_deisotope/scoring.py
+    ms_deisotope/peak_dependency_network/intervals.py
 
 [report]
 # Regexes for lines to exclude from consideration
