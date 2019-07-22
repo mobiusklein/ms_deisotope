@@ -420,6 +420,12 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             self._build_scan_type_index()
             self._get_instrument_info()
 
+    def _get_instrument_model_name(self):
+        return self._source.GetInstModel()
+
+    def _get_instrument_serial_number(self):
+        return self._source.GetInstSerialNumber()
+
     def _parse_method(self):
         return _InstrumentMethod(self._source.GetInstMethod())
 

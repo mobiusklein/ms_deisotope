@@ -175,6 +175,12 @@ def _parse_id(scan_id):
 
 
 class _RawFileMetadataLoader(ScanFileMetadataBase):
+    def _get_instrument_serial_number(self):
+        return ''
+
+    def _get_instrument_model_name(self):
+        return ''
+
     def _build_scan_type_index(self):
         self.make_iterator(grouped=False)
         index = defaultdict(int)
@@ -218,7 +224,9 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
             # Thermo::(Reader_Thermo_Detail::)createInstrumentConfigurations
             detector_group = ComponentGroup("detector", [component('inductive detector')], 3)
             configs.append(InstrumentInformation(
-                counter, [source_group, analyzer_group, detector_group]))
+                counter, [source_group, analyzer_group, detector_group],
+                self._get_instrument_model_name(), self._get_instrument_serial_number())
+            )
         self._instrument_config = {
             c.id: c for c in configs
         }

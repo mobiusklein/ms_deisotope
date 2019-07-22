@@ -518,6 +518,12 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             index[_make_id(sn)] = sn
         return index
 
+    def _get_instrument_model_name(self):
+        return self._source.GetInstrumentData().Model;
+
+    def _get_instrument_serial_number(self):
+        return self._source.GetInstrumentData().SerialNumber
+
     def _parse_method(self):
         try:
             method_count = self._source.InstrumentMethodsCount
