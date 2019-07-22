@@ -1252,15 +1252,19 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     def _make_scan(self, data):
         scan = super(ProcessedMzMLDeserializer, self)._make_scan(data)
-        if scan.precursor_information:
-            scan.precursor_information.default()
-            selected_ion_dict = self._get_selected_ion(data)
-            scan.precursor_information.orphan = selected_ion_dict.get(
-                "ms_deisotope:orphan") == "true"
-            scan.precursor_information.defaulted = selected_ion_dict.get(
-                "ms_deisotope:defaulted") == "true"
-            scan.annotations['precursor purity'] = data.get(
-                'precursor purity', 0)
+        try:
+            precursor_information = scan.precursor_information
+            if precursor_information:
+                scan.precursor_information.default()
+                selected_ion_dict = self._get_selected_ion(data)
+                scan.precursor_information.orphan = selected_ion_dict.get(
+                    "ms_deisotope:orphan") == "true"
+                scan.precursor_information.defaulted = selected_ion_dict.get(
+                    "ms_deisotope:defaulted") == "true"
+                scan.annotations['precursor purity'] = data.get(
+                    'precursor purity', 0)
+        except KeyError:
+            pass
         if "isotopic envelopes array" in data:
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
             scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
