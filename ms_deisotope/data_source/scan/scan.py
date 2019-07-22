@@ -470,10 +470,14 @@ class Scan(ScanBase):
         return self
 
     def __repr__(self):
+        try:
+            precursor_information = self.precursor_information
+        except KeyError:
+            precursor_information = None
         return "Scan(%r, index=%d, time=%0.4f, ms_level=%r%s)" % (
             self.id, (self.index if self.index is not None else -1), (
                 self.scan_time if self.scan_time is not None else -1), self.ms_level,
-            ", " + repr(self.precursor_information) if self.precursor_information else '')
+            ", " + repr(precursor_information) if precursor_information else '')
 
     # peak manipulation
 
