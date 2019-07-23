@@ -4,6 +4,7 @@ implementation.
 
 The parser is based on :mod:`pyteomics.mzml`.
 '''
+import warnings
 
 from six import string_types as basestring
 
@@ -105,7 +106,16 @@ class MzMLDataInterface(ScanDataSource):
             return np.array([]), np.array([])
 
     def _get_selected_ion(self, scan):
-        pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
+        try:
+            pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
+        except KeyError:
+            if "precursorList" in pinfo_dict:
+                if 'precursor' in pinfo_dict['precursorList']:
+                    precursor = pinfo_dict['precursorList']['precursor'][0]
+                    if 'selectedIonList' not in precursor:
+                        warnings.warn("No selected ions were found for precursor")
+                        return None
+            return None
         return pinfo_dict
 
     def _precursor_information(self, scan):
@@ -125,6 +135,8 @@ class MzMLDataInterface(ScanDataSource):
         PrecursorInformation
         """
         pinfo_dict = self._get_selected_ion(scan)
+        if pinfo_dict is None:
+            return None
         try:
             precursor_scan_id = scan["precursorList"]['precursor'][0]['spectrumRef']
         except KeyError:
