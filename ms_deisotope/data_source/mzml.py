@@ -109,9 +109,9 @@ class MzMLDataInterface(ScanDataSource):
         try:
             pinfo_dict = scan["precursorList"]['precursor'][0]["selectedIonList"]['selectedIon'][0]
         except KeyError:
-            if "precursorList" in pinfo_dict:
-                if 'precursor' in pinfo_dict['precursorList']:
-                    precursor = pinfo_dict['precursorList']['precursor'][0]
+            if "precursorList" in scan:
+                if 'precursor' in scan['precursorList']:
+                    precursor = scan['precursorList']['precursor'][0]
                     if 'selectedIonList' not in precursor:
                         warnings.warn("No selected ions were found for precursor")
                         return None
