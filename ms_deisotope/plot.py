@@ -123,7 +123,15 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
                 peak = max(scan.peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
                 local_intensity = peak.intensity
             except ValueError:
-                local_intensity = 1e3
+                if scan.deconvoluted_peak_set:
+                    try:
+                        peak = max(scan.deconvoluted_peak_set.between(lower + 1.2, upper - 1.2),
+                                   key=lambda x: x.intensity, use_mz=True)
+                        local_intensity = peak.intensity
+                    except ValueError:
+                        local_intensity = 1e3
+                else:
+                    local_intensity = 1e3
 
             # get the monoisotopic peak for the precursor, or the isolation center depending
             # upon whether the precursor has been deconvoluted and what the instrument reports
@@ -235,7 +243,15 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
         peak = max(peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
         local_intensity = peak.intensity
     except ValueError:
-        local_intensity = 1e3
+        if scan.deconvoluted_peak_set:
+            try:
+                peak = max(scan.deconvoluted_peak_set.between(lower + 1.2, upper - 1.2),
+                           key=lambda x: x.intensity, use_mz=True)
+                local_intensity = peak.intensity
+            except ValueError:
+                local_intensity = 1e3
+        else:
+            local_intensity = 1e3
 
     # get the monoisotopic peak for the precursor, or the isolation center depending
     # upon whether the precursor has been deconvoluted and what the instrument reports
