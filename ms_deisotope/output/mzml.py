@@ -704,34 +704,39 @@ class MzMLSerializer(ScanSerializerBase):
         -------
         :class:`dict`
         """
+        package = {}
         # If the scan bunch has been fully deconvoluted and it's PrecursorInformation
         # filled in, its extracted fields will be populated and should be used, otherwise
         # use the default read values.
-        extracted_neutral_mass = precursor_information.extracted_neutral_mass
-        if (extracted_neutral_mass != 0):
-            package = {
-                "mz": precursor_information.extracted_mz,
-                "intensity": precursor_information.extracted_intensity,
-                "charge": precursor_information.extracted_charge,
-                "scan_id": precursor_information.precursor_scan_id,
-                "params": [
-                    {"ms_deisotope:defaulted": precursor_information.defaulted},
-                    {"ms_deisotope:orphan": precursor_information.orphan}
-                ]
-            }
-            if precursor_information.coisolation:
-                for p in precursor_information.coisolation:
-                    package['params'].append({
-                        "name": "ms_deisotope:coisolation",
-                        "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
-                    })
+        if precursor_information is not None:
+            extracted_neutral_mass = precursor_information.extracted_neutral_mass
+            if (extracted_neutral_mass != 0):
+                package = {
+                    "mz": precursor_information.extracted_mz,
+                    "intensity": precursor_information.extracted_intensity,
+                    "charge": precursor_information.extracted_charge,
+                    "scan_id": precursor_information.precursor_scan_id,
+                    "params": [
+                        {"ms_deisotope:defaulted": precursor_information.defaulted},
+                        {"ms_deisotope:orphan": precursor_information.orphan}
+                    ]
+                }
+                if precursor_information.coisolation:
+                    for p in precursor_information.coisolation:
+                        package['params'].append({
+                            "name": "ms_deisotope:coisolation",
+                            "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
+                        })
+            else:
+                package = {
+                    "mz": precursor_information.mz,
+                    "intensity": precursor_information.intensity,
+                    "charge": precursor_information.charge,
+                    "scan_id": precursor_information.precursor_scan_id
+                }
         else:
-            package = {
-                "mz": precursor_information.mz,
-                "intensity": precursor_information.intensity,
-                "charge": precursor_information.charge,
-                "scan_id": precursor_information.precursor_scan_id
-            }
+            package['mz'] = None
+            package["charge"] = None
         if package['charge'] == ChargeNotProvided:
             package["charge"] = None
         if activation_information is not None:
@@ -825,7 +830,7 @@ class MzMLSerializer(ScanSerializerBase):
         scan_parameters, scan_window_list = self.extract_scan_event_parameters(
             scan)
 
-        if scan.precursor_information:
+        if (scan.precursor_information or scan.isolation_window or scan.activation):
             precursor_information = self._pack_precursor_information(
                 scan.precursor_information,
                 scan.activation,
@@ -1143,6 +1148,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         PrecursorInformation
         """
         precursor = super(ProcessedMzMLDeserializer, self)._precursor_information(scan)
+        if precursor is None:
+            return None
         pinfo_dict = self._get_selected_ion(scan)
         coisolation_params = pinfo_dict.get("ms_deisotope:coisolation", [])
         if not isinstance(coisolation_params, list):
