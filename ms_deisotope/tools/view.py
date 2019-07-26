@@ -29,7 +29,7 @@ except ImportError:
 import ms_deisotope
 from ms_deisotope.data_source import ScanBunch, Scan
 from ms_deisotope.peak_set import EnvelopePair
-from ms_deisotope.utils import (draw_raw, draw_peaklist)
+from ms_deisotope.plot import (draw_raw, draw_peaklist, annotate_isotopic_peaks, label_peaks)
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
 averagine_label_map = {
@@ -213,7 +213,8 @@ class SpectrumViewer(object, ttk.Frame):
             averagine=averagine_value,
             scorer=scorer,
             truncate_after=1 - 1e-4,
-            incremental_truncation=truncate_to)
+            incremental_truncation=truncate_to,
+            charge_range=(self.min_charge_state_var.get(), self.max_charge_state_var.get()))
 
     def draw_plot(self, scan=None, children=None):
         if children is None:
@@ -244,6 +245,7 @@ class SpectrumViewer(object, ttk.Frame):
              for p in scan.deconvoluted_peak_set if not (p.envelope[0].intensity > 0)],
             ax=self.axis, alpha=0.6, lw=0.5,
             color='red', linestyle='--')
+        # annotate_isotopic_peaks(scan, ax=self.axis)
         # draw isolation window and instrument reported precursor
         if children:
             ylim = scan.arrays.intensity.max()
@@ -322,6 +324,22 @@ class SpectrumViewer(object, ttk.Frame):
         self.ms1_scan_averaging = ttk.Entry(self.display_row, width=3)
         self.ms1_scan_averaging['textvariable'] = self.ms1_scan_averaging_var
         self.ms1_scan_averaging.grid(row=0, column=6, padx=(1, 3))
+
+        self.min_charge_state_var = tk.IntVar(self, value=1)
+        self.max_charge_state_var = tk.IntVar(self, value=12)
+        self.min_charge_state_label = ttk.Label(
+            self.display_row, text="Min Charge:")
+        self.min_charge_state_label.grid(row=0, column=7, padx=(5, 0))
+        self.min_charge_state = ttk.Entry(self.display_row, width=3)
+        self.min_charge_state['textvariable'] = self.min_charge_state_var
+        self.min_charge_state.grid(row=0, column=8, padx=(1, 3))
+
+        self.max_charge_state_label = ttk.Label(
+            self.display_row, text="Max Charge:")
+        self.max_charge_state_label.grid(row=0, column=9, padx=(5, 0))
+        self.max_charge_state = ttk.Entry(self.display_row, width=3)
+        self.max_charge_state['textvariable'] = self.max_charge_state_var
+        self.max_charge_state.grid(row=0, column=10, padx=(1, 3))
 
 
     def configure_treeview(self):
