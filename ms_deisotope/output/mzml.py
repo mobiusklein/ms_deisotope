@@ -750,9 +750,10 @@ class MzMLSerializer(ScanSerializerBase):
             }
         return package
 
-    def _prepare_extra_arrays(self, scan):
+    def _prepare_extra_arrays(self, scan, **kwargs):
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
         extra_arrays = []
-        if self.deconvoluted:
+        if deconvoluted:
             score_array = [
                 peak.score for peak in scan.deconvoluted_peak_set
             ]
@@ -853,7 +854,7 @@ class MzMLSerializer(ScanSerializerBase):
             polarity=polarity,
             scan_start_time=scan.scan_time,
             compression=self.compression,
-            other_arrays=self._prepare_extra_arrays(scan),
+            other_arrays=self._prepare_extra_arrays(scan, deconvoluted=deconvoluted),
             instrument_configuration_id=instrument_config_id,
             precursor_information=precursor_information,
             scan_params=scan_parameters,
@@ -864,6 +865,9 @@ class MzMLSerializer(ScanSerializerBase):
             scan.scan_time] = (descriptors["total ion current"])
         self.base_peak_chromatogram_tracker[
             scan.scan_time] = (descriptors["base peak intensity"])
+
+        if kwargs.get("_include_in_index", True) and self.indexer is not None:
+            self.indexer.add_scan(scan)
 
     def save_scan_bunch(self, bunch, **kwargs):
         """Write a :class:`~.ScanBunch` to the output document
@@ -882,10 +886,10 @@ class MzMLSerializer(ScanSerializerBase):
             The scan set to write.
         """
         if bunch.precursor is not None:
-            self.save_scan(bunch.precursor)
+            self.save_scan(bunch.precursor, _include_in_index=False, **kwargs)
 
         for prod in bunch.products:
-            self.save_scan(prod)
+            self.save_scan(prod, _include_in_index=False, **kwargs)
 
         if self.indexer is not None:
             self.indexer.add_scan_bunch(bunch)
