@@ -4,6 +4,12 @@ and provide an interface for manipulating that data.
 import warnings
 
 from collections import namedtuple
+
+try:
+    from collections import Sequence as _SequenceABC
+except ImportError:
+    from collections.abc import Sequence as _SequenceABC
+
 from numbers import Number
 
 import numpy as np
@@ -398,7 +404,18 @@ class ScanBase(object):
 
     @property
     def plot(self):
+        """A facade function for plotting different layers of signal in the scan from raw,
+        centroided, and deconvoluted representation, as well as limited precursor annotation.
+
+        Returns
+        -------
+        :class:`PlottingMethods`
+        """
         return PlottingMethods(self)
+
+    @property
+    def peaks(self):
+        return PeakSetMethods(self)
 
     def copy(self, deep=True):
         """Return a deep copy of the :class:`Scan` object
@@ -1072,8 +1089,292 @@ class BasePeakMethods(object):
         return self._peak_sequence_bp(self.scan.deconvoluted_peak_set)
 
 
+class PeakSetMethods(_SequenceABC):
+    """A facade to simplify determining how to call common peak-set methods
+    on an object like :class:`~.Scan` which may have multiple tiers of
+    representation of the peaks it contains, while still supporting directly
+    using real PeakSet-like objects.
+
+    In addition to the three common peak searching methods, this type supports
+    :class:`~.Sequence` operations.
+
+    Attributes
+    ----------
+    scan: object
+        The scan containing peaks to manipulate
+    is_scan: bool
+        Whether or not :attr:`scan` is an instance of :class:`~.ScanBase`
+    is_deconvoluted: bool
+        Whether or not :attr:`scan` has been deconvoluted.
+    is_centroided: bool
+        Whether or not :attr:`scan` has been centroided (undergone peak picking).
+    is_raw_sequence: bool
+        Whether or not :attr:`scan` is of a known type or just a sequence.
+
+    """
+    def __init__(self, scan):
+        self.scan = scan
+        self.is_scan = self._is_scan()
+        self.is_deconvoluted = self._is_deconvoluted()
+        self.is_centroided = self._is_centroided()
+        self.is_raw_sequence = self._is_raw_sequence()
+
+    def _is_scan(self):
+        return isinstance(self.scan, ScanBase)
+
+    def _is_deconvoluted(self):
+        if self.is_scan:
+            return self.scan.deconvoluted_peak_set is not None
+        else:
+            from ms_deisotope.peak_set import DeconvolutedPeakSet
+            return isinstance(self.scan, DeconvolutedPeakSet)
+
+    def deconvoluted(self):
+        """Get the deconvoluted peak set
+
+        Returns
+        -------
+        :class:`~.DeconvolutedPeakSet`
+        """
+        if self.is_deconvoluted:
+            return self._get_deconvoluted()
+        return None
+
+    def centroided(self):
+        """Get the centroided peak set
+
+        Returns
+        -------
+        :class:`~.PeakSet` or :class:`~.PeakIndex`
+        """
+        if self.is_centroided:
+            return self._get_centroided()
+
+    def raw(self):
+        """Get the raw signal, or lacking that, the simplest representation available.
+
+        Returns
+        -------
+        objects
+        """
+        if self.is_scan:
+            return self.scan.arrays
+        elif self.is_raw_sequence:
+            return self.scan
+        else:
+            return None
+
+    def _get_deconvoluted(self):
+        if self.is_scan:
+            return self.scan.deconvoluted_peak_set
+        elif self.is_deconvoluted:
+            return self.scan
+        else:
+            return None
+
+    def _is_centroided(self):
+        if self.is_scan:
+            return self.scan.peak_set is not None
+        else:
+            from ms_peak_picker import PeakIndex, PeakSet
+            return isinstance(self.scan, (PeakIndex, PeakSet))
+
+    def _get_centroided(self):
+        if self.is_scan:
+            return self.scan.peak_set
+        elif self.is_centroided:
+            return self.scan
+        else:
+            return None
+
+    def _is_raw_sequence(self):
+        if self.is_scan:
+            return False
+        else:
+            if hasattr(self.scan, 'has_peak'):
+                return False
+            return isinstance(self.scan, _SequenceABC)
+
+    def has_peak(self, m, error_tolerance=2e-5):
+        """Search the most refined representation available for a peak at the
+        given mass dimension coordinates with the specified parts-per-million
+        error tolerance.
+
+        This method invokes the underlying collection's ``has_peak`` method,
+        and may not expose all specialized parameters. If the underlying collection
+        cannot support this operation, an error will be raised.
+
+        Parameters
+        ----------
+        m : float
+            The mass dimension coordinates to search for. Depending upon if the
+            peaks have been deconvoluted, this may be m/z or neutral mass.
+        error_tolerance : float, optional
+            The parts-per-million error tolerance to apply (the default is 2e-5)
+
+        Returns
+        -------
+        :class:`~.PeakBase`
+
+        See Also
+        --------
+        :meth:`~.DeconvolutedPeakSet.has_peak`
+        :meth:`~.PeakSet.has_peak`
+
+        Raises
+        ------
+        NotImplementedError
+            When the underlying collection does not support calling ``has_peak``
+        """
+        if self.is_deconvoluted:
+            return self._get_deconvoluted().has_peak(m, error_tolerance)
+        elif self.is_centroided:
+            return self._get_centroided().has_peak(m, error_tolerance)
+        elif self.is_scan:
+            self.scan.pick_peaks()
+            self.is_centroided = self._is_centroided()
+            return self._get_centroided().has_peak(m, error_tolerance)
+        elif self.is_raw_sequence:
+            if not hasattr(self.scan, 'has_peak'):
+                raise NotImplementedError()
+            return self.scan.has_peak(m, error_tolerance)
+        else:
+            raise NotImplementedError()
+
+    def all_peaks_for(self, m, error_tolerance=2e-5):
+        """Search the most refined representation available for all peaks at the
+        given mass dimension coordinates with the specified parts-per-million
+        error tolerance.
+
+        This method invokes the underlying collection's ``all_peaks_for`` method,
+        and may not expose all specialized parameters. If the underlying collection
+        cannot support this operation, an error will be raised.
+
+        Parameters
+        ----------
+        m : float
+            The mass dimension coordinates to search for. Depending upon if the
+            peaks have been deconvoluted, this may be m/z or neutral mass.
+        error_tolerance : float, optional
+            The parts-per-million error tolerance to apply (the default is 2e-5)
+
+        Returns
+        -------
+        :class:`tuple` of :class:`~.PeakBase`
+
+        See Also
+        --------
+        :meth:`~.DeconvolutedPeakSet.all_peaks_for`
+        :meth:`~.PeakSet.all_peaks_for`
+
+        Raises
+        ------
+        NotImplementedError
+            When the underlying collection does not support calling ``all_peaks_for``
+        """
+        if self.is_deconvoluted:
+            return self._get_deconvoluted().all_peaks_for(m, error_tolerance)
+        elif self.is_centroided:
+            return self._get_centroided().all_peaks_for(m, error_tolerance)
+        elif self.is_scan:
+            self.scan.pick_peaks()
+            self.is_centroided = self._is_centroided()
+            return self._get_centroided().all_peaks_for(m, error_tolerance)
+        elif self.is_raw_sequence:
+            if not hasattr(self.scan, 'all_peaks_for'):
+                raise NotImplementedError()
+            return self.scan.all_peaks_for(m, error_tolerance)
+        else:
+            raise NotImplementedError()
+
+    def between(self, lo, hi, **kwargs):
+        """Search the most refined representation available for all peaks at the
+        between the given low and high mass dimension coordinates.
+
+        This method invokes the underlying collection's ``between`` method,
+        and may not expose all specialized parameters. If the underlying collection
+        cannot support this operation, an error will be raised.
+
+        Parameters
+        ----------
+        lo : float
+            The lower bound mass dimension coordinates to search for.
+            Depending upon if the peaks have been deconvoluted, this may be m/z
+            or neutral mass.
+        hi : float
+            The upper bound mass dimension coordinates to search for.
+            Depending upon if the peaks have been deconvoluted, this may be m/z
+            or neutral mass.
+        **kwargs
+            Forwarded to the underlying collection's ``between`` method.
+
+        Returns
+        -------
+        object
+
+        See Also
+        --------
+        :meth:`~.DeconvolutedPeakSet.between`
+        :meth:`~.PeakSet.between`
+
+        Raises
+        ------
+        NotImplementedError
+            When the underlying collection does not support calling ``between``
+        """
+        if self.is_deconvoluted:
+            return self._get_deconvoluted().between(lo, hi, **kwargs)
+        elif self.is_centroided:
+            return self._get_centroided().between(lo, hi, **kwargs)
+        elif self.is_scan:
+            self.scan.pick_peaks()
+            self.is_centroided = self._is_centroided()
+            return self._get_centroided().between(lo, hi, **kwargs)
+        elif self.is_raw_sequence:
+            if not hasattr(self.scan, 'between'):
+                raise NotImplementedError()
+            return self.scan.between(lo, hi, **kwargs)
+        else:
+            raise NotImplementedError()
+
+    def __len__(self):
+        if self.is_raw_sequence:
+            return len(self.scan)
+        elif self.is_deconvoluted:
+            return len(self._get_deconvoluted())
+        elif self.is_centroided:
+            return len(self._get_centroided())
+        elif self.is_scan:
+            self.scan.pick_peaks()
+            self.is_centroided = self._is_centroided()
+            return len(self._get_centroided())
+        elif self.is_raw_sequence:
+            return len(self.scan)
+        else:
+            raise NotImplementedError()
+
+    def __getitem__(self, i):
+        if self.is_raw_sequence:
+            return (self.scan)[i]
+        elif self.is_deconvoluted:
+            return (self._get_deconvoluted())[i]
+        elif self.is_centroided:
+            return (self._get_centroided())[i]
+        elif self.is_scan:
+            self.scan.pick_peaks()
+            self.is_centroided = self._is_centroided()
+            return (self._get_centroided())[i]
+        elif self.is_raw_sequence:
+            return self.scan[i]
+        else:
+            raise NotImplementedError()
+
+
 class PlottingMethods(object):
     """A plotting method facade that knows how to draw different facets of a spectrum.
+
+    When called directly, the behavior is the same as calling :meth:`raw`, :meth:`centroided`,
+    and meth:`deconvoluted` with a shared ``ax`` argument and common ``**kwargs``.
     """
     def __init__(self, scan):
         self.scan = scan
@@ -1100,6 +1401,10 @@ class PlottingMethods(object):
         Returns
         -------
         :class:`~.Axes`
+
+        See Also
+        --------
+        :func:`ms_deisotope.plot.draw_raw`
         """
         return self._plot_api.draw_raw(self.scan.arrays, *args, **kwargs)
 
@@ -1123,6 +1428,10 @@ class PlottingMethods(object):
         Returns
         -------
         matplotlib.Axes
+
+        See Also
+        --------
+        :func:`ms_deisotope.plot.draw_peaklist`
         """
         return self._plot_api.draw_peaklist(self.scan.peak_set, *args, **kwargs)
 
@@ -1146,10 +1455,31 @@ class PlottingMethods(object):
         Returns
         -------
         matplotlib.Axes
+
+        See Also
+        --------
+        :func:`ms_deisotope.plot.draw_peaklist`
         """
         return self._plot_api.draw_peaklist(self.scan.deconvoluted_peak_set, *args, **kwargs)
 
     def annotate_precursor(self, *args, **kwargs):
+        '''Draw a zoomed-in view of the precursor scan of :attr:`scan` surrounding the
+        area around each precursor ion that gave rise to :attr:`scan`
+        with monoisotopic peaks and isolation windows marked.
+
+        Parameters
+        ----------
+        ax: :class:`matplotlib._axes.Axes`
+            An :class:`~.Axes` object to draw the plot on
+
+        Returns
+        -------
+        :class:`matplotlib._axes.Axes`
+
+        See Also
+        --------
+        :func:`ms_deisotope.plot.annotate_scan_single`
+        '''
         pinfo = self.scan.precursor_information
         if pinfo is None:
             return
@@ -1158,6 +1488,27 @@ class PlottingMethods(object):
 
     def label_peaks(self, *args, **kwargs):
         return self._plot_api.label_peaks(self.scan, *args, **kwargs)
+
+    def annotate_isotopic_peaks(self, *args, **kwargs):
+        """Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
+        in ``scan``.
+
+        Parameters
+        ----------
+        color_cycle: :class:`~.Iterable`
+            An iterable to draw isotopic cluster colors from
+        ax: :class:`matplotlib._axes.Axes`
+            An :class:`~.Axes` object to draw the plot on
+
+        Returns
+        -------
+        :class:`matplotlib._axes.Axes`
+
+        See Also
+        --------
+        :func:`ms_deisotope.plot.annotate_isotopic_peaks`
+        """
+        return self._plot_api.annotate_isotopic_peaks(self.scan, *args, **kwargs)
 
     def _guess(self, ax=None, **kwargs):
         try:
