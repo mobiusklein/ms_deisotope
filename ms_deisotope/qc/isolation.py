@@ -1,6 +1,7 @@
 from collections import namedtuple
 
-from ms_deisotope.averagine import mass_charge_ratio
+from ms_deisotope.averagine import mass_charge_ratio, peptide as peptide_averagine
+from ms_deisotope.peak_set import Envelope, EnvelopePair
 
 
 _CoIsolation = namedtuple(
@@ -50,7 +51,14 @@ class PrecursorPurityEstimator(object):
         self.lower_extension = lower_extension
         self.default_width = default_width
 
-    def precursor_purity(self, scan, precursor_peak, isolation_window=None):
+    def _find_default_envelope_for_mz(self, scan, mz, charge):
+        tid = peptide_averagine.isotopic_cluster(mz, charge=charge)
+        eid = [scan.peak_set.has_peak(p.mz) for p in tid]
+        eid = [EnvelopePair(p.mz, p.intensity) if p is not None else EnvelopePair(tid[i].mz, 1)
+               for i, p in enumerate(eid)]
+        return Envelope(eid)
+
+    def precursor_purity(self, scan, precursor_peak, isolation_window=None, precursor_charge=None):
         """Calculate the purity of an isolation window.
 
         If the isolation window is not given, :attr:`default_width` will be used.
@@ -59,12 +67,15 @@ class PrecursorPurityEstimator(object):
         ----------
         scan : :class:`Scan`
             The precursor scan
-        precursor_peak : :class:`~.DeconvolutedPeak`
-            The precursor peak that was deconvolved, whose
-            :attr:`~.DeconvolutedPeak.envelope` contains the signal assigned
-            to this precursor ion.
+        precursor_peak : :class:`~.DeconvolutedPeak` or :class:`~.FittedPeak`
+            The precursor peak that was deconvolved, whose :attr:`~.DeconvolutedPeak.envelope`
+            contains the signal assigned to this precursor ion, or a :class:`~.FittedPeak` which
+            is believed to be the monoisotopic peak of the precursor ion. If a :class:`~.FittedPeak`
+            is used, `precursor_charge` must be provided.
         isolation_window : :class:`~.IsolationWindow`
             The isolation window to search within
+        precursor_charge: :class:`int`, optional
+            The charge state of the precursor peak, if the charge of the peak is not known
 
         Returns
         -------
@@ -82,7 +93,14 @@ class PrecursorPurityEstimator(object):
         else:
             lower_bound = isolation_window.lower_bound
             upper_bound = isolation_window.upper_bound
-        envelope = precursor_peak.envelope
+        try:
+            envelope = precursor_peak.envelope
+        except AttributeError:
+            if precursor_charge is None:
+                raise ValueError(
+                    "If `precursor_peak` has not been deconvoluted, `precursor_charge` cannot be None")
+            envelope = self._find_default_envelope_for_mz(
+                scan, precursor_peak.mz, precursor_charge)
         assigned = sum([p.intensity for p in envelope])
         total = sum(
             [p.intensity for p in peak_set.between(lower_bound, upper_bound)])

@@ -5,6 +5,8 @@ from ms_deisotope.utils import Base
 from ms_deisotope.averagine import mass_charge_ratio
 from ms_deisotope.data_source.scan.base import BasePeakMethods, PeakSetMethods
 
+from ms_deisotope.qc.isolation import PrecursorPurityEstimator
+
 
 class Target(Base):
     def __init__(self, name, neutral_mass, charge_states=None):
