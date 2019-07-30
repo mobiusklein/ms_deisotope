@@ -2,8 +2,11 @@ import operator
 import math
 from collections import namedtuple
 
+from brainpy import mass_charge_ratio, neutral_mass as calc_neutral_mass, PROTON
+
+from ms_peak_picker import simple_peak, PeakSet as FittedPeakSet
+
 from .utils import Base, ppm_error
-from brainpy import mass_charge_ratio
 
 
 class _Index(object):
@@ -465,7 +468,6 @@ try:
     from ms_deisotope._c.peak_set import (
         Envelope, _Index, DeconvolutedPeak, DeconvolutedPeakSolution,
         DeconvolutedPeakSetIndexed as DeconvolutedPeakSet
-        # DeconvolutedPeakSet
     )
 
 except ImportError:
@@ -491,3 +493,65 @@ def window_peak_set(peak_set, window_size=100.0, peaks_per_window=10):
         window_lower_bound += window_size
         window_upper_bound += window_size
     return windows
+
+
+def decharge(self, include_envelopes=True, charge_carrier=PROTON, new_charge=1):
+    """Transfomr multiply charged deconvoluted peaks into singly charged deconvoluted peaks.
+
+    This operation returns a copy of the peak set, the input peak set is unchanged.
+
+    Parameters
+    ----------
+    include_envelopes : bool, optional
+        Whether or not to charge-transform the isotopic envelope fitted in :attr:`DeconvolutedPeak.envelope`
+        (the default is True)
+    charge_carrier : float, optional
+        The charge carrier mass to use when recalculating m/z (the default is PROTON)
+    new_charge : int, optional
+        The new charge to set all peaks to, the default being +1
+
+
+    Returns
+    -------
+    DeconvolutedPeakSet
+    """
+    peaks = []
+    for peak in self:
+        mz = mass_charge_ratio(peak.neutral_mass, new_charge,
+                               charge_carrier=charge_carrier)
+        if include_envelopes:
+            envelope = Envelope(
+                [EnvelopePair(
+                    mass_charge_ratio(
+                        calc_neutral_mass(p.mz, peak.charge, charge_carrier),
+                        new_charge, charge_carrier), p.intensity)
+                 for p in peak.envelope])
+        else:
+            envelope = peak.envelope
+        new_peak = DeconvolutedPeak(
+            peak.neutral_mass, peak.intensity, new_charge, peak.signal_to_noise, None,
+            peak.full_width_at_half_max, peak.a_to_a2_ratio, peak.most_abundant_mass,
+            peak.average_mass, peak.score, envelope, mz, peak.fit, peak.chosen_for_msms,
+            peak.area)
+        peaks.append(new_peak)
+    new_peak_set = self.__class__(peaks)
+    new_peak_set.reindex()
+    return new_peak_set
+
+
+def envelopes_to_peak_set(self):
+    """Convert a set of deconvoluted peaks with fitted isotopic envelopes into a
+    set of centroids representing those envelope peaks.
+
+    Returns
+    -------
+    :class:`ms_peak_picker.PeakSet`
+    """
+    peaks = []
+    for peak in self:
+        for point in peak.envelope:
+            peaks.append(
+                simple_peak(point.mz, point.intensity, peak.full_width_at_half_max))
+    new_peak_set = FittedPeakSet(peaks)
+    new_peak_set.reindex()
+    return new_peak_set
