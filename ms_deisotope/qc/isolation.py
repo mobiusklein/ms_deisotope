@@ -238,3 +238,38 @@ def isolation_window_valid(scan):
     if mz in window:
         return True
     return False
+
+
+def is_isolation_window_empty(scan):
+    window = scan.isolation_window
+    if window is None:
+        if scan.ms_level == 1:
+            # An MS1 scan should never have an isolation window
+            return False
+        else:
+            # We have an MSn scan that does not have an isolation
+            # window, which may mean the vendor does not support
+            # retrieving this information.
+            return False
+    if window.is_empty():
+        # The vendor or the ScanDataSource populated an empty isolation
+        # window, so no analysis is possible
+        return False
+    pinfo = scan.precursor_information
+    precursor = pinfo.precursor
+    if precursor is None:
+        return False
+    try:
+        arrays = precursor.arrays
+        signal = arrays.between_mz(window.lower_bound, window.upper_bound).intensity.sum()
+        return signal <= 1
+    except AttributeError:
+        if precursor.peaks.is_centroid:
+            peaks = precursor.peak_set.between(window.lower_bound, window.upper_bound)
+            return sum([p.intensity for p in peaks]) <= 1
+        elif precursor.peaks.is_deconvoluted:
+            peaks = precursor.deconvoluted_peak_set.between(
+                window.lower_bound, window.upper_bound, use_mz=True)
+            return sum([p.intensity for p in peaks]) <= 1
+        else:
+            return False

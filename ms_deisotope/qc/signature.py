@@ -1,3 +1,6 @@
+'''
+'''
+
 from collections import namedtuple
 from numbers import Number
 
@@ -5,10 +8,19 @@ from ms_deisotope.utils import Base
 from ms_deisotope.averagine import mass_charge_ratio
 from ms_deisotope.data_source.scan.base import BasePeakMethods, PeakSetMethods
 
-from ms_deisotope.qc.isolation import PrecursorPurityEstimator
-
-
 class Target(Base):
+    """An analyte with known mass and expected charge states
+
+    Attributes
+    ----------
+    name: str
+        The name of the analyte
+    neutral_mass: float
+        The known neutral mass of the analyte
+    charge_states: list
+        The list of expected charge states, defaults to ``[1]``
+
+    """
     def __init__(self, name, neutral_mass, charge_states=None):
         if isinstance(charge_states, Number):
             charge_states = [charge_states]
@@ -19,6 +31,13 @@ class Target(Base):
         self.charge_states = charge_states
 
     def iter_mz(self):
+        """Iterate over theoretical m/z coordinates for this analyte
+
+        Yields
+        ------
+        float:
+            The theoretical m/z for a charge state
+        """
         for charge in self.charge_states:
             yield mass_charge_ratio(self.neutral_mass, charge)
 
@@ -135,7 +154,8 @@ TMT10_INFO = [
 
 
 class SignatureIonExtractor(SignatureIonDetector):
-
+    '''Extracts signal for a set of target ions from each scan.
+    '''
     def extract(self, peak_list, error_tolerance=2e-5):
         result = {}
         peak_list = PeakSetMethods(peak_list)

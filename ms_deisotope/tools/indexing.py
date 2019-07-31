@@ -16,7 +16,7 @@ from ms_deisotope.feature_map import scan_interval_tree
 from ms_deisotope.clustering.scan_clustering import (
     iterative_clustering, ScanClusterWriter, ScanClusterReader, _DynamicallyLoadingResolver)
 
-from ms_deisotope.qc.isolation import isolation_window_valid
+from ms_deisotope.qc.isolation import isolation_window_valid, is_isolation_window_empty
 
 from ms_deisotope.data_source import (
     _compression, ScanProxyContext, MSFileLoader)
@@ -111,13 +111,27 @@ def describe(path, diagnostics=False):
     if diagnostics:
         reader.reset()
         scan_ids_with_invalid_isolation_window = []
-
+        scan_ids_with_empty_isolation_window = []
+        n_ms1 = 0
+        n_msn = 0
         for precursor, products in reader:
+            if precursor is not None:
+                n_ms1 += 1
             for product in products:
+                n_msn += 1
                 if not isolation_window_valid(product):
                     scan_ids_with_invalid_isolation_window.append((precursor.id, product.id))
+                if is_isolation_window_empty(product):
+                    scan_ids_with_empty_isolation_window.append(
+                        (precursor.id, product.id))
+
+        click.echo("MS1 Spectra: %d" % (n_ms1, ))
+        click.echo("MSn Spectra: %d" % (n_msn, ))
         click.echo("Invalid Isolation Windows: %d" % (
             len(scan_ids_with_invalid_isolation_window), ))
+        click.echo("Empty Isolation Windows: %d" % (
+            len(scan_ids_with_empty_isolation_window), ))
+
 
 
 
