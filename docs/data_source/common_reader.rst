@@ -10,6 +10,7 @@ Common MS File Model
     mass spectrometry data files.
 
 
+
 .. automodule:: ms_deisotope.data_source.common
 
     Abstract Base Classes
@@ -32,3 +33,22 @@ Common MS File Model
 
     .. autoclass:: RandomAccessScanSource
         :members:
+
+
+    Iteratation Strategies
+    ======================
+
+    :class:`ScanIterator` instances may iterate over scans in :term:`single` or :term:`grouped` strategies.
+    :term:`single` mode produces a single instance of :class:`~.Scan` on each iteration, while :term:`grouped`
+    produces a :class:`~.ScanBunch` containing an MS1 :class:`~.Scan` (may be :const:`None`) and 0 or more
+    related MSn :class:`~.Scan` instances which are derived from the MS1 :class:`~.Scan`. The default
+    mode for a given :class:`ScanIterator` depends upon both the file format and available metadata.
+
+    You can force the iteration strategy to be :term:`grouped` when calling :meth:`ScanIterator.make_iterator`
+    by passing ``grouped=True``, and :term:`single` by passing ``grouped=False``. The same applies to
+    :meth:`RandomAccessScanSource.start_from_scan`. When :term:`grouped` mode is requested but cannot be
+    fulfilled, :class:`~.ScanBunch` objects are still produced, but the :attr:`~.ScanBunch.precursor` may be
+    :const:`None` or :attr:`~.ScanBunch.products` may be empty.
+
+    The iteration mode of a :class:`ScanIterator` is always available through it's :attr:`iteration_mode`
+    attribute, which should have the value ``"single"`` or ``"grouped"`` accordingy.
