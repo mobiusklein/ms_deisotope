@@ -1,0 +1,455 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>MGF &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Formats" href="formats.html" />
+    <link rel="prev" title="mzXML" href="mzxml.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>MGF</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="mzxml.html">mzXML</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="formats.html">Formats</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="module-ms_deisotope.data_source.mgf">
+<span id="mgf"></span><h1>MGF<a class="headerlink" href="#module-ms_deisotope.data_source.mgf" title="Permalink to this headline">¶</a></h1>
+<p>MGF is a simple human-readable format for MS/MS data. It
+allows storing MS/MS peak lists and exprimental parameters.</p>
+<p>This module provides <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoader" title="ms_deisotope.data_source.mgf.MGFLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MGFLoader</span></code></a>, a <a class="reference internal" href="common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource" title="ms_deisotope.data_source.common.RandomAccessScanSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomAccessScanSource</span></code></a>
+implementation.</p>
+<p>The parser is based on <code class="xref py py-mod docutils literal notranslate"><span class="pre">pyteomics.mgf</span></code>.</p>
+<dl class="class">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.mgf.</code><code class="descname">MGFLoader</code><span class="sig-paren">(</span><em>source_file</em>, <em>encoding='utf-8'</em>, <em>use_index=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads scans from MASCOT Generic File (MGF) Format files. Provides both iterative
+and random access.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If the file is not sorted by retention time, <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time" title="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_time()</span></code></a> and any
+other time-based accessors will fail.</p>
+</div>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.source_file">
+<code class="descname">source_file</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to file to read from.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.source">
+<code class="descname">source</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Underlying scan data source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">pyteomics.mgf.MGFBase</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.header">
+<code class="descname">header</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Any top-of-the-file parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the underlying reader.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.data_processing">
+<code class="descname">data_processing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.data_processing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describe any preprocessing steps applied to the data described by this
+instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.file_description">
+<code class="descname">file_description</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.file_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describe the file and its components, as well
+as any content types it has.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileInformation</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.find_next_ms1">
+<code class="descname">find_next_ms1</code><span class="sig-paren">(</span><em>start_index</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.find_next_ms1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Locate the MS1 scan following <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating forwards through
+scans until either the last scan is reached or an MS1 scan is found.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code> if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.find_previous_ms1">
+<code class="descname">find_previous_ms1</code><span class="sig-paren">(</span><em>start_index</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.find_previous_ms1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Locate the MS1 scan preceding <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating backwards through
+scans until either the first scan is reached or an MS1 scan is found.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code> if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id">
+<code class="descname">get_scan_by_id</code><span class="sig-paren">(</span><em>scan_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the scan object for the specified scan id.</p>
+<p>If the scan object is still bound and in memory somewhere,
+a reference to that same object will be returned. Otherwise,
+a new object will be created.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scan_id</strong> (<em>str</em>) – The unique scan id value to be retrieved</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_index">
+<code class="descname">get_scan_by_index</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the scan object for the specified scan index.</p>
+<p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id" title="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
+use its cache.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> (<em>int</em>) – The index to get the scan for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time">
+<code class="descname">get_scan_by_time</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the scan object for the specified scan time.</p>
+<p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id" title="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
+use its cache.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time</strong> (<em>float</em>) – The time to get the nearest scan from</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan">Scan</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.has_ms1_scans">
+<code class="descname">has_ms1_scans</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.has_ms1_scans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_ms1_scans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if this <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code> contains MS1 spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns a boolean value if the presence of MS1 scans is known for certain, or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code>
+if it cannot be determined in the case of missing metadata.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.has_msn_scans">
+<code class="descname">has_msn_scans</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.has_msn_scans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_msn_scans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if this <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code> contains MSn spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns a boolean value if the presence of MSn scans is known for certain, or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code>
+if it cannot be determined in the case of missing metadata.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">header</code></dt>
+<dd><p>Any top-of-the-file parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.index">
+<code class="descname">index</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>The byte offset index used to achieve fast random access.</p>
+<p>Maps <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> IDs to the byte offsets, implying
+the order the scans reside in the file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyteomics.xml.ByteEncodingOrderedDict</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.initialize_scan_cache">
+<code class="descname">initialize_scan_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.initialize_scan_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a cache which keeps track of which <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>
+objects are still in memory using a <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code>.</p>
+<p>When a scan is requested, if the scan object is found in the cahce, the
+existing object is returned rather than re-read from disk.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.instrument_configuration">
+<code class="descname">instrument_configuration</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.instrument_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describe the different instrument components and configurations used
+to acquire scans in this run.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.make_iterator">
+<code class="descname">make_iterator</code><span class="sig-paren">(</span><em>iterator=None</em>, <em>grouped=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.make_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.make_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure the iterator’s behavior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>iterator</strong> (<em>Iterator</em><em>, </em><em>optional</em>) – The iterator to manipulate. If missing, the default
+iterator will be used.</li>
+<li><strong>grouped</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the iterator should be grouped and produce <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> objects
+or single <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>. Defaults to False</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advance the iterator, fetching the next <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>
+depending upon iteration strategy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the object, clearing out any existing
+state.</p>
+<p>This resets the underlying file iterator, then
+calls <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoader.make_iterator" title="ms_deisotope.data_source.mgf.MGFLoader.make_iterator"><code class="xref py py-meth docutils literal notranslate"><span class="pre">make_iterator()</span></code></a>, and clears the scan
+cache.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.scan_cache">
+<code class="descname">scan_cache</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.scan_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code> mapping used to retrieve
+scans from memory if available before re-reading them from disk.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.software_list">
+<code class="descname">software_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.software_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describe any software used on the data described by this instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">source</code></dt>
+<dd><p>The file parser that this reader consumes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.mgf.MGFLoader.start_from_scan">
+<code class="descname">start_from_scan</code><span class="sig-paren">(</span><em>scan_id=None</em>, <em>rt=None</em>, <em>index=None</em>, <em>require_ms1=True</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.start_from_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.start_from_scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruct an iterator which will start from the scan matching one of <code class="docutils literal notranslate"><span class="pre">scan_id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">rt</span></code>, or <code class="docutils literal notranslate"><span class="pre">index</span></code>. Only one may be provided.</p>
+<p>After invoking this method, the iterator this object wraps will be changed to begin
+yielding scan bunchs (or single scans if <code class="docutils literal notranslate"><span class="pre">grouped</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code>).</p>
+<p>This method will trigger several random-access operations, making it prohibitively
+expensive for normally compressed files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>scan_id</strong> (<em>str</em><em>, </em><em>optional</em>) – Start from the scan with the specified id.</li>
+<li><strong>rt</strong> (<em>float</em><em>, </em><em>optional</em>) – Start from the scan nearest to specified time (in minutes) in the run. If no
+exact match is found, the nearest scan time will be found, rounded up.</li>
+<li><strong>index</strong> (<em>int</em><em>, </em><em>optional</em>) – Start from the scan with the specified index.</li>
+<li><strong>require_ms1</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the iterator must start from an MS1 scan. True by default.</li>
+<li><strong>grouped</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether the iterator should yield scan bunches or single scans. True by default.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="mzxml.html">mzXML</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="formats.html">Formats</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

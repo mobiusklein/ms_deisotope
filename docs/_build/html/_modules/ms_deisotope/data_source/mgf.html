@@ -1,0 +1,577 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.data_source.mgf &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.data_source.mgf</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.data_source.mgf</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;MGF is a simple human-readable format for MS/MS data. It</span>
+<span class="sd">allows storing MS/MS peak lists and exprimental parameters.</span>
+
+<span class="sd">This module provides :class:`MGFLoader`, a :class:`~.RandomAccessScanSource`</span>
+<span class="sd">implementation.</span>
+
+<span class="sd">The parser is based on :mod:`pyteomics.mgf`.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">pyteomics</span> <span class="k">import</span> <span class="n">mgf</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+
+<span class="kn">from</span> <span class="nn">.scan</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">ScanFileMetadataBase</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">,</span> <span class="n">ScanDataSource</span><span class="p">,</span>
+    <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">_FakeGroupedScanIteratorImpl</span><span class="p">,</span>
+    <span class="n">ChargeNotProvided</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.metadata.file_information</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">FileInformation</span><span class="p">,</span> <span class="n">MS_MSn_Spectrum</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_MGFParser</span><span class="p">(</span><span class="n">mgf</span><span class="o">.</span><span class="n">IndexedMGF</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">parse_charge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">charge_text</span><span class="p">,</span> <span class="n">list_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Pyteomics _parse_charge is very general-purpose, and</span>
+<span class="sd">        can&#39;t be sped up, so we specialize it here.&#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">list_only</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">charge_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_charge</span><span class="p">,</span> <span class="n">charge_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;-&#39;</span> <span class="ow">in</span> <span class="n">charge_text</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">charge_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">raise</span>
+
+
+<span class="k">class</span> <span class="nc">_MGFMetadata</span><span class="p">(</span><span class="n">ScanFileMetadataBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Objects implementing this interface can describe the original source</span>
+<span class="sd">    files, instrument configuration, and data processing parameters used to</span>
+<span class="sd">    create the current spectral data file.</span>
+
+<span class="sd">    Patterned after the provenance features of mzML that could also be mapped</span>
+<span class="sd">    onto mzXML and other complete vendor readers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">file_description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Describe the file and its components, as well</span>
+<span class="sd">        as any content types it has.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`~.FileInformation`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">finfo</span> <span class="o">=</span> <span class="n">FileInformation</span><span class="p">()</span>
+        <span class="n">finfo</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="s2">&quot;centroid spectrum&quot;</span><span class="p">)</span>
+        <span class="n">finfo</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="n">MS_MSn_Spectrum</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">finfo</span><span class="o">.</span><span class="n">add_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
+            <span class="n">finfo</span><span class="o">.</span><span class="n">add_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">finfo</span>
+
+    <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Describe the different instrument components and configurations used</span>
+<span class="sd">        to acquire scans in this run.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`list` of :class:`~.InstrumentInformation`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MGFMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">data_processing</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Describe any preprocessing steps applied to the data described by this</span>
+<span class="sd">        instance.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`list` of :class:`~.DataProcessingInformation`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MGFMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">data_processing</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">MGFInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Provides a basic set of widely used MASCOT Generic File (MGF)</span>
+<span class="sd">    data accessor mechanisms. Because MGF files lack any form of standardization,</span>
+<span class="sd">    no strong guarantees of correctness can be made.</span>
+
+<span class="sd">    This dialect does not know how to use the charge column of the peak data</span>
+<span class="sd">    section, see :class:`~.ProcessedMGFLoader`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">_scan_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns raw data arrays for m/z and intensity</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan : Mapping</span>
+<span class="sd">            The underlying scan information storage,</span>
+<span class="sd">            usually a `dict`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mz: np.array</span>
+<span class="sd">            An array of m/z values for this scan</span>
+<span class="sd">        intensity: np.array</span>
+<span class="sd">            An array of intensity values for this scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">],</span> <span class="n">scan</span><span class="p">[</span><span class="s2">&quot;intensity array&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+    <span class="k">def</span> <span class="nf">_ms_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">_scan_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a verbose name for this scan, if one</span>
+<span class="sd">        were stored in the file. Usually includes both the</span>
+<span class="sd">        scan&#39;s id string, as well as information about the</span>
+<span class="sd">        original file and format.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan : Mapping</span>
+<span class="sd">            The underlying scan information storage,</span>
+<span class="sd">            usually a `dict`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_scan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the scan&#39;s id string, a unique</span>
+<span class="sd">        identifier for this scan in the context of</span>
+<span class="sd">        the data file it is recordered in</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan : Mapping</span>
+<span class="sd">            The underlying scan information storage,</span>
+<span class="sd">            usually a `dict`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s2">&quot;title&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_scan_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">scan</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;rtinseconds&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="mf">60.0</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_is_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;pepmass&#39;</span><span class="p">]</span>
+        <span class="n">charge</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;charge&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">ChargeNotProvided</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">pinfo</span> <span class="o">=</span> <span class="n">PrecursorInformation</span><span class="p">(</span>
+            <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">product_scan_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">scan</span><span class="p">),</span>
+            <span class="n">defaulted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">orphan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pinfo</span>
+
+    <span class="k">def</span> <span class="nf">_polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">pinfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_scan_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the base 0 offset from the start</span>
+<span class="sd">        of the data file in number of scans to reach</span>
+<span class="sd">        this scan.</span>
+
+<span class="sd">        If the original format does not natively include</span>
+<span class="sd">        an index value, this value may be computed from</span>
+<span class="sd">        the byte offset index.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan : Mapping</span>
+<span class="sd">            The underlying scan information storage,</span>
+<span class="sd">            usually a `dict`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title_to_index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_title</span><span class="p">(</span><span class="n">scan</span><span class="p">)]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title_to_index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_title</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">annots</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">scan</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;pepmass&quot;</span><span class="p">,</span> <span class="s2">&quot;charge&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;rtinseconds&quot;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">annots</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">annots</span>
+
+
+<div class="viewcode-block" id="MGFLoader"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader">[docs]</a><span class="k">class</span> <span class="nc">MGFLoader</span><span class="p">(</span><span class="n">MGFInterface</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">,</span> <span class="n">_MGFMetadata</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads scans from MASCOT Generic File (MGF) Format files. Provides both iterative</span>
+<span class="sd">    and random access.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        If the file is not sorted by retention time, :meth:`get_scan_by_time` and any</span>
+<span class="sd">        other time-based accessors will fail.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source_file: str</span>
+<span class="sd">        Path to file to read from.</span>
+<span class="sd">    source: pyteomics.mgf.MGFBase</span>
+<span class="sd">        Underlying scan data source</span>
+<span class="sd">    header: dict</span>
+<span class="sd">        Any top-of-the-file parameters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">encoding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span> <span class="o">=</span> <span class="n">use_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_parser</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_scan_cache</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_title_to_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_index_lookup</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_index_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">title_to_index</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+            <span class="n">title_to_index</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">return</span> <span class="n">title_to_index</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Any top-of-the-file parameters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">header</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">,</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="MGFLoader.has_msn_scans"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.has_msn_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_msn_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="MGFLoader.has_ms1_scans"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.has_ms1_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="k">def</span> <span class="nf">_create_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_MGFParser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mgf</span><span class="o">.</span><span class="n">MGF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MGFLoader.get_scan_by_id"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_scan_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan id.</span>
+
+<span class="sd">        If the scan object is still bound and in memory somewhere,</span>
+<span class="sd">        a reference to that same object will be returned. Otherwise,</span>
+<span class="sd">        a new object will be created.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan_id : str</span>
+<span class="sd">            The unique scan id value to be retrieved</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_cache</span><span class="p">[</span><span class="n">scan_id</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">get_spectrum</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">get_spectrum</span><span class="p">(</span><span class="n">scan_id</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_cache</span><span class="p">[</span><span class="n">scan_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span>
+        <span class="k">return</span> <span class="n">scan</span></div>
+
+<div class="viewcode-block" id="MGFLoader.get_scan_by_index"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_index">[docs]</a>    <span class="k">def</span> <span class="nf">get_scan_by_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan index.</span>
+
+<span class="sd">        This internally calls :meth:`get_scan_by_id` which will</span>
+<span class="sd">        use its cache.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index: int</span>
+<span class="sd">            The index to get the scan for</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;This method requires the index. Please pass `use_index=True` during initialization&quot;</span><span class="p">)</span>
+        <span class="n">id_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">from_index</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">id_str</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MGFLoader.get_scan_by_time"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_scan_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan time.</span>
+
+<span class="sd">        This internally calls :meth:`get_scan_by_id` which will</span>
+<span class="sd">        use its cache.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            The time to get the nearest scan from</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;This method requires the index. Please pass `use_index=True` during initialization&quot;</span><span class="p">)</span>
+
+        <span class="n">scan_ids</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">scan_ids</span><span class="p">)</span>
+
+        <span class="n">best_match</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">best_error</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">time</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">scan_ids</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">while</span> <span class="n">hi</span> <span class="o">!=</span> <span class="n">lo</span><span class="p">:</span>
+            <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">hi</span> <span class="o">+</span> <span class="n">lo</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">sid</span> <span class="o">=</span> <span class="n">scan_ids</span><span class="p">[</span><span class="n">mid</span><span class="p">]</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">sid</span><span class="p">)</span>
+            <span class="n">scan_time</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_time</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">scan_time</span> <span class="o">-</span> <span class="n">time</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">err</span> <span class="o">&lt;</span> <span class="n">best_error</span><span class="p">:</span>
+                <span class="n">best_error</span> <span class="o">=</span> <span class="n">err</span>
+                <span class="n">best_match</span> <span class="o">=</span> <span class="n">scan</span>
+            <span class="k">if</span> <span class="n">scan_time</span> <span class="o">==</span> <span class="n">time</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">scan</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">best_match</span>
+            <span class="k">elif</span> <span class="n">scan_time</span> <span class="o">&gt;</span> <span class="n">time</span><span class="p">:</span>
+                <span class="n">hi</span> <span class="o">=</span> <span class="n">mid</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lo</span> <span class="o">=</span> <span class="n">mid</span>
+        <span class="k">if</span> <span class="n">hi</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;This method requires the index. Please pass `use_index=True` during initialization&quot;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">source</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The file parser that this reader consumes.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The byte offset index used to achieve fast random access.</span>
+
+<span class="sd">        Maps :class:`~.ScanBase` IDs to the byte offsets, implying</span>
+<span class="sd">        the order the scans reside in the file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`pyteomics.xml.ByteEncodingOrderedDict`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MGFLoader.close"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Close the underlying reader.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MGFLoader.reset"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the object, clearing out any existing</span>
+<span class="sd">        state.</span>
+
+<span class="sd">        This resets the underlying file iterator, then</span>
+<span class="sd">        calls :meth:`make_iterator`, and clears the scan</span>
+<span class="sd">        cache.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_scan_cache</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_make_default_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MGFLoader.make_iterator"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.make_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">make_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Configure the iterator&#39;s behavior.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        iterator : Iterator, optional</span>
+<span class="sd">            The iterator to manipulate. If missing, the default</span>
+<span class="sd">            iterator will be used.</span>
+<span class="sd">        grouped : bool, optional</span>
+<span class="sd">            Whether the iterator should be grouped and produce :class:`.ScanBunch` objects</span>
+<span class="sd">            or single :class:`.Scan`. Defaults to False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">MGFLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">grouped</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_yield_from_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_source</span><span class="p">,</span> <span class="n">start</span><span class="p">):</span>
+        <span class="n">offset_provider</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">offset_provider</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot start from object </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">start</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">[</span><span class="n">start</span><span class="p">:]:</span>
+            <span class="k">yield</span> <span class="n">scan_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MGFLoader.start_from_scan"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.start_from_scan">[docs]</a>    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">require_ms1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Reconstruct an iterator which will start from the scan matching one of ``scan_id``,</span>
+<span class="sd">        ``rt``, or ``index``. Only one may be provided.</span>
+
+<span class="sd">        After invoking this method, the iterator this object wraps will be changed to begin</span>
+<span class="sd">        yielding scan bunchs (or single scans if ``grouped`` is ``False``).</span>
+
+<span class="sd">        This method will trigger several random-access operations, making it prohibitively</span>
+<span class="sd">        expensive for normally compressed files.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        scan_id: str, optional</span>
+<span class="sd">            Start from the scan with the specified id.</span>
+<span class="sd">        rt: float, optional</span>
+<span class="sd">            Start from the scan nearest to specified time (in minutes) in the run. If no</span>
+<span class="sd">            exact match is found, the nearest scan time will be found, rounded up.</span>
+<span class="sd">        index: int, optional</span>
+<span class="sd">            Start from the scan with the specified index.</span>
+<span class="sd">        require_ms1: bool, optional</span>
+<span class="sd">            Whether the iterator must start from an MS1 scan. True by default.</span>
+<span class="sd">        grouped: bool, optional</span>
+<span class="sd">            whether the iterator should yield scan bunches or single scans. True by default.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">scan_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_time</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+                        <span class="n">index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide a scan locator, one of (scan_id, rt, index)&quot;</span><span class="p">)</span>
+
+            <span class="n">scan_id</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span>
+
+        <span class="c1"># MGF files do not contain MS1 scans</span>
+        <span class="k">if</span> <span class="n">require_ms1</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yield_from_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="n">grouped</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="nf">_scan_group_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">iterator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_default_iterator</span><span class="p">()</span>
+
+        <span class="n">impl</span> <span class="o">=</span> <span class="n">_FakeGroupedScanIteratorImpl</span><span class="p">(</span>
+            <span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_scan</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">impl</span>
+
+<div class="viewcode-block" id="MGFLoader.next"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_producer</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

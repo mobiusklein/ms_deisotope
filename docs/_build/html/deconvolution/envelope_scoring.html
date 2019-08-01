@@ -1,0 +1,402 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Envelope Scoring &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Deconvolution Pipeline" href="pipeline.html" />
+    <link rel="prev" title="Isotopic Pattern Generation" href="averagine.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Envelope Scoring</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="averagine.html">Isotopic Pattern Generation</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="pipeline.html">Deconvolution Pipeline</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="envelope-scoring">
+<h1>Envelope Scoring<a class="headerlink" href="#envelope-scoring" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-ms_deisotope.scoring" title="ms_deisotope.scoring"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.scoring</span></code></a> module contains classes for evaluating the goodness-of-fit
+of isotopic pattern matches. It is used by deconvoluters defined in <a class="reference internal" href="deconvolution.html#module-ms_deisotope.deconvolution" title="ms_deisotope.deconvolution"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.deconvolution</span></code></a>
+to decide which pattern fit is best. Each instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitterBase</span></code> takes a score
+threshold, a <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, and additional configuration arguments. The score threshold is used
+to filter out noise matches.</p>
+<p>When the isotopic patterns of the target data are of high quality and intensity can be used
+to effectively filter out noise peaks, <a class="reference internal" href="#ms_deisotope.scoring.PenalizedMSDeconVFitter" title="ms_deisotope.scoring.PenalizedMSDeconVFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">PenalizedMSDeconVFitter</span></code></a> often works best. If
+the isotopic patterns are not high quality, but intensity can be used to discriminate noise,
+<a class="reference internal" href="#ms_deisotope.scoring.MSDeconVFitter" title="ms_deisotope.scoring.MSDeconVFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">MSDeconVFitter</span></code></a> is more forgiving. If intensity is not important, one of either
+<a class="reference internal" href="#ms_deisotope.scoring.ScaledGTestFitter" title="ms_deisotope.scoring.ScaledGTestFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScaledGTestFitter</span></code></a> or <a class="reference internal" href="#ms_deisotope.scoring.LeastSquaresFitter" title="ms_deisotope.scoring.LeastSquaresFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">LeastSquaresFitter</span></code></a> may work.</p>
+<span class="target" id="module-ms_deisotope.scoring"></span><div class="section" id="scoring-functions">
+<h2>Scoring Functions<a class="headerlink" href="#scoring-functions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.scoring.IsotopicFitterBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">IsotopicFitterBase</code><span class="sig-paren">(</span><em>score_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A base class for Isotopic Pattern Fitters, objects
+which given a set of experimental peaks and a set of matching
+theoretical peaks, returns a fit score describing how good the
+match is.</p>
+<p>An IsotopicFitter may be optimal when the score is small (minimizing)
+or when the score is large (maximizing), and the appropriate
+<a class="reference internal" href="#ms_deisotope.scoring.FitSelectorBase" title="ms_deisotope.scoring.FitSelectorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FitSelectorBase</span></code></a> type will be used for <code class="xref py py-attr docutils literal notranslate"><span class="pre">select</span></code>. This
+will also be reflected by <a class="reference internal" href="#ms_deisotope.scoring.IsotopicFitterBase.is_maximizing" title="ms_deisotope.scoring.IsotopicFitterBase.is_maximizing"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_maximizing()</span></code></a>.</p>
+<dl class="method">
+<dt id="ms_deisotope.scoring.IsotopicFitterBase.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes <a class="reference internal" href="#ms_deisotope.scoring.IsotopicFitterBase.evaluate" title="ms_deisotope.scoring.IsotopicFitterBase.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>*args</strong> – Forwarded to <a class="reference internal" href="#ms_deisotope.scoring.IsotopicFitterBase.evaluate" title="ms_deisotope.scoring.IsotopicFitterBase.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code></a></li>
+<li><strong>**kwargs</strong> – Forwarded to <a class="reference internal" href="#ms_deisotope.scoring.IsotopicFitterBase.evaluate" title="ms_deisotope.scoring.IsotopicFitterBase.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code></a></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The score</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.scoring.IsotopicFitterBase.evaluate">
+<code class="descname">evaluate</code><span class="sig-paren">(</span><em>peaklist</em>, <em>observed</em>, <em>expected</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a pair of peak lists for goodness-of-fit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code>) – The full set of all experimental peaks</li>
+<li><strong>observed</strong> (<em>list</em>) – The list of experimental peaks that are part of this fit</li>
+<li><strong>expected</strong> (<em>list</em>) – The list of theoretical peaks that are part of this fit</li>
+<li><strong>**kwargs</strong> – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The score</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.scoring.IsotopicFitterBase.is_maximizing">
+<code class="descname">is_maximizing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.is_maximizing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.is_maximizing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not this fitter’s score gets better as it grows</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Whether or not this fitter is a maximizing fitter</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.scoring.IsotopicFitterBase.reject">
+<code class="descname">reject</code><span class="sig-paren">(</span><em>fit</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.reject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.reject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether this fit is too poor to be used</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fit</strong> (<a class="reference internal" href="#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a>) – The fit to test</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div></blockquote>
+<div class="section" id="minimizing-fitters">
+<h3>Minimizing Fitters<a class="headerlink" href="#minimizing-fitters" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.scoring.GTestFitter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">GTestFitter</code><span class="sig-paren">(</span><em>score_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#GTestFitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.GTestFitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate an isotopic fit using a G-test</p>
+<div class="math notranslate nohighlight">
+\[G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(o_i\)</span> is the intensity of the ith experimental peak
+and <span class="math notranslate nohighlight">\(e_i\)</span> is the intensity of the ith theoretical peak.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.scoring.ScaledGTestFitter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">ScaledGTestFitter</code><a class="headerlink" href="#ms_deisotope.scoring.ScaledGTestFitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate an isotopic fit using a G-test after normalizing the
+list of experimental and theoretical peaks to both sum to 1.</p>
+<div class="math notranslate nohighlight">
+\[G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}\]</div>
+<p>where <span class="math notranslate nohighlight">\(o_i\)</span> is the intensity of the ith experimental peak
+and <span class="math notranslate nohighlight">\(e_i\)</span> is the intensity of the ith theoretical peak.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.scoring.LeastSquaresFitter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">LeastSquaresFitter</code><a class="headerlink" href="#ms_deisotope.scoring.LeastSquaresFitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate an isotopic fit using least squares coefficient of
+determination <span class="math notranslate nohighlight">\(R^2\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}{\hat e_i} &amp;= e_i / max(e)\\{\hat t_i} &amp;= t_i / max(t)\\{\hat t} &amp;= \sum_i^n {\hat t_i}^2\\R^2 &amp;= \frac{1}{{\hat t}}\sum_i^n ({\hat e_i} - {\hat t_i})^2\end{aligned}\end{align} \]</div>
+<p>where <span class="math notranslate nohighlight">\(e_i\)</span> is the ith experimental peak intensity and <span class="math notranslate nohighlight">\(t_i\)</span>
+is the ith theoretical peak intensity</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="maximizing-fitters">
+<h3>Maximizing Fitters<a class="headerlink" href="#maximizing-fitters" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.scoring.MSDeconVFitter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">MSDeconVFitter</code><span class="sig-paren">(</span><em>minimum_score=10</em>, <em>mass_error_tolerance=0.02</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.MSDeconVFitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>An implementation of the scoring function used in <cite>MSDeconV</cite></p>
+<p class="rubric">References</p>
+<p>Liu, X., Inbar, Y., Dorrestein, P. C., Wynne, C., Edwards, N., Souda, P., …
+Pevzner, P. A. (2010). Deconvolution and database search of complex tandem
+mass spectra of intact proteins: a combinatorial approach. Molecular &amp; Cellular
+Proteomics : MCP, 9(12), 2772–2782. <a class="reference external" href="https://doi.org/10.1074/mcp.M110.002766">https://doi.org/10.1074/mcp.M110.002766</a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.scoring.PenalizedMSDeconVFitter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">PenalizedMSDeconVFitter</code><span class="sig-paren">(</span><em>minimum_score=10</em>, <em>penalty_factor=1</em>, <em>mass_error_tolerance=0.02</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.PenalizedMSDeconVFitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>An Isotopic Fitter which uses the <a class="reference internal" href="#ms_deisotope.scoring.MSDeconVFitter" title="ms_deisotope.scoring.MSDeconVFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">MSDeconVFitter</span></code></a> score
+weighted by 1 - <code class="xref py py-attr docutils literal notranslate"><span class="pre">penalty_factor</span></code> * <a class="reference internal" href="#ms_deisotope.scoring.ScaledGTestFitter" title="ms_deisotope.scoring.ScaledGTestFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScaledGTestFitter</span></code></a> score</p>
+<div class="math notranslate nohighlight">
+\[S(e, t) = M(e, t) * (1 - G(e, t))\]</div>
+<p>where <span class="math notranslate nohighlight">\(e\)</span> is the experimental peak list and <span class="math notranslate nohighlight">\(t\)</span> is the theoretical
+peak list</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="support-structures">
+<h2>Support Structures<a class="headerlink" href="#support-structures" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">IsotopicFitRecord</code><span class="sig-paren">(</span><em>FittedPeak seed_peak</em>, <em>double score</em>, <em>int charge</em>, <em>TheoreticalIsotopicPattern theoretical</em>, <em>list experimental</em>, <em>data=None</em>, <em>int missed_peaks=0</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes a single isotopic pattern fit, comparing how well an
+experimentally observed sequence of peaks matches a theoretical isotopic
+pattern.</p>
+<p>IsotopicFitRecord instances are hashable and orderable (by score).</p>
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.charge">
+<code class="descname">charge</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.charge" title="Permalink to this definition">¶</a></dt>
+<dd><p>The charge state used to generate the theoretical pattern</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.data">
+<code class="descname">data</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>An arbitrary Python object containing extra information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.experimental">
+<code class="descname">experimental</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.experimental" title="Permalink to this definition">¶</a></dt>
+<dd><p>The observed experimental peaks to be fitted</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list of FittedPeak</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.missed_peaks">
+<code class="descname">missed_peaks</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.missed_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of peaks in the theoretical pattern that do not
+have a matching experimental peak</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak">
+<code class="descname">monoisotopic_peak</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fitted peak which corresponds to the monoisotopic peak</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">FittedPeak</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.score">
+<code class="descname">score</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>The score assigned to the fit by an IsotopicFitter object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.seed_peak">
+<code class="descname">seed_peak</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.seed_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>The peak that was used to initiate the fit. This may be unused
+if not using an Averagine method</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">FittedPeak</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.IsotopicFitRecord.theoretical">
+<code class="descname">theoretical</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.theoretical" title="Permalink to this definition">¶</a></dt>
+<dd><p>The theoretical isotopic pattern being fitted on the experimental data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="averagine.html#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern">TheoreticalIsotopicPattern</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.scoring.FitSelectorBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">FitSelectorBase</code><span class="sig-paren">(</span><em>minimum_score=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#FitSelectorBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.FitSelectorBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object that controls the filtering and
+selection of IsotopicFitRecord</p>
+<dl class="attribute">
+<dt id="ms_deisotope.scoring.FitSelectorBase.minimum_score">
+<code class="descname">minimum_score</code><a class="headerlink" href="#ms_deisotope.scoring.FitSelectorBase.minimum_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum score needed to be a candidate for selection. If the
+FitSelector is <cite>minimizing</cite> it is the maximal score to be a candidate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.scoring.MaximizeFitSelector">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">MaximizeFitSelector</code><span class="sig-paren">(</span><em>minimum_score=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#MaximizeFitSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.MaximizeFitSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>A FitSelector which tries to maximize the score of the best fit.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.scoring.MinimizeFitSelector">
+<em class="property">class </em><code class="descclassname">ms_deisotope.scoring.</code><code class="descname">MinimizeFitSelector</code><span class="sig-paren">(</span><em>minimum_score=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#MinimizeFitSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.MinimizeFitSelector" title="Permalink to this definition">¶</a></dt>
+<dd><p>A FitSelector which tries to minimize the score of the best fit.</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="averagine.html">Isotopic Pattern Generation</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="pipeline.html">Deconvolution Pipeline</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

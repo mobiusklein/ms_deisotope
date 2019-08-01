@@ -1,0 +1,403 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Isotopic Pattern Generation &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Envelope Scoring" href="envelope_scoring.html" />
+    <link rel="prev" title="Envelope Search" href="deconvolution.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Isotopic Pattern Generation</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="deconvolution.html">Envelope Search</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="envelope_scoring.html">Envelope Scoring</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="isotopic-pattern-generation">
+<h1>Isotopic Pattern Generation<a class="headerlink" href="#isotopic-pattern-generation" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-ms_deisotope.averagine" title="ms_deisotope.averagine"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.averagine</span></code></a> module contains several pre-created isotopic models whose
+name is derived from the original peptide <cite>averagine</cite> <a class="reference internal" href="deconvolution.html#senko" id="id1">[Senko]</a>, as well
+as isotopic models for other common molecular classes. Isotopic patterns are generated from
+a chemical composition using <code class="xref py py-mod docutils literal notranslate"><span class="pre">brainpy</span></code>, which is an implementation of the
+<cite>Baffling Recursive Algorithm for Isotopic distributioN calculations</cite> <a class="reference internal" href="#dittwald2014" id="id2">[Dittwald2014]</a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ms_deisotope</span>
+
+<span class="c1"># Senko peptide averagine</span>
+<span class="n">isotopic_pattern</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">peptide</span><span class="o">.</span><span class="n">isotopic_cluster</span><span class="p">(</span><span class="mf">966.12</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">isotopic_pattern</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope</span></code> includes several pre-defined averagines (or “averagoses” as may be more appropriate):</dt>
+<dd><ol class="first last arabic simple">
+<li>Senko’s peptide - <code class="xref py py-obj docutils literal notranslate"><span class="pre">ms_deisotope.peptide</span></code></li>
+<li>Native <em>N</em>- and <em>O</em>-glycan - <code class="xref py py-obj docutils literal notranslate"><span class="pre">ms_deisotope.glycan</span></code></li>
+<li>Permethylated glycan - <code class="xref py py-obj docutils literal notranslate"><span class="pre">ms_deisotope.permethylated_glycan</span></code></li>
+<li>Glycopeptide - <code class="xref py py-obj docutils literal notranslate"><span class="pre">ms_deisotope.glycopeptide</span></code></li>
+<li>Sulfated Glycosaminoglycan - <code class="xref py py-obj docutils literal notranslate"><span class="pre">ms_deisotope.heparan_sulfate</span></code></li>
+<li>Unsulfated Glycosaminoglycan - <code class="xref py py-obj docutils literal notranslate"><span class="pre">ms_deisotope.heparin</span></code></li>
+</ol>
+</dd>
+</dl>
+<span class="target" id="module-ms_deisotope.averagine"></span><dl class="class">
+<dt id="ms_deisotope.averagine.Averagine">
+<em class="property">class </em><code class="descclassname">ms_deisotope.averagine.</code><code class="descname">Averagine</code><span class="sig-paren">(</span><em>base_composition</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.averagine.Averagine" title="Permalink to this definition">¶</a></dt>
+<dd><p>An isotopic model which can be used to interpolate the composition
+of a class of molecule given an average monomer composition and a theoretical
+polymer mass</p>
+<p>Implements the <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code> interface.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.averagine.Averagine.base_composition">
+<code class="descname">base_composition</code><a class="headerlink" href="#ms_deisotope.averagine.Averagine.base_composition" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mapping from element symbol to average count (float) of that element
+for the average monomer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">Mapping</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.averagine.Averagine.base_mass">
+<code class="descname">base_mass</code><a class="headerlink" href="#ms_deisotope.averagine.Averagine.base_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The base mass of the average monomer. Calculated from <a class="reference internal" href="#ms_deisotope.averagine.Averagine.base_composition" title="ms_deisotope.averagine.Averagine.base_composition"><code class="xref py py-attr docutils literal notranslate"><span class="pre">base_composition</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.averagine.Averagine.isotopic_cluster">
+<code class="descname">isotopic_cluster</code><span class="sig-paren">(</span><em>self</em>, <em>double mz</em>, <em>int charge=1</em>, <em>double charge_carrier=PROTON</em>, <em>double truncate_after=0.95</em>, <em>double ignore_below=0.0</em><span class="sig-paren">)</span> &#x2192; TheoreticalIsotopicPattern<a class="headerlink" href="#ms_deisotope.averagine.Averagine.isotopic_cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+by theoretical peak height and density.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mz</strong> (<em>float</em>) – The reference m/z to calculate the neutral mass to interpolate from</li>
+<li><strong>charge</strong> (<em>int</em><em>, </em><em>optional</em>) – The reference charge state to calculate the neutral mass. Defaults to 1</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to the mass of a proton.</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the signal in the theoretical isotopic pattern to include.
+Defaults to 0.95, including the first 95% of the signal in the generated pattern</li>
+<li><strong>ignore_below</strong> (<em>float</em><em>, </em><em>optional</em>) – Omit theoretical peaks whose intensity is below this number.
+Defaults to 0.0</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The generated and thresholded pattern</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">TheoreticalIsotopicPattern</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.averagine.Averagine.scale">
+<code class="descname">scale</code><span class="sig-paren">(</span><em>self</em>, <em>double mz</em>, <em>int charge=1</em>, <em>double charge_carrier=PROTON</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#ms_deisotope.averagine.Averagine.scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an m/z and a charge state, interpolate the composition
+of the polymer with the matching neutral mass</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mz</strong> (<em>float</em>) – The reference m/z to calculate the neutral mass to interpolate from</li>
+<li><strong>charge</strong> (<em>int</em><em>, </em><em>optional</em>) – The reference charge state to calculate the neutral mass. Defaults to 1</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to the mass of a proton.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The interpolated composition for the calculated neutral mass,
+rounded to the nearest integer and hydrogen corrected.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Mapping</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations
+for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.org/10.1016/1044-0305(95)00017-8">http://doi.org/10.1016/1044-0305(95)00017-8</a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern">
+<em class="property">class </em><code class="descclassname">ms_deisotope.averagine.</code><code class="descname">TheoreticalIsotopicPattern</code><span class="sig-paren">(</span><em>peaklist</em>, <em>origin</em>, <em>offset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represent a theoretical isotopic peak list</p>
+<dl class="attribute">
+<dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.peaklist">
+<code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>The theoretical isotopic pattern peak list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list of <code class="xref py py-class docutils literal notranslate"><span class="pre">brainpy.TheoreticalPeak</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.origin">
+<code class="descname">origin</code><a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.origin" title="Permalink to this definition">¶</a></dt>
+<dd><p>The monoisotopic peak’s m/z</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.ignore_below">
+<code class="descname">ignore_below</code><span class="sig-paren">(</span><em>self</em>, <em>double ignore_below=0.0</em><span class="sig-paren">)</span> &#x2192; TheoreticalIsotopicPattern<a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.ignore_below" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discards peaks whose intensity is below <code class="docutils literal notranslate"><span class="pre">ignore_below</span></code>.</p>
+<p>After discarding peaks, the pattern will be renormalized to
+sum to <code class="docutils literal notranslate"><span class="pre">1.0</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ignore_below</strong> (<em>float</em><em>, </em><em>optional</em>) – The threshold below which peaks will be discarded</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern">TheoreticalIsotopicPattern</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.scale">
+<code class="descname">scale</code><span class="sig-paren">(</span><em>self</em>, <em>list experimental_distribution</em>, <em>str method='sum'</em><span class="sig-paren">)</span> &#x2192; TheoreticalIsotopicPattern<a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scales <code class="docutils literal notranslate"><span class="pre">self</span></code>’s intensity to match the intensity distribution of the
+experimental isotopic pattern in <code class="docutils literal notranslate"><span class="pre">experimental_distribution</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">method</span></code> argument must be one of:</p>
+<dl class="docutils">
+<dt>“sum”</dt>
+<dd>Scale each peak of the theoretical distribution by the sum of the
+intensity in the experimental distribution such that the sums of their
+intensities are equal.</dd>
+<dt>“max”</dt>
+<dd>Select the most abundant peak in the theoretical distribution <span class="math notranslate nohighlight">\(t_i\)</span>, find it’s
+match in the experimental distribution <span class="math notranslate nohighlight">\(e_i\)</span>, find the scaling factor
+<span class="math notranslate nohighlight">\(\alpha = \frac{e_i}{t_i}\)</span> which will make <span class="math notranslate nohighlight">\(e_i == t_i\)</span> and scale all
+peaks in self by <span class="math notranslate nohighlight">\(alpha\)</span></dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>experimental_distribution</strong> (<em>list</em>) – The experimental peaks matched</li>
+<li><strong>method</strong> (<em>str</em><em>, </em><em>optional</em>) – The scaling method to use. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;sum&quot;</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">self</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern">TheoreticalIsotopicPattern</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.shift">
+<code class="descname">shift</code><span class="sig-paren">(</span><em>self</em>, <em>double mz</em><span class="sig-paren">)</span> &#x2192; TheoreticalIsotopicPattern<a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.shift" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shift all the m/z of peaks in the isotopic pattern by <code class="docutils literal notranslate"><span class="pre">offset</span></code>
+m/z.</p>
+<p>This will update <a class="reference internal" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.origin" title="ms_deisotope.averagine.TheoreticalIsotopicPattern.origin"><code class="xref py py-attr docutils literal notranslate"><span class="pre">origin</span></code></a> to reflect the new starting
+monoisotopic m/z.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>offset</strong> (<em>float</em>) – The amount to shift each peak in the pattern by in m/z</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern">TheoreticalIsotopicPattern</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.averagine.TheoreticalIsotopicPattern.truncate_after">
+<code class="descname">truncate_after</code><span class="sig-paren">(</span><em>self</em>, <em>double truncate_after=0.95</em><span class="sig-paren">)</span> &#x2192; TheoreticalIsotopicPattern<a class="headerlink" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern.truncate_after" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drops peaks from the end of the isotopic pattern
+which make up the last <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">truncate_after</span></code> percent
+of the isotopic pattern.</p>
+<p>After truncation, the pattern is renormalized to sum to <code class="docutils literal notranslate"><span class="pre">1</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the isotopic pattern signal to retain. Defaults
+to 0.95.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern">TheoreticalIsotopicPattern</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.averagine.AveragineCache">
+<em class="property">class </em><code class="descclassname">ms_deisotope.averagine.</code><code class="descname">AveragineCache</code><span class="sig-paren">(</span><em>averagine</em>, <em>backend=None</em>, <em>double cache_truncation=1.</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.averagine.AveragineCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper around a <a class="reference internal" href="#ms_deisotope.averagine.Averagine" title="ms_deisotope.averagine.Averagine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Averagine</span></code></a> instance which will cache isotopic patterns
+produced for new (m/z, charge) pairs and reuses it for nearby m/z values</p>
+<dl class="attribute">
+<dt id="ms_deisotope.averagine.AveragineCache.averagine">
+<code class="descname">averagine</code><a class="headerlink" href="#ms_deisotope.averagine.AveragineCache.averagine" title="Permalink to this definition">¶</a></dt>
+<dd><p>The averagine to use to generate new isotopic patterns</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.averagine.Averagine" title="ms_deisotope.averagine.Averagine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Averagine</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.averagine.AveragineCache.cache_truncation">
+<code class="descname">cache_truncation</code><a class="headerlink" href="#ms_deisotope.averagine.AveragineCache.cache_truncation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of decimal places to round off the m/z for caching purposes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.averagine.AveragineCache.isotopic_cluster">
+<code class="descname">isotopic_cluster</code><span class="sig-paren">(</span><em>self</em>, <em>double mz</em>, <em>int charge=1</em>, <em>double charge_carrier=PROTON</em>, <em>double truncate_after=0.95</em>, <em>double ignore_below=0.0</em><span class="sig-paren">)</span> &#x2192; TheoreticalIsotopicPattern<a class="headerlink" href="#ms_deisotope.averagine.AveragineCache.isotopic_cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a theoretical isotopic pattern for the given m/z and charge state, thresholded
+by theoretical peak height and density.</p>
+<p>Mimics <a class="reference internal" href="#ms_deisotope.averagine.Averagine.isotopic_cluster" title="ms_deisotope.averagine.Averagine.isotopic_cluster"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Averagine.isotopic_cluster()</span></code></a> but uses the object’s cache through
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">has_mz_charge_pair()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mz</strong> (<em>float</em>) – The reference m/z to calculate the neutral mass to interpolate from</li>
+<li><strong>charge</strong> (<em>int</em><em>, </em><em>optional</em>) – The reference charge state to calculate the neutral mass. Defaults to 1</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to the mass of a proton.</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the signal in the theoretical isotopic pattern to include.
+Defaults to 0.95, including the first 95% of the signal in the generated pattern</li>
+<li><strong>ignore_below</strong> (<em>float</em><em>, </em><em>optional</em>) – Omit theoretical peaks whose intensity is below this number.
+Defaults to 0.0</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The generated and thresholded pattern</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">TheoreticalIsotopicPattern</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<table class="docutils citation" frame="void" id="senko" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[Senko]</a></td><td>Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations
+for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.org/10.1016/1044-0305(95)00017-8">http://doi.org/10.1016/1044-0305(95)00017-8</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="dittwald2014" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[Dittwald2014]</a></td><td>Dittwald, P., &amp; Valkenborg, D. (2014). BRAIN 2.0: time and memory complexity improvements in the algorithm for calculating the isotope distribution. Journal of the American Society for Mass Spectrometry, 25(4), 588–94. <a class="reference external" href="https://doi.org/10.1007/s13361-013-0796-5">https://doi.org/10.1007/s13361-013-0796-5</a></td></tr>
+</tbody>
+</table>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="deconvolution.html">Envelope Search</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="envelope_scoring.html">Envelope Scoring</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

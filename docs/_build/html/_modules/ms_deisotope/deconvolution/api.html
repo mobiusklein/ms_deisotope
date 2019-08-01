@@ -1,0 +1,213 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.deconvolution.api &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.deconvolution.api</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.deconvolution.api</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">High Level Deconvolution API</span>
+<span class="sd">----------------------------</span>
+
+<span class="sd">A high-level wrapper around the deconvolution machinery, orchestrating the</span>
+<span class="sd">process of constructing a deconvoluter instance, performing deconvolution, and</span>
+<span class="sd">extracting targets of interest from the result.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="k">import</span> <span class="n">FittedPeak</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="n">merge</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="n">DeconvolutionProcessResult</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">ERROR_TOLERANCE</span><span class="p">,</span>
+    <span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
+    <span class="n">MAX_ITERATION</span><span class="p">,</span>
+    <span class="n">SCALE_METHOD</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">PROTON</span>
+
+<span class="kn">from</span> <span class="nn">.averagine_based</span> <span class="k">import</span> <span class="n">AveraginePeakDependenceGraphDeconvoluter</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">logger</span><span class="p">,</span> <span class="n">prepare_peaklist</span>
+
+
+<div class="viewcode-block" id="deconvolute_peaks"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks">[docs]</a><span class="k">def</span> <span class="nf">deconvolute_peaks</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">decon_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span>
+                      <span class="n">priority_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="n">left_search_limit_for_priorities</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_search_limit_for_priorities</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">verbose_priorities</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                      <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">MAX_ITERATION</span><span class="p">,</span>
+                      <span class="n">deconvoluter_type</span><span class="o">=</span><span class="n">AveraginePeakDependenceGraphDeconvoluter</span><span class="p">,</span>
+                      <span class="n">retention_strategy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deconvolute a centroided mass spectrum</span>
+
+<span class="sd">    This function constructs a deconvoluter object using the ``deconvoluter_type`` argument</span>
+<span class="sd">    and deconvolutes the input ``peaklist`` by calling its :meth:`deconvolute` method.</span>
+
+<span class="sd">    If ``priority_list`` is not :const:`None`, it is expected to be an iterable of either</span>
+<span class="sd">    tuples of (:class:`~.FittedPeak`, ``(min charge, max charge)``) pairs, or instances of</span>
+<span class="sd">    :class:`~.PriorityTarget`. These will be passed to :meth:`targeted_deconvolution` of</span>
+<span class="sd">    the deconvoluter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    peaklist : :class:`~.PeakSet` or list of Peak-like objects, see :func:`~.prepare_peaklist`</span>
+<span class="sd">        The centroided mass spectrum to deconvolute.</span>
+<span class="sd">    decon_config : dict, optional</span>
+<span class="sd">        Parameters to use to initialize the deconvoluter instance produced by</span>
+<span class="sd">        ``deconvoluter_type``</span>
+<span class="sd">    charge_range : tuple of integers, optional</span>
+<span class="sd">        The range of charge states to consider.</span>
+<span class="sd">    error_tolerance : float, optional</span>
+<span class="sd">        PPM error tolerance to use to match experimental to theoretical peaks</span>
+<span class="sd">    priority_list : list, optional</span>
+<span class="sd">        The set of peaks to target for deconvolution to be able to enforce external</span>
+<span class="sd">        constraints on, such as selected precursors for fragmentation.</span>
+<span class="sd">    left_search_limit : int, optional</span>
+<span class="sd">        The maximum number of neutron shifts to search to the left  (decrease) from</span>
+<span class="sd">        each query peak</span>
+<span class="sd">    right_search_limit : int, optional</span>
+<span class="sd">        The maximum number of neutron shifts to search to the right (increase) from</span>
+<span class="sd">        each query peak</span>
+<span class="sd">    left_search_limit_for_priorities : int, optional</span>
+<span class="sd">        The maximum number of neutron shifts to search to the left (decrease) from</span>
+<span class="sd">        each query peak for priority targets</span>
+<span class="sd">    right_search_limit_for_priorities : int, optional</span>
+<span class="sd">        The maximum number of neutron shifts to search to the right (increase) from</span>
+<span class="sd">        each query peak for priority targets</span>
+<span class="sd">    verbose_priorities : bool, optional</span>
+<span class="sd">        Whether to turn on verbose mode for priority targets</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Passed to the deconvoluter to enable verbose mode globally</span>
+<span class="sd">    charge_carrier : float, optional</span>
+<span class="sd">        The mass of the charge carrier. Defaults to |PROTON|</span>
+<span class="sd">    truncate_after : float, optional</span>
+<span class="sd">        The percentage of the isotopic pattern to include. Defaults to |TRUNCATE_AFTER|</span>
+<span class="sd">    deconvoluter_type : type or callable, optional</span>
+<span class="sd">        A callable returning a deconvoluter. Defaults to :class:`~.AveraginePeakDependenceGraphDeconvoluter`</span>
+<span class="sd">    retention_strategy: :class:`~.PeakRetentionStrategyBase` or callable, optional</span>
+<span class="sd">        A callable that may compute additional peaks to include in the output deconvoluted peaks.</span>
+<span class="sd">    use_quick_charge: :class:`bool`</span>
+<span class="sd">        Whether or not to use the :title-reference:`QuickCharge` algorithm to quickly filter</span>
+<span class="sd">        theoretical charge states to consider for each peak.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Additional keywords included in ``decon_config``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`~.DeconvolutionProcessResult`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">priority_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">priority_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">left_search_limit_for_priorities</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">left_search_limit_for_priorities</span> <span class="o">=</span> <span class="n">left_search_limit</span>
+    <span class="k">if</span> <span class="n">right_search_limit_for_priorities</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">right_search_limit_for_priorities</span> <span class="o">=</span> <span class="n">right_search_limit</span>
+
+    <span class="n">decon_config</span> <span class="o">=</span> <span class="n">decon_config</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">decon_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">decon_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;use_subtraction&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">decon_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;scale_method&quot;</span><span class="p">,</span> <span class="n">SCALE_METHOD</span><span class="p">)</span>
+    <span class="n">decon_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;use_quick_charge&quot;</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="p">)</span>
+    <span class="n">decon</span> <span class="o">=</span> <span class="n">deconvoluter_type</span><span class="p">(</span><span class="n">peaklist</span><span class="o">=</span><span class="n">peaklist</span><span class="p">,</span> <span class="o">**</span><span class="n">decon_config</span><span class="p">)</span>
+
+    <span class="n">peaklist</span> <span class="o">=</span> <span class="n">prepare_peaklist</span><span class="p">(</span><span class="n">peaklist</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose_priorities</span> <span class="ow">or</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">decon</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">priority_list_results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">priority_list</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">target_info</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">target_info</span><span class="o">.</span><span class="n">peak</span>
+            <span class="n">hinted_charge_range</span> <span class="o">=</span> <span class="n">target_info</span><span class="o">.</span><span class="n">charge_range_hint</span><span class="p">(</span><span class="n">charge_range</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">hinted_charge_range</span> <span class="o">=</span> <span class="n">charge_range</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">FittedPeak</span><span class="p">):</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">decon</span><span class="o">.</span><span class="n">peaklist</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="n">priority_result</span> <span class="o">=</span> <span class="n">decon</span><span class="o">.</span><span class="n">targeted_deconvolution</span><span class="p">(</span>
+            <span class="n">p</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span>
+            <span class="n">charge_range</span><span class="o">=</span><span class="n">hinted_charge_range</span><span class="p">,</span>
+            <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit_for_priorities</span><span class="p">,</span>
+            <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit_for_priorities</span><span class="p">,</span>
+            <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+            <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">)</span>
+        <span class="n">priority_list_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">priority_result</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose_priorities</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">decon</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">deconvoluted_peaks</span> <span class="o">=</span> <span class="n">decon</span><span class="o">.</span><span class="n">deconvolute</span><span class="p">(</span>
+        <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+        <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+        <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
+        <span class="n">iterations</span><span class="o">=</span><span class="n">iterations</span><span class="p">)</span>
+
+    <span class="n">acc</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">pr</span> <span class="ow">in</span> <span class="n">priority_list_results</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Could not extract a solution for </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span>
+                         <span class="n">pr</span><span class="o">.</span><span class="n">query_peak</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">acc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="n">priority_list_results</span> <span class="o">=</span> <span class="n">acc</span>
+
+    <span class="k">if</span> <span class="n">retention_strategy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">retained</span> <span class="o">=</span> <span class="n">retention_strategy</span><span class="p">(</span>
+            <span class="n">decon</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">charge_range</span><span class="p">,</span> <span class="n">deconvoluted_peaks</span><span class="p">)</span>
+        <span class="n">deconvoluted_peaks</span> <span class="o">=</span> <span class="n">merge</span><span class="p">(</span><span class="n">deconvoluted_peaks</span><span class="p">,</span> <span class="n">retained</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">DeconvolutionProcessResult</span><span class="p">(</span>
+        <span class="n">decon</span><span class="p">,</span> <span class="n">deconvoluted_peaks</span><span class="p">,</span> <span class="n">priority_list_results</span><span class="p">,</span> <span class="n">errors</span><span class="p">)</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

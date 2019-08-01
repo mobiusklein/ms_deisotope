@@ -1,0 +1,432 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.data_source.metadata.scan_traits &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.data_source.metadata.scan_traits</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.data_source.metadata.scan_traits</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">MutableSequence</span>
+
+<span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
+
+
+<span class="k">def</span> <span class="nf">_isclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">atol</span>
+
+
+<div class="viewcode-block" id="IsolationWindow"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.IsolationWindow">[docs]</a><span class="k">class</span> <span class="nc">IsolationWindow</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;IsolationWindow&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="s1">&#39;upper&#39;</span><span class="p">])):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Describes the m/z interval a precursor ion was isolated from in the precursor scan</span>
+
+<span class="sd">    An :class:`IsolationWindow` instance is comparable, hashable, and orderable. It is based</span>
+<span class="sd">    on a :class:`namedtuple`, and supports the same interface and methods as a :class:`tuple`.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lower: float</span>
+<span class="sd">        The distance from the center of the isolation window towards 0</span>
+<span class="sd">    target: float</span>
+<span class="sd">        The center of the isolation window in m/z</span>
+<span class="sd">    upper: float</span>
+<span class="sd">        The distance from the center of the isolation window towards :math:`\infty`</span>
+<span class="sd">    lower_bound: float</span>
+<span class="sd">        The m/z coordinate of the lower bound :attr:`target` - :attr:`lower`</span>
+<span class="sd">    upper_bound: float</span>
+<span class="sd">        The m/z coordinate of the upper bound :attr:`target` + :attr:`upper`</span>
+<span class="sd">    width: float</span>
+<span class="sd">        The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by</span>
+<span class="sd">        the window</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IsolationWindow.make_empty"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.IsolationWindow.make_empty">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">make_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A helper method for instantiating an empty isolation window centered at</span>
+<span class="sd">        `point`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        point : float</span>
+<span class="sd">            The point to center the new empty window at.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`IsolationWindow`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">lower_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The m/z coordinate of the lower bound :attr:`target` - :attr:`lower`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">upper_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The m/z coordinate of the upper bound :attr:`target` + :attr:`upper`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by</span>
+<span class="sd">        the window&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">spans</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IsolationWindow.spans"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.IsolationWindow.spans">[docs]</a>    <span class="k">def</span> <span class="nf">spans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test whether `x` is within the interval defined by this window&#39;s bounds.</span>
+
+<span class="sd">        This method permits a small amount of error (controlled by `tolerance`) when</span>
+<span class="sd">        computing the bounds.</span>
+
+<span class="sd">        Equivalent to: :code:`(self.lower_bound - tolerance) &lt;= x &lt;= (self.upper_bound + tolerance)`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : float</span>
+<span class="sd">            The number to query</span>
+<span class="sd">        tolerance : float, optional</span>
+<span class="sd">            The amount of error to accept when computing the bounds (the default is 0.1)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`bool`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">-</span> <span class="n">tolerance</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">+</span> <span class="n">tolerance</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IsolationWindow.is_empty"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.IsolationWindow.is_empty">[docs]</a>    <span class="k">def</span> <span class="nf">is_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests if the window is empty (e.g. its upper bound is equal to its lower bound)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`bool`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">==</span> <span class="mf">0.0</span></div>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__nonzero__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_isclose</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_isclose</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ScanAcquisitionInformation"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ScanAcquisitionInformation">[docs]</a><span class="k">class</span> <span class="nc">ScanAcquisitionInformation</span><span class="p">(</span><span class="n">MutableSequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes the set distinct scans along the measurable range by</span>
+<span class="sd">    the instrument that were performed to produce the acquired data</span>
+
+<span class="sd">    :class:`ScanAcquisitionInformation` objects implement the :class:`MutableSequence`</span>
+<span class="sd">    interface, acting as a sequence of :class:`ScanEventInformation` objects.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    combination : :class:`str`</span>
+<span class="sd">        A controlled vocabulary string describing the way in which scans were combined</span>
+<span class="sd">    scan_list : :class:`list` of :class:`ScanEventInformation`</span>
+<span class="sd">        The list of scan events performed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">combination</span><span class="p">,</span> <span class="n">scan_list</span><span class="p">):</span>  <span class="c1"># pylint: disable=super-init-not-called</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">combination</span> <span class="o">=</span> <span class="n">combination</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span> <span class="o">=</span> <span class="n">scan_list</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ScanAcquisitionInformation.insert"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ScanAcquisitionInformation.insert">[docs]</a>    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert an event at a given position</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            The position to add the new event</span>
+<span class="sd">        value : :class:`ScanEventInformation`</span>
+<span class="sd">            The event to insert</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ScanEventInformation</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected ScanEventInformation but got </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;ScanAcquisitionInformation(combination=</span><span class="si">%r</span><span class="s2">, scan_list=</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">combination</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">combination</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">scan_list</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">ScanEventInformation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">window_list</span><span class="p">,</span> <span class="n">drift_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">injection_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">traits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span> <span class="o">=</span> <span class="n">window_list</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span> <span class="o">=</span> <span class="n">drift_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span> <span class="o">=</span> <span class="n">injection_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traits</span> <span class="o">=</span> <span class="n">traits</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">has_ion_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;ScanEventInformation(start_time=</span><span class="si">{}</span><span class="s2">, window_list=</span><span class="si">{}{}</span><span class="s2">)&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ion_mobility</span><span class="p">():</span>
+            <span class="n">tail</span> <span class="o">=</span> <span class="s2">&quot;, drift_time=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tail</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tail</span> <span class="o">+=</span> <span class="s1">&#39;, injection_time=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="p">:</span>
+            <span class="n">tail</span> <span class="o">+=</span> <span class="s2">&quot;, traits=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="p">)</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">,</span> <span class="n">tail</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">form</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">eq</span> <span class="o">=</span> <span class="n">_isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">window_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">eq</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ion_mobility</span><span class="p">()</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">has_ion_mobility</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ion_mobility</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">drift_time</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">total_scan_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+        <span class="n">high</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">low</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span>
+            <span class="n">high</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">high</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ScanWindow</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ScanWindow</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;ScanWindow&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="s1">&#39;upper&#39;</span><span class="p">])):</span>
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">&lt;=</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span>
+
+    <span class="k">def</span> <span class="nf">is_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">==</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__nonzero__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_isclose</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ScanAttribute</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="n">scan_attributes</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># [[[cog</span>
+<span class="c1"># import cog</span>
+<span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
+<span class="c1"># render_list(&#39;scan attribute&#39;, term_cls_name=&quot;ScanAttribute&quot;, writer=cog.out)</span>
+<span class="c1"># ]]]</span>
+<span class="n">scan_attributes</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;ion mobility attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002892&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;An attribute describing ion mobility searches.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;PSM-level attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;single identification result attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;identification attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;analysis attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mass resolution&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000011&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Smallest mass difference between two equal magnitude peaks&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;so that the valley between them is a specified fraction of&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;the peak height.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;scan start time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000016&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The time that an analyzer started a scan, relative to the&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;start of the MS run.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;PSM-level attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;single identification result attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;identification attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;analysis attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;scan rate&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000015&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Rate in Th/sec for scanning analyzers.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;elution time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000826&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The time of elution from all used chromatographic columns&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;(one or more) in the chromatographic separation step,&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;relative to the start of the chromatography.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mass resolving power&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000800&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The observed mass divided by the difference between two&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;masses that can be separated: m/dm. The procedure by which&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;dm was obtained and the mass at which the measurement was&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;made should be reported.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;analyzer scan offset&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000803&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Offset between two analyzers in a constant neutral loss or&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;neutral gain scan. The value corresponds to the neutral loss&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;or neutral gain value.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;ion injection time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000927&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The length of time spent filling an ion trapping device.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;instrument specific scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002527&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Instrument specific scan properties that are associated with&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;a value.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;interchannel delay&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000880&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The duration of intervals between scanning, during which the&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;instrument configuration is switched.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;dwell time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000502&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The time spent gathering data across a peak.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;filter string&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000512&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A string unique to Thermo instrument describing instrument&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;settings for the scan.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;preset scan configuration&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000616&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A user-defined scan configuration that specifies the&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;instrumental settings in which a spectrum is acquired. An&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;instrument may cycle through a list of preset scan&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;configurations to acquire data. This is a more generic term&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;for the Thermo </span><span class="se">\\</span><span class="s1">&quot;scan event</span><span class="se">\\</span><span class="s1">&quot;, which is defined in the&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;Thermo Xcalibur glossary as: a mass spectrometer scan that&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;is defined by choosing the necessary scan parameter&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;settings. Multiple scan events can be defined for each&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;segment of time.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;second column elution time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002083&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The time of elution from the second chromatographic column&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;in the chromatographic separation step, relative to the&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;start of the chromatography on the second column.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;first column elution time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002082&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The time of elution from the first chromatographic column in&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;the chromatographic separation step, relative to the start&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;of chromatography on the first column.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;inverse reduced ion mobility&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002815&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Ion mobility measurement for an ion or spectrum of ions as&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;measured in an ion mobility mass spectrometer. This might&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;refer to the central value of a bin into which all ions&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;within a narrow range of mobilities have been aggregated.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion selection attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;ion mobility attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;PSM-level attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;single identification result attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;identification attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;analysis attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;ion mobility drift time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002476&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Drift time of an ion or spectrum of ions as measured in an&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;ion mobility mass spectrometer. This time might refer to the&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;central value of a bin into which all ions within a narrow&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;range of drift time have been aggregated.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion selection attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;ion mobility attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;PSM-level attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;single identification result attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;identification attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;analysis attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;FAIMS compensation voltage&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001581&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The DC potential applied to the asymmetric waveform in FAIMS&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;that compensates for the difference between high and low&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;field mobility of an ion.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion mobility attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;PSM-level attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;single identification result attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;identification attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;analysis attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;synchronous prefilter selection&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1002528&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Synchronous prefilter selection.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;instrument specific scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+<span class="p">])</span>
+<span class="c1"># [[[end]]]</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;IsolationWindow&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanAcquisitionInformation&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanEventInformation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ScanWindow&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanAttribute&quot;</span><span class="p">,</span> <span class="s2">&quot;scan_attributes&quot;</span>
+<span class="p">]</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

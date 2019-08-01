@@ -1,0 +1,646 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Instrument Configuration &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Activation" href="activation.html" />
+    <link rel="prev" title="File Description" href="file_metadata.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Instrument Configuration</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="file_metadata.html">File Description</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="activation.html">Activation</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="instrument-configuration">
+<h1>Instrument Configuration<a class="headerlink" href="#instrument-configuration" title="Permalink to this headline">¶</a></h1>
+<p>A mass spectrometer may be configured to operate in multiple modes during
+a single data acquisition run. A program may need to know which configurations
+were available, and formats like <cite>mzML</cite> are able record this
+information. To retrieve the configuration used for a particular scan, see
+<a class="reference internal" href="../common_scan.html#ms_deisotope.data_source.common.Scan.instrument_configuration" title="ms_deisotope.data_source.common.Scan.instrument_configuration"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ms_deisotope.data_source.common.Scan.instrument_configuration</span></code></a></p>
+<span class="target" id="module-ms_deisotope.data_source.metadata.instrument_components"></span><dl class="class">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.Component">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">Component</code><span class="sig-paren">(</span><em>name</em>, <em>id</em>, <em>description</em>, <em>category</em>, <em>specialization</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/instrument_components.html#Component"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.Component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes a named component of a mass spectrometer, either
+using a controlled-vocabulary term or user-defined name.</p>
+<p>A <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.Component" title="ms_deisotope.data_source.metadata.instrument_components.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a> is equal to its name and its controlled
+vocabulary identifier.</p>
+<dl class="method">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.Component.is_a">
+<code class="descname">is_a</code><span class="sig-paren">(</span><em>term</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.Component.is_a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether this entity is exactly <strong>term</strong> or a specialization
+of <strong>term</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>term</strong> (str or <a class="reference internal" href="cv.html#ms_deisotope.data_source.metadata.cv.Term" title="ms_deisotope.data_source.metadata.cv.Term"><code class="xref py py-class docutils literal notranslate"><span class="pre">Term</span></code></a>) – The entity to compare to</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">ComponentGroup</code><span class="sig-paren">(</span><em>type</em>, <em>members</em>, <em>order</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/instrument_components.html#ComponentGroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represent a collection of <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.Component" title="ms_deisotope.data_source.metadata.instrument_components.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a> objects which are
+part of a single instrument subsystem.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.type">
+<code class="descname">type</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the instrument subsystem</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.members">
+<code class="descname">members</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.members" title="Permalink to this definition">¶</a></dt>
+<dd><p>The components contained</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order">
+<code class="descname">order</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order" title="Permalink to this definition">¶</a></dt>
+<dd><p>The position of this group in the sequence of steps
+that analytes take when passing through the instrument.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation">
+<em class="property">class </em><code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">InstrumentInformation</code><span class="sig-paren">(</span><em>id=None</em>, <em>groups=None</em>, <em>model=None</em>, <em>serial_number=None</em>, <em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/instrument_components.html#InstrumentInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes a single configuration of an instrument for acquiring spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>id</strong> (<em>object</em>) – The within-run unique identifier of this configuration. May be an integer or string</li>
+<li><strong>groups</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup" title="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComponentGroup</span></code></a>) – The component groups, sorted by <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order" title="ms_deisotope.data_source.metadata.instrument_components.ComponentGroup.order"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ComponentGroup.order</span></code></a>, in this configuraton</li>
+<li><strong>analyzers</strong> (<em>list</em>) – A convenience list for storing the <a class="reference internal" href="#ms_deisotope.data_source.metadata.instrument_components.Component" title="ms_deisotope.data_source.metadata.instrument_components.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a> objects which are <a href="#id1"><span class="problematic" id="id2">``</span></a>analyzer``s</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.ionization_types">
+<code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">ionization_types</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.ionization_types" title="Permalink to this definition">¶</a></dt>
+<dd><table border="1" class="docutils">
+<colgroup>
+<col width="61%" />
+<col width="10%" />
+<col width="30%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Ionization Type</th>
+<th class="head">ID</th>
+<th class="head">Category</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>multiphoton ionization</td>
+<td>MS:1000227</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>fast ion bombardment</td>
+<td>MS:1000446</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>resonance enhanced multiphoton ionization</td>
+<td>MS:1000276</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>pyrolysis mass spectrometry</td>
+<td>MS:1000274</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>neutralization reionization mass spectrometry</td>
+<td>MS:1000272</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>photoionization</td>
+<td>MS:1000273</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>Negative Ion chemical ionization</td>
+<td>MS:1000271</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>chemical ionization</td>
+<td>MS:1000071</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>electrospray ionization</td>
+<td>MS:1000073</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>fast atom bombardment ionization</td>
+<td>MS:1000074</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>flowing afterglow</td>
+<td>MS:1000255</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>desorption ionization</td>
+<td>MS:1000247</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>atmospheric pressure ionization</td>
+<td>MS:1000240</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>spark ionization</td>
+<td>MS:1000404</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>thermal ionization</td>
+<td>MS:1000407</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>surface ionization</td>
+<td>MS:1000406</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>plasma desorption ionization</td>
+<td>MS:1000400</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>soft ionization</td>
+<td>MS:1000403</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>secondary ionization</td>
+<td>MS:1000402</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>vertical ionization</td>
+<td>MS:1000408</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>autodetachment</td>
+<td>MS:1000383</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>adiabatic ionization</td>
+<td>MS:1000380</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>associative ionization</td>
+<td>MS:1000381</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>chemi-ionization</td>
+<td>MS:1000386</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>autoionization</td>
+<td>MS:1000384</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>charge exchange ionization</td>
+<td>MS:1000385</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>dissociative ionization</td>
+<td>MS:1000388</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>electron ionization</td>
+<td>MS:1000389</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>field ionization</td>
+<td>MS:1000258</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>glow discharge ionization</td>
+<td>MS:1000259</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>liquid secondary ionization</td>
+<td>MS:1000395</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-odd"><td>penning ionization</td>
+<td>MS:1000399</td>
+<td>ionization type</td>
+</tr>
+<tr class="row-even"><td>microelectrospray</td>
+<td>MS:1000397</td>
+<td>electrospray ionization</td>
+</tr>
+<tr class="row-odd"><td>nanoelectrospray</td>
+<td>MS:1000398</td>
+<td>electrospray ionization</td>
+</tr>
+<tr class="row-even"><td>matrix-assisted laser desorption ionization</td>
+<td>MS:1000075</td>
+<td>desorption ionization</td>
+</tr>
+<tr class="row-odd"><td>field desorption</td>
+<td>MS:1000257</td>
+<td>desorption ionization</td>
+</tr>
+<tr class="row-even"><td>surface-assisted laser desorption ionization</td>
+<td>MS:1000405</td>
+<td>desorption ionization</td>
+</tr>
+<tr class="row-odd"><td>desorption/ionization on silicon</td>
+<td>MS:1000387</td>
+<td>desorption ionization</td>
+</tr>
+<tr class="row-even"><td>laser desorption ionization</td>
+<td>MS:1000393</td>
+<td>desorption ionization</td>
+</tr>
+<tr class="row-odd"><td>atmospheric pressure matrix-assisted laser desorption ionization</td>
+<td>MS:1000239</td>
+<td>atmospheric pressure ionization</td>
+</tr>
+<tr class="row-even"><td>atmospheric pressure chemical ionization</td>
+<td>MS:1000070</td>
+<td>atmospheric pressure ionization</td>
+</tr>
+<tr class="row-odd"><td>desorption electrospray ionization</td>
+<td>MS:1002011</td>
+<td>atmospheric pressure ionization</td>
+</tr>
+<tr class="row-even"><td>atmospheric pressure photoionization</td>
+<td>MS:1000382</td>
+<td>atmospheric pressure ionization</td>
+</tr>
+<tr class="row-odd"><td>surface enhanced laser desorption ionization</td>
+<td>MS:1000278</td>
+<td>surface ionization</td>
+</tr>
+<tr class="row-even"><td>surface enhanced neat desorption</td>
+<td>MS:1000279</td>
+<td>surface ionization</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.detector_types">
+<code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">detector_types</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.detector_types" title="Permalink to this definition">¶</a></dt>
+<dd><table border="1" class="docutils">
+<colgroup>
+<col width="53%" />
+<col width="14%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Detector Type</th>
+<th class="head">ID</th>
+<th class="head">Category</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>channeltron</td>
+<td>MS:1000107</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>photomultiplier</td>
+<td>MS:1000116</td>
+<td>detector type</td>
+</tr>
+<tr class="row-even"><td>multi-collector</td>
+<td>MS:1000115</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>faraday cup</td>
+<td>MS:1000112</td>
+<td>detector type</td>
+</tr>
+<tr class="row-even"><td>daly detector</td>
+<td>MS:1000110</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>electron multiplier</td>
+<td>MS:1000253</td>
+<td>detector type</td>
+</tr>
+<tr class="row-even"><td>fluorescence detector</td>
+<td>MS:1002308</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>conversion dynode</td>
+<td>MS:1000346</td>
+<td>detector type</td>
+</tr>
+<tr class="row-even"><td>dynode</td>
+<td>MS:1000347</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>array detector</td>
+<td>MS:1000345</td>
+<td>detector type</td>
+</tr>
+<tr class="row-even"><td>focal plane collector</td>
+<td>MS:1000348</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>ion-to-photon detector</td>
+<td>MS:1000349</td>
+<td>detector type</td>
+</tr>
+<tr class="row-even"><td>postacceleration detector</td>
+<td>MS:1000351</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>point collector</td>
+<td>MS:1000350</td>
+<td>detector type</td>
+</tr>
+<tr class="row-even"><td>inductive detector</td>
+<td>MS:1000624</td>
+<td>detector type</td>
+</tr>
+<tr class="row-odd"><td>electron multiplier tube</td>
+<td>MS:1000111</td>
+<td>electron multiplier</td>
+</tr>
+<tr class="row-even"><td>Acquity UPLC FLR</td>
+<td>MS:1000819</td>
+<td>Waters instrument model</td>
+</tr>
+<tr class="row-odd"><td>conversion dynode electron multiplier</td>
+<td>MS:1000108</td>
+<td>conversion dynode</td>
+</tr>
+<tr class="row-even"><td>conversion dynode photomultiplier</td>
+<td>MS:1000109</td>
+<td>conversion dynode</td>
+</tr>
+<tr class="row-odd"><td>microchannel plate detector</td>
+<td>MS:1000114</td>
+<td>array detector</td>
+</tr>
+<tr class="row-even"><td>photodiode array detector</td>
+<td>MS:1000621</td>
+<td>array detector</td>
+</tr>
+<tr class="row-odd"><td>focal plane array</td>
+<td>MS:1000113</td>
+<td>focal plane collector</td>
+</tr>
+<tr class="row-even"><td>Acquity UPLC PDA</td>
+<td>MS:1000818</td>
+<td>Waters instrument model</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.analyzer_types">
+<code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">analyzer_types</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.analyzer_types" title="Permalink to this definition">¶</a></dt>
+<dd><table border="1" class="docutils">
+<colgroup>
+<col width="68%" />
+<col width="11%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Analyzer Type</th>
+<th class="head">ID</th>
+<th class="head">Category</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>cyclotron</td>
+<td>MS:1000288</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-odd"><td>orbitrap</td>
+<td>MS:1000484</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-even"><td>ion trap</td>
+<td>MS:1000264</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-odd"><td>fourier transform ion cyclotron resonance mass spectrometer</td>
+<td>MS:1000079</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-even"><td>electrostatic energy analyzer</td>
+<td>MS:1000254</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-odd"><td>quadrupole</td>
+<td>MS:1000081</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-even"><td>magnetic sector</td>
+<td>MS:1000080</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-odd"><td>time-of-flight</td>
+<td>MS:1000084</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-even"><td>stored waveform inverse fourier transform</td>
+<td>MS:1000284</td>
+<td>mass analyzer type</td>
+</tr>
+<tr class="row-odd"><td>quadrupole ion trap</td>
+<td>MS:1000082</td>
+<td>ion trap</td>
+</tr>
+<tr class="row-even"><td>linear ion trap</td>
+<td>MS:1000291</td>
+<td>ion trap</td>
+</tr>
+<tr class="row-odd"><td>axial ejection linear ion trap</td>
+<td>MS:1000078</td>
+<td>linear ion trap</td>
+</tr>
+<tr class="row-even"><td>radial ejection linear ion trap</td>
+<td>MS:1000083</td>
+<td>linear ion trap</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="ms_deisotope.data_source.metadata.instrument_components.inlet_types">
+<code class="descclassname">ms_deisotope.data_source.metadata.instrument_components.</code><code class="descname">inlet_types</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.instrument_components.inlet_types" title="Permalink to this definition">¶</a></dt>
+<dd><table border="1" class="docutils">
+<colgroup>
+<col width="57%" />
+<col width="15%" />
+<col width="28%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Inlet Type</th>
+<th class="head">ID</th>
+<th class="head">Category</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>flow injection analysis</td>
+<td>MS:1000058</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>inductively coupled plasma</td>
+<td>MS:1000059</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>direct inlet</td>
+<td>MS:1000056</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>electrospray inlet</td>
+<td>MS:1000057</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>continuous flow fast atom bombardment</td>
+<td>MS:1000055</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>reservoir</td>
+<td>MS:1000067</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>particle beam</td>
+<td>MS:1000066</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>open split</td>
+<td>MS:1000065</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>moving wire</td>
+<td>MS:1000064</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>moving belt</td>
+<td>MS:1000063</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>membrane separator</td>
+<td>MS:1000062</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>jet separator</td>
+<td>MS:1000061</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>infusion</td>
+<td>MS:1000060</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>thermospray inlet</td>
+<td>MS:1000069</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>septum</td>
+<td>MS:1000068</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>direct liquid introduction</td>
+<td>MS:1000249</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>direct insertion probe</td>
+<td>MS:1000248</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-odd"><td>membrane inlet</td>
+<td>MS:1000396</td>
+<td>inlet type</td>
+</tr>
+<tr class="row-even"><td>nanospray inlet</td>
+<td>MS:1000485</td>
+<td>electrospray inlet</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="file_metadata.html">File Description</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="activation.html">Activation</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

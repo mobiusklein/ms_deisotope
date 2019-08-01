@@ -1,0 +1,111 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Writing MGF &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Visualizing Mass Spectra" href="../visualization.html" />
+    <link rel="prev" title="Writing mzML" href="mzml.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Writing MGF</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="mzml.html">Writing mzML</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../visualization.html">Visualizing Mass Spectra</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="writing-mgf">
+<h1>Writing MGF<a class="headerlink" href="#writing-mgf" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference internal" href="#module-ms_deisotope.output.mgf" title="ms_deisotope.output.mgf"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.output.mgf</span></code></a> can write an MGF for centroided or deconvoluted spectra.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ms_deisotope.output.mgf</span> <span class="kn">import</span> <span class="n">MGFSerializer</span>
+
+<span class="k">def</span> <span class="nf">to_mgf</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">outstream</span><span class="p">,</span> <span class="n">msn_filters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">msn_filters</span><span class="p">:</span>
+        <span class="n">msn_filters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">reader</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="n">grouped</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">MGFSerializer</span><span class="p">(</span><span class="n">outstream</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">writer</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">msn_filters</span><span class="p">:</span>
+                <span class="n">scan</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">msn_filters</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">scan</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">save_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+</pre></div>
+</div>
+<span class="target" id="module-ms_deisotope.output.mgf"></span><dl class="class">
+<dt id="ms_deisotope.output.mgf.MGFSerializer">
+<em class="property">class </em><code class="descclassname">ms_deisotope.output.mgf.</code><code class="descname">MGFSerializer</code><span class="sig-paren">(</span><em>stream</em>, <em>sample_name=None</em>, <em>deconvoluted=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch">
+<code class="descname">save_scan_bunch</code><span class="sig-paren">(</span><em>bunch</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.save_scan_bunch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a single <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> to the
+writing stream, recording any information relating
+the precursors and products to each other.</p>
+<p>May call <code class="xref py py-meth docutils literal notranslate"><span class="pre">save_scan()</span></code> multiple times.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bunch</strong> (<a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a>) – The scan bunch to save</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.output.mgf.ProcessedMGFDeserializer">
+<code class="descclassname">ms_deisotope.output.mgf.</code><code class="descname">ProcessedMGFDeserializer</code><a class="headerlink" href="#ms_deisotope.output.mgf.ProcessedMGFDeserializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_deisotope.output.mgf.ProcessedMGFLoader</span></code></p>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="mzml.html">Writing mzML</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../visualization.html">Visualizing Mass Spectra</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

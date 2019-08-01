@@ -1,0 +1,2339 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Envelope Search &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Isotopic Pattern Generation" href="averagine.html" />
+    <link rel="prev" title="Deconvolution" href="index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Envelope Search</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Deconvolution</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="averagine.html">Isotopic Pattern Generation</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="envelope-search">
+<h1>Envelope Search<a class="headerlink" href="#envelope-search" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-ms_deisotope.deconvolution" title="ms_deisotope.deconvolution"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.deconvolution</span></code></a> module contains algorithms for deisotoping
+centroided mass spectra, computing the monoisotopic neutral mass and charge of
+each fitted envelope. There are two types of searches that can be used, envelope
+search can be targeted, using a list of compositions, or exhaustive using an average
+monomer isotopic model or <cite>averagine</cite> <a class="reference internal" href="#senko" id="id1">[Senko]</a>.</p>
+<p>These strategies are implemented as large object hierarchies, but the high level
+function <a class="reference internal" href="#ms_deisotope.deconvolution.deconvolute_peaks" title="ms_deisotope.deconvolution.deconvolute_peaks"><code class="xref py py-func docutils literal notranslate"><span class="pre">deconvolute_peaks()</span></code></a> encapsulates the process for most use cases.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ms_deisotope</span>
+
+<span class="n">deconvoluted_peaks</span><span class="p">,</span> <span class="n">targeted</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">deconvolute_peaks</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">peptide</span><span class="p">,</span>
+                                                              <span class="n">scorer</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSDeconVFitter</span><span class="p">(</span><span class="mf">10.</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="contents local topic" id="table-of-contents">
+<p class="topic-title first">Table of Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#high-level-api" id="id2">High Level API</a></li>
+<li><a class="reference internal" href="#algorithms-for-complex-spectra" id="id3">Algorithms for Complex Spectra</a></li>
+<li><a class="reference internal" href="#algorithms-for-simple-spectra" id="id4">Algorithms for Simple Spectra</a></li>
+<li><a class="reference internal" href="#base-classes" id="id5">Base Classes</a></li>
+<li><a class="reference internal" href="#module-ms_deisotope.deconvolution.peak_retention_strategy" id="id6">Accounting For Lower Quality Data</a></li>
+<li><a class="reference internal" href="#module-ms_deisotope.deconvolution.utils" id="id7">Utilities and Implementation Details</a></li>
+</ul>
+</div>
+<span class="target" id="module-ms_deisotope.deconvolution"></span><p>This module defines a collection of isotopic envelope search strategies for
+deisotoping and charge state deconvolution. Each strategy is implemented through
+a subtype of <a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="ms_deisotope.deconvolution.DeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvoluterBase</span></code></a> and provide a common set of methods for
+deconvolving a peak list.</p>
+<div class="section" id="high-level-api">
+<h2><a class="toc-backref" href="#id2">High Level API</a><a class="headerlink" href="#high-level-api" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="ms_deisotope.deconvolution.deconvolute_peaks">
+<code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">deconvolute_peaks</code><span class="sig-paren">(</span><em>peaklist</em>, <em>decon_config=None</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>error_tolerance=2e-05</em>, <em>priority_list=None</em>, <em>left_search_limit=3</em>, <em>right_search_limit=0</em>, <em>left_search_limit_for_priorities=None</em>, <em>right_search_limit_for_priorities=None</em>, <em>verbose_priorities=False</em>, <em>verbose=False</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>iterations=10</em>, <em>deconvoluter_type=&lt;class 'ms_deisotope.deconvolution.averagine_based.AveraginePeakDependenceGraphDeconvoluter'&gt;</em>, <em>retention_strategy=None</em>, <em>use_quick_charge=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/api.html#deconvolute_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.deconvolute_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deconvolute a centroided mass spectrum</p>
+<p>This function constructs a deconvoluter object using the <code class="docutils literal notranslate"><span class="pre">deconvoluter_type</span></code> argument
+and deconvolutes the input <code class="docutils literal notranslate"><span class="pre">peaklist</span></code> by calling its <code class="xref py py-meth docutils literal notranslate"><span class="pre">deconvolute()</span></code> method.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">priority_list</span></code> is not <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code>, it is expected to be an iterable of either
+tuples of (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>, <code class="docutils literal notranslate"><span class="pre">(min</span> <span class="pre">charge,</span> <span class="pre">max</span> <span class="pre">charge)</span></code>) pairs, or instances of
+<a class="reference internal" href="pipeline.html#ms_deisotope.processor.PriorityTarget" title="ms_deisotope.processor.PriorityTarget"><code class="xref py py-class docutils literal notranslate"><span class="pre">PriorityTarget</span></code></a>. These will be passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">targeted_deconvolution()</span></code> of
+the deconvoluter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code> or list of Peak-like objects, see <a class="reference internal" href="#ms_deisotope.deconvolution.utils.prepare_peaklist" title="ms_deisotope.deconvolution.utils.prepare_peaklist"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_peaklist()</span></code></a>) – The centroided mass spectrum to deconvolute.</li>
+<li><strong>decon_config</strong> (<em>dict</em><em>, </em><em>optional</em>) – Parameters to use to initialize the deconvoluter instance produced by
+<code class="docutils literal notranslate"><span class="pre">deconvoluter_type</span></code></li>
+<li><strong>charge_range</strong> (<em>tuple of integers</em><em>, </em><em>optional</em>) – The range of charge states to consider.</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – PPM error tolerance to use to match experimental to theoretical peaks</li>
+<li><strong>priority_list</strong> (<em>list</em><em>, </em><em>optional</em>) – The set of peaks to target for deconvolution to be able to enforce external
+constraints on, such as selected precursors for fragmentation.</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the left  (decrease) from
+each query peak</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the right (increase) from
+each query peak</li>
+<li><strong>left_search_limit_for_priorities</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the left (decrease) from
+each query peak for priority targets</li>
+<li><strong>right_search_limit_for_priorities</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of neutron shifts to search to the right (increase) from
+each query peak for priority targets</li>
+<li><strong>verbose_priorities</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to turn on verbose mode for priority targets</li>
+<li><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Passed to the deconvoluter to enable verbose mode globally</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percentage of the isotopic pattern to include. Defaults to 0.95</li>
+<li><strong>deconvoluter_type</strong> (<em>type</em><em> or </em><em>callable</em><em>, </em><em>optional</em>) – A callable returning a deconvoluter. Defaults to <a class="reference internal" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveraginePeakDependenceGraphDeconvoluter</span></code></a></li>
+<li><strong>retention_strategy</strong> (<a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase" title="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakRetentionStrategyBase</span></code></a> or callable, optional) – A callable that may compute additional peaks to include in the output deconvoluted peaks.</li>
+<li><strong>use_quick_charge</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether or not to use the <cite>QuickCharge</cite> algorithm to quickly filter
+theoretical charge states to consider for each peak.</li>
+<li><strong>**kwargs</strong> – Additional keywords included in <code class="docutils literal notranslate"><span class="pre">decon_config</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.utils.DeconvolutionProcessResult" title="ms_deisotope.utils.DeconvolutionProcessResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutionProcessResult</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="algorithms-for-complex-spectra">
+<h2><a class="toc-backref" href="#id3">Algorithms for Complex Spectra</a><a class="headerlink" href="#algorithms-for-complex-spectra" title="Permalink to this headline">¶</a></h2>
+<p>The following algorithms are appropriate for deconvoluting complex, partially
+overlapping isotopic envelopes. The default algorithm used by all functions is
+<a class="reference internal" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveraginePeakDependenceGraphDeconvoluter</span></code></a>.</p>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">AveraginePeakDependenceGraphDeconvoluter</code><span class="sig-paren">(</span><em>peaklist</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/averagine_based.html#AveraginePeakDependenceGraphDeconvoluter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Deconvoluter which uses an <cite>averagine</cite> [1] model to generate theoretical
+isotopic patterns for each peak to consider, using a peak dependence graph to solve complex mass
+spectra.</p>
+<p>Extends <a class="reference internal" href="#ms_deisotope.deconvolution.AveragineDeconvoluter" title="ms_deisotope.deconvolution.AveragineDeconvoluter"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveragineDeconvoluter</span></code></a> to include features from
+<a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakDependenceGraphDeconvoluterBase</span></code></a> making it suitable for deconvoluting complex spectra where
+peak overlaps are common.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.peaklist">
+<code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>The centroided mass spectrum to deconvolute</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.scorer">
+<code class="descname">scorer</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.scorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The criterion for evaluating individual isotopic pattern fits</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase" title="ms_deisotope.scoring.IsotopicFitterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitterBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.averagine">
+<code class="descname">averagine</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.averagine" title="Permalink to this definition">¶</a></dt>
+<dd><p>The averagine model and associated theoretical isotopic pattern cache to use
+to build theoretical isotopic patterns.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="averagine.html#ms_deisotope.averagine.AveragineCache" title="ms_deisotope.averagine.AveragineCache"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveragineCache</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.max_missed_peaks">
+<code class="descname">max_missed_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.max_missed_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of missing peaks to tolerate in an isotopic fit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.peak_dependency_network">
+<code class="descname">peak_dependency_network</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.peak_dependency_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>The peak dependence graph onto which isotopic fit dependences on peaks
+are constructed and solved.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.peak_dependency_network.PeakDependenceGraph" title="ms_deisotope.peak_dependency_network.PeakDependenceGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakDependenceGraph</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.merge_isobaric_peaks">
+<code class="descname">merge_isobaric_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.merge_isobaric_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>If multiple passes produce peaks with identical mass values,
+should those peaks be summed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.minimum_intensity">
+<code class="descname">minimum_intensity</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.minimum_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Experimental peaks whose intensity is below this level will be ignored
+by peak querying methods</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.scale_method">
+<code class="descname">scale_method</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.scale_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the method to use to scale theoretical isotopic pattern intensities
+to match the experimental isotopic pattern</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.use_subtraction">
+<code class="descname">use_subtraction</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.use_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to apply a subtraction procedure to experimental peaks after they
+have been fitted. This is only necessary if the same signal may be examined multiple
+times as in a multi-pass method or when peak dependence is not considered</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.verbose">
+<code class="descname">verbose</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce extra logging information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p class="rubric">References</p>
+<dl class="docutils">
+<dt>[1] Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations</dt>
+<dd>for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.org/10.1016/1044-0305(95)00017-8">http://doi.org/10.1016/1044-0305(95)00017-8</a></dd>
+</dl>
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.charge_state_determination">
+<code class="descname">charge_state_determination</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.charge_state_determination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the optimal isotopic fit for <cite>peak</cite>, extracting it’s charge state and monoisotopic peak.</p>
+<p>This method invokes <code class="xref py py-meth docutils literal notranslate"><span class="pre">_fit_all_charge_states()</span></code>, and then uses <a class="reference internal" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.scorer" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.scorer"><code class="xref py py-attr docutils literal notranslate"><span class="pre">scorer</span></code></a>’s <cite>select</cite> method to
+choose the optimal solution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The best scoring isotopic fit</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.deconvolute">
+<code class="descname">deconvolute</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=1</em>, <em>right_search_limit=0</em>, <em>iterations=10</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>convergence=0.001</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.deconvolute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Completely deconvolute the spectrum.</p>
+<p>For each iteration, clear <code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_depencency_network</span></code>, then invoke <a class="reference internal" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.populate_graph" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.populate_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">populate_graph()</span></code></a>
+followed by <code class="xref py py-meth docutils literal notranslate"><span class="pre">select_best_disjoint_subgraphs()</span></code> to populate the resulting
+<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 1</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 0</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>ignore_below</strong> (<em>float</em><em>, </em><em>optional</em>) – The minimum relative abundance to consider a peak in a theoretical isotopic
+pattern</li>
+<li><strong>convergence</strong> (<em>float</em><em>, </em><em>optional</em>) – The threshold of the below which after the <cite>(sum(intensity_before) - sum(
+intensity_after)) / sum(intensity_after)</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.populate_graph">
+<code class="descname">populate_graph</code><span class="sig-paren">(</span><em>DeconvoluterBase self</em>, <em>error_tolerance=ERROR_TOLERANCE</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=1</em>, <em>right_search_limit=0</em>, <em>charge_carrier=PROTON</em>, <em>truncate_after=TRUNCATE_AFTER</em>, <em>ignore_below=IGNORE_BELOW</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.populate_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visit each experimental peak and execute <code class="xref py py-meth docutils literal notranslate"><span class="pre">_explore_local()</span></code> on it with the provided
+parameters, populating the peak dependence graph with all viable candidates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – </li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 1</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 0</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.targeted_deconvolution">
+<code class="descname">targeted_deconvolution</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.targeted_deconvolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Express the intent that this peak’s deconvolution solution will be retrieved at a later point in the process
+and that it should be deconvoluted, and return a handle to retrieve the results with.</p>
+<p>As the operation does not immediately result in a deconvoluted peak but just adds the resulting fits to
+<a class="reference internal" href="#ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.peak_dependency_network" title="ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter.peak_dependency_network"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_dependency_network</span></code></a>, this method constructs an instance of
+<a class="reference internal" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult" title="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetworkedTargetedDeconvolutionResult</span></code></a> which holds all
+the required information for recovering the best fit containing <cite>peak</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult" title="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetworkedTargetedDeconvolutionResult</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">CompositionListPeakDependenceGraphDeconvoluter</code><span class="sig-paren">(</span><em>peaklist</em>, <em>composition_list</em>, <em>scorer</em>, <em>use_subtraction=False</em>, <em>scale_method='sum'</em>, <em>verbose=False</em>, <em>use_quick_charge=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListPeakDependenceGraphDeconvoluter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit exact isotopic patterns from a list of compositions.</p>
+<p>Fits are added to a peak dependence graph, and the best fit is chosen after
+all fits are calculated at each iteration.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.composition_list">
+<code class="descname">composition_list</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.composition_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>A series of objects which represent elemental compositions and support
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code> interface to access their individual elements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list of <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.peaklist">
+<code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>The collection of ms_peak_picker.FittedPeak instances and possible associated
+data to deconvolute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.scorer">
+<code class="descname">scorer</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.scorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The criterion for evaluating individual isotopic pattern fits</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase" title="ms_deisotope.scoring.IsotopicFitterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitterBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.max_missed_peaks">
+<code class="descname">max_missed_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.max_missed_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of missing peaks to tolerate in an isotopic fit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.peak_dependency_network">
+<code class="descname">peak_dependency_network</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.peak_dependency_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>The peak dependence graph onto which isotopic fit dependences on peaks
+are constructed and solved.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakDependenceGraph</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.merge_isobaric_peaks">
+<code class="descname">merge_isobaric_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.merge_isobaric_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>If multiple passes produce peaks with identical mass values,
+should those peaks be summed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.minimum_intensity">
+<code class="descname">minimum_intensity</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.minimum_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Experimental peaks whose intensity is below this level will be ignored
+by peak querying methods</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.scale_method">
+<code class="descname">scale_method</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.scale_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the method to use to scale theoretical isotopic pattern intensities
+to match the experimental isotopic pattern</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.use_subtraction">
+<code class="descname">use_subtraction</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.use_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to apply a subtraction procedure to experimental peaks after they
+have been fitted. This is only necessary if the same signal may be examined multiple
+times as in a multi-pass method or when peak dependence is not considered</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.verbose">
+<code class="descname">verbose</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce extra logging information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute">
+<code class="descname">deconvolute</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>iterations=10</em>, <em>truncate_after=0.95</em>, <em>charge_carrier=1.00727646677</em>, <em>ignore_below=0.001</em>, <em>mass_shift=None</em>, <em>convergence=0.001</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListPeakDependenceGraphDeconvoluter.deconvolute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deconvolute the spectrum, extracting isotopic patterns from the composition list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An optional mass shift to apply to each composition</li>
+<li><strong>convergence</strong> (<em>float</em><em>, </em><em>optional</em>) – The threshold of the below which after the <cite>(sum(intensity_before) - sum(
+intensity_after)) / sum(intensity_after)</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition">
+<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
+and if the fit is satisfactory, add it to the results set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>composition</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>) – An object representing an elemental composition</li>
+<li><strong>error_tolerance</strong> (<em>float</em>) – The mass accuracy required to for peak matches</li>
+<li><strong>charge_range</strong> (<em>tuple</em>) – The charge state range to generate the isotopic patterns for</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
+moving all peaks forward by that mass charge ratio transformed mass.</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
+each incremental change in charge state. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.populate_graph">
+<code class="descname">populate_graph</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>truncate_after=0.95</em>, <em>charge_carrier=1.00727646677</em>, <em>ignore_below=0.001</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListPeakDependenceGraphDeconvoluter.populate_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListPeakDependenceGraphDeconvoluter.populate_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each composition, for each charge state under consideration, fit the theoretical
+isotopic pattern for this composition, and if the fit is satisfactory, add it to the
+peak dependence graph for later selecting the optimal solution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>error_tolerance</strong> (<em>float</em>) – The mass accuracy required to for peak matches</li>
+<li><strong>charge_range</strong> (<em>tuple</em>) – The charge state range to generate the isotopic patterns for</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
+each incremental change in charge state. Defaults to 1.0072</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
+moving all peaks forward by that mass charge ratio transformed mass.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<p>If your data do not conform to a single averagine, <code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleAveraginePeakDependenceGraphDeconvoluter</span></code>
+can take a <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="averagine.html#ms_deisotope.averagine.Averagine" title="ms_deisotope.averagine.Averagine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Averagine</span></code></a> objects, selecting the best averagine
+for each experimental isotopic pattern.</p>
+</div></blockquote>
+</div>
+<div class="section" id="algorithms-for-simple-spectra">
+<h2><a class="toc-backref" href="#id4">Algorithms for Simple Spectra</a><a class="headerlink" href="#algorithms-for-simple-spectra" title="Permalink to this headline">¶</a></h2>
+<p>These algorithms do not take into account the optimal peak assignment across fits
+and should be used only for spot-checks or for simple spectra where best fit resolution
+across multiple fits is not required.</p>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">AveragineDeconvoluter</code><span class="sig-paren">(</span><em>peaklist</em>, <em>averagine=None</em>, <em>scorer=PenalizedMSDeconVFitter((MaximizeFitSelector(minimum_score=10.0)</em>, <em>1.0</em>, <em>0.02))</em>, <em>use_subtraction=True</em>, <em>scale_method='sum'</em>, <em>verbose=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/averagine_based.html#AveragineDeconvoluter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Deconvoluter which uses an <cite>averagine</cite> [1] model to generate theoretical
+isotopic patterns for each peak to consider. Combines <a class="reference internal" href="#ms_deisotope.deconvolution.AveragineDeconvoluterBase" title="ms_deisotope.deconvolution.AveragineDeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveragineDeconvoluterBase</span></code></a> and
+<a class="reference internal" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase" title="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExhaustivePeakSearchDeconvoluterBase</span></code></a> to create a working Deconvoluter type.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter.averagine">
+<code class="descname">averagine</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.averagine" title="Permalink to this definition">¶</a></dt>
+<dd><p>The averagine model and associated theoretical isotopic pattern cache to use
+to build theoretical isotopic patterns.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="averagine.html#ms_deisotope.averagine.AveragineCache" title="ms_deisotope.averagine.AveragineCache"><code class="xref py py-class docutils literal notranslate"><span class="pre">AveragineCache</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter.peaklist">
+<code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>The collection of ms_peak_picker.FittedPeak instances and possible associated
+data to deconvolute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter.scorer">
+<code class="descname">scorer</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.scorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The criterion for evaluating individual isotopic pattern fits</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase" title="ms_deisotope.scoring.IsotopicFitterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitterBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter.verbose">
+<code class="descname">verbose</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>How much diagnostic information to provide</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p class="rubric">References</p>
+<dl class="docutils">
+<dt>[1] Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations</dt>
+<dd>for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.org/10.1016/1044-0305(95)00017-8">http://doi.org/10.1016/1044-0305(95)00017-8</a></dd>
+</dl>
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter.charge_state_determination">
+<code class="descname">charge_state_determination</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.charge_state_determination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the optimal isotopic fit for <cite>peak</cite>, extracting it’s charge state and monoisotopic peak.</p>
+<p>This method invokes <code class="xref py py-meth docutils literal notranslate"><span class="pre">_fit_all_charge_states()</span></code>, and then uses <a class="reference internal" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.scorer" title="ms_deisotope.deconvolution.AveragineDeconvoluter.scorer"><code class="xref py py-attr docutils literal notranslate"><span class="pre">scorer</span></code></a>’s <cite>select</cite> method to
+choose the optimal solution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The best scoring isotopic fit</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter.deconvolute">
+<code class="descname">deconvolute</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>order_chooser=&lt;operator.attrgetter object&gt;</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.deconvolute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Completely deconvolute the spectrum.</p>
+<p>Visit each peak in the order chosen by <cite>order_chooser</cite>, and call <code class="xref py py-meth docutils literal notranslate"><span class="pre">deconvolute_peak()</span></code>
+on it with the provided arguments. This assumes all overlaps in isotopic pattern are captured
+by the search limits. This is usually not the case. For an alternative see
+<a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakDependenceGraphDeconvoluterBase</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluter.targeted_deconvolution">
+<code class="descname">targeted_deconvolution</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluter.targeted_deconvolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Express the intent that this peak’s deconvolution solution will be retrieved at a later point in the process
+and that it should be deconvoluted, and return a handle to retrieve the results with.</p>
+<p>This algorithm’s implementation is simple enough that this is equivalent to just performing the deconvolution
+now and storing the result in a <code class="xref py py-class docutils literal notranslate"><span class="pre">TrivialTargetedDeconvolutionResult</span></code> instance.</p>
+<p>Otherwise identical to <code class="xref py py-meth docutils literal notranslate"><span class="pre">deconvolute_peak()</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrivialTargetedDeconvolutionResult</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">CompositionListDeconvoluter</code><span class="sig-paren">(</span><em>peaklist</em>, <em>composition_list</em>, <em>scorer</em>, <em>use_subtraction=False</em>, <em>scale_method='sum'</em>, <em>verbose=False</em>, <em>use_quick_charge=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListDeconvoluter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit exact isotopic patterns from a list of compositions.</p>
+<p>Fits are accepted as they are made, making this algorithm unsuitable for
+complex spectra where isotopic patterns will share peaks.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.composition_list">
+<code class="descname">composition_list</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.composition_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>A series of objects which represent elemental compositions and support
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code> interface to access their individual elements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list of <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.peaklist">
+<code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>The collection of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> instances and possible associated
+data to deconvolute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.scorer">
+<code class="descname">scorer</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.scorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The criterion for evaluating individual isotopic pattern fits</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase" title="ms_deisotope.scoring.IsotopicFitterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitterBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.merge_isobaric_peaks">
+<code class="descname">merge_isobaric_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.merge_isobaric_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>If multiple passes produce peaks with identical mass values,
+should those peaks be summed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.minimum_intensity">
+<code class="descname">minimum_intensity</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.minimum_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Experimental peaks whose intensity is below this level will be ignored
+by peak querying methods</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.scale_method">
+<code class="descname">scale_method</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.scale_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the method to use to scale theoretical isotopic pattern intensities
+to match the experimental isotopic pattern</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.use_subtraction">
+<code class="descname">use_subtraction</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.use_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to apply a subtraction procedure to experimental peaks after they
+have been fitted. This is only necessary if the same signal may be examined multiple
+times as in a multi-pass method or when peak dependence is not considered</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.verbose">
+<code class="descname">verbose</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce extra logging information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute">
+<code class="descname">deconvolute</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>mass_shift=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListDeconvoluter.deconvolute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deconvolute the spectrum, extracting isotopic patterns from the composition list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An optional mass shift to apply to each composition</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute_composition">
+<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluter.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
+and if the fit is satisfactory, add it to the results set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>composition</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>) – An object representing an elemental composition</li>
+<li><strong>error_tolerance</strong> (<em>float</em>) – The mass accuracy required to for peak matches</li>
+<li><strong>charge_range</strong> (<em>tuple</em>) – The charge state range to generate the isotopic patterns for</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
+moving all peaks forward by that mass charge ratio transformed mass.</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
+each incremental change in charge state. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="base-classes">
+<h2><a class="toc-backref" href="#id5">Base Classes</a><a class="headerlink" href="#base-classes" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="class">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">DeconvoluterBase</code><span class="sig-paren">(</span><em>use_subtraction=False</em>, <em>scale_method='sum'</em>, <em>merge_isobaric_peaks=True</em>, <em>minimum_intensity=5.</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all Deconvoluter types. Provides basic configuration for common operations,
+regardless of implementation. Because these methods form the backbone of all deconvolution algorithms,
+this class has a C-extension implementation as well.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.peaklist">
+<code class="descname">peaklist</code><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>The centroided mass spectrum to deconvolute</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ms_peak_picker.PeakSet</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.scorer">
+<code class="descname">scorer</code><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.scorer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The criterion for evaluating individual isotopic pattern fits</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase" title="ms_deisotope.scoring.IsotopicFitterBase">IsotopicFitterBase</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.merge_isobaric_peaks">
+<code class="descname">merge_isobaric_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.merge_isobaric_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>If multiple passes produce peaks with identical mass values,
+should those peaks be summed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.minimum_intensity">
+<code class="descname">minimum_intensity</code><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.minimum_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Experimental peaks whose intensity is below this level will be ignored
+by peak querying methods</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.scale_method">
+<code class="descname">scale_method</code><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.scale_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the method to use to scale theoretical isotopic pattern intensities
+to match the experimental isotopic pattern</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.use_subtraction">
+<code class="descname">use_subtraction</code><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.use_subtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to apply a subtraction procedure to experimental peaks after they
+have been fitted. This is only necessary if the same signal may be examined multiple
+times as in a multi-pass method or when peak dependence is not considered</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.verbose">
+<code class="descname">verbose</code><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce extra logging information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.between">
+<code class="descname">between</code><span class="sig-paren">(</span><em>self</em>, <em>double m1</em>, <em>double m2</em><span class="sig-paren">)</span> &#x2192; PeakSet<a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.between" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.fit_incremental_truncation">
+<code class="descname">fit_incremental_truncation</code><span class="sig-paren">(</span><em>self</em>, <em>IsotopicFitRecord seed_fit</em>, <em>double lower_bound</em><span class="sig-paren">)</span> &#x2192; list<a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.fit_incremental_truncation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit incrementally truncated versions of the seed fit to check to see if a narrower
+theoretical fit matches the data better.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>seed_fit</strong> (<a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a>) – The original fit to explore truncations of</li>
+<li><strong>lower_bound</strong> (<em>float</em>) – The percentage of total signal remaining to stop truncating at.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.has_peak">
+<code class="descname">has_peak</code><span class="sig-paren">(</span><em>self</em>, <em>double mz</em>, <em>double error_tolerance</em><span class="sig-paren">)</span> &#x2192; FittedPeak<a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.has_peak" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.match_theoretical_isotopic_distribution">
+<code class="descname">match_theoretical_isotopic_distribution</code><span class="sig-paren">(</span><em>self</em>, <em>list theoretical_distribution</em>, <em>double error_tolerance=2e-5</em><span class="sig-paren">)</span> &#x2192; list<a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.match_theoretical_isotopic_distribution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">merge_isobaric_peaks</code></dt>
+<dd><p>‘bool’</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">merge_isobaric_peaks</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">minimum_intensity</code></dt>
+<dd><p>‘double’</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">minimum_intensity</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">peaklist</code></dt>
+<dd><p>ms_peak_picker._c.peak_set.PeakSet</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">peaklist</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">scale_method</code></dt>
+<dd><p>str</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">scale_method</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.scale_theoretical_distribution">
+<code class="descname">scale_theoretical_distribution</code><span class="sig-paren">(</span><em>self</em>, <em>TheoreticalIsotopicPattern theoretical_distribution</em>, <em>list experimental_distribution</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.scale_theoretical_distribution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">scorer</code></dt>
+<dd><p>ms_deisotope._c.scoring.IsotopicFitterBase</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">scorer</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.DeconvoluterBase.subtraction">
+<code class="descname">subtraction</code><span class="sig-paren">(</span><em>self</em>, <em>TheoreticalIsotopicPattern isotopic_cluster</em>, <em>double error_tolerance=2e-5</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.DeconvoluterBase.subtraction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">use_subtraction</code></dt>
+<dd><p>‘bool’</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">use_subtraction</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">verbose</code></dt>
+<dd><p>‘bool’</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">verbose</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluterBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">AveragineDeconvoluterBase</code><span class="sig-paren">(</span><em>bool use_subtraction=False</em>, <em>str scale_method='sum'</em>, <em>bool merge_isobaric_peaks=True</em>, <em>double minimum_intensity=5.</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluterBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A base class derived from <a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="ms_deisotope.deconvolution.DeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvoluterBase</span></code></a> which provides some common methods
+for fitting isotopic patterns using an Averagine model.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluterBase.averagine">
+<code class="descname">averagine</code><a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluterBase.averagine" title="Permalink to this definition">¶</a></dt>
+<dd><p>ms_deisotope._c.averagine.AveragineCache</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">averagine</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.AveragineDeconvoluterBase.fit_theoretical_distribution">
+<code class="descname">fit_theoretical_distribution</code><span class="sig-paren">(</span><em>self</em>, <em>FittedPeak peak</em>, <em>double error_tolerance</em>, <em>int charge</em>, <em>double charge_carrier=PROTON</em>, <em>double truncate_after=0.95</em>, <em>double ignore_below=0</em><span class="sig-paren">)</span> &#x2192; IsotopicFitRecord<a class="headerlink" href="#ms_deisotope.deconvolution.AveragineDeconvoluterBase.fit_theoretical_distribution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">CompositionListDeconvoluterBase</code><span class="sig-paren">(</span><em>composition_list</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListDeconvoluterBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mixin class to provide common features for deconvoluters which process spectra
+using a list of targeted compositions.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase.composition_list">
+<code class="descname">composition_list</code><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.composition_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>A series of objects which represent elemental compositions and support
+the <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code> interface to access their individual elements.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list of <code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase.deconvolute_composition">
+<code class="descname">deconvolute_composition</code><span class="sig-paren">(</span><em>composition</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListDeconvoluterBase.deconvolute_composition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.deconvolute_composition" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each charge state under consideration, fit the theoretical isotopic pattern for this composition,
+and if the fit is satisfactory, add it to the results set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>composition</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>) – An object representing an elemental composition</li>
+<li><strong>error_tolerance</strong> (<em>float</em>) – The mass accuracy required to for peak matches</li>
+<li><strong>charge_range</strong> (<em>tuple</em>) – The charge state range to generate the isotopic patterns for</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
+moving all peaks forward by that mass charge ratio transformed mass.</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
+each incremental change in charge state. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase.fit_composition_at_charge">
+<code class="descname">fit_composition_at_charge</code><span class="sig-paren">(</span><em>composition</em>, <em>charge</em>, <em>error_tolerance=2e-05</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>mass_shift=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListDeconvoluterBase.fit_composition_at_charge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.fit_composition_at_charge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce an isotopic fit for <cite>composition</cite> at <cite>charge</cite> against the experimental peak set.</p>
+<p>This method requires that the instance also possess a method named <cite>match_theoretical_isotopic_distribution</cite>
+such as the one implemented in <a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="ms_deisotope.deconvolution.DeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvoluterBase</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>composition</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>) – An object representing an elemental composition</li>
+<li><strong>charge</strong> (<em>int</em>) – The charge state to generate the isotopic pattern for</li>
+<li><strong>error_tolerance</strong> (<em>float</em>) – The mass accuracy required to for peak matches</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
+moving all peaks forward by that mass charge ratio transformed mass.</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
+each incremental change in charge state. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase.generate_theoretical_isotopic_cluster">
+<code class="descname">generate_theoretical_isotopic_cluster</code><span class="sig-paren">(</span><em>composition</em>, <em>charge</em>, <em>truncate_after=0.95</em>, <em>mass_shift=None</em>, <em>charge_carrier=1.00727646677</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListDeconvoluterBase.generate_theoretical_isotopic_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.generate_theoretical_isotopic_cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a theoretical isotopic pattern for <code class="docutils literal notranslate"><span class="pre">composition</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>composition</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>) – An object representing an elemental composition</li>
+<li><strong>charge</strong> (<em>int</em>) – The charge state to generate the isotopic pattern for</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>mass_shift</strong> (<em>float</em><em>, </em><em>optional</em>) – An arbitrary mass shift to apply to the generated theoretical isotopic pattern,
+moving all peaks forward by that mass charge ratio transformed mass.</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
+each incremental change in charge state. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The theoretical isotopic pattern generated</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="averagine.html#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern"><code class="xref py py-class docutils literal notranslate"><span class="pre">TheoreticalIsotopicPattern</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.CompositionListDeconvoluterBase.recalibrate_theoretical_mz">
+<code class="descname">recalibrate_theoretical_mz</code><span class="sig-paren">(</span><em>theoretical_distribution</em>, <em>experimental_mz</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/composition_list.html#CompositionListDeconvoluterBase.recalibrate_theoretical_mz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.recalibrate_theoretical_mz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recalibrate the m/z of the theoretical isotopic pattern to start from the
+peak matching the experimental monoisotopic m/z</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>theoretical_distribution</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">TheoreticalIsotopicPattern</span></code>) – The theoretical isotopic pattern to adjust</li>
+<li><strong>experimental_mz</strong> (<em>float</em>) – The experimental monoisotopic peak m/z</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="averagine.html#ms_deisotope.averagine.TheoreticalIsotopicPattern" title="ms_deisotope.averagine.TheoreticalIsotopicPattern">TheoreticalIsotopicPattern</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">ExhaustivePeakSearchDeconvoluterBase</code><span class="sig-paren">(</span><em>peaklist</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#ExhaustivePeakSearchDeconvoluterBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides common methods for algorithms which attempt to find a deconvolution for every peak
+in a spectrum. This assumes no dependence between different peaks, instead it relies on subtraction,
+breadth of search, and order of encounter to avoid artefactual fits. This is usually not reasonable,
+so instead please use this class’s extension, <a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakDependenceGraphDeconvoluterBase</span></code></a> which can
+express dependence of fits on common resources.</p>
+<p>This class is not meant to be instantiated, but instead used as a mixin for classes that also
+inherit from <a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="ms_deisotope.deconvolution.DeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvoluterBase</span></code></a> and provide methods <cite>fit_theoretical_distribution</cite>
+and <cite>_fit_peaks_at_charges</cite></p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.use_quick_charge">
+<code class="descname">use_quick_charge</code><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.use_quick_charge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to use the <cite>QuickCharge</cite> algorithm when generating
+putative charge states.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.incremental_truncation">
+<code class="descname">incremental_truncation</code><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.incremental_truncation" title="Permalink to this definition">¶</a></dt>
+<dd><p>If not <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code>, the isotopic pattern truncation lower bound to contract each fit to
+incrementally, generating new fits for each dropped peak using
+<a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase.fit_incremental_truncation" title="ms_deisotope.deconvolution.DeconvoluterBase.fit_incremental_truncation"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_incremental_truncation()</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.charge_state_determination">
+<code class="descname">charge_state_determination</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#ExhaustivePeakSearchDeconvoluterBase.charge_state_determination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.charge_state_determination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the optimal isotopic fit for <cite>peak</cite>, extracting it’s charge state and monoisotopic peak.</p>
+<p>This method invokes <code class="xref py py-meth docutils literal notranslate"><span class="pre">_fit_all_charge_states()</span></code>, and then uses <code class="xref py py-attr docutils literal notranslate"><span class="pre">scorer</span></code>’s <cite>select</cite> method to
+choose the optimal solution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The best scoring isotopic fit</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotopicFitRecord</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute">
+<code class="descname">deconvolute</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>order_chooser=&lt;operator.attrgetter object&gt;</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#ExhaustivePeakSearchDeconvoluterBase.deconvolute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Completely deconvolute the spectrum.</p>
+<p>Visit each peak in the order chosen by <cite>order_chooser</cite>, and call <a class="reference internal" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak" title="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deconvolute_peak()</span></code></a>
+on it with the provided arguments. This assumes all overlaps in isotopic pattern are captured
+by the search limits. This is usually not the case. For an alternative see
+<a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakDependenceGraphDeconvoluterBase</span></code></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak">
+<code class="descname">deconvolute_peak</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a deconvolution for <cite>peak</cite>, generating a new <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_deisotope.peak_set.DeconvolutedPeak</span></code> instance
+corresponding to the optimal solution.</p>
+<p>This new peak has an m/z matching the monoisotopic peak of the pattern containing <cite>peak</cite>, and its intensity
+is the sum of all the matched peaks in its isotopic pattern. Its charge, isotopic fit, and other qualities
+are derived from the <a class="reference internal" href="envelope_scoring.html#ms_deisotope.scoring.IsotopicFitRecord" title="ms_deisotope.scoring.IsotopicFitRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_deisotope.scoring.IsotopicFitRecord</span></code></a> instance corresponding to its best
+solution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier, or more specifically, the moiety which is added for
+each incremental change in charge state. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.targeted_deconvolution">
+<code class="descname">targeted_deconvolution</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#ExhaustivePeakSearchDeconvoluterBase.targeted_deconvolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.targeted_deconvolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Express the intent that this peak’s deconvolution solution will be retrieved at a later point in the process
+and that it should be deconvoluted, and return a handle to retrieve the results with.</p>
+<p>This algorithm’s implementation is simple enough that this is equivalent to just performing the deconvolution
+now and storing the result in a <code class="xref py py-class docutils literal notranslate"><span class="pre">TrivialTargetedDeconvolutionResult</span></code> instance.</p>
+<p>Otherwise identical to <a class="reference internal" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak" title="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.deconvolute_peak"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deconvolute_peak()</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrivialTargetedDeconvolutionResult</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.</code><code class="descname">PeakDependenceGraphDeconvoluterBase</code><span class="sig-paren">(</span><em>peaklist</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#PeakDependenceGraphDeconvoluterBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends the concept of <a class="reference internal" href="#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase" title="ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExhaustivePeakSearchDeconvoluterBase</span></code></a> to include a way to handle
+conflicting solutions which claim the same experimental peak.</p>
+<p>This lets the Deconvoluter assign a single peak only once, and to the “best” solution to use it. To
+do this, the Deconvoluter constructs a graph where peaks are nodes, and isotopic fits are hyperedges
+connecting multiple nodes. Rather than deconvoluting the spectrum step by step, assigning signal as
+it explores the spectrum, the Deconvoluter instead inserts each considered isotopic fit into the graph.
+After completely traversing the spectrum, the Deconvoluter solves the dependence graph attempting to
+maximize some criterion and produce a set of disjoint isotopic fits. These fits are then assigned signal
+and added to the deconvoluted spectrum as normal.</p>
+<p>The criterion used is currently a greedy maximization (or minimization) of each connected component of
+the peak dependence graph.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.max_missed_peaks">
+<code class="descname">max_missed_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.max_missed_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of missing peaks to tolerate in an isotopic fit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.peak_dependency_network">
+<code class="descname">peak_dependency_network</code><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.peak_dependency_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>The peak dependence graph onto which isotopic fit dependences on peaks
+are constructed and solved.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.peak_dependency_network.PeakDependenceGraph" title="ms_deisotope.peak_dependency_network.PeakDependenceGraph"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakDependenceGraph</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.deconvolute">
+<code class="descname">deconvolute</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=1</em>, <em>right_search_limit=0</em>, <em>iterations=10</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em>, <em>convergence=0.001</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#PeakDependenceGraphDeconvoluterBase.deconvolute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.deconvolute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Completely deconvolute the spectrum.</p>
+<p>For each iteration, clear <code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_depencency_network</span></code>, then invoke <a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.populate_graph" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.populate_graph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">populate_graph()</span></code></a>
+followed by <a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">select_best_disjoint_subgraphs()</span></code></a> to populate the resulting
+<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>order_chooser</strong> (<em>callable</em><em>, </em><em>optional:</em>) – A callable used as a key function for sorting peaks into the order they will
+be visited during deconvolution. Defaults to <code class="xref py py-obj docutils literal notranslate"><span class="pre">operator.attrgetter(&quot;index&quot;)</span></code></li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 1</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <code class="xref py py-obj docutils literal notranslate"><span class="pre">peak</span></code>. Defaults to 0</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+<li><strong>ignore_below</strong> (<em>float</em><em>, </em><em>optional</em>) – The minimum relative abundance to consider a peak in a theoretical isotopic
+pattern</li>
+<li><strong>convergence</strong> (<em>float</em><em>, </em><em>optional</em>) – The threshold of the below which after the <cite>(sum(intensity_before) - sum(
+intensity_after)) / sum(intensity_after)</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">max_missed_peaks</code></dt>
+<dd><p>The maximum number of missed peaks per isotopic fit record permitted.</p>
+<p>This property directly mirrors <code class="xref py py-attr docutils literal notranslate"><span class="pre">PeakDependenceGraph.max_missed_peaks</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.populate_graph">
+<code class="descname">populate_graph</code><span class="sig-paren">(</span><em>DeconvoluterBase self</em>, <em>error_tolerance=ERROR_TOLERANCE</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=1</em>, <em>right_search_limit=0</em>, <em>charge_carrier=PROTON</em>, <em>truncate_after=TRUNCATE_AFTER</em>, <em>ignore_below=IGNORE_BELOW</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.populate_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Visit each experimental peak and execute <code class="xref py py-meth docutils literal notranslate"><span class="pre">_explore_local()</span></code> on it with the provided
+parameters, populating the peak dependence graph with all viable candidates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – </li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 1</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 0</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+<li><strong>truncate_after</strong> (<em>float</em><em>, </em><em>optional</em>) – The percent of intensity to ensure is included in a theoretical isotopic pattern
+starting from the monoisotopic peak. This will cause theoretical isotopic patterns
+to be truncated, excluding trailing peaks which do not contribute substantially to
+the overall shape of the isotopic pattern.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.postprocess_fits">
+<code class="descname">postprocess_fits</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>charge_carrier=1.00727646677</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#PeakDependenceGraphDeconvoluterBase.postprocess_fits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.postprocess_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Postprocesses fits before solving the peak dependence graph.</p>
+<p>Currently a no-op.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs">
+<code class="descname">select_best_disjoint_subgraphs</code><span class="sig-paren">(</span><em>error_tolerance=2e-05</em>, <em>charge_carrier=1.00727646677</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct connected envelope graphs from <a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.peak_dependency_network" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.peak_dependency_network"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_dependency_network</span></code></a> and
+extract the best disjoint isotopic pattern fits in each envelope graph. This in turn
+produces one or more <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> instances from each disjoint fit,
+which are processed and added to the results set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The error tolerance to use when performing subtraction, if subtraction is
+being performed.</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier as used for the deconvolution. Required to
+back-out the neutral mass of the deconvoluted result</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.targeted_deconvolution">
+<code class="descname">targeted_deconvolution</code><span class="sig-paren">(</span><em>peak</em>, <em>error_tolerance=2e-05</em>, <em>charge_range=(1</em>, <em>8)</em>, <em>left_search_limit=3</em>, <em>right_search_limit=3</em>, <em>charge_carrier=1.00727646677</em>, <em>truncate_after=0.95</em>, <em>ignore_below=0.001</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/exhaustive.html#PeakDependenceGraphDeconvoluterBase.targeted_deconvolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.targeted_deconvolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Express the intent that this peak’s deconvolution solution will be retrieved at a later point in the process
+and that it should be deconvoluted, and return a handle to retrieve the results with.</p>
+<p>As the operation does not immediately result in a deconvoluted peak but just adds the resulting fits to
+<a class="reference internal" href="#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.peak_dependency_network" title="ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.peak_dependency_network"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_dependency_network</span></code></a>, this method constructs an instance of
+<a class="reference internal" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult" title="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetworkedTargetedDeconvolutionResult</span></code></a> which holds all
+the required information for recovering the best fit containing <cite>peak</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to start the search from</li>
+<li><strong>error_tolerance</strong> (<em>float</em><em>, </em><em>optional</em>) – The parts-per-million error tolerance in m/z to search with. Defaults to 2e-5</li>
+<li><strong>charge_range</strong> (<em>tuple</em><em>, </em><em>optional</em>) – The range of charge states to consider. Defaults to (1, 8)</li>
+<li><strong>left_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the left of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>right_search_limit</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to search to the right of <cite>peak</cite>. Defaults to 3</li>
+<li><strong>charge_carrier</strong> (<em>float</em><em>, </em><em>optional</em>) – The mass of the charge carrier. Defaults to 1.0072</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult" title="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">NetworkedTargetedDeconvolutionResult</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="module-ms_deisotope.deconvolution.peak_retention_strategy">
+<span id="accounting-for-lower-quality-data"></span><h2><a class="toc-backref" href="#id6">Accounting For Lower Quality Data</a><a class="headerlink" href="#module-ms_deisotope.deconvolution.peak_retention_strategy" title="Permalink to this headline">¶</a></h2>
+<p>A set of strategies for retaining peaks following deconvolution to
+recover from low quality spectra. These methods are not recommended for
+use on spectra where most ions are multiply charged.</p>
+<p>These objects are meant to be provided to <code class="xref py py-func docutils literal notranslate"><span class="pre">deconvolut_peaks()</span></code>’s
+<cite>retention_strategy</cite> argument, which will take care of calling them with
+the appropriate arguments.</p>
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.peak_retention_strategy.</code><code class="descname">PeakRetentionStrategyBase</code><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A strategy for retaining peaks left behind by the deconvolution procedure.</p>
+<p>Deconvolution requires that the isotopic peak structure is present in the peak list,
+which may not be consistent for all types of data. This type of method is appropriate
+when the caller expects real peaks may have been left behind, as is the case with smaller
+peptides and lower quality tandem mass spectra.</p>
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>peaklist</em>, <em>original_peaklist=None</em>, <em>charge_range=None</em>, <em>solutions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper for <a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks" title="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">retain_peaks()</span></code></a>. Given a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>
+objects left over after deconvolution, produce a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code>
+objects from them according to some criteria.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code>) – The list of peaks that remain after deconvolution</li>
+<li><strong>original_peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code>, optional) – The list of peaks that were initially presented for deconvolution,
+which may be used to infer relative thresholds from. If not provided,
+these thresholds may be learned from the left over peaks, but the
+parameters may not be as good.</li>
+<li><strong>charge_range</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>, optional) – The range of charge states considered during deconvolution. Used to infer
+the minimum charge state to assign to the peaks this method creates. If
+not provided, the default charge state is :const`1`.</li>
+<li><strong>solutions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks" title="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">retain_peaks()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.create_peak">
+<code class="descname">create_peak</code><span class="sig-paren">(</span><em>fitted_peak</em>, <em>charge=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase.create_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.create_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> from a given <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> <code class="docutils literal notranslate"><span class="pre">peak</span></code>
+and an optional charge state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fitted_peak</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code>) – The peak to treat as the monoisotopic peak of the unfitted deconvoluted peak</li>
+<li><strong>charge</strong> (<em>int</em><em>, </em><em>optional</em>) – The charge state to specify the peak at (the default is 1)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DeconvolutedPeak</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.infer_minimum_charge">
+<code class="descname">infer_minimum_charge</code><span class="sig-paren">(</span><em>charge_range</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase.infer_minimum_charge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.infer_minimum_charge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a charge range <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>, return the smallest absolute magnitude
+charge state possible in that range.</p>
+<p>This method is polarity aware, and does its reasoning on the absolute magnitude
+of the charge state range, rather than on its signed value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>charge_range</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>) – The range of charge values that were used during the deconvolution process</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The minimum charge state.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks">
+<code class="descname">retain_peaks</code><span class="sig-paren">(</span><em>peaklist</em>, <em>original_peaklist=None</em>, <em>charge_range=None</em>, <em>solutions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#PeakRetentionStrategyBase.retain_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.PeakRetentionStrategyBase.retain_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> objects left over after deconvolution,
+produce a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects from them according to some
+criteria.</p>
+<p>Deconvolution requires that the isotopic peak structure is present in the peak list,
+which may not be consistent for all types of data. This type of method is appropriate
+when the caller expects real peaks may have been left behind, as is the case with smaller
+peptides and lower quality tandem mass spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code>) – The list of peaks that remain after deconvolution</li>
+<li><strong>original_peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code>, optional) – The list of peaks that were initially presented for deconvolution,
+which may be used to infer relative thresholds from. If not provided,
+these thresholds may be learned from the left over peaks, but the
+parameters may not be as good.</li>
+<li><strong>charge_range</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>, optional) – The range of charge states considered during deconvolution. Used to infer
+the minimum charge state to assign to the peaks this method creates. If
+not provided, the default charge state is :const`1`.</li>
+<li><strong>solutions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy">
+<em class="property">class </em><code class="descclassname">ms_deisotope.deconvolution.peak_retention_strategy.</code><code class="descname">TopNRetentionStrategy</code><span class="sig-paren">(</span><em>n_peaks=50</em>, <em>base_peak_coefficient=0.05</em>, <em>max_mass=850.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#TopNRetentionStrategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>This strategy retains up to at most <a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.n_peaks" title="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.n_peaks"><code class="xref py py-attr docutils literal notranslate"><span class="pre">n_peaks</span></code></a> peaks from the
+leftover signal, and requires that any peaks it retains are atleast
+<a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.base_peak_coefficient" title="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.base_peak_coefficient"><code class="xref py py-attr docutils literal notranslate"><span class="pre">base_peak_coefficient</span></code></a> * the base peak of the original peak list.</p>
+<p>This strategy treats the leftover peak as if it were the monoisotopic peak
+of an unobserved isotopic distribution. Because the monoisotopic peak ceases
+to dominate an isotopic distribution above a certain mass (as implied by an
+averagine isotopic model), any peak selected must have a neutral mass below
+<a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.max_mass" title="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.max_mass"><code class="xref py py-attr docutils literal notranslate"><span class="pre">max_mass</span></code></a>.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.n_peaks">
+<code class="descname">n_peaks</code><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.n_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of peaks to retain.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.base_peak_coefficient">
+<code class="descname">base_peak_coefficient</code><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.base_peak_coefficient" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fraction of the base peak intensity to threshold on. Defaults to <code class="xref py py-const docutils literal notranslate"><span class="pre">0.05</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.max_mass">
+<code class="descname">max_mass</code><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.max_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>The largest neutral mass that a peak may have before it would no longer have a dominant
+monoisotopic peak and the peak will be discarded.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.retain_peaks">
+<code class="descname">retain_peaks</code><span class="sig-paren">(</span><em>peaklist</em>, <em>original_peaklist=None</em>, <em>charge_range=None</em>, <em>solutions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/peak_retention_strategy.html#TopNRetentionStrategy.retain_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy.retain_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> objects left over after deconvolution,
+produce a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects from them according to some
+criteria.</p>
+<p>Deconvolution requires that the isotopic peak structure is present in the peak list,
+which may not be consistent for all types of data. This type of method is appropriate
+when the caller expects real peaks may have been left behind, as is the case with smaller
+peptides and lower quality tandem mass spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code>) – The list of peaks that remain after deconvolution</li>
+<li><strong>original_peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code>, optional) – The list of peaks that were initially presented for deconvolution,
+which may be used to infer relative thresholds from. If not provided,
+these thresholds may be learned from the left over peaks, but the
+parameters may not be as good.</li>
+<li><strong>charge_range</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>, optional) – The range of charge states considered during deconvolution. Used to infer
+the minimum charge state to assign to the peaks this method creates. If
+not provided, the default charge state is :const`1`.</li>
+<li><strong>solutions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code>, optional) – The accepted solutions which might be used to infer/reject additional peaks.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code> objects.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<p><code class="xref py py-data docutils literal notranslate"><span class="pre">ms_deisotope.deconvolution.peak_retention_strategy.simple_peak_retention</span></code> is an instance of
+<a class="reference internal" href="#ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy" title="ms_deisotope.deconvolution.peak_retention_strategy.TopNRetentionStrategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">TopNRetentionStrategy</span></code></a> with <cite>n_peaks=50, base_peak_coefficient=0.05, max_mass=850.0</cite>, the default
+values.</p>
+</div>
+<div class="section" id="module-ms_deisotope.deconvolution.utils">
+<span id="utilities-and-implementation-details"></span><h2><a class="toc-backref" href="#id7">Utilities and Implementation Details</a><a class="headerlink" href="#module-ms_deisotope.deconvolution.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="ms_deisotope.deconvolution.utils.prepare_peaklist">
+<code class="descclassname">ms_deisotope.deconvolution.utils.</code><code class="descname">prepare_peaklist</code><span class="sig-paren">(</span><em>peaks</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/deconvolution/utils.html#prepare_peaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.deconvolution.utils.prepare_peaklist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure <code class="docutils literal notranslate"><span class="pre">peaks</span></code> is a <code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code> object,
+converting from other compatible types as needed. Additionally, make a deep
+copy of the peaks as signal subtraction methods will modify peaks in place.</p>
+<p>This function ensures that any of the following common input types are coerced
+to the appropriate type:</p>
+<ol class="arabic simple">
+<li><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet</span></code> will be copied and indexed</li>
+<li><code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakIndex</span></code> will have its peaks extracted and copied</li>
+<li>Any other <em>sequence</em> of <code class="xref py py-class docutils literal notranslate"><span class="pre">PeakLike</span></code> objects (objects having an mz and
+intensity attribute) will be converted into a <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet</span></code></li>
+<li>Any <em>sequence</em> of <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> having at least two entries
+will be converted into a <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_peak_picker.PeakSet</span></code> with the m/z value
+of each peak being the the <cite>p[0]</cite> of each entry and the intensity <cite>p[1]</cite>. Any
+other entries will be ignored.</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>peaks</strong> (<em>Sequence</em>) – Any sequence of <code class="xref py py-class docutils literal notranslate"><span class="pre">FittedPeak</span></code> objects, objects
+with <code class="docutils literal notranslate"><span class="pre">mz</span></code> and <code class="docutils literal notranslate"><span class="pre">intensity</span></code> attributes, or <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> / <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>
+objects containing paired values for <code class="docutils literal notranslate"><span class="pre">mz</span></code> and <code class="docutils literal notranslate"><span class="pre">intensity</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">PeakSet</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<span class="target" id="module-ms_deisotope.utils"></span><dl class="class">
+<dt id="ms_deisotope.utils.DeconvolutionProcessResult">
+<em class="property">class </em><code class="descclassname">ms_deisotope.utils.</code><code class="descname">DeconvolutionProcessResult</code><span class="sig-paren">(</span><em>deconvoluter</em>, <em>peak_set</em>, <em>priorities</em>, <em>errors=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/utils.html#DeconvolutionProcessResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.utils.DeconvolutionProcessResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hold information from a multi-stage deconvolution process.</p>
+<p>Emulates an interface matching a tuple of (<a class="reference internal" href="#ms_deisotope.utils.DeconvolutionProcessResult.peak_set" title="ms_deisotope.utils.DeconvolutionProcessResult.peak_set"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_set</span></code></a>, <a class="reference internal" href="#ms_deisotope.utils.DeconvolutionProcessResult.priorities" title="ms_deisotope.utils.DeconvolutionProcessResult.priorities"><code class="xref py py-attr docutils literal notranslate"><span class="pre">priorities</span></code></a>)</p>
+<dl class="attribute">
+<dt id="ms_deisotope.utils.DeconvolutionProcessResult.deconvoluter">
+<code class="descname">deconvoluter</code><a class="headerlink" href="#ms_deisotope.utils.DeconvolutionProcessResult.deconvoluter" title="Permalink to this definition">¶</a></dt>
+<dd><p>The deconvoluter used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="ms_deisotope.deconvolution.DeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvoluterBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.utils.DeconvolutionProcessResult.errors">
+<code class="descname">errors</code><a class="headerlink" href="#ms_deisotope.utils.DeconvolutionProcessResult.errors" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code> instances that may have been
+thrown during any stage of deconvolution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list, optional</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.utils.DeconvolutionProcessResult.peak_set">
+<code class="descname">peak_set</code><a class="headerlink" href="#ms_deisotope.utils.DeconvolutionProcessResult.peak_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>The resulting deconvoluted peaks</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.utils.DeconvolutionProcessResult.priorities">
+<code class="descname">priorities</code><a class="headerlink" href="#ms_deisotope.utils.DeconvolutionProcessResult.priorities" title="Permalink to this definition">¶</a></dt>
+<dd><p>The extracted results from the targeted deconvolution list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.utils.TargetedDeconvolutionResultBase">
+<em class="property">class </em><code class="descclassname">ms_deisotope.utils.</code><code class="descname">TargetedDeconvolutionResultBase</code><span class="sig-paren">(</span><em>deconvoluter</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/utils.html#TargetedDeconvolutionResultBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.utils.TargetedDeconvolutionResultBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class to store all of the necessary information to retrieve the optimal
+solution for a single peak.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.utils.TargetedDeconvolutionResultBase.deconvoluter">
+<code class="descname">deconvoluter</code><a class="headerlink" href="#ms_deisotope.utils.TargetedDeconvolutionResultBase.deconvoluter" title="Permalink to this definition">¶</a></dt>
+<dd><p>The deconvoluter to use to look up the result</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#ms_deisotope.deconvolution.DeconvoluterBase" title="ms_deisotope.deconvolution.DeconvoluterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvoluterBase</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.utils.TargetedDeconvolutionResultBase.get">
+<code class="descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/utils.html#TargetedDeconvolutionResultBase.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.utils.TargetedDeconvolutionResultBase.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch the optimal solution after the computation has finished.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeak</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-ms_deisotope.peak_dependency_network"></span><dl class="class">
+<dt id="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult">
+<em class="property">class </em><code class="descclassname">ms_deisotope.peak_dependency_network.</code><code class="descname">NetworkedTargetedDeconvolutionResult</code><span class="sig-paren">(</span><em>deconvoluter</em>, <em>peak</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/peak_dependency_network/peak_network.html#NetworkedTargetedDeconvolutionResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the necessary information to retrieve the local optimal solution for
+a single peak for a deconvolution algorithm from the optimal fit containing
+<a class="reference internal" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.query_peak" title="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.query_peak"><code class="xref py py-attr docutils literal notranslate"><span class="pre">query_peak</span></code></a> in the set of disjoint best fits for the enclosing connected
+component</p>
+<dl class="attribute">
+<dt id="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.query_peak">
+<code class="descname">query_peak</code><a class="headerlink" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.query_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>The peak queried with</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">FittedPeak</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.solution_peak">
+<code class="descname">solution_peak</code><a class="headerlink" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.solution_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>The optimal solution peak</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">DeconvolutedPeak</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.get">
+<code class="descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/peak_dependency_network/peak_network.html#NetworkedTargetedDeconvolutionResult.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch the optimal solution after the computation has finished.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">DeconvolutedPeak</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ms_deisotope.peak_dependency_network.PeakDependenceGraph">
+<em class="property">class </em><code class="descclassname">ms_deisotope.peak_dependency_network.</code><code class="descname">PeakDependenceGraph</code><span class="sig-paren">(</span><em>peaklist</em>, <em>nodes=None</em>, <em>dependencies=None</em>, <em>max_missed_peaks=1</em>, <em>use_monoisotopic_superceded_filtering=True</em>, <em>maximize=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/peak_dependency_network/peak_network.html#PeakDependenceGraph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.peak_dependency_network.PeakDependenceGraph" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<table class="docutils citation" frame="void" id="senko" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[Senko]</a></td><td>Senko, M. W., Beu, S. C., &amp; McLafferty, F. W. (1995). Determination of monoisotopic masses and ion populations
+for large biomolecules from resolved isotopic distributions. Journal of the American Society for Mass
+Spectrometry, 6(4), 229–233. <a class="reference external" href="http://doi.org/10.1016/1044-0305(95)00017-8">http://doi.org/10.1016/1044-0305(95)00017-8</a></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Deconvolution</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="averagine.html">Isotopic Pattern Generation</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

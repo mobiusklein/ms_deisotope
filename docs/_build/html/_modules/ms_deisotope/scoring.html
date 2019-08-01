@@ -1,0 +1,654 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ms_deisotope.scoring &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.scoring</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.scoring</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">Base</span>
+
+<span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-4</span>
+
+
+<span class="k">class</span> <span class="nc">IsotopicFitRecord</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describes a single isotopic pattern fit, comparing how well an</span>
+<span class="sd">    experimentally observed sequence of peaks matches a theoretical isotopic</span>
+<span class="sd">    pattern.</span>
+
+<span class="sd">    IsotopicFitRecord instances are hashable and orderable (by score).</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    charge : int</span>
+<span class="sd">        The charge state used to generate the theoretical pattern</span>
+<span class="sd">    data : object</span>
+<span class="sd">        An arbitrary Python object containing extra information</span>
+<span class="sd">    experimental : list of FittedPeak</span>
+<span class="sd">        The observed experimental peaks to be fitted</span>
+<span class="sd">    missed_peaks : int</span>
+<span class="sd">        The number of peaks in the theoretical pattern that do not</span>
+<span class="sd">        have a matching experimental peak</span>
+<span class="sd">    monoisotopic_peak : FittedPeak</span>
+<span class="sd">        The fitted peak which corresponds to the monoisotopic peak</span>
+<span class="sd">    score : float</span>
+<span class="sd">        The score assigned to the fit by an IsotopicFitter object</span>
+<span class="sd">    seed_peak : FittedPeak</span>
+<span class="sd">        The peak that was used to initiate the fit. This may be unused</span>
+<span class="sd">        if not using an Averagine method</span>
+<span class="sd">    theoretical : list of TheoreticalPeak</span>
+<span class="sd">        The theoretical isotopic pattern being fitted on the experimental data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;seed_peak&quot;</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="s2">&quot;charge&quot;</span><span class="p">,</span> <span class="s2">&quot;experimental&quot;</span><span class="p">,</span> <span class="s2">&quot;theoretical&quot;</span><span class="p">,</span>
+                 <span class="s2">&quot;monoisotopic_peak&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;missed_peaks&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_peak</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">theoretical</span><span class="p">,</span> <span class="n">experimental</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">missed_peaks</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed_peak</span> <span class="o">=</span> <span class="n">seed_peak</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">=</span> <span class="n">charge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experimental</span> <span class="o">=</span> <span class="n">experimental</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theoretical</span> <span class="o">=</span> <span class="n">theoretical</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">monoisotopic_peak</span> <span class="o">=</span> <span class="n">experimental</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missed_peaks</span> <span class="o">=</span> <span class="n">missed_peaks</span>
+
+    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seed_peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theoretical</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">experimental</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">missed_peaks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seed_peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theoretical</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">experimental</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">missed_peaks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">score</span> <span class="ow">and</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">charge</span> <span class="ow">and</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">experimental</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">experimental</span> <span class="ow">and</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">theoretical</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">theoretical</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">other</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">val</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">score</span>
+
+    <span class="k">def</span> <span class="nf">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">score</span>
+
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">experimental</span>
+        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">theoretical</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">npeaks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experimental</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;IsotopicFitRecord(score=</span><span class="si">%0.5f</span><span class="s2">, charge=</span><span class="si">%d</span><span class="s2">, npeaks=</span><span class="si">%d</span><span class="s2">, monoisotopic_mz=</span><span class="si">%0.5f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npeaks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">monoisotopic_peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FitSelectorBase"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.FitSelectorBase">[docs]</a><span class="k">class</span> <span class="nc">FitSelectorBase</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An object that controls the filtering and</span>
+<span class="sd">    selection of IsotopicFitRecord</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    minimum_score : int</span>
+<span class="sd">        The minimum score needed to be a candidate for selection. If the</span>
+<span class="sd">        FitSelector is `minimizing` it is the maximal score to be a candidate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">minimum_score</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum_score</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minimum_score</span> <span class="o">=</span> <span class="n">minimum_score</span>
+
+    <span class="k">def</span> <span class="nf">best</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">best</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">reject_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">is_maximizing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="MinimizeFitSelector"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.MinimizeFitSelector">[docs]</a><span class="k">class</span> <span class="nc">MinimizeFitSelector</span><span class="p">(</span><span class="n">FitSelectorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A FitSelector which tries to minimize the score of the best fit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">best</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the IsotopicFitRecord with the smallest score</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        results : list of IsotopicFitRecord</span>
+<span class="sd">            List of isotopic fits to select the most optimal case from</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        IsotopicFitRecord</span>
+<span class="sd">            The most optimal fit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">reject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decide whether the fit should be discarded for having too</span>
+<span class="sd">        large a score. Compares against :attr:`minimum_score`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fit : IsotopicFitRecord</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">fit</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_score</span>
+
+    <span class="k">def</span> <span class="nf">reject_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_score</span>
+
+    <span class="k">def</span> <span class="nf">is_maximizing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns that this is *not* a maximizing selector</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="MaximizeFitSelector"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.MaximizeFitSelector">[docs]</a><span class="k">class</span> <span class="nc">MaximizeFitSelector</span><span class="p">(</span><span class="n">FitSelectorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A FitSelector which tries to maximize the score of the best fit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">best</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the IsotopicFitRecord with the largest score</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        results : list of IsotopicFitRecord</span>
+<span class="sd">            List of isotopic fits to select the most optimal case from</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        IsotopicFitRecord</span>
+<span class="sd">            The most optimal fit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="s2">&quot;score&quot;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">reject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decide whether the fit should be discarded for having too</span>
+<span class="sd">        small a score. Compares against :attr:`minimum_score`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fit : IsotopicFitRecord</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">fit</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_score</span>
+
+    <span class="k">def</span> <span class="nf">reject_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">score</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_score</span>
+
+    <span class="k">def</span> <span class="nf">is_maximizing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns that this *is* a maximizing selector</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="IsotopicFitterBase"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase">[docs]</a><span class="k">class</span> <span class="nc">IsotopicFitterBase</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A base class for Isotopic Pattern Fitters, objects</span>
+<span class="sd">    which given a set of experimental peaks and a set of matching</span>
+<span class="sd">    theoretical peaks, returns a fit score describing how good the</span>
+<span class="sd">    match is.</span>
+
+<span class="sd">    An IsotopicFitter may be optimal when the score is small (minimizing)</span>
+<span class="sd">    or when the score is large (maximizing), and the appropriate</span>
+<span class="sd">    :class:`FitSelectorBase` type will be used for :attr:`select`. This</span>
+<span class="sd">    will also be reflected by :meth:`is_maximizing`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select</span> <span class="o">=</span> <span class="n">MinimizeFitSelector</span><span class="p">(</span><span class="n">score_threshold</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IsotopicFitterBase.evaluate"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate a pair of peak lists for goodness-of-fit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        peaklist : :class:`~.PeakSet`</span>
+<span class="sd">            The full set of all experimental peaks</span>
+<span class="sd">        observed : list</span>
+<span class="sd">            The list of experimental peaks that are part of this fit</span>
+<span class="sd">        expected : list</span>
+<span class="sd">            The list of theoretical peaks that are part of this fit</span>
+<span class="sd">        **kwargs</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The score</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">NotImplemented</span></div>
+
+    <span class="k">def</span> <span class="nf">_evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IsotopicFitterBase.__call__"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Invokes :meth:`evaluate`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args</span>
+<span class="sd">            Forwarded to :meth:`evaluate`</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Forwarded to :meth:`evaluate`</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The score</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IsotopicFitterBase.reject"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase.reject">[docs]</a>    <span class="k">def</span> <span class="nf">reject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test whether this fit is too poor to be used</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fit : :class:`~IsotopicFitRecord`</span>
+<span class="sd">            The fit to test</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="o">.</span><span class="n">reject</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="IsotopicFitterBase.is_maximizing"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.IsotopicFitterBase.is_maximizing">[docs]</a>    <span class="k">def</span> <span class="nf">is_maximizing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Whether or not this fitter&#39;s score gets better as it grows</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            Whether or not this fitter is a maximizing fitter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="o">.</span><span class="n">is_maximizing</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deconvoluter</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="GTestFitter"><a class="viewcode-back" href="../../deconvolution/envelope_scoring.html#ms_deisotope.scoring.GTestFitter">[docs]</a><span class="k">class</span> <span class="nc">GTestFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Evaluate an isotopic fit using a G-test</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}</span>
+
+<span class="sd">    where :math:`o_i` is the intensity of the ith experimental peak</span>
+<span class="sd">    and :math:`e_i` is the intensity of the ith theoretical peak.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">g_score</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="k">for</span> <span class="n">obs</span><span class="p">,</span> <span class="n">theo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">g_score</span></div>
+
+
+<span class="n">g_test</span> <span class="o">=</span> <span class="n">GTestFitter</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">ScaledGTestFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Evaluate an isotopic fit using a G-test after normalizing the</span>
+<span class="sd">    list of experimental and theoretical peaks to both sum to 1.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}</span>
+
+<span class="sd">    where :math:`o_i` is the intensity of the ith experimental peak</span>
+<span class="sd">    and :math:`e_i` is the intensity of the ith theoretical peak.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">total_observed</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">observed</span><span class="p">)</span>
+        <span class="n">total_expected</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">)</span>
+        <span class="n">total_expected</span> <span class="o">+=</span> <span class="n">eps</span>
+        <span class="n">normalized_observed</span> <span class="o">=</span> <span class="p">[</span><span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span>
+                               <span class="n">total_observed</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observed</span><span class="p">]</span>
+        <span class="n">normalized_expected</span> <span class="o">=</span> <span class="p">[</span><span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span>
+                               <span class="n">total_expected</span> <span class="k">for</span> <span class="n">theo</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">]</span>
+        <span class="n">g_score</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">([</span><span class="n">obs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">obs</span> <span class="o">/</span> <span class="n">theo</span><span class="p">)</span> <span class="k">for</span> <span class="n">obs</span><span class="p">,</span> <span class="n">theo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="n">normalized_observed</span><span class="p">,</span> <span class="n">normalized_expected</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">g_score</span>
+
+
+<span class="n">g_test_scaled</span> <span class="o">=</span> <span class="n">ScaledGTestFitter</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">ChiSquareFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([(</span><span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">-</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span>
+                     <span class="k">for</span> <span class="n">obs</span><span class="p">,</span> <span class="n">theo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">score</span>
+
+
+<span class="n">chi_sqr_test</span> <span class="o">=</span> <span class="n">ChiSquareFitter</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">LeastSquaresFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Evaluate an isotopic fit using least squares coefficient of</span>
+<span class="sd">    determination :math:`R^2`.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        {\hat e_i} &amp;= e_i / max(e)</span>
+
+<span class="sd">        {\hat t_i} &amp;= t_i / max(t)</span>
+
+<span class="sd">        {\hat t} &amp;= \sum_i^n {\hat t_i}^2</span>
+
+<span class="sd">        R^2 &amp;= \frac{1}{{\hat t}}\sum_i^n ({\hat e_i} - {\hat t_i})^2</span>
+
+<span class="sd">    where :math:`e_i` is the ith experimental peak intensity and :math:`t_i`</span>
+<span class="sd">    is the ith theoretical peak intensity</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">exp_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">observed</span><span class="p">)</span>
+        <span class="n">theo_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">)</span>
+
+        <span class="n">sum_of_squared_errors</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">sum_of_squared_theoreticals</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+            <span class="n">normed_expr</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span> <span class="n">exp_max</span>
+            <span class="n">normed_theo</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span> <span class="n">theo_max</span>
+            <span class="n">sum_of_squared_errors</span> <span class="o">+=</span> <span class="p">(</span><span class="n">normed_theo</span> <span class="o">-</span> <span class="n">normed_expr</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="n">sum_of_squared_theoreticals</span> <span class="o">+=</span> <span class="n">normed_theo</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">sum_of_squared_errors</span> <span class="o">/</span> <span class="n">sum_of_squared_theoreticals</span>
+
+
+<span class="n">least_squares</span> <span class="o">=</span> <span class="n">LeastSquaresFitter</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">MSDeconVFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An implementation of the scoring function used in :title-reference:`MSDeconV`</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Liu, X., Inbar, Y., Dorrestein, P. C., Wynne, C., Edwards, N., Souda, P., …</span>
+<span class="sd">    Pevzner, P. A. (2010). Deconvolution and database search of complex tandem</span>
+<span class="sd">    mass spectra of intact proteins: a combinatorial approach. Molecular &amp; Cellular</span>
+<span class="sd">    Proteomics : MCP, 9(12), 2772–2782. https://doi.org/10.1074/mcp.M110.002766</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum_score</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mass_error_tolerance</span><span class="o">=</span><span class="mf">0.02</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select</span> <span class="o">=</span> <span class="n">MaximizeFitSelector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select</span><span class="o">.</span><span class="n">minimum_score</span> <span class="o">=</span> <span class="n">minimum_score</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_error_tolerance</span> <span class="o">=</span> <span class="n">mass_error_tolerance</span>
+
+    <span class="k">def</span> <span class="nf">calculate_minimum_signal_to_noise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed</span><span class="p">):</span>
+        <span class="n">snr</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">signal_to_noise</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">snr</span> <span class="o">+=</span> <span class="n">obs</span><span class="o">.</span><span class="n">signal_to_noise</span>
+            <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">snr</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.05</span>
+
+    <span class="k">def</span> <span class="nf">reweight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">theo</span><span class="p">,</span> <span class="n">obs_total</span><span class="p">,</span> <span class="n">theo_total</span><span class="p">):</span>
+        <span class="n">norm_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span> <span class="n">obs_total</span>
+        <span class="n">norm_theo</span> <span class="o">=</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span> <span class="n">theo_total</span>
+        <span class="k">return</span> <span class="n">norm_obs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">norm_obs</span> <span class="o">/</span> <span class="n">norm_theo</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">score_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">theo</span><span class="p">,</span> <span class="n">mass_error_tolerance</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">minimum_signal_to_noise</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">signal_to_noise</span> <span class="o">&lt;</span> <span class="n">minimum_signal_to_noise</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+
+        <span class="n">mass_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">theo</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mass_error</span> <span class="o">&lt;=</span> <span class="n">mass_error_tolerance</span><span class="p">:</span>
+            <span class="n">mass_accuracy</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">mass_error</span> <span class="o">/</span> <span class="n">mass_error_tolerance</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mass_accuracy</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&lt;</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="ow">and</span> <span class="p">(((</span><span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">abundance_diff</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> \
+                <span class="p">((</span><span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&gt;=</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="ow">and</span> <span class="p">(((</span><span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">-</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">abundance_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+                <span class="mi">1</span> <span class="o">-</span> <span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">-</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">abundance_diff</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">theo</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="o">*</span> <span class="n">mass_accuracy</span> <span class="o">*</span> <span class="n">abundance_diff</span>
+        <span class="k">return</span> <span class="n">score</span>
+
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">obs</span><span class="p">,</span> <span class="n">theo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+            <span class="n">inc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_peak</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">theo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_error_tolerance</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="n">inc</span>
+        <span class="k">return</span> <span class="n">score</span>
+
+
+<span class="k">class</span> <span class="nc">PenalizedMSDeconVFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&#39;&#39;&#39;An Isotopic Fitter which uses the :class:`MSDeconVFitter` score</span>
+<span class="sd">    weighted by 1 - :attr:`penalty_factor` * :class:`ScaledGTestFitter` score</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        S(e, t) = M(e, t) * (1 - G(e, t))</span>
+
+<span class="sd">    where :math:`e` is the experimental peak list and :math:`t` is the theoretical</span>
+<span class="sd">    peak list</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum_score</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">penalty_factor</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">mass_error_tolerance</span><span class="o">=</span><span class="mf">0.02</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select</span> <span class="o">=</span> <span class="n">MaximizeFitSelector</span><span class="p">(</span><span class="n">minimum_score</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msdeconv</span> <span class="o">=</span> <span class="n">MSDeconVFitter</span><span class="p">(</span><span class="n">mass_error_tolerance</span><span class="o">=</span><span class="n">mass_error_tolerance</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">penalizer</span> <span class="o">=</span> <span class="n">ScaledGTestFitter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">penalty_factor</span> <span class="o">=</span> <span class="n">penalty_factor</span>
+
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msdeconv</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span>
+        <span class="n">penalty</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">penalizer</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">score</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">penalty</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty_factor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">decon2ls_chisqr_test</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">fit_total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">sum_total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">obs</span><span class="p">,</span> <span class="n">theo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+        <span class="n">intensity_diff</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span> <span class="o">-</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span>
+        <span class="n">fit_total</span> <span class="o">+=</span> <span class="p">(</span><span class="n">intensity_diff</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+        <span class="n">sum_total</span> <span class="o">+=</span> <span class="n">theo</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="n">obs</span><span class="o">.</span><span class="n">intensity</span>
+    <span class="k">return</span> <span class="n">fit_total</span> <span class="o">/</span> <span class="p">(</span><span class="n">sum_total</span> <span class="o">+</span> <span class="mf">0.01</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">InterferenceDetection</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span> <span class="o">=</span> <span class="n">peaklist</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experimental_peaks</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">detect_interference</span><span class="p">(</span><span class="n">experimental_peaks</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">detect_interference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experimental_peaks</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">min_peak</span> <span class="o">=</span> <span class="n">experimental_peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">max_peak</span> <span class="o">=</span> <span class="n">experimental_peaks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">lower</span> <span class="o">=</span> <span class="n">min_peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">min_peak</span><span class="o">.</span><span class="n">full_width_at_half_max</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">lower</span> <span class="o">=</span> <span class="n">min_peak</span><span class="o">.</span><span class="n">mz</span>
+        <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">upper</span> <span class="o">=</span> <span class="n">max_peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">+</span> <span class="n">max_peak</span><span class="o">.</span><span class="n">full_width_at_half_max</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">upper</span> <span class="o">=</span> <span class="n">max_peak</span><span class="o">.</span><span class="n">mz</span>
+
+        <span class="n">region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+
+        <span class="n">included_intensity</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">experimental_peaks</span><span class="p">)</span>
+        <span class="n">region_intensity</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">region</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">region_intensity</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">included_intensity</span> <span class="o">/</span> <span class="n">region_intensity</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">score</span>
+
+
+<span class="k">class</span> <span class="nc">DistinctPatternFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum_score</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">peak_count_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">domain_scale</span><span class="o">=</span><span class="mf">100.</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select</span> <span class="o">=</span> <span class="n">MinimizeFitSelector</span><span class="p">(</span><span class="n">minimum_score</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interference_detector</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g_test_scaled</span> <span class="o">=</span> <span class="n">ScaledGTestFitter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_count_scale</span> <span class="o">=</span> <span class="n">peak_count_scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_scale</span> <span class="o">=</span> <span class="n">domain_scale</span>
+
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">experimental</span><span class="p">,</span> <span class="n">theoretical</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">npeaks</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">experimental</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interference_detector</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interference_detector</span> <span class="o">=</span> <span class="n">InterferenceDetection</span><span class="p">(</span><span class="n">peaklist</span><span class="p">)</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">g_test_scaled</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">experimental</span><span class="p">,</span> <span class="n">theoretical</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">*=</span> <span class="nb">abs</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">interference_detector</span><span class="o">.</span><span class="n">detect_interference</span><span class="p">(</span><span class="n">experimental</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.00001</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="n">npeaks</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak_count_scale</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_scale</span>
+        <span class="k">return</span> <span class="n">score</span>
+
+
+<span class="k">def</span> <span class="nf">percentile</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">percent</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">N</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">percent</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="o">==</span> <span class="n">c</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">N</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span>
+    <span class="n">d0</span> <span class="o">=</span> <span class="n">N</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">c</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span>
+    <span class="n">d1</span> <span class="o">=</span> <span class="n">N</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="p">)]</span> <span class="o">*</span> <span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">d0</span> <span class="o">+</span> <span class="n">d1</span>
+
+
+<span class="k">class</span> <span class="nc">DotProductFitter</span><span class="p">(</span><span class="n">IsotopicFitterBase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+            <span class="n">total</span> <span class="o">+=</span> <span class="n">e</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="n">t</span><span class="o">.</span><span class="n">intensity</span>
+        <span class="k">return</span> <span class="n">total</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">_c</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">_IsotopicFitRecord</span> <span class="o">=</span> <span class="n">IsotopicFitRecord</span>
+    <span class="n">_LeastSquaresFitter</span> <span class="o">=</span> <span class="n">LeastSquaresFitter</span>
+    <span class="n">_MSDeconVFitter</span> <span class="o">=</span> <span class="n">MSDeconVFitter</span>
+    <span class="n">_ScaledGTestFitter</span> <span class="o">=</span> <span class="n">ScaledGTestFitter</span>
+    <span class="n">_PenalizedMSDeconVFitter</span> <span class="o">=</span> <span class="n">PenalizedMSDeconVFitter</span>
+    <span class="n">_DistinctPatternFitter</span> <span class="o">=</span> <span class="n">DistinctPatternFitter</span>
+    <span class="n">_DotProductFitter</span> <span class="o">=</span> <span class="n">DotProductFitter</span>
+
+    <span class="kn">from</span> <span class="nn">._c.scoring</span> <span class="k">import</span> <span class="p">(</span>
+        <span class="n">IsotopicFitRecord</span><span class="p">,</span> <span class="n">LeastSquaresFitter</span><span class="p">,</span> <span class="n">MSDeconVFitter</span><span class="p">,</span>
+        <span class="n">ScaledGTestFitter</span><span class="p">,</span> <span class="n">PenalizedMSDeconVFitter</span><span class="p">,</span> <span class="n">DistinctPatternFitter</span><span class="p">,</span>
+        <span class="n">DotProductFitter</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">_c</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">msdeconv</span> <span class="o">=</span> <span class="n">MSDeconVFitter</span><span class="p">()</span>
+<span class="n">least_squares</span> <span class="o">=</span> <span class="n">LeastSquaresFitter</span><span class="p">()</span>
+<span class="n">g_test_scaled</span> <span class="o">=</span> <span class="n">ScaledGTestFitter</span><span class="p">()</span>
+<span class="n">penalized_msdeconv</span> <span class="o">=</span> <span class="n">PenalizedMSDeconVFitter</span><span class="p">()</span>
+<span class="n">distinct_pattern_fitter</span> <span class="o">=</span> <span class="n">DistinctPatternFitter</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">MassShiftSupportPostProcessorBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shifts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">shifts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">shifts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shifts</span> <span class="o">=</span> <span class="n">shifts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fits</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fits</span>
+
+    <span class="nd">@fits</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fits</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">reweight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span> <span class="n">shift</span><span class="p">):</span>
+        <span class="k">pass</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
