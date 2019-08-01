@@ -16,6 +16,15 @@ a chemical composition using :mod:`brainpy`, which is an implementation of the
     for peak in isotopic_pattern:
         print(peak.mz, peak.intensity)
 
+:mod:`ms_deisotope` includes several pre-defined averagines (or "averagoses" as may be more appropriate):
+    1. Senko's peptide - :obj:`ms_deisotope.peptide`
+    2. Native *N*- and *O*-glycan - :obj:`ms_deisotope.glycan`
+    3. Permethylated glycan - :obj:`ms_deisotope.permethylated_glycan`
+    4. Glycopeptide - :obj:`ms_deisotope.glycopeptide`
+    5. Sulfated Glycosaminoglycan - :obj:`ms_deisotope.heparan_sulfate`
+    6. Unsulfated Glycosaminoglycan - :obj:`ms_deisotope.heparin`
+
+
 
 .. automodule:: ms_deisotope.averagine
 

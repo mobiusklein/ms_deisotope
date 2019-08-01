@@ -1,4 +1,6 @@
-.. image:: docs/_static/logo.svg
+.. .. image:: docs/_static/logo.svg
+
+.. image:: https://raw.githubusercontent.com/mobiusklein/ms_deisotope/master/docs/_static/logo.svg
 
 A Library for Deisotoping and Charge State Deconvolution For Mass Spectrometry
 ------------------------------------------------------------------------------
@@ -25,7 +27,8 @@ Data Access
 ``ms_deisotope`` can read from mzML, mzXML and MGF files directly, using the ``pyteomics`` library.
 On Windows, it can also use ``comtypes`` to access Thermo's MSFileReader.dll to read RAW files and
 Agilent's MassSpecDataReader.dll to read .d directories. Whenever possible, the library provides a
-common interface to all supported formats.
+common interface to all supported formats. With Thermo's pure .NET library, it can use ``pythonnet``
+to read Thermo RAW files on Windows and Linux (and presumably Mac, too).
 
 .. code:: python
 
@@ -67,10 +70,35 @@ by default: `{"C": 4.9384, "H": 7.7583, "N": 1.3577, "O": 1.4773, "S": 0.0417}`
 .. code:: python
 
     from ms_deisotope import Averagine
-    from ms_deisotope import utils
+    from ms_deisotope import plot
 
     peptide_averagine = Averagine({"C": 4.9384, "H": 7.7583, "N": 1.3577, "O": 1.4773, "S": 0.0417})
-    
-    utils.draw_peaklist(peptide_averagine.isotopic_cluster(1266.321, charge=1))
 
+    plot.draw_peaklist(peptide_averagine.isotopic_cluster(1266.321, charge=1))
 
+`ms_deisotope` includes several pre-defined averagines (or "averagoses" as may be more appropriate):
+    1. Senko's peptide - `ms_deisotope.peptide`
+    2. Native *N*- and *O*-glycan - `ms_deisotope.glycan`
+    3. Permethylated glycan - `ms_deisotope.permethylated_glycan`
+    4. Glycopeptide - `ms_deisotope.glycopeptide`
+    5. Sulfated Glycosaminoglycan - `ms_deisotope.heparan_sulfate`
+    6. Unsulfated Glycosaminoglycan - `ms_deisotope.heparin`
+
+Deconvolution
+=============
+
+The general-purpose averagine-based deconvolution procedure can be called by using the high level
+API function `deconvolute_peaks`, which takes a sequence of peaks, an averagine model, and a isotopic
+goodness-of-fit scorer:
+
+.. code:: python
+
+    import ms_deisotope
+
+    deconvoluted_peaks, _ = ms_deisotope.deconvolute_peaks(peaks, averagine=ms_deisotope.peptide,
+                                                           scorer=ms_deisotope.MSDeconVFitter(10.))
+
+The result is a deisotoped and charge state deconvoluted peak list where each peak's neutral mass is known
+and the fitted charge state is recorded along with the isotopic peaks that gave rise to the fit.
+
+Refer to the documentation for a deeper description of isotopic pattern fitting.
