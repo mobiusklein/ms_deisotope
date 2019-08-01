@@ -74,6 +74,7 @@ by default: `{"C": 4.9384, "H": 7.7583, "N": 1.3577, "O": 1.4773, "S": 0.0417}`
 
     plot.draw_peaklist(peptide_averagine.isotopic_cluster(1266.321, charge=1))
 
+
 `ms_deisotope` includes several pre-defined averagines (or "averagoses" as may be more appropriate):
     1. Senko's peptide - `ms_deisotope.peptide`
     2. Native *N*- and *O*-glycan - `ms_deisotope.glycan`
