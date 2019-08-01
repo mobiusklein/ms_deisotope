@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/mobiusklein/ms_deisotope/master/docs/_static/logo.svg
+.. image:: https://raw.githubusercontent.com/mobiusklein/ms_deisotope/master/docs/_static/logo.png
 
 A Library for Deisotoping and Charge State Deconvolution For Mass Spectrometry
 ------------------------------------------------------------------------------
