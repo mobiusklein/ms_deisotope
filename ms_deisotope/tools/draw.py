@@ -69,3 +69,45 @@ def draw_tic(path, output_path=None, start_time=None, end_time=None):
     figure.savefig(output_path, bbox_inches='tight', dpi=120)
 
 
+@draw.command("spectrum")
+@click.argument("ms-file-path", type=click.Path(exists=True))
+@click.option("-o", "--output-path", type=click.Path(writable=True),
+              required=False, help="Path to write image to")
+@click.option("-i", "--index", type=int, help="The index of the scan to draw. Exclusive with scan-id and time.")
+@click.option("-s", "--scan-id", type=str, help="The unique ID of the scan to draw. Exclusive with index and time.")
+@click.option("-t", "--time", type=float,
+              help="The acquisition time of the scan to draw. Exclusive with index and scan-id.")
+def draw_spectrum(ms_file_path, index=None, scan_id=None, time=None, output_path=None):
+    options = map(bool, (index, scan_id, time))
+    if sum(options) == 0 or sum(options) > 1:
+        raise click.UsageError(
+            "Only one of `index`, `scan-id`, and `time` should be provided")
+
+    reader = ms_deisotope.MSFileLoader(ms_file_path)
+
+    if index is not None:
+        source = "index"
+        key = index
+        scan = reader.get_scan_by_index(index)
+    elif scan_id is not None:
+        source = 'scan_id'
+        key = scan_id
+        scan = reader.get_scan_by_id(scan_id)
+    elif time is not None:
+        source = 'time'
+        key = time
+        scan = reader.get_scan_by_time(time)
+
+    click.echo("Drawing %r" % (scan, ))
+
+    if output_path is None:
+        output_path = ms_file_path + '.%s-%s.png' % (source, key)
+
+    figure, axis = _make_figure()
+
+    if scan.is_profile:
+        scan.arrays.plot(ax=axis)
+    else:
+        scan.pick_peaks()
+        plot.draw_peaklist(scan.peak_set, ax=axis)
+    figure.savefig(output_path, bbox_inches='tight', dpi=120)
