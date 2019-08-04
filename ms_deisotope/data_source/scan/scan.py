@@ -760,6 +760,7 @@ class Scan(ScanBase):
         mzs, intensities = transform(mzs, intensities)
         return WrappedScan(self._data, self.source,
                            (mzs, intensities), list(self.product_scans),
+                           is_profile=self.is_profile,
                            annotations=self._external_annotations)
 
     def transform(self, filters=None):
@@ -783,6 +784,7 @@ class Scan(ScanBase):
             mzs, intensities, filters=filters)
         return WrappedScan(self._data, self.source,
                            (mzs, intensities), list(self.product_scans),
+                           is_profile=self.is_profile,
                            annotations=self._external_annotations)
 
     def average_with(self, scans, dx=None, weight_sigma=None):

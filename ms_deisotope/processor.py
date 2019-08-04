@@ -396,6 +396,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         -------
         PeakSet
         """
+        # averaged scans are always profile mode
         new_scan = precursor_scan.average(self.ms1_averaging)
         prec_peaks = pick_peaks(*new_scan.arrays,
                                 target_envelopes=self._get_envelopes(precursor_scan),
