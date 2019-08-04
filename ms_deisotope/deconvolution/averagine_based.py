@@ -277,7 +277,8 @@ class AveraginePeakDependenceGraphDeconvoluter(AveragineDeconvoluter, PeakDepend
         by peak querying methods
     scale_method : str
         The name of the method to use to scale theoretical isotopic pattern intensities
-        to match the experimental isotopic pattern
+        to match the experimental isotopic pattern. For a description of options, see
+        :meth:`~.TheoreticalIsotopicPattern.scale`.
     use_subtraction : bool
         Whether or not to apply a subtraction procedure to experimental peaks after they
         have been fitted. This is only necessary if the same signal may be examined multiple
@@ -324,7 +325,8 @@ class MultiAveraginePeakDependenceGraphDeconvoluter(MultiAveragineDeconvoluter, 
         by peak querying methods
     scale_method : str
         The name of the method to use to scale theoretical isotopic pattern intensities
-        to match the experimental isotopic pattern
+        to match the experimental isotopic pattern. For a description of options, see
+        :meth:`~.TheoreticalIsotopicPattern.scale`.
     use_subtraction : bool
         Whether or not to apply a subtraction procedure to experimental peaks after they
         have been fitted. This is only necessary if the same signal may be examined multiple

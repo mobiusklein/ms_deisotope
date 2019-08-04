@@ -532,16 +532,25 @@ cdef class TheoreticalIsotopicPattern(object):
 
         The ``method`` argument must be one of:
 
-        "sum"
+        `"sum"`:
             Scale each peak of the theoretical distribution by the sum of the
             intensity in the experimental distribution such that the sums of their
             intensities are equal.
 
-        "max"
+        `"max"`:
             Select the most abundant peak in the theoretical distribution :math:`t_i`, find it's
             match in the experimental distribution :math:`e_i`, find the scaling factor
             :math:`\alpha = \frac{e_i}{t_i}` which will make :math:`e_i == t_i` and scale all
-            peaks in self by :math:`alpha`
+            peaks in self by :math:`\alpha`
+
+        `"basepeak"`:
+            As in `"max"`, except the most abundant peak index is taken from the *experimental*
+            distribution
+
+        `"top3"`:
+            The as in `"max"`, but the scaling factor is the mean of the scale factors for the
+            top three most abundant theoretical peaks.
+
 
         Parameters
         ----------
