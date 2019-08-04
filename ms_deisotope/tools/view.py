@@ -68,6 +68,7 @@ class SpectrumViewer(object, ttk.Frame):
         self._ms_file_name = None
         self.reader = None
         self.scan = None
+        self.draw_isotopic_patterns = True
         self.configure_toolbar()
         self.configure_canvas()
         self.configure_treeview()
@@ -245,7 +246,6 @@ class SpectrumViewer(object, ttk.Frame):
              for p in scan.deconvoluted_peak_set if not (p.envelope[0].intensity > 0)],
             ax=self.axis, alpha=0.6, lw=0.5,
             color='red', linestyle='--')
-        # annotate_isotopic_peaks(scan, ax=self.axis)
         # draw isolation window and instrument reported precursor
         if children:
             ylim = scan.arrays.intensity.max()
@@ -253,9 +253,11 @@ class SpectrumViewer(object, ttk.Frame):
                 if child.isolation_window and not child.isolation_window.is_empty():
                     self.axis.vlines(
                         [child.isolation_window.lower_bound, child.isolation_window.upper_bound],
-                        0, ylim, linestyle='--', color='skyblue', lw=0.5)
+                        0, ylim, linestyle='--', color='skyblue', lw=1)
                 self.axis.vlines(child.precursor_information.mz, 0, ylim,
-                                 linestyle='--', color='black', lw=0.5)
+                                 linestyle='--', color='black', lw=1)
+        if self.draw_isotopic_patterns:
+            annotate_isotopic_peaks(self.scan, self.axis)
         if self.scan.precursor_information:
             ylim = scan.arrays.intensity.max()
             self.axis.vlines(self.scan.precursor_information.mz, 0, ylim, linestyle='-.', color='orange')

@@ -25,7 +25,7 @@ from ms_deisotope.data_source.metadata.file_information import SourceFile
 
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
-from ms_deisotope.tools import conversion
+from ms_deisotope.tools import conversion, draw
 from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook
 
 
@@ -112,6 +112,7 @@ def describe(path, diagnostics=False):
         reader.reset()
         scan_ids_with_invalid_isolation_window = []
         scan_ids_with_empty_isolation_window = []
+        activation_counter = Counter()
         n_ms1 = 0
         n_msn = 0
         for precursor, products in reader:
@@ -124,6 +125,7 @@ def describe(path, diagnostics=False):
                 if is_isolation_window_empty(product):
                     scan_ids_with_empty_isolation_window.append(
                         (precursor.id, product.id))
+                activation_counter[product.activation] += 1
 
         click.echo("MS1 Spectra: %d" % (n_ms1, ))
         click.echo("MSn Spectra: %d" % (n_msn, ))
@@ -132,7 +134,15 @@ def describe(path, diagnostics=False):
         click.echo("Empty Isolation Windows: %d" % (
             len(scan_ids_with_empty_isolation_window), ))
 
-
+        click.echo("Activation Methods")
+        for activation, count in activation_counter.items():
+            if not activation.is_multiple_dissociation():
+                click.echo("\t{method}:{energy} = {count}".format(
+                    method=activation.method, energy=activation.energy, count=count))
+            else:
+                click.echo("\t{method}:{energy} = {count}".format(
+                    method=','.join(map(str, activation.method)),
+                    energy=','.join(map(str, activation.energies)), count=count))
 
 
 @cli.command("byte-index", short_help='Build an external byte offset index for a mass spectrometry data file')
@@ -483,6 +493,8 @@ def _mount_group(group):
 
 
 _mount_group(conversion.ms_conversion)
+
+cli.add_command(draw.draw)
 
 main = cli.main
 

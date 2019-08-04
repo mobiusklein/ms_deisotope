@@ -5,10 +5,16 @@ import math
 import itertools
 
 import numpy as np
-from matplotlib import pyplot as plt, gridspec
-
-from ms_peak_picker.plot import draw_peaklist, draw_raw
-has_plot = True
+try:
+    from matplotlib import pyplot as plt, gridspec
+    from ms_peak_picker.plot import draw_peaklist, draw_raw
+    has_plot = True
+except ImportError:
+    import warnings
+    warnings.warn("Could not import matplotlib, plotting tools will not work")
+    pyplot = None
+    gridspec = None
+    has_plot = False
 
 
 def _default_color_cycle():
