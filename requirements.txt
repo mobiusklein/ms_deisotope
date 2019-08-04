@@ -12,3 +12,5 @@ python-idzip >=0.3.2
 comtypes[com]
 
 pythonnet[net]
+
+matplotlib[plot]

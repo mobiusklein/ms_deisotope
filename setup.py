@@ -237,7 +237,7 @@ install_requires = [
     "brain-isotopic-distribution",
     "pyteomics >= 4.0",
     "lxml",
-    "psims >= 0.1.19",
+    "psims >= 0.1.28",
 ]
 
 
@@ -247,6 +247,9 @@ extra_requires = {
     ],
     "net": [
         "pythonnet"
+    ],
+    "plot": [
+        "matplotlib",
     ]
 }
 
