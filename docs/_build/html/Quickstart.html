@@ -234,7 +234,9 @@ can use <code class="docutils literal notranslate"><span class="pre">MSFileLoade
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">reader</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSFileLoader</span><span class="p">(</span><span class="n">datafile</span><span class="p">(</span><span class="s2">&quot;three_test_scans.mzML&quot;</span><span class="p">))</span>
+<span></span><span class="c1"># We&#39;ll use the datafile helper to locate the package test data for demonstration purposes</span>
+<span class="n">path</span> <span class="o">=</span> <span class="n">datafile</span><span class="p">(</span><span class="s2">&quot;three_test_scans.mzML&quot;</span><span class="p">)</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">MSFileLoader</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

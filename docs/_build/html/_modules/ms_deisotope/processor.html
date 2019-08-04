@@ -37,11 +37,11 @@
 <span class="sd">Deconvolution Pipeline</span>
 <span class="sd">----------------------</span>
 
-<span class="sd">The deconvolution process from start to finish can be pipelined from start to finish</span>
+<span class="sd">The deconvolution process can be pipelined from start to finish</span>
 <span class="sd">using the :class:`~.ScanProcessor` class. This includes precursor recalculation and</span>
 <span class="sd">coisolation detection. :class:`~.ScanProcessor` is intended to be used either as a</span>
-<span class="sd">replacement for :class:`~.ScanIterator` when deconvolution is desired, or that the</span>
-<span class="sd">:meth:`~.ScanProcessor.process` will be used to handle individual :class:`~.ScanBunch`</span>
+<span class="sd">replacement for :class:`~.ScanIterator` when deconvolution is desired, or that it&#39;s</span>
+<span class="sd">:meth:`ScanProcessor.process` method will be used to handle individual :class:`~.ScanBunch`</span>
 <span class="sd">objects/pairs of precursor :class:`~.Scan` objects and a :class:`list` of product :class:`~.Scan`</span>
 <span class="sd">objects.</span>
 
@@ -54,7 +54,10 @@
 <span class="sd">    from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter</span>
 <span class="sd">    from ms_deisotope.test.common import datafile</span>
 
-<span class="sd">    proc = processor.ScanProcessor(datafile(&quot;20150710_3um_AGP_001_29_30.mzML.gz&quot;), ms1_deconvolution_args={</span>
+<span class="sd">    # Locate example dataset</span>
+<span class="sd">    path = datafile(&quot;20150710_3um_AGP_001_29_30.mzML.gz&quot;)</span>
+
+<span class="sd">    proc = processor.ScanProcessor(path, ms1_deconvolution_args={</span>
 <span class="sd">        &quot;averagine&quot;: glycopeptide,</span>
 <span class="sd">        &quot;scorer&quot;: PenalizedMSDeconVFitter(20., 2.),</span>
 <span class="sd">        &quot;truncate_after&quot;: 0.95</span>

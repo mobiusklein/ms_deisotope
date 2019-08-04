@@ -32,7 +32,9 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "reader = ms_deisotope.MSFileLoader(datafile(\"three_test_scans.mzML\"))"
+    "# We'll use the datafile helper to locate the package test data for demonstration purposes\n",
+    "path = datafile(\"three_test_scans.mzML\")\n",
+    "reader = ms_deisotope.MSFileLoader(path)"
    ]
   },
   {
