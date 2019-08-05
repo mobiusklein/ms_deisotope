@@ -298,6 +298,7 @@ def run_setup(include_cext=True):
             'License :: OSI Approved :: Apache Software License',
             'Topic :: Scientific/Engineering :: Bio-Informatics'],
         install_requires=install_requires,
+        extra_requires=extra_requires,
         include_package_data=True,
         zip_safe=False,
         project_urls={
