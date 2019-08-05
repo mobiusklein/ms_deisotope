@@ -249,10 +249,14 @@ class SpectrumViewer(object, ttk.Frame):
         self.scan = scan
         self.children_scans = children
         if scan.ms_level == 1:
+            print("Averaging")
             if scan.arrays.mz.shape[0] > 1:
-                self.scan = scan.average(self.ms1_scan_averaging_var.get())
+                self.scan = scan = scan.average(self.ms1_scan_averaging_var.get())
+            print("Denoising")
             self.scan = scan.denoise(4)
+        print("Processing Peaks")
         self._process_scan()
+        print("Begin Drawing")
         scan = self.scan
         if scan.is_profile:
             draw_raw(*scan.arrays, ax=self.axis, color='black', lw=0.75)

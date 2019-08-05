@@ -2,11 +2,11 @@
 Deconvolution Pipeline
 ----------------------
 
-The deconvolution process from start to finish can be pipelined from start to finish
+The deconvolution process can be pipelined from start to finish
 using the :class:`~.ScanProcessor` class. This includes precursor recalculation and
 coisolation detection. :class:`~.ScanProcessor` is intended to be used either as a
-replacement for :class:`~.ScanIterator` when deconvolution is desired, or that the
-:meth:`~.ScanProcessor.process` will be used to handle individual :class:`~.ScanBunch`
+replacement for :class:`~.ScanIterator` when deconvolution is desired, or that it's
+:meth:`ScanProcessor.process` method will be used to handle individual :class:`~.ScanBunch`
 objects/pairs of precursor :class:`~.Scan` objects and a :class:`list` of product :class:`~.Scan`
 objects.
 
@@ -19,7 +19,10 @@ with fewer configurable parameters.
     from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
     from ms_deisotope.test.common import datafile
 
-    proc = processor.ScanProcessor(datafile("20150710_3um_AGP_001_29_30.mzML.gz"), ms1_deconvolution_args={
+    # Locate example dataset
+    path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+
+    proc = processor.ScanProcessor(path, ms1_deconvolution_args={
         "averagine": glycopeptide,
         "scorer": PenalizedMSDeconVFitter(20., 2.),
         "truncate_after": 0.95
@@ -393,6 +396,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         -------
         PeakSet
         """
+        # averaged scans are always profile mode
         new_scan = precursor_scan.average(self.ms1_averaging)
         prec_peaks = pick_peaks(*new_scan.arrays,
                                 target_envelopes=self._get_envelopes(precursor_scan),

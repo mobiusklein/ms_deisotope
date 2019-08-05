@@ -1,12 +1,6 @@
 import click
-from six import string_types as basestring
 
-import os
 import numpy as np
-
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_agg import (FigureCanvasAgg,)
-
 from array import array
 
 import ms_deisotope
@@ -19,10 +13,16 @@ def draw():
     '''
 
 def _make_figure():
-    figure = Figure(dpi=120)
-    canvas = FigureCanvasAgg(figure)
-    axis = figure.add_subplot(111)
-    return figure, axis
+    try:
+        from matplotlib.figure import Figure
+        from matplotlib.backends.backend_agg import (FigureCanvasAgg,)
+        figure = Figure(dpi=120)
+        canvas = FigureCanvasAgg(figure)  # pylint: disable=unused-variable
+        axis = figure.add_subplot(111)
+        return figure, axis
+    except ImportError:
+        raise click.ClickException(
+            "Could not import matplotlib, please make sure it is installed prior to using `draw` commands")
 
 
 @draw.command("tic")
