@@ -9,8 +9,8 @@ brain-isotopic-distribution
 dill
 python-idzip >=0.3.2
 
-comtypes[com]
+comtypes
 
-pythonnet[net]
+pythonnet
 
-matplotlib[plot]
+matplotlib
