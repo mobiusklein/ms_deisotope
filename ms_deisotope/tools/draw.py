@@ -57,6 +57,7 @@ def draw_tic(path, output_path=None, start_time=None, end_time=None):
                 continue
             time.append(scan.scan_time)
             intensity.append(scan.arrays.intensity.sum())
+
     click.echo("Total Ion Current: %e" % np.sum(intensity))
 
     axis.plot(time, intensity)
@@ -78,7 +79,7 @@ def draw_tic(path, output_path=None, start_time=None, end_time=None):
 @click.option("-t", "--time", type=float,
               help="The acquisition time of the scan to draw. Exclusive with index and scan-id.")
 def draw_spectrum(ms_file_path, index=None, scan_id=None, time=None, output_path=None):
-    options = map(bool, (index, scan_id, time))
+    options = map(lambda x: x is not None, (index, scan_id, time))
     if sum(options) == 0 or sum(options) > 1:
         raise click.UsageError(
             "Only one of `index`, `scan-id`, and `time` should be provided")

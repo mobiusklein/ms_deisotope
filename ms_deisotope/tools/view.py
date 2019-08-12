@@ -29,7 +29,7 @@ except ImportError:
     import tkinter.filedialog as tkfiledialog
 
 import ms_deisotope
-from ms_deisotope.data_source import ScanBunch, Scan
+from ms_deisotope.data_source import ScanBunch
 from ms_deisotope.peak_set import EnvelopePair
 from ms_deisotope.plot import (draw_raw, draw_peaklist, annotate_isotopic_peaks)
 
@@ -79,7 +79,14 @@ class SummaryChromatogramBuilder(object):
         self.time = array.array('d')
 
 
-class SpectrumViewer(object, ttk.Frame):
+if issubclass(ttk.Frame, object):
+    _BaseFrame = ttk.Frame
+else:
+    class _BaseFrame(object, ttk.Frame):
+        pass
+
+
+class SpectrumViewer(_BaseFrame):
     def __init__(self, master):
         ttk.Frame.__init__(self, master)
         self.root = master
@@ -249,9 +256,11 @@ class SpectrumViewer(object, ttk.Frame):
         self.scan = scan
         self.children_scans = children
         if scan.ms_level == 1:
-            print("Averaging")
-            if scan.arrays.mz.shape[0] > 1:
-                self.scan = scan = scan.average(self.ms1_scan_averaging_var.get())
+            averaging_level = self.ms1_scan_averaging_var.get()
+            if averaging_level > 0:
+                print("Averaging")
+                if scan.arrays.mz.shape[0] > 1 :
+                    self.scan = scan = scan.average(averaging_level)
             print("Denoising")
             self.scan = scan.denoise(4)
         print("Processing Peaks")
@@ -260,19 +269,26 @@ class SpectrumViewer(object, ttk.Frame):
         scan = self.scan
         if scan.is_profile:
             draw_raw(*scan.arrays, ax=self.axis, color='black', lw=0.75)
-        self.axis.set_xlim(0, max(self.axis.get_xlim()))
-        draw_peaklist(
-            [i for p in scan.deconvoluted_peak_set for i in p.envelope],
-            ax=self.axis, alpha=0.6, lw=0.5, color='orange')
-        draw_peaklist(
-            [p.envelope[0] for p in scan.deconvoluted_peak_set if p.envelope[0].intensity > 0],
-            ax=self.axis, alpha=0.6, lw=1,
-            color='red')
-        draw_peaklist(
-            [EnvelopePair(p.mz, p.intensity / len(self.envelope))
-             for p in scan.deconvoluted_peak_set if not (p.envelope[0].intensity > 0)],
-            ax=self.axis, alpha=0.6, lw=0.5,
-            color='red', linestyle='--')
+            # lock in axis dimensions for profile spectra according to the raw profile
+            self.axis.set_xlim(0, max(self.axis.get_xlim()))
+        if scan.peak_set:
+            draw_peaklist(scan.peak_set, alpha=0.3, lw=1, color='grey')
+            if not scan.is_profile:
+                # lock in axis dimensions for centroid spectra according to the picked peaks
+                self.axis.set_xlim(0, max(self.axis.get_xlim()) + 2)
+        if scan.deconvoluted_peak_set:
+            draw_peaklist(
+                [i for p in scan.deconvoluted_peak_set for i in p.envelope],
+                ax=self.axis, alpha=0.6, lw=0.5, color='orange')
+            draw_peaklist(
+                [p.envelope[0] for p in scan.deconvoluted_peak_set if p.envelope[0].intensity > 0],
+                ax=self.axis, alpha=0.6, lw=1,
+                color='red')
+            draw_peaklist(
+                [EnvelopePair(p.mz, p.intensity / len(self.envelope))
+                for p in scan.deconvoluted_peak_set if not (p.envelope[0].intensity > 0)],
+                ax=self.axis, alpha=0.6, lw=0.5,
+                color='red', linestyle='--')
         # draw isolation window and instrument reported precursor
         if children:
             ylim = scan.arrays.intensity.max()

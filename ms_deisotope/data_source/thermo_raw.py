@@ -490,6 +490,10 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         self.initialize_scan_cache()
 
     def _scan_time_to_scan_number(self, scan_time):
+        if scan_time < self._first_scan_time:
+            scan_time = self._first_scan_time
+        elif scan_time > self._last_scan_time:
+            scan_time = self._last_scan_time
         scan_number = self._source.ScanNumFromRT(scan_time)
         return scan_number
 
