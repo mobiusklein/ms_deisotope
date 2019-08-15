@@ -27,7 +27,7 @@ class GraphBasedDenoiser(object):
     def select_peaks(self, peak_set, indices):
         keep = []
         for i in indices:
-            keep.append(peak_set[i])
+            keep.append(peak_set[i].clone())
         keep = DeconvolutedPeakSet(keep)
         keep.reindex()
         return keep
