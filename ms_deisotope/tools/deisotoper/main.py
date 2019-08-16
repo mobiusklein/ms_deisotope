@@ -68,11 +68,14 @@ def check_if_profile(loader):
 @click.argument("outfile-path", type=click.Path(writable=True))
 @click.option("-a", "--averagine", default=["peptide"],
               type=AveragineParamType(),
-              help='Averagine model to use for MS1 scans. Either a name or formula',
+              help=('Averagine model to use for MS1 scans. '
+                    'Either a name or formula. May specify multiple times.'),
               multiple=True)
 @click.option("-an", "--msn-averagine", default="peptide",
               type=AveragineParamType(),
-              help='Averagine model to use for MS^n scans. Either a name or formula')
+              help=('Averagine model to use for MS^n scans. '
+                    'Either a name or formula. May specify multiple times.'),
+              multiple=True)
 @click.option("-s", "--start-time", type=float, default=0.0,
               help='Scan time to begin processing at in minutes')
 @click.option("-e", "--end-time", type=float, default=float('inf'),
@@ -217,13 +220,20 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         else:
             msn_isotopic_scorer = ms_deisotope.scoring.MSDeconVFitter(msn_score_threshold)
 
+        if len(msn_averagine) == 1:
+            msn_averagine = msn_averagine[0]
+            msn_deconvoluter_type = ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter
+        else:
+            msn_deconvoluter_type = ms_deisotope.deconvolution.MultiAveraginePeakDependenceGraphDeconvoluter
+
         msn_deconvolution_args = {
             "scorer": msn_isotopic_scorer,
             "averagine": msn_averagine,
             "max_missed_peaks": msn_missed_peaks,
             "truncate_after": workflow.SampleConsumer.MSN_ISOTOPIC_PATTERN_WIDTH,
             "ignore_below": workflow.SampleConsumer.MSN_IGNORE_BELOW,
-            "use_quick_charge": True
+            "use_quick_charge": True,
+            "deconvoluter_type": msn_deconvoluter_type,
         }
     else:
         ms1_deconvolution_args = None

@@ -299,14 +299,14 @@ class ScanProcessor(Base, LogUtilsMixin):
     def _prepopulate_averagine_cache(self):
         if 'averagine' in self.ms1_deconvolution_args:
             averagine = self.ms1_deconvolution_args['averagine']
-            if isinstance(averagine, list):
+            if isinstance(averagine, (list, tuple)):
                 averagine = [AveragineCache(a).populate() for a in averagine]
             else:
                 averagine = AveragineCache(averagine).populate()
             self.ms1_deconvolution_args['averagine'] = averagine
         if 'averagine' in self.msn_deconvolution_args:
             averagine = self.msn_deconvolution_args['averagine']
-            if isinstance(averagine, list):
+            if isinstance(averagine, (list, tuple)):
                 averagine = [AveragineCache(a).populate() for a in averagine]
             else:
                 averagine = AveragineCache(averagine).populate()
