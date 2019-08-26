@@ -425,7 +425,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                     progbar.update(1)
                     scan = reader.get_scan_by_id(i)
                     if scan.peak_set is None and not deconvoluted:
-                        scan.pick_peaks()
+                        scan = scan.pick_peaks().pack()
                     msn_scans.append(scan)
 
     click.echo("Begin Clustering", err=True)
