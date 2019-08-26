@@ -933,7 +933,7 @@ class SourceFile(object):
             ext = parts[1]
             if ext.lower() == '.gz':
                 is_compressed = True
-                parts = os.path.splitext(path)
+                parts = os.path.splitext(parts[0])
                 ext = parts[1]
             if ext.lower() == '.mzml':
                 fmt = "mzML format"
