@@ -929,12 +929,22 @@ class SourceFile(object):
 
         parts = os.path.splitext(path)
         if len(parts) > 1:
+            is_compressed = False
             ext = parts[1]
+            if ext.lower() == '.gz':
+                is_compressed = True
+                parts = os.path.splitext(path)
+                ext = parts[1]
             if ext.lower() == '.mzml':
                 fmt = "mzML format"
                 id_fmt = "no nativeID format"
                 hit = False
-                with open(path, 'rb') as fh:
+                if is_compressed:
+                    from .._compression import get_opener
+                    fh = get_opener(path)
+                else:
+                    fh = open(path, 'rb')
+                with fh:
                     from ..xml_reader import iterparse_until
                     for sf_tag in iterparse_until(fh, 'sourceFile', 'run'):
                         for param in sf_tag.getchildren():
