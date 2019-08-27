@@ -12,7 +12,7 @@ from pyteomics.xml import unitfloat
 
 from .common import (
     RandomAccessScanSource)
-from ._compression import get_opener
+from ._compression import get_opener, test_if_file_has_fast_random_access
 
 
 def in_minutes(x):
@@ -56,6 +56,9 @@ class XMLReaderBase(RandomAccessScanSource):
 
     _parser_cls = None
 
+    @property
+    def has_fast_random_access(self):
+        return test_if_file_has_fast_random_access(self.source.file)
 
     @classmethod
     def prebuild_byte_offset_file(cls, path):

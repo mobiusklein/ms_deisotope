@@ -7,7 +7,7 @@ from weakref import WeakValueDictionary
 from ms_deisotope.utils import add_metaclass
 
 from ms_deisotope.data_source.metadata.file_information import FileInformation
-
+from ms_deisotope.data_source._compression import MaybeFastRandomAccess
 
 from .scan import Scan
 from .scan_iterator import (
@@ -403,6 +403,26 @@ class RandomAccessScanSource(ScanIterator):
     random access to individual scans. This should be doable by unique
     identifier, sequential index, or by scan time.
     """
+
+    @property
+    def has_fast_random_access(self):
+        """Check whether the underlying data stream supports fast random access
+        or not.
+
+        Even if the file format supports random access, it may be impractical due
+        to overhead in parsing the underlying data stream, e.g. calling :meth:`gzip.GzipFile.seek`
+        can force the file to be decompressed from the *beginning of the file* on each call. This
+        property can be used to signal to the caller whether or not it should use a different
+        strategy.
+
+        Returns
+        -------
+        :class:`Constant`:
+            One of :data:`~.DefinitelyNotFastRandomAccess`, :data:`~.MaybeFastRandomAccess`, or
+            :data:`~.DefinitelyFastRandomAccess`. The first is a False-y value, the latter two
+            will evaluate to :const:`True`
+        """
+        return MaybeFastRandomAccess
 
     @abc.abstractmethod
     def get_scan_by_id(self, scan_id):
