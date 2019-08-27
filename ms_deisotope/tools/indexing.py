@@ -444,7 +444,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                             progbar.current_item = scan.id
                             progbar.update(1)
                             if scan.peak_set is None and not deconvoluted:
-                                scan = scan.pick_peaks().pack()
+                                scan = scan.pick_peaks().pack(bind=True)
                             msn_scans.append(scan)
                 # Dispose of the state that is no longer required.
                 reader.reset()

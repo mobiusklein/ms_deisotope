@@ -665,9 +665,21 @@ class Scan(ScanBase):
         self.deconvoluted_peak_set = decon_results.peak_set
         return self
 
-    def pack(self):
+    def pack(self, bind=False):
         '''Pack the (dispersed) representation of the data in this :class:`Scan`
         into a packed :class:`ProcessedScan` object.
+
+        .. note::
+            A reference to :attr:`precursor_information` is passed to the returned
+            :class:`ProcessedScan`, so both objects share it. Because the :attr:`~.PrecursorInformation.product`
+            property works by looking up the scan in :attr:`source`, it's not possible to
+            retrieve the :class:`ProcessedScan` this way.
+
+        Parameters
+        ----------
+        bind: bool
+            Whether or not the :class:`ProcessedScan` object should also be bound
+            to :attr:`source`
 
         Returns
         -------
@@ -685,7 +697,8 @@ class Scan(ScanBase):
             self.isolation_window,
             self.instrument_configuration,
             self.product_scans,
-            self.annotations)
+            self.annotations,
+            source=self.source if bind else None)
 
     # signal transformation
 
@@ -1127,7 +1140,7 @@ class ProcessedScan(ScanBase):
                  deconvoluted_peak_set, polarity=None, activation=None,
                  acquisition_information=None, isolation_window=None,
                  instrument_configuration=None, product_scans=None,
-                 annotations=None):
+                 annotations=None, source=None):
         if product_scans is None:
             product_scans = []
         if annotations is None:
@@ -1147,7 +1160,7 @@ class ProcessedScan(ScanBase):
         self.instrument_configuration = instrument_configuration
         self.product_scans = product_scans
         self.annotations = annotations
-        self.source = None
+        self.source = source
 
     def clear(self):
         '''Clear storage-heavy attribute values
