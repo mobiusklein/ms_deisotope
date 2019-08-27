@@ -446,6 +446,9 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                             if scan.peak_set is None and not deconvoluted:
                                 scan = scan.pick_peaks().pack()
                             msn_scans.append(scan)
+                # Dispose of the state that is no longer required.
+                reader.reset()
+                index.clear()
 
 
     click.echo("Begin Clustering", err=True)

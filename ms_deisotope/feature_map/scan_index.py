@@ -90,6 +90,23 @@ class MSnRecord(MSRecordBase):
 
 
 class ExtendedScanIndex(object):
+    """An extra index that holds scan-level metadata in memory independent of
+    the :class:`~.ScanBase` object itself.
+
+    Attributes
+    ----------
+    ms1_ids : :class:`~.OrderedDict`
+        An ordered mapping from :term:`scan_id` to :class:`MS1Record`
+    msn_ids : :class:`~.OrderedDict`
+        An ordered mapping from :term:`scan_id` to :class:`MSNRecord`
+    schema_version : str
+        The version string for the schema of the serialization format
+    _index_bind : :class:`~.RandomAccessScanSource`
+        The data source to bind when calling :meth:`get_precursor_information` and
+        :meth:`find_msms_by_precursor_mass`
+    _mass_search_index : :class:`~.NeutralMassIndex`
+        A fast-to-search collection to make :meth:`find_msms_by_precursor_mass` faster
+    """
     SCHEMA_VERSION = "1.1"
 
     def __init__(self, ms1_ids=None, msn_ids=None, schema_version=None):
@@ -104,6 +121,13 @@ class ExtendedScanIndex(object):
         self.schema_version = schema_version
 
         self._index_bind = None
+        self._mass_search_index = None
+
+    def clear(self):
+        """Discard all information held in memory, analogous to :meth:`dict.clear`.
+        """
+        self.ms1_ids.clear()
+        self.msn_ids.clear()
         self._mass_search_index = None
 
     def get_scan_dict(self, key):
