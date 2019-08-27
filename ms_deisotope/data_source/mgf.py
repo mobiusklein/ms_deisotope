@@ -20,6 +20,8 @@ from .scan import (
 from .metadata.file_information import (
     FileInformation, MS_MSn_Spectrum)
 
+from ._compression import test_if_file_has_fast_random_access
+
 
 class _MGFParser(mgf.IndexedMGF):
 
@@ -251,6 +253,10 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
         self.initialize_scan_cache()
         self.make_iterator()
         self._title_to_index = self._prepare_index_lookup()
+
+    @property
+    def has_fast_random_access(self):
+        return test_if_file_has_fast_random_access(self.source.file)
 
     def _prepare_index_lookup(self):
         title_to_index = dict()

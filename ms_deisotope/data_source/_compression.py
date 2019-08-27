@@ -1,11 +1,20 @@
 import io
 import gzip
 
-from six import string_types as basestring
+from six import string_types as basestring, PY2
 
 from ms_deisotope.utils import Constant
 
 GzipFile = _GzipFile = gzip.GzipFile
+
+slow_random_access_file_types = [_GzipFile]
+try:
+    import bz2
+    slow_random_access_file_types.append(bz2.BZ2File)
+except ImportError:
+    pass
+
+
 try:
     import idzip
     GzipFile = idzip.IdzipFile
@@ -16,6 +25,10 @@ except (ImportError, AttributeError):
     WRITE_BUFFER_SIZE = 2 ** 16
     has_idzip = False
 
+if PY2:
+    file_like_object_bases = (file, io.IOBase)
+else:
+    file_like_object_bases = (io.IOBase, )
 
 # Do not register idzip with psims
 # try:
@@ -42,7 +55,7 @@ def test_if_file_has_fast_random_access(file_obj):
     bool
     """
     # If we have a normal gzip.GzipFile, then we definitely don't have fast random access
-    if isinstance(file_obj, _GzipFile):
+    if isinstance(file_obj, tuple(slow_random_access_file_types)):
         return DefinitelyNotFastRandomAccess
     # If we have an idzip.IdzipFile, then we need to query its _impl attribute (QUESTION: Should this be made
     # a part of the IdzipFile API and be pushed upstream?)
@@ -54,7 +67,12 @@ def test_if_file_has_fast_random_access(file_obj):
         # Otherwise it's an idzip file and we can use fast random access
         return DefinitelyFastRandomAccess
     else:
-        # It's not a gzip file of any sort. It could be a regular file, it could be something else entirely.
+        # We're looking at a file-like object of some sort. It could be a compressed file not caught
+        # by the earlier checks. The only good test would be to examine the file's raw contents, but
+        # this is not an option here. Assume that we're looking at an uncompressed stream.
+        if isinstance(file_obj, file_like_object_bases):
+            return DefinitelyFastRandomAccess
+        # It's not a file of any sort. It could be a regular file, it could be something else entirely.
         return MaybeFastRandomAccess
 
 

@@ -408,6 +408,10 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                            item_show_func=lambda x: str(x) if x else '') as progbar:
         for reader, index in key_seqs:
             if not in_memory:
+                if not reader.has_fast_random_access:
+                    click.secho(
+                        "%s does not have fast random access, scan fetching may be slow!" % (
+                            reader, ), fg='yellow')
                 proxy_context = ScanProxyContext(reader)
                 pinfo_map = {
                     pinfo.product_scan_id: pinfo for pinfo in
@@ -420,13 +424,29 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                     scan.precursor_information = pinfo_map[i]
                     msn_scans.append(scan)
             else:
-                for i in index.msn_ids:
-                    progbar.current_item = i
-                    progbar.update(1)
-                    scan = reader.get_scan_by_id(i)
-                    if scan.peak_set is None and not deconvoluted:
-                        scan = scan.pick_peaks().pack()
-                    msn_scans.append(scan)
+                if reader.has_fast_random_access:
+                    # We have fast random access so we can just loop over the index and pull out
+                    # the MSn scans directly without completely traversing the file.
+                    for i in index.msn_ids:
+                        progbar.current_item = i
+                        progbar.update(1)
+                        scan = reader.get_scan_by_id(i)
+                        if scan.peak_set is None and not deconvoluted:
+                            scan = scan.pick_peaks().pack()
+                        msn_scans.append(scan)
+                else:
+                    # If we don't  have fast random access, it's better just to loop over the file,
+                    # and absorb the cost of parsing the MS1 scans
+                    reader.reset()
+                    reader.make_iterator(grouped=False)
+                    for scan in reader:
+                        if scan.ms_level != 1:
+                            progbar.current_item = scan.id
+                            progbar.update(1)
+                            if scan.peak_set is None and not deconvoluted:
+                                scan = scan.pick_peaks().pack()
+                            msn_scans.append(scan)
+
 
     click.echo("Begin Clustering", err=True)
     clusters = iterative_clustering(
