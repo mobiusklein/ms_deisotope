@@ -113,13 +113,22 @@ def get_opener(f, buffer_size=None):
     if buffer_size is None:
         buffer_size = DEFAULT_BUFFER_SIZE
     if not hasattr(f, 'read'):
-        f = open(f, 'rb')
-    # On Py2, dill doesn't behave correctly with io-derived objects.
-    #     f = io.open(f, 'rb')
-    # buffered_reader = io.BufferedReader(f, buffer_size)
+        f = io.open(f, 'rb')
+    # On Py2, dill doesn't behave correctly with io-derived objects, so we have to patch it below.
+    buffered_reader = io.BufferedReader(f, buffer_size)
     buffered_reader = f
     if test_gzipped(f):
         handle = GzipFile(fileobj=buffered_reader, mode='rb')
     else:
         handle = buffered_reader
     return handle
+
+
+
+if PY2:
+    # Begin Monkeypatching Dill
+    import dill
+
+    @dill.register(io.BufferedReader)
+    def save_file(pickler, obj):
+        dill._dill._save_file(pickler, obj, io.open)
