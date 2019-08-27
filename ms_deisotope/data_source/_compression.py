@@ -3,6 +3,7 @@ import gzip
 
 from six import string_types as basestring
 
+from ms_deisotope.utils import Constant
 
 GzipFile = _GzipFile = gzip.GzipFile
 try:
@@ -16,7 +17,7 @@ except (ImportError, AttributeError):
     has_idzip = False
 
 
-# Do not register idzip with psims, indexing seems to corrupt file
+# Do not register idzip with psims
 # try:
 #     from psims import compression as psims_compression
 
@@ -27,7 +28,42 @@ except (ImportError, AttributeError):
 #     pass
 
 
+def test_if_file_has_fast_random_access(file_obj):
+    """Determine whether or not the passed file-like
+    object supports fast random access.
+
+    Parameters
+    ----------
+    file_obj : :class:`io.IOBase`
+        The file-like object to test
+
+    Returns
+    -------
+    bool
+    """
+    # If we have a normal gzip.GzipFile, then we definitely don't have fast random access
+    if isinstance(file_obj, _GzipFile):
+        return DefinitelyNotFastRandomAccess
+    # If we have an idzip.IdzipFile, then we need to query its _impl attribute (QUESTION: Should this be made
+    # a part of the IdzipFile API and be pushed upstream?)
+    elif has_idzip and isinstance(file_obj, GzipFile):
+        # If the _impl attribute is an ordinary gzip.GzipFile, then it is just a normal gzip file without
+        # an index.
+        if isinstance(file_obj._impl, _GzipFile):
+            return DefinitelyNotFastRandomAccess
+        # Otherwise it's an idzip file and we can use fast random access
+        return DefinitelyFastRandomAccess
+    else:
+        # It's not a gzip file of any sort. It could be a regular file, it could be something else entirely.
+        return MaybeFastRandomAccess
+
+
 DEFAULT_BUFFER_SIZE = int(2e6)
+
+
+DefinitelyNotFastRandomAccess = Constant("DefinitelyNotFastRandomAccess", False)
+MaybeFastRandomAccess = Constant("MaybeFastRandomAccess", True)
+DefinitelyFastRandomAccess = Constant("DefinitelyFastRandomAccess", True)
 
 
 def test_gzipped(f):
