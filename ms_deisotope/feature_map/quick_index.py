@@ -1,5 +1,7 @@
 import multiprocessing
 
+import dill
+
 from .scan_index import ExtendedScanIndex
 from .scan_interval_tree import (
     ScanIntervalTree, extract_intervals, make_rt_tree)
@@ -81,6 +83,67 @@ class _TaskWrapper(object):
         return start, out
 
 
+class _TaskPayload(object):
+    """A wrapper for the input to the distributed task which transmits the :class:`~.RandomAccessScanSource`
+    via :mod:`dill` to make pickling of any wrapped file objects possible.
+
+    Mocks a subset of the :class:`~.Sequence` API to allow it to be treated like a :class:`tuple`
+
+    Attributes
+    ----------
+    reader: :class:`~.RandomAccessScanSource`
+        The scan data source to be shared with the worker.
+    start: int
+        The scan index to start processing from
+    end: int
+        The scan index to stop processing at.
+    options: dict
+        A dictionary of extra arguments that the task might use.
+    """
+    def __init__(self, reader, start, end, **kwargs):
+        self.reader = reader
+        self.start = start
+        self.end = end
+        self.options = kwargs
+
+    def __iter__(self):
+        yield self.reader
+        yield self.start
+        yield self.end
+
+    def __getitem__(self, i):
+        if i == 0:
+            return self.reader
+        elif i == 1:
+            return self.start
+        elif i == 2:
+            return self.end
+        else:
+            raise IndexError(i)
+
+    def __len__(self):
+        return 3
+
+    def __getstate__(self):
+        state = {
+            "reader": dill.dumps(self.reader, -1),
+            "start": self.start,
+            "end": self.end,
+            "options": self.options
+        }
+        return state
+
+    def __setstate__(self, state):
+        self.reader = dill.loads(state['reader'])
+        self.start = state['start']
+        self.end = state['end']
+        self.options = state['options']
+
+    def __repr__(self):
+        template = "{self.__class__.__name__}({self.reader}, {self.start}, {self.end}, {self.options})"
+        return template.format(self=self)
+
+
 def run_task_in_chunks(reader, n_processes=None, n_chunks=None, scan_interval=None, task=None, progress_indicator=None):
     """Run a :class:`~.Callable` `task` over a :class:`~.ScanIterator` in chunks across multiple processes.
 
@@ -132,7 +195,9 @@ def run_task_in_chunks(reader, n_processes=None, n_chunks=None, scan_interval=No
     n_items = end_scan - start_scan
     pool = multiprocessing.Pool(n_processes)
     scan_ranges = partition_work(n_items, n_chunks, start_scan)
-    feeder = ((reader, scan_range[0], scan_range[1]) for scan_range in scan_ranges)
+    feeder = (
+        _TaskPayload(reader, scan_range[0], scan_range[1])
+        for scan_range in scan_ranges)
     result = []
     for i, block in enumerate(pool.imap_unordered(_TaskWrapper(task), feeder), 1):
         result.append(block)
@@ -165,7 +230,7 @@ def index(reader, n_processes=4, scan_interval=None, progress_indicator=None):
     # indexing a :class:`ScanIterator` without random access, have to go in sequence
     if not hasattr(reader, 'start_from_scan'):
         reader.make_iterator(grouped=True)
-        chunks = [task((reader, 0, len(reader)))]
+        chunks = [task(_TaskPayload(reader, 0, len(reader)))]
     else:
         chunks = run_task_in_chunks(
             reader, n_processes, scan_interval=scan_interval, task=task,
