@@ -26,7 +26,7 @@ from ms_deisotope.data_source.metadata.file_information import SourceFile
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
 from ms_deisotope.tools import conversion, draw
-from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook
+from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook, spinner
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -175,6 +175,7 @@ def metadata_index(paths, processes=4):
     scans, as well as other details. See :class:`~.ExtendedScanIndex` for more information
     '''
     for path in paths:
+        click.echo("Indexing %s" % (path, ))
         reader = MSFileLoader(path)
         try:
             fn = reader.prebuild_byte_offset_file
@@ -201,8 +202,18 @@ def metadata_index(paths, processes=4):
         else:
             index = quick_index.ExtendedScanIndex()
             reader.reset()
-            for bunch in reader:
-                index.add_scan_bunch(bunch)
+            try:
+                n = len(reader)
+                progbar = click.progressbar(label='Building Index', length=n)
+            except TypeError:
+                progbar = spinner(title="Building Index")
+            with progbar:
+                for bunch in reader.make_iterator(grouped=True):
+                    i = 0
+                    i += bunch.precursor is not None
+                    i += len(bunch.products)
+                    index.add_scan_bunch(bunch)
+                    progbar.update(i)
 
         name = path
         index_file_name = index.index_file_name(name)
@@ -275,10 +286,20 @@ def _ensure_metadata_index(path):
         click.secho("Building Index For %s" % (path, ), fg='yellow', err=True)
         index = quick_index.ExtendedScanIndex()
         reader.reset()
-        for bunch in reader:
-            index.add_scan_bunch(bunch)
+        try:
+            n = len(reader)
+            progbar = click.progressbar(label='Building Index', length=n)
+        except TypeError:
+            progbar = spinner(title="Building Index")
+        with progbar:
+            for bunch in reader.make_iterator(grouped=True):
+                i = 0
+                i += bunch.precursor is not None
+                i += len(bunch.products)
+                index.add_scan_bunch(bunch)
+                progbar.update(i)
         reader.reset()
-        with open(index_file_name, 'w') as fh:
+        with open(index_file_name, 'wt') as fh:
             index.serialize(fh)
     else:
         with open(index_file_name, 'rt') as fh:
@@ -498,10 +519,7 @@ if _compression.has_idzip:
         with click.open_file(output, mode='wb') as outfh:
             writer = _compression.GzipFile(fileobj=outfh, mode='wb')
             with click.open_file(path, 'rb') as infh:
-                try:
-                    infh_wrap = _compression.get_opener(infh)
-                except (IOError, AttributeError):
-                    infh_wrap = infh
+                infh_wrap = infh
                 buffer_size = _compression.WRITE_BUFFER_SIZE
                 chunk = infh_wrap.read(buffer_size)
                 while chunk:

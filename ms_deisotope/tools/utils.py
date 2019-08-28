@@ -1,3 +1,4 @@
+import itertools
 import multiprocessing
 import os
 import re
@@ -99,3 +100,50 @@ def is_debug_mode():
     else:
         warnings.warn("MS_DEISOTOPE_DEBUG value %r was not recognized. Enabling debug mode" % (env_val, ))
         return True
+
+
+class Spinner(object):
+    """Super-simple synchronous CLI spinner implementation.
+    """
+    _default_symbols = ['-', '/', '|', '\\']
+
+    def __init__(self, stream=None, symbols=None, title=None):
+        if symbols is None:
+            symbols = list(self._default_symbols)
+        if stream is None:
+            stream = click.get_text_stream('stdout')
+        self.symbol_cycle = itertools.cycle(symbols)
+        self.stream = stream
+        self.title = title
+
+    def _next_symbol(self):
+        symbol = next(self.symbol_cycle)
+        return symbol
+
+    def update(self, *args, **kwargs):
+        if self.stream.isatty():
+            return self._update(*args, **kwargs)
+
+    def _update(self, *args, **kwargs):
+        self.stream.write("\b")
+        self.stream.flush()
+        symbol = self._next_symbol()
+        self.stream.write(symbol)
+        self.stream.flush()
+
+    def __enter__(self):
+        if self.title is not None:
+            self.stream.write(self.title)
+            self.stream.write("  ")
+            self.stream.flush()
+        return self
+
+    def __exit__(self, *args):
+        self.stream.write("\n")
+        self.stream.flush()
+
+    def __repr__(self):
+        template = "{self.__class__.__name__}({self.stream}, {self.symbol_cycle})"
+        return template.format(self=self)
+
+spinner = Spinner
