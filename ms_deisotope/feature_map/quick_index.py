@@ -156,6 +156,15 @@ class _TaskWrapper(object):
     def __init__(self, task):
         self.task = task
 
+    def __getstate__(self):
+        state = {
+            "task": dill.dumps(self.task)
+        }
+        return state
+
+    def __setstate__(self, state):
+        self.task = dill.loads(state['task'])
+
     def __call__(self, payload):
         _reader, start, _end = payload
         out = self.task(payload)
