@@ -393,12 +393,15 @@ def precursor_clustering(path, grouping_error=2e-5):
 @click.option("-t", "--similarity-threshold", "similarity_thresholds", multiple=True, type=float)
 @click.option("-o", "--output", "output_path", type=click.Path(writable=True, file_okay=True, dir_okay=False),
               required=False)
+@click.option("-c", "--cache-size", type=int, default=2**10, help=(
+    "The number of scans to cache in memory when not using --in-memory. If you are clustering multiple "
+    "files, this number will be apply to each file separately."))
 @click.option("-M", "--in-memory", is_flag=True, default=False, help=(
     "Whether to load the entire dataset into memory for better performance"))
 @click.option("-D", "--deconvoluted", is_flag=True, default=False, help=(
     "Whether to assume the spectrum is deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
-                        in_memory=False, deconvoluted=False):
+                        in_memory=False, deconvoluted=False, cache_size=2**10):
     '''Cluster spectra by precursor mass and cosine similarity.
 
     Spectrum clusters are written out to a text file recording
@@ -433,7 +436,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                     click.secho(
                         "%s does not have fast random access, scan fetching may be slow!" % (
                             reader, ), fg='yellow')
-                proxy_context = ScanProxyContext(reader)
+                proxy_context = ScanProxyContext(reader, cache_size=cache_size)
                 pinfo_map = {
                     pinfo.product_scan_id: pinfo for pinfo in
                     index.get_precursor_information()
