@@ -1,4 +1,11 @@
+'''Implements the infrastructure to spread indexing tasks over a single
+:class:`~.RandomAccessScanSource` across multiple processes for speed.
+
+The primary function in this module is :func:`index`, which will perform
+this dispatch.
+'''
 import multiprocessing
+import logging
 
 import dill
 
@@ -6,11 +13,31 @@ from .scan_index import ExtendedScanIndex
 from .scan_interval_tree import (
     ScanIntervalTree, extract_intervals, make_rt_tree)
 
-
+logger = logging.getLogger(__name__)
 n_cores = multiprocessing.cpu_count()
 
 
 def indexing_iterator(reader, start, end, index):
+    """A helper function which will iterate over an interval of a :class:`~.RandomAccessScanSource`
+    while feeding each yielded :class:`~.ScanBunch` into a provided :class:`~.ExtendedScanIndex`.
+
+    [description]
+
+    Parameters
+    ----------
+    reader : :class:`~.RandomAccessScanSource` or :class:`~.ScanIterator`
+        The scan data source to loop over.
+    start : int
+        The starting index
+    end : int
+        The stopping index
+    index : :class:`~.ExtendedScanIndex`
+        The scan index to fill.
+
+    Yields
+    ------
+    :class:`~.ScanBunch`
+    """
     try:
         iterator = reader.start_from_scan(index=start, grouped=True)
     except AttributeError:
@@ -29,6 +56,30 @@ def indexing_iterator(reader, start, end, index):
 
 
 def index_chunk(reader, start, end):
+    """The task function for :func:`quick_index`, which will build an
+    :class:`~.ExtendedIndex` and :class:`ScanIntervalTree` from an index
+    range over a :class:`~.ScanIterator`
+
+    Parameters
+    ----------
+    reader : :class:`~.ScanIterator` or :class:`~.RandomAccessScanSource`
+        The scan source to iterate over
+    start : int
+        The starting index
+    end : int
+        The stopping index
+
+    Returns
+    -------
+    start: int
+        The starting index for this chunk
+    end: int
+        The stopping index for this chunk
+    index: :class:`~.ExtendedIndex`
+        The constructed scan metadata index for this chunk
+    intervals: :class:`~.ScanIntervalTree
+        The constructed scan interval tree for this chunk
+    """
     index = ExtendedScanIndex()
     iterator = indexing_iterator(reader, start, end, index)
     intervals = extract_intervals(iterator)
@@ -36,6 +87,29 @@ def index_chunk(reader, start, end):
 
 
 def partition_work(n_items, n_workers, start_index=0):
+    """Given an index range and a number of workers to work on them,
+    break the index range into approximately evenly sized sub-intervals.
+
+    This is a helper function for :func:`run_task_in_chunks` used to
+    compute the chunks.
+
+    Parameters
+    ----------
+    n_items : int
+        The maximum value of the index range
+    n_workers : int
+        The number of workers to split the work between
+    start_index : int, optional
+        The starting value of the index range (the default is 0)
+
+    Returns
+    -------
+    list:
+        A list of (start, end) pairs defining the index ranges each worker will
+        handle.
+    """
+    if n_workers == 1:
+        return [[start_index, n_items]]
     chunk_size = int(n_items / n_workers)
     n_items += start_index
     intervals = []
@@ -48,6 +122,8 @@ def partition_work(n_items, n_workers, start_index=0):
         intervals.append([start, end])
         start = end
 
+    # Make sure that the last chunk actually covers the end of
+    # the interval.
     last = intervals[-1]
     if last[1] > n_items:
         last[1] = n_items
@@ -58,6 +134,9 @@ def partition_work(n_items, n_workers, start_index=0):
 
 
 class _Indexer(object):
+    '''A pickle-able callable object which wraps :func:`index_chunk` for the call signature
+    used by :func:`run_task_in_chunks`
+    '''
     def __call__(self, payload):
         reader, start, end = payload
         try:
@@ -211,14 +290,14 @@ def run_task_in_chunks(reader, n_processes=None, n_chunks=None, scan_interval=No
     return result
 
 
-def merge_indices(indices):
+def _merge_indices(indices):
     index = indices[0]
     for ind in indices:
         index = index.merge(ind)
     return index
 
 
-def make_interval_tree(intervals):
+def _make_interval_tree(intervals):
     concat = []
     for i in intervals:
         concat.extend(i)
@@ -226,19 +305,51 @@ def make_interval_tree(intervals):
 
 
 def index(reader, n_processes=4, scan_interval=None, progress_indicator=None):
+    """Generate a :class:`~.ExtendedScanIndex` and :class:`~.ScanIntervalTree` for
+    `reader` between `scan_interval` start and end points across `n_processes` worker
+    processes.
+
+    If a :class:`~.ScanIterator` is passed instead of a :class:`~.RandomAccessScanSource`,
+    only a single process will be used.
+
+    Parameters
+    ----------
+    reader : :class:`~.RandomAccessScanSource` or :class:`~.ScanIterator`
+        The scan data source to index.
+    n_processes : int, optional
+        The number of worker processes to use (the default is 4 or however many CPUs are available, whichever is lower)
+    scan_interval : tuple, optional
+        The start and stop scan indices to operate on (the default is None, which will index the entire file)
+    progress_indicator : :class:`Callable`, optional
+        A callable object which will be used to report progress as chunks finish processing. It must take
+        one argument, a :class:`float` which represents the fraction of all work completed.
+
+    Returns
+    -------
+    :class:`~.ExtendedScanIndex`:
+        The extended metadata index for this data file.
+    :class:`~.ScanIntervalTree`:
+        The scan interval tree for this data file.
+
+    See Also
+    --------
+    run_task_in_chunks
+    """
     task = _Indexer()
     # indexing a :class:`ScanIterator` without random access, have to go in sequence
     if not hasattr(reader, 'start_from_scan'):
+        logger.info("A non-random access ScanIterator was passed, defaulting to a single worker.")
         reader.make_iterator(grouped=True)
         chunks = [task(_TaskPayload(reader, 0, len(reader)))]
+        n_processes = 1
     else:
         chunks = run_task_in_chunks(
             reader, n_processes, scan_interval=scan_interval, task=task,
             progress_indicator=progress_indicator)
     indices = [chunk[2] for chunk in chunks]
     intervals = [chunk[3] for chunk in chunks]
-    index = merge_indices(indices)
-    interval_tree = make_interval_tree(intervals)
+    index = _merge_indices(indices)
+    interval_tree = _make_interval_tree(intervals)
     return index, interval_tree
 
 
