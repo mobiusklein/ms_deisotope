@@ -4,6 +4,8 @@ from libc.math cimport floor, sqrt
 from libc.stdlib cimport malloc, free
 from cpython cimport PyErr_SetString
 
+from cpython.object cimport PyObject
+from cpython.sequence cimport PySequence_Fast, PySequence_Fast_ITEMS
 from cpython.list cimport PyList_Size, PyList_GET_ITEM
 from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_Size
 
@@ -28,6 +30,27 @@ ctypedef fused peak_collection:
 cpdef enum SimilarityMetrics:
     dot_product
     normalized_dot_product
+
+
+cdef PyObject** _make_fast_array(peak_collection peak_set):
+    cdef:
+        PyObject** items
+
+    if peak_collection is PeakIndex:
+        items = PySequence_Fast_ITEMS(
+            PySequence_Fast(peak_set.peaks.peaks, "Error, could not create fast array from PeakIndex"))
+    elif peak_collection is PeakSet:
+        items = PySequence_Fast_ITEMS(
+            PySequence_Fast(peak_set.peaks, "Error, could not create fast array from PeakSet"))
+    elif peak_collection is DeconvolutedPeakSet:
+        items = PySequence_Fast_ITEMS(
+            PySequence_Fast(peak_set.peaks, "Error, could not create fast array from DeconvolutedPeakSet"))
+    else:
+        items = PySequence_Fast_ITEMS(
+            PySequence_Fast(peak_set, "Error, could not create fast array from object"))
+    return items
+
+
 
 
 @cython.boundscheck(False)
@@ -59,7 +82,10 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         PeakBase peak
         double *bin_a
         double *bin_b
-        long i, n, k, index
+        long i, n, k, index, n_peaks_a, n_peaks_b
+        PyObject** items_a
+        PyObject** items_b
+        PyObject* p_peak
 
     n_a = 0
     n_b = 0
@@ -112,48 +138,44 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
 
     # Fill bins
     if peak_collection is object:
-        n = len(peak_set_a)
+        n_peaks_a = len(peak_set_a)
     else:
-        n = peak_set_a.get_size()
-    for i in range(n):
-        if peak_collection is PeakIndex:
-            peak = peak_set_a.peaks.getitem(i)
-        elif peak_collection is object:
-            peak = peak_set_a[i]
-        else:
-            peak = peak_set_a.getitem(i)
-        index = int(peak.mz * scaler)
-        bin_a[index] += peak.intensity
+        n_peaks_a = peak_set_a.get_size()
 
     if peak_collection is object:
-        n = len(peak_set_b)
+        n_peaks_b = len(peak_set_b)
     else:
-        n = peak_set_b.get_size()
-    for i in range(n):
-        if peak_collection is PeakIndex:
-            peak = peak_set_b.peaks.getitem(i)
-        elif peak_collection is object:
-            peak = peak_set_b[i]
-        else:
-            peak = peak_set_b.getitem(i)
-        index = int(peak.mz * scaler)
-        bin_b[index] += peak.intensity
+        n_peaks_b = peak_set_b.get_size()
 
-    # Calculate dot product and normalizers in parallel
-    n = k
-    for i in prange(n, nogil=True, schedule='static', num_threads=4):
-        a = bin_a[i]
-        b = bin_b[i]
-        n_a += a * a
-        n_b += b * b
-        z += a * b
+    items_a = _make_fast_array(peak_set_a)
+    items_b = _make_fast_array(peak_set_b)
+    with nogil:
+        # Fill bins
+        for i in prange(n_peaks_a, schedule='static', num_threads=2):
+            p_peak = items_a[i]
+            index = int((<PeakBase>p_peak).mz * scaler)
+            bin_a[index] += (<PeakBase>p_peak).intensity
 
-    free(bin_a)
-    free(bin_b)
-    n_ab = sqrt(n_a) * sqrt(n_b)
-    if n_ab == 0:
-        return 0.0
-    return z / n_ab
+        for i in prange(n_peaks_b, schedule='static', num_threads=2):
+            p_peak = items_b[i]
+            index = int((<PeakBase>p_peak).mz * scaler)
+            bin_b[index] += (<PeakBase>p_peak).intensity
+
+        # Calculate dot product and normalizers in parallel
+        n = k
+        for i in prange(n, schedule='static', num_threads=4):
+            a = bin_a[i]
+            b = bin_b[i]
+            n_a += a * a
+            n_b += b * b
+            z += a * b
+
+        free(bin_a)
+        free(bin_b)
+        n_ab = sqrt(n_a) * sqrt(n_b)
+        if n_ab == 0:
+            return 0.0
+        return z / n_ab
 
 
 @cython.boundscheck(False)
