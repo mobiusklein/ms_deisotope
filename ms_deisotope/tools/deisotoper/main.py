@@ -1,3 +1,5 @@
+"""The main entry point for the `ms-deisotope` command line program.
+"""
 import os
 
 import click
@@ -14,7 +16,33 @@ from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_de
 from ms_deisotope.tools.deisotoper import workflow
 
 
-def check_random_access(loader, start_time, end_time):
+def configure_iterator(loader, start_time, end_time):
+    """Configure `loader` to run between the time ranges specified, or
+    if the `loader` does not support random access, the bounds are set to
+    the start and end of the iterator.
+
+    This function will also set the iteration mode of `loader` to "grouped".
+
+    Parameters
+    ----------
+    loader : :class:`ScanDataSource`
+        The source to load scans from
+    start_time : float
+        The start time to load scans from
+    end_time : float
+        The end time to stop loading scans at
+
+    Returns
+    -------
+    str: start_scan_id
+        The id value of the scan to start from, will be :cosnt:`None` if there is no random access.
+    float: start_scan_time
+        The actual time associated with the start scan
+    str: end_scan_id
+        The id value of the scan to stop at, will be :cosnt:`None` if there is no random access.
+    float: end_scan_time
+        The actual time associated with the end scan
+    """
     if isinstance(loader, RandomAccessScanSource):
         last_scan = loader[len(loader) - 1]
         last_time = last_scan.scan_time
@@ -47,6 +75,19 @@ def check_random_access(loader, start_time, end_time):
 
 
 def check_if_profile(loader):
+    """Check if the spectra in `loader` are stored in profile mode,
+    established by querying the next scan bunch.
+
+    Parameters
+    ----------
+    loader : :class:`ScanIterator`
+        The source to load scans from
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the spectra are profile mode.
+    """
     first_bunch = next(loader)
     if first_bunch.precursor is not None:
         is_profile = (first_bunch.precursor.is_profile)
@@ -60,10 +101,11 @@ def check_if_profile(loader):
     return is_profile
 
 
-@click.command("deisotope", short_help=(
-    "Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML."
-    " Can accept mzML, mzXML, MGF with either profile or centroided scans."),
-    context_settings=dict(help_option_names=['-h', '--help']))
+@click.command("deisotope",
+               short_help=(
+                   "Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML."
+                   " Can accept mzML, mzXML, MGF with either profile or centroided scans."),
+               context_settings=dict(help_option_names=['-h', '--help']))
 @click.argument("ms-file", type=click.Path(exists=True))
 @click.argument("outfile-path", type=click.Path(writable=True))
 @click.option("-a", "--averagine", default=["peptide"],
@@ -94,11 +136,11 @@ def check_if_profile(loader):
               help="Number of missing peaks to permit before an isotopic fit is discarded in an MSn scan")
 @processes_option
 @click.option("-b", "--background-reduction", type=float, default=0., help=(
-              "Background reduction factor. Larger values more aggresively remove low abundance"
-              " signal in MS1 scans."))
+    "Background reduction factor. Larger values more aggresively remove low abundance"
+    " signal in MS1 scans."))
 @click.option("-bn", "--msn-background-reduction", type=float, default=0., help=(
-              "Background reduction factor. Larger values more aggresively remove low abundance"
-              " signal in MS^n scans."))
+    "Background reduction factor. Larger values more aggresively remove low abundance"
+    " signal in MS^n scans."))
 @click.option("-r", '--transform', multiple=True, type=parse_filter, help=(
     "Scan transformations to apply to MS1 scans. May specify more than once."))
 @click.option("-rn", '--msn-transform', multiple=True, type=parse_filter, help=(
@@ -142,7 +184,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
 
     loader = MSFileLoader(ms_file)
     (start_scan_id, start_scan_time,
-     end_scan_id, end_scan_time) = check_random_access(loader, start_time, end_time)
+     end_scan_id, end_scan_time) = configure_iterator(loader, start_time, end_time)
 
     is_profile = check_if_profile(loader)
 

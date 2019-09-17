@@ -415,6 +415,13 @@ class ScanBase(object):
 
     @property
     def peaks(self):
+        """Automatically locate the most refined representation of the signal from the :class:`Scan`
+        object.
+
+        Returns
+        -------
+        :class:`PeakSetMethods`
+        """
         return PeakSetMethods(self)
 
     def copy(self, deep=True):
@@ -1487,6 +1494,32 @@ class PlottingMethods(object):
         return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
 
     def label_peaks(self, *args, **kwargs):
+        """Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
+        of `scan` have been deconvoluted, the most abundant peak will be annotated with
+        "<neutral mass> (<charge>)", otherwise just "<m/z>".
+
+        Parameters
+        ----------
+        scan : :class:`~.ScanBase`
+            The scan to annotate
+        min_mz : float, optional
+            The minimum m/z to annotate
+        max_mz : float, optional
+            The maximum m/z to annotate
+        ax: :class:`matplotlib._axes.Axes`
+            An :class:`~.Axes` object to draw the plot on
+        is_deconvoluted : bool, optional
+            Whether or not to always use :attr:`Scan.deconvoluted_peak_set`
+        threshold : float, optional
+            The intensity threshold under which peaks will be ignored
+
+        Returns
+        -------
+        ax: :class:`matplotlib._axes.Axes`
+            The axes the plot was drawn on
+        annotations: :class:`list` of :class:`matplotlib.text.Text`
+            The list of :class:`matplotlib.text.Text` annotations
+        """
         return self._plot_api.label_peaks(self.scan, *args, **kwargs)
 
     def annotate_isotopic_peaks(self, *args, **kwargs):
