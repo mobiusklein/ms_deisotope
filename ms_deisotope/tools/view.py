@@ -240,12 +240,20 @@ class SpectrumViewer(_BaseFrame):
             averagine_value = averagine_label_map[averagine_value]
             truncate_to = 0.8
             scorer = ms_deisotope.MSDeconVFitter(10.)
+        max_charge_state = self.max_charge_state_var.get()
+        min_charge_state = self.min_charge_state_var.get()
+        if self.scan.ms_level > 1:
+            prec_charge = self.scan.precursor_information.charge
+            if prec_charge:
+                max_charge_state = prec_charge
+                if prec_charge < 0:
+                    min_charge_state = -abs(min_charge_state)
         self.scan.deconvolute(
             averagine=averagine_value,
             scorer=scorer,
             truncate_after=1 - 1e-4,
             incremental_truncation=truncate_to,
-            charge_range=(self.min_charge_state_var.get(), self.max_charge_state_var.get()))
+            charge_range=(min_charge_state, max_charge_state))
 
     def draw_plot(self, scan=None, children=None):
         if children is None:
