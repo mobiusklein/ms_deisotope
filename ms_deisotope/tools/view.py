@@ -276,15 +276,18 @@ class SpectrumViewer(_BaseFrame):
         print("Begin Drawing")
         scan = self.scan
         if scan.is_profile:
+            print("Drawing Profile")
             draw_raw(*scan.arrays, ax=self.axis, color='black', lw=0.75)
             # lock in axis dimensions for profile spectra according to the raw profile
             self.axis.set_xlim(0, max(self.axis.get_xlim()))
         if scan.peak_set:
-            draw_peaklist(scan.peak_set, alpha=0.3, lw=1, color='grey')
+            print("Drawing Centroids")
+            draw_peaklist(scan.peak_set, ax=self.axis, alpha=0.5, lw=1, color='grey', linestyle='--')
             if not scan.is_profile:
                 # lock in axis dimensions for centroid spectra according to the picked peaks
                 self.axis.set_xlim(0, max(self.axis.get_xlim()) + 2)
         if scan.deconvoluted_peak_set:
+            print("Drawing Isotopic Envelope")
             draw_peaklist(
                 [i for p in scan.deconvoluted_peak_set for i in p.envelope],
                 ax=self.axis, alpha=0.6, lw=0.5, color='orange')
@@ -292,11 +295,7 @@ class SpectrumViewer(_BaseFrame):
                 [p.envelope[0] for p in scan.deconvoluted_peak_set if p.envelope[0].intensity > 0],
                 ax=self.axis, alpha=0.6, lw=1,
                 color='red')
-            draw_peaklist(
-                [EnvelopePair(p.mz, p.intensity / len(self.envelope))
-                for p in scan.deconvoluted_peak_set if not (p.envelope[0].intensity > 0)],
-                ax=self.axis, alpha=0.6, lw=0.5,
-                color='red', linestyle='--')
+
         # draw isolation window and instrument reported precursor
         if children:
             ylim = scan.arrays.intensity.max()
