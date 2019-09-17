@@ -34,6 +34,14 @@ from ms_deisotope.data_source._thermo_helper import (
     _make_id, _id_template, _RawFileMetadataLoader, analyzer_map)
 
 
+def _try_number(string):
+    try:
+        x = float(string)
+        return x
+    except (TypeError, ValueError):
+        return string
+
+
 _DEFAULT_DLL_PATH = os.path.join(
     os.path.dirname(
         os.path.realpath(__file__)),
@@ -282,7 +290,7 @@ class RawReaderInterface(ScanDataSource):
     def _trailer_values(self, scan):
         scan_number = scan.scan_number
         trailers = self._source.GetTrailerExtraInformation(scan_number + 1)
-        return OrderedDict(zip([label.strip(":") for label in trailers.Labels], trailers.Values))
+        return OrderedDict(zip([label.strip(":") for label in trailers.Labels], map(_try_number, trailers.Values)))
 
     def _infer_precursor_scan_number(self, scan):
         precursor_scan_number = None
