@@ -99,7 +99,7 @@ class GraphBasedDenoiser(object):
         """
         if losses is None:
             losses = self.product_losses
-        for index in kept_peak_indices:
+        for index in tuple(kept_peak_indices):
             peak = peak_set[index]
             for loss in losses:
                 for loss_peak in peak_set.all_peaks_for(
