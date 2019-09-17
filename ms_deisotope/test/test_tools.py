@@ -4,6 +4,7 @@ import io
 from click.testing import CliRunner
 
 from ms_deisotope.data_source.mzml import MzMLLoader
+from ms_deisotope.data_source import _compression
 from ms_deisotope.tools import indexing, conversion
 from ms_deisotope.test.common import datafile
 
@@ -42,3 +43,36 @@ def test_mzml():
     reader = MzMLLoader(buff)
     n = len(reader)
     assert n == 48
+
+
+def test_idzip():
+    runner = CliRunner(mix_stderr=False)
+    path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+    stdin_data = io.BytesIO(open(path, 'rb').read())
+    result = runner.invoke(
+        indexing.idzip_compression,
+        ['-'],
+        input=stdin_data,
+        mix_stderr=False)
+    assert b"Detected gzip input file" in result.stderr_bytes
+    outbuff = io.BytesIO(result.stdout_bytes)
+    outstream = _compression.GzipFile(fileobj=outbuff, mode='rb')
+    instream = _compression.GzipFile(path, mode='rb')
+    in_data = instream.read()
+    out_data = outstream.read()
+    assert in_data == out_data
+
+    path = datafile("small.mzML")
+    stdin_data = io.BytesIO(open(path, 'rb').read())
+    result = runner.invoke(
+        indexing.idzip_compression,
+        ['-'],
+        input=stdin_data,
+        mix_stderr=False)
+    assert b"Detected gzip input file" not in result.stderr_bytes
+    outbuff = io.BytesIO(result.stdout_bytes)
+    outstream = _compression.GzipFile(fileobj=outbuff, mode='rb')
+    instream = io.open(path, mode='rb')
+    in_data = instream.read()
+    out_data = outstream.read()
+    assert in_data == out_data

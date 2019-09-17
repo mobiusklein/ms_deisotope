@@ -1,6 +1,7 @@
 '''A collection of little command line utilities for inspecting mass
 spectrum data.
 '''
+import io
 import os
 import math
 
@@ -522,7 +523,14 @@ if _compression.has_idzip:
         with click.open_file(output, mode='wb') as outfh:
             writer = _compression.GzipFile(fileobj=outfh, mode='wb')
             with click.open_file(path, 'rb') as infh:
-                infh_wrap = infh
+                try:
+                    infh_wrap = io.BufferedReader(infh)
+                    header = infh_wrap.peek(2)
+                    if _compression.starts_with_gz_magic(header):
+                        click.echo("Detected gzip input file", err=True)
+                        infh_wrap = _compression.GzipFile(fileobj=infh_wrap)
+                except AttributeError:
+                    infh_wrap = infh
                 buffer_size = _compression.WRITE_BUFFER_SIZE
                 chunk = infh_wrap.read(buffer_size)
                 while chunk:
