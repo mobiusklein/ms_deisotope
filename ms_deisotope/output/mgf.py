@@ -47,8 +47,11 @@ class MGFSerializer(HeaderedDelimitedWriter):
         charge = header_dict['precursor_charge']
         intensity = header_dict['precursor_intensity']
         self.add_parameter("pepmass", "%f %f" % (pepmass, intensity))
+        polarity = header_dict['polarity']
+        if polarity is None:
+            polarity = 1
         try:
-            self.add_parameter("charge", "%d%s" % (charge, "+" if header_dict['polarity'] > 0 else '-'))
+            self.add_parameter("charge", "%d%s" % (charge, "+" if polarity > 0 else '-'))
         except TypeError:
             pass
         self.add_parameter("title", header_dict['title'])
