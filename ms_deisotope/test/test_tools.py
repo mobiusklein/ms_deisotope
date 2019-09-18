@@ -25,7 +25,7 @@ def test_mgf():
     runner = CliRunner()
 
     path = datafile("small.mzML")
-    result = runner.invoke(conversion.mgf, [path, '-'])
+    result = runner.invoke(conversion.mgf, [path, '-'], catch_exceptions=False)
     lines = result.output.splitlines()
     count = 0
     for line in lines:

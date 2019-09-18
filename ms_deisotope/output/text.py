@@ -184,7 +184,7 @@ class HeaderedDelimitedWriter(TextScanSerializerBase):
         header_dict : :class:`_HeaderInformation`
         """
         for key, value in header_dict.items():
-            self.stream.write("#%s=%s\n" % (key, value))
+            self.stream.write(("#%s=%s\n" % (key, value)).encode("utf8"))
 
     def write_vectors(self, vectors):
         """Write out the peak attribute lists along peak index.
@@ -204,7 +204,7 @@ class HeaderedDelimitedWriter(TextScanSerializerBase):
                     line.append(' ')
                 line.append(str(vector[i]))
             line.append("\n")
-            self.stream.write(''.join(line))
+            self.stream.write(''.join(line).encode('utf8'))
 
     def write_scan(self, scan_header, data_vectors):
         self.write_header(scan_header)

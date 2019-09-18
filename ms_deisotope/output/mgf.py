@@ -59,7 +59,7 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self._add_parameter(name, value)
 
     def _add_parameter(self, name, value):
-        self.stream.write(_format_parameter(name, value))
+        self.stream.write(_format_parameter(name, value).encode('utf-8'))
 
     def add_parameter(self, name, value):
         """Add a parameter to the current block.
@@ -109,10 +109,10 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self.add_parameter("rtinseconds", header_dict['scan_time'] * 60.0)
 
     def write_scan(self, scan_header, data_vectors):
-        self.stream.write('BEGIN IONS\n')
+        self.stream.write(b'BEGIN IONS\n')
         self.write_header(scan_header)
         self.write_vectors(data_vectors)
-        self.stream.write('END IONS\n')
+        self.stream.write(b'END IONS\n')
 
 
 class ProcessedMGFLoader(MGFLoader):

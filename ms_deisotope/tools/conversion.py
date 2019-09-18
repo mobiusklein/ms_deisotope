@@ -210,7 +210,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, c
         is_a_tty = stream.isatty()
     except AttributeError: # Not all file-like objects have this method...
         if output == "-":
-            is_a_tty = True
+            is_a_tty = False
 
     if is_a_tty:
         write_index = False
