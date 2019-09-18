@@ -1,3 +1,7 @@
+"""Code for writing Mascot Generic Format files and for reading deconvoluted
+generic format files.
+
+"""
 
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
@@ -11,12 +15,45 @@ def _format_parameter(key, value):
 
 
 class MGFSerializer(HeaderedDelimitedWriter):
+    """A MASCOT Generic Format writer which is deconvolution aware.
+
+    Implements :class:`~.HeaderedDelimitedWriter, as well as allowing
+    global parameters to be included at the beginning of the file.
+
+    Attributes
+    ----------
+    sample_name: str
+        The name of the sample. This value is currently ignored.
+    started: bool
+        Whether scans have been written out yet or not. Once :attr:`started` is
+        true, it is no longer possible to add global parameters using :meth:`add_global_parameter`.
+
+    """
     def __init__(self, stream, sample_name=None, deconvoluted=True):
         super(MGFSerializer, self).__init__(stream, deconvoluted)
         self.sample_name = sample_name
         self.started = False
 
     def add_global_parameter(self, name, value):
+        """Add a global parameter at the beginning of the file, before scans
+        are written.
+
+        Global parameters follow the same ``KEY=value`` format as scan-level
+        parameters. New global parameters may not be added once a scan has been
+        written.
+
+        Parameters
+        ----------
+        name : str
+            The parameter name. Will be made upper-case.
+        value : object
+            The parameter's value. Will be converted to a string.
+
+        Raises
+        ------
+        ValueError:
+            If scans have already been written, this method raises a :class:`ValueError`
+        """
         if self.started:
             raise ValueError("Cannot add global parameter if scan data has begun being written")
         self._add_parameter(name, value)
@@ -25,6 +62,17 @@ class MGFSerializer(HeaderedDelimitedWriter):
         self.stream.write(_format_parameter(name, value))
 
     def add_parameter(self, name, value):
+        """Add a parameter to the current block.
+
+        Parameters are written ``KEY=value`` format.
+
+        Parameters
+        ----------
+        name : str
+            The parameter name. Will be made upper-case.
+        value : object
+            The parameter's value. Will be converted to a string.
+        """
         self._add_parameter(name, value)
 
     def save_scan_bunch(self, bunch, **kwargs):
@@ -32,6 +80,9 @@ class MGFSerializer(HeaderedDelimitedWriter):
             self.save_scan(scan, **kwargs)
 
     def format_peak_vectors(self, scan):
+        """As in :class:`~.HeaderedDelimitedTextWriter` but always writes m/z, even when charge
+        is known.
+        """
         if self.deconvoluted:
             (neutral_mass_array, intensity_array, charge_array) = super(
                 MGFSerializer, self).format_peak_vectors(scan)
@@ -65,7 +116,11 @@ class MGFSerializer(HeaderedDelimitedWriter):
 
 
 class ProcessedMGFLoader(MGFLoader):
+    """A variant of the :class:`~.MGFLoader` that reads deconvoluted mass spectra
+    with a charge value for each peak, and looks for additional annotation of the
+    precursor ion.
 
+    """
     def __init__(self, source_file, encoding='ascii'):
         super(ProcessedMGFDeserializer, self).__init__(source_file, encoding)
 

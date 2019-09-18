@@ -166,23 +166,43 @@ class TextScanSerializerBase(ScanSerializerBase):
 
 
 class HeaderedDelimitedWriter(TextScanSerializerBase):
+    """A simple but usable implementation of :class:`TextScanSerializerBase`
+
+    Writes all metadata headers as "#{key}={value}\\n" immediately preceding
+    the peak attribute list.
+
+    """
     def __init__(self, stream, deconvoluted=True):
         super(HeaderedDelimitedWriter, self).__init__(stream, deconvoluted)
 
     def write_header(self, header_dict):
+        """Write the header information in the form "#{key}={value}" with one
+        key-value pair per line.
+
+        Parameters
+        ----------
+        header_dict : :class:`_HeaderInformation`
+        """
         for key, value in header_dict.items():
             self.stream.write("#%s=%s\n" % (key, value))
 
     def write_vectors(self, vectors):
+        """Write out the peak attribute lists along peak index.
+
+        Parameters
+        ----------
+        vectors : :class:`Sequence`
+            The peak attribute lists to write.
+        """
         vectors = [v for v in vectors if v is not None]
         if sum(map(len, vectors)) != len(vectors[0]) * len(vectors):
             raise ValueError("All data vectors must be equal!")
         for i in range(len(vectors[0])):
             line = []
-            for j in range(len(vectors)):
+            for j, vector in enumerate(vectors):
                 if j != 0:
                     line.append(' ')
-                line.append(str(vectors[j][i]))
+                line.append(str(vector[i]))
             line.append("\n")
             self.stream.write(''.join(line))
 
