@@ -33,6 +33,16 @@ def test_mgf():
             count += 1
     assert count == 34
 
+    result = runner.invoke(conversion.mgf, [path, '-z', '-'])
+    assert _compression.starts_with_gz_magic(result.stdout_bytes)
+    buff = io.BytesIO(result.stdout_bytes)
+    reader = _compression.GzipFile(fileobj=buff, mode='rb')
+    count = 0
+    for line in reader:
+        if b"BEGIN" in line:
+            count += 1
+    assert count == 34
+
 
 def test_mzml():
     runner = CliRunner()
@@ -43,6 +53,14 @@ def test_mzml():
     reader = MzMLLoader(buff)
     n = len(reader)
     assert n == 48
+
+    result = runner.invoke(
+        conversion.mzml, ['-p', '-z', '-c', path, '-'], catch_exceptions=False)
+    buff = io.BytesIO(result.stdout_bytes)
+    reader = MzMLLoader(_compression.get_opener(buff))
+    n = len(reader)
+    assert n == 48
+
 
 
 def test_idzip():

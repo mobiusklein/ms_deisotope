@@ -66,14 +66,22 @@ def to_mgf(reader, outstream, msn_filters=None):
 
 @ms_conversion.command('mgf', short_help="Convert a mass spectrometry data file to MGF")
 @click.argument("source")
-@click.argument("output", type=click.File(mode='w'))
+@click.argument("output", type=click.Path(writable=True))
+@click.option("-z", "--compress", is_flag=True, help=("Compress the output file using gzip"))
 @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
-def mgf(source, output, msn_filters=None):
+def mgf(source, output, compress=False, msn_filters=None):
     """Convert a mass spectrometry data file to MGF. MGF can only represent centroid spectra
     and generally does not contain any MS1 information.
     """
+    if compress:
+        if not output.endswith(".gz") and output != '-':
+            output += '.gz'
+        stream = click.open_file(output, 'wb')
+        stream = GzipFile(fileobj=stream, mode='wb')
+    else:
+        stream = click.open_file(output, 'wb')
     reader = ms_deisotope.MSFileLoader(source)
-    to_mgf(reader, output, msn_filters=msn_filters)
+    to_mgf(reader, stream, msn_filters=msn_filters)
 
 
 def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=None, default_activation=None,
@@ -191,13 +199,20 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, c
     """
     reader = ms_deisotope.MSFileLoader(source)
     if compress:
-        if not output.endswith(".gz"):
+        if not output.endswith(".gz") and output != '-':
             output += '.gz'
         stream = click.open_file(output, 'wb')
         stream = GzipFile(fileobj=stream, mode='wb')
     else:
         stream = click.open_file(output, 'wb')
-    if stream.isatty():
+    is_a_tty = False
+    try:
+        is_a_tty = stream.isatty()
+    except AttributeError: # Not all file-like objects have this method...
+        if output == "-":
+            is_a_tty = True
+
+    if is_a_tty:
         write_index = False
     else:
         write_index = True
