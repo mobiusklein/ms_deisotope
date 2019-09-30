@@ -1,4 +1,5 @@
 import unittest
+import os
 import io
 
 from click.testing import CliRunner
@@ -23,7 +24,8 @@ def test_describe():
 
 def test_mgf():
     runner = CliRunner()
-
+    if os.path.exists("-idx.json"):
+        raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")
     result = runner.invoke(conversion.mgf, [path, '-'], catch_exceptions=False)
     lines = result.output.splitlines()
@@ -32,7 +34,8 @@ def test_mgf():
         if "BEGIN" in line:
             count += 1
     assert count == 34
-
+    if os.path.exists("-idx.json"):
+        raise IOError("Orphan index file exists after running uncompressed test")
     result = runner.invoke(conversion.mgf, [path, '-z', '-'])
     assert _compression.starts_with_gz_magic(result.stdout_bytes)
     buff = io.BytesIO(result.stdout_bytes)
@@ -42,17 +45,23 @@ def test_mgf():
         if b"BEGIN" in line:
             count += 1
     assert count == 34
+    if os.path.exists("-idx.json"):
+        raise IOError("Orphan index file exists after running compressed test")
 
 
 def test_mzml():
     runner = CliRunner()
-
+    if os.path.exists("-idx.json"):
+        raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")
     result = runner.invoke(conversion.mzml, ['-p', '-c', path, '-'])
     buff = io.BytesIO(result.output.encode("utf-8"))
     reader = MzMLLoader(buff)
     n = len(reader)
     assert n == 48
+    if os.path.exists("-idx.json"):
+        raise IOError(
+            "Orphan index file exists after running uncompressed test")
 
     result = runner.invoke(
         conversion.mzml, ['-p', '-z', '-c', path, '-'], catch_exceptions=False)
@@ -60,6 +69,8 @@ def test_mzml():
     reader = MzMLLoader(_compression.get_opener(buff))
     n = len(reader)
     assert n == 48
+    if os.path.exists("-idx.json"):
+        raise IOError("Orphan index file exists after running compressed test")
 
 
 

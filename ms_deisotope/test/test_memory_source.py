@@ -31,6 +31,10 @@ class TestMemoryScanSource(unittest.TestCase):
         for product in bunch.products:
             assert product.id == next(g)
 
+    def test_source_file_name_none(self):
+        source = self.prepare_source
+        assert source.source_file_name is None
+
 
 if __name__ == '__main__':
     unittest.main()

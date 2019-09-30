@@ -23,4 +23,5 @@ class TestInferType(unittest.TestCase):
 
     def test_infer_loader_compressed(self):
         reader = infer_type.MSFileLoader(self.mzmlgz_path)
+        assert reader.source_file_name is not None
         self.assertIsNotNone(next(reader))

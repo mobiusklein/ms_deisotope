@@ -12,6 +12,10 @@ class TestMGFLoaderScanBehavior(unittest.TestCase):
     def reader(self):
         return infer_type.MSFileLoader(self.path)
 
+    def test_source_file_name(self):
+        reader = self.reader
+        assert reader.source_file_name.endswith("small.mgf")
+
     def test_index(self):
         reader = self.reader
         assert len(reader.index) == 34

@@ -94,6 +94,10 @@ class ThermoRawLoaderScanBehaviorBase(object):
         self.assertEqual(raw_scan.precursor_information.precursor,
                          mzml_scan.precursor_information.precursor)
 
+    def test_source_file_name(self):
+        reader = self.reader
+        assert reader.source_file_name.lower().endswith("small.raw")
+
 
 @unittest.skipIf(not_windows or missing_reader_dll, "Requires Windows COM and MSFileReader.dll")
 class TestCOMThermoRawLoaderScanBehavior(ThermoRawLoaderScanBehaviorBase, unittest.TestCase):

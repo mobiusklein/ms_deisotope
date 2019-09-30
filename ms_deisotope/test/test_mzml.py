@@ -23,6 +23,7 @@ class TestMzMLLoaderScanBehavior(unittest.TestCase):
         assert reader.index.from_index(0) == scan_ids[0]
         assert list(reader.index.index_sequence) == sorted(
             reader.index.index_sequence, key=lambda x: x[1])
+        assert reader.source_file_name.endswith("three_test_scans.mzML")
         return reader
 
     def test_index_building(self):

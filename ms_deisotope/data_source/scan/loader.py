@@ -252,6 +252,26 @@ class ScanDataSource(object):
     def _annotations(self, scan):
         return dict()
 
+    @property
+    def source_file_name(self):
+        """Return the name of the file that backs this data source, if available.
+
+        Returns
+        -------
+        :class:`str` or :const:`None`
+        """
+        try:
+            file_ = self.source_file
+        except AttributeError:
+            return None
+        if isinstance(file_, basestring):
+            return file_
+        try:
+            name = file_.name
+        except AttributeError:
+            return None
+        return name
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
