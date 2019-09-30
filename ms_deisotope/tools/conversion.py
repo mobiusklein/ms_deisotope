@@ -198,6 +198,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, c
     transformations along the way.
     """
     reader = ms_deisotope.MSFileLoader(source)
+    is_a_tty = False
     if compress:
         if not output.endswith(".gz") and output != '-':
             output += '.gz'
@@ -205,13 +206,12 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, c
         stream = GzipFile(fileobj=stream, mode='wb')
     else:
         stream = click.open_file(output, 'wb')
-    is_a_tty = False
+
     try:
         is_a_tty = stream.isatty()
     except AttributeError: # Not all file-like objects have this method...
         if output == "-":
-            is_a_tty = False
-
+            is_a_tty = True
     if is_a_tty:
         write_index = False
     else:
