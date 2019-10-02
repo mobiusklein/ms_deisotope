@@ -3,14 +3,22 @@ import logging
 import multiprocessing
 import threading
 import traceback
+import six
 
 from datetime import datetime
 
 logger = logging.getLogger("ms_deisotope.task")
 
 
+def ensure_text(obj):
+    if six.PY2:
+        return unicode(obj)
+    else:
+        return str(obj)
+
+
 def fmt_msg(*message):
-    return "%s %s" % (datetime.now().isoformat(' '), ', '.join(map(str, message)))
+    return u"%s %s" % (ensure_text(datetime.now().isoformat(' ')), u', '.join(map(ensure_text, message)))
 
 
 def printer(obj, *message):
@@ -19,7 +27,7 @@ def printer(obj, *message):
 
 def debug_printer(obj, *message):
     if obj.in_debug_mode():
-        print("DEBUG:" + fmt_msg(*message))
+        print(u"DEBUG:" + fmt_msg(*message))
 
 
 class CallInterval(object):
@@ -151,17 +159,17 @@ class LogUtilsMixin(object):
         return bool(self._debug_enabled)
 
     def log(self, *message):
-        self.print_fn(', '.join(map(str, message)))
+        self.print_fn(u', '.join(map(ensure_text, message)))
 
     def warn(self, *message):
-        self.warn_print_fn(', '.join(map(str, message)))
+        self.warn_print_fn(u', '.join(map(ensure_text, message)))
 
     def debug(self, *message):
-        self.debug_print_fn(', '.join(map(str, message)))
+        self.debug_print_fn(u', '.join(map(ensure_text, message)))
 
     def error(self, *message, **kwargs):
         exception = kwargs.get("exception")
-        self.error_print_fn(', '.join(map(str, message)))
+        self.error_print_fn(u', '.join(map(ensure_text, message)))
         if exception is not None:
             self.error_print_fn(traceback.format_exc(exception))
 
