@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
+from array import array as pyarray
+
 from brainpy import (
     calculate_mass, neutral_mass, PROTON,
     isotopic_variants, mass_charge_ratio)
@@ -297,6 +299,15 @@ class TheoreticalIsotopicPattern(object):
             i -= 1
         return accumulator
 
+    def basepeak_index(self):
+        bp_intensity = 0
+        bp_index = 0
+        for i, p in enumerate(self):
+            if p.intensity > bp_intensity:
+                bp_intensity = p.intensity
+                bp_index = i
+        return bp_index
+
 
 @dict_proxy("base_composition")
 class Averagine(object):
@@ -558,3 +569,99 @@ try:
     from ms_deisotope._c.averagine import AveragineCache, isotopic_shift
 except ImportError:
     pass
+
+
+
+class BasePeakToMonoisotopicOffsetEstimator(object):
+    """A type to predict the distance (in neutron count) from the base peak to
+    the monoisotopic peak of an isotopic pattern given a mass and an
+    :class:`Averagine` model.
+
+    The smaller :attr:`step_size` is, the more precise the estimate, but the more
+    space is used.
+
+    Attributes
+    ----------
+    averagine : :class:`Averagine`
+        The averagine model to use to generate isotopic patterns
+    step_size : float
+        The level of discretization to use to bin masses around isotopic
+        pattern shape.
+    bins : :class:`array.array`
+        A sequence of positive :class:`int` values corresponding to the distance
+        between the base peak and the monoisotopic peak in neutrons in
+        the given bin. The mass for the bin is the bin index times :attr:`step_size`.
+
+    """
+    def __init__(self, averagine, step_size=100.0):
+        self.averagine = averagine
+        self.bins = pyarray('I')
+        self.step_size = step_size
+
+    def _max_mass_bin(self):
+        return len(self.bins) * self.step_size
+
+    def _bin_for(self, mass):
+        offset, _remainder = divmod(mass, self.step_size)
+        return int(offset)
+
+    def _estimate_for_peak_offset(self, mass):
+        tid = self.averagine.isotopic_cluster(mass, 1, ignore_below=0.0)
+        return tid.basepeak_index()
+
+    def _populate_bins(self, max_mass):
+        current_bin = self._max_mass_bin()
+        i = 0
+        while max_mass >= current_bin:
+            next_bin_mass = current_bin + self.step_size
+            delta = self._estimate_for_peak_offset(next_bin_mass)
+            self.bins.append(delta)
+            current_bin = next_bin_mass
+            i += 1
+        return i
+
+    def get_peak_offset(self, mass, binned=True):
+        """Estimate the number of neutrons separating the most intense peak of
+        an isotopic pattern from the pattern's monoisotopic peak.
+
+        Parameters
+        ----------
+        mass : float
+            The neutral mass to predict for.
+        binned : bool, optional
+            Whether or not to use the bin-interpolated solution. If not,
+            an exact mass solution will be calculated, which is more precise,
+            but more expensive (the default is True).
+
+        Returns
+        -------
+        int
+        """
+        if not binned:
+            return self._estimate_for_peak_offset(mass)
+        index = self._bin_for(mass)
+        try:
+            return self.bins[index]
+        except IndexError:
+            self._populate_bins(mass)
+            return self.bins[index]
+
+    def __call__(self, mass, binned=True):
+        """Estimate the number of neutrons separating the most intense peak of
+        an isotopic pattern from the pattern's monoisotopic peak.
+
+        Parameters
+        ----------
+        mass : float
+            The neutral mass to predict for.
+        binned : bool, optional
+            Whether or not to use the bin-interpolated solution. If not,
+            an exact mass solution will be calculated, which is more precise,
+            but more expensive (the default is True).
+
+        Returns
+        -------
+        int
+        """
+        return self.get_peak_offset(mass, binned=binned)
+
