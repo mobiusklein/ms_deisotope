@@ -686,7 +686,7 @@ class Scan(ScanBase):
         :class:`ProcessedScan`
         '''
         precursor_info = self.precursor_information
-        return ProcessedScan(
+        scan = ProcessedScan(
             self.id, self.title, precursor_info,
             self.ms_level, self.scan_time, self.index,
             self.peak_set.pack() if self.peak_set is not None else None,
@@ -699,6 +699,7 @@ class Scan(ScanBase):
             self.product_scans,
             self.annotations,
             source=self.source if bind else None)
+        return scan
 
     # signal transformation
 

@@ -274,6 +274,22 @@ class ScanDataSource(object):
             return None
         return name
 
+    def close(self):
+        """Close the underlying scan data stream, which may be a file or other
+        system resource.
+
+        A closed data source may not be able to serve data requests, but not all
+        :class:`ScanDataSource` implementations require the data stream be open
+        for all operations.
+        """
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, exc_value, traceback):
+        self.close()
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
