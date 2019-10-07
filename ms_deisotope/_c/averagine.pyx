@@ -613,7 +613,7 @@ cdef class TheoreticalIsotopicPattern(object):
                 peak.intensity *= scale_factor
         elif method == 'basepeak':
             i = 1
-            j = self._basepeak_index()
+            j = self.basepeak_index()
             scale_factor =  (<FittedPeak>PyList_GET_ITEM(
                 experimental_distribution, j)).intensity / self.get(j).intensity
             if j < n:
@@ -635,7 +635,7 @@ cdef class TheoreticalIsotopicPattern(object):
                 peak.intensity *= scale_factor
         return self
 
-    cpdef size_t _basepeak_index(self):
+    cpdef size_t basepeak_index(self):
         cdef:
             size_t i, n, bp_index
             double bp_intensity
@@ -647,7 +647,7 @@ cdef class TheoreticalIsotopicPattern(object):
             if p.intensity > bp_intensity:
                 bp_intensity = p.intensity
                 bp_index = i
-        return 0
+        return bp_index
 
     @cython.cdivision
     cpdef TheoreticalIsotopicPattern normalize(self):
