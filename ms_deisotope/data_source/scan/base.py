@@ -134,9 +134,12 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         -------
         :class:`ScanBunch`
         '''
-        return self.__class__(self.precursor.pack(), [
-            p.pack() for p in self.products
-        ])
+        precursor = self.precursor.pack()
+        products = [p.pack() for p in self.products]
+        inst = self.__class__(precursor, products)
+        precursor.product_scans = products
+        return inst
+
 
 
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
