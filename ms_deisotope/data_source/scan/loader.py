@@ -417,7 +417,7 @@ class ScanIterator(ScanDataSource):
         '''Initialize a cache which keeps track of which :class:`~.Scan`
         objects are still in memory using a :class:`weakref.WeakValueDictionary`.
 
-        When a scan is requested, if the scan object is found in the cahce, the
+        When a scan is requested, if the scan object is found in the cache, the
         existing object is returned rather than re-read from disk.
         '''
         self._scan_cache = WeakValueDictionary()
