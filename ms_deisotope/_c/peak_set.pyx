@@ -1096,7 +1096,7 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
         self._release_buffers()
 
     def __reduce__(self):
-        return self.__class__, (self.peaks, )
+        return self.__class__, (self.peaks, ), self.__getstate__()
 
     def __getstate__(self):
         d = {"indexed": self.indexed}
