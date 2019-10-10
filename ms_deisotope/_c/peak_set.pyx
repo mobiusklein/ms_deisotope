@@ -1095,6 +1095,17 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
     def __dealloc__(self):
         self._release_buffers()
 
+    def __reduce__(self):
+        return self.__class__, (self.peaks, )
+
+    def __getstate__(self):
+        d = {"indexed": self.indexed}
+        return d
+
+    def __setstate__(self, d):
+        if d.get("indexed", False):
+            self.reindex()
+
     def _release_buffers(self):
         if self.neutral_mass_array != NULL:
             free(self.neutral_mass_array)
