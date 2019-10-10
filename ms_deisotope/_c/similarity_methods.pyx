@@ -2,6 +2,7 @@ cimport cython
 from cython.parallel cimport prange
 from libc.math cimport floor, sqrt
 from libc.stdlib cimport malloc, free
+from libc.stdio cimport printf
 from cpython cimport PyErr_SetString
 
 from cpython.object cimport PyObject
@@ -46,6 +47,8 @@ cdef PyObject** _make_fast_array(peak_collection peak_set):
         items = PySequence_Fast_ITEMS(
             PySequence_Fast(peak_set.peaks, "Error, could not create fast array from DeconvolutedPeakSet"))
     else:
+        # This block is unsafe for any type that is not a list or a tuple, risking segfaults.
+        # The list/tuple must have a lifespan exceeding the duration of this function call.
         items = PySequence_Fast_ITEMS(
             PySequence_Fast(peak_set, "Error, could not create fast array from object"))
     return items
@@ -77,6 +80,7 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
 
     cdef:
         tuple binned_spectra
+        list _hold_a, _hold_b
         double n_a, n_b, n_ab, z, a, b
         double hi, scaler
         PeakBase peak
@@ -138,17 +142,23 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
 
     # Fill bins
     if peak_collection is object:
-        n_peaks_a = len(peak_set_a)
+        _hold_a = list(peak_set_a)
+        n_peaks_a = len(_hold_a)
     else:
         n_peaks_a = peak_set_a.get_size()
 
     if peak_collection is object:
-        n_peaks_b = len(peak_set_b)
+        _hold_b = list(peak_set_b)
+        n_peaks_b = len(_hold_b)
     else:
         n_peaks_b = peak_set_b.get_size()
 
-    items_a = _make_fast_array(peak_set_a)
-    items_b = _make_fast_array(peak_set_b)
+    if peak_collection is object:
+        items_a = _make_fast_array(_hold_a)
+        items_b = _make_fast_array(_hold_b)
+    else:
+        items_a = _make_fast_array(peak_set_a)
+        items_b = _make_fast_array(peak_set_b)
     with nogil:
         # Fill bins
         for i in prange(n_peaks_a, schedule='static', num_threads=2):
