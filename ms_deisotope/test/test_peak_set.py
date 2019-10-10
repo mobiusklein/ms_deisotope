@@ -1,5 +1,5 @@
 import unittest
-import dill as pickle
+import pickle
 
 import numpy as np
 
