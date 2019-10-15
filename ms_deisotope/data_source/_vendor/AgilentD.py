@@ -554,6 +554,14 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
             index[make_scan_id_string(rec.ScanId)] = sn
         return index
 
+    def _make_pointer_iterator(self, start_index=None, start_time=None):
+        iterator = self._make_scan_index_producer(start_index, start_time)
+        for i in iterator:
+            yield AgilentDScanPtr(i)
+
+    def _make_default_iterator(self):
+        return self._make_pointer_iterator()
+
     def _make_scan_index_producer(self, start_index=None, start_time=None):
         if start_index is not None:
             return range(start_index, self._n_spectra)
