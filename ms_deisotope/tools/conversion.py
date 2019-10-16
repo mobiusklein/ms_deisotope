@@ -148,7 +148,7 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
         writer.add_file_contents("centroid spectrum")
     n_spectra = len(reader)
     progbar = click.progressbar(
-        label="Loading Spectra", length=n_spectra,
+        label="Processed Spectra", length=n_spectra,
         item_show_func=lambda x: str(x.precursor.id if x.precursor else
                                      x.products[0].id) if x else '')
     with progbar:
