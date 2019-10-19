@@ -1,5 +1,6 @@
-from .cv import Term, TermSet
+from ms_deisotope.utils import _MappingOverAttributeProxy
 
+from .cv import Term, TermSet
 
 class ActivationInformation(object):
     """Describes the dissociation process used to produce an MSn scan.
@@ -13,6 +14,7 @@ class ActivationInformation(object):
     method : :class:`DissociationMethod`
         The dissociation method used
     """
+    __slots__ = ('energy', 'method', 'data')
 
     def __init__(self, method, energy, data=None):  # pylint: disable=redefined-outer-name
         if data is None:
@@ -95,6 +97,13 @@ class ActivationInformation(object):
     def has_dissociation_type(self, dissociation_type):
         return self.method.is_a(dissociation_type)
 
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
+
+    def __reduce__(self):
+        return self.__class__, (self.method, self.energy, self.data)
+
 
 class MultipleActivationInformation(ActivationInformation):
     """Describes the dissociation processes used to produce an MSn
@@ -173,6 +182,9 @@ class MultipleActivationInformation(ActivationInformation):
 
     def has_dissociation_type(self, dissociation_type):
         return any(method.is_a(dissociation_type) for method in self.methods)
+
+    def __reduce__(self):
+        return self.__class__, (self.methods, self.energies, self.data)
 
 
 class DissociationMethod(Term):

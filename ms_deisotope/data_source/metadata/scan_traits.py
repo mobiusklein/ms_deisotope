@@ -1,5 +1,6 @@
 from collections import namedtuple, MutableSequence
 
+from ms_deisotope.utils import _MappingOverAttributeProxy
 from .cv import Term, TermSet
 
 
@@ -29,6 +30,8 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
         The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
         the window
     """
+
+    __slots__ = ()
 
     @classmethod
     def make_empty(cls, point):
@@ -113,6 +116,10 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     def __ne__(self, other):
         return not (self == other)
 
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
+
 
 class ScanAcquisitionInformation(MutableSequence):
     """Describes the set distinct scans along the measurable range by
@@ -128,6 +135,12 @@ class ScanAcquisitionInformation(MutableSequence):
     scan_list : :class:`list` of :class:`ScanEventInformation`
         The list of scan events performed
     """
+
+    __slots__ = ("combination", "scan_list")
+
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
 
     def __init__(self, combination, scan_list):  # pylint: disable=super-init-not-called
         self.combination = combination
@@ -171,6 +184,13 @@ class ScanAcquisitionInformation(MutableSequence):
 
 
 class ScanEventInformation(object):
+
+    __slots__ = ("start_time", "window_list", "drift_time", "injection_time", "traits")
+
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
+
     def __init__(self, start_time, window_list, drift_time=None, injection_time=None, traits=None, **options):
         self.start_time = start_time
         self.window_list = window_list or []
@@ -228,6 +248,12 @@ class ScanEventInformation(object):
 
 
 class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
+    __slots__ = ()
+
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
+
     def __contains__(self, i):
         return self.lower <= i <= self.upper
 
@@ -251,7 +277,7 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
 
 
 class ScanAttribute(Term):
-    pass
+    __slots__ = ()
 
 
 scan_attributes = []

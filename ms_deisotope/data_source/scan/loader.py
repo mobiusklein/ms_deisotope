@@ -4,12 +4,12 @@ load data for :class:`~.Scan` objects.
 import abc
 from weakref import WeakValueDictionary
 
+from six import string_types as basestring
+
 from ms_deisotope.utils import add_metaclass
 
 from ms_deisotope.data_source.metadata.file_information import FileInformation
 from ms_deisotope.data_source._compression import MaybeFastRandomAccess
-
-from six import string_types as basestring
 
 from .scan import Scan
 from .scan_iterator import (

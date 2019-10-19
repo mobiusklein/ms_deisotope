@@ -7,7 +7,10 @@ import os
 import hashlib
 import warnings
 
-from collections import MutableMapping
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 
 from six import string_types as basestring
 

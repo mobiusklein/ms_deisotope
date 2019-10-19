@@ -343,3 +343,23 @@ def decimal_shift(x):
             return 1.0 / i
         i *= 10.
     return 1.0 / i
+
+
+class _MappingOverAttributeProxy(object):
+    '''A replacement for __dict__ for unpickling an object which once
+    has __slots__ now but did not before.'''
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __getitem__(self, key):
+        return getattr(self.obj, key)
+
+    def __setitem__(self, key, value):
+        setattr(self.obj, key, value)
+
+    def __contains__(self, key):
+        return hasattr(self.obj, key)
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.obj})".format(self=self)
