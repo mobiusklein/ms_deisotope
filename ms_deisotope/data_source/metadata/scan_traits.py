@@ -182,6 +182,9 @@ class ScanAcquisitionInformation(MutableSequence):
     def __ne__(self, other):
         return not (self == other)
 
+    def __reduce__(self):
+        return self.__class__, (self.combination, self.scan_list)
+
 
 class ScanEventInformation(object):
 
