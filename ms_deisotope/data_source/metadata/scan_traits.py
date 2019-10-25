@@ -246,6 +246,9 @@ class ScanEventInformation(object):
             high = max(high, window.upper)
         return ScanWindow(low, high)
 
+    def __reduce__(self):
+        return self.__class__, (self.start_time, self.window_list, self.drift_time, self.injection_time, self.traits)
+
 
 class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
     __slots__ = ()
