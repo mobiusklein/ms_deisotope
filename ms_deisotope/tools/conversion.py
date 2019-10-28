@@ -85,7 +85,7 @@ def mgf(source, output, compress=False, msn_filters=None):
 
 
 def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=None, default_activation=None,
-            correct_precursor_mz=False, write_index=True):
+            correct_precursor_mz=False, write_index=True, update_metadata=True):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -121,15 +121,17 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
         msn_filters = []
     reader.make_iterator(grouped=True)
     writer = MzMLSerializer(outstream, len(
-        reader), deconvoluted=False, build_extra_index=write_index)
+        reader), deconvoluted=False, build_extra_index=write_index,
+        include_software_entry=update_metadata)
     writer.copy_metadata_from(reader)
-    method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
-    if pick_peaks:
-        method.add('MS:1000035')
-    if correct_precursor_mz:
-        method.add('MS:1000780')
-    method.add('MS:1000544')
-    writer.add_data_processing(method)
+    if update_metadata:
+        method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
+        if pick_peaks:
+            method.add('MS:1000035')
+        if correct_precursor_mz:
+            method.add('MS:1000780')
+        method.add('MS:1000544')
+        writer.add_data_processing(method)
     if default_activation is not None:
         if isinstance(default_activation, basestring):
             default_activation = activation_module.ActivationInformation(
@@ -192,8 +194,11 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
 @click.option("-z", "--compress", is_flag=True, help=("Compress the output file using gzip"))
 @click.option("-c", "--correct-precursor-mz", is_flag=True, help=(
     "Adjust the precursor m/z of each MSn scan to the nearest peak m/z in the precursor"))
+@click.option("--update-metadata/--no-update-metadata", default=True, help=(
+    "Whether or not to add the conversion"
+    " program's metadata to the mzML file."))
 def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, compress=False,
-         correct_precursor_mz=False):
+         correct_precursor_mz=False, update_metadata=True):
     """Convert `source` into mzML format written to `output`, applying a collection of optional data
     transformations along the way.
     """
@@ -219,7 +224,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, c
     with stream:
         to_mzml(reader, stream, pick_peaks=pick_peaks, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
-                write_index=write_index)
+                write_index=write_index, update_metadata=update_metadata)
 
 
 if is_debug_mode():

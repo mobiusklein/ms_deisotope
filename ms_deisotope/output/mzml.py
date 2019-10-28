@@ -63,6 +63,7 @@ from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided,
     _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
 from ms_deisotope.data_source.metadata import data_transformation
+from ms_deisotope.data_source.metadata.software import (Software, software_name)
 from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.feature_map import ExtendedScanIndex
 
@@ -258,7 +259,7 @@ class MzMLSerializer(ScanSerializerBase):
 
     def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
-                 data_encoding=None):
+                 data_encoding=None, include_software_entry=True):
         if data_encoding is None:
             data_encoding = {
                 writer.MZ_ARRAY: np.float64,
@@ -296,6 +297,8 @@ class MzMLSerializer(ScanSerializerBase):
         self.indexer = None
         if build_extra_index:
             self.indexer = ExtendedScanIndex()
+        self._include_software_entry = include_software_entry
+        self._this_software = None
 
     def _init_sample(self, sample_name, **kwargs):
         self.sample_name = sample_name
@@ -540,7 +543,12 @@ class MzMLSerializer(ScanSerializerBase):
 
     def _create_software_list(self):
         software_list = []
-        ms_deisotope_entries = []
+        if self._include_software_entry:
+            if self._this_software is None:
+                self._this_software = this_software = self._make_software_entry()
+            else:
+                this_software = self._this_software
+            self.software_list.append(this_software)
         for sw in self.software_list:
             d = {
                 'id': sw.id,
@@ -551,10 +559,15 @@ class MzMLSerializer(ScanSerializerBase):
             else:
                 d['MS:1000799'] = sw.name
             d['params'] = list(sw.options.items())
-            if 'ms_deisotope' in str(sw.id):
-                ms_deisotope_entries.append(str(sw.id))
             software_list.append(d)
 
+        self.writer.software_list(software_list)
+
+    def _make_software_entry(self):
+        ms_deisotope_entries = []
+        for sw in self.software_list:
+            if 'ms_deisotope' in str(sw.id):
+                ms_deisotope_entries.append(str(sw.id))
         for i in range(1, 100):
             query = 'ms_deisotope_%d' % i
             if query in ms_deisotope_entries:
@@ -564,13 +577,8 @@ class MzMLSerializer(ScanSerializerBase):
                 break
         else:
             new_entry_id = 'ms_deisotope_%s' % str(uuid4())
-
-        software_list.append({
-            "id": new_entry_id,
-            'version': lib_version,
-            'ms_deisotope': "",
-        })
-        self.writer.software_list(software_list)
+        self._this_software = inst = Software("ms_deisotope", new_entry_id, lib_version)
+        return inst
 
     def _create_sample_list(self):
         self.writer.sample_list(self.sample_list)
@@ -579,7 +587,9 @@ class MzMLSerializer(ScanSerializerBase):
                                 baseline_reduction=True, additional_parameters=tuple(),
                                 software_id=None, data_processing_id=None):
         if software_id is None:
-            software_id = "ms_deisotope_1"
+            if self._this_software is None:
+                self._make_software_entry()
+            software_id = self._this_software.id
         if data_processing_id is None:
             data_processing_id = 'ms_deisotope_processing_%d' % len(
                 self.data_processing_list)

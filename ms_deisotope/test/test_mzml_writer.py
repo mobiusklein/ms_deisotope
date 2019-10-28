@@ -72,13 +72,19 @@ class TestMzMLSerializer(unittest.TestCase):
         pinfo = index.find_msms_by_precursor_mass(ms_deisotope.neutral_mass(562.7397, 2))
         assert len(pinfo) > 0
 
+        software_list = processed_reader.software_list()
+        for sw in software_list:
+            if sw.name == 'ms_deisotope' and sw.id == 'ms_deisotope_1':
+                break
+        else:
+            raise AssertionError("Could not find \"ms_deisotope\" entry in software list %r" % (software_list, ))
+
         processed_reader.close()
         try:
             os.remove(name)
             os.remove(processed_reader._index_file_name)
-        except OSError:
+        except OSError as _err:
             pass
-
 
 if __name__ == '__main__':
     unittest.main()
