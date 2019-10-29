@@ -12,10 +12,12 @@ from .metadata.file_information import (
 
 from .common import ScanFileMetadataBase
 
-analyzer_pat = re.compile(r"(?P<mass_analyzer_type>ITMS|TQMS|SQMS|TOFMS|FTMS|SECTOR)")
+analyzer_pat = re.compile(
+    r"(?P<mass_analyzer_type>ITMS|TQMS|SQMS|TOFMS|FTMS|SECTOR)")
 polarity_pat = re.compile(r"(?P<polarity>[\+\-])")
 point_type_pat = re.compile(r"(?P<point_type>[CP])")
-ionization_pat = re.compile(r"(?P<ionization_type>EI|CI|FAB|APCI|ESI|APCI|NSI|TSP|FD|MALDI|GD)")
+ionization_pat = re.compile(
+    r"(?P<ionization_type>EI|CI|FAB|APCI|ESI|APCI|NSI|TSP|FD|MALDI|GD)")
 scan_type_pat = re.compile(r"(?P<scan_type>FULL|SIM|SRM|CRM|Z|Q1MS|Q3MS)")
 ms_level_pat = re.compile(r" ms(?P<level>\d*) ")
 activation_pat = re.compile(
@@ -62,11 +64,258 @@ inlet_map = {
 }
 
 
+instrument_models = {
+    "MAT253",
+    "MAT900XP",
+    "MAT900XP Trap",
+    "MAT95XP",
+    "MAT95XP Trap",
+    "SSQ 7000",
+    "TSQ 7000",
+    "TSQ",
+    "Element 2",
+    "Delta Plus Advantage",
+    "Delta Plus XP",
+    "LCQ Advantage",
+    "LCQ Classic",
+    "LCQ Deca",
+    "LCQ Deca XP Plus",
+    "Neptune",
+    "DSQ",
+    "PolarisQ",
+    "Surveyor MSQ",
+    "Surveyor MSQ",
+    "Tempus TOF",
+    "Trace DSQ",
+    "Triton",
+    "LTQ",
+    "LTQ FT",
+    "LTQ FT Ultra",
+    "LTQ Orbitrap",
+    "LTQ Orbitrap Discovery",
+    "LTQ Orbitrap XL",
+    "LTQ Orbitrap Velos",
+    "LTQ Orbitrap Elite",
+    "LTQ Velos Plus",
+    "LTQ Velos Plus",
+    "LTQ Velos",
+    "LXQ",
+    "LCQ Fleet",
+    "ITQ 700",
+    "ITQ 900",
+    "ITQ 1100",
+    "GC Quantum",
+    "LTQ XL ETD",
+    "LTQ Orbitrap XL ETD",
+    "DFS",
+    "DSQ II",
+    "ISQ",
+    "MALDI LTQ XL",
+    "MALDI LTQ Orbitrap",
+    "TSQ Quantum",
+    "TSQ Quantum Access",
+    "TSQ Quantum Ultra",
+    "TSQ Quantum Ultra AM",
+    "TSQ Vantage Standard",
+    "TSQ Vantage EMR",
+    "TSQ Quantiva",
+    "TSQ Endura",
+    "TSQ Altis",
+    "Element XR",
+    "Element GD",
+    "GC IsoLink",
+    "Q Exactive",
+    "Exactive",
+    "Orbitrap Exploris 480",
+    "Orbitrap Eclipse",
+    "Orbitrap Fusion ETD",
+    "Orbitrap Fusion",
+    "Surveyor PDA",
+    "Accela PDA",
+    "Unknown",
+}
+
+
+def parse_instrument_model(model_name):
+    """Interpret the instrument model name provided by the Thermo library,
+    mapping it to the nearest instrument family.
+
+    Parameters
+    ----------
+    model_name : str
+        The Thermo-provided instrument model name
+
+    Returns
+    -------
+    str:
+        The instrument model family
+    """
+    model_name = model_name.upper()
+    if (model_name == "MAT253"):
+        return "MAT253"
+    elif (model_name == "MAT900XP"):
+        return "MAT900XP"
+    elif (model_name == "MAT900XP Trap"):
+        return "MAT900XP Trap"
+    elif (model_name == "MAT95XP"):
+        return "MAT95XP"
+    elif (model_name == "MAT95XP Trap"):
+        return "MAT95XP Trap"
+    elif (model_name == "SSQ 7000"):
+        return "SSQ 7000"
+    elif (model_name == "TSQ 7000"):
+        return "TSQ 7000"
+    elif (model_name == "TSQ"):
+        return "TSQ"
+    elif (model_name == "ELEMENT2" or model_name == "ELEMENT 2"):
+        return "Element 2"
+    elif (model_name == "DELTA PLUSADVANTAGE"):
+        return "Delta Plus Advantage"
+    elif (model_name == "DELTAPLUSXP"):
+        return "Delta Plus XP"
+    elif (model_name == "LCQ ADVANTAGE"):
+        return "LCQ Advantage"
+    elif (model_name == "LCQ CLASSIC"):
+        return "LCQ Classic"
+    elif (model_name == "LCQ DECA"):
+        return "LCQ Deca"
+    elif (model_name == "LCQ DECA XP" or model_name == "LCQ DECA XP PLUS"):
+        return "LCQ Deca XP Plus"
+    elif (model_name == "NEPTUNE"):
+        return "Neptune"
+    elif (model_name == "DSQ"):
+        return "DSQ"
+    elif (model_name == "POLARISQ"):
+        return "PolarisQ"
+    elif (model_name == "SURVEYOR MSQ"):
+        return "Surveyor MSQ"
+    elif (model_name == "MSQ PLUS"):
+        return "Surveyor MSQ"
+    elif (model_name == "TEMPUS TOF"):
+        return "Tempus TOF"
+    elif (model_name == "TRACE DSQ"):
+        return "Trace DSQ"
+    elif (model_name == "TRITON"):
+        return "Triton"
+    elif (model_name == "LTQ" or model_name == "LTQ XL"):
+        return "LTQ"
+    elif (model_name == "LTQ FT" or model_name == "LTQ-FT"):
+        return "LTQ FT"
+    elif (model_name == "LTQ FT ULTRA"):
+        return "LTQ FT Ultra"
+    elif (model_name == "LTQ ORBITRAP"):
+        return "LTQ Orbitrap"
+    elif (model_name == "LTQ ORBITRAP DISCOVERY"):
+        return "LTQ Orbitrap Discovery"
+    elif (model_name == "LTQ ORBITRAP XL"):
+        return "LTQ Orbitrap XL"
+    elif ("ORBITRAP VELOS" in model_name):
+        return "LTQ Orbitrap Velos"
+    elif ("ORBITRAP ELITE" in model_name):
+        return "LTQ Orbitrap Elite"
+    elif ("VELOS PLUS" in model_name):
+        return "LTQ Velos Plus"
+    elif ("VELOS PRO" in model_name):
+        return "LTQ Velos Plus"
+    elif (model_name == "LTQ VELOS"):
+        return "LTQ Velos"
+    elif (model_name == "LXQ"):
+        return "LXQ"
+    elif (model_name == "LCQ FLEET"):
+        return "LCQ Fleet"
+    elif (model_name == "ITQ 700"):
+        return "ITQ 700"
+    elif (model_name == "ITQ 900"):
+        return "ITQ 900"
+    elif (model_name == "ITQ 1100"):
+        return "ITQ 1100"
+    elif (model_name == "GC QUANTUM"):
+        return "GC Quantum"
+    elif (model_name == "LTQ XL ETD"):
+        return "LTQ XL ETD"
+    elif (model_name == "LTQ ORBITRAP XL ETD"):
+        return "LTQ Orbitrap XL ETD"
+    elif (model_name == "DFS"):
+        return "DFS"
+    elif (model_name == "DSQ II"):
+        return "DSQ II"
+    elif (model_name == "ISQ SERIES"):
+        return "ISQ"
+    elif (model_name == "MALDI LTQ XL"):
+        return "MALDI LTQ XL"
+    elif (model_name == "MALDI LTQ ORBITRAP"):
+        return "MALDI LTQ Orbitrap"
+    elif (model_name == "TSQ QUANTUM"):
+        return "TSQ Quantum"
+    elif ("TSQ QUANTUM ACCESS" in model_name):
+        return "TSQ Quantum Access"
+    elif (model_name == "TSQ QUANTUM ULTRA"):
+        return "TSQ Quantum Ultra"
+    elif (model_name == "TSQ QUANTUM ULTRA AM"):
+        return "TSQ Quantum Ultra AM"
+    elif (model_name == "TSQ VANTAGE STANDARD"):
+        return "TSQ Vantage Standard"
+    elif (model_name == "TSQ VANTAGE EMR"):
+        return "TSQ Vantage EMR"
+    elif (model_name == "TSQ QUANTIVA"):
+        return "TSQ Quantiva"
+    elif (model_name == "TSQ ENDURA"):
+        return "TSQ Endura"
+    elif (model_name == "TSQ ALTIS"):
+        return "TSQ Altis"
+    elif (model_name == "ELEMENT XR"):
+        return "Element XR"
+    elif (model_name == "ELEMENT GD"):
+        return "Element GD"
+    elif (model_name == "GC ISOLINK"):
+        return "GC IsoLink"
+    elif ("Q EXACTIVE" in model_name):
+        return "Q Exactive"
+    elif ("EXACTIVE" in model_name):
+        return "Exactive"
+    elif ("EXPLORIS" in model_name):
+        return "Orbitrap Exploris 480"
+    elif ("ECLIPSE" in model_name):
+        return "Orbitrap Eclipse"
+    elif ("FUSION" in model_name):
+        return "Orbitrap Fusion ETD" if "ETD" in model_name else "Orbitrap Fusion"
+    elif (model_name == "SURVEYOR PDA"):
+        return "Surveyor PDA"
+    elif (model_name == "ACCELA PDA"):
+        return "Accela PDA"
+    else:
+        return "Unknown"
+
+
 class FilterString(str):
-    def __init__(self, value):
+    """A :class:`str` subclass which knows how to parse Thermo's filter string syntax.
+
+    Attributes
+    ----------
+    data: dict
+        The fields parsed from the filter string. Accessible through the :meth:`get`
+        method.
+
+    """
+
+    def __init__(self, value):  # pylint: disable=super-init-not-called
         self.data = self._parse()
 
     def get(self, key):
+        """Look up a key's value in the filter string
+
+        If the key is not found, returns :const:`None`
+
+        Parameters
+        ----------
+        key : str
+            The key to look up
+
+        Returns
+        -------
+        object:
+            The key's value, or :const:`None` if the key is not found.
+        """
         return self.data.get(key)
 
     def _parse(self):
@@ -102,9 +351,12 @@ def filter_string_parser(line):
                 if activation_info is not None:
                     activation_info = activation_info.groupdict()
                     activation_event = dict()
-                    activation_event["isolation_mz"] = float(activation_info['isolation_mz'])
-                    activation_event["activation_type"] = [activation_info['activation_type']]
-                    activation_event["activation_energy"] = [float(activation_info['activation_energy'])]
+                    activation_event["isolation_mz"] = float(
+                        activation_info['isolation_mz'])
+                    activation_event["activation_type"] = [
+                        activation_info['activation_type']]
+                    activation_event["activation_energy"] = [
+                        float(activation_info['activation_energy'])]
                     if part.count("@") > 1:
                         act_events = activation_mode_pat.finditer(part)
                         # discard the first match which we already recorded
@@ -112,15 +364,18 @@ def filter_string_parser(line):
                         for match in act_events:
                             act_type, act_energy = match.groups()
                             act_energy = float(act_energy)
-                            activation_event["activation_type"].append(act_type)
-                            activation_event['activation_energy'].append(act_energy)
+                            activation_event["activation_type"].append(
+                                act_type)
+                            activation_event['activation_energy'].append(
+                                act_energy)
                     tandem_sequence.append(activation_event)
             values['ms_level'] = int(level)
             values['tandem_sequence'] = tandem_sequence
 
     scan_window_info = scan_window_pat.search(line)
     if scan_window_info is not None:
-        values['scan_window'] = (float(scan_window_info.group(1)), float(scan_window_info.group(2)))
+        values['scan_window'] = (
+            float(scan_window_info.group(1)), float(scan_window_info.group(2)))
 
     try:
         word = words[i]
@@ -186,7 +441,7 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
         index = defaultdict(int)
         analyzer_counter = 1
         analyzer_confs = dict()
-        for scan in self: # pylint: disable=not-an-iterable
+        for scan in self:  # pylint: disable=not-an-iterable
             index[scan.ms_level] += 1
             fline = self._filter_string(scan._data)
             analyzer = analyzer_map[fline.data['analyzer']]
@@ -222,7 +477,8 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
             # this is the most common Thermo detector, but it is not universal. To get this right,
             # we'd need to reproduce the Proteowizard conversion table @
             # Thermo::(Reader_Thermo_Detail::)createInstrumentConfigurations
-            detector_group = ComponentGroup("detector", [component('inductive detector')], 3)
+            detector_group = ComponentGroup(
+                "detector", [component('inductive detector')], 3)
             configs.append(InstrumentInformation(
                 counter, [source_group, analyzer_group, detector_group],
                 self._get_instrument_model_name(), self._get_instrument_serial_number())
@@ -278,10 +534,13 @@ class _InstrumentMethod(object):
 def method_parser(method_text):
     scan_segment_re = re.compile(r"\s*Segment (\d+) Information\s*")
     scan_event_re = re.compile(r"\s*(\d+):.*")
-    scan_event_isolation_width_re = re.compile(r"\s*Isolation Width:\s*(\S+)\s*")
+    scan_event_isolation_width_re = re.compile(
+        r"\s*Isolation Width:\s*(\S+)\s*")
     scan_event_iso_w_re = re.compile(r"\s*MS.*:.*\s+IsoW\s+(\S+)\s*")
-    repeated_event_re = re.compile(r"\s*Scan Event (\d+) repeated for top (\d+)\s*")
-    default_isolation_width_re = re.compile(r"\s*MS(\d+) Isolation Width:\s*(\S+)\s*")
+    repeated_event_re = re.compile(
+        r"\s*Scan Event (\d+) repeated for top (\d+)\s*")
+    default_isolation_width_re = re.compile(
+        r"\s*MS(\d+) Isolation Width:\s*(\S+)\s*")
 
     scan_segment = 1
     scan_event = 0
@@ -310,12 +569,14 @@ def method_parser(method_text):
 
             match = scan_event_isolation_width_re.match(line)
             if match:
-                isolation_width_by_segment_and_event[scan_segment][scan_event] = float(match.group(1))
+                isolation_width_by_segment_and_event[scan_segment][scan_event] = float(
+                    match.group(1))
                 continue
 
             match = scan_event_iso_w_re.match(line)
             if match:
-                isolation_width_by_segment_and_event[scan_segment][scan_event] = float(match.group(1))
+                isolation_width_by_segment_and_event[scan_segment][scan_event] = float(
+                    match.group(1))
                 continue
 
             match = repeated_event_re.match(line)
