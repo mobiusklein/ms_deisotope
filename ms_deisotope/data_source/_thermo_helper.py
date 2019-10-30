@@ -287,6 +287,74 @@ def parse_instrument_model(model_name):
         return "Unknown"
 
 
+def detector_for(model):
+    if model in set(['Q Exactive', 'Orbitrap Exploris 480', 'Exactive']):
+        return ['inductive detector']
+    if model in set(['Orbitrap Fusion', 'Orbitrap Fusion ETD', 'LTQ Orbitrap',
+                     'LTQ Orbitrap XL ETD', 'LTQ Orbitrap XL', 'LTQ FT Ultra',
+                     'MALDI LTQ Orbitrap', 'Orbitrap Eclipse', 'LTQ Orbitrap Velos',
+                     'LTQ Orbitrap Elite', 'LTQ Orbitrap Discovery', 'LTQ FT']):
+        return ['inductive detector', 'electron multiplier']
+    if model in set(['DSQ II', 'TSQ Endura', 'SSQ 7000', 'TSQ Quantum Access', 'ISQ',
+                     'Surveyor MSQ', 'MALDI LTQ XL', 'LCQ Classic', 'TSQ Quantum',
+                     'TSQ Vantage EMR', 'TSQ', 'TSQ Quantum Ultra', 'LTQ Velos Plus',
+                     'LCQ Deca XP Plus', 'LCQ Deca', 'LCQ Advantage', 'TSQ Altis',
+                     'Trace DSQ', 'GC Quantum', 'TSQ Vantage Standard', 'LCQ Fleet',
+                     'LTQ', 'ITQ 700', 'LTQ XL ETD', 'ITQ 900', 'DFS', 'DSQ',
+                     'TSQ Quantum Ultra AM', 'GC IsoLink', 'TSQ Quantiva', 'LXQ',
+                     'TSQ 7000', 'PolarisQ', 'ITQ 1100', 'LTQ Velos']):
+        return ['electron multiplier']
+    if model in set(['Triton', 'MAT95XP Trap', 'Element GD', 'Surveyor PDA', 'Delta Plus Advantage',
+                     'Delta Plus XP', 'Tempus TOF', 'Neptune', 'Accela PDA', 'Element XR', 'Element 2',
+                     'MAT900XP', 'MAT900XP Trap', 'MAT95XP', 'MAT253']):
+        return ['photodiode array detector']
+    return []
+
+
+def mass_analyzer_for(model):
+    if model in set(['Q Exactive', 'Orbitrap Exploris 480', 'Exactive']):
+        return ['orbitrap']
+    if model in set(['Orbitrap Fusion', 'Orbitrap Fusion ETD', 'LTQ Orbitrap', 'LTQ Orbitrap XL', 'MALDI LTQ Orbitrap',
+                     'Orbitrap Eclipse', 'LTQ Orbitrap Velos', 'LTQ Orbitrap Elite', 'LTQ Orbitrap Discovery']):
+        return ['orbitrap', 'linear ion trap']
+    if model in set(['LTQ FT Ultra', 'LTQ FT']):
+        return ['fourier transform ion cyclotron resonance mass spectrometer', 'linear ion trap']
+    if model in set(['DSQ II', 'SSQ 7000', 'ISQ', 'DSQ', 'Trace DSQ', 'Surveyor MSQ', 'GC IsoLink']):
+        return ['quadrupole']
+    if model in set(['LCQ Fleet', 'ITQ 700', 'LCQ Deca XP Plus', 'ITQ 900', 'PolarisQ', 'LCQ Advantage', 'LCQ Deca',
+                     'LCQ Classic']):
+        return ['quadrupole ion trap']
+    if model in set(['LTQ', 'LTQ Velos Plus', 'LXQ', 'LTQ XL ETD', 'ITQ 1100', 'LTQ Orbitrap XL ETD', 'LTQ Velos',
+                     'MALDI LTQ XL']):
+        return ['linear ion trap']
+    if model in set(['MAT95XP Trap', 'MAT900XP Trap', 'MAT253', 'MAT900XP', 'DFS', 'MAT95XP']):
+        return ['magnetic sector']
+    if model in set(['Tempus TOF']):
+        return ['time-of-flight']
+    return []
+
+
+def ionization_for(model):
+    if model in set(['TSQ Quantiva', 'TSQ Endura', 'Orbitrap Fusion ETD',
+                     'SSQ 7000', 'TSQ Quantum Access', 'TSQ Quantum', 'LCQ Classic',
+                     'Surveyor MSQ', 'TSQ Vantage EMR', 'TSQ', 'TSQ Quantum Ultra',
+                     'LTQ Orbitrap', 'LTQ Velos Plus', 'LCQ Deca XP Plus', 'LCQ Deca',
+                     'LCQ Advantage', 'LTQ Orbitrap XL', 'Orbitrap Eclipse', 'TSQ Altis',
+                     'Exactive', 'Orbitrap Fusion', 'LCQ Fleet', 'LTQ', 'LTQ XL ETD', 'TSQ 7000',
+                     'LTQ FT Ultra', 'LTQ Orbitrap Elite', 'LTQ Orbitrap Discovery', 'LTQ FT', 'LXQ',
+                     'TSQ Quantum Ultra AM', 'TSQ Vantage Standard', 'Orbitrap Exploris 480', 'LTQ Velos',
+                     'Q Exactive', 'LTQ Orbitrap XL ETD', 'LTQ Orbitrap Velos']):
+        return ['electrospray ionization']
+    if model in set(['DSQ II', 'ITQ 700', 'ITQ 900', 'PolarisQ', 'ITQ 1100', 'DSQ', 'Trace DSQ',
+                     'GC Quantum', 'DFS', 'GC IsoLink', 'ISQ']):
+        return ['electron ionization']
+    if model in set(['MALDI LTQ Orbitrap', 'MALDI LTQ XL']):
+        return ['matrix-assisted laser desorption ionization']
+    if model in set(['Element GD']):
+        return ['glow discharge ionization']
+    return []
+
+
 class FilterString(str):
     """A :class:`str` subclass which knows how to parse Thermo's filter string syntax.
 
