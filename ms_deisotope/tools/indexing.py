@@ -155,6 +155,7 @@ def byte_index(paths):
     Supported Formats: mzML, mzXML
     '''
     for path in paths:
+        click.echo("Indexing %s" % (path, ))
         reader = ms_deisotope.MSFileLoader(path, use_index=False)
         try:
             fn = reader.prebuild_byte_offset_file
