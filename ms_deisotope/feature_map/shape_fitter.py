@@ -105,6 +105,37 @@ class PeakShapeModelBase(object):
         """
         raise NotImplementedError()
 
+    @staticmethod
+    def center(params_dict):
+        """Get the center position parameter for the dominant peak in a
+        fitted peak shape
+
+        Parameters
+        ----------
+        params_dict : dict
+            The fitted peak shape parameters
+
+        Returns
+        -------
+        float
+        """
+        return params_dict['center']
+
+    @staticmethod
+    def spread(params_dict):
+        """Get an approximate symmetric variance term for the fitted peak shape.
+
+        Parameters
+        ----------
+        params_dict : dict
+            The fitted peak shape parameters
+
+        Returns
+        -------
+        float
+        """
+        return params_dict['sigma']
+
 
 class SkewedGaussianModel(PeakShapeModelBase):
     r"""Model for a Skewed Gaussian Peak Shape
@@ -143,16 +174,12 @@ class SkewedGaussianModel(PeakShapeModelBase):
         skew = (1 + erf((gamma * (xs - center)) / (sigma * sqrt(2))))
         return norm * skew
 
-    @staticmethod
-    def center(params_dict):
-        return params_dict['center']
-
-    @staticmethod
-    def spread(params_dict):
-        return params_dict['sigma']
-
 
 class PenalizedSkewedGaussianModel(SkewedGaussianModel):
+    """A penalized version of :class:`SkewedGaussianModel` which applies an extra
+    penalty on the fit when any of the shape or position parameters take on extreme
+    values.
+    """
     @staticmethod
     def fit(params, xs, ys):
         center, amplitude, sigma, gamma = params
@@ -162,7 +189,9 @@ class PenalizedSkewedGaussianModel(SkewedGaussianModel):
 
 
 class BiGaussianModel(PeakShapeModelBase):
-
+    """Fit an asymmetric Gaussian peak shape model with different variance on either
+    side of the mean.
+    """
     @staticmethod
     def center(params_dict):
         return params_dict['center']
