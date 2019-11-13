@@ -61,16 +61,20 @@ _default_paths = []
 
 
 def _register_dll_dir(search_paths=None):
+    from ms_deisotope.config import get_config
     if search_paths is None:
         search_paths = []
+    global DLL_IS_LOADED
+    if DLL_IS_LOADED:
+        return True
     search_paths = list(search_paths)
     search_paths.extend(_default_paths)
+    search_paths.extend(get_config().get('vendor_readers', {}).get('agilent-com', []))
     for dll_dir in search_paths:
         try:
             GetModule(os.path.join(dll_dir, 'MassSpecDataReader.tlb'))
             GetModule(os.path.join(dll_dir, 'BaseCommon.tlb'))
             GetModule(os.path.join(dll_dir, 'BaseDataAccess.tlb'))
-            global DLL_IS_LOADED
             DLL_IS_LOADED = True
             return True
         except Exception:

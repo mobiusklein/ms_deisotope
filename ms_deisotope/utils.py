@@ -1,8 +1,10 @@
 from __future__ import print_function
 import operator
 import random
+
 from datetime import datetime
 from collections import OrderedDict
+
 from six import add_metaclass
 
 

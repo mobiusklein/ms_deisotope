@@ -26,7 +26,7 @@ from ms_deisotope.data_source.metadata.file_information import SourceFile
 
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
-from ms_deisotope.tools import conversion, draw
+from ms_deisotope.tools import conversion, draw, maintenance
 from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook, spinner
 
 
@@ -552,7 +552,7 @@ def _mount_group(group):
 _mount_group(conversion.ms_conversion)
 
 cli.add_command(draw.draw)
-
+cli.add_command(maintenance.maintenance)
 main = cli.main
 
 if is_debug_mode():

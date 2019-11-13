@@ -148,8 +148,13 @@ def _register_dll(search_paths=None):
     :class:`bool`:
         Whether or not the .NET library successfully loaded
     '''
+    from ms_deisotope.config import get_config
     if search_paths is None:
         search_paths = []
+    search_paths = list(search_paths)
+    search_paths.append(_DEFAULT_DLL_PATH)
+    # Take user-specified search paths first.
+    search_paths = get_config().get('vendor_readers', {}).get('thermo-net', []) + search_paths
     global _RawFileReader, Business, clr, NullReferenceException   # pylint: disable=global-statement
     global Marshal, IntPtr, Int64   # pylint: disable=global-statement
     if _test_dll_loaded():
@@ -191,8 +196,6 @@ def register_dll(search_paths=None):
     '''
     if search_paths is None:
         search_paths = []
-    search_paths = list(search_paths)
-    search_paths.append(_DEFAULT_DLL_PATH)
     loaded = _register_dll(search_paths)
     if not loaded:
         msg = '''The ThermoFisher.CommonCore libraries could not be located and loaded.'''
