@@ -262,8 +262,10 @@ class XMLReaderBase(RandomAccessScanSource):
         """
         if not self._use_index:
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
-        index_keys = tuple(self.index)
-        id_str = index_keys[index]
+        # index_keys = tuple(self.index)
+        # id_str = index_keys[index]
+        # Use pyteomics index structure to avoid re-traversing the whole index again and again
+        id_str, _ = self.index.index_sequence[index]
         scan = self.get_scan_by_id(id_str)
         if not self._validate(scan):
             warnings.warn("index %d, id=%r does not appear to be a mass spectrum. Most behaviors will fail." % (
