@@ -265,7 +265,7 @@ class XMLReaderBase(RandomAccessScanSource):
         # index_keys = tuple(self.index)
         # id_str = index_keys[index]
         # Use pyteomics index structure to avoid re-traversing the whole index again and again
-        id_str, _ = self.index.index_sequence[index]
+        id_str = self.index.from_index(index)
         scan = self.get_scan_by_id(id_str)
         if not self._validate(scan):
             warnings.warn("index %d, id=%r does not appear to be a mass spectrum. Most behaviors will fail." % (
