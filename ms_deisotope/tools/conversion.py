@@ -84,8 +84,8 @@ def mgf(source, output, compress=False, msn_filters=None):
     to_mgf(reader, stream, msn_filters=msn_filters)
 
 
-def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=None, default_activation=None,
-            correct_precursor_mz=False, write_index=True, update_metadata=True):
+def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
+            default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -100,6 +100,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
         The output stream to write mzML to.
     pick_peaks : bool, optional
         Whether to centroid profile spectra (the default is False)
+    reprofile: bool, optional
+        Whether to reprofile spectra from their centroids (the default is False)
     ms1_filters : list, optional
         An optional list of strings or :class:`~.ScanFilterBase` instances which will be
         used to transform the m/z and intensity arrays of MS1 spectra before they are further
@@ -130,6 +132,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
             method.add('MS:1000035')
         if correct_precursor_mz:
             method.add('MS:1000780')
+        if reprofile:
+            method.add('MS:1000784')
         method.add('MS:1000544')
         writer.add_data_processing(method)
     if default_activation is not None:
@@ -159,6 +163,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
             progbar.update((bunch.precursor is not None) + len(bunch.products))
             discard_peaks = False
             if bunch.precursor is not None:
+                if (reprofile):
+                    bunch = bunch._replace(precursor=bunch.precursor.reprofile())
                 if ms1_filters:
                     bunch = bunch._replace(precursor=bunch.precursor.transform(ms1_filters))
                 if (pick_peaks or not bunch.precursor.is_profile):
@@ -170,6 +176,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
                             discard_peaks = True
 
             for i, product in enumerate(bunch.products):
+                # if reprofile:
+                #     product = bunch.products[i] = product.reprofile()
                 if msn_filters:
                     product = bunch.products[i] = product.transform(msn_filters)
                 if pick_peaks or not product.is_profile:
@@ -191,13 +199,15 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
 @click.option("-r", "--ms1-filter", "ms1_filters", multiple=True, type=parse_filter)
 @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
 @click.option("-p", "--pick-peaks", is_flag=True, help=("Enable peak picking, centroiding profile data"))
+@click.option("-f", "--reprofile", is_flag=True, help=(
+    "Enable reprofiling, converting all MS1 spectra into smoothed profile data"))
 @click.option("-z", "--compress", is_flag=True, help=("Compress the output file using gzip"))
 @click.option("-c", "--correct-precursor-mz", is_flag=True, help=(
     "Adjust the precursor m/z of each MSn scan to the nearest peak m/z in the precursor"))
 @click.option("--update-metadata/--no-update-metadata", default=True, help=(
     "Whether or not to add the conversion"
     " program's metadata to the mzML file."))
-def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, compress=False,
+def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False, compress=False,
          correct_precursor_mz=False, update_metadata=True):
     """Convert `source` into mzML format written to `output`, applying a collection of optional data
     transformations along the way.
@@ -222,7 +232,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, c
     else:
         write_index = True
     with stream:
-        to_mzml(reader, stream, pick_peaks=pick_peaks, ms1_filters=ms1_filters,
+        to_mzml(reader, stream, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
                 write_index=write_index, update_metadata=update_metadata)
 

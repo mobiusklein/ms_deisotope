@@ -703,7 +703,7 @@ class Scan(ScanBase):
 
     # signal transformation
 
-    def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
+    def reprofile(self, max_fwhm=0.2, dx=0.005, model_cls=None, override_fwhm=None):
         """Use the picked peaks in :attr:`peak_set` to create a new
         profile mass spectrum using a peak shape model.
 
@@ -738,7 +738,8 @@ class Scan(ScanBase):
         if not self.peak_set:
             arrays = (np.array([], dtype=float), np.array([], dtype=float))
         else:
-            arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
+            arrays = reprofile(self.peak_set, max_fwhm, dx,
+                               model_cls, override_fwhm=override_fwhm)
         scan = WrappedScan(
             self._data, self.source, arrays,
             list(self.product_scans), is_profile=True,
