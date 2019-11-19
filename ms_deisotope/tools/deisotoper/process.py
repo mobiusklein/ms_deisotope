@@ -190,8 +190,8 @@ class ScanBunchLoader(object):
         return (precursor, products)
 
 
-class ScanTransformingProcess(Process, ScanTransformMixin):
-    """ScanTransformingProcess describes a child process that consumes scan id bunches
+class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
+    """DeconvolutingScanTransformingProcess describes a child process that consumes scan id bunches
     from a shared input queue, retrieves the relevant scans, and preprocesses them using an
     instance of :class:`ms_deisotope.processor.ScanProcessor`, sending the reduced result
     to a shared output queue.
@@ -414,3 +414,5 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
             self.output_queue.put((DONE, DONE, DONE))
 
         self._work_complete.set()
+
+
