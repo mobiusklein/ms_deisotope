@@ -136,6 +136,13 @@ class PeakShapeModelBase(object):
         """
         return params_dict['sigma']
 
+    @classmethod
+    def leastsq(cls, xs, ys, params=None):
+        if params is None:
+            params = cls.guess(xs, ys)
+        result = leastsq(cls.fit, params, args=(xs, ys))
+        return result
+
 
 class SkewedGaussianModel(PeakShapeModelBase):
     r"""Model for a Skewed Gaussian Peak Shape
@@ -437,8 +444,7 @@ class ChromatogramShapeFitter(ChromatogramShapeFitterBase):
     def peak_shape_fit(self):
         xs, ys = self.xs, self.ys
         params = self.shape_fitter.guess(xs, ys)
-        fit = leastsq(self.shape_fitter.fit,
-                      params, (xs, ys))
+        fit = self.shape_fitter.leastsq(xs, ys, params)
         params = fit[0]
         self.params = params
         self.params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
@@ -528,8 +534,7 @@ class MultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
             center = xs[len(xs) / 2]
         params_dict['center'] = center
 
-        fit = leastsq(self.shape_fitter.fit,
-                      params_dict.values(), (xs, ys))
+        fit = self.shape_fitter.leastsq(xs, ys, list(params_dict.values()))
         params = fit[0]
         params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
         self.params_list.append(params)
@@ -707,8 +712,7 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
             self.params_dict_list.append(params_dict)
             return ys, params_dict
 
-        fit = leastsq(self.shape_fitter.fit,
-                      params_dict.values(), (xs, ys))
+        fit = self.shape_fitter.leastsq(xs, ys, list(params_dict.values()))
         params = fit[0]
         params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
         self.params_list.append(params)
