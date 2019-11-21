@@ -186,6 +186,8 @@ class SkewedGaussianModel(PeakShapeModelBase):
     def guess(xs, ys):
         weights = np.clip(ys, 0, np.infty)
         center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
@@ -265,6 +267,8 @@ class BiGaussianModel(PeakShapeModelBase):
     def guess(xs, ys):
         weights = np.clip(ys, 0, np.infty)
         center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
@@ -306,6 +310,8 @@ class GaussianModel(PeakShapeModelBase):
     def guess(xs, ys):
         weights = np.clip(ys, 0, np.infty)
         center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
@@ -314,8 +320,38 @@ class GaussianModel(PeakShapeModelBase):
 
     @classmethod
     def bounds(cls, params):
-        return ([-np.inf, 0, 0], np.inf)
+        return ([-np.inf, 0, 0], [np.inf] * 3)
 
+
+class SimpleGaussianModel(GaussianModel):
+
+    @staticmethod
+    def error(params, xs, ys):
+        center, amplitude = params
+        sigma = 1.0
+        return ys - GaussianModel.shape(
+            xs, center, amplitude, sigma) * (
+                center if center > xs[-1] or center < xs[0] else 1.)
+
+    @staticmethod
+    def params_to_dict(params):
+        center, amplitude = params
+        return OrderedDict(
+            (("center", center), ("amplitude", amplitude), ))
+
+    @staticmethod
+    def guess(xs, ys):
+        weights = np.clip(ys, 0, np.infty)
+        center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
+        height_at = np.abs(xs - center).argmin()
+        apex = ys[height_at]
+        return center, apex
+
+    @classmethod
+    def bounds(cls, params):
+        return ([-np.inf, 0, ], [np.inf] * 2)
 
 
 try:
