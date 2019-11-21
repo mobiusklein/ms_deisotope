@@ -190,6 +190,10 @@ class SkewedGaussianModel(PeakShapeModelBase):
             center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
                                     search.nearest_right(ys, apex / 2, height_at + 1)]]).sum()
         gamma = 1
@@ -271,6 +275,10 @@ class BiGaussianModel(PeakShapeModelBase):
             center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
                                     search.nearest_right(ys, apex / 2, height_at + 1)]]).sum()
         return center, apex, sigma, sigma
@@ -314,6 +322,10 @@ class GaussianModel(PeakShapeModelBase):
             center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
                                     search.nearest_right(ys, apex / 2, height_at + 1)]]).sum()
         return center, apex, sigma
@@ -347,6 +359,10 @@ class SimpleGaussianModel(GaussianModel):
             center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
         return center, apex
 
     @classmethod
