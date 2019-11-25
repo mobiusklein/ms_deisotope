@@ -299,6 +299,13 @@ class ScanIterator(ScanDataSource):
     with additional requirements that enable clients of the
     class to treat the object as an iterator over the underlying
     data file.
+
+    Attributes
+    ----------
+    iteration_mode: str
+        A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`
+        that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced
+        by iteration.
     """
 
     iteration_mode = ITERATION_MODE_GROUPED
