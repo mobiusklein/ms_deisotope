@@ -8,7 +8,7 @@ from ms_deisotope.feature_map.quick_index import index as build_scan_index
 from ms_deisotope.task import TaskBase
 
 from .collator import ScanCollator
-from .process import ScanIDYieldingProcess, ScanTransformingProcess
+from .process import ScanIDYieldingProcess, DeconvolutingScanTransformingProcess
 
 
 class ScanGeneratorBase(object):
@@ -167,7 +167,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
         self._scan_interval_tree = interval_tree
 
     def _make_transforming_process(self):
-        return ScanTransformingProcess(
+        return DeconvolutingScanTransformingProcess(
             self.ms_file,
             self._input_queue,
             self._output_queue,

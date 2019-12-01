@@ -15,7 +15,9 @@ from .scan import Scan
 from .scan_iterator import (
     _SingleScanIteratorImpl,
     _GroupedScanIteratorImpl,
-    _FakeGroupedScanIteratorImpl)
+    _FakeGroupedScanIteratorImpl,
+    ITERATION_MODE_GROUPED,
+    ITERATION_MODE_SINGLE)
 
 
 @add_metaclass(abc.ABCMeta)
@@ -297,9 +299,16 @@ class ScanIterator(ScanDataSource):
     with additional requirements that enable clients of the
     class to treat the object as an iterator over the underlying
     data file.
+
+    Attributes
+    ----------
+    iteration_mode: str
+        A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`
+        that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced
+        by iteration.
     """
 
-    iteration_mode = 'group'
+    iteration_mode = ITERATION_MODE_GROUPED
 
     def has_ms1_scans(self):
         '''Checks if this :class:`ScanDataSource` contains MS1 spectra.
@@ -377,10 +386,10 @@ class ScanIterator(ScanDataSource):
 
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
-            self.iteration_mode = 'group'
+            self.iteration_mode = ITERATION_MODE_GROUPED
         else:
             self._producer = self._single_scan_iterator(iterator)
-            self.iteration_mode = 'single'
+            self.iteration_mode = ITERATION_MODE_SINGLE
         return self
 
     def _make_cache_key(self, scan):

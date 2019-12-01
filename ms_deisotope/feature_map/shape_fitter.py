@@ -5,7 +5,7 @@ from collections import OrderedDict
 import numpy as np
 from numpy import pi, sqrt, exp
 
-from scipy.optimize import leastsq
+from scipy.optimize import leastsq, least_squares
 from scipy.special import erf # pylint: disable=no-name-in-module
 
 from ms_peak_picker import search
@@ -46,7 +46,7 @@ class PeakShapeModelBase(object):
         return "{self.__class__.__name__}()".format(self=self)
 
     @staticmethod
-    def fit(params, xs, ys):
+    def error(params, xs, ys):
         """A callback function for use with :func:`scipy.optimize.leastsq` to compute
         the residuals given a set of parameters, x, and y
 
@@ -136,6 +136,33 @@ class PeakShapeModelBase(object):
         """
         return params_dict['sigma']
 
+    @classmethod
+    def bounds(cls, params):
+        return ([-np.inf] * len(params), [np.inf] * len(params))
+
+    @classmethod
+    def adapt_params_to_bounds(cls, params, bounds):
+        new_params = params[:]
+        for i, param in enumerate(params):
+            if param < bounds[0][i]:
+                new_params[i] = bounds[0][i]
+            if param > bounds[1][i]:
+                new_params[i] = bounds[1][i]
+        return new_params
+
+    @classmethod
+    def leastsq(cls, xs, ys, params=None, method='leastsq'):
+        if params is None:
+            params = cls.guess(xs, ys)
+        if method == 'least_squares':
+            bounds = cls.bounds(params)
+            params = cls.adapt_params_to_bounds(params, bounds)
+            result = least_squares(cls.error, params, bounds=bounds, args=(xs, ys))
+            return result['x'],
+        else:
+            result = leastsq(cls.error, params, args=(xs, ys))
+            return result[0],
+
 
 class SkewedGaussianModel(PeakShapeModelBase):
     r"""Model for a Skewed Gaussian Peak Shape
@@ -146,17 +173,27 @@ class SkewedGaussianModel(PeakShapeModelBase):
 
     """
     @staticmethod
-    def fit(params, xs, ys):
+    def error(params, xs, ys):
         center, amplitude, sigma, gamma = params
         return ys - SkewedGaussianModel.shape(xs, center, amplitude, sigma, gamma) * (
             sigma / 2. if abs(sigma) > 2 else 1.)
+
+    @classmethod
+    def bounds(cls, params):
+        return ([-np.inf, 0, 0, -np.inf], [np.inf] * 4)
 
     @staticmethod
     def guess(xs, ys):
         weights = np.clip(ys, 0, np.infty)
         center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
                                     search.nearest_right(ys, apex / 2, height_at + 1)]]).sum()
         gamma = 1
@@ -181,7 +218,7 @@ class PenalizedSkewedGaussianModel(SkewedGaussianModel):
     values.
     """
     @staticmethod
-    def fit(params, xs, ys):
+    def error(params, xs, ys):
         center, amplitude, sigma, gamma = params
         return ys - PenalizedSkewedGaussianModel.shape(xs, center, amplitude, sigma, gamma) * (
             sigma / 2. if abs(sigma) > 2 else 1.) * (gamma / 2. if abs(gamma) > 40 else 1.) * (
@@ -214,11 +251,15 @@ class BiGaussianModel(PeakShapeModelBase):
         return ys
 
     @staticmethod
-    def fit(params, xs, ys):
+    def error(params, xs, ys):
         center, amplitude, sigma_left, sigma_right = params
         return ys - BiGaussianModel.shape(
             xs, center, amplitude, sigma_left, sigma_right) * (
                 center if center > xs[-1] or center < xs[0] else 1.)
+
+    @classmethod
+    def bounds(cls, params):
+        return ([-np.inf, 0, 0, 0], [np.inf, np.inf, 2, 2])
 
     @staticmethod
     def params_to_dict(params):
@@ -230,17 +271,110 @@ class BiGaussianModel(PeakShapeModelBase):
     def guess(xs, ys):
         weights = np.clip(ys, 0, np.infty)
         center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
         height_at = np.abs(xs - center).argmin()
         apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
         sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
                                     search.nearest_right(ys, apex / 2, height_at + 1)]]).sum()
         return center, apex, sigma, sigma
+
+
+class GaussianModel(PeakShapeModelBase):
+    """Fit an asymmetric Gaussian peak shape model with different variance on either
+    side of the mean.
+    """
+    @staticmethod
+    def center(params_dict):
+        return params_dict['center']
+
+    @staticmethod
+    def spread(params_dict):
+        return (params_dict['sigma'])
+
+    @staticmethod
+    def shape(xs, center, amplitude, sigma):  # pylint: disable=arguments-differ
+        ys = amplitude / sqrt(2 * pi) * np.exp(-(xs - center) ** 2 / (2 * sigma ** 2))
+        return ys
+
+    @staticmethod
+    def error(params, xs, ys):
+        center, amplitude, sigma = params
+        return ys - GaussianModel.shape(
+            xs, center, amplitude, sigma) * (
+                center if center > xs[-1] or center < xs[0] else 1.)
+
+    @staticmethod
+    def params_to_dict(params):
+        center, amplitude, sigma = params
+        return OrderedDict(
+            (("center", center), ("amplitude", amplitude), ("sigma", sigma), ))
+
+    @staticmethod
+    def guess(xs, ys):
+        weights = np.clip(ys, 0, np.infty)
+        center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
+        height_at = np.abs(xs - center).argmin()
+        apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
+        sigma = np.abs(center - xs[[search.nearest_left(ys, apex / 2, height_at),
+                                    search.nearest_right(ys, apex / 2, height_at + 1)]]).sum()
+        return center, apex, sigma
+
+    @classmethod
+    def bounds(cls, params):
+        return ([-np.inf, 0, 0], [np.inf] * 3)
+
+
+class SimpleGaussianModel(GaussianModel):
+
+    @staticmethod
+    def error(params, xs, ys):
+        center, amplitude = params
+        sigma = 1.0
+        return ys - GaussianModel.shape(
+            xs, center, amplitude, sigma) * (
+                center if center > xs[-1] or center < xs[0] else 1.)
+
+    @staticmethod
+    def params_to_dict(params):
+        center, amplitude = params
+        return OrderedDict(
+            (("center", center), ("amplitude", amplitude), ))
+
+    @staticmethod
+    def guess(xs, ys):
+        weights = np.clip(ys, 0, np.infty)
+        center = np.average(xs, weights=weights / weights.sum())
+        if np.isnan(center):
+            center = xs.mean()
+        height_at = np.abs(xs - center).argmin()
+        apex = ys[height_at]
+        max_ix = ys.argmax()
+        if apex < ys[max_ix] * 0.1:
+            apex = ys[max_ix]
+            height_at = max_ix
+        return center, apex
+
+    @classmethod
+    def bounds(cls, params):
+        return ([-np.inf, 0, ], [np.inf] * 2)
 
 
 try:
     from ms_deisotope._c.feature_map.shape_fitter import gaussian_shape, bigaussian_shape, skewed_gaussian_shape
     SkewedGaussianModel.shape = staticmethod(skewed_gaussian_shape)
     BiGaussianModel.shape = staticmethod(bigaussian_shape)
+    GaussianModel.shape = staticmethod(gaussian_shape)
 except ImportError as err:
     print(err)
 
@@ -429,7 +563,7 @@ class ChromatogramShapeFitter(ChromatogramShapeFitterBase):
         self.line_test /= self.off_center
 
     def compute_residuals(self):
-        return self.shape_fitter.fit(self.params, self.xs, self.ys)
+        return self.shape_fitter.error(self.params, self.xs, self.ys)
 
     def compute_fitted(self):
         return self.shape_fitter.shape(self.xs, **self.params_dict)
@@ -437,8 +571,7 @@ class ChromatogramShapeFitter(ChromatogramShapeFitterBase):
     def peak_shape_fit(self):
         xs, ys = self.xs, self.ys
         params = self.shape_fitter.guess(xs, ys)
-        fit = leastsq(self.shape_fitter.fit,
-                      params, (xs, ys))
+        fit = self.shape_fitter.leastsq(xs, ys, params)
         params = fit[0]
         self.params = params
         self.params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
@@ -528,14 +661,13 @@ class MultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
             center = xs[len(xs) / 2]
         params_dict['center'] = center
 
-        fit = leastsq(self.shape_fitter.fit,
-                      params_dict.values(), (xs, ys))
+        fit = self.shape_fitter.leastsq(xs, ys, list(params_dict.values()))
         params = fit[0]
         params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
         self.params_list.append(params)
         self.params_dict_list.append(params_dict)
 
-        residuals = self.shape_fitter.fit(params, xs, ys)
+        residuals = self.shape_fitter.error(params, xs, ys)
 
         fitted_apex_index = search.get_nearest(xs, params_dict['center'], 0)
         fitted_apex = ys[fitted_apex_index]
@@ -707,14 +839,13 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
             self.params_dict_list.append(params_dict)
             return ys, params_dict
 
-        fit = leastsq(self.shape_fitter.fit,
-                      params_dict.values(), (xs, ys))
+        fit = self.shape_fitter.leastsq(xs, ys, list(params_dict.values()))
         params = fit[0]
         params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
         self.params_list.append(params)
         self.params_dict_list.append(params_dict)
 
-        residuals = self.shape_fitter.fit(params, xs, ys)
+        residuals = self.shape_fitter.error(params, xs, ys)
         return residuals, params_dict
 
     def peak_shape_fit(self):
