@@ -401,9 +401,11 @@ class RawReaderInterface(ScanDataSource):
             'preset scan configuration': event,
             'filter string': fline,
         }
+        cv = fline.get("compensation_voltage")
         event = ScanEventInformation(
             self._scan_time(scan),
             injection_time=unitfloat(trailer_extras.get('Ion Injection Time (ms)', 0.0), 'millisecond'),
+            drift_time=cv,
             window_list=[ScanWindow(
                 fline.get("scan_window")[0], fline.get("scan_window")[1])], traits=traits)
         return ScanAcquisitionInformation("no combination", [event])

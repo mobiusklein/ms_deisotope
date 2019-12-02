@@ -927,14 +927,6 @@ class MzMLSerializer(ScanSerializerBase):
             scan_parameters.append({"name": "filter string", "value": filter_string})
         if acquisition_info is not None and len(acquisition_info) > 0:
             scan_event = acquisition_info[0]
-            if scan_event.has_ion_mobility():
-                scan_parameters.append({
-                    "name": "ion mobility drift time",
-                    "value": scan_event.drift_time,
-                    "unit_name": "millisecond",
-                    'unit_cv_ref': "UO",
-                    "unit_accession": 'UO:0000028'
-                })
             if scan_event.injection_time is not None:
                 scan_parameters.append({
                     "accession": 'MS:1000927', "value": scan_event.injection_time,

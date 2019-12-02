@@ -1,5 +1,7 @@
 from collections import namedtuple, MutableSequence
 
+from pyteomics.auxiliary import unitfloat
+
 from ms_deisotope.utils import _MappingOverAttributeProxy
 from .cv import Term, TermSet
 
@@ -186,9 +188,35 @@ class ScanAcquisitionInformation(MutableSequence):
         return self.__class__, (self.combination, self.scan_list)
 
 
-class ScanEventInformation(object):
+class _IonMobilityMixin(object):
+    __slots__ = ()
 
-    __slots__ = ("start_time", "window_list", "drift_time", "injection_time", "traits")
+    @property
+    def ion_mobility(self):
+        return IonMobilityMethods(self)
+
+    def has_ion_mobility(self):
+        return self.ion_mobility.has_ion_mobility()
+
+    @property
+    def drift_time(self):
+        return self.ion_mobility.drift_time()
+
+    @drift_time.setter
+    def drift_time(self, value):
+        if value is None or value == 0:
+            return
+        else:
+            raise ValueError("Cannot set drift time directly yet.")
+
+    @property
+    def ion_mobility_type(self):
+        return self.ion_mobility.ion_mobility_type()
+
+
+class ScanEventInformation(_IonMobilityMixin):
+
+    __slots__ = ("start_time", "window_list", "injection_time", "traits")
 
     @property
     def __dict__(self):
@@ -201,9 +229,6 @@ class ScanEventInformation(object):
         self.injection_time = injection_time
         self.traits = traits or {}
         self.traits.update(options)
-
-    def has_ion_mobility(self):
-        return self.drift_time is not None and self.drift_time > 0
 
     def __getitem__(self, i):
         return self.window_list[i]
@@ -250,7 +275,7 @@ class ScanEventInformation(object):
         return ScanWindow(low, high)
 
     def __reduce__(self):
-        return self.__class__, (self.start_time, self.window_list, self.drift_time, self.injection_time, self.traits)
+        return self.__class__, (self.start_time, self.window_list, self.injection_time, self.traits)
 
 
 class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
@@ -405,6 +430,53 @@ scan_attributes = TermSet([
                   [u'instrument specific scan attribute', u'scan attribute', u'object attribute']),
 ])
 # [[[end]]]
+
+
+FAIMS_compensation_voltage = scan_attributes['MS:1001581']
+ion_mobility_drift_time = scan_attributes['MS:1002476']
+inverse_reduced_ion_mobility = scan_attributes['MS:1002815']
+
+ION_MOBILITY_TYPES = {
+    FAIMS_compensation_voltage,
+    ion_mobility_drift_time,
+    inverse_reduced_ion_mobility,
+}
+
+class IonMobilityMethods(object):
+
+    def __init__(self, scan_event):
+        self.scan_event = scan_event
+
+    def get(self):
+        for ims_type in ION_MOBILITY_TYPES:
+            result = self.scan_event.traits.get(ims_type.name)
+            if result is not None:
+                return (ims_type, result)
+        return None
+
+    def has_ion_mobility(self):
+        return self.get() is not None
+
+    def drift_time(self):
+        _ims_type_value = self.get()
+        if _ims_type_value is None:
+            return None
+        _ims_type, value = _ims_type_value
+        return value
+
+    def add_ion_mobility(self, ion_mobility_type, drift_time):
+        self.scan_event.traits[ion_mobility_type] = drift_time
+
+    def remove_ion_mobility_type(self, ion_mobility_type):
+        self.scan_event.traits.pop(ion_mobility_type)
+
+    def ion_mobility_type(self):
+        _ims_type_value = self.get()
+        if _ims_type_value is None:
+            return None
+        ims_type, _value = _ims_type_value
+        return ims_type
+
 
 __all__ = [
     "IsolationWindow", "ScanAcquisitionInformation", "ScanEventInformation",

@@ -10,6 +10,7 @@ from six import string_types as basestring
 
 import numpy as np
 from pyteomics import mzml
+from pyteomics.auxiliary import unitfloat
 from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
@@ -26,6 +27,7 @@ from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .metadata.sample import Sample
+from .metadata.scan_traits import FAIMS_compensation_voltage
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
@@ -389,20 +391,22 @@ class MzMLDataInterface(ScanDataSource):
             combination = "mean of spectra"
         scan_info['combination'] = combination
         scan_info_scan_list = []
-        for scan in scan_list_struct.get("scan", []):
-            scan = scan.copy()
+        misplaced_FAIMS_value = scan.get(FAIMS_compensation_voltage.name, None)
+        for i, scan_ in enumerate(scan_list_struct.get("scan", [])):
+            scan_ = scan_.copy()
+            if misplaced_FAIMS_value is not None and i == 0:
+                scan[FAIMS_compensation_voltage.name] = misplaced_FAIMS_value
             struct = {}
-            struct['start_time'] = scan.pop('scan start time', 0)
-            struct['drift_time'] = scan.pop('ion mobility drift time', 0)
-            struct['injection_time'] = scan.pop("ion injection time", 0)
+            struct['start_time'] = scan_.pop('scan start time', unitfloat(0, 'minute'))
+            struct['injection_time'] = scan_.pop("ion injection time", unitfloat(0, 'millisecond'))
             windows = []
-            for window in scan.pop("scanWindowList", {}).get("scanWindow", []):
+            for window in scan_.pop("scanWindowList", {}).get("scanWindow", []):
                 windows.append(ScanWindow(
                     window['scan window lower limit'],
                     window['scan window upper limit']))
             struct['window_list'] = windows
-            scan.pop("instrumentConfigurationRef", None)
-            struct['traits'] = scan
+            scan_.pop("instrumentConfigurationRef", None)
+            struct['traits'] = scan_
             scan_info_scan_list.append(ScanEventInformation(**struct))
         scan_info['scan_list'] = scan_info_scan_list
         return ScanAcquisitionInformation(**scan_info)

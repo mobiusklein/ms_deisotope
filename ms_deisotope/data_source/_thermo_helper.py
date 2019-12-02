@@ -3,6 +3,8 @@ from collections import defaultdict
 
 import numpy as np
 
+from pyteomics.auxiliary import unitfloat
+
 from ms_deisotope.utils import Base
 
 from .metadata.instrument_components import (
@@ -162,7 +164,7 @@ def filter_string_parser(line):
 
         cv_info = compensation_voltage_pat.search(word)
         if cv_info is not None:
-            values['compensation_voltage'] = float(cv_info.group(0))
+            values['compensation_voltage'] = unitfloat(cv_info.group(0), None)
             word = words[i]
             i += 1
 
