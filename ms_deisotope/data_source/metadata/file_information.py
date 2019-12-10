@@ -987,9 +987,10 @@ class SourceFile(object):
         )
 
     def _compute_checksum(self, hash_type='sha1', buffer_size=2**16):
+        from .._compression import get_opener
         hasher = hashlib.new(hash_type)
         buffer_size = int(buffer_size)
-        with open(self.path, 'rb') as fh:
+        with get_opener(self.path, 'rb') as fh:
             content_buffer = fh.read(buffer_size)
             while content_buffer:
                 hasher.update(content_buffer)
