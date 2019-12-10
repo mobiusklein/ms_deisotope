@@ -44,11 +44,9 @@ def cli():
 @cli.command("describe", short_help=("Produce a minimal textual description"
                                      " of a mass spectrometry data file"))
 @click.argument('path', type=click.Path(exists=True))
-@click.option('-c', '--checksum', is_flag=True,
-              help='Calculate the file checksum. If the format includes a checksum, validate against it')
 @click.option("-d", "--diagnostics", is_flag=True,
               help="Run more diagnostics, greatly increasing runtime but producing additional informatoin")
-def describe(path, diagnostics=False, checksum=False):
+def describe(path, diagnostics=False):
     '''Produces a minimal textual description of a mass spectrometry data file.
     '''
     click.echo("Describing \"%s\"" % (path,))
@@ -61,23 +59,6 @@ def describe(path, diagnostics=False, checksum=False):
         raise click.Abort("\"%s\" doesn't appear to be a mass spectrometry data file" % (path, ))
     click.echo("File Format: %s" % (sf.file_format, ))
     click.echo("ID Format: %s" % (sf.id_format, ))
-    if checksum:
-        if sf.has_checksum('sha-1'):
-            click.echo("SHA-1 Checksum: %s" % sf.parameters['SHA-1'])
-            recalc = sf.checksum('sha-1')
-            click.echo("  Recalculated: %s" % recalc)
-            if recalc != sf.parameters['SHA-1']:
-                click.secho("SHA-1 Checksums do not match!", err=True, fg='red')
-        elif sf.has_checksum("md5"):
-            click.echo("MD5 Checksum: %s" % sf.parameters['MD5'])
-            recalc = sf.checksum('md5')
-            click.echo("  Recalculated: %s" % recalc)
-            if recalc != sf.parameters['MD5']:
-                click.secho("MD5 Checksums do not match!", err=True, fg='red')
-        else:
-            click.echo("No checksums present in \"%s\", calculating SHA-1" % (path, ))
-            recalc = sf.checksum("sha-1")
-            click.echo("Current SHA-1 Checksum: %s" % (recalc, ))
     reader = MSFileLoader(path)
     if isinstance(reader, RandomAccessScanSource):
         click.echo("Format Supports Random Access: True")
