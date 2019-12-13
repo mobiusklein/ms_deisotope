@@ -62,7 +62,7 @@ def to_mgf(reader, outstream, msn_filters=None):
             if scan.peak_set is None:
                 scan.pick_peaks()
             writer.save_scan(scan)
-    writer.close()
+    outstream.flush()
 
 
 @ms_conversion.command('mgf', short_help="Convert a mass spectrometry data file to MGF")
