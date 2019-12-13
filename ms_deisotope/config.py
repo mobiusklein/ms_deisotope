@@ -50,6 +50,7 @@ def get_config_dir():
     -------
     str
     """
+    FALLBACK_DIR = '.'
     configdir = os.environ.get('MS_DEISOTOPE_CONFIGDIR')
     if configdir is not None:
         configdir = os.path.abspath(configdir)
@@ -57,7 +58,7 @@ def get_config_dir():
             try:
                 os.makedirs(configdir)
             except OSError:
-                return None
+                return FALLBACK_DIR
         return configdir
 
     home_dir = _get_home_dir()
@@ -81,7 +82,8 @@ def get_config_dir():
             os.makedirs(configdir)
             return configdir
         except OSError:
-            return '.'
+            return FALLBACK_DIR
+    return FALLBACK_DIR
 
 
 _DEFAULT_CONFIG = {
