@@ -32,7 +32,7 @@ from ms_deisotope.data_source.metadata.activation import (
 from ms_deisotope.data_source._thermo_helper import (
     _InstrumentMethod, ThermoRawScanPtr, FilterString,
     _make_id, _id_template, _RawFileMetadataLoader, analyzer_map)
-
+from ms_deisotope.data_source.metadata.scan_traits import FAIMS_compensation_voltage
 
 def _try_number(string):
     try:
@@ -402,10 +402,11 @@ class RawReaderInterface(ScanDataSource):
             'filter string': fline,
         }
         cv = fline.get("compensation_voltage")
+        if cv is not None:
+            traits[FAIMS_compensation_voltage] = cv
         event = ScanEventInformation(
             self._scan_time(scan),
             injection_time=unitfloat(trailer_extras.get('Ion Injection Time (ms)', 0.0), 'millisecond'),
-            drift_time=cv,
             window_list=[ScanWindow(
                 fline.get("scan_window")[0], fline.get("scan_window")[1])], traits=traits)
         return ScanAcquisitionInformation("no combination", [event])
