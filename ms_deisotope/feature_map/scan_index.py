@@ -85,7 +85,7 @@ class MSnRecord(MSRecordBase):
         package['defaulted'] = self.defaulted
         package['orphan'] = self.orphan
         package['coisolation'] = self.coisolation
-        package['activation'] = self.activation.to_dict()
+        package['activation'] = self.activation.to_dict() if self.activation is not None else None
         return package
 
 
