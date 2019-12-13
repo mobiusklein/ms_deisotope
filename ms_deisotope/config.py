@@ -81,7 +81,7 @@ def get_config_dir():
             os.makedirs(configdir)
             return configdir
         except OSError:
-            return None
+            return '.'
 
 
 _DEFAULT_CONFIG = {
