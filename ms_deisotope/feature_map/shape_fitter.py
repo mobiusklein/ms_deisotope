@@ -10,7 +10,7 @@ from scipy.special import erf # pylint: disable=no-name-in-module
 
 from ms_peak_picker import search
 
-from .profile_transform import smooth_leveled, ProfileSplitter
+from .profile_transform import (smooth_leveled, ProfileSplitter)
 
 
 DEFAULT_SMOOTH = 3
@@ -44,6 +44,9 @@ class PeakShapeModelBase(object):
     """
     def __repr__(self):
         return "{self.__class__.__name__}()".format(self=self)
+
+    def __init__(self, bounds=None):
+        self._bounds = bounds
 
     @staticmethod
     def error(params, xs, ys):
@@ -137,8 +140,17 @@ class PeakShapeModelBase(object):
         return params_dict['sigma']
 
     @classmethod
-    def bounds(cls, params):
+    def _default_bounds(cls, params):
         return ([-np.inf] * len(params), [np.inf] * len(params))
+
+    def bounds(self, params):
+        if self._bounds is None:
+            return self._default_bounds(params)
+        return self._bounds
+
+    @classmethod
+    def wrap_parameters(cls, params):
+        return FittedPeakShape(cls.params_to_dict(params), cls)
 
     @classmethod
     def adapt_params_to_bounds(cls, params, bounds):
@@ -150,17 +162,16 @@ class PeakShapeModelBase(object):
                 new_params[i] = bounds[1][i]
         return new_params
 
-    @classmethod
-    def leastsq(cls, xs, ys, params=None, method='leastsq'):
+    def leastsq(self, xs, ys, params=None, method='leastsq'):
         if params is None:
-            params = cls.guess(xs, ys)
+            params = self.guess(xs, ys)
         if method == 'least_squares':
-            bounds = cls.bounds(params)
-            params = cls.adapt_params_to_bounds(params, bounds)
-            result = least_squares(cls.error, params, bounds=bounds, args=(xs, ys))
+            bounds = self.bounds(params)
+            params = self.adapt_params_to_bounds(params, bounds)
+            result = least_squares(self.error, params, bounds=bounds, args=(xs, ys))
             return result['x'],
         else:
-            result = leastsq(cls.error, params, args=(xs, ys))
+            result = leastsq(self.error, params, args=(xs, ys))
             return result[0],
 
 
@@ -179,7 +190,7 @@ class SkewedGaussianModel(PeakShapeModelBase):
             sigma / 2. if abs(sigma) > 2 else 1.)
 
     @classmethod
-    def bounds(cls, params):
+    def _default_bounds(cls, params):
         return ([-np.inf, 0, 0, -np.inf], [np.inf] * 4)
 
     @staticmethod
@@ -258,7 +269,7 @@ class BiGaussianModel(PeakShapeModelBase):
                 center if center > xs[-1] or center < xs[0] else 1.)
 
     @classmethod
-    def bounds(cls, params):
+    def _default_bounds(cls, params):
         return ([-np.inf, 0, 0, 0], [np.inf, np.inf, 2, 2])
 
     @staticmethod
@@ -331,7 +342,7 @@ class GaussianModel(PeakShapeModelBase):
         return center, apex, sigma
 
     @classmethod
-    def bounds(cls, params):
+    def _default_bounds(cls, params):
         return ([-np.inf, 0, 0], [np.inf] * 3)
 
 
@@ -366,7 +377,7 @@ class SimpleGaussianModel(GaussianModel):
         return center, apex
 
     @classmethod
-    def bounds(cls, params):
+    def _default_bounds(cls, params):
         return ([-np.inf, 0, ], [np.inf] * 2)
 
 
@@ -402,8 +413,11 @@ class FittedPeakShape(object):
     def __getitem__(self, key):
         return self.params[key]
 
+    def __setitem__(self, key, value):
+        self.params[key] = value
+
     def __repr__(self):
-        return "Fitted{self.shape_model.__class__.__name__}({params})".format(
+        return "FittedPeakShape({params}, {self.shape_model})".format(
             self=self, params=", ".join("%s=%0.3f" % (k, v) for k, v in self.params.items()))
 
     @property
@@ -413,6 +427,15 @@ class FittedPeakShape(object):
     @property
     def amplitude(self):
         return self['amplitude']
+
+    def copy(self):
+        """Create a deep copy of this object.
+
+        Returns
+        -------
+        :class:`FittedPeakShapeModel`
+        """
+        return self.__class__(self.params.copy(), self.shape_model)
 
 
 class ChromatogramShapeFitterBase(object):
@@ -574,7 +597,7 @@ class ChromatogramShapeFitter(ChromatogramShapeFitterBase):
         fit = self.shape_fitter.leastsq(xs, ys, params)
         params = fit[0]
         self.params = params
-        self.params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
+        self.params_dict = self.shape_fitter.wrap_parameters(params)
 
     def iterfits(self):
         yield self.compute_fitted()
@@ -619,12 +642,13 @@ def peak_indices(x, min_height=0):
 
 class MultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
     def __init__(self, chromatogram, max_peaks=5, smooth=DEFAULT_SMOOTH, fitter=BiGaussianModel(),
-                 relative_peak_height_threshold=0.5):
+                 relative_peak_height_threshold=0.5, initial_fits=None):
+        if initial_fits is None:
+            initial_fits = []
         super(MultimodalChromatogramShapeFitter, self).__init__(chromatogram, smooth=smooth, fitter=fitter)
         self.max_peaks = max_peaks
         self.relative_peak_height_threshold = relative_peak_height_threshold
-        self.params_list = []
-        self.params_dict_list = []
+        self.params_dict_list = list(initial_fits)
 
         if len(self.chromatogram) < 5:
             self.handle_invalid()
@@ -658,13 +682,12 @@ class MultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
         if len(indices) > 0:
             center = xs[max(indices, key=lambda x: ys[x])]
         else:
-            center = xs[len(xs) / 2]
+            center = xs[len(xs) // 2]
         params_dict['center'] = center
 
         fit = self.shape_fitter.leastsq(xs, ys, list(params_dict.values()))
         params = fit[0]
-        params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
-        self.params_list.append(params)
+        params_dict = self.shape_fitter.wrap_parameters(params)
         self.params_dict_list.append(params_dict)
 
         residuals = self.shape_fitter.error(params, xs, ys)
@@ -712,7 +735,6 @@ class AdaptiveMultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
         self.max_peaks = max_peaks
         self.relative_peak_height_threshold = relative_peak_height_threshold
         self.fitters = fitters
-        self.params_list = []
         self.params_dict_list = []
 
         self.alternative_fits = []
@@ -745,7 +767,6 @@ class AdaptiveMultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
                 relative_peak_height_threshold=self.relative_peak_height_threshold)
             self.alternative_fits.append(model_fit)
         self.best_fit = min(self.alternative_fits, key=lambda x: x.line_test)
-        self.params_list = self.best_fit.params_list
         self.params_dict_list = self.best_fit.params_dict_list
         self.shape_fitter = self.best_fit.shape_fitter
 
@@ -761,30 +782,13 @@ class AdaptiveMultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
         return "AdaptiveMultimodalChromatogramShapeFitter(%s, %0.4f)" % (self.chromatogram, self.line_test)
 
 
-# class SplittingPoint(object):
-#     __slots__ = ["first_maximum", "minimum", "second_maximum", "minimum_index", "total_distance"]
-
-#     def __init__(self, first_maximum, minimum, second_maximum, minimum_index):
-#         self.first_maximum = first_maximum
-#         self.minimum = minimum
-#         self.second_maximum = second_maximum
-#         self.minimum_index = minimum_index
-#         self.total_distance = self.compute_distance()
-
-#     def compute_distance(self):
-#         return (self.first_maximum - self.minimum) + (self.second_maximum - self.minimum)
-
-#     def __repr__(self):
-#         return "SplittingPoint(%0.4f, %0.4f, %0.4f, %0.2f, %0.3e)" % (
-#             self.first_maximum, self.minimum, self.second_maximum, self.minimum_index, self.total_distance)
-
-
 class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterBase):
-    def __init__(self, chromatogram, max_splits=3, smooth=DEFAULT_SMOOTH, fitter=BiGaussianModel()):
+    def __init__(self, chromatogram, max_splits=3, smooth=DEFAULT_SMOOTH, fitter=BiGaussianModel(), initial_fits=None):
         super(ProfileSplittingMultimodalChromatogramShapeFitter, self).__init__(
             chromatogram, smooth=smooth, fitter=fitter)
+        if initial_fits is None:
+            initial_fits = []
         self.max_splits = max_splits
-        self.params_list = []
         self.params_dict_list = []
         self.partition_sites = []
 
@@ -833,16 +837,14 @@ class ProfileSplittingMultimodalChromatogramShapeFitter(ChromatogramShapeFitterB
 
     def set_up_peak_fit(self, xs, ys):
         params = self.shape_fitter.guess(xs, ys)
-        params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
+        params_dict = self.shape_fitter.wrap_parameters(params)
         if len(params) > len(xs):
-            self.params_list.append(params)
             self.params_dict_list.append(params_dict)
             return ys, params_dict
 
         fit = self.shape_fitter.leastsq(xs, ys, list(params_dict.values()))
         params = fit[0]
-        params_dict = FittedPeakShape(self.shape_fitter.params_to_dict(params), self.shape_fitter)
-        self.params_list.append(params)
+        params_dict = self.shape_fitter.wrap_parameters(params)
         self.params_dict_list.append(params_dict)
 
         residuals = self.shape_fitter.error(params, xs, ys)
