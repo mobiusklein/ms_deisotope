@@ -690,7 +690,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     def _make_scan_index_producer(self, start_index=None, start_time=None):
         if start_index is not None:
-            return range(start_index, self._source.RunHeaderEx.LastSpectrum - 1)
+            return range(start_index, self._source.RunHeaderEx.LastSpectrum)
         elif start_time is not None:
             start_index = self._scan_time_to_scan_number(start_time)
             while start_index != 0:
@@ -699,9 +699,9 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
                     start_index -= 1
                 else:
                     break
-            return range(start_index, self._source.RunHeaderEx.LastSpectrum - 1)
+            return range(start_index, self._source.RunHeaderEx.LastSpectrum)
         else:
-            return range(0, self._source.RunHeaderEx.LastSpectrum - 1)
+            return range(0, self._source.RunHeaderEx.LastSpectrum)
 
     def _make_pointer_iterator(self, start_index=None, start_time=None):
         iterator = self._make_scan_index_producer(start_index, start_time)
