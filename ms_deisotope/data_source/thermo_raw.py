@@ -357,7 +357,10 @@ class ThermoRawDataInterface(ScanDataSource):
             return None
 
     def _trailer_values(self, scan):
+        if scan.trailer_values is not None:
+            return scan.trailer_values
         trailer_extras = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        scan.trailer_values = trailer_extras
         return trailer_extras
 
     def _acquisition_information(self, scan):

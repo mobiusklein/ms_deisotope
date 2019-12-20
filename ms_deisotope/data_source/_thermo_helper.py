@@ -365,6 +365,7 @@ class ThermoRawScanPtr(Base):
     def __init__(self, scan_number):
         self.scan_number = scan_number
         self.filter_string = None
+        self.trailer_values = None
 
     def validate(self, source):
         try:
