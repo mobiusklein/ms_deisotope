@@ -265,8 +265,10 @@ class RawReaderInterface(ScanDataSource):
         return "%s %r" % (self._scan_id(scan), self._filter_string(scan))
 
     def _filter_string(self, scan):
-        scan_number = scan.scan_number
-        return FilterString(self._source.GetFilterForScanNumber(scan_number + 1).Filter)
+        if scan.filter_string is None:
+            scan_number = scan.scan_number
+            scan.filter_string = FilterString(self._source.GetFilterForScanNumber(scan_number + 1).Filter)
+        return scan.filter_string
 
     def _scan_index(self, scan):
         scan_number = scan.scan_number
