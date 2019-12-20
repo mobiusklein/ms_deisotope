@@ -215,6 +215,12 @@ def _copy_double_array(src):
     ``int_ptr_tp`` must be an integer type that can hold a pointer. On Python 2
     this is :class:`long`, and on Python 3 it is :class:`int`.
     '''
+    # When the input .NET array pointer is None, return an empty array. On Py2
+    # this would happen automatically, but not on Py3, and perhaps not safely on
+    # all Py2 because it relies on pythonnet and the .NET runtime properly checking
+    # for nulls.
+    if src is None:
+        return np.array([], dtype=np.float64)
     dest = np.empty(len(src), dtype=np.float64)
     Marshal.Copy(
         src, 0,
