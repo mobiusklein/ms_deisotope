@@ -1,5 +1,5 @@
 # cython: embedsignature=True
-# 
+#
 
 from libc.math cimport sqrt, exp, pi
 
@@ -244,7 +244,7 @@ cdef class ProfileSplitter(object):
             self.profile = None
         self.partition_sites = []
 
-    def _extreme_indices(self, ys):
+    cpdef _extreme_indices(self, ys):
         maxima_indices, minima_indices = locate_extrema(ys)
         return maxima_indices.astype(np.int64), minima_indices.astype(np.int64)
 
@@ -294,7 +294,7 @@ cdef class ProfileSplitter(object):
         return candidates
 
     @cython.boundscheck(False)
-    def locate_valleys(self, double scale=0.3, double smooth=1, int interpolate_past=200):
+    cpdef locate_valleys(self, double scale=0.3, double smooth=1, int interpolate_past=200):
         cdef:
             np.ndarray[double, ndim=1, mode='c'] xs
             np.ndarray[double, ndim=1, mode='c'] ys
@@ -307,7 +307,7 @@ cdef class ProfileSplitter(object):
 
         xs = self.xs
         ys = self.ys
-        
+
         if len(xs) > interpolate_past:
             xs, ys = self.interpolate(xs, ys, interpolate_past)
 
@@ -330,10 +330,10 @@ cdef class ProfileSplitter(object):
                     y_k = ys[min_k]
                     if max_i < min_k < max_j and (y_i - y_k) > (y_i * scale) and (
                             y_j - y_k) > (y_j * scale):
-                        point = ValleyPoint(y_i, y_k, y_j, xs[max_i], xs[min_k], xs[max_j])
+                        point = _create_ValleyPoint(y_i, y_k, y_j, xs[max_i], xs[min_k], xs[max_j])
                         candidates.append(point)
         if candidates:
-            candidates = sorted(candidates, key=lambda x: x.total_distance, reverse=True)
+            candidates = sorted(candidates, key=_get_total_distance, reverse=True)
             best_point = candidates[0]
             self.partition_sites.append(best_point)
 
@@ -351,6 +351,25 @@ cdef class ProfileSplitter(object):
             return valley.split(self.profile)
         else:
             return None
+
+
+cpdef double _get_total_distance(object obj):
+    return (<ValleyPoint>obj).total_distance
+
+
+cdef ValleyPoint _create_ValleyPoint(double first_maximum, double minimum, double second_maximum,
+                                     double first_maximum_index, double minimum_index,
+                                     double second_maximum_index):
+    cdef:
+        ValleyPoint self
+    self = ValleyPoint.__new__(ValleyPoint)
+    self.first_maximum = first_maximum
+    self.minimum = minimum
+    self.second_maximum = second_maximum
+    self.first_maximum_index = first_maximum_index
+    self.minimum_index = minimum_index
+    self.second_maximum_index
+    return self
 
 
 def split_valleys(profiles, scale=0.3, n_levels=2):
