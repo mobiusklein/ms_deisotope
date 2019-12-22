@@ -357,6 +357,10 @@ class RawReaderInterface(ScanDataSource):
                 i += 1
         if precursor_scan_number is not None:
             precursor_scan_id = self.get_scan_by_index(precursor_scan_number).id
+        else:
+            import warnings
+            warnings.warn("Could not resolve precursor scan for %s" % (self._scan_id(scan), ))
+            precursor_scan_id = None
         return PrecursorInformation(
             precursor_mz, inten, charge, precursor_scan_id,
             source=self, product_scan_id=self._scan_id(scan))
