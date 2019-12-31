@@ -1358,23 +1358,20 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         return np.array(current)
 
     def msms_for(self, query_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
-        m = query_mass
-        w = query_mass * mass_error_tolerance
-        lo = m - w
-        hi = m + w
         out = []
-        for pinfo in self.precursor_information():
-            if lo <= pinfo.neutral_mass <= hi:
-                valid = True
-                product = None
-                if start_time is not None or end_time is not None:
-                    product = self.get_scan_header_by_id(pinfo.product_scan_id)
-                if start_time is not None and product.scan_time < start_time:
-                    valid = False
-                elif end_time is not None and product.scan_time > end_time:
-                    valid = False
-                if valid:
-                    out.append(pinfo)
+        pinfos = self.extended_index.find_msms_by_precursor_mass(
+            query_mass, mass_error_tolerance, bind=self)
+        for pinfo in pinfos:
+            valid = True
+            product = None
+            if start_time is not None or end_time is not None:
+                product = self.get_scan_header_by_id(pinfo.product_scan_id)
+            if start_time is not None and product.scan_time < start_time:
+                valid = False
+            elif end_time is not None and product.scan_time > end_time:
+                valid = False
+            if valid:
+                out.append(pinfo)
         return out
 
 
