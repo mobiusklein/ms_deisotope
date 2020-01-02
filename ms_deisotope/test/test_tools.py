@@ -11,7 +11,7 @@ from ms_deisotope.test.common import datafile
 
 
 def test_describe():
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=False)
 
     path = datafile("small.mzML")
     result = runner.invoke(indexing.describe, [path])
@@ -23,7 +23,7 @@ def test_describe():
 
 
 def test_mgf():
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=False)
     if os.path.exists("-idx.json"):
         raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")
@@ -50,7 +50,7 @@ def test_mgf():
 
 
 def test_mzml():
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=False)
     if os.path.exists("-idx.json"):
         raise IOError("Orphan index file exists before running test")
     path = datafile("small.mzML")

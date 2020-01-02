@@ -147,3 +147,72 @@ class Spinner(object):
         return template.format(self=self)
 
 spinner = Spinner
+
+
+class ProgressLogger(object):
+    def __init__(self, iterable=None, length=None, label=None, show_item_func=None, interval=None, file=None, **kwargs):
+        if iterable is not None:
+            try:
+                length = len(iterable)
+            except TypeError:
+                pass
+        if interval is None:
+            if length is None:
+                interval = 1000
+            else:
+                interval = int(length * 0.05)
+        if label is None:
+            label = ''
+        if file is None:
+            file = click.get_text_stream('stderr')
+        self.iterable = iterable
+        self.length = length
+        self.show_item_func = show_item_func
+        self.current_item = None
+        self.count = 0
+        self.interval = interval
+        self.last_update = 0
+        self.label = label
+        self.file = file
+
+    def update(self, n):
+        self.count += n
+        if self.count > self.last_update:
+            self._log()
+            self.last_update += self.interval * (int(n // self.interval) + 1)
+
+    def _log(self):
+        item = self.current_item
+        if self.show_item_func is not None:
+            show = self.show_item_func(item)
+        else:
+            show = str(item)
+        i = self.count
+        label = self.label
+        if self.length is not None:
+            prog_label = "%s %d/%d (%0.2f%%)" % (label, i, self.length, i * 100.0 / self.length)
+        else:
+            prog_label = "%s %d" % (label, i)
+        message = "%s: %s" % (prog_label, show)
+        click.echo(message, file=self.file, err=True)
+
+    def __iter__(self):
+        for item in self.iterable:
+            self.current_item = item
+            self.update(1)
+            yield item
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+
+def progress(*args, **kwargs):
+    if sys.stdout.isatty():
+        click.echo("Using ProgressBar", err=True)
+        return click.progressbar(*args, **kwargs)
+    else:
+        click.echo("Using ProgressLogger", err=True)
+        return ProgressLogger(*args, **kwargs)

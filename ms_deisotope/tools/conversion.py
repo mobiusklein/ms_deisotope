@@ -13,7 +13,7 @@ from ms_deisotope.data_source._compression import GzipFile
 from ms_deisotope.data_source.metadata import activation as activation_module, data_transformation
 from ms_deisotope.output import MzMLSerializer, MGFSerializer
 
-from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook
+from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook, progress
 
 
 @click.group()
@@ -49,7 +49,7 @@ def to_mgf(reader, outstream, msn_filters=None):
         n_spectra = len(reader)
     except TypeError:
         n_spectra = None
-    progbar = click.progressbar(
+    progbar = progress(
         reader,
         label="Processed Spectra", length=n_spectra,
         item_show_func=lambda x: str(x.id) if x else '')
@@ -154,7 +154,7 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
             pass
         writer.add_file_contents("centroid spectrum")
     n_spectra = len(reader)
-    progbar = click.progressbar(
+    progbar = progress(
         label="Processed Spectra", length=n_spectra,
         item_show_func=lambda x: str(x.precursor.id if x.precursor else
                                      x.products[0].id) if x else '')
