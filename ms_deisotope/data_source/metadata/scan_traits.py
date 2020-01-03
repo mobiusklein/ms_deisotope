@@ -324,7 +324,7 @@ class ScanEventInformation(_IonMobilityMixin):
         return ScanWindow(low, high)
 
     def __reduce__(self):
-        return self.__class__, (self.start_time, self.window_list, self.injection_time, self.traits)
+        return self.__class__, (self.start_time, self.window_list, None, self.injection_time, self.traits)
 
 
 class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
