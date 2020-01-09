@@ -126,6 +126,9 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     def __dict__(self):
         return _MappingOverAttributeProxy(self)
 
+    def __reduce__(self):
+        return self.__class__, (self.lower, self.target, self.upper)
+
 
 class ScanAcquisitionInformation(MutableSequence):
     """Describes the set distinct scans along the measurable range by
@@ -345,6 +348,9 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
     @property
     def __dict__(self):
         return _MappingOverAttributeProxy(self)
+
+    def __reduce__(self):
+        return self.__class__, (self.lower, self.upper)
 
     def __contains__(self, i):
         return self.lower <= i <= self.upper
