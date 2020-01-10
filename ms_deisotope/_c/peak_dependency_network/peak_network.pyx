@@ -9,7 +9,7 @@ from cpython cimport Py_INCREF
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM
 from cpython.tuple cimport PyTuple_GET_ITEM
 from cpython.int cimport PyInt_AsLong
-from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
+from cpython.dict cimport PyDict_GetItem, PyDict_SetItem, PyDict_DelItem, PyDict_Next, PyDict_Values
 from cpython.object cimport PyObject
 from cpython.set cimport PySet_Add
 
@@ -268,3 +268,118 @@ cdef class PeakDependenceGraphBase(object):
                         result.append(node)
                 PyDict_SetItem(cache, fit_record, result)
                 return result
+
+    cpdef drop_fit_dependence(self, IsotopicFitRecord fit_record):
+        '''Remove this fit from the graph, deleting all
+        hyper-edges.
+        '''
+        cdef:
+            list nodes
+            size_t i, n
+
+        nodes = self.nodes_for(fit_record)
+        n = PyList_GET_SIZE(nodes)
+        for i in range(n):
+            node = <PeakNode>PyList_GET_ITEM(nodes, i)
+            try:
+                (PyDict_DelItem(node.links, fit_record))
+            except KeyError:
+                pass
+
+    cpdef best_exact_fits(self):
+        '''For each distinct group of experimental peaks, retain only
+        the best scoring fit using exactly those peaks.
+        '''
+        cdef:
+            dict by_peaks
+            list best_fits, fits_for
+            IsotopicFitRecord fit
+            object _fit
+            tuple peaks_key
+            Py_ssize_t i, j, n
+            PyObject* ptemp
+            PyObject* pvalue
+
+        by_peaks = {}
+        best_fits = []
+        for _fit in self.dependencies:
+            fit = <IsotopicFitRecord>_fit
+            peaks_key = tuple(fit.experimental)
+            ptemp = PyDict_GetItem(by_peaks, peaks_key)
+            if ptemp == NULL:
+                fits_for = [fit]
+                PyDict_SetItem(by_peaks, peaks_key, fits_for)
+            else:
+                fits_for = <list>ptemp
+                fits_for.append(fit)
+        j = 0
+        while PyDict_Next(by_peaks, &j, &ptemp, &pvalue):
+            fits_for = <list>pvalue
+            n = PyList_GET_SIZE(fits_for)
+            fits_for.sort(key=_score_getter, reverse=(not self.maximize))
+            for i in range(0, n - 1):
+                fit = <IsotopicFitRecord>PyList_GET_ITEM(fits_for, i)
+                self.drop_fit_dependence(fit)
+            fit = <IsotopicFitRecord>PyList_GET_ITEM(fits_for, n - 1)
+            best_fits.append(fit)
+        self.dependencies = set(best_fits)
+
+    cpdef _gather_independent_clusters(self, dict nodes_for_cache=None):
+        cdef:
+            dict clusters
+            set dependencies
+            list dependencies_snapshot, dependent_nodes
+            PeakNode seed_node, dep_node
+            list nodes, nodes_of
+            IsotopicFitRecord dep
+            Py_ssize_t i, n, j, m, k, p
+            PyObject* ptemp
+
+        clusters = dict()
+        if nodes_for_cache is None:
+            nodes_for_cache = dict()
+
+        nodes = PyDict_Values(self.nodes)
+        n = PyList_GET_SIZE(nodes)
+        for i in range(n):
+            seed_node = <PeakNode>PyList_GET_ITEM(nodes, i)
+
+            # This peak is depended upon by each fit in `dependencies`
+            dependencies = set(seed_node.links)
+
+            if len(dependencies) == 0:
+                continue
+
+            # These fits also depend upon these other peaks, and those peaks are depended upon
+            # for other fits in turn, which depend upon the assignment of this peak.
+            dependencies_snapshot = list(dependencies)
+            dependent_nodes = []
+            m = PyList_GET_SIZE(dependencies_snapshot)
+            for j in range(m):
+                dep = <IsotopicFitRecord>PyList_GET_ITEM(dependencies_snapshot, j)
+                nodes_of = self.nodes_for(dep, nodes_for_cache)
+                p = PyList_GET_SIZE(nodes_of)
+                for k in range(p):
+                    dep_node = <PeakNode>PyList_GET_ITEM(nodes_of, k)
+                    ptemp = PyDict_GetItem(clusters, dep_node)
+                    if ptemp != NULL:
+                        dependencies |= (<set>ptemp)
+                    # Update all co-depended nodes with the full set of all fits which depend upon them
+                    # PyDict_SetItem(clusters, dep_node, dependencies)
+
+            # dependencies = set(dependencies)
+
+            for _dep in dependencies:
+                dep = <IsotopicFitRecord>_dep
+                nodes_of = self.nodes_for(dep, nodes_for_cache)
+                p = PyList_GET_SIZE(nodes_of)
+                for k in range(p):
+                    dep_node = <PeakNode>PyList_GET_ITEM(nodes_of, k)
+                    PyDict_SetItem(clusters, dep_node, dependencies)
+
+        return clusters
+
+
+
+cpdef double _score_getter(object x):
+    return (<IsotopicFitRecord>x).score
