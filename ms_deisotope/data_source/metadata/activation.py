@@ -21,7 +21,12 @@ class ActivationInformation(object):
             data = dict()
         self.method = dissociation_methods_map.get(str(method).lower(), None)
         if self.method is None:
-            self.method = self._make_unknown_method(method)
+            try:
+                self.method = dissociation_methods_map.get(method.accession, None)
+            except AttributeError:
+                pass
+            if self.method is None:
+                self.method = self._make_unknown_method(method)
         self.energy = energy
         self.data = data
 
@@ -364,6 +369,7 @@ dissociation_methods_map = {
 method = None
 for method in dissociation_methods:
     dissociation_methods_map[method.name] = method
+    dissociation_methods_map[method.id] = method
 del method
 
 
