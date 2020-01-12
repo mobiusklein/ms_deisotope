@@ -150,7 +150,7 @@ spinner = Spinner
 
 
 class ProgressLogger(object):
-    def __init__(self, iterable=None, length=None, label=None, show_item_func=None, interval=None, file=None, **kwargs):
+    def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None, file=None, **kwargs):
         if iterable is not None:
             try:
                 length = len(iterable)
@@ -167,7 +167,7 @@ class ProgressLogger(object):
             file = click.get_text_stream('stderr')
         self.iterable = iterable
         self.length = length
-        self.show_item_func = show_item_func
+        self.item_show_func = item_show_func
         self.current_item = None
         self.count = 0
         self.interval = interval
@@ -183,8 +183,8 @@ class ProgressLogger(object):
 
     def _log(self):
         item = self.current_item
-        if self.show_item_func is not None:
-            show = self.show_item_func(item)
+        if self.item_show_func is not None:
+            show = self.item_show_func(item)
         else:
             show = str(item)
         i = self.count
