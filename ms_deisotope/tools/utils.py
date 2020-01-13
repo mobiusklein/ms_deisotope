@@ -150,6 +150,11 @@ spinner = Spinner
 
 
 class ProgressLogger(object):
+    """A simple text logger that wraps an iterable and logs update messages as chunks are requested.
+
+    This class tries to emulate :func:`click.progressbar` for use when the attached STDERR stream is not
+    a terminal.
+    """
     def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None, file=None, **kwargs):
         if iterable is not None:
             try:
@@ -161,6 +166,8 @@ class ProgressLogger(object):
                 interval = 1000
             else:
                 interval = int(length * 0.05)
+        if interval == 0:
+            interval = 1
         if label is None:
             label = ''
         if file is None:
@@ -189,7 +196,7 @@ class ProgressLogger(object):
             show = str(item)
         i = self.count
         label = self.label
-        if self.length is not None:
+        if self.length is not None and self.length != 0:
             prog_label = "%s %d/%d (%0.2f%%)" % (label, i, self.length, i * 100.0 / self.length)
         else:
             prog_label = "%s %d" % (label, i)
@@ -210,9 +217,10 @@ class ProgressLogger(object):
 
 
 def progress(*args, **kwargs):
+    """A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a TTY and :class:`ProgressLogger`
+    otherwise.
+    """
     if sys.stdout.isatty():
-        click.echo("Using ProgressBar", err=True)
         return click.progressbar(*args, **kwargs)
     else:
-        click.echo("Using ProgressLogger", err=True)
         return ProgressLogger(*args, **kwargs)
