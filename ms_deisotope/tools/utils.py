@@ -14,6 +14,8 @@ from ms_deisotope.averagine import (
     Averagine, glycan as n_glycan_averagine, permethylated_glycan,
     peptide, glycopeptide, heparin, heparan_sulfate)
 
+from ms_deisotope.task.log_utils import fmt_msg
+
 
 def processes_option(f):
     opt = click.option(
@@ -200,7 +202,7 @@ class ProgressLogger(object):
             prog_label = "%s %d/%d (%0.2f%%)" % (label, i, self.length, i * 100.0 / self.length)
         else:
             prog_label = "%s %d" % (label, i)
-        message = "%s: %s" % (prog_label, show)
+        message = fmt_msg("%s: %s" % (prog_label, show))
         click.echo(message, file=self.file, err=True)
 
     def __iter__(self):
