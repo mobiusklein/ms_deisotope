@@ -574,6 +574,24 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         return get_tag_attributes(self.source, "run")
 
 
+def checksum_mzml_stream(stream):
+    import re
+    import hashlib
+    hasher = hashlib.md5()
+    target = b"<fileChecksum>"
+    target_pattern = re.compile(b"(" + target + b")")
+    block_size = int(2 ** 12)
+    chunk = stream.read(block_size)
+    while chunk:
+        tokens = target_pattern.split(chunk)
+        for token in tokens:
+            hasher.update(token)
+            if token == target:
+                break
+        chunk = stream.read(block_size)
+    return hasher.hexdigest()
+
+
 class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     """Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
     random access.

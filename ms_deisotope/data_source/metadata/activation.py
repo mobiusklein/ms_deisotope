@@ -2,6 +2,7 @@ from ms_deisotope.utils import _MappingOverAttributeProxy
 
 from .cv import Term, TermSet
 
+
 class ActivationInformation(object):
     """Describes the dissociation process used to produce an MSn scan.
 
@@ -22,7 +23,8 @@ class ActivationInformation(object):
         self.method = dissociation_methods_map.get(str(method).lower(), None)
         if self.method is None:
             try:
-                self.method = dissociation_methods_map.get(method.accession, None)
+                self.method = dissociation_methods_map.get(
+                    method.accession, None)
             except AttributeError:
                 pass
             if self.method is None:

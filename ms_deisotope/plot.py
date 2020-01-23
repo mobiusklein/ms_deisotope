@@ -9,9 +9,10 @@ try:
     from matplotlib import pyplot as plt, gridspec
     from ms_peak_picker.plot import draw_peaklist, draw_raw
     has_plot = True
-except ImportError:
+except ImportError as err:
     import warnings
-    warnings.warn("Could not import matplotlib, plotting tools will not work")
+    import traceback
+    warnings.warn("Could not import matplotlib, plotting tools will not work\n%s" % (err, ))
     pyplot = None
     gridspec = None
     has_plot = False

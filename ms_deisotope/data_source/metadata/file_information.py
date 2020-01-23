@@ -399,14 +399,12 @@ content_keys = TermSet([
                  u'(ultraviolet/visible spectrum).'),
                 'data file content',
                 [u'data file content', u'spectrum type']),
-    FileContent(u'mass chromatogram', u'MS:1000810',
-                (u'A plot of the relative abundance of a beam or other'
-                 u'collection of ions as a function of the retention time.'),
+    FileContent(u'ion current chromatogram', u'MS:1000810',
+                (u'Representation of the current of ions versus time.'),
                 'data file content',
                 [u'data file content', u'chromatogram type']),
     FileContent(u'electromagnetic radiation chromatogram', u'MS:1000811',
-                (u'The measurement of electromagnetic properties as a function'
-                 u'of the retention time.'),
+                (u'Representation of electromagnetic properties versus time.'),
                 'data file content',
                 [u'data file content', u'chromatogram type']),
     FileContent(u'MSn spectrum', u'MS:1000580',
@@ -490,48 +488,41 @@ content_keys = TermSet([
                 'data file content',
                 [u'mass spectrum', u'data file content', u'spectrum type']),
     FileContent(u'total ion current chromatogram', u'MS:1000235',
-                (u'Chromatogram obtained by plotting the total ion current'
-                 u'detected in each of a series of mass spectra recorded as a'
-                 u'function of retention time.'),
+                (u'Representation of the total ion current detected in each of'
+                 u'a series of mass spectra versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'selected reaction monitoring chromatogram', u'MS:1001473',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a selectively monitored reaction at each'
-                 u'time point.'),
+                (u'Representation of an array of the measurements of a'
+                 u'selectively monitored reaction versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'selected ion monitoring chromatogram', u'MS:1001472',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a selectively monitored ion at each time'
-                 u'point.'),
+                (u'Representation of an array of the measurements of a'
+                 u'selectively monitored ion versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'consecutive reaction monitoring chromatogram', u'MS:1001474',
-                (u'OBSOLETE Chromatogram created by creating an array of the'
-                 u'measurements of a series of monitored reactions at each time'
-                 u'point.'),
+                (u'OBSOLETE Representation of an array of the measurements of a'
+                 u'series of monitored reactions versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'basepeak chromatogram', u'MS:1000628',
-                (u'Chromatogram created by creating an array of the most'
-                 u'intense peaks at each time point.'),
+                (u'Representation of an array of the most intense peaks versus'
+                 u'time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'selected ion current chromatogram', u'MS:1000627',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a specific single ion current at each time'
-                 u'point.'),
+                (u'Representation of an array of the measurements of a specific'
+                 u'single ion current versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'absorption chromatogram', u'MS:1000812',
-                (u'The measurement of light absorbed by the sample as a'
-                 u'function of the retention time.'),
+                (u'Representation of light absorbed by the sample versus time.'),
                 'data file content',
                 [u'electromagnetic radiation chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'emission chromatogram', u'MS:1000813',
-                (u'The measurement of light emitted by the sample as a function'
-                 u'of the retention time.'),
+                (u'Representation of light emitted by the sample versus time.'),
                 'data file content',
                 [u'electromagnetic radiation chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'time-delayed fragmentation spectrum', u'MS:1000790',
@@ -699,7 +690,8 @@ class FileInformation(MutableMapping):
                         "Source File %r does not exist" % (source,))
             source = SourceFile.from_path(source)
         elif not isinstance(source, SourceFile):
-            raise TypeError("Must pass an object of type %r, could not coerce %r" % (SourceFile, type(source)))
+            raise TypeError("Must pass an object of type %r, could not coerce %r" % (
+                SourceFile, type(source)))
         self.source_files.append(source)
 
     def add_content(self, key, value=None):

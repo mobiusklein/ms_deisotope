@@ -2,9 +2,15 @@
 as well as a :class:`~.Term` subclass for the `scan attribute` family.
 """
 
-from collections import namedtuple, MutableSequence
+from collections import namedtuple
 
-from pyteomics.auxiliary import unitfloat
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
+
+
+from pyteomics.auxiliary import unitfloat  # pylint: disable=unused-import
 
 from ms_deisotope.utils import _MappingOverAttributeProxy
 from .cv import Term, TermSet
@@ -175,7 +181,8 @@ class ScanAcquisitionInformation(MutableSequence):
             The event to insert
         """
         if not isinstance(value, ScanEventInformation):
-            raise TypeError("Expected ScanEventInformation but got %r" % (type(value), ))
+            raise TypeError(
+                "Expected ScanEventInformation but got %r" % (type(value), ))
         self.scan_list.insert(index, value)
 
     def __len__(self):
@@ -268,12 +275,12 @@ class ScanEventInformation(_IonMobilityMixin):
         return _MappingOverAttributeProxy(self)
 
     def __init__(self, start_time, window_list, drift_time=None, injection_time=None, traits=None, **options):
+        self.traits = traits or {}
+        self.traits.update(options)
         self.start_time = start_time
         self.window_list = window_list or []
         self.drift_time = drift_time
         self.injection_time = injection_time
-        self.traits = traits or {}
-        self.traits.update(options)
 
     def __getitem__(self, i):
         return self.window_list[i]
@@ -415,6 +422,12 @@ scan_attributes = TermSet([
                   (u'Rate in Th/sec for scanning analyzers.'),
                   'scan attribute',
                   [u'scan attribute', u'object attribute']),
+    ScanAttribute(u'zoom scan', u'MS:1000497',
+                  (u'Special scan mode where data with improved resolution is'
+                   u'acquired. This is typically achieved by scanning a more'
+                   u'narrow m/z window or scanning with a lower scan rate.'),
+                  'scan attribute',
+                  [u'scan attribute', u'object attribute']),
     ScanAttribute(u'elution time', u'MS:1000826',
                   (u'The time of elution from all used chromatographic columns'
                    u'(one or more) in the chromatographic separation step,'
@@ -446,6 +459,11 @@ scan_attributes = TermSet([
     ScanAttribute(u'interchannel delay', u'MS:1000880',
                   (u'The duration of intervals between scanning, during which the'
                    u'instrument configuration is switched.'),
+                  'scan attribute',
+                  [u'scan attribute', u'object attribute']),
+    ScanAttribute(u'scan number', u'MS:1003057',
+                  (u'Ordinal number of the scan indicating its order of'
+                   u'acquisition within a mass spectrometry acquisition run.'),
                   'scan attribute',
                   [u'scan attribute', u'object attribute']),
     ScanAttribute(u'dwell time', u'MS:1000502',
@@ -519,6 +537,7 @@ ION_MOBILITY_TYPES = {
     inverse_reduced_ion_mobility,
 }
 
+
 class IonMobilityMethods(object):
     """Determine the ion mobility measure of a scan event.
 
@@ -530,6 +549,7 @@ class IonMobilityMethods(object):
     scan_event: :class:`ScanEventInformation`
         The scan to interpret.
     """
+
     def __init__(self, scan_event):
         self.scan_event = scan_event
 

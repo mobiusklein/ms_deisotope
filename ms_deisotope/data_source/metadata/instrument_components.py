@@ -1988,6 +1988,17 @@ instrument_models = TermSet([
                     (u'Thermo Scientific TSQ Endura MS.'),
                     'instrument model',
                     [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
+    InstrumentModel(u'Orbitrap Exploris 480', u'MS:1003028',
+                    (u'Thermo Scientific Orbitrap Exploris 480 Quadrupole Orbitrap'
+                     u'MS.'),
+                    'instrument model',
+                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
+    InstrumentModel(u'Orbitrap Eclipse', u'MS:1003029',
+                    (u'Thermo Scientific Orbitrap Eclipse mass spectrometer with'
+                     u'Tribrid architecture consisting of quadrupole mass filter,'
+                     u'linear ion trap and Orbitrap mass analyzers.'),
+                    'instrument model',
+                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
     InstrumentModel(u'LTQ Velos ETD', u'MS:1000856',
                     (u'Thermo Scientific LTQ Velos MS with ETD.'),
                     'instrument model',
