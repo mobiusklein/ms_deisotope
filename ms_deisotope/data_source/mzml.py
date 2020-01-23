@@ -577,7 +577,7 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
 def checksum_mzml_stream(stream):
     import re
     import hashlib
-    hasher = hashlib.md5()
+    hasher = hashlib.sha1()
     target = b"<fileChecksum>"
     target_pattern = re.compile(b"(" + target + b")")
     block_size = int(2 ** 12)
@@ -590,6 +590,15 @@ def checksum_mzml_stream(stream):
                 break
         chunk = stream.read(block_size)
     return hasher.hexdigest()
+
+
+def read_file_checksum(stream):
+    import re
+    stream.seek(-5000, 2)
+    chunk = stream.read(5001)
+    target = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
+    matches = target.findall(chunk)
+    return matches
 
 
 class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
