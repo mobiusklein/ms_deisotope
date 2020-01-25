@@ -23,7 +23,7 @@ cdef class IsotopicFitRecord(object):
     """Describes a single isotopic pattern fit, comparing how well an
     experimentally observed sequence of peaks matches a theoretical isotopic
     pattern.
-    
+
     IsotopicFitRecord instances are hashable and orderable (by score).
 
     Attributes
@@ -88,7 +88,6 @@ cdef class IsotopicFitRecord(object):
             bint val
             size_t i, n
             FittedPeak fp1, fp2
-            TheoreticalPeak tp1, tp2
 
         val = self.score == other.score
         if not val:
@@ -110,7 +109,7 @@ cdef class IsotopicFitRecord(object):
         if not val:
             return val
         if self.data is not None or other.data is not None:
-            val = val & (self.data == other.data)
+            val = (self.data == other.data)
         return val
 
     cpdef bint _ne(self, IsotopicFitRecord other):
@@ -202,12 +201,12 @@ cdef class MinimizeFitSelector(FitSelectorBase):
     """
     cpdef IsotopicFitRecord best(self, object results):
         """Returns the IsotopicFitRecord with the smallest score
-        
+
         Parameters
         ----------
         results : list of IsotopicFitRecord
             List of isotopic fits to select the most optimal case from
-        
+
         Returns
         -------
         IsotopicFitRecord
@@ -236,11 +235,11 @@ cdef class MinimizeFitSelector(FitSelectorBase):
     cpdef bint reject(self, IsotopicFitRecord fit):
         """Decide whether the fit should be discarded for having too
         large a score. Compares against :attr:`minimum_score`
-        
+
         Parameters
         ----------
         fit : IsotopicFitRecord
-        
+
         Returns
         -------
         bool
@@ -265,12 +264,12 @@ cdef class MaximizeFitSelector(FitSelectorBase):
     """
     cpdef IsotopicFitRecord best(self, object results):
         """Returns the IsotopicFitRecord with the largest score
-        
+
         Parameters
         ----------
         results : list of IsotopicFitRecord
             List of isotopic fits to select the most optimal case from
-        
+
         Returns
         -------
         IsotopicFitRecord
@@ -297,11 +296,11 @@ cdef class MaximizeFitSelector(FitSelectorBase):
     cpdef bint reject(self, IsotopicFitRecord fit):
         """Decide whether the fit should be discarded for having too
         small a score. Compares against :attr:`minimum_score`
-        
+
         Parameters
         ----------
         fit : IsotopicFitRecord
-        
+
         Returns
         -------
         bool
@@ -370,14 +369,14 @@ cdef class IsotopicFitterBase(object):
 
     def __call__(self, *args, **kwargs):
         """Invokes :meth:`evaluate`
-        
+
         Parameters
         ----------
         *args
             Forwarded to :meth:`evaluate`
         **kwargs
             Forwarded to :meth:`evaluate`
-        
+
         Returns
         -------
         float
@@ -431,7 +430,7 @@ cdef double sum_intensity_theoretical(list peaklist):
     for i in range(PyList_GET_SIZE(peaklist)):
         peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, i)
         summed += peak.intensity
-    return summed    
+    return summed
 
 
 cdef double sum_intensity_fitted(list peaklist):
@@ -844,7 +843,7 @@ cdef class DistinctPatternFitter(IsotopicFitterBase):
 
     cpdef IsotopicFitterBase _configure(self, DeconvoluterBase deconvoluter, dict kwargs):
         self.interference_detector = InterferenceDetection(deconvoluter.peaklist)
-        return self    
+        return self
 
     cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
         cdef:
@@ -919,7 +918,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
             FittedPeak peak
         for i in range(len(experimental)):
             peak = <FittedPeak>PyList_GET_ITEM(experimental, i)
-            peak.intensity *= factor        
+            peak.intensity *= factor
 
     cdef void scale_theoretical_peaks(self, list theoretical, double factor):
         cdef:

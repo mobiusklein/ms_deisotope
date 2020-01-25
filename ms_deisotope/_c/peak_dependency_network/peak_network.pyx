@@ -1,4 +1,3 @@
-import operator
 import warnings
 
 from collections import defaultdict
@@ -8,6 +7,7 @@ cimport cython
 from cpython cimport Py_INCREF
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM
 from cpython.tuple cimport PyTuple_GET_ITEM
+from cpython.sequence cimport PySequence_Fast, PySequence_Fast_ITEMS
 from cpython.int cimport PyInt_AsLong
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem, PyDict_DelItem, PyDict_Next, PyDict_Values
 from cpython.object cimport PyObject
@@ -18,9 +18,6 @@ from ms_peak_picker._c.peak_set cimport FittedPeak, PeakSet
 from ms_deisotope._c.scoring cimport IsotopicFitRecord
 from ms_deisotope._c.peak_dependency_network.intervals cimport SpanningMixin, IntervalTreeNode
 from ms_deisotope._c.peak_dependency_network.subgraph cimport ConnectedSubgraph
-
-
-cdef object score_getter = operator.attrgetter("score")
 
 
 @cython.freelist(1000000)
@@ -94,7 +91,7 @@ cdef class DependenceCluster(SpanningMixin):
         if dependencies is None:
             dependencies = []
         else:
-            dependencies = sorted(dependencies, key=lambda x: x.score, reverse=maximize)
+            dependencies = sorted(dependencies, reverse=maximize)
         self.parent = parent
         self.dependencies = dependencies
         self.maximize = maximize
@@ -297,6 +294,7 @@ cdef class PeakDependenceGraphBase(object):
             object _fit
             tuple peaks_key
             Py_ssize_t i, j, n
+            size_t best_index
             PyObject* ptemp
             PyObject* pvalue
 
@@ -316,11 +314,14 @@ cdef class PeakDependenceGraphBase(object):
         while PyDict_Next(by_peaks, &j, &ptemp, &pvalue):
             fits_for = <list>pvalue
             n = PyList_GET_SIZE(fits_for)
-            fits_for.sort(key=_score_getter, reverse=(not self.maximize))
-            for i in range(0, n - 1):
-                fit = <IsotopicFitRecord>PyList_GET_ITEM(fits_for, i)
-                self.drop_fit_dependence(fit)
-            fit = <IsotopicFitRecord>PyList_GET_ITEM(fits_for, n - 1)
+            if n == 0:
+                continue
+            best_index = best_fit_index(fits_for, n, self.maximize)
+            for i in range(0, n):
+                if i != best_index:
+                    fit = <IsotopicFitRecord>PyList_GET_ITEM(fits_for, i)
+                    self.drop_fit_dependence(fit)
+            fit = <IsotopicFitRecord>PyList_GET_ITEM(fits_for, best_index)
             best_fits.append(fit)
         self.dependencies = set(best_fits)
 
@@ -380,6 +381,23 @@ cdef class PeakDependenceGraphBase(object):
         return clusters
 
 
+cdef double INFTY = float('inf')
 
-cpdef double _score_getter(object x):
-    return (<IsotopicFitRecord>x).score
+cdef size_t best_fit_index(list fits_for, size_t n, bint maximize):
+    cdef:
+        double best_score
+        size_t i, best_index
+        PyObject* value
+
+    if maximize:
+        best_score = -INFTY
+    else:
+        best_score = INFTY
+    best_index = 0
+    for i in range(n):
+        value = <PyObject*>PyList_GET_ITEM(fits_for, i)
+        if (maximize and (<IsotopicFitRecord>value).score > best_score) or\
+           (not maximize and (<IsotopicFitRecord>value).score < best_score):
+            best_score = (<IsotopicFitRecord>value).score
+            best_index = i
+    return best_index

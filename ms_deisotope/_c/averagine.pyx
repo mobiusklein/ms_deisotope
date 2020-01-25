@@ -270,13 +270,13 @@ cdef list clone_peak_list(list peaklist):
     return result
 
 
-cdef double sum_intensity(list peaklist):
+cdef double sum_intensity(list peaklist, size_t n):
     cdef:
         size_t i
         double total
         FittedPeak peak
     total = 0
-    for i in range(PyList_GET_SIZE(peaklist)):
+    for i in range(n):
         total += (<FittedPeak>PyList_GET_ITEM(peaklist, i)).intensity
     return total
 
@@ -580,7 +580,7 @@ cdef class TheoreticalIsotopicPattern(object):
         if n == 0:
             raise ValueError("Isotopic Pattern has length 0 (%f, %r)" % (self.origin, self.peaklist))
         if method == "sum":
-            total_abundance = sum_intensity(experimental_distribution)
+            total_abundance = sum_intensity(experimental_distribution, n)
             for i in range(n):
                 (<TheoreticalPeak>self.get(i)).intensity *= total_abundance
         elif method == "max":
