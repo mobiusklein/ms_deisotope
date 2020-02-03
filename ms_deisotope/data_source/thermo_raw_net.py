@@ -465,7 +465,10 @@ class RawReaderInterface(ScanDataSource):
 def _trailer_float(value):
     if value is None:
         return None
-    value = value.strip()
+    try:
+        value = value.strip()
+    except AttributeError:
+        return value
     if not value:
         return None
     try:
