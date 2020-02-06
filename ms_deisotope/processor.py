@@ -45,7 +45,8 @@ import numpy as np
 from ms_peak_picker import pick_peaks, PeakSet, PeakIndex
 from ms_peak_picker.scan_filter import FTICRBaselineRemoval
 
-from .averagine import AveragineCache, peptide
+from ms_deisotope import constants
+from .averagine import AveragineCache, peptide, PROTON
 from .scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 from .deconvolution import deconvolute_peaks
 from .data_source import MSFileLoader, ScanIterator
@@ -299,17 +300,56 @@ class ScanProcessor(Base, LogUtilsMixin):
     def _prepopulate_averagine_cache(self):
         if 'averagine' in self.ms1_deconvolution_args:
             averagine = self.ms1_deconvolution_args['averagine']
+            ms1_truncate_after = self.ms1_deconvolution_args.get(
+                'truncate_after', constants.TRUNCATE_AFTER)
+            ms1_ignore_below = self.ms1_deconvolution_args.get(
+                'ignore_below', constants.IGNORE_BELOW)
+            ms1_charge_range = self.ms1_deconvolution_args.get('charge_range', (1, 8))
+            ms1_charge_carrier = self.ms1_deconvolution_args.get(
+                'charge_carrier', PROTON)
             if isinstance(averagine, (list, tuple)):
-                averagine = [AveragineCache(a).populate() for a in averagine]
+                averagine = [
+                    AveragineCache(a).populate(
+                        truncate_after=ms1_truncate_after,
+                        ignore_below=ms1_ignore_below,
+                        min_charge=ms1_charge_range[0],
+                        max_charge=ms1_charge_range[1],
+                        charge_carrier=ms1_charge_carrier)
+                    for a in averagine]
             else:
-                averagine = AveragineCache(averagine).populate()
+                averagine = AveragineCache(averagine).populate(
+                    truncate_after=ms1_truncate_after,
+                    ignore_below=ms1_ignore_below,
+                    min_charge=ms1_charge_range[0],
+                    max_charge=ms1_charge_range[1],
+                    charge_carrier=ms1_charge_carrier)
             self.ms1_deconvolution_args['averagine'] = averagine
         if 'averagine' in self.msn_deconvolution_args:
             averagine = self.msn_deconvolution_args['averagine']
+            msn_truncate_after = self.msn_deconvolution_args.get(
+                'truncate_after', constants.TRUNCATE_AFTER)
+            msn_ignore_below = self.msn_deconvolution_args.get(
+                'ignore_below', constants.IGNORE_BELOW)
+            msn_charge_range = self.msn_deconvolution_args.get(
+                'charge_range', (1, 8))
+            msn_charge_carrier = self.msn_deconvolution_args.get(
+                'charge_carrier', PROTON)
             if isinstance(averagine, (list, tuple)):
-                averagine = [AveragineCache(a).populate() for a in averagine]
+                averagine = [
+                    AveragineCache(a).populate(
+                        truncate_after=msn_truncate_after,
+                        ignore_below=msn_ignore_below,
+                        min_charge=msn_charge_range[0],
+                        max_charge=msn_charge_range[1],
+                        charge_carrier=msn_charge_carrier
+                    ) for a in averagine]
             else:
-                averagine = AveragineCache(averagine).populate()
+                averagine = AveragineCache(averagine).populate(
+                    truncate_after=msn_truncate_after,
+                    ignore_below=msn_ignore_below,
+                    min_charge=msn_charge_range[0],
+                    max_charge=msn_charge_range[1],
+                    charge_carrier=msn_charge_carrier)
             self.msn_deconvolution_args['averagine'] = averagine
 
     def _reject_candidate_precursor_peak(self, peak, product_scan):
