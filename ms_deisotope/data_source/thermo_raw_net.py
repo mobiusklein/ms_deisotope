@@ -453,13 +453,28 @@ class RawReaderInterface(ScanDataSource):
         mono_mz = float(trailer_extras.get("Monoisotopic M/Z", 0))
         if mono_mz is not None and mono_mz > 0:
             annots['[Thermo Trailer Extra]Monoisotopic M/Z'] = mono_mz
-        hcd_ev = trailer_extras.get('HCD Energy eV')
+        hcd_ev = _trailer_float(trailer_extras.get('HCD Energy eV'))
         if hcd_ev is not None and hcd_ev > 0:
-            annots['[Thermo Trailer Extra]HCD Energy eV'] = hcd_ev
+            annots['[Thermo Trailer Extra]HCD Energy eV'] = float(hcd_ev)
         hcd_energies = trailer_extras.get('HCD Energy')
         if hcd_energies is not None and hcd_energies:
             annots['[Thermo Trailer Extra]HCD Energy'] = hcd_energies
         return annots
+
+
+def _trailer_float(value):
+    if value is None:
+        return None
+    try:
+        value = value.strip()
+    except AttributeError:
+        return value
+    if not value:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
 
 
 class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetadataLoader):
