@@ -7,7 +7,7 @@ import numpy as np
 cimport numpy as np
 
 from ms_peak_picker._c.peak_index cimport PeakIndex
-from ms_peak_picker._c.peak_set cimport PeakSet
+from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak, PeakSetIndexed
 from ms_deisotope._c.peak_set cimport (
     Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSetIndexed, PeakBase)
 from ms_deisotope._c.averagine cimport neutral_mass
@@ -80,10 +80,10 @@ cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
 cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dict):
     cdef:
         list envelopes, peaks
-        np.ndarray[np.float32_t] mz_array
-        np.ndarray[np.float32_t] intensity_array
+        np.ndarray[np.float64_t] mz_array
+        np.ndarray[np.float64_t] intensity_array
         np.ndarray[np.int8_t] charge_array
-        np.ndarray[np.float32_t] score_array
+        np.ndarray[np.float64_t] score_array
         size_t n, i
         double mz, peak_neutral_mass
         int charge
@@ -92,10 +92,10 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
 
     peaks = []
     envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
-    mz_array = scan_dict['m/z array'].astype(np.float32)
-    intensity_array = scan_dict['intensity array'].astype(np.float32)
+    mz_array = scan_dict['m/z array'].astype(np.float64)
+    intensity_array = scan_dict['intensity array'].astype(np.float64)
     charge_array = scan_dict['charge array'].astype(np.int8)
-    score_array = scan_dict['deconvolution score array'].astype(np.float32)
+    score_array = scan_dict['deconvolution score array'].astype(np.float64)
     n = mz_array.shape[0]
     i = 0
     for i in range(n):
@@ -114,6 +114,27 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
     peak_set = DeconvolutedPeakSetIndexed(peaks)
     peak_set.reindex()
     return peak_set
+
+cpdef PeakIndex deserialize_peak_set(dict scan_dict):
+    cdef:
+        np.ndarray[np.float64_t] mz_array
+        np.ndarray[np.float64_t] intensity_array
+        size_t n, i
+        FittedPeak peak
+        list peaks
+    mz_array = scan_dict['m/z array'].astype(np.float64)
+    intensity_array = scan_dict['intensity array'].astype(np.float64)
+    n = len(mz_array)
+    peaks = []
+    for i in range(n):
+        peak = FittedPeak._create(
+            mz_array[i], intensity_array[i], intensity_array[i],
+            0.01, 0.01, 0.1, 0, 0,
+            intensity_array[i])
+        peaks.append(peak)
+    peak_set = PeakSetIndexed(peaks)
+    peak_set.reindex()
+    return PeakIndex(np.array([]), np.array([]), peak_set)
 
 
 @cython.boundscheck(False)

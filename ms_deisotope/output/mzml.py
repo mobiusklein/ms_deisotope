@@ -1378,6 +1378,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 try:
     has_c = True
     _deserialize_deconvoluted_peak_set = deserialize_deconvoluted_peak_set
-    from ms_deisotope._c.utils import deserialize_deconvoluted_peak_set
+    _deserialize_peak_set = deserialize_peak_set
+    from ms_deisotope._c.utils import deserialize_deconvoluted_peak_set, deserialize_peak_set
 except ImportError:
     has_c = False

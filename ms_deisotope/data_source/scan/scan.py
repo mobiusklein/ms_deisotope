@@ -281,7 +281,10 @@ class Scan(ScanBase):
             if len(value) == 2:
                 self._arrays = RawDataArrays(*map(np.asanyarray, value))
             elif len(value) == 3:
-                RawDataArrays(*map(np.asanyarray, value[:2]), arrays=dict(value[2]))
+                self._arrays = RawDataArrays(*map(np.asanyarray, value[:2]), arrays=dict(value[2]))
+            else:
+                raise ValueError("Too many values to convert. Please provide two arrays, "
+                                 "or two arrays and a dictionary of additional arrays.")
         else:
             raise TypeError(
                 "arrays must be an instance of RawDataArrays or a pair of numpy arrays")
