@@ -12,7 +12,8 @@ except ImportError:
 from .version import version
 
 from .averagine import (
-    Averagine, peptide, glycan, glycopeptide, heparin,
+    Averagine, AveragineCache,
+    peptide, glycan, glycopeptide, heparin,
     heparan_sulfate, permethylated_glycan,
     mass_charge_ratio, neutral_mass,
     calculate_mass, isotopic_shift)

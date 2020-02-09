@@ -889,8 +889,9 @@ cdef class AveragineCache(object):
             cache_key = (key_mz, charge, charge_carrier, truncate_after)
             pvalue = PyDict_GetItem(self.backend, cache_key)
             if pvalue == NULL:
-                tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
+                tid = self.averagine._isotopic_cluster(key_mz, charge, charge_carrier, truncate_after, ignore_below)
                 PyDict_SetItem(self.backend, cache_key, tid.clone())
+                tid.shift(mz)
                 return tid
             else:
                 tid = <TheoreticalIsotopicPattern>pvalue
@@ -961,7 +962,8 @@ cdef class AveragineCache(object):
                  truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
         for i in range(int(min_mz), int(max_mz)):
             for j in range(min(max_charge, min_charge), max(min_charge, max_charge)):
-                self.isotopic_cluster(i, j, PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW)
+                self.isotopic_cluster(
+                    i, j, charge_carrier, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW)
         return self
 
 
