@@ -7,7 +7,7 @@ from cpython cimport PyErr_SetString
 
 from cpython.object cimport PyObject
 from cpython.sequence cimport PySequence_Fast, PySequence_Fast_ITEMS
-from cpython.list cimport PyList_Size, PyList_GET_ITEM
+from cpython.list cimport PyList_Size, PyList_GET_ITEM, PyList_Sort
 from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_Size
 
 from ms_peak_picker._c.peak_index cimport PeakIndex
@@ -33,6 +33,73 @@ cpdef enum SimilarityMetrics:
     normalized_dot_product
 
 
+cpdef enum PeakType:
+    Fitted
+    Deconvoluted
+
+
+@cython.freelist(10000)
+@cython.final
+cdef class PeakMatch(object):
+    cdef:
+        public PeakBase peak_a
+        public PeakBase peak_b
+        public double score
+
+    def __init__(self, peak_a, peak_b, score=0.0):
+        self.peak_a = peak_a
+        self.peak_b = peak_b
+        self.score = score
+
+    cpdef bint _lt(self, PeakMatch other):
+        return self.score < other.score
+
+    cpdef bint _gt(self, PeakMatch other):
+        return self.score > other.score
+
+    cpdef bint _eq(self, PeakMatch other):
+        return self.peak_a == other.peak_a and self.peak_b == other.peak_b
+
+    def __richcmp__(self, PeakMatch other, int code):
+        if other is None:
+            if code == 3:
+                return True
+            else:
+                return False
+
+        if code == 0:
+            return self._lt(other)
+        elif code == 2:
+            return self._eq(other)
+        elif code == 3:
+            return not (self._eq(other))
+        elif code == 4:
+            return self._gt(other)
+
+    @staticmethod
+    cdef PeakMatch _create(PeakBase peak_a, PeakBase peak_b, double score=0.0):
+        cdef PeakMatch self = PeakMatch.__new__(PeakMatch)
+        self.peak_a = peak_a
+        self.peak_b = peak_b
+        self.score = score
+        return self
+
+    def __getitem__(self, i):
+        if i == 0:
+            return self.peak_a
+        elif i == 1:
+            return self.peak_b
+        else:
+            raise IndexError(i)
+
+    def __len__(self):
+        return 2
+
+    def __repr__(self):
+        template = "{self.__class__.__name__}({self.peak_a}, {self.peak_b}, {self.score})"
+        return template.format(self=self)
+
+
 cdef PyObject** _make_fast_array(peak_collection peak_set):
     cdef:
         PyObject** items
@@ -52,8 +119,6 @@ cdef PyObject** _make_fast_array(peak_collection peak_set):
         items = PySequence_Fast_ITEMS(
             PySequence_Fast(peak_set, "Error, could not create fast array from object"))
     return items
-
-
 
 
 @cython.boundscheck(False)
@@ -283,48 +348,155 @@ cdef double calculate_dot_product(cnp.ndarray[double, ndim=1] bin_a, cnp.ndarray
         return z
 
 
-cdef list convolve_peak_sets(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5):
+
+cdef class SpectrumAlignment(object):
+    cdef:
+        public list peak_pairs
+        public double shift
+        public double score
+        public object peak_set_a
+        public object peak_set_b
+        public PeakType peak_type
+
+    def __init__(self, peak_set_a, peak_set_b, double error_tolerance=2e-5, double shift=0.0):
+        self.peak_set_a = peak_set_a
+        self.peak_set_b = peak_set_b
+        self.peak_pairs = []
+        self.shift = shift
+        self.score = 0
+        self._determine_peak_type()
+        self.align(error_tolerance, shift)
+
+    cpdef _determine_peak_type(self):
+        if isinstance(self.peak_set_a, DeconvolutedPeakSet):
+            if isinstance(self.peak_set_b, DeconvolutedPeakSet):
+                self.peak_type = PeakType.Deconvoluted
+            else:
+                raise TypeError(
+                    "Peak set types must match, got %s and %s" % (type(self.peak_set_a), type(self.peak_set_b)))
+        elif isinstance(self.peak_set_a, PeakSet):
+            if isinstance(self.peak_set_b, PeakSet):
+                self.peak_type = PeakType.Fitted
+            else:
+                raise TypeError(
+                    "Peak set types must match, got %s and %s" % (type(self.peak_set_a), type(self.peak_set_b)))
+        else:
+            raise TypeError(
+                "Peak set types must match, got %s and %s" % (type(self.peak_set_a), type(self.peak_set_b)))
+
+    cpdef align(self, double error_tolerance=2e-5, double shift=0.0):
+        cdef:
+            list pairs
+        pairs = []
+        if self.peak_type == PeakType.Fitted:
+            pairs = convolve_peak_sets(<PeakSet>self.peak_set_a, <PeakSet>self.peak_set_b, error_tolerance)
+            if shift != 0:
+                pairs.extend(
+                    convolve_peak_sets(
+                        <PeakSet>self.peak_set_a,
+                        <PeakSet>self.peak_set_b, error_tolerance, shift))
+        elif self.peak_type == PeakType.Deconvoluted:
+            pairs = convolve_deconvoluted_peak_sets(
+                <DeconvolutedPeakSet>self.peak_set_a,
+                <DeconvolutedPeakSet>self.peak_set_b, error_tolerance)
+            if shift != 0:
+                pairs.extend(
+                    convolve_deconvoluted_peak_sets(
+                        <DeconvolutedPeakSet>self.peak_set_a,
+                        <DeconvolutedPeakSet>self.peak_set_b, error_tolerance, shift))
+        self.peak_pairs = pairs
+        self._calculate_score()
+
+    cpdef _calculate_score(self):
+        self.score = convolved_dot_product(self.peak_pairs, self.peak_type)
+
+
+
+cdef list convolve_peak_sets(PeakSet peak_set_a, PeakSet peak_set_b, double error_tolerance=2e-5, double shift=0.0):
     cdef:
         size_t i, n, j, m
         FittedPeak peak
         FittedPeak other
-        PeakSet peaks_slice
+        tuple peaks_slice
         list peak_pairs
         list pairs_for_peak
+        double pt
 
     peak_pairs = []
     n = peak_set_a.get_size()
     for i in range(n):
         pairs_for_peak = []
         peak = peak_set_a.getitem(i)
-        peaks_slice = peak_set_b._between(
-            peak.mz - peak.mz * error_tolerance, peak.mz + peak.mz * error_tolerance)
-        m = peaks_slice.get_size()
+        pt = peak.mz + shift
+        peaks_slice = peak_set_b.all_peaks_for(pt - pt * error_tolerance, pt + pt * error_tolerance)
+        m = PyTuple_Size(peaks_slice)
         for j in range(m):
-            other = peaks_slice.getitem(j)
-            pairs_for_peak.append((peak, other))
-        peak_pairs.append(pairs_for_peak)
+            other = <FittedPeak>PyTuple_GET_ITEM(peaks_slice, j)
+            peak_pairs.append(PeakMatch._create(peak, other))
     return peak_pairs
 
 
-cdef double convolved_dot_product(list peak_pairs):
+cdef list convolve_deconvoluted_peak_sets(DeconvolutedPeakSet peak_set_a, DeconvolutedPeakSet peak_set_b,
+                                          double error_tolerance=2e-5, double shift=0.0):
     cdef:
-        size_t i, j, n, m
+        size_t i, n, j, m
+        DeconvolutedPeak peak
+        DeconvolutedPeak other
+        tuple peaks_slice
+        list peak_pairs
+        list pairs_for_peak
+        double pt
+
+    peak_pairs = []
+    n = peak_set_a.get_size()
+    for i in range(n):
+        peak = peak_set_a.getitem(i)
+        pt = peak.neutral_mass + shift
+        peaks_slice = peak_set_b.all_peaks_for(pt - pt * error_tolerance, pt + pt * error_tolerance)
+        m = PyTuple_Size(peaks_slice)
+        for j in range(m):
+            other = <DeconvolutedPeak>PyTuple_GET_ITEM(peaks_slice, j)
+            peak_pairs.append(PeakMatch._create(peak, other))
+    return peak_pairs
+
+
+cdef double convolved_dot_product(list peak_pairs, PeakType peak_type=PeakType.Fitted):
+    cdef:
+        size_t i, n
         PeakBase peak, other
         list pairs
-        tuple pair
+        PeakMatch pair
         double d
-
+        set seen1, seen2
+        object key1, key2
+    seen1 = set()
+    seen2 = set()
     d = 0.0
     n = PyList_Size(peak_pairs)
     for i in range(n):
-        pairs = <list>PyList_GET_ITEM(peak_pairs, i)
-        m = PyList_Size(pairs)
-        for j in range(m):
-            pair = <tuple>PyList_GET_ITEM(pairs, j)
-            peak = <PeakBase>PyTuple_GET_ITEM(pair, 0)
-            other = <PeakBase>PyTuple_GET_ITEM(pair, 1)
-            d += peak.intensity * other.intensity
+        pair = <PeakMatch>PyList_GET_ITEM(peak_pairs, i)
+        pair.score = pair.peak_a.intensity * pair.peak_b.intensity
+    PyList_Sort(peak_pairs)
+
+    for i in range(n - 1, -1, -1):
+        pair = <PeakMatch>PyList_GET_ITEM(peak_pairs, i)
+        if peak_type == PeakType.Fitted:
+            key1 = (<FittedPeak>pair.peak_a).peak_count
+            if key1 in seen1:
+                continue
+            key2 = (<FittedPeak>pair.peak_b).peak_count
+            if key2 in seen2:
+                continue
+        elif peak_type == PeakType.Deconvoluted:
+            key1 = (<DeconvolutedPeak>pair.peak_a)._index.neutral_mass
+            if key1 in seen1:
+                continue
+            key2 = (<DeconvolutedPeak>pair.peak_b)._index.neutral_mass
+            if key2 in seen2:
+                continue
+        seen1.add(key1)
+        seen2.add(key2)
+        d += pair.score
     return d
 
 
@@ -349,7 +521,8 @@ cdef double convolve_peak_sets2_fitted(PeakSet peak_set_a, PeakSet peak_set_b, d
     return acc
 
 
-cdef double convolve_peak_sets2_deconvoluted(DeconvolutedPeakSet peak_set_a, DeconvolutedPeakSet peak_set_b, double error_tolerance=2e-5):
+cdef double convolve_peak_sets2_deconvoluted(DeconvolutedPeakSet peak_set_a, DeconvolutedPeakSet peak_set_b,
+                                             double error_tolerance=2e-5):
     cdef:
         size_t i, n, j, m
         DeconvolutedPeak peak
@@ -388,3 +561,12 @@ cpdef double ppm_peak_set_similarity(peak_collection peak_set_a, peak_collection
         raise TypeError("Cannot handle objects of type %s" % type(peak_set_a))
 
     return (ab) / (sqrt((aa)) * sqrt((bb)))
+
+
+cpdef SpectrumAlignment align_peaks(peak_collection peak_set_a, peak_collection peak_set_b, double error_tolerance=2e-5, double shift=0.0):
+    if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet:
+        return SpectrumAlignment(peak_set_a, peak_set_b, error_tolerance, shift)
+    elif peak_collection is PeakIndex:
+        return SpectrumAlignment(peak_set_a.peaks, peak_set_b.peaks, error_tolerance, shift)
+    elif peak_collection is object:
+        raise TypeError("Cannot handle objects of type %s" % type(peak_set_a))

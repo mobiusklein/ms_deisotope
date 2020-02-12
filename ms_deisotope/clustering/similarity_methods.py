@@ -132,6 +132,10 @@ try:
         else:
             return csimilarity_methods.peak_set_similarity(peak_set_a, peak_set_b, precision)
 
+    ppm_peak_set_similarity = csimilarity_methods.ppm_peak_set_similarity
+    align_peaks = csimilarity_methods.align_peaks
+    SpectrumAlignment = csimilarity_methods.SpectrumAlignment
+
     peak_set_similarity.__doc__ = sparse_similarity.__doc__
 
 except ImportError:
