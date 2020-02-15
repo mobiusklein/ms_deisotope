@@ -14,7 +14,13 @@ data_path = os.path.abspath(
 
 
 def datafile(name):
-    return os.path.join(data_path, name)
+    path = os.path.join(data_path, name)
+    if not os.path.exists(path):
+        raise Exception(
+            ("The path %r could not be located in the test suite's data package." % (path, )) +
+            "If you are NOT running the ms_deisotope test suite, you should not"
+            " be using this function.")
+    return path
 
 
 def gzload(path):
