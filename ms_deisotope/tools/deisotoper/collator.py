@@ -1,3 +1,7 @@
+"""Manages keeping scans delivered out-of-order in-order for
+writing to disk.
+"""
+
 try:
     from Queue import Empty as QueueEmpty
 except ImportError:
@@ -69,6 +73,14 @@ class ScanCollator(TaskBase):
         self.input_queue = input_queue
 
     def all_workers_done(self):
+        '''
+        Check if all of the worker processes have set their "work done"
+        flag.
+
+        Returns
+        -------
+        bool
+        '''
         if self.done_event.is_set():
             if self.primary_worker.all_work_done():
                 for helper in self.helper_producers:
@@ -165,16 +177,43 @@ class ScanCollator(TaskBase):
         return scan
 
     def count_pending_items(self):
+        """Count the number of scans that are waiting to be added to the
+        write queue.
+
+        Returns
+        -------
+        int
+        """
         return len(self.waiting)
 
     def drain_queue(self):
+        """Try to read a lot of scans from the incoming result queue.
+
+        If there are items pending to be sent to the write queue immediately,
+        don't read as many.
+
+        Returns
+        -------
+        int:
+            The number of items drained.
+        """
         i = 0
-        while self.count_pending_items() < 500 and self.consume(0):
+        has_next = self.last_index + 1 not in self.waiting
+        while (self.count_pending_items() < (1000 if has_next else 10)
+               and self.consume(.1)):
             self.count_jobs_done += 1
+            has_next = self.last_index + 1 not in self.waiting
             i += 1
+        if i > 15:
+            self.log("Drained Output Queue of %d Items" % (i, ))
         return i
 
     def print_state(self):
+        """Log the state of the collator, reporting pending items
+        in all output stages.
+
+        If a worker process is done, try to join it.
+        """
         try:
             if self.queue.qsize() > 0:
                 self.log("%d since last work item" % (self.count_since_last,))
@@ -209,7 +248,7 @@ class ScanCollator(TaskBase):
                         self.drain_queue()
                 except NotImplementedError:
                     # Some platforms do not support qsize
-                    pass
+                    self.drain_queue()
             if self.last_index is None:
                 keys = sorted(self.waiting)
                 if keys:
