@@ -588,7 +588,7 @@ class ScanClusterBuilder(LogUtilsMixin):
                 logger.log("Clustering %d Scans" % (len(to_bisect[0])))
             else:
                 logger.log("Nothing to cluster...")
-                return SpectrumClusterCollection([])
+                break
             n = len(to_bisect)
             report_interval = max(min(n // 10, 1000), 1)
             for i, group in enumerate(to_bisect):
