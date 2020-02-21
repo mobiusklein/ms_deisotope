@@ -1325,11 +1325,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             precursor_scan_id = info['precursor_scan_id']
             product_scan_id = info['product_scan_id']
             orphan = info.get('orphan', False)
+            coisolation = info.get('coisolation', [])[:]
             defaulted = info.get('defaulted', False)
             pinfo = PrecursorInformation(
                 mz, intensity, charge, precursor_scan_id,
                 self, prec_neutral_mass, charge, intensity,
                 product_scan_id=product_scan_id, orphan=orphan,
+                coisolation=coisolation,
                 defaulted=defaulted)
             out.append(pinfo)
         return out
