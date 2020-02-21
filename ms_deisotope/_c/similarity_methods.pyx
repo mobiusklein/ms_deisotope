@@ -226,12 +226,12 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         items_b = _make_fast_array(peak_set_b)
     with nogil:
         # Fill bins
-        for i in prange(n_peaks_a, schedule='static', num_threads=2):
+        for i in range(n_peaks_a):
             p_peak = items_a[i]
             index = int((<PeakBase>p_peak).mz * scaler)
             bin_a[index] += (<PeakBase>p_peak).intensity
 
-        for i in prange(n_peaks_b, schedule='static', num_threads=2):
+        for i in range(n_peaks_b):
             p_peak = items_b[i]
             index = int((<PeakBase>p_peak).mz * scaler)
             bin_b[index] += (<PeakBase>p_peak).intensity
