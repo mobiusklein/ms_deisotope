@@ -132,7 +132,7 @@ cdef long binary_search(list array, double mz, double error_tolerance):
         err = (x.get_mz() - mz) / mz
         if abs(err) <= error_tolerance:
             best_index = mid
-            best_error = err
+            best_error = abs(err)
             i = mid - 1
             while i > 0:
                 x = <LCMSFeature>PyList_GET_ITEM(array, i)
