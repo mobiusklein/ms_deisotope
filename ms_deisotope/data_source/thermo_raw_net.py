@@ -10,6 +10,11 @@ Runtime.
 
 The public interface of this module should be identical to
 :mod:`ms_deisotope.data_source.thermo_raw`.
+
+.. note::
+    This interface was largely based upon the APIs that ProteoWizard used, both
+    in order to understand how the Thermo libraries really worked, and to maintain
+    parity with it.
 '''
 
 import sys

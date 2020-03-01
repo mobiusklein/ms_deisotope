@@ -724,6 +724,17 @@ class PrecursorInformation(object):
         if orphan:
             self.orphan = True
 
+    def update_to_extracted(self):
+        """Override the reference values given by the source with those values
+        that were extracted from experimental data, if they have been set.
+        """
+        if self.extracted_neutral_mass is not None:
+            self.mz = self.extracted_mz
+        if self.extracted_intensity is not None:
+            self.intensity = self.extracted_intensity
+        if self.extracted_charge is not None:
+            self.charge = self.extracted_charge
+
     @property
     def neutral_mass(self):
         """Calculate the neutral mass of the precursor from the given m/z and charge.

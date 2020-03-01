@@ -76,6 +76,32 @@ cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
     return envelope_list
 
 
+cpdef np.ndarray[np.float32_t] envelopes_to_array(list envelope_list):
+    cdef:
+        size_t n, m, i, j, point_count, k
+        np.ndarray[np.float32_t] collection
+        Envelope envelope
+        EnvelopePair pair
+    n = PyList_GET_SIZE(envelope_list)
+    point_count = 0
+    for i in range(n):
+        envelope = <Envelope>PyList_GET_ITEM(envelope_list, i)
+        point_count += (1 + envelope.get_size()) * 2
+    collection = np.zeros(point_count, dtype=np.float32)
+    k = 0
+    for i in range(n):
+        k += 2
+        envelope = <Envelope>PyList_GET_ITEM(envelope_list, i)
+        m = envelope.get_size()
+        for j in  range(m):
+            pair = envelope.getitem(j)
+            collection[k] = pair.mz
+            k += 1
+            collection[k] = pair.intensity
+            k += 1
+    return collection
+
+
 @cython.boundscheck(False)
 cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dict):
     cdef:

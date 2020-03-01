@@ -70,6 +70,7 @@ def decode_envelopes(array):
 try:
     has_c = True
     _decode_envelopes = decode_envelopes
-    from ms_deisotope._c.utils import decode_envelopes
+    _envelopes_to_array = envelopes_to_array
+    from ms_deisotope._c.utils import decode_envelopes, envelopes_to_array
 except ImportError:
     has_c = False
