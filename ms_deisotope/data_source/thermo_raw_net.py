@@ -296,9 +296,16 @@ class RawReaderInterface(ScanDataSource):
 
     def _isolation_window(self, scan):
         scan_number = scan.scan_number
+        ms_level = self._ms_level(scan)
+        width = 0
+        trailer = self._trailer_values(scan)
         filt = self._source.GetFilterForScanNumber(scan_number + 1)
         seq_index = filt.MSOrder - 2
-        width = filt.GetIsolationWidth(seq_index)
+        try:
+            width = trailer['MS%d Isolation Width' % ms_level]
+        except KeyError:
+            width = filt.GetIsolationWidth(seq_index)
+        width /= 2.0
         offset = filt.GetIsolationWidthOffset(seq_index)
         precursor_mz = filt.GetMass(seq_index)
         return IsolationWindow(width, precursor_mz + offset, width)
