@@ -26,6 +26,9 @@ import numpy as np
 
 from pyteomics.auxiliary import unitfloat
 
+from six import string_types as basestring
+
+
 from ms_peak_picker import PeakSet, PeakIndex, simple_peak
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided, Scan,
@@ -469,8 +472,11 @@ class RawReaderInterface(ScanDataSource):
         if hcd_ev is not None and hcd_ev > 0:
             annots['[Thermo Trailer Extra]HCD Energy eV'] = float(hcd_ev)
         hcd_energies = trailer_extras.get('HCD Energy')
-        if hcd_energies is not None and hcd_energies:
-            annots['[Thermo Trailer Extra]HCD Energy'] = hcd_energies
+        if hcd_energies is not None:
+            if isinstance(hcd_energies, basestring) and not hcd_energies.strip():
+                pass
+            else:
+                annots['[Thermo Trailer Extra]HCD Energy'] = hcd_energies
         return annots
 
 
