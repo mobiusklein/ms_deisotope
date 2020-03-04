@@ -305,8 +305,11 @@ class RawReaderInterface(ScanDataSource):
         filt = self._source.GetFilterForScanNumber(scan_number + 1)
         seq_index = filt.MSOrder - 2
         try:
+            # Fetch the isolation window width from the old location first, which
+            # will be correct on old files, where the new API won't be right.
             width = trailer['MS%d Isolation Width' % ms_level]
         except KeyError:
+            # Fall back to the new API, which is akin to our only hope here?
             width = filt.GetIsolationWidth(seq_index)
         width /= 2.0
         offset = filt.GetIsolationWidthOffset(seq_index)
