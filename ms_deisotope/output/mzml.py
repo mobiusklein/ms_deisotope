@@ -665,7 +665,8 @@ class MzMLSerializer(ScanSerializerBase):
         params.append({
             "name": "collision energy",
             "value": activation_information.energy,
-            "unitName": "electron volt"
+            "unit_name": "electronvolt",
+            'unit_accession': 'UO:0000266'
         })
         if activation_information.is_multiple_dissociation():
             energies = activation_information.energies[1:]
@@ -677,13 +678,15 @@ class MzMLSerializer(ScanSerializerBase):
                 params.append({
                     "name": "collision energy",
                     "value": energy,
-                    "unitName": "electron volt"
+                    "unit_name": "electronvolt",
+                    'unit_accession': 'UO:0000266'
                 })
             if supplemental_energy is not None:
                 params.append({
                     "name": 'supplemental collision energy',
                     "value": supplemental_energy,
-                    "unitName": "electron volt"
+                    "unit_name": "electronvolt",
+                    'unit_accession': 'UO:0000266'
                 })
 
         for key, val in activation_information.data.items():

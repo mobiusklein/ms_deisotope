@@ -30,7 +30,7 @@ class JSONScanFormatter(object):
         params.append({
             "name": "collision energy",
             "value": activation_information.energy,
-            "unitName": "electron volt"
+            "unitName": "electronvolt"
         })
         if activation_information.is_multiple_dissociation():
             energies = activation_information.energies[1:]
@@ -42,13 +42,13 @@ class JSONScanFormatter(object):
                 params.append({
                     "name": "collision energy",
                     "value": energy,
-                    "unitName": "electron volt"
+                    "unitName": "electronvolt"
                 })
             if supplemental_energy is not None:
                 params.append({
                     "name": 'supplemental collision energy',
                     "value": supplemental_energy,
-                    "unitName": "electron volt"
+                    "unitName": "electronvolt"
                 })
 
         for key, val in activation_information.data.items():
