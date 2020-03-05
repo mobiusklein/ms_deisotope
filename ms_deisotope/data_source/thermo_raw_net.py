@@ -30,16 +30,20 @@ from six import string_types as basestring
 
 
 from ms_peak_picker import PeakSet, PeakIndex, simple_peak
+
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided, Scan,
     ActivationInformation, MultipleActivationInformation,
     IsolationWindow, ScanDataSource, ScanEventInformation,
     ScanAcquisitionInformation, ScanWindow, RandomAccessScanSource)
-from ms_deisotope.data_source.metadata.activation import (
-    supplemental_term_map, dissociation_methods_map)
+
 from ms_deisotope.data_source._thermo_helper import (
     _InstrumentMethod, ThermoRawScanPtr, FilterString,
     _make_id, _id_template, _RawFileMetadataLoader, analyzer_map)
+
+from ms_deisotope.data_source.metadata.activation import (
+    supplemental_term_map, dissociation_methods_map)
+from ms_deisotope.data_source.metadata.sample import Sample
 from ms_deisotope.data_source.metadata.scan_traits import FAIMS_compensation_voltage
 
 def _try_number(string):
@@ -585,7 +589,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return index
 
     def _get_instrument_model_name(self):
-        return self._source.GetInstrumentData().Model;
+        return self._source.GetInstrumentData().Model
 
     def _get_instrument_serial_number(self):
         return self._source.GetInstrumentData().SerialNumber
@@ -603,6 +607,29 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
     def _scan_time_to_scan_number(self, scan_time):
         scan_number = self._source.ScanNumberFromRetentionTime(scan_time) - 1
         return scan_number
+
+    def samples(self):
+        """Describe the sample(s) used to generate the mass spectrometry
+        data contained in this file.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Sample`
+        """
+        result = []
+        si = self._source.SampleInformation
+        sample = Sample(si.SampleId or 'sample_1')
+        sample.name = si.SampleName or si.SampleId
+        if si.SampleVolume:
+            sample.parameters['sample volume'] = si.SampleVolume
+        if si.SampleWeight:
+            sample.parameters['sample mass'] = si.SampleWeight
+        if si.Vial:
+            sample.parameters['sample vial'] = si.Vial
+        if si.Barcode:
+            sample.parameters['sample barcode'] = si.Barcode
+        result.append(sample)
+        return result
 
     def get_scan_by_index(self, index):
         """Retrieve the scan object for the specified scan index.

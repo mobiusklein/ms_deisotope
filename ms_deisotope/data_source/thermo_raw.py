@@ -33,12 +33,15 @@ from ms_deisotope.data_source.common import (
     ActivationInformation, IsolationWindow,
     ScanAcquisitionInformation, ScanEventInformation, ScanWindow,
     MultipleActivationInformation)
-from ms_deisotope.data_source.metadata.activation import (
-    supplemental_term_map, dissociation_methods_map)
+
 from ms_deisotope.data_source._thermo_helper import (
     _RawFileMetadataLoader, analyzer_map,
     FilterString, _id_template, _InstrumentMethod,
     _make_id, ThermoRawScanPtr)
+
+from ms_deisotope.data_source.metadata.activation import (
+    supplemental_term_map, dissociation_methods_map)
+from ms_deisotope.data_source.metadata.sample import Sample
 from ms_deisotope.data_source.metadata.scan_traits import FAIMS_compensation_voltage
 
 try:
@@ -438,6 +441,29 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
 
     def _get_instrument_serial_number(self):
         return self._source.GetInstSerialNumber()
+
+    def samples(self):
+        """Describe the sample(s) used to generate the mass spectrometry
+        data contained in this file.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Sample`
+        """
+        result = []
+        si = self._source
+        sample = Sample(si.GetSeqRowSampleID() or 'sample_1')
+        sample.name = si.GetSeqRowSampleName() or si.GetSeqRowSampleID()
+        if si.GetSeqRowSampleVolume():
+            sample.parameters['sample volume'] = si.GetSeqRowSampleVolume()
+        if si.GetSeqRowSampleWeight():
+            sample.parameters['sample mass'] = si.GetSeqRowSampleWeight()
+        if si.GetSeqRowVial():
+            sample.parameters['sample vial'] = si.GetSeqRowVial()
+        if si.GetSeqRowBarcode():
+            sample.parameters['sample barcode'] = si.GetSeqRowBarcode()
+        result.append(sample)
+        return result
 
     def _parse_method(self):
         return _InstrumentMethod(self._source.GetInstMethod())
