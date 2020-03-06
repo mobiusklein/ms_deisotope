@@ -229,59 +229,59 @@ except ImportError:
                         self.nodes[p.index] for p in fit_record.experimental if p.peak_count >= 0]
                     return value
 
-    def drop_fit_dependence(self, fit_record):
-        '''Remove this fit from the graph, deleting all
-        hyper-edges.
-        '''
-        for node in self.nodes_for(fit_record):
-            try:
-                del node.links[fit_record]
-            except KeyError:
-                pass
+        def drop_fit_dependence(self, fit_record):
+            '''Remove this fit from the graph, deleting all
+            hyper-edges.
+            '''
+            for node in self.nodes_for(fit_record):
+                try:
+                    del node.links[fit_record]
+                except KeyError:
+                    pass
 
-    def best_exact_fits(self):
-        '''For each distinct group of experimental peaks, retain only
-        the best scoring fit using exactly those peaks.
-        '''
-        by_peaks = defaultdict(list)
-        best_fits = []
-        for fit in self.dependencies:
-            by_peaks[tuple(fit.experimental)].append(fit)
-        for _peak_tuple, fits in by_peaks.items():
-            fits = sorted(fits, key=lambda x: x.score,
-                          reverse=not self.maximize)
-            for fit in fits[:-1]:
-                self.drop_fit_dependence(fit)
-            best_fits.append(fits[-1])
-        self.dependencies = set(best_fits)
+        def best_exact_fits(self):
+            '''For each distinct group of experimental peaks, retain only
+            the best scoring fit using exactly those peaks.
+            '''
+            by_peaks = defaultdict(list)
+            best_fits = []
+            for fit in self.dependencies:
+                by_peaks[tuple(fit.experimental)].append(fit)
+            for _peak_tuple, fits in by_peaks.items():
+                fits = sorted(fits, key=lambda x: x.score,
+                            reverse=not self.maximize)
+                for fit in fits[:-1]:
+                    self.drop_fit_dependence(fit)
+                best_fits.append(fits[-1])
+            self.dependencies = set(best_fits)
 
-    def _gather_independent_clusters(self, nodes_for_cache=None):
-        clusters = defaultdict(set)
-        if nodes_for_cache is None:
-            nodes_for_cache = dict()
-        seed_nodes = self.nodes.values()
-        for seed_node in seed_nodes:
-            # This peak is depended upon by each fit in `dependencies`
-            dependencies = set(seed_node.links.keys())
+        def _gather_independent_clusters(self, nodes_for_cache=None):
+            clusters = defaultdict(set)
+            if nodes_for_cache is None:
+                nodes_for_cache = dict()
+            seed_nodes = self.nodes.values()
+            for seed_node in seed_nodes:
+                # This peak is depended upon by each fit in `dependencies`
+                dependencies = set(seed_node.links.keys())
 
-            if len(dependencies) == 0:
-                continue
+                if len(dependencies) == 0:
+                    continue
 
-            # These fits also depend upon these other peaks, and those peaks are depended upon
-            # for other fits in turn, which depend upon the assignment of this peak.
-            for dep in list(dependencies):
-                for node in self.nodes_for(dep, nodes_for_cache):
-                    dependencies |= clusters[node]
+                # These fits also depend upon these other peaks, and those peaks are depended upon
+                # for other fits in turn, which depend upon the assignment of this peak.
+                for dep in list(dependencies):
+                    for node in self.nodes_for(dep, nodes_for_cache):
+                        dependencies |= clusters[node]
 
-            # Create a fresh copy to share out again to avoid eliminate possible errors of shared storage.
-            # This is likely unecessary under the current implementation.
-            dependencies = set(dependencies)
+                # Create a fresh copy to share out again to avoid eliminate possible errors of shared storage.
+                # This is likely unecessary under the current implementation.
+                dependencies = set(dependencies)
 
-            # Update all co-depended nodes with the full set of all fits which depend upon them
-            for dep in dependencies:
-                for node in self.nodes_for(dep, nodes_for_cache):
-                    clusters[node] = dependencies
-        return clusters
+                # Update all co-depended nodes with the full set of all fits which depend upon them
+                for dep in dependencies:
+                    for node in self.nodes_for(dep, nodes_for_cache):
+                        clusters[node] = dependencies
+            return clusters
 
 
 class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
@@ -535,7 +535,7 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
         return self.clusters[i]
 
     def __repr__(self):
-        return "PeakDependenceNetwork(%s, %d)" % (self.peaklist, len(self.dependencies))
+        return "PeakDependenceGraph(%s, %d)" % (self.peaklist, len(self.dependencies))
 
 
 PeakDependenceGraph.log_with_logger(logger)
