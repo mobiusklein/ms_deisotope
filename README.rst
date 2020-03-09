@@ -12,7 +12,19 @@ to streamline processing raw data.
 Installing
 ----------
 
-Building from source requires a version of Cython >= 0.27.0
+Building C extensions from source requires a version of Cython >= 0.27.0
+
+Compiling C extensions requires that ``numpy``, ``brain-isotopic-distribution``, and ``ms_peak_picker``
+be compiled and installed prior to installing ``ms_deisotope``:
+
+.. code:: bash
+
+    pip install numpy
+    pip install -v brain-isotopic-distribution ms_peak_picker
+    pip install -v ms_deisotope
+
+If these libraries are not installed, ``ms_deisotope`` will fall back to using pure Python implementations,
+which are much slower.
 
 
 API

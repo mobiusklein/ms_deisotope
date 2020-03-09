@@ -249,7 +249,7 @@ except ImportError:
                 by_peaks[tuple(fit.experimental)].append(fit)
             for _peak_tuple, fits in by_peaks.items():
                 fits = sorted(fits, key=lambda x: x.score,
-                            reverse=not self.maximize)
+                              reverse=not self.maximize)
                 for fit in fits[:-1]:
                     self.drop_fit_dependence(fit)
                 best_fits.append(fits[-1])
