@@ -95,8 +95,7 @@ def test_idzip():
     result = runner.invoke(
         indexing.idzip_compression,
         ['-'],
-        input=stdin_data,
-        mix_stderr=False)
+        input=stdin_data)
     assert b"Detected gzip input file" not in result.stderr_bytes
     outbuff = io.BytesIO(result.stdout_bytes)
     outstream = _compression.GzipFile(fileobj=outbuff, mode='rb')
