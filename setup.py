@@ -312,6 +312,8 @@ try:
     run_setup(True)
 except Exception as exc:
     print(exc)
+    import traceback
+    traceback.print_exc
     run_setup(False)
 
     status_msgs(
