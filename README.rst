@@ -12,10 +12,27 @@ to streamline processing raw data.
 Installing
 ----------
 
+``ms_deisotope`` uses PEP 517 and 518 build system definition and isolation to ensure all of its
+compile-time dependencies are installed prior to building. Normal installation should work with `pip`,
+and pre-built wheels are available for Windows.
+
+C Extensions
+============
+
+``ms_deisotope`` and several of its dependencies use C extensions to make iterative operations *much*
+faster. If you plan to use this library on a large amount of data, I highly recommend you ensure they
+are installed:
+
+.. code:: python
+
+    >>> import ms_deisotope
+    >>> ms_deisotope.DeconvolutedPeak
+    <type 'ms_deisotope._c.peak_set.DeconvolutedPeak'>
+
 Building C extensions from source requires a version of Cython >= 0.27.0
 
 Compiling C extensions requires that ``numpy``, ``brain-isotopic-distribution``, and ``ms_peak_picker``
-be compiled and installed prior to installing ``ms_deisotope``:
+be compiled and installed prior to building ``ms_deisotope``:
 
 .. code:: bash
 

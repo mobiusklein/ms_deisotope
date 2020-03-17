@@ -1560,7 +1560,8 @@ class PlottingMethods(object):
     def _guess(self, ax=None, **kwargs):
         try:
             if self.scan.arrays:
-                ax = self.raw(ax=ax)
+                if self.scan.is_profile:
+                    ax = self.raw(ax=ax)
         except (AttributeError, TypeError):
             pass
         try:
