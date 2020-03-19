@@ -575,21 +575,50 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
 
 
 def checksum_mzml_stream(stream):
+    """Calculate the SHA1 checksum of an indexed mzML file for the purposes
+    of validating the checksum at the end of the file.
+
+    Parameters
+    ----------
+    stream : file-like
+        A file-like object supporting a `read` method.
+
+    Returns
+    -------
+    calculated_checksum: str
+        The checksum calculated from the file's contents up to the first occurrence
+        of <fileChecksum>, exclusive.
+    obsesrved_checksum: str or :const:`None`
+        The checksum written in the file within the <fileChecksum> tag. Will be :const:`None`
+        if the tag is not found and closed. Expected to match the calculated checksum.
+    """
     import re
     import hashlib
     hasher = hashlib.sha1()
     target = b"<fileChecksum>"
     target_pattern = re.compile(b"(" + target + b")")
+    extract_checksum = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
     block_size = int(2 ** 12)
     chunk = stream.read(block_size)
+    hit_target = False
+    observed_checksum = None
     while chunk:
         tokens = target_pattern.split(chunk)
         for token in tokens:
             hasher.update(token)
             if token == target:
+                hit_target = True
+                chunk += stream.read(5000)
+                observed_checksum = extract_checksum.findall(chunk)
+                if observed_checksum:
+                    observed_checksum = observed_checksum[0]
+                else:
+                    observed_checksum = None
                 break
+        if hit_target:
+            break
         chunk = stream.read(block_size)
-    return hasher.hexdigest()
+    return hasher.hexdigest(), observed_checksum
 
 
 def read_file_checksum(stream):
