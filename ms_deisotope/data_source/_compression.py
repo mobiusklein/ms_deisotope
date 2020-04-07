@@ -115,7 +115,10 @@ def get_opener(f, buffer_size=None):
     if not hasattr(f, 'read'):
         f = io.open(f, 'rb')
     # On Py2, dill doesn't behave correctly with io-derived objects, so we have to patch it below.
-    buffered_reader = io.BufferedReader(f, buffer_size)
+    if not isinstance(f, io.BufferedReader):
+        buffered_reader = io.BufferedReader(f, buffer_size)
+    else:
+        buffered_reader = f
     if test_gzipped(buffered_reader):
         handle = GzipFile(fileobj=buffered_reader, mode='rb')
     else:
