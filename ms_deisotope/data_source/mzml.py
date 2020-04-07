@@ -33,9 +33,21 @@ from .xml_reader import (
     get_tag_attributes, _find_section, in_minutes)
 
 
+def _open_if_not_file(obj, mode='rt'):
+    if obj is None:
+        return obj
+    if hasattr(obj, 'read'):
+        return obj
+    return open(obj, mode)
+
+
 class _MzMLParser(mzml.MzML):
     # we do not care about chromatograms
     _indexed_tags = {'spectrum', }
+
+    def __init__(self, *args, **kwargs):
+        self._index_file_obj = _open_if_not_file(kwargs.pop("index_file", None))
+        super(_MzMLParser, self).__init__(*args, **kwargs)
 
     def _handle_param(self, element, **kwargs):
         try:
@@ -64,6 +76,21 @@ class _MzMLParser(mzml.MzML):
                         break
         return dtype
 
+    def _check_has_byte_offset_file(self):
+        if self._index_file_obj is not None:
+            return True
+        return super(_MzMLParser, self)._check_has_byte_offset_file()
+
+    def _read_byte_offsets(self):
+        if self._index_file_obj is not None:
+            index = self._index_class.load(self._index_file_obj)
+            try:
+                self._index_file_obj.close()
+            except (AttributeError, OSError, IOError):
+                pass
+            self._offset_index = index
+        else:
+            super(_MzMLParser, self)._read_byte_offsets()
 
 def _find_arrays(data_dict, decode=False):
     arrays = dict()
@@ -645,11 +672,11 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     _parser_cls = _MzMLParser
 
 
-    def __init__(self, source_file, use_index=True, decode_binary=True, **kwargs):
+    def __init__(self, source_file, use_index=True, decode_binary=True, index_file=None, **kwargs):
         self.source_file = source_file
         self._source = self._parser_cls(source_file, read_schema=True, iterative=True,
                                         huge_tree=True, decode_binary=decode_binary,
-                                        use_index=use_index)
+                                        use_index=use_index, index_file=index_file)
         self.initialize_scan_cache()
         self._use_index = use_index
         self._decode_binary = decode_binary
