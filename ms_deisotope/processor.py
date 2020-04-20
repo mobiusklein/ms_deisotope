@@ -563,6 +563,8 @@ class ScanProcessor(Base, LogUtilsMixin):
 
         for scan in product_scans:
             precursor_ion = scan.precursor_information
+            if precursor_ion is None:
+                continue
             peak = prec_peaks.has_peak(precursor_ion.mz)
             if peak is not None:
                 err = abs(peak.mz - precursor_ion.mz)
