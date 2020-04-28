@@ -13,13 +13,14 @@ from weakref import WeakValueDictionary
 
 import numpy as np
 
+from ms_peak_picker import reprofile, pick_peaks
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.metadata import software
 from ms_deisotope.data_source.scan.loader import ScanDataSource
 from ms_deisotope.data_source.scan import PrecursorInformation, RawDataArrays
 from ms_deisotope.data_source.metadata.activation import ActivationInformation, dissociation_methods
-from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow
+from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, inverse_reduced_ion_mobility
 from ms_deisotope.peak_dependency_network import Interval
 
 if sys.platform[:5] == "win32" or sys.platform[:5] == "win64":
@@ -271,8 +272,18 @@ class TIMSPASEFSpectrumData(TIMSSpectrumDataBase):
         self.pasef_precursor = pasef_precursor
 
 
+default_scan_merging_parameters = {
+    "fwhm": 0.04,
+    "dx": 0.001
+}
+
+
 class TIMSScanDataSource(ScanDataSource):
+    _scan_merging_parameters = default_scan_merging_parameters.copy()
+
     def _is_profile(self, scan):
+        if scan.is_combined():
+            return True
         return False
 
     def _scan_time(self, scan):
@@ -300,14 +311,12 @@ class TIMSScanDataSource(ScanDataSource):
     def _activation(self, scan):
         mode = scan.frame.scan_mode
         if mode in (2, 8, 9):
-            method = dissociation_methods['CID']
+            method = dissociation_methods["collision-induced dissociation"]
         elif mode in (3, 4, 5):
             method = dissociation_methods['in-source collision-induced dissociation']
         else:
             print("Unknown Scan Mode %d, Unknown Dissociation. Returning CID" % (mode, ))
-            method = dissociation_methods['CID']
-        if scan.is_combined():
-            raise ValueError("Cannot determine activation for combined spectra yet")
+            method = dissociation_methods["collision-induced dissociation"]
         precursor = self._locate_pasef_precursor_for(scan)
         if precursor is not None:
             collision_energy = precursor.collision_energy
@@ -315,13 +324,19 @@ class TIMSScanDataSource(ScanDataSource):
 
     def _locate_pasef_precursor_for(self, scan):
         if scan.is_combined():
-            raise ValueError("Cannot determine precursor for combined spectra yet")
+            # raise ValueError("Cannot determine precursor for combined spectra yet")
             query_interval = Interval(scan.start_scan, scan.end_scan)
             matches = []
             for precursor in scan.frame.pasef_precursors:
-                if Interval.overlaps(Interval(precursor.start_scan, precursor.end_scan)):
+                if query_interval.overlaps(Interval(precursor.start_scan, precursor.end_scan)):
                     matches.append(precursor)
             n_matches = len(matches)
+            if n_matches == 0:
+                return None
+            elif n_matches > 1:
+                raise ValueError("Multiple precursors found for scan interval!")
+            else:
+                return matches[0]
 
         else:
             scan_number = scan.start_scan
@@ -350,14 +365,14 @@ class TIMSScanDataSource(ScanDataSource):
                 product_scan_id = scan.make_id_string()
                 pinfo = PrecursorInformation(
                     mz, intensity, charge, precursor_scan_id,
-                    product_scan_id=product_scan_id, source=self)
+                    product_scan_id=product_scan_id, source=self, annotations={
+                        inverse_reduced_ion_mobility: current_drift_time,
+                    })
                 return pinfo
         return None
 
     def _isolation_window(self, scan):
         if scan.frame.msms_type == 8:
-            if scan.is_combined():
-                raise ValueError("Cannot determine activation for combined spectra yet")
             precursor = self._locate_pasef_precursor_for(scan)
             if precursor is not None:
                 width = precursor.isolation_width / 2
@@ -375,9 +390,27 @@ class TIMSScanDataSource(ScanDataSource):
     def _acquisition_informatioN(self, scan):
         pass
 
+    def _get_centroids(self, scan):
+        mzs, intensities = self.read_spectrum(
+            scan.frame.id, scan.start_scan, scan.end_scan)
+        sort_mask = np.argsort(mzs)
+        mzs = mzs[sort_mask]
+        intensities = intensities[sort_mask]
+        centroids = pick_peaks(mzs, intensities, peak_mode="centroid")
+        return centroids
+
     def _scan_arrays(self, scan):
         if scan.is_combined():
-            raise ValueError("Multi-scan merging not supported yet")
+            mzs, intensities = self.read_spectrum(
+                scan.frame.id, scan.start_scan, scan.end_scan)
+            sort_mask = np.argsort(mzs)
+            mzs = mzs[sort_mask]
+            intensities = intensities[sort_mask]
+            centroids = pick_peaks(mzs, intensities, peak_mode="centroid")
+            mzs, intensities = reprofile(
+                centroids, dx=self._scan_merging_parameters['dx'],
+                override_fwhm=self._scan_merging_parameters['fwhm'])
+            return mzs, intensities
         else:
             mzs, intensities = self.read_spectrum(scan.frame.id, scan.start_scan, scan.end_scan)
             return mzs, intensities
@@ -389,13 +422,18 @@ multi_scan_id_parser = re.compile(r"frame=(\d+) startScan=(\d+) endScan=(\d+)")
 
 class TIMSData(TIMSMetadata, TIMSScanDataSource):
 
-    def __init__(self, analysis_directory, use_recalibrated_state=False):
+    def __init__(self, analysis_directory, use_recalibrated_state=False, scan_merging_parameters=None):
         if sys.version_info.major == 2:
             if not isinstance(analysis_directory, unicode):
                 raise ValueError("analysis_directory must be a Unicode string.")
         if sys.version_info.major == 3:
             if not isinstance(analysis_directory, str):
                 raise ValueError("analysis_directory must be a string.")
+        if scan_merging_parameters is None:
+            scan_merging_parameters = default_scan_merging_parameters.copy()
+        else:
+            for key, value in default_scan_merging_parameters.items():
+                scan_merging_parameters.setdefault(key, value)
 
         self.dll = load_library()
 
@@ -410,6 +448,7 @@ class TIMSData(TIMSMetadata, TIMSScanDataSource):
         self.initial_frame_buffer_size = 128 # may grow in readScans()
         self._read_metadata()
         self._frame_cache = WeakValueDictionary()
+        self._scan_merging_parameters = scan_merging_parameters
 
 
     def __del__(self):
@@ -430,20 +469,21 @@ class TIMSData(TIMSMetadata, TIMSScanDataSource):
                 frame_id, start_scan, end_scan = map(int, match.groups())
                 frame = self.get_frame_by_id(frame_id)
                 if frame.msms_type == 8:
-                    pasef_scan = TIMSPASEFSpectrumData(frame, start_scan, None, end_scan)
+                    pasef_scan = TIMSPASEFSpectrumData(
+                        frame, start_scan - 1, None, end_scan)
                     pasef_scan.pasef_precursor = self._locate_pasef_precursor_for(pasef_scan)
                     scan_obj = self._make_scan(pasef_scan)
                 else:
-                    scan_obj = self._make_scan(TIMSSpectrumDataBase(frame, start_scan, end_scan))
+                    scan_obj = self._make_scan(TIMSSpectrumDataBase(frame, start_scan - 1, end_scan))
         else:
             frame_id, scan_number = map(int, match.groups())
             frame = self.get_frame_by_id(frame_id)
             if frame.msms_type == 8:
-                pasef_scan = TIMSPASEFSpectrumData(frame, scan_number, None)
+                pasef_scan = TIMSPASEFSpectrumData(frame, scan_number - 1, None)
                 pasef_scan.pasef_precursor = self._locate_pasef_precursor_for(pasef_scan)
                 scan_obj = self._make_scan(pasef_scan)
             else:
-                scan_obj = self._make_scan(TIMSSpectrumDataBase(frame, scan_number))
+                scan_obj = self._make_scan(TIMSSpectrumDataBase(frame, scan_number - 1))
         # Cache scan here
         return scan_obj
 
