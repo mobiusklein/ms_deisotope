@@ -1159,8 +1159,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         precursor = super(ProcessedMzMLDeserializer, self)._precursor_information(scan)
         if precursor is None:
             return None
-        pinfo_dict = self._get_selected_ion(scan)
-        coisolation_params = pinfo_dict.get("ms_deisotope:coisolation", [])
+        precursor.orphan = precursor.annotations.pop(
+            "ms_deisotope:orphan", None) == "true"
+        precursor.defaulted = precursor.annotations.pop(
+            "ms_deisotope:defaulted", None) == "true"
+        coisolation_params = precursor.annotations.pop("ms_deisotope:coisolation", [])
         if not isinstance(coisolation_params, list):
             coisolation_params = [coisolation_params]
         coisolation = []

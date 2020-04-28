@@ -20,6 +20,8 @@ from ms_peak_picker.base import PeakLike
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.deconvolution import deconvolute_peaks
 
+from ms_deisotope.data_source.metadata.scan_traits import _IonMobilityMixin
+
 try:
     from ms_deisotope.plot import annotate_scan as _annotate_precursors, draw_raw
 except ImportError:
@@ -537,7 +539,7 @@ class ScanBase(object):
         return self
 
 
-class PrecursorInformation(object):
+class PrecursorInformation(_IonMobilityMixin):
     """Store information relating a tandem MS scan to its precursor MS scan.
 
     .. note::
@@ -662,6 +664,10 @@ class PrecursorInformation(object):
         if not eq:
             return False
         return True
+
+    @property
+    def traits(self):
+        return self.annotations
 
     def __ne__(self, other):
         return not (self == other)

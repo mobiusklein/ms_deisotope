@@ -27,7 +27,7 @@ from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .metadata.sample import Sample
-from .metadata.scan_traits import FAIMS_compensation_voltage
+from .metadata.scan_traits import FAIMS_compensation_voltage, ION_MOBILITY_TYPES
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
@@ -183,13 +183,19 @@ class MzMLDataInterface(ScanDataSource):
                         precursor_scan_id = self._scan_id(prev_scan._data)
                         break
                     i += 1
+
+        keys = set(pinfo_dict) - {"selected ion m/z", 'peak intensity', 'charge state'}
+
         pinfo = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),
             charge=pinfo_dict.get('charge state', ChargeNotProvided),
             precursor_scan_id=precursor_scan_id,
             source=self,
-            product_scan_id=self._scan_id(scan))
+            product_scan_id=self._scan_id(scan),
+            annotations={
+                k: pinfo_dict[k] for k in keys
+            })
         return pinfo
 
     def _scan_title(self, scan):
