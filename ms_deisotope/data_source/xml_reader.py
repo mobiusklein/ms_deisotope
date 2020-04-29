@@ -144,6 +144,10 @@ class XMLReaderBase(RandomAccessScanSource):
     def _make_default_iterator(self):
         return iter(self._source)
 
+    def _dispose(self):
+        super(XMLReaderBase, self)._dispose()
+        self.index.clear()
+
     def next(self):
         try:
             return next(self._producer)

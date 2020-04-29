@@ -2,6 +2,8 @@
 load data for :class:`~.Scan` objects.
 '''
 import abc
+import logging
+
 from weakref import WeakValueDictionary
 
 from six import string_types as basestring
@@ -18,6 +20,10 @@ from .scan_iterator import (
     _FakeGroupedScanIteratorImpl,
     ITERATION_MODE_GROUPED,
     ITERATION_MODE_SINGLE)
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 @add_metaclass(abc.ABCMeta)
@@ -360,6 +366,13 @@ class ScanIterator(ScanDataSource):
         '''Reset the iterator, if possible, and clear any caches.
         '''
         raise NotImplementedError()
+
+    def _dispose(self):
+        extant = len(self.scan_cache)
+        logger.info("Disposing of %s with %d extant scans attached to it.", self, extant)
+        for _key, value in list(self.scan_cache.items()):
+            value.clear()
+        self.scan_cache.clear()
 
     @abc.abstractmethod
     def _make_default_iterator(self):

@@ -1097,6 +1097,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                     pass
                 self._build_scan_id_to_rt_cache()
 
+    def _dispose(self):
+        self._scan_id_to_rt.clear()
+        self.extended_index.clear()
+        super(ProcessedMzMLDeserializer, self)._dispose()
+
     def require_extended_index(self):
         if not self.has_extended_index():
             try:
