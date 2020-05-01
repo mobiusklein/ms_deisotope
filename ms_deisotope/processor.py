@@ -743,11 +743,11 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         self.log("Deconvoluting Product Scan %r" % (product_scan, ))
         precursor_ion = product_scan.precursor_information
+        deconargs = dict(self.msn_deconvolution_args)
         if precursor_ion is not None:
             top_charge_state = precursor_ion.extracted_charge
             if not top_charge_state:
                 top_charge_state = precursor_ion.charge
-            deconargs = dict(self.msn_deconvolution_args)
             charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
             if top_charge_state is not None and top_charge_state is not ChargeNotProvided and\
                     top_charge_state != 0 and abs(top_charge_state) < abs(charge_range[1]):
