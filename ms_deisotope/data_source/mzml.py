@@ -5,7 +5,7 @@ implementation.
 The parser is based on :mod:`pyteomics.mzml`.
 '''
 import warnings
-
+import zlib
 from six import string_types as basestring
 
 import numpy as np
@@ -134,7 +134,14 @@ class MzMLDataInterface(ScanDataSource):
             decode = not self._decode_binary
         except AttributeError:
             decode = False
-        arrays = _find_arrays(scan, decode=decode)
+        try:
+            arrays = _find_arrays(scan, decode=decode)
+        except zlib.error as zerr:
+            warnings.warn(
+                "An error occurred while decompressing the spectrum data arrays for scan %r: %r" % (
+                    self._scan_id(scan), zerr))
+            # Fall back assuming the missing key error handling below will just work *tm*
+            arrays = {}
         try:
             return arrays.pop('m/z array'), arrays.pop("intensity array"), arrays
         except KeyError:

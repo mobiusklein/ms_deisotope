@@ -2,7 +2,6 @@ import os
 import logging
 import multiprocessing
 import traceback
-import zlib
 
 from collections import deque
 from multiprocessing import Process
