@@ -197,7 +197,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             self.error("An error occurred while pre-indexing.", e)
 
     def _make_interval_tree(self, start_scan, end_scan):
-        reader = MSFileLoader(self.ms_file)
+        reader = MSFileLoader(self.ms_file, decode_binary=False)
         if start_scan is not None:
             start_ix = reader.get_scan_by_id(start_scan).index
         else:

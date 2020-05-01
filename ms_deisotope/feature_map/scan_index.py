@@ -141,40 +141,42 @@ class ExtendedScanIndex(object):
 
     def _package_precursor_information(self, product):
         precursor_information = product.precursor_information
-        if precursor_information.extracted_neutral_mass != 0:
+        package = {
+            "product_scan_id": product.id,
+            "scan_time": product.scan_time,
+        }
+        if precursor_information is None:
+            pass
+        elif precursor_information.extracted_neutral_mass != 0:
             charge = precursor_information.extracted_charge
             if charge == ChargeNotProvided:
                 charge = 'ChargeNotProvided'
-            package = {
+            package.update({
                 "neutral_mass": precursor_information.extracted_neutral_mass,
                 "mz": precursor_information.extracted_mz,
                 "intensity": precursor_information.extracted_intensity,
                 "charge": charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
-                "product_scan_id": product.id,
-                "scan_time": product.scan_time,
                 "defaulted": precursor_information.defaulted,
                 "orphan": precursor_information.orphan,
                 "coisolation": precursor_information.coisolation,
                 "activation": product.activation,
-            }
+            })
         else:
             charge = precursor_information.charge
             if charge == ChargeNotProvided:
                 charge = 'ChargeNotProvided'
-            package = {
+            package.update({
                 "neutral_mass": precursor_information.neutral_mass,
                 "mz": precursor_information.mz,
                 "intensity": precursor_information.intensity,
                 "charge": charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
-                "product_scan_id": product.id,
-                "scan_time": product.scan_time,
                 "defaulted": precursor_information.defaulted,
                 "orphan": precursor_information.orphan,
                 "coisolation": precursor_information.coisolation,
                 "activation": product.activation,
-            }
+            })
         if product.has_ion_mobility():
             package['drift_time'] = product.drift_time
         return package

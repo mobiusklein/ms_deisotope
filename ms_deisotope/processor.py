@@ -665,7 +665,8 @@ class ScanProcessor(Base, LogUtilsMixin):
             ]))
         for product_scan in precursor_scan.product_scans:
             precursor_information = product_scan.precursor_information
-
+            if precursor_information is None:
+                continue
             # unknown precursor purity
             product_scan.annotations['precursor purity'] = 0.0
             i = _get_nearest_index(precursor_information.mz, priorities)
@@ -742,16 +743,16 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         self.log("Deconvoluting Product Scan %r" % (product_scan, ))
         precursor_ion = product_scan.precursor_information
-        top_charge_state = precursor_ion.extracted_charge
-        if not top_charge_state:
-            top_charge_state = precursor_ion.charge
-        deconargs = dict(self.msn_deconvolution_args)
-        charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
-        if top_charge_state is not None and top_charge_state is not ChargeNotProvided and\
-           top_charge_state != 0 and abs(top_charge_state) < abs(charge_range[1]):
-            charge_range[1] = top_charge_state
-
-        deconargs["charge_range"] = charge_range
+        if precursor_ion is not None:
+            top_charge_state = precursor_ion.extracted_charge
+            if not top_charge_state:
+                top_charge_state = precursor_ion.charge
+            deconargs = dict(self.msn_deconvolution_args)
+            charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
+            if top_charge_state is not None and top_charge_state is not ChargeNotProvided and\
+                    top_charge_state != 0 and abs(top_charge_state) < abs(charge_range[1]):
+                charge_range[1] = top_charge_state
+            deconargs["charge_range"] = charge_range
 
         if product_scan.polarity in (-1, 1):
             polarity = product_scan.polarity

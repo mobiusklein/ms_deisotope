@@ -2,6 +2,7 @@ import os
 import logging
 import multiprocessing
 import traceback
+import zlib
 
 from collections import deque
 from multiprocessing import Process
@@ -71,7 +72,7 @@ class ScanIDYieldingProcess(Process):
         return batch, scan_ids
 
     def run(self):
-        self.loader = MSFileLoader(self.ms_file_path)
+        self.loader = MSFileLoader(self.ms_file_path, decode_binary=False)
 
         if self.start_scan is not None:
             try:
@@ -372,7 +373,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                 logger_to_silence.addHandler(logging.NullHandler())
 
     def run(self):
-        loader = MSFileLoader(self.ms_file_path)
+        loader = MSFileLoader(self.ms_file_path, decode_binary=False)
         queued_loader = ScanBunchLoader(loader)
 
         has_input = True
