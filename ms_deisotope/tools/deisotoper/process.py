@@ -295,7 +295,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         if scan is not None:
             if len(scan.arrays[0]) == 0:
                 self.skip_scan(scan)
-                return
+                for product_scan in product_scans:
+                    self.skip_scan(product_scan)
 
             try:
                 scan, priorities, product_scans = transformer.process_scan_group(
