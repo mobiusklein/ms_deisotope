@@ -295,30 +295,28 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         if scan is not None:
             if len(scan.arrays[0]) == 0:
                 self.skip_scan(scan)
-                for product_scan in product_scans:
-                    self.skip_scan(product_scan)
-
-            try:
-                scan, priorities, product_scans = transformer.process_scan_group(
-                    scan, product_scans)
-                if scan is None:
-                    # no way to report skip
-                    pass
-                else:
-                    if self.verbose:
-                        self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
-                    if self.deconvolute:
-                        transformer.deconvolute_precursor_scan(scan, priorities)
-                    self.send_scan(scan)
-            except NoIsotopicClustersError as e:
-                self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
-                    e.scan_id, len(scan.peak_set)))
-                self.skip_scan(scan)
-            except EmptyScanError as e:
-                self.skip_scan(scan)
-            except Exception as e:
-                self.skip_scan(scan)
-                self.log_error(e, scan_id, scan, (product_scan_ids))
+            else:
+                try:
+                    scan, priorities, product_scans = transformer.process_scan_group(
+                        scan, product_scans)
+                    if scan is None:
+                        # no way to report skip
+                        pass
+                    else:
+                        if self.verbose:
+                            self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
+                        if self.deconvolute:
+                            transformer.deconvolute_precursor_scan(scan, priorities)
+                        self.send_scan(scan)
+                except NoIsotopicClustersError as e:
+                    self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
+                        e.scan_id, len(scan.peak_set)))
+                    self.skip_scan(scan)
+                except EmptyScanError as e:
+                    self.skip_scan(scan)
+                except Exception as e:
+                    self.skip_scan(scan)
+                    self.log_error(e, scan_id, scan, (product_scan_ids))
 
         for product_scan in product_scans:
             # no way to report skip
