@@ -96,7 +96,13 @@ def _find_arrays(data_dict, decode=False):
     arrays = dict()
     for key, value in data_dict.items():
         if " array" in key:
-            arrays[key] = value.decode() if decode else value
+            if decode:
+                if value.data:
+                    arrays[key] = value.decode()
+                else:
+                    arrays[key] = np.array([], dtype=value.dtype)
+            else:
+                arrays[key] = value
     return arrays
 
 
