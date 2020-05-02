@@ -1344,6 +1344,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                 product_scan_id=product_scan_id, orphan=orphan,
                 coisolation=coisolation,
                 defaulted=defaulted)
+            if prec_neutral_mass is None or charge is None:
+                continue
             out.append(pinfo)
         return out
 

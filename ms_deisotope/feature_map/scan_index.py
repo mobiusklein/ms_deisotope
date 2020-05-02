@@ -325,6 +325,8 @@ class ExtendedScanIndex(object):
         for _, info in self.msn_ids.items():
             mz = info['mz']
             neutral_mass = info['neutral_mass']
+            if neutral_mass is None:
+                continue
             charge = info['charge']
             if charge == "ChargeNotProvided":
                 charge = ChargeNotProvided
