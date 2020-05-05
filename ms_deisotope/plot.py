@@ -127,13 +127,13 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
                 lower = pinfo.mz - 4
                 upper = pinfo.mz + 4
             try:
-                peak = max(scan.peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
+                peak = max(scan.peak_set.between(lower - 1.2, upper + 1.2), key=lambda x: x.intensity)
                 local_intensity = peak.intensity
             except ValueError:
                 if scan.deconvoluted_peak_set:
                     try:
-                        peak = max(scan.deconvoluted_peak_set.between(lower + 1.2, upper - 1.2),
-                                   key=lambda x: x.intensity, use_mz=True)
+                        peak = max(scan.deconvoluted_peak_set.between(lower - 1.2, upper + 1.2, use_mz=True),
+                                   key=lambda x: x.intensity)
                         local_intensity = peak.intensity
                     except ValueError:
                         local_intensity = 1e3
@@ -247,13 +247,13 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
 
     peak_set = scan.peak_set
     try:
-        peak = max(peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
+        peak = max(peak_set.between(lower - 1.2, upper + 1.2), key=lambda x: x.intensity)
         local_intensity = peak.intensity
     except ValueError:
         if scan.deconvoluted_peak_set:
             try:
-                peak = max(scan.deconvoluted_peak_set.between(lower + 1.2, upper - 1.2),
-                           key=lambda x: x.intensity, use_mz=True)
+                peak = max(scan.deconvoluted_peak_set.between(lower - 1.2, upper + 1.2, use_mz=True),
+                           key=lambda x: x.intensity)
                 local_intensity = peak.intensity
             except ValueError:
                 local_intensity = 1e3
