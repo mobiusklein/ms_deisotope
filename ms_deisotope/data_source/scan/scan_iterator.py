@@ -154,7 +154,8 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
                 product_scans.append(packed)
             elif packed.ms_level == 1:
                 if current_level > 1:
-                    precursor_scan.product_scans = list(product_scans)
+                    if precursor_scan is not None:
+                        precursor_scan.product_scans = list(product_scans)
                     yield ScanBunch(precursor_scan, product_scans)
                 else:
                     if precursor_scan is not None:
