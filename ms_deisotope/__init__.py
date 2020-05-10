@@ -52,3 +52,20 @@ __all__ = [
     "MzMLLoader", "MzXMLLoader", "MSFileLoader", "ScanProcessor",
     "deconvolute_peaks", 'version'
 ]
+
+
+try:
+    from ms_deisotope._c import deconvoluter_base as _cdeconvoluter_base
+    has_c = True
+    _has_c_error = None
+except ImportError as _has_c_error:
+    has_c = False
+
+
+def check_c_extensions():
+    if has_c:
+        print("C extensions appear to have imported successfully.")
+        return True
+    else:
+        print("Could not import deconvolution machinery: %r" % (_has_c_error, ))
+    return False

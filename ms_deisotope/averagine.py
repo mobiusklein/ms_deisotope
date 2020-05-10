@@ -460,11 +460,12 @@ def add_compositions(a, b):
 
 
 try:
+    _has_c = True
     _Averagine = Averagine
     _TheoreticalIsotopicPattern = TheoreticalIsotopicPattern
     from ms_deisotope._c.averagine import Averagine, TheoreticalIsotopicPattern
 except ImportError as e:
-    print(e, "averagine")
+    _has_c = False
 
 
 peptide = Averagine({"C": 4.9384, "H": 7.7583, "N": 1.3577, "O": 1.4773, "S": 0.0417})

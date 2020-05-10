@@ -930,10 +930,11 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
 
 try:
+    _has_c = True
     from ms_deisotope._c.deconvoluter_base import (
         _explore_local as _c_explore_local,
         populate_graph as cpopulate_graph)
     PeakDependenceGraphDeconvoluterBase._explore_local = _c_explore_local
     PeakDependenceGraphDeconvoluterBase.populate_graph = cpopulate_graph
 except ImportError as e:
-    print(e)
+    _has_c = False

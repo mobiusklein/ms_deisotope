@@ -340,7 +340,8 @@ class DeconvoluterBase(Base):
 
 
 try:
+    _has_c = True
     _DeconvoluterBase = DeconvoluterBase
     from ms_deisotope._c.deconvoluter_base import DeconvoluterBase
 except ImportError as e:
-    print(e)
+    _has_c = False
