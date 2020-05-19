@@ -56,7 +56,7 @@ except ImportError:
     writer = None
 
 from ms_deisotope import version as lib_version
-from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet, Envelope
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.qc.isolation import CoIsolation
 from ms_deisotope.data_source.common import (
@@ -1049,6 +1049,34 @@ def deserialize_deconvoluted_peak_set(scan_dict):
     return peaks
 
 
+def deserialize_external_deconvoluted_peaks(scan_dict, fill_envelopes=True, averagine=None):
+    if averagine is None:
+        from ms_deisotope import peptide
+        averagine = peptide
+    peaks = []
+    mz_array = scan_dict['m/z array']
+    intensity_array = scan_dict['intensity array']
+    charge_array = scan_dict['charge array']
+    for i in range(len(mz_array)):
+        mz = mz_array[i]
+        charge = charge_array[i]
+        mass = neutral_mass(mz, charge)
+        intensity = intensity_array[i]
+        if fill_envelopes:
+            envelope = averagine.isotopic_cluster(mz, charge, truncate_after=0.8)
+            envelope = Envelope([(p.mz, p.intensity) for p in envelope.scale_raw(intensity)])
+        else:
+            envelope = Envelope([])
+        peak = DeconvolutedPeak(
+            mass, intensity, charge=charge, signal_to_noise=intensity,
+            index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
+            average_mass=0, score=intensity, envelope=envelope, mz=mz
+        )
+        peaks.append(peak)
+    peaks = DeconvolutedPeakSet(peaks)
+    peaks._reindex()
+    return peaks
+
 def deserialize_peak_set(scan_dict):
     mz_array = scan_dict['m/z array']
     intensity_array = scan_dict['intensity array']
@@ -1129,7 +1157,13 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
-        return deserialize_deconvoluted_peak_set(scan_dict)
+        try:
+            return deserialize_deconvoluted_peak_set(scan_dict)
+        except KeyError as err:
+            if "charge array" in scan_dict and "isotopic envelopes array" not in scan_dict:
+                return deserialize_external_deconvoluted_peaks(scan_dict)
+            else:
+                raise err
 
     def deserialize_peak_set(self, scan_dict):
         return deserialize_peak_set(scan_dict)
