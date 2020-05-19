@@ -1045,7 +1045,7 @@ def deserialize_deconvoluted_peak_set(scan_dict):
         )
         peaks.append(peak)
     peaks = DeconvolutedPeakSet(peaks)
-    peaks._reindex()
+    peaks.reindex()
     return peaks
 
 
@@ -1074,7 +1074,7 @@ def deserialize_external_deconvoluted_peaks(scan_dict, fill_envelopes=True, aver
         )
         peaks.append(peak)
     peaks = DeconvolutedPeakSet(peaks)
-    peaks._reindex()
+    peaks.reindex()
     return peaks
 
 def deserialize_peak_set(scan_dict):
