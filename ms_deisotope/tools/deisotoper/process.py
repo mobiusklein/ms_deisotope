@@ -293,60 +293,68 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         transformer = self.transformer
         # handle the MS1 scan if it is present
         if scan is not None:
-            if len(scan.arrays[0]) == 0:
+            try:
+                if len(scan.arrays[0]) == 0:
+                    self.skip_scan(scan)
+                else:
+                    try:
+                        scan, priorities, product_scans = transformer.process_scan_group(
+                            scan, product_scans)
+                        if scan is None:
+                            # no way to report skip
+                            pass
+                        else:
+                            if self.verbose:
+                                self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
+                            if self.deconvolute:
+                                transformer.deconvolute_precursor_scan(scan, priorities)
+                            self.send_scan(scan)
+                    except NoIsotopicClustersError as e:
+                        self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
+                            e.scan_id, len(scan.peak_set)))
+                        self.skip_scan(scan)
+                    except EmptyScanError as e:
+                        self.skip_scan(scan)
+                    except Exception as e:
+                        self.skip_scan(scan)
+                        self.log_error(e, scan_id, scan, (product_scan_ids))
+            except Exception as err:
                 self.skip_scan(scan)
-            else:
-                try:
-                    scan, priorities, product_scans = transformer.process_scan_group(
-                        scan, product_scans)
-                    if scan is None:
-                        # no way to report skip
-                        pass
-                    else:
-                        if self.verbose:
-                            self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
-                        if self.deconvolute:
-                            transformer.deconvolute_precursor_scan(scan, priorities)
-                        self.send_scan(scan)
-                except NoIsotopicClustersError as e:
-                    self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
-                        e.scan_id, len(scan.peak_set)))
-                    self.skip_scan(scan)
-                except EmptyScanError as e:
-                    self.skip_scan(scan)
-                except Exception as e:
-                    self.skip_scan(scan)
-                    self.log_error(e, scan_id, scan, (product_scan_ids))
-
+                self.log_error(err, scan_id, scan, product_scan_ids)
         for product_scan in product_scans:
             # no way to report skip
-            if product_scan is None:
-                continue
-            if len(product_scan.arrays[0]) == 0 or (not process_msn):
-                self.skip_scan(product_scan)
-                continue
             try:
-                transformer.pick_product_scan_peaks(product_scan)
-                if self.verbose:
-                    self.log_message("Handling Product Scan %r with %d peaks (%0.3f/%0.3f, %r)" % (
-                        product_scan.id, len(product_scan.peak_set), product_scan.precursor_information.mz,
-                        product_scan.precursor_information.extracted_mz,
-                        product_scan.precursor_information.defaulted))
-                if self.deconvolute:
-                    transformer.deconvolute_product_scan(product_scan)
-                    if scan is None:
-                        product_scan.precursor_information.default(orphan=True)
-                self.send_scan(product_scan)
-            except NoIsotopicClustersError as e:
-                self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
-                    e.scan_id, len(product_scan.peak_set)))
+                if product_scan is None:
+                    continue
+                if len(product_scan.arrays[0]) == 0 or (not process_msn):
+                    self.skip_scan(product_scan)
+                    continue
+                try:
+                    transformer.pick_product_scan_peaks(product_scan)
+                    if self.verbose:
+                        self.log_message("Handling Product Scan %r with %d peaks (%0.3f/%0.3f, %r)" % (
+                            product_scan.id, len(product_scan.peak_set), product_scan.precursor_information.mz,
+                            product_scan.precursor_information.extracted_mz,
+                            product_scan.precursor_information.defaulted))
+                    if self.deconvolute:
+                        transformer.deconvolute_product_scan(product_scan)
+                        if scan is None:
+                            product_scan.precursor_information.default(orphan=True)
+                    self.send_scan(product_scan)
+                except NoIsotopicClustersError as e:
+                    self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
+                        e.scan_id, len(product_scan.peak_set)))
+                    self.skip_scan(product_scan)
+                except EmptyScanError as e:
+                    self.skip_scan(product_scan)
+                except Exception as e:
+                    self.skip_scan(product_scan)
+                    self.log_error(e, product_scan.id,
+                                   product_scan, (product_scan_ids))
+            except Exception as err:
                 self.skip_scan(product_scan)
-            except EmptyScanError as e:
-                self.skip_scan(product_scan)
-            except Exception as e:
-                self.skip_scan(product_scan)
-                self.log_error(e, product_scan.id,
-                               product_scan, (product_scan_ids))
+                self.log_error(err, product_scan.id,
+                               product_scan, [])
 
     def _silence_loggers(self):
         nologs = ["deconvolution_scan_processor"]
