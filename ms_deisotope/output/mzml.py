@@ -1327,7 +1327,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             warnings.warn("No m/z array found for scan %r" % (scan.id, ))
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
             scan.deconvoluted_peak_set = DeconvolutedPeakSet([])
-        elif "isotopic envelopes array" in data:
+        elif "charge array" in data:
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
             scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
                 data)
