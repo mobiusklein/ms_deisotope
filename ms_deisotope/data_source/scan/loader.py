@@ -662,6 +662,50 @@ class RandomAccessScanSource(ScanIterator):
             i = n + i
         return self.get_scan_by_index(i)
 
+    @property
+    def time(self):
+        '''A indexer facade that lets you index and slice by scan time.
+
+        Returns
+        -------
+        TimeIndex
+        '''
+        return TimeIndex(self)
+
+
+class TimeIndex(object):
+    """A facade that translates ``[x]`` into
+    scan time access, and supports slicing over
+    a time range.
+
+    """
+    def __init__(self, scan_loader):
+        self.scan_loader = scan_loader
+
+    def is_sorted_by_time(self):
+        lo = 0
+        hi = len(self.scan_loader)
+
+        last = 0.0
+        for i in range(lo, hi):
+            current = self.scan_loader[i].scan_time
+            if last <= current:
+                last = current
+            else:
+                return False
+        return True
+
+    def __len__(self):
+        return len(self.scan_loader)
+
+    def __getitem__(self, time):
+        if isinstance(time, slice):
+            start_scan = self.scan_loader.get_scan_by_time(time.start)
+            end_scan = self.scan_loader.get_scan_by_time(time.stop)
+            return self.scan_loader[start_scan.index:end_scan.index]
+        else:
+            return self.scan_loader.get_scan_by_time(time)
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanFileMetadataBase(object):
