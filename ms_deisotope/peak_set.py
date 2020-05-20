@@ -281,7 +281,7 @@ class DeconvolutedPeakSet(Base):
         hi_ix = hi_peak.index.neutral_mass + 1
         if abs(ppm_error(hi_peak.neutral_mass, neutral_mass)) > tolerance:
             hi_ix -= 1
-        return self[lo_ix:hi_ix]
+        return tuple(self[lo_ix:hi_ix])
 
     def __repr__(self):
         return "<DeconvolutedPeakSet %d Peaks>" % (len(self))
