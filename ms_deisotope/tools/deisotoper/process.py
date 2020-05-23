@@ -309,6 +309,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                             if self.deconvolute:
                                 transformer.deconvolute_precursor_scan(scan, priorities)
                             self.send_scan(scan)
+                    except (KeyboardInterrupt, SystemExit) as e:
+                        raise
                     except NoIsotopicClustersError as e:
                         self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
                             e.scan_id, len(scan.peak_set)))
@@ -318,6 +320,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                     except Exception as e:
                         self.skip_scan(scan)
                         self.log_error(e, scan_id, scan, (product_scan_ids))
+            except (KeyboardInterrupt, SystemExit) as e:
+                raise
             except Exception as err:
                 self.skip_scan(scan)
                 self.log_error(err, scan_id, scan, product_scan_ids)
@@ -341,6 +345,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                         if scan is None:
                             product_scan.precursor_information.default(orphan=True)
                     self.send_scan(product_scan)
+                except (KeyboardInterrupt, SystemExit) as e:
+                    raise
                 except NoIsotopicClustersError as e:
                     self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
                         e.scan_id, len(product_scan.peak_set)))
@@ -351,6 +357,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                     self.skip_scan(product_scan)
                     self.log_error(e, product_scan.id,
                                    product_scan, (product_scan_ids))
+            except (KeyboardInterrupt, SystemExit) as e:
+                raise
             except Exception as err:
                 self.skip_scan(product_scan)
                 self.log_error(err, product_scan.id,
@@ -406,6 +414,9 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
             try:
                 queued_loader.put(scan_id, product_scan_ids)
                 scan, product_scans = queued_loader.get()
+            except (KeyboardInterrupt, SystemExit) as e:
+                self.log_message("Interrupt received.")
+                break
             except Exception as e:
                 self.log_message("Something went wrong when loading bunch (%s): %r.\nRecovery is not possible." % (
                     (scan_id, product_scan_ids), e))
