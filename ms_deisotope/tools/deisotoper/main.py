@@ -46,12 +46,16 @@ def configure_iterator(loader, start_time, end_time):
     if isinstance(loader, RandomAccessScanSource):
         last_scan = loader[len(loader) - 1]
         last_time = last_scan.scan_time
-        start_scan = loader._locate_ms1_scan(
-            loader.get_scan_by_time(start_time))
+
+        start_scan = loader.get_scan_by_time(start_time)
+        if loader.has_ms1_scans():
+            start_scan = loader._locate_ms1_scan(start_scan)
+
         if end_time > last_time:
             end_time = last_time
-        end_scan = loader._locate_ms1_scan(
-            loader.get_scan_by_time(end_time))
+        end_scan = loader.get_scan_by_time(end_time)
+        if loader.has_ms1_scans():
+            end_scan = loader._locate_ms1_scan()
 
         start_scan_id = start_scan.id
         end_scan_id = end_scan.id
