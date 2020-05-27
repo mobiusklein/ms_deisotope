@@ -1161,7 +1161,7 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             return deserialize_deconvoluted_peak_set(scan_dict)
         except KeyError as err:
             if "charge array" in scan_dict and "isotopic envelopes array" not in scan_dict:
-                return self.deserialize_external_deconvoluted_peaks(scan_dict)
+                return self.deserialize_external_deconvoluted_peak_set(scan_dict)
             else:
                 raise err
 
