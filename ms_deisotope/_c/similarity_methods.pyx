@@ -1,3 +1,4 @@
+# cython: profile=True
 cimport cython
 from cython.parallel cimport prange
 from libc.math cimport floor, sqrt
@@ -357,15 +358,73 @@ cdef class SpectrumAlignment(object):
         public object peak_set_a
         public object peak_set_b
         public PeakType peak_type
+        public double norm_aa_cosine
+        public double norm_bb_cosine
+        public bint normalize
+        public bint sqrt_transform
 
-    def __init__(self, peak_set_a, peak_set_b, double error_tolerance=2e-5, double shift=0.0):
+    def __init__(self, peak_set_a, peak_set_b, double error_tolerance=2e-5, double shift=0.0,
+                 bint normalize=True, bint sqrt_transform=False):
         self.peak_set_a = peak_set_a
         self.peak_set_b = peak_set_b
         self.peak_pairs = []
         self.shift = shift
         self.score = 0
+        self.norm_aa_cosine = 1.0
+        self.norm_bb_cosine = 1.0
+        self.normalize = normalize
+        self.sqrt_transform = sqrt_transform
         self._determine_peak_type()
+        self.calculate_normalization()
         self.align(error_tolerance, shift)
+
+    cpdef calculate_normalization(self):
+        cdef:
+            size_t i, n
+            PeakSet peak_set
+            DeconvolutedPeakSet dpeak_set
+            double acc, intensity, acc_cosine
+            bint sqrt_transform
+
+        sqrt_transform = self.sqrt_transform
+        if self.peak_type == PeakType.Fitted:
+            peak_set = <PeakSet>self.peak_set_a
+            n = peak_set.get_size()
+            acc_cosine = 0.0
+            for i in range(n):
+                intensity = peak_set.getitem(i).intensity
+                if sqrt_transform:
+                    intensity = sqrt(intensity)
+                acc_cosine += intensity ** 2
+            self.norm_aa_cosine = sqrt(acc_cosine)
+            peak_set = <PeakSet>self.peak_set_b
+            n = peak_set.get_size()
+            acc_cosine = 0.0
+            for i in range(n):
+                intensity = peak_set.getitem(i).intensity
+                if sqrt_transform:
+                    intensity = sqrt(intensity)
+                acc_cosine += intensity ** 2
+            self.norm_bb_cosine = sqrt(acc_cosine)
+        elif self.peak_type == PeakType.Deconvoluted:
+            dpeak_set = <DeconvolutedPeakSet>self.peak_set_a
+            n = dpeak_set.get_size()
+            acc_cosine = 0.0
+            for i in range(n):
+                intensity = dpeak_set.getitem(i).intensity
+                if sqrt_transform:
+                    intensity = sqrt(intensity)
+                acc_cosine += intensity ** 2
+            self.norm_aa_cosine = sqrt(acc_cosine)
+            dpeak_set = <DeconvolutedPeakSet>self.peak_set_b
+            n = dpeak_set.get_size()
+            acc_cosine = 0.0
+            for i in range(n):
+                intensity = dpeak_set.getitem(i).intensity
+                if sqrt_transform:
+                    intensity = sqrt(intensity)
+                acc_cosine += intensity ** 2
+            self.norm_bb_cosine = sqrt(acc_cosine)
 
     cpdef _determine_peak_type(self):
         if isinstance(self.peak_set_a, DeconvolutedPeakSet):
@@ -409,6 +468,8 @@ cdef class SpectrumAlignment(object):
 
     cpdef _calculate_score(self):
         self.score = convolved_dot_product(self.peak_pairs, self.peak_type)
+        if self.normalize:
+            self.score /= (self.norm_aa_cosine * self.norm_bb_cosine)
 
 
 
@@ -460,7 +521,8 @@ cdef list convolve_deconvoluted_peak_sets(DeconvolutedPeakSet peak_set_a, Deconv
     return peak_pairs
 
 
-cdef double convolved_dot_product(list peak_pairs, PeakType peak_type=PeakType.Fitted):
+cpdef double convolved_dot_product(list peak_pairs, PeakType peak_type=PeakType.Fitted, double norm_a=1.0,
+                                   double norm_b=1.0, bint sqrt_transform=False):
     cdef:
         size_t i, n
         PeakBase peak, other
@@ -475,7 +537,10 @@ cdef double convolved_dot_product(list peak_pairs, PeakType peak_type=PeakType.F
     n = PyList_Size(peak_pairs)
     for i in range(n):
         pair = <PeakMatch>PyList_GET_ITEM(peak_pairs, i)
-        pair.score = pair.peak_a.intensity * pair.peak_b.intensity
+        if sqrt_transform:
+            pair.score = (sqrt(pair.peak_a.intensity) / norm_a) * (sqrt(pair.peak_b.intensity) / norm_b)
+        else:
+            pair.score = (pair.peak_a.intensity / norm_a) * (pair.peak_b.intensity / norm_b)
     PyList_Sort(peak_pairs)
 
     for i in range(n - 1, -1, -1):
@@ -563,10 +628,11 @@ cpdef double ppm_peak_set_similarity(peak_collection peak_set_a, peak_collection
     return (ab) / (sqrt((aa)) * sqrt((bb)))
 
 
-cpdef SpectrumAlignment align_peaks(peak_collection peak_set_a, peak_collection peak_set_b, double error_tolerance=2e-5, double shift=0.0):
+cpdef SpectrumAlignment align_peaks(peak_collection peak_set_a, peak_collection peak_set_b, double error_tolerance=2e-5,
+                                    double shift=0.0, bint normalize=True):
     if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet:
-        return SpectrumAlignment(peak_set_a, peak_set_b, error_tolerance, shift)
+        return SpectrumAlignment(peak_set_a, peak_set_b, error_tolerance, shift, normalize, sqrt_transform=False)
     elif peak_collection is PeakIndex:
-        return SpectrumAlignment(peak_set_a.peaks, peak_set_b.peaks, error_tolerance, shift)
+        return SpectrumAlignment(peak_set_a.peaks, peak_set_b.peaks, error_tolerance, shift, normalize, sqrt_transform=False)
     elif peak_collection is object:
         raise TypeError("Cannot handle objects of type %s" % type(peak_set_a))
