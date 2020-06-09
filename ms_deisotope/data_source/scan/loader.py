@@ -369,9 +369,10 @@ class ScanIterator(ScanDataSource):
 
     def _dispose(self):
         extant = len(self.scan_cache)
-        logger.info("Disposing of %s with %d extant scans attached to it.", self, extant)
-        for _key, value in list(self.scan_cache.items()):
-            value.clear()
+        if extant > 0:
+            logger.info("Disposing of %s with %d extant scans attached to it.", self, extant)
+            for _key, value in list(self.scan_cache.items()):
+                value.clear()
         self.scan_cache.clear()
 
     @abc.abstractmethod
