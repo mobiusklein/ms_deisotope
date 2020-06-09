@@ -8,20 +8,21 @@ import sqlite3
 import sys
 import warnings
 
-from ctypes import cdll, c_char_p, c_uint32, c_uint64, c_int64, c_double, c_void_p, POINTER, create_string_buffer
+from ctypes import cdll, c_char_p, c_uint32, c_int32, c_uint64, c_int64, c_double, c_void_p, POINTER, create_string_buffer
 from weakref import WeakValueDictionary
 
 import numpy as np
 
-from ms_peak_picker import reprofile, pick_peaks
+from ms_peak_picker import reprofile, pick_peaks, PeakIndex, PeakSet
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.metadata import software
-from ms_deisotope.data_source.scan.loader import ScanDataSource
+from ms_deisotope.data_source.scan.loader import ScanDataSource, RandomAccessScanSource
 from ms_deisotope.data_source.scan import PrecursorInformation, RawDataArrays
 from ms_deisotope.data_source.metadata.activation import ActivationInformation, dissociation_methods
 from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, inverse_reduced_ion_mobility
 from ms_deisotope.peak_dependency_network import Interval
+from ms_deisotope.averagine import neutral_mass as calculate_neutral_mass
 
 if sys.platform[:5] == "win32" or sys.platform[:5] == "win64":
     libname = "timsdata.dll"
@@ -68,6 +69,13 @@ def _load_library(lib_path):
     dll.tims_read_scans_v2.argtypes = [
         c_uint64, c_int64, c_uint32, c_uint32, c_void_p, c_uint32]
     dll.tims_read_scans_v2.restype = c_uint32
+
+    dll.tims_oneoverk0_to_ccs_for_mz.argtypes = [c_double, c_int32, c_double]
+    dll.tims_oneoverk0_to_ccs_for_mz.restype = c_double
+
+    dll.tims_ccs_to_oneoverk0_for_mz.argtypes = [c_double, c_int32, c_double]
+    dll.tims_ccs_to_oneoverk0_for_mz.restype = c_double
+
 
     convfunc_argtypes = [c_uint64, c_int64, POINTER(
         c_double), POINTER(c_double), c_uint32]
@@ -150,10 +158,27 @@ class TIMSMetadata(object):
             self._frame_counts[msms_type_to_label[scan_type_enum]] = count
             total += count
         self._frame_counts['Total'] = total
+        frame_id_scan_count = self.conn.execute("SELECT Id, NumScans, Time FROM Frames ORDER BY Id;")
+        count_to_id = []
+        time_to_id = []
+        total = 0
+        for f_c in frame_id_scan_count:
+            count_to_id.append([total, f_c['Id']])
+            total += f_c['NumScans']
+            time_to_id.append([f_c['Time'], f_c['Id']])
+        self._total_scans = total
+        self._scan_count_to_frame_id = np.array(count_to_id)
+        self._scan_time_to_frame_id = np.array(time_to_id)
 
     def _read_metadata(self):
         self._read_global_metadata()
         self._build_frame_index()
+
+    def frame_count(self):
+        return self._frame_counts['Total']
+
+    def scan_count(self):
+        return self._total_scans
 
 
 class TIMSFrame(Base):
@@ -181,6 +206,11 @@ class TIMSFrame(Base):
         self.tims_calibration = tims_calibration
         self.tims_id = tims_id
         self.pasef_precursors = pasef_precursors
+
+    def get_scan(self, start, end=None):
+        if end is None:
+            return self.source.get_scan_by_id("frame=%d scan=%d" % (self.id, start))
+        return self.source.get_scan_by_id("frame=%d startScan=%d endScan=%d" % (self.id, start, end))
 
     @classmethod
     def from_query(cls, source, rowdict):
@@ -221,6 +251,10 @@ class PASEFPrecursorInformation(Base):
         self.average_scan_number = average_scan_number
         self.intensity = intensity
         self.parent = parent
+
+    @property
+    def neutral_mass(self):
+        return calculate_neutral_mass(self.monoisotopic_mz, self.charge)
 
     @classmethod
     def from_query(cls, rowdict):
@@ -276,6 +310,114 @@ default_scan_merging_parameters = {
     "fwhm": 0.04,
     "dx": 0.001
 }
+
+
+class TIMSAPI(object):
+    initial_frame_buffer_size = 128
+
+    def _convert_callback(self, frame_id, input_data, func):
+        if isinstance(input_data, np.ndarray) and input_data.dtype == np.float64:
+            # already supports buffer protocol, no extra copy
+            in_array = input_data
+        else:
+            # convert data to appropriate float data buffer
+            in_array = np.array(input_data, dtype=np.float64)
+        cnt = len(in_array)
+        out = np.empty(shape=cnt, dtype=np.float64)
+        success = func(self.handle, frame_id,
+                       in_array.ctypes.data_as(POINTER(c_double)),
+                       out.ctypes.data_as(POINTER(c_double)),
+                       cnt)
+        if success == 0:
+            throw_tims_error(self.dll)
+        return out
+
+    def index_to_mz(self, frame_id, mzs):
+        return self._convert_callback(frame_id, mzs, self.dll.tims_index_to_mz)
+
+    def mz_to_index(self, frame_id, mzs):
+        return self._convert_callback(frame_id, mzs, self.dll.tims_mz_to_index)
+
+    def scan_number_to_one_over_K0(self, frame_id, mzs):
+        return self._convert_callback(frame_id, mzs, self.dll.tims_scannum_to_oneoverk0)
+
+    def one_over_K0_to_scan_number(self, frame_id, mzs):
+        return self._convert_callback(frame_id, mzs, self.dll.tims_oneoverk0_to_scannum)
+
+    def scan_number_to_voltage(self, frame_id, mzs):
+        return self._convert_callback(frame_id, mzs, self.dll.tims_scannum_to_voltage)
+
+    def voltage_to_scan_number(self, frame_id, mzs):
+        return self._convert_callback(frame_id, mzs, self.dll.tims_voltage_to_scannum)
+    # Output: list of tuples (indices, intensities)
+
+    def read_scans(self, frame_id, scan_begin, scan_end):
+        # buffer-growing loop
+        while True:
+            cnt = int(self.initial_frame_buffer_size)
+            buf = np.empty(shape=cnt, dtype=np.uint32)
+            buffer_size_in_bytes = 4 * cnt
+
+            required_len = self.dll.tims_read_scans_v2(self.handle, frame_id, scan_begin, scan_end,
+                                                       buf.ctypes.data_as(
+                                                           POINTER(c_uint32)),
+                                                       buffer_size_in_bytes)
+            if required_len == 0:
+                throw_tims_error(self.dll)
+
+            if required_len > buffer_size_in_bytes:
+                if required_len > 16777216:
+                    # arbitrary limit for now...
+                    raise RuntimeError("Maximum expected frame size exceeded.")
+                self.initial_frame_buffer_size = required_len / 4 + 1  # grow buffer
+            else:
+                break
+
+        result = []
+        d = scan_end - scan_begin
+        for i in range(scan_begin, scan_end):
+            npeaks = buf[i-scan_begin]
+            indices = buf[d:d + npeaks]
+            d += npeaks
+            intensities = buf[d:d + npeaks]
+            d += npeaks
+            result.append((indices, intensities))
+
+        return result
+
+    def read_spectrum(self, frame_id, scan_begin, scan_end):
+        scans = self.read_scans(frame_id, scan_begin, scan_end)
+        # Summarize on a grid
+        allind = []
+        allint = np.array([], dtype=float)
+        for scan in scans:
+            indices = np.array(scan[0])
+            if len(indices) > 0:
+                intens = scan[1]
+                allind = np.concatenate((allind, indices))
+                allint = np.concatenate((allint, intens))
+        allmz = self.index_to_mz(frame_id, allind)
+        return allmz, allint
+
+    def read_spectrum_grid(self, frame_id, scan_begin, scan_end):
+        scans = self.read_scans(frame_id, scan_begin, scan_end)
+        # Summarize on a grid
+        scan_numbers = []
+        scan_mzs = []
+        scan_intensities = []
+        for i, scan in enumerate(scans, scan_begin):
+            indices = np.array(scan[0])
+            if len(indices) > 0:
+                intens = scan[1]
+                mzs = self.index_to_mz(frame_id, indices)
+                scan_numbers.append(i)
+                scan_mzs.append(mzs)
+                scan_intensities.append(intens)
+            else:
+                scan_numbers.append(i)
+                scan_mzs.append(np.array([], float))
+                scan_intensities.append(np.array([], float))
+        return scan_numbers, scan_mzs, scan_intensities
 
 
 class TIMSScanDataSource(ScanDataSource):
@@ -387,7 +529,7 @@ class TIMSScanDataSource(ScanDataSource):
             result = 0
         return result + scan.start_scan
 
-    def _acquisition_informatioN(self, scan):
+    def _acquisition_information(self, scan):
         pass
 
     def _get_centroids(self, scan):
@@ -397,16 +539,23 @@ class TIMSScanDataSource(ScanDataSource):
         mzs = mzs[sort_mask]
         intensities = intensities[sort_mask]
         centroids = pick_peaks(mzs, intensities, peak_mode="centroid")
+        if centroids is None:
+            centroids = PeakIndex(
+                np.array([], float), np.array([], float), [])
         return centroids
 
     def _scan_arrays(self, scan):
         if scan.is_combined():
             mzs, intensities = self.read_spectrum(
                 scan.frame.id, scan.start_scan, scan.end_scan)
+            if len(mzs) == 0:
+                return np.array([], dtype=float), np.array([], dtype=float)
             sort_mask = np.argsort(mzs)
             mzs = mzs[sort_mask]
             intensities = intensities[sort_mask]
             centroids = pick_peaks(mzs, intensities, peak_mode="centroid")
+            if centroids is None:
+                return np.array([], dtype=float), np.array([], dtype=float)
             mzs, intensities = reprofile(
                 centroids, dx=self._scan_merging_parameters['dx'],
                 override_fwhm=self._scan_merging_parameters['fwhm'])
@@ -420,7 +569,7 @@ single_scan_id_parser = re.compile(r"frame=(\d+) scan=(\d+)")
 multi_scan_id_parser = re.compile(r"frame=(\d+) startScan=(\d+) endScan=(\d+)")
 
 
-class TIMSData(TIMSMetadata, TIMSScanDataSource):
+class TIMSData(TIMSMetadata, TIMSAPI, TIMSScanDataSource):
 
     def __init__(self, analysis_directory, use_recalibrated_state=False, scan_merging_parameters=None):
         if sys.version_info.major == 2:
@@ -450,7 +599,6 @@ class TIMSData(TIMSMetadata, TIMSScanDataSource):
         self._frame_cache = WeakValueDictionary()
         self._scan_merging_parameters = scan_merging_parameters
 
-
     def __del__(self):
         if hasattr(self, 'handle'):
             self.dll.tims_close(self.handle)
@@ -458,6 +606,34 @@ class TIMSData(TIMSMetadata, TIMSScanDataSource):
     def _describe_frame(self, frame_id):
         cursor = self.conn.execute("SELECT * FROM Frames WHERE Id={0};".format(frame_id))
         return dict(cursor.fetchone())
+
+    def get_scan_by_index(self, scan_index):
+        c, i = self._scan_count_to_frame_id[np.searchsorted(
+            self._scan_count_to_frame_id[:, 0], scan_index) - 1, :]
+        frame_id = i
+        remainder = scan_index - c
+        scan_number = remainder + 1
+        scan_id = "frame=%d scan=%d" % (frame_id, scan_number)
+        return self.get_scan_by_id(scan_id)
+
+    def get_scan_by_time(self, scan_time):
+        i = np.searchsorted(self._scan_time_to_frame_id[:, 0], scan_time) - 1
+        time, fi = self._scan_time_to_frame_id[i, :]
+        remainder = scan_time - time
+        try:
+            next_time = self._scan_time_to_frame_id[i + 1, 0]
+        except IndexError:
+            # An instance with exactly one frame?
+            if i == 0:
+                next_time = time * 2.0
+            else:
+                raise
+        duration = next_time - time
+        n_scans = self.get_frame_by_id(fi).num_scans
+        grid_space = np.linspace(0, duration, n_scans)
+        i = np.searchsorted(grid_space, remainder) - 1
+        scan_id = 'frame=%d scan=%d' % (fi, i)
+        return self.get_scan_by_id(scan_id)
 
     def get_scan_by_id(self, scan_id):
         match = single_scan_id_parser.match(scan_id)
@@ -487,40 +663,13 @@ class TIMSData(TIMSMetadata, TIMSScanDataSource):
         # Cache scan here
         return scan_obj
 
-    def _convert_callback(self, frame_id, input_data, func):
-        if isinstance(input_data, np.ndarray) and input_data.dtype == np.float64:
-            # already supports buffer protocol, no extra copy
-            in_array = input_data
-        else:
-            # convert data to appropriate float data buffer
-            in_array = np.array(input_data, dtype=np.float64)
-        cnt = len(in_array)
-        out = np.empty(shape=cnt, dtype=np.float64)
-        success = func(self.handle, frame_id,
-                       in_array.ctypes.data_as(POINTER(c_double)),
-                       out.ctypes.data_as(POINTER(c_double)),
-                       cnt)
-        if success == 0:
-            throw_tims_error(self.dll)
-        return out
+    def get_frame_by_time(self, frame_time):
+        i = np.searchsorted(self._scan_time_to_frame_id[:, 0], frame_time) - 1
+        _time, fi = self._scan_time_to_frame_id[i, :]
+        return self.get_frame_by_id(fi)
 
-    def index_to_mz(self, frame_id, mzs):
-        return self._convert_callback(frame_id, mzs, self.dll.tims_index_to_mz)
-
-    def mz_to_index(self, frame_id, mzs):
-        return self._convert_callback(frame_id, mzs, self.dll.tims_mz_to_index)
-
-    def scan_number_to_one_over_K0(self, frame_id, mzs):
-        return self._convert_callback(frame_id, mzs, self.dll.tims_scannum_to_oneoverk0)
-
-    def one_over_K0_to_scan_number(self, frame_id, mzs):
-        return self._convert_callback(frame_id, mzs, self.dll.tims_oneoverk0_to_scannum)
-
-    def scan_number_to_voltage(self, frame_id, mzs):
-        return self._convert_callback(frame_id, mzs, self.dll.tims_scannum_to_voltage)
-
-    def voltage_to_scan_number(self, frame_id, mzs):
-        return self._convert_callback(frame_id, mzs, self.dll.tims_voltage_to_scannum)
+    def get_frame_by_index(self, index):
+        return self.get_frame_by_id(index + 1)
 
     def get_frame_by_id(self, frame_id):
         if frame_id in self._frame_cache:
@@ -544,50 +693,26 @@ class TIMSData(TIMSMetadata, TIMSScanDataSource):
         self._frame_cache[frame_id] = frame
         return frame
 
-    # Output: list of tuples (indices, intensities)
-    def read_scans(self, frame_id, scan_begin, scan_end):
-        # buffer-growing loop
-        while True:
-            cnt = int(self.initial_frame_buffer_size)
-            buf = np.empty(shape=cnt, dtype=np.uint32)
-            buffer_size_in_bytes = 4 * cnt
+    def _ms2_frames_for_parent_id(self, parent_frame_id):
+        product_frame_ids = self.conn.execute("""
+            SELECT Frame
+            FROM PasefFrameMsMsInfo JOIN Precursors ON Precursors.id = PasefFrameMsMsInfo.precursor
+            WHERE Parent = ?;""", (parent_frame_id, )).fetchall()
+        product_frames = [self.get_frame_by_id(
+            i) for i, in product_frame_ids]
+        return product_frames
 
-            required_len = self.dll.tims_read_scans_v2(self.handle, frame_id, scan_begin, scan_end,
-                                                       buf.ctypes.data_as(POINTER(c_uint32)),
-                                                       buffer_size_in_bytes)
-            if required_len == 0:
-                throw_tims_error(self.dll)
+    def make_iterator(self, iterator=None, grouped=True, frame=True):
+        if iterator is None:
+            iterator = self._make_default_iterator()
 
-            if required_len > buffer_size_in_bytes:
-                if required_len > 16777216:
-                    # arbitrary limit for now...
-                    raise RuntimeError("Maximum expected frame size exceeded.")
-                self.initial_frame_buffer_size = required_len / 4 + 1 # grow buffer
-            else:
-                break
+    def _ms1_frame_iterator(self):
+        ms1_frame_ids = self.conn.execute("SELECT Id FROM Frames WHERE MsMsType = 0;").fetchall()
+        for frame_id, in ms1_frame_ids:
+            yield frame_id
 
-        result = []
-        d = scan_end - scan_begin
-        for i in range(scan_begin, scan_end):
-            npeaks = buf[i-scan_begin]
-            indices = buf[d:d + npeaks]
-            d += npeaks
-            intensities = buf[d:d + npeaks]
-            d += npeaks
-            result.append((indices, intensities))
-
-        return result
-
-    def read_spectrum(self, frame_id, scan_begin, scan_end):
-        scans = self.read_scans(frame_id, scan_begin, scan_end)
-        # Summarize on a grid
-        allind = []
-        allint = np.array([], dtype=float)
-        for scan in scans:
-            indices = np.array(scan[0])
-            if len(indices) > 0:
-                intens = scan[1]
-                allind = np.concatenate((allind, indices))
-                allint = np.concatenate((allint, intens))
-        allmz = self.index_to_mz(frame_id, allind)
-        return allmz, allint
+    def _make_default_iterator(self, frame=True):
+        if frame:
+            return self._ms1_frame_iterator()
+        else:
+            raise NotImplementedError()
