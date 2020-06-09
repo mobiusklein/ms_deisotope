@@ -55,7 +55,7 @@ def configure_iterator(loader, start_time, end_time):
             end_time = last_time
         end_scan = loader.get_scan_by_time(end_time)
         if loader.has_ms1_scans():
-            end_scan = loader._locate_ms1_scan()
+            end_scan = loader._locate_ms1_scan(end_scan)
 
         start_scan_id = start_scan.id
         end_scan_id = end_scan.id
