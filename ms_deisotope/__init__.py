@@ -23,9 +23,9 @@ from .deconvolution import (
     CompositionListPeakDependenceGraphDeconvoluter,
     deconvolute_peaks)
 from .scoring import MSDeconVFitter, PenalizedMSDeconVFitter, DistinctPatternFitter, IsotopicFitRecord
-from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSolution
-from .processor import ScanProcessor
-from .data_source import MzMLLoader, MzXMLLoader, MSFileLoader
+from .peak_set import (DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSolution, decharge)
+from .processor import ScanProcessor, process
+from .data_source import (MzMLLoader, MzXMLLoader, MSFileLoader, MGFLoader)
 
 
 def get_include():
@@ -50,7 +50,7 @@ __all__ = [
     "MSDeconVFitter", "PenalizedMSDeconVFitter", "DistinctPatternFitter", "IsotopicFitRecord",
     "DeconvolutedPeak", "DeconvolutedPeakSet", "DeconvolutedPeakSolution",
     "MzMLLoader", "MzXMLLoader", "MSFileLoader", "ScanProcessor",
-    "deconvolute_peaks", 'version'
+    "deconvolute_peaks", 'version', "process", "decharge"
 ]
 
 
