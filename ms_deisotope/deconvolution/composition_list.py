@@ -78,7 +78,7 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
         tid.truncate_after(truncate_after)
         tid.ignore_below(ignore_below)
         if mass_shift is not None:
-            tid.shift(mass_shift / abs(charge))
+            tid.shift(tid[0].mz + mass_shift / abs(charge))
         return tid
 
     def recalibrate_theoretical_mz(self, theoretical_distribution, experimental_mz):
