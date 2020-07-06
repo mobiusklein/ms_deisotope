@@ -9,7 +9,9 @@ _APDGD = AveraginePeakDependenceGraphDeconvoluter
 
 
 class HybridAveragineCompositionListPeakDependenceGraphDeconvoluter(_APDGD, CompositionListDeconvoluterBase):
-    def __init__(self, peaklist, composition_list, *args, **kwargs):
+    def __init__(self, peaklist, composition_list=None, *args, **kwargs):
+        if composition_list is None:
+            composition_list = []
         super(HybridAveragineCompositionListPeakDependenceGraphDeconvoluter, self).__init__(
             peaklist, composition_list=composition_list, *args, **kwargs)
 
