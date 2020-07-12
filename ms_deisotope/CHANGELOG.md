@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 1. The `_reindex` method of `DeconvolutedPeakSet` has been renamed `reindex` to reflect that it should be part of the type's
    public API since user code may need to call it if they apply some new transformation to the list of peaks.
 2. The `composition_list` argument to `HybridAveragineCompositionListPeakDependenceGraphDeconvoluter` is now optional.
+3. The `incremental_truncation` option for `deconvolute_peaks` and `ExhaustivePeakSearchDeconvoluterBase`-based strategies
+   now apply truncation to *all* fits, not just those passing the initial full-width fit. This required more invasive changes
+   to the implementations of `AveragineDeconvoluterBase` and `MultiAveragineDeconvoluterBase` but is now more consistent with the
+   original intent behind `incremental_truncation`.
 
 ### Fixed
 1. When using the `CompositionList`-based deconvoluters with a mass shift, the theoretical isotopic pattern will now have the correct

@@ -109,6 +109,9 @@ class AveragineDeconvoluterBase(DeconvoluterBase):
             if not self._check_fit(fit):
                 continue
             results.append(fit)
+            if self.incremental_truncation is not None:
+                results.extend(self.fit_incremental_truncation(
+                    fit, self.incremental_truncation))
         return set(results)
 
 
@@ -182,6 +185,9 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                 if not self._check_fit(fit):
                     continue
                 results.append(fit)
+                if self.incremental_truncation is not None:
+                    results.extend(self.fit_incremental_truncation(
+                        fit, self.incremental_truncation))
         return set(results)
 
 
