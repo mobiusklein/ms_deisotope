@@ -178,16 +178,26 @@ class Scan(ScanBase):
         self._isolation_window = None
         self._instrument_configuration = None
 
-    def clear(self):
+    def clear(self, full=False):
         """Releases all associated in-memory data and clears the cached
         attributes.
 
         The data reference attribute :attr:`_data` is retained
         and unchanged.
+
+        Parameters
+        ----------
+        full: bool
+            Whether to clear more attributes to aggressively free memory.
         """
         if self.source is not None:
             self.source._scan_cleared(self)
         self._unload()
+        if full:
+            self.peak_set = None
+            self.deconvoluted_peak_set = None
+            self.product_scans = []
+            self._external_annotations = {}
 
     @property
     def ms_level(self):
@@ -1167,8 +1177,13 @@ class ProcessedScan(ScanBase):
         self.annotations = annotations
         self.source = source
 
-    def clear(self):
+    def clear(self, full=False):
         '''Clear storage-heavy attribute values
+
+        Parameters
+        ----------
+        full: bool
+            Whether to clear attributes more aggressively to free up space.
         '''
         self.peak_set = None
         self.deconvoluted_peak_set = None
