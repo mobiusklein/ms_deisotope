@@ -308,6 +308,10 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         else:
             return self.arrays[i]
 
+    @property
+    def size(self):
+        return self.mz.size
+
 
 class ScanBase(object):
     '''Abstract base class for Scan-like objects
