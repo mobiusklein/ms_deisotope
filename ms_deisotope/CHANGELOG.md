@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
    original intent behind `incremental_truncation`.
 4. `Scan.clear` now takes a `full` parameter which will discard the `peak_set`, `deconvoluted_peak_set`, and `product_scans` attributes'
    data. This more aggressively frees memory.
+5. `Scan.average` and `Scan.average_with` now skip scans with empty signal arrays.
 
 ### Fixed
 1. When using the `CompositionList`-based deconvoluters with a mass shift, the theoretical isotopic pattern will now have the correct
