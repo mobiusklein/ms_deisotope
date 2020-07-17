@@ -138,7 +138,14 @@ class PrecursorPurityEstimator(object):
             whose envelopes overlap the isolation window and pass the thresholds.
         """
         peak_set = scan.deconvoluted_peak_set
-        mz = precursor_peak.mz
+        if precursor_peak is not None:
+            mz = precursor_peak.mz
+            intensity_threshold = precursor_peak.intensity * relative_intensity_threshold
+        elif isolation_window is not None:
+            mz = float(isolation_window.target)
+            intensity_threshold = None
+        else:
+            return []
 
         if isolation_window is None:
             lower_bound = mz - self.default_width
@@ -150,10 +157,11 @@ class PrecursorPurityEstimator(object):
 
         peaks = peak_set.between(extended_lower_bound,
                                  upper_bound, use_mz=True)
+        if intensity_threshold is None:
+            intensity_threshold = sum([p.intensity for p in peaks]) / float(len(peaks)) * relative_intensity_threshold
         others = [
             CoIsolation(p.neutral_mass, p.intensity, p.charge)
-            for p in peaks if p != precursor_peak and p.intensity > (
-                precursor_peak.intensity * relative_intensity_threshold) and
+            for p in peaks if p != precursor_peak and (p.intensity > intensity_threshold) and
             p.envelope[-1].mz > lower_bound and ((abs(p.charge) != 1 and ignore_singly_charged) or
                                                  not ignore_singly_charged)
         ]

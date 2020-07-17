@@ -593,7 +593,7 @@ class ScanProcessor(Base, LogUtilsMixin):
             if scan.ms_level > 1:
                 scan.precursor_information.default(orphan=True)
 
-    def deconvolute_precursor_scan(self, precursor_scan, priorities=None):
+    def deconvolute_precursor_scan(self, precursor_scan, priorities=None, product_scans=None):
         """Deconvolute the given precursor scan, giving priority to its product ions,
         correcting the :attr:`precursor_information` attributes of priority targets,
         as well as calculating the degree of precursor purity and coisolating ions.
@@ -604,6 +604,8 @@ class ScanProcessor(Base, LogUtilsMixin):
             The precursor scan to deconvolute
         priorities : :class:`list` of :class:`PriorityTarget`, optional
             The priority targets for the product ions derived from `precursor_scan`
+        product_scans: :class:`list` of :class:`~.Scan`
+            The product ion scans of `precursor_scan`.
 
         Returns
         -------
@@ -620,6 +622,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         if priorities is None:
             priorities = []
+        if product_scans is None:
+            product_scans = []
 
         self.log("Deconvoluting Precursor Scan %r" % precursor_scan)
         self.log("Priorities: %r" % priorities)
@@ -663,7 +667,7 @@ class ScanProcessor(Base, LogUtilsMixin):
             precursor_scan.id, [
                 (p.mz, p.charge) if p is not None else None for p in priorities
             ]))
-        for product_scan in precursor_scan.product_scans:
+        for product_scan in product_scans:
             precursor_information = product_scan.precursor_information
             if precursor_information is None:
                 continue
@@ -711,6 +715,10 @@ class ScanProcessor(Base, LogUtilsMixin):
                         ', '.join(["(%0.4f, %0.1f)" % (p.mz, p.intensity) for p in peak.envelope]),
                         ', '.join(["(%0.4f, %0.1f)" % (p.mz, p.intensity) for p in peak.fit.theoretical]))
                 )
+            else:
+                coisolation = coisolation_detection.coisolation(
+                    precursor_scan, None, product_scan.isolation_window, 0.0)
+                precursor_information.coisolation = coisolation
 
             product_scan.annotations['precursor purity'] = precursor_purity
             precursor_information.extract(peak)
@@ -810,7 +818,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
         if precursor_scan is not None:
-            self.deconvolute_precursor_scan(precursor_scan, priorities)
+            self.deconvolute_precursor_scan(
+                precursor_scan, priorities, product_scans)
         else:
             self._default_all_precursor_information(product_scans)
 
@@ -910,8 +919,8 @@ def process(data_source, ms1_averagine=peptide, msn_averagine=peptide,
         Whether or not to process whole MS1 scans or just the regions around those peaks
         chosen for MSn
     default_precursor_ion_selection_window : :class:`float`
-        Size of the selection window to use when :attr:`pick_only_tandem_envelopes` is `True`
-        and the information is not available in the scan.
+        Size of the selection window to use when an explicit isolation window width is not
+        available in the scan.
     trust_charge_hint : :class:`bool`
         Whether or not to trust the charge provided by the data source when determining
         the charge state of precursor isotopic patterns. Defaults to `True`

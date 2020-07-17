@@ -307,7 +307,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                             if self.verbose:
                                 self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
                             if self.deconvolute:
-                                transformer.deconvolute_precursor_scan(scan, priorities)
+                                transformer.deconvolute_precursor_scan(
+                                    scan, priorities, product_scans)
                             self.send_scan(scan)
                     except (KeyboardInterrupt, SystemExit) as e:
                         raise

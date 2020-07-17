@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 4. `Scan.clear` now takes a `full` parameter which will discard the `peak_set`, `deconvoluted_peak_set`, and `product_scans` attributes'
    data. This more aggressively frees memory.
 5. `Scan.average` and `Scan.average_with` now skip scans with empty signal arrays.
+6. The `ScanProcessor.deconvolute_precursor_scan` method now explicitly requests `product_scans` be passed as an argument. It also extracts
+   co-isolating precursor ions from the isolation window even if a deconvoluted peak is not found for the precursor ion.
 
 ### Fixed
 1. When using the `CompositionList`-based deconvoluters with a mass shift, the theoretical isotopic pattern will now have the correct
