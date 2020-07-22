@@ -161,13 +161,15 @@ def check_if_profile(loader):
 @click.option("-snr", "--signal-to-noise-threshold", default=1.0, type=float, help=(
     "Signal-to-noise ratio threshold to apply when filtering peaks"))
 @click.option("-mo", "--mass-offset", default=0.0, type=float, help=("Shift peak masses by the given amount"))
+@click.option("-D", "--default-precursor-ion-selection-window", default=1.5, type=float,
+              help="The isolation window width to assume when it is not specified.")
 def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=None, maximum_charge=None,
               name=None, msn_averagine=None, score_threshold=35., msn_score_threshold=10., missed_peaks=1,
               msn_missed_peaks=1, background_reduction=0., msn_background_reduction=0.,
               transform=None, msn_transform=None, processes=4, extract_only_tandem_envelopes=False,
               ignore_msn=False, isotopic_strictness=2.0, ms1_averaging=0,
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
-              deconvolute=True, verbose=False):
+              default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
     '''Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.
     '''
     if transform is None:
@@ -297,6 +299,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         extract_only_tandem_envelopes=extract_only_tandem_envelopes,
         ignore_tandem_scans=ignore_msn,
         ms1_averaging=ms1_averaging,
+        default_precursor_ion_selection_window=default_precursor_ion_selection_window,
         deconvolute=deconvolute,
         verbose=verbose)
     consumer.start()

@@ -222,6 +222,10 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
                     inst.register_parameter("parameter: ignore-tandem-scans", "")
                 if source.extract_only_tandem_envelopes:
                     inst.register_parameter("parameter: extract-only-tandem-envelopes", "")
+                if source.default_precursor_ion_selection_window:
+                    inst.register_parameter(
+                        "parameter: default-precursor-ion-selection-window",
+                        source.default_precursor_ion_selection_window)
 
             if source.msn_peak_picking_args is not None:
                 for trans in source.msn_peak_picking_args.get("transforms", []):

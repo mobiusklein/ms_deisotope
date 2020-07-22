@@ -226,7 +226,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  envelope_selector=None, ms1_averaging=0, log_handler=None,
-                 deconvolute=True, verbose=False, too_many_peaks_threshold=7000):
+                 deconvolute=True, verbose=False, too_many_peaks_threshold=7000,
+                 default_precursor_ion_selection_window=1.5):
         if log_handler is None:
             log_handler = show_message
 
@@ -276,6 +277,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         self._work_complete = multiprocessing.Event()
         self.log_handler = log_handler
         self.too_many_peaks_threshold = too_many_peaks_threshold
+        self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
 
     def make_scan_transformer(self, loader=None):
         transformer = ScanProcessor(
@@ -286,7 +288,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
             msn_deconvolution_args=self.msn_deconvolution_args,
             loader_type=lambda x: x,
             envelope_selector=self.envelope_selector,
-            ms1_averaging=self.ms1_averaging)
+            ms1_averaging=self.ms1_averaging,
+            default_precursor_ion_selection_window=self.default_precursor_ion_selection_window)
         return transformer
 
     def handle_scan_bunch(self, scan, product_scans, scan_id, product_scan_ids, process_msn=True):
