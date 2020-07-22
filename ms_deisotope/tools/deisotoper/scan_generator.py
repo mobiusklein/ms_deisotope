@@ -130,7 +130,8 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
                  ms1_peak_picking_args=None, msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  extract_only_tandem_envelopes=False, ignore_tandem_scans=False,
-                 ms1_averaging=0, deconvolute=True, verbose=False):
+                 ms1_averaging=0, default_precursor_ion_selection_window=1.5,
+                 deconvolute=True, verbose=False):
         self.ms_file = ms_file
         self.ignore_tandem_scans = ignore_tandem_scans
 
@@ -151,6 +152,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
         self.ms1_peak_picking_args = ms1_peak_picking_args
         self.msn_peak_picking_args = msn_peak_picking_args
         self.ms1_averaging = ms1_averaging
+        self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
 
         self.deconvoluting = deconvolute
         self.ms1_deconvolution_args = ms1_deconvolution_args
@@ -224,6 +226,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             envelope_selector=self._scan_interval_tree,
             log_handler=self.log_controller.sender(),
             ms1_averaging=self.ms1_averaging,
+            default_precursor_ion_selection_window=self.default_precursor_ion_selection_window,
             deconvolute=self.deconvoluting,
             verbose=self.verbose)
 

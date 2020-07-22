@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 3. Made `ms_deisotope.data_source.mgf.MGFLoader`, `ms_deisotope.peak_set.decharge`, and `ms_deisotope.processor.process` part
    of the top-level module's API.
 4. Added `RawDataArray.size` property to report the length of the m/z and intensity array.
+5. Added `default_precursor_ion_selection_window` (`-D`) to the `ms-deisotope` command line tool.
 
 ### Changed
 1. The `_reindex` method of `DeconvolutedPeakSet` has been renamed `reindex` to reflect that it should be part of the type's
