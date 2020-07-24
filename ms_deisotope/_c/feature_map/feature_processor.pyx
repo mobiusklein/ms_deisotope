@@ -1,5 +1,5 @@
 # cython: embedsignature=True
-# 
+#
 
 from libc.stdlib cimport malloc, free
 
@@ -189,7 +189,7 @@ cdef class envelope_conformer:
             TheoreticalPeak tpeak, peak
 
         cleaned_eid = []
-        
+
         for i in range(PyList_GET_SIZE(self.experimental)):
             fpeak = <FittedPeak>PyList_GET_ITEM(self.experimental, i)
             if fpeak is None:
@@ -243,13 +243,13 @@ cdef class LCMSFeatureProcessorBase(object):
         public IsotopicFitterBase scorer
         public AveragineCache averagine
 
-    cpdef list create_theoretical_distribution(self, double mz, int charge, double charge_carrier=PROTON, double truncate_after=0.8,
-                                               double ignore_below=0.05):
+    cpdef TheoreticalIsotopicPattern create_theoretical_distribution(self, double mz, int charge, double charge_carrier=PROTON, double truncate_after=0.8,
+                                                                     double ignore_below=0.05):
         cdef:
             TheoreticalIsotopicPattern base_tid
         base_tid = self.averagine.isotopic_cluster(
             mz, charge, truncate_after=truncate_after, ignore_below=ignore_below,
-            charge_carrier=charge_carrier)        
+            charge_carrier=charge_carrier)
         return base_tid
 
     cpdef list find_all_features(self, double mz, double error_tolerance=2e-5):
@@ -343,7 +343,7 @@ cdef class LCMSFeatureProcessorBase(object):
             return 0
         return acc / count
 
-    cpdef LCMSFeatureSetFit _fit_single_feature_set(self, list features, list base_tid, double error_tolerance, 
+    cpdef LCMSFeatureSetFit _fit_single_feature_set(self, list features, list base_tid, double error_tolerance,
                                                     int charge, double charge_carrier=PROTON, int max_missed_peaks=1,
                                                     double threshold_scale=0.3):
         cdef:
