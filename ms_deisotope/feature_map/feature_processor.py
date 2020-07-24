@@ -409,7 +409,8 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         charge = feature_fit.charge
         abs_charge = abs(charge)
         for eid in feat_iter:
-            cleaned_eid, tid, n_missing = conform_envelopes(eid, base_tid.truncated_tid)
+            cleaned_eid, tid, n_missing = conform_envelopes(
+                eid, base_tid.peaklist)
             rep_eid = drop_placeholders(cleaned_eid)
             n_real_peaks = len(rep_eid)
             if n_real_peaks == 0 or (n_real_peaks == 1 and abs_charge > 1) or \

@@ -421,7 +421,7 @@ cdef class LCMSFeatureProcessorBase(object):
             dvec* time_vec
 
         feature_groups = self.match_theoretical_isotopic_distribution(
-            base_tid.truncated_tid, error_tolerance, interval=feature)
+            base_tid.peaklist, error_tolerance, interval=feature)
         feature_fits = []
 
         conformer = envelope_conformer._create()
@@ -462,7 +462,7 @@ cdef class LCMSFeatureProcessorBase(object):
                 if eid is None:
                     continue
                 counter += 1
-                conformer.acquire(eid, snapped_tid.truncated_tid)
+                conformer.acquire(eid, snapped_tid.peaklist)
                 conformer.conform()
                 cleaned_eid = conformer.experimental
                 tid = conformer.theoretical
