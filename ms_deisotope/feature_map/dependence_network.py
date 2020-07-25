@@ -2,7 +2,9 @@ import warnings
 import operator
 from collections import defaultdict
 
-from ms_deisotope.peak_dependency_network.intervals import SpanningMixin, IntervalTreeNode
+from ms_deisotope.peak_dependency_network.intervals import (
+    # Use pure Python implementations to allow non-primitive floats as coordinates
+    _SpanningMixin as SpanningMixin, _IntervalTreeNode as IntervalTreeNode)
 from ms_deisotope.peak_dependency_network.subgraph import GreedySubgraphSelection
 
 from .lcms_feature import EmptyFeature
@@ -16,7 +18,7 @@ def is_valid(feature):
 class FeatureNode(object):
     """Holds all the information about a single `LCMSFeature` instance
     and all the `LCMSFeatureFit` instances that depend upon it.
-    
+
     Attributes
     ----------
     feature : LCMSFeature
