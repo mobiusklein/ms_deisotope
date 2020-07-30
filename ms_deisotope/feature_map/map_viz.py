@@ -122,7 +122,7 @@ def labeler(profile, *args, **kwargs):
 
 
 def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size=10,
-                  axis_label_font_size=20, axis_font_size=16, label=True,
+                  axis_label_font_size=16, axis_font_size=16, label=True,
                   colorizer=random_colorizer, label_function=labeler):
     if ax is None:
         fig, ax = plt.subplots(1)
@@ -172,7 +172,7 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
     ax.axes.spines['top'].set_visible(False)
     ax.yaxis.tick_left()
     ax.xaxis.tick_bottom()
-    ax.set_xlabel("Retention Time", fontsize=axis_label_font_size)
+    ax.set_xlabel("Time", fontsize=axis_label_font_size)
     ax.set_ylabel("Relative Abundance", fontsize=axis_label_font_size)
     [t.set(fontsize=axis_font_size) for t in ax.get_xticklabels()]
     [t.set(fontsize=axis_font_size) for t in ax.get_yticklabels()]
