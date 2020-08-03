@@ -192,7 +192,7 @@ class MassLynxRawReader(RandomAccessScanSource):
                 block_end = len(self.index)
                 self.function_blocks[fnum].append((block_start, block_end))
                 cyc = Cycle(
-                    ie.function, ie.block, 0, num_scans_in_block,
+                    ie.function, ie.block, 0, 1,
                     id="function=%d process=0 startScan=%d endScan=%d" % (
                         fnum + 1,
                         i + 1,
