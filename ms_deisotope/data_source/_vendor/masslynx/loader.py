@@ -6,10 +6,11 @@ from collections import defaultdict, OrderedDict
 
 import numpy as np
 
-import ms_deisotope
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source import (
-    Scan, ActivationInformation, PrecursorInformation, ChargeNotProvided, IsolationWindow)
+    Scan, ActivationInformation, PrecursorInformation,
+    ChargeNotProvided, IsolationWindow,
+    RandomAccessScanSource)
 from ms_deisotope.data_source.metadata.scan_traits import (
     ScanAcquisitionInformation, ScanWindow, ScanEventInformation,
     ion_mobility_drift_time)
@@ -18,10 +19,26 @@ from ms_deisotope.data_source.metadata.activation import HCD
 from . import (MassLynxRawInfoReader,
                MassLynxRawScanReader,
                MassLynxRawChromatogramReader,
-               MassLynxRawDefs, MassLynxParameters)
+               MassLynxRawDefs,
+            #    MassLynxParameters
+              )
 
 
-waters_id_pattern = re.compile("function=(\d+) process=(\d+) scan=(\d+)")
+waters_id_pattern = re.compile(r"function=(\d+) process=(\d+) scan=(\d+)")
+
+
+class Cycle(Base):
+    __slots__ = ("function", "block", "start_scan", "end_scan", "id")
+
+    def __init__(self, function=None, block=None, start_scan=None, end_scan=None, id=None):
+        self.function = function
+        self.block = block
+        self.start_scan = start_scan
+        self.end_scan = end_scan
+        self.id = id
+
+    def __str__(self):
+        return self.id
 
 
 class IndexEntry(Base):
@@ -35,22 +52,34 @@ class IndexEntry(Base):
         self.index = index
         self.id = id
 
+    def __str__(self):
+        return self.id
 
-class MassLynxReader(object):
+
+class MassLynxRawReader(RandomAccessScanSource):
     def __init__(self, raw_path):
-        self.raw_path = raw_path
+        self.source_file = raw_path
+
         self.info_reader = MassLynxRawInfoReader.MassLynxRawInfoReader(
-            raw_path)
+            self.source_file)
         self.chrom_reader = MassLynxRawChromatogramReader.MassLynxRawChromatogramReader(
-            raw_path)
+            self.source_file)
         self.scan_reader = MassLynxRawScanReader.MassLynxRawScanReader(
-            raw_path)
+            self.source_file)
+        self.index = []
+        self.cycle_index = []
+        self._producer = None
+        self.initialize_scan_cache()
+
         self._build_function_index()
         self._build_scan_index()
 
+    def __repr__(self):
+        return "MassLynxRawReader(%r)" % (self.source_file)
+
     # Vendor data access support methods
     def _read_header_properties(self):
-        path = os.path.join(self.raw_path, "_HEADER.TXT")
+        path = os.path.join(self.source_file, "_HEADER.TXT")
         self.header_properties = {}
         with open(path, 'rt') as fh:
             for line in fh:
@@ -63,7 +92,7 @@ class MassLynxReader(object):
         num_spectra = 0
         function_file_path_by_number = {}
         function_index_list = []
-        for dat in glob.glob(os.path.join(self.raw_path, "_FUNC*.DAT")):
+        for dat in glob.glob(os.path.join(self.source_file, "_FUNC*.DAT")):
             fnum = int(os.path.basename(dat).replace(
                 "_func", '').replace(".dat", ""))
             function_file_path_by_number[fnum - 1] = dat
@@ -123,8 +152,9 @@ class MassLynxReader(object):
                         (self.info_reader.GetRetentionTime(fnum, i), (fnum, i)))
         function_and_scan_by_rt.sort(key=lambda x: x[0])
         self.index = []
+        self.cycle_index = []
         self.function_blocks = defaultdict(list)
-        for rt, (fnum, i) in function_and_scan_by_rt:
+        for _rt, (fnum, i) in function_and_scan_by_rt:
             if self.ion_mobility_by_function_index[fnum]:
                 # num_scans_in_block = self.info_reader.GetDriftScanCount(fnum)
                 block_start = len(self.index)
@@ -140,6 +170,14 @@ class MassLynxReader(object):
                                                                 num_scans_in_block * ie.block + ie.scan + 1)
                 block_end = len(self.index)
                 self.function_blocks[fnum].append((block_start, block_end))
+                cyc = Cycle(
+                    fnum, i, 0, num_scans_in_block,
+                    id="function=%d process=0 startScan=%d endScan=%d" % (
+                        fnum + 1,
+                        num_scans_in_block * i + 1,
+                        num_scans_in_block * i + num_scans_in_block,
+                    ))
+                self.cycle_index.append(cyc)
             else:
                 block_start = len(self.index)
                 self.index.append(IndexEntry())
@@ -153,116 +191,18 @@ class MassLynxReader(object):
                                                             ie.scan + 1)
                 block_end = len(self.index)
                 self.function_blocks[fnum].append((block_start, block_end))
+                cyc = Cycle(
+                    ie.function, ie.block, 0, num_scans_in_block,
+                    id="function=%d process=0 startScan=%d endScan=%d" % (
+                        fnum + 1,
+                        i + 1,
+                        i + 2,
+                    ))
+                self.cycle_index.append(cyc)
 
-    # ScanSource methods
-
-    def _make_scan(self, data):
-        return Scan(data, self)
-
-    def _scan_time(self, data):
-        if data.block >= 0:
-            return self.info_reader.GetRetentionTime(data.function, data.block)
-        else:
-            return self.info_reader.GetRetentionTime(data.function, data.scan)
-
-    def _drift_time(self, data):
-        if data.block >= 0:
-            return self.info_reader.GetDriftTime(data.function, data.scan)
-        else:
-            return None
-
-    def _scan_id(self, data):
-        return data.id
-
-    def _scan_index(self, data):
-        return data.index
-
-    def _ms_level(self, data):
-        ms_level, _scan_type = self._translate_function_type(data.function)
-        return ms_level
-
-    def _scan_arrays(self, data):
-        if data.block >= 0:
-            mz, inten = self.scan_reader.ReadDriftScan(
-                data.function, data.block, data.scan)
-        else:
-            mz, inten = self.scan_reader.ReadScan(data.function, data.scan)
-        return np.array(mz), np.array(inten)
-
-    def _precursor_information(self, data):
-        if self._ms_level(data) == 1:
-            return None
-        set_mass_str = self.info_reader.GetScanItem(
-            data.function,
-            data.block if data.block >= 0 else data.scan,
-            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
-        )
-        if set_mass_str:
-            set_mass = float(set_mass_str)
-        else:
-            set_mass = 0.0
-        if set_mass == 0:
-            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
-                data.function)
-            set_mass = (lower_bound + upper_bound) / 2.
-        pinfo = PrecursorInformation(
-            set_mass, 0, ChargeNotProvided, source=self, product_scan_id=data.id)
-        return pinfo
-
-    def _isolation_window(self, data):
-        if self._ms_level(data) == 1:
-            return None
-        set_mass_str = self.info_reader.GetScanItem(
-            data.function,
-            data.block if data.block >= 0 else data.scan,
-            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
-        )
-        if set_mass_str:
-            set_mass = float(set_mass_str)
-        else:
-            set_mass = 0.0
-        if set_mass == 0:
-            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
-                data.function)
-            set_mass = (lower_bound + upper_bound) / 2.
-            lower_bound_offset = upper_bound_offset = upper_bound - set_mass
-        else:
-            lower_bound_offset = upper_bound_offset = 0
-        return IsolationWindow(
-            lower_bound_offset, set_mass, upper_bound_offset)
-
-    def _is_profile(self, data):
-        return self.info_reader.IsContinuum(data.function)
-
-    def _acquisition_information(self, data):
-        scan_window = ScanWindow(
-            *self.info_reader.GetAcquisitionMassRange(data.function))
-        scan_time = self._scan_time(data)
-        drift_time = self._drift_time(data)
-        event = ScanEventInformation(scan_time, [scan_window], traits={
-            'preset scan configuration': data.function + 1,
-        })
-        if drift_time is not None:
-            event.ion_mobility.add_ion_mobility(
-                ion_mobility_drift_time, drift_time)
-        return ScanAcquisitionInformation('no combination', [event])
-
-    def _polarity(self, data):
-        mode = self.info_reader.GetIonMode(data.function)
-        s = self.info_reader.GetIonModeString(mode)
-        if s.endswith('+'):
-            return 1
-        elif s.endswith('-'):
-            return -1
-        raise ValueError("Unknown Ion Mode %r" % (s, ))
-        # return 1
-
-    def _activation(self, data):
-        energy_str = self.info_reader.GetScanItem(
-            data.function, data.block if data.block >= 0 else data.scan, MassLynxRawDefs.MassLynxScanItem.COLLISION_ENERGY)
-        if energy_str:
-            energy = float(energy_str)
-            return ActivationInformation(HCD, energy)
+    # RandaomAccessScanSource methods
+    def __len__(self):
+        return len(self.index)
 
     def get_scan_by_index(self, index):
         return self._make_scan(self.index[index])
@@ -271,7 +211,7 @@ class MassLynxReader(object):
         match = waters_id_pattern.search(scan_id)
         if not match:
             raise KeyError(scan_id)
-        fnum1, proc, scan = tuple(map(int, match.groups()))
+        fnum1, _proc, scan = tuple(map(int, match.groups()))
         fnum = fnum1 - 1
         intervals = self.function_blocks[fnum]
         for interval in intervals:
@@ -285,6 +225,224 @@ class MassLynxReader(object):
                         ie = self.index[i]
                         if ie.id == scan_id:
                             return self._make_scan(ie)
+                    raise KeyError(scan_id)
+
+    def get_scan_by_time(self, time):
+        lo = 0
+        hi = len(self.index)
+
+        best_match = None
+        best_error = float('inf')
+
+        if time == float('inf'):
+            return self.get_scan_by_index(self.index[-1].index)
+
+        while hi != lo:
+            mid = (hi + lo) // 2
+            sid = self.index[mid]
+            scan = self.get_scan_by_index(sid.index)
+            if not self._validate(scan):
+                sid = self.index[mid - 1]
+                scan = self.get_scan_by_index(sid.index)
+                if not self._validate(scan):
+                    sid = self.index[mid - 2]
+                    scan = self.get_scan_by_index(sid.index)
+
+            scan_time = scan.scan_time
+            err = abs(scan_time - time)
+            if err < best_error:
+                best_error = err
+                best_match = scan
+            if scan_time == time:
+                # Rewind here
+                i = scan.index - 1
+                while i >= 0:
+                    prev_scan = self.get_scan_by_index(i)
+                    if prev_scan.scan_time == scan.scan_time:
+                        scan = prev_scan
+                        i -= 1
                     else:
-                        raise KeyError(scan_id)
-        raise KeyError(scan_id)
+                        break
+                return scan
+            elif (hi - lo) == 1:
+                # Rewind here
+                scan = best_match
+                i = scan.index - 1
+                while i >= 0:
+                    prev_scan = self.get_scan_by_index(i)
+                    if prev_scan.scan_time == scan.scan_time:
+                        scan = prev_scan
+                        i -= 1
+                    else:
+                        break
+                return scan
+            elif scan_time > time:
+                hi = mid
+            else:
+                lo = mid
+
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        if scan_id is not None:
+            scan = self.get_scan_by_id(scan_id)
+            start_index = scan.index
+        elif index is not None:
+            start_index = index
+        elif rt is not None:
+            scan = self.get_scan_by_time(rt)
+            start_index = scan.index
+        if require_ms1:
+            while start_index != 0:
+                scan = self.get_scan_by_index(start_index)
+                if scan.ms_level > 1:
+                    start_index -= 1
+                else:
+                    break
+            current_block = self.index[start_index].block
+            while start_index > 0:
+                ie = self.index[start_index - 1]
+                if ie.block != current_block:
+                    break
+                else:
+                    start_index -= 1
+        self._producer = self._make_pointer_iterator(start_index)
+        return self
+
+    # ScanIterator methods
+    def next(self):
+        return next(self._producer)
+
+    def _make_default_iterator(self):
+        return self._make_pointer_iterator()
+
+    def _make_scan_index_producer(self, start_index=None, start_time=None):
+        if start_index is not None:
+            return range(start_index, len(self.index))
+        elif start_time is not None:
+            raise NotImplementedError()
+            # start_index = self._scan_time_to_scan_number(start_time)
+            # while start_index != 0:
+            #     scan = self.get_scan_by_index(start_index)
+            #     if scan.ms_level > 1:
+            #         start_index -= 1
+            #     else:
+            #         break
+            # return range(start_index, len(self.index))
+        else:
+            return range(0, len(self.index))
+
+    def _make_pointer_iterator(self, start_index=None, start_time=None):
+        iterator = self._make_scan_index_producer(start_index, start_time)
+        for i in iterator:
+            yield self.index[i]
+
+    # ScanSource methods
+    def _make_scan(self, data):
+        return Scan(data, self)
+
+    def _scan_time(self, scan):
+        if scan.block >= 0:
+            return self.info_reader.GetRetentionTime(scan.function, scan.block)
+        else:
+            return self.info_reader.GetRetentionTime(scan.function, scan.scan)
+
+    def _drift_time(self, scan):
+        if scan.block >= 0:
+            return self.info_reader.GetDriftTime(scan.function, scan.scan)
+        else:
+            return None
+
+    def _scan_id(self, scan):
+        return scan.id
+
+    def _scan_index(self, scan):
+        return scan.index
+
+    def _ms_level(self, scan):
+        ms_level, _scan_type = self._translate_function_type(scan.function)
+        return ms_level
+
+    def _scan_arrays(self, scan):
+        if scan.block >= 0:
+            mz, inten = self.scan_reader.ReadDriftScan(
+                scan.function, scan.block, scan.scan)
+        else:
+            mz, inten = self.scan_reader.ReadScan(scan.function, scan.scan)
+        return np.array(mz), np.array(inten)
+
+    def _precursor_information(self, scan):
+        if self._ms_level(scan) == 1:
+            return None
+        set_mass_str = self.info_reader.GetScanItem(
+            scan.function,
+            scan.block if scan.block >= 0 else scan.scan,
+            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
+        )
+        if set_mass_str:
+            set_mass = float(set_mass_str)
+        else:
+            set_mass = 0.0
+        if set_mass == 0:
+            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
+                scan.function)
+            set_mass = (lower_bound + upper_bound) / 2.
+        pinfo = PrecursorInformation(
+            set_mass, 0, ChargeNotProvided, source=self, product_scan_id=scan.id)
+        return pinfo
+
+    def _isolation_window(self, scan):
+        if self._ms_level(scan) == 1:
+            return None
+        set_mass_str = self.info_reader.GetScanItem(
+            scan.function,
+            scan.block if scan.block >= 0 else scan.scan,
+            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
+        )
+        if set_mass_str:
+            set_mass = float(set_mass_str)
+        else:
+            set_mass = 0.0
+        if set_mass == 0:
+            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
+                scan.function)
+            set_mass = (lower_bound + upper_bound) / 2.
+            lower_bound_offset = upper_bound_offset = upper_bound - set_mass
+        else:
+            lower_bound_offset = upper_bound_offset = 0
+        return IsolationWindow(
+            lower_bound_offset, set_mass, upper_bound_offset)
+
+    def _is_profile(self, scan):
+        return self.info_reader.IsContinuum(scan.function)
+
+    def _scan_title(self, scan):
+        return self._scan_id(scan)
+
+    def _acquisition_information(self, scan):
+        scan_window = ScanWindow(
+            *self.info_reader.GetAcquisitionMassRange(scan.function))
+        scan_time = self._scan_time(scan)
+        drift_time = self._drift_time(scan)
+        event = ScanEventInformation(scan_time, [scan_window], traits={
+            'preset scan configuration': scan.function + 1,
+        })
+        if drift_time is not None:
+            event._ion_mobility.add_ion_mobility(
+                ion_mobility_drift_time, drift_time)
+        return ScanAcquisitionInformation('no combination', [event])
+
+    def _polarity(self, scan):
+        mode = self.info_reader.GetIonMode(scan.function)
+        s = self.info_reader.GetIonModeString(mode)
+        if s.endswith('+'):
+            return 1
+        elif s.endswith('-'):
+            return -1
+        raise ValueError("Unknown Ion Mode %r" % (s, ))
+        # return 1
+
+    def _activation(self, scan):
+        energy_str = self.info_reader.GetScanItem(
+            scan.function, scan.block if scan.block >= 0 else scan.scan, MassLynxRawDefs.MassLynxScanItem.COLLISION_ENERGY)
+        if energy_str:
+            energy = float(energy_str)
+            return ActivationInformation(HCD, energy)
