@@ -606,7 +606,7 @@ class IonMobilityMethods(object):
         drift_time : :class:`unitfloat`
             The drift time, with appropriate units.
         """
-        self.self._get_traits()[ion_mobility_type] = drift_time
+        self._get_traits()[ion_mobility_type] = drift_time
 
     def remove_ion_mobility_type(self, ion_mobility_type):
         """Remove a specific type of ion mobility from the scan.
@@ -616,7 +616,7 @@ class IonMobilityMethods(object):
         ion_mobility_type : :class:`ScanAttribute`
             The type of ion mobility to remove.
         """
-        self.self._get_traits().pop(ion_mobility_type)
+        self._get_traits().pop(ion_mobility_type)
 
     def ion_mobility_type(self):
         """Fetch the ion mobility type of the scan.
