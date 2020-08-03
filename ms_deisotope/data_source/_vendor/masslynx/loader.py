@@ -171,7 +171,7 @@ class MassLynxRawReader(RandomAccessScanSource):
                 block_end = len(self.index)
                 self.function_blocks[fnum].append((block_start, block_end))
                 cyc = Cycle(
-                    fnum, i, 0, num_scans_in_block,
+                    fnum, i, block_start, block_end,
                     id="function=%d process=0 startScan=%d endScan=%d" % (
                         fnum + 1,
                         num_scans_in_block * i + 1,
@@ -192,7 +192,7 @@ class MassLynxRawReader(RandomAccessScanSource):
                 block_end = len(self.index)
                 self.function_blocks[fnum].append((block_start, block_end))
                 cyc = Cycle(
-                    ie.function, ie.block, 0, 1,
+                    ie.function, ie.block, block_start, block_end,
                     id="function=%d process=0 startScan=%d endScan=%d" % (
                         fnum + 1,
                         i + 1,
@@ -225,7 +225,8 @@ class MassLynxRawReader(RandomAccessScanSource):
                         ie = self.index[i]
                         if ie.id == scan_id:
                             return self._make_scan(ie)
-                    raise KeyError(scan_id)
+                    else:
+                        raise KeyError(scan_id)
 
     def get_scan_by_time(self, time):
         lo = 0
@@ -446,3 +447,4 @@ class MassLynxRawReader(RandomAccessScanSource):
         if energy_str:
             energy = float(energy_str)
             return ActivationInformation(HCD, energy)
+

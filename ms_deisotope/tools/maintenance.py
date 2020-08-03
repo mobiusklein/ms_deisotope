@@ -79,7 +79,7 @@ def register_thermo_com(path=None):
 @maintenance.command('register-thermo-net', short_help="Register Thermo .NET Reader Library")
 @click.option('--path', type=click.Path(file_okay=False, dir_okay=True),
               help="Specify a Directory of DLLs to try to register", multiple=True)
-def register_thermo_com_net(path):
+def register_thermo_net(path):
     '''Register a bundle of Thermo's RawFileReader library's DLLs. The `--path` option can
     be used to specify additional search paths.
     '''
@@ -111,6 +111,29 @@ def register_thermo_com_net(path):
     else:
         click.secho("DLL Registration Unsuccessful")
 
+
+@maintenance.command('register-waters-masslynx', short_help="Register Waters MassLynx SDK")
+@click.option('--path', type=click.Path(file_okay=False, dir_okay=True),
+              help="Specify a Directory of DLLs to try to register", multiple=True)
+def register_waters_masslynx(path):
+    if path is None:
+        path = []
+    from ms_deisotope.data_source._vendor.masslynx import libload
+    result = libload.register_dll(path)
+    if result:
+        click.secho("DLL Registration Successful")
+        if libload.determine_if_available():
+            click.secho("DLL Load Succesful", fg='cyan')
+            if path is not None:
+                config = get_config()
+                rest = sorted(
+                    set(path) - set(config['vendor_readers']['waters-masslynx']))
+                config['vendor_readers']['waters-masslynx'].extend(rest)
+                save_config(config)
+        else:
+            click.secho("DLL Load Unsuccessful", fg='red')
+    else:
+        click.secho("DLL Registration Unsuccessful")
 
 
 @maintenance.command('show-config', short_help="Display the config file's contents")

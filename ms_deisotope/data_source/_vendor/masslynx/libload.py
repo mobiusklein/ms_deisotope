@@ -30,6 +30,9 @@ def _load_library(lib_path):
     return dll
 
 
+def determine_if_available():
+    return register_dll() is not None
+
 
 class DLLProxy(object):
     def __getattribute__(self, attribute):
