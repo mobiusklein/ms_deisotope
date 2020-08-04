@@ -1,3 +1,9 @@
+'''
+The Windows DLL needed for the MassLynx reader to work can be obtained from:
+https://interface.waters.com/masslynx/developers-area/sdks/, and by linking
+with them we agree to follow the associated licensing.
+'''
+
 import os
 from ctypes import WinDLL
 from ctypes.util import find_library
@@ -35,10 +41,15 @@ def determine_if_available():
 
 
 class DLLProxy(object):
+
     def __getattribute__(self, attribute):
         if dll is None:
             register_dll()
         return getattr(dll, attribute)
 
+    def __getattr__(self, attribute):
+        if dll is None:
+            register_dll()
+        return getattr(dll, attribute)
 
 proxy = DLLProxy()

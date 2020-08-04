@@ -91,6 +91,7 @@ _DEFAULT_CONFIG = {
         "thermo-com": [],
         "thermo-net": [],
         "agilent-com": [],
+        "waters-masslynx": [],
     }
 }
 

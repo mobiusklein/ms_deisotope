@@ -1,3 +1,4 @@
+import os
 import click
 
 from ms_deisotope.config import get_config_dir, get_config, save_config
@@ -85,6 +86,7 @@ def register_thermo_net(path):
     '''
     if path is None:
         path = []
+    path = list(map(os.path.abspath, path))
     try:
         import clr
     except ImportError:
@@ -113,12 +115,13 @@ def register_thermo_net(path):
 
 
 @maintenance.command('register-waters-masslynx', short_help="Register Waters MassLynx SDK")
-@click.option('--path', type=click.Path(file_okay=False, dir_okay=True),
-              help="Specify a Directory of DLLs to try to register", multiple=True)
+@click.option('--path', type=click.Path(file_okay=True, dir_okay=False),
+              help="Specify the MassLynx.dll to try to register", multiple=True)
 def register_waters_masslynx(path):
     if path is None:
         path = []
     from ms_deisotope.data_source._vendor.masslynx import libload
+    path = list(map(os.path.abspath, path))
     result = libload.register_dll(path)
     if result:
         click.secho("DLL Registration Successful")
@@ -126,8 +129,10 @@ def register_waters_masslynx(path):
             click.secho("DLL Load Succesful", fg='cyan')
             if path is not None:
                 config = get_config()
+                config.setdefault('vendor_readers', {})
+                config['vendor_readers'].setdefault("waters-masslynx", [])
                 rest = sorted(
-                    set(path) - set(config['vendor_readers']['waters-masslynx']))
+                    set(path) - set(config.get('vendor_readers', {}).get('waters-masslynx', [])))
                 config['vendor_readers']['waters-masslynx'].extend(rest)
                 save_config(config)
         else:
