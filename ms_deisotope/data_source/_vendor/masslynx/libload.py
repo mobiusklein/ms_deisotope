@@ -44,7 +44,18 @@ def _load_library(lib_path):
 
 
 def determine_if_available():
-    return _register_dll(override=False) is not None
+    '''Checks whether or not the Waters
+    RAW directory reading feature is available.
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the feature is enabled.
+    '''
+    try:
+        return _register_dll(override=False)
+    except (OSError, ImportError):
+        return False
 
 
 class DLLProxy(object):

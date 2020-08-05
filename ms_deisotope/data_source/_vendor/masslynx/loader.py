@@ -79,19 +79,7 @@ def infer_reader(path):
     raise ValueError("Not Waters Raw Directory")
 
 
-def determine_if_available():
-    '''Checks whether or not the Waters
-    RAW directory reading feature is available.
-
-    Returns
-    -------
-    :class:`bool`:
-        Whether or not the feature is enabled.
-    '''
-    try:
-        return libload._register_dll(override=False)
-    except (OSError, ImportError):
-        return False
+determine_if_available = libload.determine_if_available
 
 
 class Cycle(Base):
