@@ -44,7 +44,7 @@ def _load_library(lib_path):
 
 
 def determine_if_available():
-    return register_dll() is not None
+    return _register_dll(override=False) is not None
 
 
 class DLLProxy(object):

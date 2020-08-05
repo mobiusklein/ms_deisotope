@@ -122,10 +122,11 @@ def register_waters_masslynx(path):
         path = []
     from ms_deisotope.data_source._vendor.masslynx import libload
     path = list(map(os.path.abspath, path))
-    result = libload.register_dll(path)
+    result = libload._register_dll(path)
     if result:
         click.secho("DLL Registration Successful")
-        if libload.determine_if_available():
+        out = libload.determine_if_available()
+        if out:
             click.secho("DLL Load Succesful", fg='cyan')
             if path is not None:
                 config = get_config()
