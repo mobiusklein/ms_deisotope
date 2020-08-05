@@ -128,3 +128,15 @@ try:
 except ImportError:  # pragma: no cover
     def register_agilent_dll_dir(*args, **kwargs):
         pass
+
+
+try:
+    from .masslynx import (
+        MassLynxRawLoader, infer_reader as _check_mass_lynx_raw,
+        register_waters_masslynx_dll)
+
+    reader_types.append(MassLynxRawLoader)
+    register_type_guesser(_check_mass_lynx_raw)
+except ImportError:
+    def register_waters_masslynx_dll(*args, **kwargs):
+        pass

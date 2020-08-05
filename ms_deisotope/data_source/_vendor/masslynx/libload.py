@@ -12,6 +12,13 @@ dll = None
 
 
 def register_dll(search_paths=None, override=True):
+    result = _register_dll(search_paths, override)
+    if not result:
+        raise ImportError("Could not load MassLynx SDK from search paths!")
+
+
+
+def _register_dll(search_paths=None, override=True):
     if search_paths is None:
         search_paths = []
     elif isinstance(search_paths, str):
@@ -41,15 +48,12 @@ def determine_if_available():
 
 
 class DLLProxy(object):
-
-    def __getattribute__(self, attribute):
-        if dll is None:
-            register_dll()
-        return getattr(dll, attribute)
-
     def __getattr__(self, attribute):
         if dll is None:
             register_dll()
         return getattr(dll, attribute)
+
+    def _is_loaded(self):
+        return dll is not None
 
 proxy = DLLProxy()

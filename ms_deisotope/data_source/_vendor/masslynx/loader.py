@@ -7,7 +7,7 @@ from collections import defaultdict, OrderedDict
 import numpy as np
 
 from ms_deisotope.utils import Base
-from ms_deisotope.data_source import (
+from ms_deisotope.data_source.common import (
     Scan, ActivationInformation, PrecursorInformation,
     ChargeNotProvided, IsolationWindow,
     RandomAccessScanSource)
@@ -20,11 +20,78 @@ from . import (MassLynxRawInfoReader,
                MassLynxRawScanReader,
                MassLynxRawChromatogramReader,
                MassLynxRawDefs,
-            #    MassLynxParameters
+               libload
               )
 
 
+
 waters_id_pattern = re.compile(r"function=(\d+) process=(\d+) scan=(\d+)")
+
+
+def is_waters_raw_dir(path):
+    '''Detect whether or not the file referenced by ``path``
+    is a Waters RAW directory.
+
+    Parameters
+    ----------
+    path: :class:`str`
+        The path to test
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the file is a Waters RAW directory.
+    '''
+    if not libload.proxy._is_loaded():
+        try:
+            libload.register_dll()
+        except ImportError:
+            return False
+    try:
+        MassLynxRawLoader(path)
+        return True
+    except Exception:   # pylint: disable=broad-except
+        return False
+
+
+def infer_reader(path):
+    '''If the file referenced by ``path`` is a Waters RAW
+    directory, return the callable (:class:`MassLynxRawLoader`) to
+    open it, otherwise raise an exception.
+
+    Parameters
+    ----------
+    path: :class:`str`
+        The path to test
+
+    Returns
+    -------
+    :class:`type`:
+        The type to use to open the file
+
+    Raises
+    ------
+    :class:`ValueError`:
+        If the file is not a Waters RAW file
+    '''
+    if is_waters_raw_dir(path):
+        return MassLynxRawLoader
+    raise ValueError("Not Waters Raw Directory")
+
+
+def determine_if_available():
+    '''Checks whether or not the Waters
+    RAW directory reading feature is available.
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the feature is enabled.
+    '''
+    try:
+        return libload._register_dll(override=False)
+    except (OSError, ImportError):
+        return False
 
 
 class Cycle(Base):
@@ -56,7 +123,7 @@ class IndexEntry(Base):
         return self.id
 
 
-class MassLynxRawReader(RandomAccessScanSource):
+class MassLynxRawLoader(RandomAccessScanSource):
     def __init__(self, raw_path):
         self.source_file = raw_path
 
@@ -75,7 +142,7 @@ class MassLynxRawReader(RandomAccessScanSource):
         self._build_scan_index()
 
     def __repr__(self):
-        return "MassLynxRawReader(%r)" % (self.source_file)
+        return "MassLynxRawLoader(%r)" % (self.source_file)
 
     # Vendor data access support methods
     def _read_header_properties(self):
@@ -205,7 +272,12 @@ class MassLynxRawReader(RandomAccessScanSource):
         return len(self.index)
 
     def get_scan_by_index(self, index):
-        return self._make_scan(self.index[index])
+        ie = self.index[index]
+        if ie.id in self._scan_cache:
+            return self._scan_cache[ie.id]
+        scan = self._make_scan()
+        self._scan_cache[ie.id] = scan
+        return scan
 
     def get_scan_by_id(self, scan_id):
         match = waters_id_pattern.search(scan_id)
@@ -224,7 +296,7 @@ class MassLynxRawReader(RandomAccessScanSource):
                     for i in range(interval[0], interval[1]):
                         ie = self.index[i]
                         if ie.id == scan_id:
-                            return self._make_scan(ie)
+                            return self.get_scan_by_index(ie.index)
                     else:
                         raise KeyError(scan_id)
 

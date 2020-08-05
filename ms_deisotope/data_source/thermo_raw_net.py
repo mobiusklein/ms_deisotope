@@ -126,12 +126,8 @@ def infer_reader(path):
 
 
 def determine_if_available():
-    '''Checks whether or not the COM-based Thermo
+    '''Checks whether or not the .NET-based Thermo
     RAW file reading feature is available.
-
-    This is done by attempting to instantiate the
-    COM-provided object, which queries the Windows
-    registry for the MSFileReader.dll.
 
     Returns
     -------
