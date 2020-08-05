@@ -263,7 +263,7 @@ class MassLynxRawLoader(RandomAccessScanSource):
         ie = self.index[index]
         if ie.id in self._scan_cache:
             return self._scan_cache[ie.id]
-        scan = self._make_scan()
+        scan = self._make_scan(ie)
         self._scan_cache[ie.id] = scan
         return scan
 
