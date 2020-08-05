@@ -207,6 +207,14 @@ class MassLynxRawInfoReader(MassLynxRawReader):
         self.CheckReturnCode(getDriftScanCount(self._getReader(), whichFunction, scan_count))
         return scan_count.value
 
+    def GetCollisionalCrossSection(self, drift_time, mass, charge):
+        ccs = c_float(0)
+        getCollisionalCrossSection = MassLynxRawReader.massLynxDll.getCollisionalCrossSection
+        getCollisionalCrossSection.argtypes = [
+            c_void_p, c_float, c_float, c_int, POINTER(c_float)]
+        self.CheckReturnCode(getCollisionalCrossSection(self._getReader(), drift_time, mass, charge, ccs))
+        return ccs.value
+
     def CanLockMassCorrect( self ):
         canApply = c_bool(0)
         canLockMassCorrect =  MassLynxRawReader.massLynxDll.canLockMassCorrect
