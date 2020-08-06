@@ -1,4 +1,6 @@
 from itertools import cycle
+from collections import defaultdict
+
 try:
     from matplotlib import pyplot as plt
     from matplotlib import patches as mpatches, colors as mcolors
@@ -177,3 +179,113 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
     [t.set(fontsize=axis_font_size) for t in ax.get_xticklabels()]
     [t.set(fontsize=axis_font_size) for t in ax.get_yticklabels()]
     return ax
+
+
+def features_to_peak_time_pairs(features):
+    pairs = []
+    for feature in features:
+        for node in feature:
+            for peak in node.members:
+                pairs.append((peak, node.time))
+    pairs.sort(key=lambda x: x[1])
+    return pairs
+
+
+def extract_intensity_array(peaks):
+    mzs = []
+    intensities = []
+    rts = []
+    current_mzs = []
+    current_intensities = []
+    last_time = None
+    for peak, time in peaks:
+        if time != last_time:
+            if last_time is not None:
+                mzs.append(current_mzs)
+                intensities.append(current_intensities)
+                rts.append(time)
+            last_time = time
+            current_mzs = []
+            current_intensities = []
+        current_mzs.append(peak.mz)
+        current_intensities.append(peak.intensity)
+    mzs.append(current_mzs)
+    intensities.append(current_intensities)
+    rts.append(time)
+    return mzs, intensities, rts
+
+
+def binner(x):
+    return np.floor(np.array(x) / 10.) * 10
+
+
+def make_map(mzs, intensities):
+    binned_mzs = [
+        binner(mz_row) for mz_row in mzs
+    ]
+    unique_mzs = set()
+    map(unique_mzs.update, binned_mzs)
+    unique_mzs = np.array(sorted(unique_mzs))
+    assigned_bins = []
+    j = 0
+    for mz, inten in zip(mzs, intensities):
+        j += 1
+        mz = binner(mz)
+        bin_row = defaultdict(float)
+        for i in range(len(mz)):
+            k = mz[i]
+            v = inten[i]
+            bin_row[k] += v
+        array_row = np.array([bin_row[m] for m in unique_mzs])
+        assigned_bins.append(array_row)
+
+    assigned_bins = np.vstack(assigned_bins)
+    assigned_bins[assigned_bins == 0] = 1
+    return assigned_bins, unique_mzs
+
+
+def render_map(assigned_bins, rts, unique_mzs, ax=None, color_map=None, scaler=np.sqrt):
+    if ax is None:
+        fig, ax = plt.subplots(1)
+    if color_map is None:
+        color_map = plt.cm.viridis
+    ax.pcolor(np.array(scaler(assigned_bins.T)), cmap=color_map)
+
+    xticks = ax.get_xticks()
+    newlabels = np.array(ax.get_xticklabels())[np.arange(0, len(xticks))]
+    n = len(newlabels)
+    step = len(rts) / n
+    interp = [rts[i * step] for i in range(n)]
+
+    for i, label in enumerate(newlabels):
+        num = round(interp[i], 1)
+        label.set_rotation(90)
+        label.set_text(str((num)))
+
+    ax.set_xticklabels(newlabels)
+
+    yticks = ax.get_yticks()
+    n = len(yticks)
+
+    newlabels = np.array(ax.get_yticklabels())[np.arange(0, len(yticks))]
+
+    va = unique_mzs
+    n = len(newlabels)
+    step = len(va) / n
+    interp = [va[i * step] for i in range(n)]
+    for i, label in enumerate(newlabels):
+        num = interp[i]
+        label.set_text(str((num)))
+
+    ax.set_yticklabels(newlabels)
+    ax.set_xlabel("Time")
+    ax.set_ylabel("m/z")
+    return ax
+
+
+def heatmap(features, ax=None, color_map=None, scaler=np.sqrt):
+    mzs, intensities, rts = extract_intensity_array(
+        features_to_peak_time_pairs(features))
+    binned_intensities, unique_mzs = make_map(mzs, intensities)
+    return render_map(
+        binned_intensities, rts, unique_mzs, ax=ax, color_map=color_map, scaler=scaler)

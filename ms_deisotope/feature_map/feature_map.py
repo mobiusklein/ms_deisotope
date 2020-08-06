@@ -150,6 +150,17 @@ class LCMSFeatureForest(LCMSFeatureMap):
                     new_index = index[0]
             self.features.insert(new_index, feature)
 
+    def split_sparse(self, delta_rt=1.0, min_size=2):
+        features = [fi for f in self.features for fi in f.split_sparse(delta_rt) if len(fi) >= min_size]
+        self.features = features
+        return self
+
+    def smooth_overlaps(self, error_tolerance=None):
+        if error_tolerance is None:
+            error_tolerance = self.error_tolerance
+        self.features = smooth_overlaps(self.features, error_tolerance)
+        return self
+
     def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf')):
         for scan in scans:
             peak_set = scan.peak_set

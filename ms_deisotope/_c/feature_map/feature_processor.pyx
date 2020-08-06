@@ -341,6 +341,9 @@ cdef class LCMSFeatureProcessorBase(object):
                 count += 1
         if count == 0:
             return 0
+        if count == 1:
+            # Penalize singletons? This may harm more than help
+            count += 1
         return acc / count
 
     cpdef LCMSFeatureSetFit _fit_single_feature_set(self, list features, list base_tid, double error_tolerance,
