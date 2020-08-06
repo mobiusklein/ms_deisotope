@@ -3,6 +3,7 @@ from .lcms_feature import LCMSFeature
 from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope import DeconvolutedPeakSet
 from ms_peak_picker import PeakSet
+from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
 
 
 class LCMSFeatureMap(object):
@@ -188,7 +189,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
         return self
 
 
-def smooth_overlaps(feature_list, error_tolerance=1e-5):
+def smooth_overlaps_simple(feature_list, error_tolerance=1e-5):
     feature_list = sorted(feature_list, key=lambda x: x.mz)
     out = []
     last = feature_list[0]
@@ -209,6 +210,11 @@ def smooth_overlaps(feature_list, error_tolerance=1e-5):
         i += 1
     out.append(last)
     return out
+
+
+def smooth_overlaps(feature_list, error_tolerance=1e-5):
+    smoother = LCMSFeatureOverlapSmoother(feature_list, error_tolerance)
+    return smoother.smooth()
 
 
 def binary_search_with_flag(array, mz, error_tolerance=1e-5):
@@ -302,6 +308,24 @@ def binary_search(array, mz, error_tolerance=1e-5):
         elif err > 0:
             hi = mid
         elif err < 0:
+            lo = mid
+    return 0
+
+
+def binary_search_exact(array, mz):
+    lo = 0
+    hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) // 2
+        x = array[mid]
+        err = (x.mz - mz)
+        if err == 0:
+            return mid
+        elif (hi - lo) == 1:
+            return mid
+        elif err > 0:
+            hi = mid
+        else:
             lo = mid
     return 0
 
@@ -631,3 +655,156 @@ try:
     from ms_deisotope._c.feature_map.feature_map import binary_search_with_flag
 except ImportError:
     pass
+
+
+class FeatureRetentionTimeInterval(Interval):
+    def __init__(self, chromatogram):
+        super(FeatureRetentionTimeInterval, self).__init__(
+            chromatogram.start_time, chromatogram.end_time, [chromatogram])
+        self.neutral_mass = chromatogram.neutral_mass
+        self.start_time = self.start
+        self.end_time = self.end
+        self.data['neutral_mass'] = self.neutral_mass
+
+
+def build_rt_interval_tree(chromatogram_list, interval_tree_type=IntervalTreeNode):
+    intervals = list(map(FeatureRetentionTimeInterval, chromatogram_list))
+    interval_tree = interval_tree_type.build(intervals)
+    return interval_tree
+
+
+class LCMSFeatureMerger(object):
+    def __init__(self, features=None, error_tolerance=1e-5):
+        if features is None:
+            features = []
+        self.features = sorted(
+            features, key=lambda x: x.mz)
+        self.error_tolerance = error_tolerance
+        self.count = 0
+        self.verbose = False
+
+    def __len__(self):
+        return len(self.features)
+
+    def __iter__(self):
+        return iter(self.features)
+
+    def __getitem__(self, i):
+        if isinstance(i, (int, slice)):
+            return self.features[i]
+        else:
+            return [self.features[j] for j in i]
+
+    def find_candidates(self, new_feature):
+        index, matched = binary_search_with_flag(
+            self.features, new_feature.mz, self.error_tolerance)
+        return index, matched
+
+    def merge_overlaps(self, new_feature, feature_range):
+        has_merged = False
+        query_mass = new_feature.mz
+        for chroma in feature_range:
+            cond = (chroma.overlaps_in_time(new_feature) and abs(
+                    (chroma.mz - query_mass) / query_mass) < self.error_tolerance)
+            if cond:
+                chroma.merge(new_feature)
+                has_merged = True
+                break
+        return has_merged
+
+    def find_insertion_point(self, new_feature):
+        return binary_search_exact(
+            self.features, new_feature.mz)
+
+    def handle_new_feature(self, new_feature):
+        if len(self) == 0:
+            index = [0]
+            matched = False
+        else:
+            index, matched = self.find_candidates(new_feature)
+        if matched:
+
+            chroma = self[index]
+            has_merged = self.merge_overlaps(new_feature, chroma)
+            if not has_merged:
+                insertion_point = self.find_insertion_point(new_feature)
+                self.insert_feature(new_feature, [insertion_point])
+        else:
+            self.insert_feature(new_feature, index)
+        self.count += 1
+
+    def insert_feature(self, feature, index):
+        if index[0] != 0:
+            self.features.insert(index[0] + 1, feature)
+        else:
+            if len(self) == 0:
+                new_index = index[0]
+            else:
+                x = self.features[index[0]]
+                if x.mz < feature.mz:
+                    new_index = index[0] + 1
+                else:
+                    new_index = index[0]
+            self.features.insert(new_index, feature)
+
+    def aggregate_features(self, features):
+        unmatched = sorted(
+            features, key=lambda x: x.total_signal, reverse=True)
+        for chroma in unmatched:
+            self.handle_new_feature(chroma)
+
+
+def flatten_tree(tree):
+    output_queue = []
+    input_queue = [tree]
+    while input_queue:
+        next_node = input_queue.pop()
+        output_queue.append(next_node)
+
+        next_right = next_node.right
+        if next_right is not None:
+            input_queue.append(next_right)
+
+        next_left = next_node.left
+        if next_left is not None:
+            input_queue.append(next_left)
+    return output_queue[::-1]
+
+
+def layered_traversal(nodes):
+    return sorted(nodes, key=lambda x: (x.level, x.center), reverse=True)
+
+
+class LCMSFeatureOverlapSmoother(object):
+    def __init__(self, features, error_tolerance=1e-5):
+        self.retention_interval_tree = build_rt_interval_tree(features)
+        self.error_tolerance = error_tolerance
+        self.solution_map = {None: []}
+        self.features = self.smooth()
+
+    def __iter__(self):
+        return iter(self.features)
+
+    def __getitem__(self, i):
+        return self.features[i]
+
+    def __len__(self):
+        return len(self.features)
+
+    def aggregate_interval(self, tree):
+        features = [interval[0] for interval in tree.contained]
+        features.extend(self.solution_map[tree.left])
+        features.extend(self.solution_map[tree.right])
+        merger = LCMSFeatureMerger(error_tolerance=self.error_tolerance)
+        merger.aggregate_features(features)
+        self.solution_map[tree] = list(merger)
+        return merger
+
+    def smooth(self):
+        nodes = layered_traversal(flatten_tree(self.retention_interval_tree))
+        for node in nodes:
+            self.aggregate_interval(node)
+        final = self.solution_map[self.retention_interval_tree]
+        result = LCMSFeatureMerger()
+        result.aggregate_features(final)
+        return list(result)
