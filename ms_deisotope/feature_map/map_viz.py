@@ -198,6 +198,7 @@ def extract_intensity_array(peaks):
     current_mzs = []
     current_intensities = []
     last_time = None
+    time = None
     for peak, time in peaks:
         if time != last_time:
             if last_time is not None:
@@ -209,9 +210,10 @@ def extract_intensity_array(peaks):
             current_intensities = []
         current_mzs.append(peak.mz)
         current_intensities.append(peak.intensity)
-    mzs.append(current_mzs)
-    intensities.append(current_intensities)
-    rts.append(time)
+    if time is not None:
+        mzs.append(current_mzs)
+        intensities.append(current_intensities)
+        rts.append(time)
     return mzs, intensities, rts
 
 
@@ -244,48 +246,53 @@ def make_map(mzs, intensities):
     return assigned_bins, unique_mzs
 
 
-def render_map(assigned_bins, rts, unique_mzs, ax=None, color_map=None, scaler=np.sqrt):
+def render_map(assigned_bins, rts, unique_mzs, ax=None, color_map=None, scaler=np.sqrt, colorbar=True):
     if ax is None:
-        fig, ax = plt.subplots(1)
+        _fig, ax = plt.subplots(1)
     if color_map is None:
         color_map = plt.cm.viridis
-    ax.pcolor(np.array(scaler(assigned_bins.T)), cmap=color_map)
+    data = np.array(scaler(assigned_bins.T))
+    img = ax.pcolormesh(data, cmap=color_map)
 
     xticks = ax.get_xticks()
     newlabels = np.array(ax.get_xticklabels())[np.arange(0, len(xticks))]
     n = len(newlabels)
-    step = len(rts) / n
-    interp = [rts[i * step] for i in range(n)]
-
+    interp = np.linspace(rts[0], rts[-1], n)
     for i, label in enumerate(newlabels):
         num = round(interp[i], 1)
         label.set_rotation(90)
         label.set_text(str((num)))
 
-    ax.set_xticklabels(newlabels)
+    # ax.set_xticklabels(newlabels)
 
     yticks = ax.get_yticks()
     n = len(yticks)
-
+    # print n, yticks
     newlabels = np.array(ax.get_yticklabels())[np.arange(0, len(yticks))]
 
     va = unique_mzs
+    # Hacky and doesn't align quite right
     n = len(newlabels)
-    step = len(va) / n
-    interp = [va[i * step] for i in range(n)]
-    for i, label in enumerate(newlabels):
+    # if n % 2 != 0:
+    #     n -= 1
+    interp = np.linspace(va[0], va[-1], n)
+    newlabels = []
+    # for i, label in enumerate(newlabels):
+    for i in range(n):
         num = interp[i]
-        label.set_text(str((num)))
-
-    ax.set_yticklabels(newlabels)
+        newlabels.append(str(round(num, 2)))
+    ax.set_yticklabels((newlabels))
     ax.set_xlabel("Time")
     ax.set_ylabel("m/z")
+    if colorbar:
+        _cbar = ax.figure.colorbar(img, ax=ax)
     return ax
 
 
-def heatmap(features, ax=None, color_map=None, scaler=np.sqrt):
+def heatmap(features, ax=None, color_map=None, scaler=np.sqrt, colorbar=True):
     mzs, intensities, rts = extract_intensity_array(
         features_to_peak_time_pairs(features))
     binned_intensities, unique_mzs = make_map(mzs, intensities)
     return render_map(
-        binned_intensities, rts, unique_mzs, ax=ax, color_map=color_map, scaler=scaler)
+        binned_intensities, rts, unique_mzs, ax=ax, color_map=color_map,
+        scaler=scaler, colorbar=colorbar)
