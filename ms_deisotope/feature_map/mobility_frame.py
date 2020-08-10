@@ -44,7 +44,7 @@ class IonMobilityFrame(object):
 
     def scans(self):
         scans = []
-        for i in range(self.start_scan_index, self.end_scan_index + 1):
+        for i in range(self.start_scan_index, self.end_scan_index):
             scan = self.source.get_scan_by_index(i)
             scans.append(scan)
         return scans
