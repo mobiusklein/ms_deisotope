@@ -46,18 +46,20 @@ class LCMSFeatureMap(object):
                 self.features, hi, error_tolerance)[0][0])
 
     def between(self, lo, hi, error_tolerance=2e-5):
+        n = len(self)
         lo_ix = binary_search_with_flag(
             self.features, lo, error_tolerance)[0][0]
-        hi_ix = binary_search_with_flag(
-            self.features, hi, error_tolerance)[0][0]
         if self[lo_ix].mz < lo:
             lo_ix += 1
-        if self[hi_ix] > hi:
-            hi_ix -= 1
-        if hi_ix < 0:
-            hi_ix = 0
         if lo_ix > len(self):
             lo_ix = len(self) - 1
+        i = lo_ix
+        while i < n:
+            f = self[i]
+            if f.mz > hi:
+                break
+            i += 1
+        hi_ix = i
         return self[lo_ix:hi_ix]
 
     def __repr__(self):
@@ -555,33 +557,36 @@ class DeconvolutedLCMSFeatureMap(object):
                 self.features, hi, error_tolerance)[0][0])
 
     def between(self, lo, hi, error_tolerance=2e-5, use_mz=False):
+        n = len(self)
         if use_mz:
             lo_ix = binary_search_with_flag(
                 self._by_mz, lo, error_tolerance)[0][0]
-            hi_ix = binary_search_with_flag(
-                self._by_mz, hi, error_tolerance)[0][0]
             if self._by_mz[lo_ix].mz < lo:
                 lo_ix += 1
-            if self._by_mz[hi_ix].mz > hi:
-                hi_ix -= 1
-            if hi_ix < 0:
-                hi_ix = 0
             if lo_ix > len(self):
                 lo_ix = len(self) - 1
+            i = lo_ix
+            while i < n:
+                f = self._by_mz[i]
+                if f.mz > hi:
+                    break
+                i += 1
+            hi_ix = i
             return self._by_mz[lo_ix:hi_ix]
         else:
             lo_ix = binary_search_with_flag_neutral(
                 self.features, lo, error_tolerance)[0][0]
-            hi_ix = binary_search_with_flag_neutral(
-                self.features, hi, error_tolerance)[0][0]
             if self[lo_ix].neutral_mass < lo:
                 lo_ix += 1
-            if self[hi_ix].neutral_mass > hi:
-                hi_ix -= 1
-            if hi_ix < 0:
-                hi_ix = 0
             if lo_ix > len(self):
                 lo_ix = len(self) - 1
+            i = lo_ix
+            while i < n:
+                f = self[i]
+                if f.neutral_mass > hi:
+                    break
+                i += 1
+            hi_ix = i
             return self[lo_ix:hi_ix]
 
     def __repr__(self):

@@ -83,13 +83,14 @@ determine_if_available = libload.determine_if_available
 
 
 class Cycle(Base):
-    __slots__ = ("function", "block", "start_scan", "end_scan", "id")
+    __slots__ = ("function", "block", "start_scan", "end_scan", "index", "id")
 
-    def __init__(self, function=None, block=None, start_scan=None, end_scan=None, id=None):
+    def __init__(self, function=None, block=None, start_scan=None, end_scan=None, index=None, id=None):
         self.function = function
         self.block = block
         self.start_scan = start_scan
         self.end_scan = end_scan
+        self.index = index
         self.id = id
 
     def __str__(self):
@@ -111,7 +112,137 @@ class IndexEntry(Base):
         return self.id
 
 
-class MassLynxRawLoader(RandomAccessScanSource):
+class WatersMSECycleSourceMixin(object):
+    def _frame_id(self, data):
+        return data.id
+
+    def _frame_index(self, data):
+        return data.index
+
+    def _frame_time(self, data):
+        scan = self.get_scan_by_index(data.start_scan)
+        return scan.scan_time
+
+    def _frame_ms_level(self, data):
+        scan = self.get_scan_by_index(data.start_scan)
+        return scan.ms_level
+
+    def _frame_start_scan_index(self, data):
+        return data.start_scan
+
+    def _frame_end_scan_index(self, data):
+        return data.end_scan
+
+    def get_frame_by_index(self, index):
+        cycle = self.cycle_index[index]
+        return self._make_frame(cycle)
+
+    def get_frame_by_time(self, time):
+        lo = 0
+        hi = len(self.cycle_index)
+
+        best_match = None
+        best_error = float('inf')
+
+        if time == float('inf'):
+            return self.get_frame_by_index(self.cycle_index[-1].index)
+
+        while hi != lo:
+            mid = (hi + lo) // 2
+            sid = self.cycle_index[mid]
+            frame = self.get_frame_by_index(sid.index)
+            if not self._validate_frame(frame):
+                sid = self.cycle_index[mid - 1]
+                frame = self.get_frame_by_index(sid.index)
+                if not self._validate_frame(frame):
+                    sid = self.cycle_index[mid - 2]
+                    frame = self.get_frame_by_index(sid.index)
+
+            frame_time = frame.time
+            err = abs(frame_time - time)
+            if err < best_error:
+                best_error = err
+                best_match = frame
+            if frame_time == time:
+                # Rewind here
+                i = frame.index - 1
+                while i >= 0:
+                    prev_frame = self.get_frame_by_index(i)
+                    if prev_frame.time == frame.time:
+                        frame = prev_frame
+                        i -= 1
+                    else:
+                        break
+                return frame
+            elif (hi - lo) == 1:
+                # Rewind here
+                frame = best_match
+                i = frame.index - 1
+                while i >= 0:
+                    prev_frame = self.get_frame_by_index(i)
+                    if prev_frame.time == frame.time:
+                        frame = prev_frame
+                        i -= 1
+                    else:
+                        break
+                return frame
+            elif frame_time > time:
+                hi = mid
+            else:
+                lo = mid
+
+    def _validate_frame(self, data):
+        return True
+
+    def _make_frame(self, data):
+        from ms_deisotope.feature_map.mobility_frame import IonMobilityFrame
+        return IonMobilityFrame(data, self)
+
+    def _cache_frame(self, frame):
+        pass
+
+    def _default_frame_iterator(self, start_index=None):
+        if start_index is None:
+            start_index = 0
+        for i in range(start_index, len(self.cycle_index)):
+            yield self.cycle_index[i]
+
+    def make_frame_iterator(self, iterator=None, grouped=False):
+        from ms_deisotope.data_source.scan.scan_iterator import (
+            _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
+        if iterator is None:
+            iterator = self._default_frame_iterator()
+
+        if grouped:
+            strategy = _GroupedScanIteratorImpl(
+                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+        else:
+            strategy = _SingleScanIteratorImpl(
+                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+        return strategy
+
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        if scan_id is not None:
+            frame = self.get_frame_by_id(scan_id)
+            start_index = frame.index
+        elif index is not None:
+            start_index = index
+        elif rt is not None:
+            frame = self.get_frame_by_time(rt)
+            start_index = frame.index
+        if require_ms1:
+            while start_index != 0:
+                frame = self.get_frame_by_index(start_index)
+                if frame.ms_level > 1:
+                    start_index -= 1
+                else:
+                    break
+        iterator = self.make_frame_iterator(
+            self._default_frame_iterator(start_index), grouped=grouped)
+        return iterator
+
+
+class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
     def __init__(self, raw_path):
         self.source_file = raw_path
 
@@ -227,6 +358,7 @@ class MassLynxRawLoader(RandomAccessScanSource):
                 self.function_blocks[fnum].append((block_start, block_end))
                 cyc = Cycle(
                     fnum, i, block_start, block_end,
+                    len(self.cycle_index),
                     id="function=%d process=0 startScan=%d endScan=%d" % (
                         fnum + 1,
                         num_scans_in_block * i + 1,
@@ -248,6 +380,7 @@ class MassLynxRawLoader(RandomAccessScanSource):
                 self.function_blocks[fnum].append((block_start, block_end))
                 cyc = Cycle(
                     ie.function, ie.block, block_start, block_end,
+                    len(self.cycle_index),
                     id="function=%d process=0 startScan=%d endScan=%d" % (
                         fnum + 1,
                         i + 1,
@@ -285,8 +418,7 @@ class MassLynxRawLoader(RandomAccessScanSource):
                         ie = self.index[i]
                         if ie.id == scan_id:
                             return self.get_scan_by_index(ie.index)
-                    else:
-                        raise KeyError(scan_id)
+                    raise KeyError(scan_id)
 
     def get_scan_by_time(self, time):
         lo = 0
@@ -507,4 +639,3 @@ class MassLynxRawLoader(RandomAccessScanSource):
         if energy_str:
             energy = float(energy_str)
             return ActivationInformation(HCD, energy)
-

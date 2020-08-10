@@ -3,7 +3,7 @@
 cimport cython
 
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
-from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice
+from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyList_GetItem
 
 
 cdef class LCMSFeatureMap(object):
@@ -11,7 +11,7 @@ cdef class LCMSFeatureMap(object):
         self.features = sorted(features, key=lambda x: x.mz)
 
     def __len__(self):
-        return len(self.features)
+        return PyList_GET_SIZE(self.features)
 
     def __iter__(self):
         return iter(self.features)
@@ -21,6 +21,12 @@ cdef class LCMSFeatureMap(object):
             return self.features[i]
         else:
             return [self.features[j] for j in i]
+
+    cdef Py_ssize_t get_size(self):
+        return PyList_GET_SIZE(self.features)
+
+    cdef LCMSFeature get(self, size_t i):
+        return <LCMSFeature>PyList_GetItem(self.features, i)
 
     cpdef LCMSFeature _search(self, double mz, double error_tolerance):
         cdef:
@@ -54,19 +60,25 @@ cdef class LCMSFeatureMap(object):
             binary_search_with_flag(
                 self.features, hi, error_tolerance)[0][0])
 
-    def between(self, lo, hi, error_tolerance=2e-5):
+    def between(self, double lo, double hi, double error_tolerance=2e-5):
+        cdef:
+            Py_ssize_t n, i, lo_ix, hi_ix
+            LCMSFeature f
+
+        n = self.get_size()
         lo_ix = binary_search_with_flag(
             self.features, lo, error_tolerance)[0][0]
-        hi_ix = binary_search_with_flag(
-            self.features, hi, error_tolerance)[0][0]
-        if self[lo_ix].mz < lo:
+        if self.get(lo_ix).get_mz() < lo:
             lo_ix += 1
-        if self[hi_ix] > hi:
-            hi_ix -= 1
-        if hi_ix < 0:
-            hi_ix = 0
-        if lo_ix > len(self):
-            lo_ix = len(self) - 1
+        if lo_ix > n:
+            lo_ix = n - 1
+        i = lo_ix
+        while i < n:
+            f = self.get(i)
+            if f.get_mz() > hi:
+                break
+            i += 1
+        hi_ix = i
         return self[lo_ix:hi_ix]
 
     def __repr__(self):

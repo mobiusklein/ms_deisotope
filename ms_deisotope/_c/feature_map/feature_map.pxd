@@ -6,6 +6,8 @@ cdef class LCMSFeatureMap(object):
     cdef:
         public list features
 
+    cdef Py_ssize_t get_size(self)
+    cdef LCMSFeature get(self, size_t i)
     cpdef list _find_all(self, double mz, double error_tolerance)
     cpdef LCMSFeature _search(self, double mz, double error_tolerance)
 

@@ -526,6 +526,8 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         for fit in fits:
             extracted = extract_fitted_region(
                 fit, detection_threshold=detection_threshold)
+            if extracted is None:
+                continue
             solution = self.finalize_fit(
                 extracted, charge_carrier=charge_carrier, subtract=subtract,
                 detection_threshold=detection_threshold, max_missed_peaks=max_missed_peaks)
@@ -731,6 +733,8 @@ def find_bounds(fit, detection_threshold=0.1, find_separation=True):
 
 def extract_fitted_region(feature_fit, detection_threshold=0.1):
     fitted_features = []
+    if feature_fit.n_points == 0:
+        return None
     start_time, end_time = find_bounds(feature_fit, detection_threshold)
     for feature in feature_fit:
         if feature is None or isinstance(feature, EmptyFeature):
