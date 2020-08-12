@@ -545,7 +545,7 @@ class ScanClusterBuilder(LogUtilsMixin):
         augmented = []
         n = len(scans)
         for i, scan in enumerate(scans):
-            if i % 1000 == 0:
+            if i % 1000 == 0 and i > 0:
                 self.log("... Loaded TIC for %d Scans (%0.2f%%)" % (i, i * 100.0 / n))
             augmented.append((self._get_tic(scan), scan))
         augmented.sort(key=lambda x: x[0], reverse=True)

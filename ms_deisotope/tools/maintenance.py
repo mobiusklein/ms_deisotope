@@ -2,6 +2,7 @@ import os
 import click
 
 from ms_deisotope.config import get_config_dir, get_config, save_config
+from ms_deisotope.tools.utils import register_debug_hook
 
 
 @click.group()
@@ -152,9 +153,6 @@ def show_config():
     click.echo(json.dumps(config, sort_keys=True, indent=2))
 
 
-from .utils import register_debug_hook
-
-register_debug_hook()
-
 if __name__ == "__main__":
+    register_debug_hook()
     maintenance.main()
