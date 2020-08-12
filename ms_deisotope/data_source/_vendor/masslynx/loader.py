@@ -134,6 +134,19 @@ class WatersMSECycleSourceMixin(object):
     def _frame_end_scan_index(self, data):
         return data.end_scan
 
+    def _frame_precursor_information(self, data):
+        scan = self.get_scan_by_index(data.start_scan)
+        return scan.precursor_information
+
+    def _frame_activation(self, data):
+        scan = self.get_scan_by_index(data.start_scan)
+        return scan.activation
+
+    def _frame_isolation_window(self, data):
+        scan = self.get_scan_by_index(data.start_scan)
+        return scan.isolation_window
+
+
     def get_frame_by_index(self, index):
         cycle = self.cycle_index[index]
         return self._make_frame(cycle)

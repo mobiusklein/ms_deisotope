@@ -42,6 +42,18 @@ class IonMobilityFrame(object):
     def end_scan_index(self):
         return self.source._frame_end_scan_index(self._data)
 
+    @property
+    def precursor_information(self):
+        return self.source._frame_precursor_information(self._data)
+
+    @property
+    def activation(self):
+        return self.source._frame_activation(self._data)
+
+    @property
+    def isolation_window(self):
+        return self.source._frame_isolation_window(self._data)
+
     def scans(self):
         scans = []
         for i in range(self.start_scan_index, self.end_scan_index):

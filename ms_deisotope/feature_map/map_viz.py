@@ -20,7 +20,8 @@ Rectangle = mpatches.Rectangle
 def draw_features(features, ax=None, alpha=0.65, width=2e-5, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(1)
-
+    if not features:
+        return ax
     ellipses = []
     kwargs.setdefault("lw", 0.05)
     lw = kwargs.get("linewidth", kwargs.get("lw"))
@@ -127,7 +128,10 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
                   axis_label_font_size=16, axis_font_size=16, label=True,
                   colorizer=random_colorizer, label_function=labeler):
     if ax is None:
-        fig, ax = plt.subplots(1)
+        _fig, ax = plt.subplots(1)
+
+    if not profiles:
+        return ax
     minimum_ident_time = float("inf")
     maximum_ident_time = 0
     maximum_intensity = 0

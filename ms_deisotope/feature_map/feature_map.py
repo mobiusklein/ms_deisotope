@@ -47,6 +47,8 @@ class LCMSFeatureMap(object):
 
     def between(self, lo, hi, error_tolerance=2e-5):
         n = len(self)
+        if n == 0:
+            return []
         lo_ix = binary_search_with_flag(
             self.features, lo, error_tolerance)[0][0]
         if self[lo_ix].mz < lo:
@@ -558,6 +560,8 @@ class DeconvolutedLCMSFeatureMap(object):
 
     def between(self, lo, hi, error_tolerance=2e-5, use_mz=False):
         n = len(self)
+        if n == 0:
+            return []
         if use_mz:
             lo_ix = binary_search_with_flag(
                 self._by_mz, lo, error_tolerance)[0][0]

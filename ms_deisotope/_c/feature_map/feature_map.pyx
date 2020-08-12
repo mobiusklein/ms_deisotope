@@ -66,6 +66,8 @@ cdef class LCMSFeatureMap(object):
             LCMSFeature f
 
         n = self.get_size()
+        if n == 0:
+            return []
         lo_ix = binary_search_with_flag(
             self.features, lo, error_tolerance)[0][0]
         if self.get(lo_ix).get_mz() < lo:
@@ -87,7 +89,7 @@ cdef class LCMSFeatureMap(object):
 
 cpdef tuple binary_search_with_flag(list array, double mz, double error_tolerance):
     cdef:
-        int n, lo, hi, mid, low_end, high_end
+        int i, n, lo, hi, mid, low_end, high_end
         double err
         LCMSFeature x
     lo = 0
