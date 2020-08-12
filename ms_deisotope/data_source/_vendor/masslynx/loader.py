@@ -26,6 +26,7 @@ from . import (MassLynxRawInfoReader,
 
 
 waters_id_pattern = re.compile(r"function=(\d+) process=(\d+) scan=(\d+)")
+waters_frame_id_pattern = re.compile(r"function=(\d+) process=(\d+) startScan=(\d+) endScan=(\d+)")
 
 
 def is_waters_raw_dir(path):
@@ -318,7 +319,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
 
     def _build_scan_index(self):
         function_and_scan_by_rt = []
-        self.scan_time_to_function_block_map = defaultdict(list)
+        # self.scan_time_to_function_block_map = defaultdict(list)
         num_scans_in_block = 0
         for fnum in self.function_index_list:
             _ms_level, spectrum_type = self._translate_function_type(fnum)
@@ -329,8 +330,8 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
                 num_scans_in_block = self.info_reader.GetDriftScanCount(fnum)
                 for i in range(scan_count):
                     key = self.info_reader.GetRetentionTime(fnum, i)
-                    self.scan_time_to_function_block_map[key *
-                                                         60].append((fnum, i))
+                    # self.scan_time_to_function_block_map[key *
+                    #                                      60].append((fnum, i))
                     function_and_scan_by_rt.append((key, (fnum, i)))
             else:
                 for i in range(scan_count):

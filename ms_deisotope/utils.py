@@ -77,6 +77,7 @@ class Base(object):
     '''A convenience base class for non-critical code to provide types
     with automatic :meth:`__repr__` methods using :func:`simple_repr`
     '''
+    __slots__ = ()
     __repr__ = simple_repr
 
 

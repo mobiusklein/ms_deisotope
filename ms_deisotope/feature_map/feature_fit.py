@@ -8,6 +8,7 @@ from ms_deisotope.averagine import glycan
 from ms_deisotope.scoring import g_test_scaled
 from .shape_fitter import AdaptiveMultimodalChromatogramShapeFitter
 from .lcms_feature import (
+    EmptyFeature,
     LCMSFeature,
     LCMSFeatureTreeNode,
     RunningWeightedAverage,
@@ -43,6 +44,16 @@ class LCMSFeatureSetFit(object):
         self.neutral_mass = neutral_mass
         self.scores = scores
         self.times = times
+
+    def count_null_features(self):
+        n_null = 0
+        for feature in self.features:
+            if feature is None or isinstance(feature, EmptyFeature):
+                n_null += 1
+        return n_null
+
+    def has_multiple_real_features(self):
+        return len(self) - self.count_null_features() > 1
 
     def clone(self):
         return self.__class__(

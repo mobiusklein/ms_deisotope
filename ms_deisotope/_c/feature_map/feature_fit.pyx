@@ -3,7 +3,7 @@ cimport cython
 
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM
 
-from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
+from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature, EmptyFeature, FeatureBase
 from ms_deisotope._c.averagine cimport (
     neutral_mass as calc_neutral_mass, TheoreticalIsotopicPattern)
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
@@ -20,7 +20,7 @@ cdef class map_coord(object):
     def __init__(self, mz, time):
         self.mz = mz
         self.time = time
-    
+
     def __getitem__(self, i):
         if i == 0:
             return self.mz
@@ -130,6 +130,24 @@ cdef class LCMSFeatureSetFit(object):
 
     cpdef bint _gt(self, LCMSFeatureSetFit other):
         return self.score > other.score
+
+    cpdef int count_null_features(self):
+        cdef:
+            int i, n, n_null
+            FeatureBase feature
+        n = PyList_GET_SIZE(self.features)
+        n_null = 0
+        for i in range(n):
+            feature = <FeatureBase>PyList_GET_ITEM(self.features, i)
+            if feature is None or isinstance(feature, EmptyFeature):
+                n_null += 1
+        return n_null
+
+    cpdef bint has_multiple_real_features(self):
+        cdef:
+            int n
+        n = PyList_GET_SIZE(self.features)
+        return n - self.count_null_features() > 1
 
     def __richcmp__(self, LCMSFeatureSetFit other, int code):
         if other is None:

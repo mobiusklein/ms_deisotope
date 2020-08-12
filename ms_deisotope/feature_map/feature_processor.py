@@ -277,11 +277,12 @@ class PrecursorMap(object):
 
 class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
     def __init__(self, feature_map, averagine, scorer, precursor_map=None, minimum_size=3,
-                 maximum_time_gap=0.25):
+                 maximum_time_gap=0.25, prefer_multiply_charged=True):
         if precursor_map is None:
             precursor_map = PrecursorMap({})
         self.feature_map = LCMSFeatureMap([f.clone(deep=True) for f in feature_map])
         self.averagine = AveragineCache(averagine)
+        self.prefer_multiply_charged = prefer_multiply_charged
         self.scorer = scorer
         self.precursor_map = precursor_map
         self.minimum_size = minimum_size
@@ -333,20 +334,27 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 truncate_after=truncate_after,
                 max_missed_peaks=max_missed_peaks,
                 threshold_scale=threshold_scale)
+            is_multiply_charged = abs(charge) > 1
             if self.scorer.is_maximizing():
                 for fit in current_fits:
                     if fit.score > best_fit_score:
+                        if is_multiply_charged and not fit.has_multiple_real_features():
+                            continue
                         best_fit_score = fit.score
                         best_fit_charge = charge
             else:
                 for fit in current_fits:
                     if fit.score < best_fit_score:
+                        if is_multiply_charged and not fit.has_multiple_real_features():
+                            continue
                         best_fit_score = fit.score
                         best_fit_charge = charge
-            if abs(charge) == 1:
+            if abs(charge) == 1 and self.prefer_multiply_charged:
                 holdout = current_fits
             else:
                 for fit in current_fits:
+                    if is_multiply_charged and not fit.has_multiple_real_features():
+                        continue
                     self.dependence_network.add_fit_dependence(fit)
                     fits.append(fit)
         if holdout is not None and best_fit_charge == 1:
