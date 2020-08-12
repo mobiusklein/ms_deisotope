@@ -59,11 +59,11 @@ to read Thermo RAW files on Windows and Linux (and presumably Mac, too).
 
 .. code:: python
 
-    from ms_deisotope import MSFileReader
+    from ms_deisotope import MSFileLoader
     from ms_deisotope.data_source import mzxml
 
     # open a file, selecting the appropriate reader automatically
-    reader = MSFileReader("path/to/data.mzML")
+    reader = MSFileLoader("path/to/data.mzML")
 
     # or specify the reader type directly
     reader = mzxml.MzXMLLoader("path/to/data.mzXML")
@@ -81,6 +81,11 @@ interface.
     scan_bunch = next(reader)
     print(scan_bunch.precursor, len(scan_bunch.products))
 
+
+Gzip compressed mzML, mzXML, and MGF files are transparently decompressed with unaffected sequential
+access time but can be very slow for random access. `ms_deisotope` supports `idzip`-flavor gzip
+compressed files which provide the same degree of data compression as gzip (and backwards-compatible
+with programs expecting gzip) but offers near-uncompressed random access speed.
 
 Averagine
 =========
