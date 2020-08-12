@@ -355,6 +355,7 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
         peaks = scan
     else:
         peaks = getattr(scan, "deconvoluted_peak_set", [])
+    peaks = sorted(peaks, key=lambda x: x.mz)
     for peak in peaks:
         color = next(color_cycle)
         draw_peaklist(peak.envelope, ax=ax, color=color, alpha=0.75, **kwargs)
