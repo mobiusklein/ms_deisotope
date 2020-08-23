@@ -117,6 +117,19 @@ cdef class SpanningMixin(object):
         return self.start <= interval.start and self.end >= interval.end
 
 
+cdef class SimpleInterval(SpanningMixin):
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    @staticmethod
+    cdef SimpleInterval _create(double start, double end):
+        cdef SimpleInterval self = SimpleInterval.__new__(SimpleInterval)
+        self.start = start
+        self.end = end
+        return self
+
+
 cdef class Interval(SpanningMixin):
     def __init__(self, start, end, members=None, **kwargs):
         if members is None:
@@ -205,13 +218,13 @@ cdef class IntervalTreeNode(object):
     cpdef list _overlaps_interval(self, double start, double end):
         cdef:
             SpanningMixin interv
+            SimpleInterval query
             size_t i
-
+        query = SimpleInterval._create(start, end)
         result = []
         for i in range(PyList_Size(self.contained)):
             interv = <SpanningMixin>PyList_GetItem(self.contained, i)
-            if ((start < interv.start and interv.end <= end) or
-                    (interv.start <= start and interv.end >= end)):
+            if query.overlaps(interv):
                 result.append(interv)
         return result
 
