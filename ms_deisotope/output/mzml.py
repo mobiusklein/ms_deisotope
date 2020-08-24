@@ -56,7 +56,7 @@ except ImportError:
     writer = None
 
 from ms_deisotope import version as lib_version
-from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet, Envelope
+from ms_deisotope.peak_set import (DeconvolutedPeak, DeconvolutedPeakSet, Envelope, IonMobilityDeconvolutedPeak)
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.qc.isolation import CoIsolation
 from ms_deisotope.data_source.common import (
@@ -734,19 +734,25 @@ class MzMLSerializer(ScanSerializerBase):
                         {"ms_deisotope:orphan": precursor_information.orphan}
                     ]
                 }
-                if precursor_information.coisolation:
-                    for p in precursor_information.coisolation:
-                        package['params'].append({
-                            "name": "ms_deisotope:coisolation",
-                            "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
-                        })
             else:
                 package = {
                     "mz": precursor_information.mz,
                     "intensity": precursor_information.intensity,
                     "charge": precursor_information.charge,
-                    "scan_id": precursor_information.precursor_scan_id
+                    "scan_id": precursor_information.precursor_scan_id,
+                    "params": []
                 }
+            # This implicitly captures ion mobility which is stored as an annotation key-value pair.
+            for key, value in precursor_information.annotations.items():
+                package['params'].append({
+                    key: value
+                })
+            if precursor_information.coisolation:
+                for p in precursor_information.coisolation:
+                    package['params'].append({
+                        "name": "ms_deisotope:coisolation",
+                        "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
+                    })
         else:
             package['mz'] = None
             package["charge"] = None
