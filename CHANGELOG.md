@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
    of the top-level module's API.
 4. Added `RawDataArray.size` property to report the length of the m/z and intensity array.
 5. Added `default_precursor_ion_selection_window` (`-D`) to the `ms-deisotope` command line tool.
+6. Add drift time aware variant of `DeconvolutedPeak`, `IonMobilityDeconvolutedPeak` which has a `drift_time` attribute.
 
 ### Changed
 1. The `_reindex` method of `DeconvolutedPeakSet` has been renamed `reindex` to reflect that it should be part of the type's
