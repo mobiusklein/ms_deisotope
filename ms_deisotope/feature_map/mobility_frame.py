@@ -1,9 +1,86 @@
-from ms_deisotope.averagine import peptide
-from ms_deisotope.scoring import MSDeconVFitter
+from abc import ABCMeta, abstractmethod
 
-from ms_deisotope.feature_map import feature_map
-from ms_deisotope.feature_map.feature_map import LCMSFeatureForest, smooth_overlaps
-from ms_deisotope.feature_map import map_viz, feature_processor
+
+class IonMobilitySource(ABCMeta):
+    @abstractmethod
+    def _frame_id(self, data):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _frame_index(self, data):
+        raise NotImplementedError()
+
+    def _frame_time(self, data):
+        scan = self.get_scan_by_index(
+            self._frame_start_scan_index(data))
+        return scan.scan_time
+
+    def _frame_ms_level(self, data):
+        scan = self.get_scan_by_index(
+            self._frame_start_scan_index(data))
+        return scan.ms_level
+
+    @abstractmethod
+    def _frame_start_scan_index(self, data):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _frame_end_scan_index(self, data):
+        raise NotImplementedError()
+
+    def _frame_precursor_information(self, data):
+        scan = self.get_scan_by_index(
+            self._frame_start_scan_index(data))
+        return scan.precursor_information
+
+    def _frame_activation(self, data):
+        scan = self.get_scan_by_index(
+            self._frame_start_scan_index(data))
+        return scan.activation
+
+    def _frame_isolation_window(self, data):
+        scan = self.get_scan_by_index(
+            self._frame_start_scan_index(data))
+        return scan.isolation_window
+
+    def _frame_polarity(self, data):
+        scan = self.get_scan_by_index(
+            self._frame_start_scan_index(data))
+        return scan.polarity
+
+
+class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
+    @abstractmethod
+    def get_frame_by_index(self, index):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_frame_by_time(self, time):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _validate_frame(self, data):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _make_frame(self, data):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _cache_frame(self, frame):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _default_frame_iterator(self, start_index=None):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def make_frame_iterator(self, iterator=None, grouped=False):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        raise NotImplementedError()
 
 
 class IonMobilityFrame(object):
@@ -35,6 +112,10 @@ class IonMobilityFrame(object):
         return self.source._frame_ms_level(self._data)
 
     @property
+    def polarity(self):
+        return self.source._frame_polarity(self._data)
+
+    @property
     def start_scan_index(self):
         return self.source._frame_start_scan_index(self._data)
 
@@ -62,6 +143,7 @@ class IonMobilityFrame(object):
         return scans
 
     def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, **kwargs):
+        from ms_deisotope.feature_map import feature_map
         scans = self.scans()
         lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
         for scan in scans:
@@ -75,9 +157,12 @@ class IonMobilityFrame(object):
 
     def deconvolute_features(self, averagine=None, scorer=None, truncate_after=0.95,
                              minimum_intensity=5, minimum_size=2, maximum_gap_size=0.25, **kwargs):
+        from ms_deisotope.feature_map import feature_processor
         if averagine is None:
+            from ms_deisotope.averagine import peptide
             averagine = peptide
         if scorer is None:
+            from ms_deisotope.scoring import MSDeconVFitter
             scorer = MSDeconVFitter(1)
         if self.features is None:
             raise ValueError(
