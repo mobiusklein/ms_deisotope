@@ -48,6 +48,13 @@ class IonMobilitySource(ABCMeta):
             self._frame_start_scan_index(data))
         return scan.polarity
 
+    def _frame_drift_times(self, data):
+        scans = []
+        for i in range(self._frame_start_scan_index(data), self._frame_end_scan_index(data)):
+            scan = self.get_scan_by_index(i)
+            scans.append(scan.drift_time)
+        return scans
+
 
 class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     @abstractmethod
@@ -141,6 +148,52 @@ class IonMobilityFrame(object):
             scan = self.source.get_scan_by_index(i)
             scans.append(scan)
         return scans
+
+    def drift_times(self):
+        return self.source._frame_drift_times(self._data)
+
+    def get_scan_by_drift_time(self, drift_time):
+        dt_axis = self.drift_times()
+        lo = 0
+        hi = n = len(dt_axis)
+        best_match = None
+        best_error = float('inf')
+
+        # Handles infinities
+        if drift_time > dt_axis[-1]:
+            return self.source.get_scan_by_index(self.end_scan_index - 1)
+
+        while hi != lo:
+            mid = (hi + lo) // 2
+            dt = dt_axis[mid]
+            err = abs(dt - drift_time)
+            if err < best_error:
+                best_error = err
+                best_match = mid
+            if (dt == drift_time) or (hi - 1 == lo):
+                i = mid - 1
+                while i >= 0:
+                    err = abs(dt_axis[i] - drift_time)
+                    if err < best_error:
+                        best_error = err
+                        best_match = i
+                        i -= 1
+                    else:
+                        break
+                i = mid + 1
+                while i < n:
+                    err = abs(dt_axis[i] - drift_time)
+                    if err < best_error:
+                        best_error = err
+                        best_match = i
+                        i += 1
+                    else:
+                        break
+                return self.source.get_scan_by_index(self.start_scan_index + best_match)
+            elif dt > drift_time:
+                hi = mid
+            else:
+                lo = mid
 
     def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, **kwargs):
         from ms_deisotope.feature_map import feature_map

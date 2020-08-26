@@ -7,6 +7,7 @@ from collections import defaultdict, OrderedDict
 import numpy as np
 
 from ms_deisotope.utils import Base
+from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
 from ms_deisotope.data_source.common import (
     Scan, ActivationInformation, PrecursorInformation,
     ChargeNotProvided, IsolationWindow,
@@ -113,7 +114,7 @@ class IndexEntry(Base):
         return self.id
 
 
-class WatersMSECycleSourceMixin(object):
+class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
     def _frame_id(self, data):
         return data.id
 
@@ -212,7 +213,6 @@ class WatersMSECycleSourceMixin(object):
         return True
 
     def _make_frame(self, data):
-        from ms_deisotope.feature_map.mobility_frame import IonMobilityFrame
         return IonMobilityFrame(data, self)
 
     def _cache_frame(self, frame):
