@@ -146,6 +146,9 @@ class WatersMSECycleSourceMixin(object):
         scan = self.get_scan_by_index(data.start_scan)
         return scan.isolation_window
 
+    def _frame_polarity(self, data):
+        scan = self.get_scan_by_index(data.start_scan)
+        return scan.polarity
 
     def get_frame_by_index(self, index):
         cycle = self.cycle_index[index]

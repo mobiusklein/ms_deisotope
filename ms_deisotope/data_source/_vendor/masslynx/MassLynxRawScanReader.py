@@ -1,12 +1,37 @@
 ''' Waters
     MassLynx Python SDK
 '''
+import sys
 import copy
 import ctypes
 from ctypes import*
 from array import *
 from .MassLynxRawReader import *
 from .MassLynxRawDefs import MassLynxBaseType
+
+import numpy as np
+
+if sys.version_info.major >= 3:
+    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+    buf_from_mem.restype = ctypes.py_object
+    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+else:
+    buf_from_mem = ctypes.pythonapi.PyBuffer_FromMemory
+    buf_from_mem.restype = ctypes.py_object
+
+
+def make_nd_array(c_pointer, shape, dtype=np.float64, order='C', own_data=True):
+    arr_size = np.prod(shape[:]) * np.dtype(dtype).itemsize
+    if sys.version_info.major >= 3:
+        buffer = buf_from_mem(c_pointer, arr_size, 0x100)
+    else:
+        buffer = buf_from_mem(c_pointer, arr_size)
+    arr_size = np.prod(shape[:]) * np.dtype(dtype).itemsize
+    arr = np.ndarray(tuple(shape[:]), dtype, buffer, order=order)
+    if own_data and not arr.flags.owndata:
+        return arr.copy()
+    else:
+        return arr
 
 
 class MassLynxRawScanReader(MassLynxRawReader):
@@ -48,6 +73,8 @@ class MassLynxRawScanReader(MassLynxRawReader):
         #MassLynxRawReader.ReleaseMemory( pMasses)
         #MassLynxRawReader.ReleaseMemory( pIntensities)
 
+        # masses = make_nd_array(pMasses, (size, ), np.float32)
+        # intensities = make_nd_array(pIntensities, (size, ), np.float32)
         return masses, intensities
 
     def ReadScanFlags( self, whichFunction, whichScan ):
@@ -94,11 +121,13 @@ class MassLynxRawScanReader(MassLynxRawReader):
         readDriftScan.argtypes = [c_void_p, c_int, c_int, c_int, POINTER(c_void_p), POINTER(c_void_p), POINTER(c_int)]
         try:
             super(MassLynxRawScanReader, self).CheckReturnCode( readDriftScan(self._getReader(),whichFunction, whichScan, whichDrift, pMasses,pIntensities,size) )# fill the array
-            pM = cast(pMasses,POINTER(c_float))
-            pI = cast(pIntensities,POINTER(c_float))
+            # pM = cast(pMasses,POINTER(c_float))
+            # pI = cast(pIntensities,POINTER(c_float))
+            # masses = pM[0:size.value]
+            # intensities = pI[0:size.value]
 
-            masses = pM[0:size.value]
-            intensities = pI[0:size.value]
+            masses = make_nd_array(pMasses, (size.value, ), np.float32)
+            intensities = make_nd_array(pIntensities, (size.value, ), np.float32)
 
             # dealocate memory - causes segfaults?
             # MassLynxRawReader.ReleaseMemory( pMasses)
@@ -106,8 +135,8 @@ class MassLynxRawScanReader(MassLynxRawReader):
 
             return masses, intensities
 
-        except Exception:
-            return [], []
+        except Exception as err:
+            return np.array([], dtype=np.float32), np.array([], dtype=np.float32)
 
     def ReadDriftScanFlagsIndex(self, whichFunction, whichScan, whichDrift):
         masses = []
