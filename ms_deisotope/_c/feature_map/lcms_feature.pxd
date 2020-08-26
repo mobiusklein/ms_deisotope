@@ -84,6 +84,7 @@ cdef class LCMSFeature(FeatureBase):
     cpdef bint _eq(self, other)
     cpdef bint _ne(self, other)
     cpdef bint overlaps_in_time(self, FeatureBase interval)
+    cpdef bint spans_in_time(self, double time)
 
     cdef LCMSFeatureTreeNode getitem(self, size_t i)
     cdef void _feed_peak_averager(self)
@@ -91,6 +92,8 @@ cdef class LCMSFeature(FeatureBase):
     cpdef insert_node(self, LCMSFeatureTreeNode node)
     cpdef insert(self, PeakBase peak, double time)
     cpdef _invalidate(self, bint reaverage=*)
+    cpdef list split_sparse(self, double delta_rt=*)
+    cpdef LCMSFeature clone(self, deep=*, cls=*)
 
 
 cdef class EmptyFeature(FeatureBase):

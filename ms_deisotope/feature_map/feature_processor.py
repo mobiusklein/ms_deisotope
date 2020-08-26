@@ -7,7 +7,8 @@ from ms_peak_picker import FittedPeak
 
 from .feature_map import (
     LCMSFeatureMap,
-    DeconvolutedLCMSFeatureMap)
+    DeconvolutedLCMSFeatureMap,
+    smooth_overlaps_neutral)
 from .lcms_feature import (
     LCMSFeature,
     EmptyFeature,
@@ -280,7 +281,12 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                  maximum_time_gap=0.25, prefer_multiply_charged=True):
         if precursor_map is None:
             precursor_map = PrecursorMap({})
-        self.feature_map = LCMSFeatureMap([f.clone(deep=True) for f in feature_map])
+        if isinstance(feature_map, LCMSFeatureMap):
+            feature_map = feature_map.clone(deep=True)
+        else:
+            feature_map = LCMSFeatureMap(
+                [f.clone(deep=True) for f in feature_map])
+        self.feature_map = feature_map
         self.averagine = AveragineCache(averagine)
         self.prefer_multiply_charged = prefer_multiply_charged
         self.scorer = scorer
@@ -699,7 +705,7 @@ class FeatureDeconvolutionIterationState(object):
             if converged or self.iteration_count >= self.maxiter:
                 keep_going = False
         self.solutions = self.processor._clean_solutions(self.solutions)
-        return DeconvolutedLCMSFeatureMap(self.solutions)
+        return DeconvolutedLCMSFeatureMap(smooth_overlaps_neutral(self.solutions))
 
 
 def find_bounds(fit, detection_threshold=0.1, find_separation=True):

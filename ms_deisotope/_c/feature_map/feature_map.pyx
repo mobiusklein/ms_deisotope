@@ -60,6 +60,19 @@ cdef class LCMSFeatureMap(object):
             binary_search_with_flag(
                 self.features, hi, error_tolerance)[0][0])
 
+    cpdef list spanning_time(self, double time_point):
+        cdef:
+            size_t i, n
+            LCMSFeature feature
+            list result
+        result = []
+        n = self.get_size()
+        for i in range(n):
+            feature = self.get(i)
+            if feature.spans_in_time(time_point):
+                result.append(feature)
+        return result
+
     def between(self, double lo, double hi, double error_tolerance=2e-5):
         cdef:
             Py_ssize_t n, i, lo_ix, hi_ix
@@ -85,6 +98,36 @@ cdef class LCMSFeatureMap(object):
 
     def __repr__(self):
         return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
+
+    cpdef LCMSFeatureMap clone(self, bint deep=True):
+        cdef:
+            size_t i, n
+            list result
+        result = []
+        n = self.get_size()
+        for i in range(n):
+            feature = self.get(i).clone(deep)
+            result.append(feature)
+        return self.__class__(result)
+
+
+@cython.binding(True)
+cpdef list split_sparse(LCMSFeatureMap self, double delta_rt=1.0, size_t min_size=2):
+    cdef:
+        list result, chunks
+        size_t i, n, j, m
+        LCMSFeature feature, chunk
+    result = []
+    n = self.get_size()
+    for i in range(n):
+        feature = self.get(i)
+        chunks = feature.split_sparse(delta_rt)
+        m = PyList_GET_SIZE(chunks)
+        for j in range(m):
+            chunk = <LCMSFeature>PyList_GET_ITEM(chunks, j)
+            if chunk.get_size() >= min_size:
+                result.append(chunk)
+    return result
 
 
 cpdef tuple binary_search_with_flag(list array, double mz, double error_tolerance):

@@ -38,6 +38,9 @@ class LCMSFeatureMap(object):
         else:
             return []
 
+    def spanning_time(self, time_point):
+        return [feature for feature in self if feature.spans_in_time(time_point)]
+
     def index_range(self, lo, hi, error_tolerance=2e-5):
         return (
             binary_search_with_flag(
@@ -229,6 +232,11 @@ def smooth_overlaps_simple(feature_list, error_tolerance=1e-5):
 
 def smooth_overlaps(feature_list, error_tolerance=1e-5):
     smoother = LCMSFeatureOverlapSmoother(feature_list, error_tolerance)
+    return smoother.smooth()
+
+
+def smooth_overlaps_neutral(feature_list, error_tolerance=1e-5):
+    smoother = NeutralMassLCMSFeatureOverlapSmoother(feature_list, error_tolerance)
     return smoother.smooth()
 
 
@@ -508,6 +516,24 @@ def search_sweep_neutral(array, neutral_mass, error_tolerance=1e-5):
     return 0, 0
 
 
+def binary_search_exact_neutral(array, neutral_mass):
+    lo = 0
+    hi = len(array)
+    while hi != lo:
+        mid = (hi + lo) // 2
+        x = array[mid]
+        err = (x.neutral_mass - neutral_mass)
+        if err == 0:
+            return mid
+        elif (hi - lo) == 1:
+            return mid
+        elif err > 0:
+            hi = mid
+        else:
+            lo = mid
+    return 0
+
+
 class DeconvolutedLCMSFeatureMap(object):
 
     def __init__(self, features):
@@ -525,6 +551,9 @@ class DeconvolutedLCMSFeatureMap(object):
             return self.features[i]
         else:
             return [self.features[j] for j in i]
+
+    def spanning_time(self, time_point):
+        return [feature for feature in self if feature.spans_in_time(time_point)]
 
     def search(self, mz, error_tolerance=2e-5, use_mz=False):
         if use_mz:
@@ -698,7 +727,7 @@ class LCMSFeatureMerger(object):
         if features is None:
             features = []
         self.features = sorted(
-            features, key=lambda x: x.mz)
+            features, key=self._mass_coordinate)
         self.error_tolerance = error_tolerance
         self.count = 0
         self.verbose = False
@@ -715,6 +744,10 @@ class LCMSFeatureMerger(object):
         else:
             return [self.features[j] for j in i]
 
+    def _mass_coordinate(self, x):
+        return x.mz
+
+    # Mass Coordinate Explicit
     def find_candidates(self, new_feature):
         index, matched = binary_search_with_flag(
             self.features, new_feature.mz, self.error_tolerance)
@@ -722,16 +755,17 @@ class LCMSFeatureMerger(object):
 
     def merge_overlaps(self, new_feature, feature_range):
         has_merged = False
-        query_mass = new_feature.mz
+        query_mass = self._mass_coordinate(new_feature)
         for chroma in feature_range:
             cond = (chroma.overlaps_in_time(new_feature) and abs(
-                    (chroma.mz - query_mass) / query_mass) < self.error_tolerance)
+                    (self._mass_coordinate(chroma) - query_mass) / query_mass) < self.error_tolerance)
             if cond:
                 chroma.merge(new_feature)
                 has_merged = True
                 break
         return has_merged
 
+    # Mass Coordinate Explicit
     def find_insertion_point(self, new_feature):
         return binary_search_exact(
             self.features, new_feature.mz)
@@ -761,7 +795,7 @@ class LCMSFeatureMerger(object):
                 new_index = index[0]
             else:
                 x = self.features[index[0]]
-                if x.mz < feature.mz:
+                if self._mass_coordinate(x) < self._mass_coordinate(feature):
                     new_index = index[0] + 1
                 else:
                     new_index = index[0]
@@ -775,6 +809,22 @@ class LCMSFeatureMerger(object):
 
 
 def flatten_tree(tree):
+    '''Perform a FIFO infix right-to-left traversal of the tree
+    to flatten an :class:`~.IntervalTreeNode` hierarchy into a
+    list.
+
+    This still iterates over interval tree nodes, unlike the
+    IntervalTreeNode class's own `__iter__` method, which flattens
+    out the tree to iterate over contained intervals.
+
+    Parameters
+    ----------
+    tree: :class:`~.IntervalTreeNode`
+
+    Returns
+    -------
+    list
+    '''
     output_queue = []
     input_queue = [tree]
     while input_queue:
@@ -811,14 +861,17 @@ class LCMSFeatureOverlapSmoother(object):
     def __len__(self):
         return len(self.features)
 
+    def _merge_features(self, features):
+        merger = LCMSFeatureMerger(error_tolerance=self.error_tolerance)
+        merger.aggregate_features(features)
+        return list(merger)
+
     def aggregate_interval(self, tree):
         features = [interval[0] for interval in tree.contained]
         features.extend(self.solution_map[tree.left])
         features.extend(self.solution_map[tree.right])
-        merger = LCMSFeatureMerger(error_tolerance=self.error_tolerance)
-        merger.aggregate_features(features)
-        self.solution_map[tree] = list(merger)
-        return merger
+        merged = self.solution_map[tree] = self._merge_features(features)
+        return merged
 
     def smooth(self):
         nodes = layered_traversal(flatten_tree(self.retention_interval_tree))
@@ -828,3 +881,39 @@ class LCMSFeatureOverlapSmoother(object):
         result = LCMSFeatureMerger()
         result.aggregate_features(final)
         return list(result)
+
+
+class NeutralMassLCMSFeatureMerger(LCMSFeatureMerger):
+    def _mass_coordinate(self, x):
+        return x.neutral_mass
+
+    # Mass Coordinate Explicit
+    def find_candidates(self, new_feature):
+        index, matched = binary_search_with_flag_neutral(
+            self.features, new_feature.neutral_mass, self.error_tolerance)
+        return index, matched
+
+    def merge_overlaps(self, new_feature, feature_range):
+        has_merged = False
+        query_mass = self._mass_coordinate(new_feature)
+        for chroma in feature_range:
+            cond = (chroma.overlaps_in_time(new_feature) and chroma.charge == new_feature.charge and abs(
+                    (self._mass_coordinate(chroma) - query_mass) / query_mass) < self.error_tolerance)
+            if cond:
+                chroma.merge(new_feature)
+                has_merged = True
+                break
+        return has_merged
+
+    # Mass Coordinate Explicit
+    def find_insertion_point(self, new_feature):
+        return binary_search_exact_neutral(
+            self.features, new_feature.neutral_mass)
+
+
+class NeutralMassLCMSFeatureOverlapSmoother(LCMSFeatureOverlapSmoother):
+    def _merge_features(self, features):
+        merger = NeutralMassLCMSFeatureMerger(
+            error_tolerance=self.error_tolerance)
+        merger.aggregate_features(features)
+        return list(merger)

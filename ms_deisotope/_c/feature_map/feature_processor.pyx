@@ -57,6 +57,7 @@ cdef object double_vector_to_ndarray(dvec* vec):
     return out
 
 
+@cython.final
 cdef class CartesianProductIterator(object):
     cdef:
         public list collections
@@ -66,12 +67,12 @@ cdef class CartesianProductIterator(object):
         public bint done
         public size_t total_combinations
 
-    def __cinit__(self, collections):
+    cdef inline void _initialize(self, list collections):
         cdef:
             size_t i, n
             list sublist
 
-        self.collections = list(map(list, collections))
+        self.collections = collections
         self.size = PyList_GET_SIZE(self.collections)
         self.lengths = <int*>malloc(sizeof(int) * self.size)
         self.indices = <int*>malloc(sizeof(int) * self.size)
@@ -86,6 +87,16 @@ cdef class CartesianProductIterator(object):
                 self.done = True
             self.indices[i] = 0
 
+    @staticmethod
+    cdef CartesianProductIterator _create(list collections):
+        cdef CartesianProductIterator self = CartesianProductIterator.__new__(CartesianProductIterator)
+        self._initialize(collections)
+        return self
+
+    def __init__(self, collections):
+        self.collections = list(map(list, collections))
+        self._initialize(self.collections)
+
     def __dealloc__(self):
         free(self.lengths)
         free(self.indices)
@@ -96,10 +107,10 @@ cdef class CartesianProductIterator(object):
     def get_indices(self):
         return [self.indices[i] for i in range(self.size)]
 
-    cpdef bint has_more(self):
+    cdef inline bint has_more(self):
         return not self.done
 
-    cpdef list compose_next_value(self):
+    cdef inline list compose_next_value(self):
         cdef:
             int i, ix
             list result, sublist
@@ -114,7 +125,7 @@ cdef class CartesianProductIterator(object):
             result.append(value)
         return result
 
-    cpdef advance(self):
+    cdef inline void advance(self):
         for i in range(self.size - 1, -1, -1):
             if self.indices[i] == self.lengths[i] - 1:
                 self.indices[i] = 0
@@ -124,7 +135,7 @@ cdef class CartesianProductIterator(object):
                 self.indices[i] += 1
                 break
 
-    cpdef list get_next_value(self):
+    cdef inline list get_next_value(self):
         cdef list value
         if self.done:
             return None
@@ -163,6 +174,7 @@ cdef tuple _conform_envelopes(list experimental, list base_theoretical, size_t* 
     return (cleaned_eid, tid)
 
 
+@cython.final
 cdef class envelope_conformer:
     cdef:
         list experimental
@@ -173,12 +185,12 @@ cdef class envelope_conformer:
     cdef envelope_conformer _create():
         return envelope_conformer.__new__(envelope_conformer)
 
-    cdef void acquire(self, list experimental, list theoretical):
+    cdef inline void acquire(self, list experimental, list theoretical):
         self.experimental = experimental
         self.theoretical = theoretical
         self.n_missing = 0
 
-    cdef void conform(self, double minimum_theoretical_abundance=0.05):
+    cdef inline void conform(self, double minimum_theoretical_abundance=0.05):
         cdef:
             double total = 0
             size_t n_missing = 0
@@ -429,7 +441,7 @@ cdef class LCMSFeatureProcessorBase(object):
 
         conformer = envelope_conformer._create()
 
-        combn_iter = CartesianProductIterator(feature_groups)
+        combn_iter = CartesianProductIterator._create(feature_groups)
         combn_i = 0
         while combn_iter.has_more():
             features = combn_iter.get_next_value()
