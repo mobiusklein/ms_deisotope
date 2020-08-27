@@ -1,7 +1,7 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 
-class IonMobilitySource(ABCMeta):
+class IonMobilitySource(object):
     @abstractmethod
     def _frame_id(self, data):
         raise NotImplementedError()
@@ -149,11 +149,12 @@ class IonMobilityFrame(object):
             scans.append(scan)
         return scans
 
+    @property
     def drift_times(self):
         return self.source._frame_drift_times(self._data)
 
     def get_scan_by_drift_time(self, drift_time):
-        dt_axis = self.drift_times()
+        dt_axis = self.drift_times
         lo = 0
         hi = n = len(dt_axis)
         best_match = None

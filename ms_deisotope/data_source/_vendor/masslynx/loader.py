@@ -7,11 +7,11 @@ from collections import defaultdict, OrderedDict
 import numpy as np
 
 from ms_deisotope.utils import Base
-from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
 from ms_deisotope.data_source.common import (
     Scan, ActivationInformation, PrecursorInformation,
     ChargeNotProvided, IsolationWindow,
     RandomAccessScanSource)
+from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
 from ms_deisotope.data_source.metadata.scan_traits import (
     ScanAcquisitionInformation, ScanWindow, ScanEventInformation,
     ion_mobility_drift_time)
