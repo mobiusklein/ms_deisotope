@@ -1,5 +1,8 @@
 from abc import abstractmethod
+from itertools import chain
 
+from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
+from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
 
 class IonMobilitySource(object):
     @abstractmethod
@@ -91,6 +94,12 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
 
 
 class IonMobilityFrame(object):
+    '''A :class:`IonMobilityFrame` represents an single time point acquisition of
+    multiple mass spectra across multiple ion mobility drift time points. Because
+    of its drift time by m/z structure, it does not have 1-D peak sets, but pseudo-
+    :class:`~.LCMSFeatureMap`-like data structures which conserve the over-time
+    property.
+    '''
     def __init__(self, data, source):
         self._data = data
         self.source = source
@@ -227,3 +236,67 @@ class IonMobilityFrame(object):
         self.deconvoluted_features = decon.deconvolute(
             minimum_intensity=minimum_intensity, truncate_after=truncate_after, **kwargs)
         return self
+
+    def to_deconvoluted_peak_set(self, time_bound=None):
+        if self.deconvoluted_features is None:
+            raise ValueError("Must first deconvolute IMS features before converting to a time-binned peak set!")
+        if time_bound is not None:
+            cft = IntervalTreeNode.build(
+                [Interval(f.start_time, f.end_time, [f]) for f in self.deconvoluted_features])
+            features = chain.from_iterable(cft.overlaps(*time_bound))
+        else:
+            features = self.deconvoluted_features
+        return features_to_peak_set(features)
+
+
+def weighted_centroid(feature):
+    total = 0
+    normalizer = 0
+    for node in feature:
+        weight = node.total_intensity()
+        total += node.time * weight
+        normalizer += weight
+    return total / normalizer
+
+
+def merge_envelopes(envelopes):
+    base = envelopes[0].clone()
+    for env in envelopes[1:]:
+        for i, p in enumerate(env):
+            base[i].intensity += p.intensity
+
+    return base
+
+
+def feature_to_peak(feature):
+    peak_cluster = feature.peaks
+    peak_cluster = [pi for p in peak_cluster for pi in p]
+    total_intensity = sum(p.intensity for p in peak_cluster)
+    mz = sum(p.mz * p.intensity for p in peak_cluster) / total_intensity
+    neutral_mass = sum(
+        p.neutral_mass * p.intensity for p in peak_cluster) / total_intensity
+    most_abundant_mass = sum(
+        p.most_abundant_mass * p.intensity for p in peak_cluster) / total_intensity
+    a_to_a2_ratio = sum(
+        p.a_to_a2_ratio * p.intensity for p in peak_cluster) / total_intensity
+    average_mass = sum(
+        p.average_mass * p.intensity for p in peak_cluster) / total_intensity
+    signal_to_noise = sum(p.signal_to_noise *
+                          p.intensity for p in peak_cluster) / total_intensity
+    fwhm = sum(p.full_width_at_half_max *
+               p.intensity for p in peak_cluster) / total_intensity
+    area = sum(p.area * p.intensity for p in peak_cluster) / total_intensity
+    score = sum(p.score * p.intensity for p in peak_cluster) / total_intensity
+    charge = peak_cluster[0].charge
+    envelope = merge_envelopes([p.envelope for p in peak_cluster])
+    return IonMobilityDeconvolutedPeak(
+        neutral_mass=neutral_mass, intensity=total_intensity, charge=charge, signal_to_noise=signal_to_noise,
+        full_width_at_half_max=fwhm, index=-1, a_to_a2_ratio=a_to_a2_ratio, most_abundant_mass=most_abundant_mass,
+        average_mass=average_mass, score=score, envelope=envelope, mz=mz, fit=None, chosen_for_msms=False,
+        area=area, drift_time=weighted_centroid(feature))
+
+
+def features_to_peak_set(features):
+    peak_set = DeconvolutedPeakSet(tuple(map(feature_to_peak, features)))
+    peak_set.reindex()
+    return peak_set
