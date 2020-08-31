@@ -58,6 +58,17 @@ class IonMobilitySource(object):
             scans.append(scan.drift_time)
         return scans
 
+    def _frame_acquisition_information(self, data):
+        scan = self.get_scan_by_index(self._frame_start_scan_index(data))
+        acq = scan.acquisition_information
+        if acq is None:
+            return acq
+        acq = acq.copy()
+        for event in acq:
+            im = event._ion_mobility
+            im.remove_ion_mobility_type(im.ion_mobility_type())
+        return acq
+
 
 class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     @abstractmethod
@@ -150,6 +161,10 @@ class IonMobilityFrame(object):
     @property
     def isolation_window(self):
         return self.source._frame_isolation_window(self._data)
+
+    @property
+    def acquisition_information(self):
+        return self.source._frame_acquisition_information(self._data)
 
     def scans(self):
         scans = []

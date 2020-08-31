@@ -201,6 +201,9 @@ class ScanAcquisitionInformation(MutableSequence):
     def __reduce__(self):
         return self.__class__, (self.combination, self.scan_list)
 
+    def copy(self):
+        return self.__class__(self.combination, [se.copy() for se in self.scan_list])
+
 
 class _IonMobilityMixin(object):
     __slots__ = ()
@@ -281,6 +284,13 @@ class ScanEventInformation(_IonMobilityMixin):
         self.window_list = window_list or []
         self.drift_time = drift_time
         self.injection_time = injection_time
+
+    @property
+    def scan_configuration(self):
+        return self.traits.get('preset scan configuration')
+
+    def copy(self):
+        return self.__class__(self.start_time, self.window_list[:], None, self.injection_time, self.traits.copy())
 
     def __getitem__(self, i):
         return self.window_list[i]
