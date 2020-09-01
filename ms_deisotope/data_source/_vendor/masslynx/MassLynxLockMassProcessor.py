@@ -1,5 +1,5 @@
-''' 
-    Waters 
+'''
+    Waters
     MassLynx Python SDK
 '''
 
@@ -23,7 +23,7 @@ class MassLynxLockMassProcessor(object):
     # destroy the processor
     def __del__(self):
         destroyLockMassProcessor = MassLynxRawReader.massLynxDll.destroyRawProcessor
-        destroyLockMassProcessor.argtypes = [c_void_p]          
+        destroyLockMassProcessor.argtypes = [c_void_p]
         destroyLockMassProcessor( self.mlLockMassProcessor )
 
     def SetRawData( self, source ):
@@ -53,30 +53,30 @@ class MassLynxLockMassProcessor(object):
         setRawReader.argtypes = [c_void_p, c_void_p]
         self._codeHandler.CheckReturnCode(setRawReader(self.mlLockMassProcessor, mlReader._getReader() ))
 
-
-    def SetParameters( self, parameters ):
-        bytes = str.encode(parameters)
-        setLockMassParameters = MassLynxRawReader.massLynxDll.setLockMassParameters_dep
-        setLockMassParameters.argtypes = [c_void_p, c_char_p]
-        self._codeHandler.CheckReturnCode(setLockMassParameters(self.mlLockMassProcessor, bytes) )
+    def SetParameters(self, parameters):
+        p_params = parameters.GetParameters()
+        setLockMassParameters = MassLynxRawReader.massLynxDll.setLockMassParameters
+        setLockMassParameters.argtypes = [c_void_p, c_void_p]
+        self._codeHandler.CheckReturnCode(
+            setLockMassParameters(self.mlLockMassProcessor, p_params))
 
     def LockMassCorrect( self ):
-         # get applied lock mass gain   
-        success = c_bool(0)   
+         # get applied lock mass gain
+        success = c_bool(0)
         lockMassCorrect =  MassLynxRawReader.massLynxDll.lockMassCorrect
         lockMassCorrect.argtypes = [c_void_p, POINTER(c_bool)]
         self._codeHandler.CheckReturnCode(lockMassCorrect(self.mlLockMassProcessor, success ))
 
         return success.value
 
-    def RemoveLockMassCorrection( self ):  
-        # get applied lock mass gain      
+    def RemoveLockMassCorrection( self ):
+        # get applied lock mass gain
         removeLockMassCorrection =  MassLynxRawReader.massLynxDll.removeLockMassCorrection
         removeLockMassCorrection.argtypes = [c_void_p]
         self._codeHandler.CheckReturnCode( removeLockMassCorrection(self.mlLockMassProcessor) )
- 
+
     def IsLockMassCorrected( self ):
-        # get applied lock mass gain      
+        # get applied lock mass gain
         applied = c_int(0)
         isLockMassCorrected =  MassLynxRawReader.massLynxDll.LMP_isLockMassCorrected
         isLockMassCorrected.argtypes = [c_void_p, POINTER(c_int)]
@@ -84,8 +84,8 @@ class MassLynxLockMassProcessor(object):
 
         return applied.value == 1
 
-    def CanLockMassCorrect( self ):   
-        # get applied lock mass gain      
+    def CanLockMassCorrect( self ):
+        # get applied lock mass gain
         canApply = c_int(0)
         canLockMassCorrect =  MassLynxRawReader.massLynxDll.LMP_canLockMassCorrect
         canLockMassCorrect.argtypes = [c_void_p, POINTER(c_int)]
@@ -93,8 +93,8 @@ class MassLynxLockMassProcessor(object):
 
         return canApply.value == 1
 
-    def GetLockMassValues( self ):  
-        # get applied lock mass gain      
+    def GetLockMassValues( self ):
+        # get applied lock mass gain
         mass = c_float(0)
         tolerance = c_float(0)
         getLockMassValues =  MassLynxRawReader.massLynxDll.getLockMassValues
@@ -103,8 +103,8 @@ class MassLynxLockMassProcessor(object):
 
         return mass.value, tolerance.value
 
-    def GetLockMassCorrection( self, retentionTime ):  
-        # get applied lock mass gain      
+    def GetLockMassCorrection( self, retentionTime ):
+        # get applied lock mass gain
         gain = c_float(0)
         getLockMassCorrection =  MassLynxRawReader.massLynxDll.getLockMassCorrection
         getLockMassCorrection.argtypes = [c_void_p, c_float, POINTER(c_float)]

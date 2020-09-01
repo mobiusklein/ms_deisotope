@@ -21,6 +21,8 @@ from . import (MassLynxRawInfoReader,
                MassLynxRawScanReader,
                MassLynxRawChromatogramReader,
                MassLynxRawDefs,
+               MassLynxParameters,
+               MassLynxLockMassProcessor,
                libload
               )
 
@@ -260,7 +262,7 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
 
 
 class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
-    def __init__(self, raw_path):
+    def __init__(self, raw_path, lockmass_config=None):
         self.source_file = raw_path
 
         self.info_reader = MassLynxRawInfoReader.MassLynxRawInfoReader(
@@ -269,6 +271,9 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
             self.source_file)
         self.scan_reader = MassLynxRawScanReader.MassLynxRawScanReader(
             self.source_file)
+        self.lockmass_processor = MassLynxLockMassProcessor.MassLynxLockMassProcessor()
+        self.lockmass_processor.SetRawData(self.scan_reader)
+        self.configure_lockmass(lockmass_config)
         self.index = []
         self.cycle_index = []
         self._producer = None
@@ -276,6 +281,27 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
 
         self._build_function_index()
         self._build_scan_index()
+
+    def configure_lockmass(self, lockmass_config=None):
+        if lockmass_config is None:
+            return
+        if isinstance(lockmass_config, (list, tuple)):
+            if len(lockmass_config) == 1:
+                mass = float(lockmass_config[0])
+                tolerance = 0.25
+            else:
+                mass = float(lockmass_config[0])
+                tolerance = float(lockmass_config[1])
+        else:
+            mass = float(lockmass_config)
+            tolerance = 0.25
+
+        params = MassLynxParameters.MassLynxParameters()
+        params.Set(MassLynxRawDefs.LockMassParameter.MASS, mass)
+        params.Set(MassLynxRawDefs.LockMassParameter.TOLERANCE, tolerance)
+        self.lockmass_processor.SetParameters(params)
+        if self.lockmass_processor.CanLockMassCorrect():
+            self.lockmass_processor.LockMassCorrect()
 
     def __repr__(self):
         return "MassLynxRawLoader(%r)" % (self.source_file)
