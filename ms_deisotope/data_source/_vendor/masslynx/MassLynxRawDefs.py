@@ -1,4 +1,4 @@
-''' Waters 
+''' Waters
     MassLynx Python SDK
 '''
 
@@ -33,39 +33,39 @@ class MassLynxIonMode(IntEnum):
     UNINITIALISED = EI_POS + 99
 
 class MassLynxFunctionType(IntEnum):
-	MS = 200
-	SIR = 1 + MS
-	DLY = 2 + MS
-	CAT = 3 + MS
-	OFF = 4 + MS
-	PAR = 5 + MS
-	DAU = 6 + MS
-	NL = 7 + MS
-	NG = 8 + MS
-	MRM = 9 + MS
-	Q1F = 10 + MS
-	MS2 = 11 + MS
-	DAD = 12 + MS
-	TOF = 13 + MS
-	PSD = 14 + MS
-	TOFS = 15 + MS
-	TOFD = 16 + MS
-	MTOF = 17 + MS
-	TOFM = 18 + MS
-	TOFP = 19 + MS
-	ASVS = 20 + MS
-	ASMS = 21 + MS
-	ASVSIR = 22 + MS
-	ASMSIR = 23 + MS
-	QUADD = 24 + MS
-	ASBE = 25 + MS
-	ASB2E = 26 + MS
-	ASCNL = 27 + MS
-	ASMIKES = 28 + MS
-	ASMRM = 29 + MS
-	ASNRMS = 30 + MS
-	ASMRMQ = 31 + MS
-	UNINITIALISED = MS + 99
+    MS = 200
+    SIR = 1 + MS
+    DLY = 2 + MS
+    CAT = 3 + MS
+    OFF = 4 + MS
+    PAR = 5 + MS
+    DAU = 6 + MS
+    NL = 7 + MS
+    NG = 8 + MS
+    MRM = 9 + MS
+    Q1F = 10 + MS
+    MS2 = 11 + MS
+    DAD = 12 + MS
+    TOF = 13 + MS
+    PSD = 14 + MS
+    TOFS = 15 + MS
+    TOFD = 16 + MS
+    MTOF = 17 + MS
+    TOFM = 18 + MS
+    TOFP = 19 + MS
+    ASVS = 20 + MS
+    ASMS = 21 + MS
+    ASVSIR = 22 + MS
+    ASMSIR = 23 + MS
+    QUADD = 24 + MS
+    ASBE = 25 + MS
+    ASB2E = 26 + MS
+    ASCNL = 27 + MS
+    ASMIKES = 28 + MS
+    ASMRM = 29 + MS
+    ASNRMS = 30 + MS
+    ASMRMQ = 31 + MS
+    UNINITIALISED = MS + 99
 
 class MassLynxHeaderItem(IntEnum):
     VERSION = 300
@@ -312,4 +312,80 @@ class MassLynxSampleListItem(IntEnum):
     SUBJECTTIME = FILE_NAME + 115
     METH_DB = FILE_NAME + 116
     CURVE_DB = FILE_NAME + 117
-  
+
+
+class MassLynxScanType(IntEnum):
+    MS1 = 1
+    MS2 = MS1 + 2
+    UNINITIALISED = MS1 + 9
+
+class MassLynxAcquisitionType(IntEnum):
+    DDA = 0
+    MSE = DDA + 1
+    HDDDA = DDA + 2
+    HDMSE = DDA + 3
+    SONAR = DDA + 4
+    UNINITIALISED = DDA + 99
+
+class ThresholdParameters(IntEnum):
+    VALUE = 0
+    THRESHTYPE = 1
+
+
+
+class ThresholdType2(IntEnum):
+    ABSOLUTE_1 = 0
+    RELATIVE_2 = 1
+
+
+
+class SmoothParameter(IntEnum):
+    NUMBER = 1
+    WIDTH = NUMBER + 1
+    SMOOTHTYPE = NUMBER + 2
+
+
+class SmoothType(IntEnum):
+    MEAN = 1
+    MEDIAN = MEAN + 1
+    SAVITZKY_GOLAY = MEAN + 2
+
+
+
+class LockMassParameter(IntEnum):
+    MASS = 1000
+    TOLERANCE = MASS + 1
+    FORCE = MASS + 2
+
+
+class FunctionDefinition(IntEnum):
+    CONTINUUM = 1100
+    IONMODE = CONTINUUM + 1
+    FUNCTIONTYPE = CONTINUUM + 2
+    STARTMASS = CONTINUUM + 3
+    ENDMASS = CONTINUUM + 4
+    CDT_SCANS = CONTINUUM + 5,
+    SAMPLINGFREQUENCY = CONTINUUM + 6
+    LTEFF = CONTINUUM + 7
+    VEFF = CONTINUUM + 8,
+
+
+class AnalogParameter(IntEnum):
+    DESCRIPTION = 1200 + 1
+    UNITS = DESCRIPTION + 2
+    TYPE = DESCRIPTION + 3
+
+
+class AnalogTraceType(IntEnum):
+    ANALOG = 1250
+    ELSD = ANALOG + 1
+    READBACK = ANALOG + 2
+
+
+class AutoLynxStatus(IntEnum):
+    QUEUED = 1300
+    PROCESSED = QUEUED + 1
+    FAILED = QUEUED + 2
+    NOTFOUND = QUEUED + 3
+    UNINITIALISED = QUEUED + 9
+
