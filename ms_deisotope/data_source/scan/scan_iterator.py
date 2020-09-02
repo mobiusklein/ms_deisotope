@@ -167,3 +167,47 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
                 raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
+
+
+class MSEIterator(_GroupedScanIteratorImpl):
+    def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None, scan_cacher=None):
+        super(MSEIterator, self).__init__(iterator, scan_packer, scan_validator, scan_cacher)
+        self.low_energy_config = low_energy_config
+        self.lock_mass_config = lock_mass_config
+
+    def _make_producer(self):
+        _make_scan = self.scan_packer
+        _validate = self.scan_validator
+        _cache_scan = self.scan_cacher
+
+        precursor_scan = None
+        product_scans = []
+
+        current_level = 'low'
+
+        for scan in self.iterator:
+            packed = _make_scan(scan)
+            if not _validate(packed):
+                continue
+            _cache_scan(packed)
+            config = packed.acquisition_information[0].scan_configuration
+            if config == self.lock_mass_config:
+                continue
+
+            if config != self.low_energy_config:
+                if current_level == 'low':
+                    current_level = 'high'
+                # decreasing ms level
+                product_scans.append(packed)
+            elif config == self.low_energy_config:
+                if current_level != 'low':
+                    yield ScanBunch(precursor_scan, product_scans)
+                else:
+                    if precursor_scan is not None:
+                        yield ScanBunch(precursor_scan, product_scans)
+                precursor_scan = packed
+                product_scans = []
+            else:
+                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
+        if precursor_scan is not None:
+            yield ScanBunch(precursor_scan, product_scans)

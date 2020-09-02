@@ -66,7 +66,9 @@ class IonMobilitySource(object):
         acq = acq.copy()
         for event in acq:
             im = event._ion_mobility
-            im.remove_ion_mobility_type(im.ion_mobility_type())
+            mt = im.ion_mobility_type()
+            if mt is not None:
+                im.remove_ion_mobility_type(mt)
         return acq
 
 

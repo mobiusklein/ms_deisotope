@@ -228,11 +228,15 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
 
     def make_frame_iterator(self, iterator=None, grouped=False):
         from ms_deisotope.data_source.scan.scan_iterator import (
-            _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
+            _SingleScanIteratorImpl, _GroupedScanIteratorImpl, MSEIterator)
         if iterator is None:
             iterator = self._default_frame_iterator()
 
-        if grouped:
+        if grouped == 'mse':
+            strategy = MSEIterator(
+                iterator, self._make_frame, self.low_energy_function, self.lockmass_function,
+                self._validate_frame, self._cache_frame)
+        elif grouped:
             strategy = _GroupedScanIteratorImpl(
                 iterator, self._make_frame, self._validate_frame, self._cache_frame)
         else:
@@ -249,7 +253,7 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
         elif rt is not None:
             frame = self.get_frame_by_time(rt)
             start_index = frame.index
-        if require_ms1:
+        if require_ms1 and grouped != 'mse':
             while start_index != 0:
                 frame = self.get_frame_by_index(start_index)
                 if frame.ms_level > 1:
@@ -281,6 +285,8 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
 
         self._build_function_index()
         self._build_scan_index()
+        self.lockmass_function = self.function_index_list[-1] + 1
+        self.low_energy_function = self.function_index_list[0] + 1
 
     def configure_lockmass(self, lockmass_config=None):
         if lockmass_config is None:
