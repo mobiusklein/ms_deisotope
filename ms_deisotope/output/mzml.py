@@ -780,6 +780,10 @@ class MzMLSerializer(ScanSerializerBase):
             envelope_array = envelopes_to_array(
                 [peak.envelope for peak in scan.deconvoluted_peak_set])
             extra_arrays.append(("isotopic envelopes array", envelope_array))
+            if score_array and isinstance(scan.deconvoluted_peak_set, IonMobilityDeconvolutedPeak):
+                extra_arrays.append(('mean drift time array', [
+                    peak.drift_time for peak in scan.deconvoluted_peak_set
+                ]))
         return extra_arrays
 
     def _get_annotations(self, scan):
@@ -1055,6 +1059,29 @@ def deserialize_deconvoluted_peak_set(scan_dict):
     return peaks
 
 
+def deserialize_deconvoluted_ion_mobility_peak_set(scan_dict):
+    envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    peaks = []
+    mz_array = scan_dict['m/z array']
+    intensity_array = scan_dict['intensity array']
+    charge_array = scan_dict['charge array']
+    score_array = scan_dict['deconvolution score array']
+    drift_time_array = scan_dict['mean drift time array']
+    n = len(scan_dict['m/z array'])
+    for i in range(n):
+        mz = mz_array[i]
+        charge = charge_array[i]
+        peak = IonMobilityDeconvolutedPeak(
+            neutral_mass(mz, charge), intensity_array[i], charge=charge, signal_to_noise=score_array[i],
+            index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
+            average_mass=0, score=score_array[i], envelope=envelopes[i], mz=mz, drift_time=drift_time_array[i],
+        )
+        peaks.append(peak)
+    peaks = DeconvolutedPeakSet(peaks)
+    peaks.reindex()
+    return peaks
+
+
 def deserialize_external_deconvoluted_peaks(scan_dict, fill_envelopes=True, averagine=None):
     if averagine is None:
         from ms_deisotope import peptide
@@ -1164,6 +1191,8 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
         try:
+            if "mean drift time array" in scan_dict:
+                return deserialize_deconvoluted_ion_mobility_peak_set(scan_dict)
             return deserialize_deconvoluted_peak_set(scan_dict)
         except KeyError as err:
             if "charge array" in scan_dict and "isotopic envelopes array" not in scan_dict:
