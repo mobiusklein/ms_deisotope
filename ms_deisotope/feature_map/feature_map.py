@@ -230,12 +230,12 @@ def smooth_overlaps_simple(feature_list, error_tolerance=1e-5):
     return out
 
 
-def smooth_overlaps(feature_list, error_tolerance=1e-5):
+def smooth_overlaps(feature_list, error_tolerance=1e-5, time_bridge=0):
     smoother = LCMSFeatureOverlapSmoother(feature_list, error_tolerance)
     return smoother.smooth()
 
 
-def smooth_overlaps_neutral(feature_list, error_tolerance=1e-5):
+def smooth_overlaps_neutral(feature_list, error_tolerance=1e-5, time_bridge=0):
     smoother = NeutralMassLCMSFeatureOverlapSmoother(feature_list, error_tolerance)
     return smoother.smooth()
 
@@ -730,7 +730,6 @@ class LCMSFeatureMerger(object):
             features, key=self._mass_coordinate)
         self.error_tolerance = error_tolerance
         self.count = 0
-        self.verbose = False
 
     def __len__(self):
         return len(self.features)
@@ -756,8 +755,10 @@ class LCMSFeatureMerger(object):
     def merge_overlaps(self, new_feature, feature_range):
         has_merged = False
         query_mass = self._mass_coordinate(new_feature)
+
         for chroma in feature_range:
-            cond = (chroma.overlaps_in_time(new_feature) and abs(
+            cond = chroma.overlaps_in_time(new_feature)
+            cond = (cond and abs(
                     (self._mass_coordinate(chroma) - query_mass) / query_mass) < self.error_tolerance)
             if cond:
                 chroma.merge(new_feature)
@@ -846,9 +847,10 @@ def layered_traversal(nodes):
 
 
 class LCMSFeatureOverlapSmoother(object):
-    def __init__(self, features, error_tolerance=1e-5):
+    def __init__(self, features, error_tolerance=1e-5, time_bridge=0):
         self.retention_interval_tree = build_rt_interval_tree(features)
         self.error_tolerance = error_tolerance
+        self.time_bridge = time_bridge
         self.solution_map = {None: []}
         self.features = self.smooth()
 
@@ -878,9 +880,8 @@ class LCMSFeatureOverlapSmoother(object):
         for node in nodes:
             self.aggregate_interval(node)
         final = self.solution_map[self.retention_interval_tree]
-        result = LCMSFeatureMerger()
-        result.aggregate_features(final)
-        return list(result)
+        result = self._merge_features(final)
+        return result
 
 
 class NeutralMassLCMSFeatureMerger(LCMSFeatureMerger):
@@ -897,7 +898,8 @@ class NeutralMassLCMSFeatureMerger(LCMSFeatureMerger):
         has_merged = False
         query_mass = self._mass_coordinate(new_feature)
         for chroma in feature_range:
-            cond = (chroma.overlaps_in_time(new_feature) and chroma.charge == new_feature.charge and abs(
+            cond = chroma.overlaps_in_time(new_feature)
+            cond = (cond and chroma.charge == new_feature.charge and abs(
                     (self._mass_coordinate(chroma) - query_mass) / query_mass) < self.error_tolerance)
             if cond:
                 chroma.merge(new_feature)
@@ -913,7 +915,6 @@ class NeutralMassLCMSFeatureMerger(LCMSFeatureMerger):
 
 class NeutralMassLCMSFeatureOverlapSmoother(LCMSFeatureOverlapSmoother):
     def _merge_features(self, features):
-        merger = NeutralMassLCMSFeatureMerger(
-            error_tolerance=self.error_tolerance)
+        merger = NeutralMassLCMSFeatureMerger(error_tolerance=self.error_tolerance)
         merger.aggregate_features(features)
         return list(merger)

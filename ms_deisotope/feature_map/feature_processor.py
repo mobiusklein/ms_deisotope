@@ -705,7 +705,10 @@ class FeatureDeconvolutionIterationState(object):
             if converged or self.iteration_count >= self.maxiter:
                 keep_going = False
         self.solutions = self.processor._clean_solutions(self.solutions)
-        return DeconvolutedLCMSFeatureMap(smooth_overlaps_neutral(self.solutions))
+        return DeconvolutedLCMSFeatureMap(
+            smooth_overlaps_neutral(
+                self.solutions,
+                self.error_tolerance))
 
 
 def find_bounds(fit, detection_threshold=0.1, find_separation=True):

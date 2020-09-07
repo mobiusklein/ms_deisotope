@@ -35,7 +35,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Fixed
 1. When using the `CompositionList`-based deconvoluters with a mass shift, the theoretical isotopic pattern will now have the correct
    monoisotopic m/z.
-2. `IntervalTreeNode.overlaps` is now consisent with `SpanningMixin.overlaps`.
+2. `IntervalTreeNode.overlaps` is now consistent with `SpanningMixin.overlaps`.
 
 ---
 
