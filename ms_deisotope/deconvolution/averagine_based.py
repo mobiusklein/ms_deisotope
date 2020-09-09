@@ -170,6 +170,42 @@ class MultiAveragineDeconvoluterBase(DeconvoluterBase):
     for fitting isotopic patterns using multiple Averagine models.
     """
 
+    def fit_theoretical_distribution(self, peak, error_tolerance, charge, averagine, charge_carrier=PROTON, truncate_after=0.8,
+                                     ignore_below=IGNORE_BELOW):
+        """Fit an isotopic pattern seeded at `peak` at `charge` charge.
+
+        Generates a theoretical isotopic pattern using :attr:`averagine`, calls
+        :meth:`match_theoretical_isotopic_distribution`
+        to extract experimental peaks matching this theoretical pattern, scales the theoretical distribution using
+        :meth:`scale_theoretical_distribution`, and evaluates the quality of the fit using :attr:`scorer`.
+
+        Parameters
+        ----------
+        peak : :class:`~.FittedPeak`
+            The putative monoisotopic peak to use for interpolating an isotopic pattern
+        error_tolerance : float
+            Parts-per-million error tolerance for isotopic pattern matching
+        charge : int
+            The charge state to produce an isotopic pattern for
+        averagine : :class:`~.AveragineCache`
+            The isotopic model to use for this fitting
+        charge_carrier : float, optional
+            The charge carrier mass, defaults to |PROTON|
+
+        Returns
+        -------
+        :class:`~.IsotopicFitRecord`
+            The fitted isotopic pattern
+        """
+        tid = averagine.isotopic_cluster(
+            peak.mz, charge, charge_carrier=charge_carrier,
+            truncate_after=truncate_after, ignore_below=ignore_below)
+        eid = self.match_theoretical_isotopic_distribution(
+            tid, error_tolerance=error_tolerance)
+        record = self._evaluate_theoretical_distribution(
+            eid, tid, peak, charge)
+        return record
+
     def _fit_peaks_at_charges(self, peak_charge_set, error_tolerance, charge_carrier=PROTON,
                               truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
         results = []
