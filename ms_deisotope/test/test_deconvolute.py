@@ -62,8 +62,8 @@ class TestAveragineDeconvolution(unittest.TestCase):
             scan.peak_set, {
                 "averagine": peptide,
                 "scorer": PenalizedMSDeconVFitter(5., 1.),
-                "use_subtraction": False
-            }, deconvoluter_type=algorithm_type)
+                "use_subtraction": False,
+            }, left_search_limit=3, deconvoluter_type=algorithm_type)
         dpeaks = deconresult.peak_set
         assert len(dpeaks) == 6
         for point in points:
