@@ -31,11 +31,14 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 6. The `ScanProcessor.deconvolute_precursor_scan` method now explicitly requests `product_scans` be passed as an argument. It also extracts
    co-isolating precursor ions from the isolation window even if a deconvoluted peak is not found for the precursor ion.
 7. `MzMLSerializer` now propagates all `PrecursorInformation.annotations` as parameters.
+8. `ScanProcessor` now reports coisolation even when the precursor peak is not found (though it still omits it if an unacceptable solution is reported).
 
 ### Fixed
 1. When using the `CompositionList`-based deconvoluters with a mass shift, the theoretical isotopic pattern will now have the correct
    monoisotopic m/z.
 2. `IntervalTreeNode.overlaps` is now consistent with `SpanningMixin.overlaps`.
+3. `ms-deisotope` CLI now properly handles the case when the MSn average option `-an` is not passed.
+4. `ms-deisotope` CLI now properly builds the extended scan index when processing a file with only MSn spectra
 
 ---
 

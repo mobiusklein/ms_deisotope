@@ -13,7 +13,8 @@ from ms_deisotope import MSFileLoader
 from ms_deisotope.data_source import RandomAccessScanSource
 
 from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_debug_mode, register_debug_hook
-from ms_deisotope.tools.deisotoper import workflow
+from ms_deisotope.tools.deisotoper import workflow, output
+
 
 
 def configure_iterator(loader, start_time, end_time):
@@ -105,6 +106,17 @@ def check_if_profile(loader):
     return is_profile
 
 
+def determine_output_format(output_file):
+    base, ext = os.path.splitext(output_file)
+    if ext.lower() == '.mzml':
+        return output.ThreadedMzMLScanStorageHandler
+    elif ext.lower() == '.mgf':
+        return output.ThreadedMGFScanStorageHandler
+    else:
+        click.secho("Could not infer output file format. Assuming mzML.", fg='yellow')
+        return output.ThreadedMzMLScanStorageHandler
+
+
 @click.command("deisotope",
                short_help=(
                    "Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML."
@@ -117,7 +129,7 @@ def check_if_profile(loader):
               help=('Averagine model to use for MS1 scans. '
                     'Either a name or formula. May specify multiple times.'),
               multiple=True)
-@click.option("-an", "--msn-averagine", default="peptide",
+@click.option("-an", "--msn-averagine", default=["peptide"],
               type=AveragineParamType(),
               help=('Averagine model to use for MS^n scans. '
                     'Either a name or formula. May specify multiple times.'),
@@ -183,7 +195,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
             fg='red')
         raise click.Abort("Cannot use both --ignore-msn and --extract-only-tandem-envelopes")
 
-    cache_handler_type = workflow.ThreadedMzMLScanStorageHandler
+    cache_handler_type = determine_output_format(outfile_path)
     click.echo("Preprocessing %s" % ms_file)
     minimum_charge = 1 if maximum_charge > 0 else -1
     charge_range = (minimum_charge, maximum_charge)

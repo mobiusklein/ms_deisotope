@@ -35,7 +35,7 @@ class ScanStorageHandlerBase(TaskBase):
         raise NotImplementedError()
 
     def save(self):
-        if self.current_precursor is not None:
+        if self.current_precursor is not None or self.current_products:
             self.save_bunch(
                 self.current_precursor, self.current_products)
             self.reset()
@@ -52,7 +52,15 @@ class ScanStorageHandlerBase(TaskBase):
 
     def accumulate(self, scan):
         if self.current_precursor is None:
-            self.current_precursor = scan
+            if scan is not None:
+                # If the scan is an MS1 scan, start accumulating a new bunch of scans
+                if scan.ms_level == 1:
+                    self.current_precursor = scan
+                else:
+                    # Otherwise this scan source may not have formal bunches of scans so we should
+                    # just save the incoming scan.
+                    self.current_products.append(scan)
+                    self.save()
         elif scan.ms_level == self.current_precursor.ms_level:
             self.save()
             self.current_precursor = scan

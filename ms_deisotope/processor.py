@@ -692,7 +692,9 @@ class ScanProcessor(Base, LogUtilsMixin):
                     "Could not find deconvolution for %r (No solution was found for this region)" %
                     precursor_information)
                 precursor_information.default(orphan=True)
-
+                coisolation = coisolation_detection.coisolation(
+                    precursor_scan, None, product_scan.isolation_window, 0.0)
+                precursor_information.coisolation = coisolation
                 continue
             elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
                 if precursor_information.charge != ChargeNotProvided:
