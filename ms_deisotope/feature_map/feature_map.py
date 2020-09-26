@@ -1,9 +1,17 @@
+import logging
 from collections import defaultdict
-from .lcms_feature import LCMSFeature
+
 from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope import DeconvolutedPeakSet
 from ms_peak_picker import PeakSet
 from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
+
+from .lcms_feature import LCMSFeature
+from .feature_fit import DeconvolutedLCMSFeature, IonMobilityDeconvolutedLCMSFeature
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class LCMSFeatureMap(object):
@@ -91,10 +99,6 @@ class LCMSFeatureForest(LCMSFeatureMap):
     it into :attr:`features` while preserving the overall sortedness. This algorithm
     is carried out by :meth:`aggregate_unmatched_peaks`
 
-    This process may produce features with large gaps in them, which
-    may or may not be acceptable. To break gapped features into separate
-    entities, the :class:`LCMSFeatureFilter` type has a method :meth:`split_sparse`.
-
     Attributes
     ----------
     features : list of LCMSFeature
@@ -178,7 +182,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
                 if peak.mz < minimum_mz or peak.mz > maximum_mz or peak.intensity < minimum_intensity:
                     continue
                 self.handle_peak(peak, scan.scan_time)
-        self.features = smooth_overlaps(self.features, self.error_tolerance)
+        return self.smooth_overlaps()
 
     @classmethod
     def from_reader(cls, reader, error_tolerance=1e-5, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf'),
@@ -193,8 +197,10 @@ class LCMSFeatureForest(LCMSFeatureMap):
             i = 0
             n = len(reader)
             for i, scan in enumerate(reader):
-                if i % 1000 == 0 and i:
-                    print("Processed %d/%d Scans (%0.2f%%)" % (i, n, i * 100.0 / n))
+                if end_time is not None:
+                    if scan.scan_time > end_time:
+                        break
+                logger.info("... Processed Scan %d/%d (%0.2f%%)" % (i, n, i * 100.0 / n))
                 if scan.ms_level == 1:
                     yield scan
 
@@ -918,3 +924,265 @@ class NeutralMassLCMSFeatureOverlapSmoother(LCMSFeatureOverlapSmoother):
         merger = NeutralMassLCMSFeatureMerger(error_tolerance=self.error_tolerance)
         merger.aggregate_features(features)
         return list(merger)
+
+
+class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
+    """An an algorithm for aggregating features from peaks of close mass
+    weighted by intensity.
+
+    This algorithm assumes that mass accuracy is correlated with intensity, so
+    the most intense peaks should most accurately reflect their true neutral mass.
+    The expected input is a list of (scan id, peak) pairs. This list is sorted by
+    descending peak intensity. For each pair, using binary search, locate the nearest
+    existing feature in :attr:`features`. If the nearest feature is within
+    :attr:`error_tolerance` ppm of the peak's neutral mass, add this peak to that
+    feature, otherwise create a new feature containing this peak and insert
+    it into :attr:`features` while preserving the overall sortedness. This algorithm
+    is carried out by :meth:`aggregate_unmatched_peaks`
+
+
+    Attributes
+    ----------
+    features : list of LCMSFeature
+        A list of growing LCMSFeature objects, ordered by neutral mass
+    count : int
+        The number of peaks accumulated
+    error_tolerance : float
+        The mass error tolerance between peaks and possible features (in ppm)
+    """
+
+    def __init__(self, features=None, error_tolerance=1e-5):
+        if features is None:
+            features = []
+        self.features = sorted(features, key=lambda x: x.neutral_mass)
+        self.error_tolerance = error_tolerance
+        self.count = 0
+
+    def find_insertion_point(self, peak):
+        index, matched = binary_search_with_flag_neutral(
+            self.features, peak.neutral_mass, self.error_tolerance)
+        return index, matched
+
+    def find_minimizing_index(self, peak, indices):
+        best_index = None
+        best_error = float('inf')
+        for index_case in indices:
+            feature = self[index_case]
+            if feature.charge != peak.charge:
+                continue
+            err = abs(feature.neutral_mass - peak.neutral_mass) / \
+                peak.neutral_mass
+            if err < best_error:
+                best_index = index_case
+                best_error = err
+        return best_index
+
+    def handle_peak(self, peak, scan_time):
+        if len(self) == 0:
+            index = [0]
+            matched = False
+        else:
+            index, matched = self.find_insertion_point(peak)
+        if matched:
+            minimized_feature_index = self.find_minimizing_index(peak, index)
+            if minimized_feature_index is not None:
+                feature = self.features[minimized_feature_index]
+                feature.insert(peak, scan_time)
+            else:
+                feature = DeconvolutedLCMSFeature(charge=peak.charge)
+                feature.created_at = "forest"
+                feature.insert(peak, scan_time)
+                self.insert_feature(feature, index)
+        else:
+            feature = DeconvolutedLCMSFeature(charge=peak.charge)
+            feature.created_at = "forest"
+            feature.insert(peak, scan_time)
+            self.insert_feature(feature, index)
+        self.count += 1
+
+    def insert_feature(self, feature, index):
+        if index[0] != 0:
+            self.features.insert(index[0] + 1, feature)
+        else:
+            if len(self) == 0:
+                new_index = index[0]
+            else:
+                x = self.features[index[0]]
+                if x.neutral_mass < feature.neutral_mass:
+                    new_index = index[0] + 1
+                else:
+                    new_index = index[0]
+            self.features.insert(new_index, feature)
+
+    def split_sparse(self, delta_rt=1.0, min_size=2):
+        features = [fi for f in self.features for fi in f.split_sparse(
+            delta_rt) if len(fi) >= min_size]
+        self.features = features
+        return self
+
+    def smooth_overlaps(self, error_tolerance=None):
+        if error_tolerance is None:
+            error_tolerance = self.error_tolerance
+        self.features = smooth_overlaps_neutral(self.features, error_tolerance)
+        return self
+
+    def aggregate_peaks(self, scans, minimum_mass=160, minimum_intensity=10., maximum_mass=float('inf')):
+        for scan in scans:
+            peak_set = scan.deconvoluted_peak_set
+            if peak_set is None:
+                scan.pick_peaks()
+                peak_set = scan.deconvoluted_peak_set
+            for peak in peak_set:
+                if peak.neutral_mass < minimum_mass or peak.neutral_mass > maximum_mass or peak.intensity < minimum_intensity:
+                    continue
+                self.handle_peak(peak, scan.scan_time)
+        self.smooth_overlaps()
+        return self
+
+    @classmethod
+    def from_reader(cls, reader, error_tolerance=1e-5, minimum_mass=160, minimum_intensity=10., maximum_mass=float('inf'),
+                    start_time=None, end_time=None, ms_level=1):
+
+        def generate():
+            if start_time is not None:
+                reader.start_from_scan(rt=start_time, grouped=False)
+            else:
+                reader.reset()
+                reader.make_iterator(grouped=False)
+            i = 0
+            n = len(reader)
+            for i, scan in enumerate(reader):
+                if end_time is not None:
+                    if scan.scan_time > end_time:
+                        break
+                    logger.info("... Processed Scan %d/%d (%0.2f%%)" %
+                                (i, n, i * 100.0 / n))
+                if scan.ms_level == ms_level:
+                    yield scan
+
+        self = cls(error_tolerance=error_tolerance)
+        self.aggregate_peaks(
+            generate(),
+            minimum_mass=minimum_mass,
+            minimum_intensity=minimum_intensity,
+            maximum_mass=maximum_mass)
+        return self
+
+
+class IonMobilityNeutralMassLCMSFeatureMerger(NeutralMassLCMSFeatureMerger):
+    def __init__(self, features=None, error_tolerance=1e-5, drift_error_tolerance=0.1):
+        self.drift_error_tolerance = drift_error_tolerance
+        super(IonMobilityNeutralMassLCMSFeatureMerger, self).__init__(features, error_tolerance)
+
+    def merge_overlaps(self, new_feature, feature_range):
+        has_merged = False
+        query_mass = self._mass_coordinate(new_feature)
+        for chroma in feature_range:
+            cond = chroma.overlaps_in_time(new_feature)
+            cond = (cond and chroma.charge == new_feature.charge and abs(
+                    (self._mass_coordinate(chroma) - query_mass) / query_mass) < self.error_tolerance)
+            cond = (cond and abs(chroma.drift_time - new_feature.drift_time) < self.drift_error_tolerance)
+            if cond:
+                chroma.merge(new_feature)
+                has_merged = True
+                break
+        return has_merged
+
+
+class IonMobilityNeutralMassLCMSFeatureOverlapSmoother(NeutralMassLCMSFeatureOverlapSmoother):
+    def __init__(self, features, error_tolerance=1e-5, time_bridge=0, drift_error_tolerance=0.1):
+        self.drift_error_tolerance = drift_error_tolerance
+        super(IonMobilityNeutralMassLCMSFeatureOverlapSmoother, self).__init__(features, error_tolerance, time_bridge)
+
+    def _merge_features(self, features):
+        merger = IonMobilityNeutralMassLCMSFeatureMerger(
+            error_tolerance=self.error_tolerance, drift_error_tolerance=self.drift_error_tolerance)
+        merger.aggregate_features(features)
+        return list(merger)
+
+
+def smooth_overlaps_neutral_ims(feature_list, error_tolerance=1e-5, time_bridge=0, drift_error_tolerance=0.1):
+    smoother = IonMobilityNeutralMassLCMSFeatureOverlapSmoother(
+        feature_list, error_tolerance, drift_error_tolerance=drift_error_tolerance)
+    return smoother.smooth()
+
+
+class IonMobilityDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
+    def __init__(self, features=None, error_tolerance=1e-5, drift_error_tolerance=0.1):
+        self.drift_error_tolerance = drift_error_tolerance
+        super(IonMobilityDeconvolutedLCMSFeatureForest, self).__init__(features, error_tolerance)
+
+    def smooth_overlaps(self, error_tolerance=None):
+        if error_tolerance is None:
+            error_tolerance = self.error_tolerance
+        self.features = smooth_overlaps_neutral_ims(
+            self.features, error_tolerance, drift_error_tolerance=self.drift_error_tolerance)
+        return self
+
+    def find_minimizing_index(self, peak, indices):
+        best_index = None
+        best_error = float('inf')
+        for index_case in indices:
+            feature = self[index_case]
+            if feature.charge != peak.charge:
+                continue
+            if abs(feature.drift_time - peak.drift_time) >= self.drift_error_tolerance:
+                continue
+            err = abs(feature.neutral_mass - peak.neutral_mass) / peak.neutral_mass
+            if err < best_error:
+                best_index = index_case
+                best_error = err
+        return best_index
+
+    def handle_peak(self, peak, scan_time):
+        if len(self) == 0:
+            index = [0]
+            matched = False
+        else:
+            index, matched = self.find_insertion_point(peak)
+        if matched:
+            minimized_feature_index = self.find_minimizing_index(peak, index)
+            if minimized_feature_index is not None:
+                feature = self.features[minimized_feature_index]
+                feature.insert(peak, scan_time)
+            else:
+                feature = IonMobilityDeconvolutedLCMSFeature(charge=peak.charge)
+                feature.created_at = "forest"
+                feature.insert(peak, scan_time)
+                self.insert_feature(feature, index)
+        else:
+            feature = IonMobilityDeconvolutedLCMSFeature(charge=peak.charge)
+            feature.created_at = "forest"
+            feature.insert(peak, scan_time)
+            self.insert_feature(feature, index)
+        self.count += 1
+
+    @classmethod
+    def from_reader(cls, reader, error_tolerance=1e-5, drift_error_tolerance=0.1, minimum_mass=160,
+                    minimum_intensity=10., maximum_mass=float('inf'), start_time=None, end_time=None,
+                    ms_level=1):
+
+        def generate():
+            if start_time is not None:
+                reader.start_from_scan(rt=start_time, grouped=False)
+            else:
+                reader.reset()
+                reader.make_iterator(grouped=False)
+            i = 0
+            n = len(reader)
+            for i, scan in enumerate(reader):
+                if end_time is not None:
+                    if scan.scan_time > end_time:
+                        break
+                logger.info("... Processed Scan %d/%d (%0.2f%%)" % (i, n, i * 100.0 / n))
+                if scan.ms_level == ms_level:
+                    yield scan
+
+        self = cls(error_tolerance=error_tolerance,
+                   drift_error_tolerance=drift_error_tolerance)
+        self.aggregate_peaks(
+            generate(),
+            minimum_mass=minimum_mass,
+            minimum_intensity=minimum_intensity,
+            maximum_mass=maximum_mass)
+        return self

@@ -244,6 +244,61 @@ class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
         return total / weight
 
 
+class DriftTimeRunningWeightedAverage(RunningWeightedAverage):
+    def add(self, peak):
+        if peak.intensity == 0:
+            if self.current_mean == 0 and self.total_weight == 0:
+                self.current_mean = peak.drift_time
+                self.total_weight = 1
+            else:
+                return
+        self.accumulator.append(peak)
+        agg = (self.total_weight * self.current_mean) + \
+            (peak.drift_time * peak.intensity)
+        self.total_weight += peak.intensity
+        self.current_mean = agg / self.total_weight
+        self.current_count += 1
+        return self
+
+    def recompute(self):
+        weight = 0
+        total = 0
+        for peak in self.accumulator:
+            weight += peak.intensity
+            total += peak.intensity * peak.drift_time
+        return total / weight
+
+
+class IonMobilityDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
+    def __init__(self, nodes=None, charge=None, adducts=None, used_as_adduct=None, score=0.0,
+                 n_features=0, feature_id=None, supporters=None):
+        self._drift_time = None
+        self._last_drift_time = None
+        super(IonMobilityDeconvolutedLCMSFeature, self).__init__(
+            nodes=nodes, charge=charge, adducts=adducts, used_as_adduct=used_as_adduct, score=score,
+            n_features=n_features, feature_id=feature_id, supporters=supporters)
+
+    def _invalidate(self, reaverage=False):
+        self._last_drift_time = self._drift_time if self._drift_time is not None else 0.
+        self._drift_time = None
+        return super(IonMobilityDeconvolutedLCMSFeature, self)._invalidate(reaverage=reaverage)
+
+    @property
+    def drift_time(self):
+        if self._drift_time is None:
+            avger = DriftTimeRunningWeightedAverage()
+            for node in self.nodes:
+                avger.update(node.members)
+            self._drift_time = self._last_drift_time = avger.current_mean
+        return self._drift_time
+
+    def __repr__(self):
+        return "%s(%0.4f, %0.4f, %d, %0.2f, %0.2f, %0.2f)" % (
+            self.__class__.__name__, self.neutral_mass, self.drift_time,
+            self.charge, self.score,
+            self.start_time, self.end_time)
+
+
 def envelope_to_peak_list(envelope):
     return [FittedPeak(e[0], e[1], 0, 0, 0, 0, 0, 0, 0) for e in envelope]
 
