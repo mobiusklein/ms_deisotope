@@ -38,6 +38,7 @@ def indexing_iterator(reader, start, end, index):
     ------
     :class:`~.ScanBunch`
     """
+    assert end >= start, "End cannot precede Start"
     try:
         iterator = reader.start_from_scan(index=start, grouped=True)
     except AttributeError:
@@ -109,7 +110,7 @@ def partition_work(n_items, n_workers, start_index=0):
         handle.
     """
     if n_workers == 1:
-        return [[start_index, n_items]]
+        return [[start_index, start_index + n_items]]
     chunk_size = int(n_items / n_workers)
     n_items += start_index
     intervals = []
@@ -292,7 +293,6 @@ def run_task_in_chunks(reader, n_processes=None, n_chunks=None, scan_interval=No
         if progress_indicator is not None:
             progress_indicator(i / float(n_chunks))
     pool.close()
-    pool.terminate()
     pool.join()
     result.sort(key=lambda x: x[0])
     result = [x[1] for x in result]

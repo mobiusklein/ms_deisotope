@@ -13,6 +13,7 @@ from ms_deisotope.constants import ERROR_TOLERANCE
 
 
 logger = logging.getLogger("deconvolution")
+logger.addHandler(logging.NullHandler())
 info = logger.info
 debug = logger.debug
 error = logger.error
