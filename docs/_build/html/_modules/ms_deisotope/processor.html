@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -73,22 +75,23 @@
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="k">import</span> <span class="n">pick_peaks</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">,</span> <span class="n">PeakIndex</span>
-<span class="kn">from</span> <span class="nn">ms_peak_picker.scan_filter</span> <span class="k">import</span> <span class="n">FTICRBaselineRemoval</span>
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">pick_peaks</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">,</span> <span class="n">PeakIndex</span>
+<span class="kn">from</span> <span class="nn">ms_peak_picker.scan_filter</span> <span class="kn">import</span> <span class="n">FTICRBaselineRemoval</span>
 
-<span class="kn">from</span> <span class="nn">.averagine</span> <span class="k">import</span> <span class="n">AveragineCache</span><span class="p">,</span> <span class="n">peptide</span>
-<span class="kn">from</span> <span class="nn">.scoring</span> <span class="k">import</span> <span class="n">PenalizedMSDeconVFitter</span><span class="p">,</span> <span class="n">MSDeconVFitter</span>
-<span class="kn">from</span> <span class="nn">.deconvolution</span> <span class="k">import</span> <span class="n">deconvolute_peaks</span>
-<span class="kn">from</span> <span class="nn">.data_source</span> <span class="k">import</span> <span class="n">MSFileLoader</span><span class="p">,</span> <span class="n">ScanIterator</span>
-<span class="kn">from</span> <span class="nn">.data_source.common</span> <span class="k">import</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">ScanBunch</span><span class="p">,</span> <span class="n">ChargeNotProvided</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">Base</span>
-<span class="kn">from</span> <span class="nn">.peak_dependency_network</span> <span class="k">import</span> <span class="n">NoIsotopicClustersError</span>
-<span class="kn">from</span> <span class="nn">.qc.isolation</span> <span class="k">import</span> <span class="n">PrecursorPurityEstimator</span>
-<span class="kn">from</span> <span class="nn">.task</span> <span class="k">import</span> <span class="n">LogUtilsMixin</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope</span> <span class="kn">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">.averagine</span> <span class="kn">import</span> <span class="n">AveragineCache</span><span class="p">,</span> <span class="n">peptide</span><span class="p">,</span> <span class="n">PROTON</span>
+<span class="kn">from</span> <span class="nn">.scoring</span> <span class="kn">import</span> <span class="n">PenalizedMSDeconVFitter</span><span class="p">,</span> <span class="n">MSDeconVFitter</span>
+<span class="kn">from</span> <span class="nn">.deconvolution</span> <span class="kn">import</span> <span class="n">deconvolute_peaks</span>
+<span class="kn">from</span> <span class="nn">.data_source</span> <span class="kn">import</span> <span class="n">MSFileLoader</span><span class="p">,</span> <span class="n">ScanIterator</span>
+<span class="kn">from</span> <span class="nn">.data_source.common</span> <span class="kn">import</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">ScanBunch</span><span class="p">,</span> <span class="n">ChargeNotProvided</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">.peak_dependency_network</span> <span class="kn">import</span> <span class="n">NoIsotopicClustersError</span>
+<span class="kn">from</span> <span class="nn">.qc.isolation</span> <span class="kn">import</span> <span class="n">PrecursorPurityEstimator</span>
+<span class="kn">from</span> <span class="nn">.task</span> <span class="kn">import</span> <span class="n">LogUtilsMixin</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;deconvolution_scan_processor&quot;</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
@@ -130,7 +133,7 @@
 <span class="sd">        The isolation window for this precursor ion. May be `None`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">trust_charge_hint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">precursor_scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">trust_charge_hint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">precursor_scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">product_scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">isolation_window</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak</span> <span class="o">=</span> <span class="n">peak</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">info</span>
@@ -139,7 +142,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">product_scan_id</span> <span class="o">=</span> <span class="n">product_scan_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">isolation_window</span> <span class="o">=</span> <span class="n">isolation_window</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak</span>
         <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span>
 
@@ -191,7 +194,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">charge_range</span></div>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;PriorityTarget(mz=</span><span class="si">%0.4f</span><span class="s2">, intensity=</span><span class="si">%0.4f</span><span class="s2">, charge_hint=</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span></div>
 
@@ -291,7 +294,7 @@
 <span class="sd">        The number of adjacent MS1 scans to average prior to picking peaks.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">ms1_peak_picking_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">ms1_peak_picking_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">msn_peak_picking_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">ms1_deconvolution_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">msn_deconvolution_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -334,17 +337,56 @@
     <span class="k">def</span> <span class="nf">_prepopulate_averagine_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39;averagine&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms1_deconvolution_args</span><span class="p">:</span>
             <span class="n">averagine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms1_deconvolution_args</span><span class="p">[</span><span class="s1">&#39;averagine&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">averagine</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">averagine</span> <span class="o">=</span> <span class="p">[</span><span class="n">AveragineCache</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">averagine</span><span class="p">]</span>
+            <span class="n">ms1_truncate_after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms1_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;truncate_after&#39;</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">TRUNCATE_AFTER</span><span class="p">)</span>
+            <span class="n">ms1_ignore_below</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms1_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;ignore_below&#39;</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">IGNORE_BELOW</span><span class="p">)</span>
+            <span class="n">ms1_charge_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms1_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;charge_range&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+            <span class="n">ms1_charge_carrier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ms1_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;charge_carrier&#39;</span><span class="p">,</span> <span class="n">PROTON</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">averagine</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="n">averagine</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">AveragineCache</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span>
+                        <span class="n">truncate_after</span><span class="o">=</span><span class="n">ms1_truncate_after</span><span class="p">,</span>
+                        <span class="n">ignore_below</span><span class="o">=</span><span class="n">ms1_ignore_below</span><span class="p">,</span>
+                        <span class="n">min_charge</span><span class="o">=</span><span class="n">ms1_charge_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">max_charge</span><span class="o">=</span><span class="n">ms1_charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">charge_carrier</span><span class="o">=</span><span class="n">ms1_charge_carrier</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">averagine</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">averagine</span> <span class="o">=</span> <span class="n">AveragineCache</span><span class="p">(</span><span class="n">averagine</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">()</span>
+                <span class="n">averagine</span> <span class="o">=</span> <span class="n">AveragineCache</span><span class="p">(</span><span class="n">averagine</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span>
+                    <span class="n">truncate_after</span><span class="o">=</span><span class="n">ms1_truncate_after</span><span class="p">,</span>
+                    <span class="n">ignore_below</span><span class="o">=</span><span class="n">ms1_ignore_below</span><span class="p">,</span>
+                    <span class="n">min_charge</span><span class="o">=</span><span class="n">ms1_charge_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">max_charge</span><span class="o">=</span><span class="n">ms1_charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">charge_carrier</span><span class="o">=</span><span class="n">ms1_charge_carrier</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ms1_deconvolution_args</span><span class="p">[</span><span class="s1">&#39;averagine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">averagine</span>
         <span class="k">if</span> <span class="s1">&#39;averagine&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="p">:</span>
             <span class="n">averagine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="p">[</span><span class="s1">&#39;averagine&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">averagine</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">averagine</span> <span class="o">=</span> <span class="p">[</span><span class="n">AveragineCache</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">averagine</span><span class="p">]</span>
+            <span class="n">msn_truncate_after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;truncate_after&#39;</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">TRUNCATE_AFTER</span><span class="p">)</span>
+            <span class="n">msn_ignore_below</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;ignore_below&#39;</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">IGNORE_BELOW</span><span class="p">)</span>
+            <span class="n">msn_charge_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;charge_range&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+            <span class="n">msn_charge_carrier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s1">&#39;charge_carrier&#39;</span><span class="p">,</span> <span class="n">PROTON</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">averagine</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="n">averagine</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">AveragineCache</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span>
+                        <span class="n">truncate_after</span><span class="o">=</span><span class="n">msn_truncate_after</span><span class="p">,</span>
+                        <span class="n">ignore_below</span><span class="o">=</span><span class="n">msn_ignore_below</span><span class="p">,</span>
+                        <span class="n">min_charge</span><span class="o">=</span><span class="n">msn_charge_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">max_charge</span><span class="o">=</span><span class="n">msn_charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">charge_carrier</span><span class="o">=</span><span class="n">msn_charge_carrier</span>
+                    <span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">averagine</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">averagine</span> <span class="o">=</span> <span class="n">AveragineCache</span><span class="p">(</span><span class="n">averagine</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">()</span>
+                <span class="n">averagine</span> <span class="o">=</span> <span class="n">AveragineCache</span><span class="p">(</span><span class="n">averagine</span><span class="p">)</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span>
+                    <span class="n">truncate_after</span><span class="o">=</span><span class="n">msn_truncate_after</span><span class="p">,</span>
+                    <span class="n">ignore_below</span><span class="o">=</span><span class="n">msn_ignore_below</span><span class="p">,</span>
+                    <span class="n">min_charge</span><span class="o">=</span><span class="n">msn_charge_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">max_charge</span><span class="o">=</span><span class="n">msn_charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">charge_carrier</span><span class="o">=</span><span class="n">msn_charge_carrier</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="p">[</span><span class="s1">&#39;averagine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">averagine</span>
 
     <span class="k">def</span> <span class="nf">_reject_candidate_precursor_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">product_scan</span><span class="p">):</span>
@@ -431,6 +473,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        PeakSet</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># averaged scans are always profile mode</span>
         <span class="n">new_scan</span> <span class="o">=</span> <span class="n">precursor_scan</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ms1_averaging</span><span class="p">)</span>
         <span class="n">prec_peaks</span> <span class="o">=</span> <span class="n">pick_peaks</span><span class="p">(</span><span class="o">*</span><span class="n">new_scan</span><span class="o">.</span><span class="n">arrays</span><span class="p">,</span>
                                 <span class="n">target_envelopes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_envelopes</span><span class="p">(</span><span class="n">precursor_scan</span><span class="p">),</span>
@@ -557,6 +600,8 @@
 
         <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">product_scans</span><span class="p">:</span>
             <span class="n">precursor_ion</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span>
+            <span class="k">if</span> <span class="n">precursor_ion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="n">peak</span> <span class="o">=</span> <span class="n">prec_peaks</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span><span class="n">precursor_ion</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">peak</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">err</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">-</span> <span class="n">precursor_ion</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
@@ -585,7 +630,7 @@
             <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">orphan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ScanProcessor.deconvolute_precursor_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_precursor_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">priorities</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.deconvolute_precursor_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_precursor_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">priorities</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">product_scans</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Deconvolute the given precursor scan, giving priority to its product ions,</span>
 <span class="sd">        correcting the :attr:`precursor_information` attributes of priority targets,</span>
 <span class="sd">        as well as calculating the degree of precursor purity and coisolating ions.</span>
@@ -596,6 +641,8 @@
 <span class="sd">            The precursor scan to deconvolute</span>
 <span class="sd">        priorities : :class:`list` of :class:`PriorityTarget`, optional</span>
 <span class="sd">            The priority targets for the product ions derived from `precursor_scan`</span>
+<span class="sd">        product_scans: :class:`list` of :class:`~.Scan`</span>
+<span class="sd">            The product ion scans of `precursor_scan`.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -612,6 +659,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">priorities</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">priorities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">product_scans</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">product_scans</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Deconvoluting Precursor Scan </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">precursor_scan</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Priorities: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">priorities</span><span class="p">)</span>
@@ -655,9 +704,13 @@
             <span class="n">precursor_scan</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="p">[</span>
                 <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">priorities</span>
             <span class="p">]))</span>
-        <span class="k">for</span> <span class="n">product_scan</span> <span class="ow">in</span> <span class="n">precursor_scan</span><span class="o">.</span><span class="n">product_scans</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">priorities</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">product_scans</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Priority targets were passed without product scans&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">product_scan</span> <span class="ow">in</span> <span class="n">product_scans</span><span class="p">:</span>
             <span class="n">precursor_information</span> <span class="o">=</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">precursor_information</span>
-
+            <span class="k">if</span> <span class="n">precursor_information</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="c1"># unknown precursor purity</span>
             <span class="n">product_scan</span><span class="o">.</span><span class="n">annotations</span><span class="p">[</span><span class="s1">&#39;precursor purity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">i</span> <span class="o">=</span> <span class="n">_get_nearest_index</span><span class="p">(</span><span class="n">precursor_information</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">priorities</span><span class="p">)</span>
@@ -679,7 +732,9 @@
                     <span class="s2">&quot;Could not find deconvolution for </span><span class="si">%r</span><span class="s2"> (No solution was found for this region)&quot;</span> <span class="o">%</span>
                     <span class="n">precursor_information</span><span class="p">)</span>
                 <span class="n">precursor_information</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">orphan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
+                <span class="n">coisolation</span> <span class="o">=</span> <span class="n">coisolation_detection</span><span class="o">.</span><span class="n">coisolation</span><span class="p">(</span>
+                    <span class="n">precursor_scan</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="n">precursor_information</span><span class="o">.</span><span class="n">coisolation</span> <span class="o">=</span> <span class="n">coisolation</span>
                 <span class="k">continue</span>
             <span class="k">elif</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">!=</span> <span class="n">precursor_information</span><span class="o">.</span><span class="n">charge</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">trust_charge_hint</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">precursor_information</span><span class="o">.</span><span class="n">charge</span> <span class="o">!=</span> <span class="n">ChargeNotProvided</span><span class="p">:</span>
@@ -702,6 +757,10 @@
                         <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;(</span><span class="si">%0.4f</span><span class="s2">, </span><span class="si">%0.1f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">]),</span>
                         <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;(</span><span class="si">%0.4f</span><span class="s2">, </span><span class="si">%0.1f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">theoretical</span><span class="p">]))</span>
                 <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">coisolation</span> <span class="o">=</span> <span class="n">coisolation_detection</span><span class="o">.</span><span class="n">coisolation</span><span class="p">(</span>
+                    <span class="n">precursor_scan</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="n">precursor_information</span><span class="o">.</span><span class="n">coisolation</span> <span class="o">=</span> <span class="n">coisolation</span>
 
             <span class="n">product_scan</span><span class="o">.</span><span class="n">annotations</span><span class="p">[</span><span class="s1">&#39;precursor purity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">precursor_purity</span>
             <span class="n">precursor_information</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
@@ -734,16 +793,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Deconvoluting Product Scan </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">product_scan</span><span class="p">,</span> <span class="p">))</span>
         <span class="n">precursor_ion</span> <span class="o">=</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">precursor_information</span>
-        <span class="n">top_charge_state</span> <span class="o">=</span> <span class="n">precursor_ion</span><span class="o">.</span><span class="n">extracted_charge</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">top_charge_state</span><span class="p">:</span>
-            <span class="n">top_charge_state</span> <span class="o">=</span> <span class="n">precursor_ion</span><span class="o">.</span><span class="n">charge</span>
         <span class="n">deconargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="p">)</span>
-        <span class="n">charge_range</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">deconargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;charge_range&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">top_charge_state</span><span class="p">]))</span>
-        <span class="k">if</span> <span class="n">top_charge_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">top_charge_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ChargeNotProvided</span> <span class="ow">and</span>\
-           <span class="n">top_charge_state</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">top_charge_state</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">top_charge_state</span>
-
-        <span class="n">deconargs</span><span class="p">[</span><span class="s2">&quot;charge_range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">charge_range</span>
+        <span class="k">if</span> <span class="n">precursor_ion</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">top_charge_state</span> <span class="o">=</span> <span class="n">precursor_ion</span><span class="o">.</span><span class="n">extracted_charge</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">top_charge_state</span><span class="p">:</span>
+                <span class="n">top_charge_state</span> <span class="o">=</span> <span class="n">precursor_ion</span><span class="o">.</span><span class="n">charge</span>
+            <span class="n">charge_range</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">deconargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;charge_range&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">top_charge_state</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">top_charge_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">top_charge_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">ChargeNotProvided</span> <span class="ow">and</span>\
+                    <span class="n">top_charge_state</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">top_charge_state</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">charge_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">top_charge_state</span>
+            <span class="n">deconargs</span><span class="p">[</span><span class="s2">&quot;charge_range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">charge_range</span>
 
         <span class="k">if</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">polarity</span> <span class="ow">in</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">polarity</span> <span class="o">=</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">polarity</span>
@@ -801,7 +860,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">priorities</span><span class="p">,</span> <span class="n">product_scans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_scan_group</span><span class="p">(</span><span class="n">precursor</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">precursor_scan</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">deconvolute_precursor_scan</span><span class="p">(</span><span class="n">precursor_scan</span><span class="p">,</span> <span class="n">priorities</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">deconvolute_precursor_scan</span><span class="p">(</span>
+                <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">priorities</span><span class="p">,</span> <span class="n">product_scans</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_default_all_precursor_information</span><span class="p">(</span><span class="n">product_scans</span><span class="p">)</span>
 
@@ -823,7 +883,7 @@
         <span class="n">bunch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">precursor</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">bunch</span></div>
 
-    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Fetches the next bunch of scans from :attr:`reader` and</span>
 <span class="sd">        invokes :meth:`process` on them, picking peaks and deconvoluting them.</span>
 
@@ -833,7 +893,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">pack_next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -901,8 +961,8 @@
 <span class="sd">        Whether or not to process whole MS1 scans or just the regions around those peaks</span>
 <span class="sd">        chosen for MSn</span>
 <span class="sd">    default_precursor_ion_selection_window : :class:`float`</span>
-<span class="sd">        Size of the selection window to use when :attr:`pick_only_tandem_envelopes` is `True`</span>
-<span class="sd">        and the information is not available in the scan.</span>
+<span class="sd">        Size of the selection window to use when an explicit isolation window width is not</span>
+<span class="sd">        available in the scan.</span>
 <span class="sd">    trust_charge_hint : :class:`bool`</span>
 <span class="sd">        Whether or not to trust the charge provided by the data source when determining</span>
 <span class="sd">        the charge state of precursor isotopic patterns. Defaults to `True`</span>
@@ -959,7 +1019,7 @@
     <span class="sd">&quot;&quot;&quot;A sub-type of :class:`ValueError` which is used to indicate</span>
 <span class="sd">    that a spectrum is empty and could not be manipulated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="ne">ValueError</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_id</span> <span class="o">=</span> <span class="n">scan_id</span>
 </pre></div>

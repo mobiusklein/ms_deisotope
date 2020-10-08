@@ -14,7 +14,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Writing MGF" href="output/mgf.html" /> 
@@ -93,8 +95,8 @@ coordinates</li>
 unpack <cite>mz_array</cite></li>
 <li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.Axes</span></code>, optional) – The axis to draw the plot on. If missing, a new one will be created using
 <code class="xref py py-func docutils literal notranslate"><span class="pre">matplotlib.pyplot.subplots()</span></code></li>
-<li><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></li>
 <li><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <cite>True</cite>, will normalize the abundance dimension to be between 0 and 100%</li>
+<li><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></li>
 <li><strong>**kwargs</strong> – Passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">matplotlib.Axes.plot()</span></code></li>
 </ul>
 </td>
@@ -123,8 +125,8 @@ unpack <cite>mz_array</cite></li>
 <li><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">PeakLike</span></code>) – The peaks to draw.</li>
 <li><strong>ax</strong> (<em>matplotlib.Axes</em><em>, </em><em>optional</em>) – The axis to draw the plot on. If missing, a new one will be created using
 <code class="xref py py-func docutils literal notranslate"><span class="pre">matplotlib.pyplot.subplots()</span></code></li>
-<li><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></li>
 <li><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <cite>True</cite>, will normalize the abundance dimension to be between 0 and 100%</li>
+<li><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></li>
 <li><strong>**kwargs</strong> – Passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">matplotlib.Axes.plot()</span></code></li>
 </ul>
 </td>
@@ -159,7 +161,7 @@ in <code class="docutils literal notranslate"><span class="pre">scan</span></cod
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvolute</span><span class="p">(</span>
     <span class="n">scorer</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">PenalizedMSDeconVFitter</span><span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
-    <span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">glycopeptide</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">glycopeptide</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">ax</span> <span class="o">=</span> <span class="n">plot</span><span class="o">.</span><span class="n">draw_peaklist</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
 <span class="n">ax</span> <span class="o">=</span> <span class="n">plot</span><span class="o">.</span><span class="n">annotate_isotopic_peaks</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
@@ -239,7 +241,7 @@ with monoisotopic peaks and isolation windows marked.</p>
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvolute</span><span class="p">(</span>
     <span class="n">scorer</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">PenalizedMSDeconVFitter</span><span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
-    <span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">glycopeptide</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">glycopeptide</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">ax</span> <span class="o">=</span> <span class="n">plot</span><span class="o">.</span><span class="n">annotate_scan_single</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="p">,</span> <span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
@@ -288,7 +290,7 @@ surrounding the area around each precursor ion that gave rise to the scans in
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
 <span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvolute</span><span class="p">(</span>
     <span class="n">scorer</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">PenalizedMSDeconVFitter</span><span class="p">(</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
-    <span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">glycopeptide</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">averagine</span><span class="o">=</span><span class="n">ms_deisotope</span><span class="o">.</span><span class="n">glycopeptide</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="n">ax</span> <span class="o">=</span> <span class="n">plot</span><span class="o">.</span><span class="n">annotate_scan</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="p">,</span> <span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">,</span> <span class="n">nperrow</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>

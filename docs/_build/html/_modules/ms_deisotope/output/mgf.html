@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -33,12 +35,16 @@
         
         
   <h1>Source code for ms_deisotope.output.mgf</h1><div class="highlight"><pre>
-<span></span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">mass_charge_ratio</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mgf</span> <span class="k">import</span> <span class="n">MGFLoader</span><span class="p">,</span> <span class="n">mgf</span> <span class="k">as</span> <span class="n">pymgf</span><span class="p">,</span> <span class="n">_MGFParser</span>
+<span></span><span class="sd">&quot;&quot;&quot;Code for writing Mascot Generic Format files and for reading deconvoluted</span>
+<span class="sd">generic format files.</span>
 
-<span class="kn">from</span> <span class="nn">.text</span> <span class="k">import</span> <span class="n">HeaderedDelimitedWriter</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">mass_charge_ratio</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="kn">import</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mgf</span> <span class="kn">import</span> <span class="n">MGFLoader</span><span class="p">,</span> <span class="n">mgf</span> <span class="k">as</span> <span class="n">pymgf</span><span class="p">,</span> <span class="n">_MGFParser</span>
+
+<span class="kn">from</span> <span class="nn">.text</span> <span class="kn">import</span> <span class="n">HeaderedDelimitedWriter</span>
 
 
 <span class="k">def</span> <span class="nf">_format_parameter</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -46,27 +52,74 @@
 
 
 <div class="viewcode-block" id="MGFSerializer"><a class="viewcode-back" href="../../../output/mgf.html#ms_deisotope.output.mgf.MGFSerializer">[docs]</a><span class="k">class</span> <span class="nc">MGFSerializer</span><span class="p">(</span><span class="n">HeaderedDelimitedWriter</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A MASCOT Generic Format writer which is deconvolution aware.</span>
+
+<span class="sd">    Implements :class:`~.HeaderedDelimitedWriter, as well as allowing</span>
+<span class="sd">    global parameters to be included at the beginning of the file.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_name: str</span>
+<span class="sd">        The name of the sample. This value is currently ignored.</span>
+<span class="sd">    started: bool</span>
+<span class="sd">        Whether scans have been written out yet or not. Once :attr:`started` is</span>
+<span class="sd">        true, it is no longer possible to add global parameters using :meth:`add_global_parameter`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MGFSerializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_name</span> <span class="o">=</span> <span class="n">sample_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">add_global_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="viewcode-block" id="MGFSerializer.add_global_parameter"><a class="viewcode-back" href="../../../output/mgf.html#ms_deisotope.output.mgf.MGFSerializer.add_global_parameter">[docs]</a>    <span class="k">def</span> <span class="nf">add_global_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a global parameter at the beginning of the file, before scans</span>
+<span class="sd">        are written.</span>
+
+<span class="sd">        Global parameters follow the same ``KEY=value`` format as scan-level</span>
+<span class="sd">        parameters. New global parameters may not be added once a scan has been</span>
+<span class="sd">        written.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The parameter name. Will be made upper-case.</span>
+<span class="sd">        value : object</span>
+<span class="sd">            The parameter&#39;s value. Will be converted to a string.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError:</span>
+<span class="sd">            If scans have already been written, this method raises a :class:`ValueError`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">started</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot add global parameter if scan data has begun being written&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_format_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_format_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_add_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<div class="viewcode-block" id="MGFSerializer.add_parameter"><a class="viewcode-back" href="../../../output/mgf.html#ms_deisotope.output.mgf.MGFSerializer.add_parameter">[docs]</a>    <span class="k">def</span> <span class="nf">add_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a parameter to the current block.</span>
+
+<span class="sd">        Parameters are written ``KEY=value`` format.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The parameter name. Will be made upper-case.</span>
+<span class="sd">        value : object</span>
+<span class="sd">            The parameter&#39;s value. Will be converted to a string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="MGFSerializer.save_scan_bunch"><a class="viewcode-back" href="../../../output/mgf.html#ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch">[docs]</a>    <span class="k">def</span> <span class="nf">save_scan_bunch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bunch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">bunch</span><span class="o">.</span><span class="n">products</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">save_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">format_peak_vectors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;As in :class:`~.HeaderedDelimitedTextWriter` but always writes m/z, even when charge</span>
+<span class="sd">        is known.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">:</span>
             <span class="p">(</span><span class="n">neutral_mass_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span> <span class="n">charge_array</span><span class="p">)</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span>
                 <span class="n">MGFSerializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">format_peak_vectors</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
@@ -82,23 +135,30 @@
         <span class="n">charge</span> <span class="o">=</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;precursor_charge&#39;</span><span class="p">]</span>
         <span class="n">intensity</span> <span class="o">=</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;precursor_intensity&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;pepmass&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%f</span><span class="s2"> </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pepmass</span><span class="p">,</span> <span class="n">intensity</span><span class="p">))</span>
+        <span class="n">polarity</span> <span class="o">=</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;polarity&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">polarity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">polarity</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;charge&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%d%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">charge</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span> <span class="k">if</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;polarity&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;-&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;charge&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%d%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">charge</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span> <span class="k">if</span> <span class="n">polarity</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;-&#39;</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;rtinseconds&quot;</span><span class="p">,</span> <span class="n">header_dict</span><span class="p">[</span><span class="s1">&#39;scan_time&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mf">60.0</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">write_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_header</span><span class="p">,</span> <span class="n">data_vectors</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;BEGIN IONS</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;BEGIN IONS</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_header</span><span class="p">(</span><span class="n">scan_header</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_vectors</span><span class="p">(</span><span class="n">data_vectors</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;END IONS</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;END IONS</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 
 <span class="k">class</span> <span class="nc">ProcessedMGFLoader</span><span class="p">(</span><span class="n">MGFLoader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A variant of the :class:`~.MGFLoader` that reads deconvoluted mass spectra</span>
+<span class="sd">    with a charge value for each peak, and looks for additional annotation of the</span>
+<span class="sd">    precursor ion.</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;ascii&#39;</span><span class="p">):</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;ascii&#39;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_create_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -148,7 +208,7 @@
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">_build_deconvoluted_peak_set_from_arrays</span> <span class="o">=</span> <span class="n">build_deconvoluted_peak_set_from_arrays</span>
-    <span class="kn">from</span> <span class="nn">ms_deisotope._c.utils</span> <span class="k">import</span> <span class="n">build_deconvoluted_peak_set_from_arrays</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.utils</span> <span class="kn">import</span> <span class="n">build_deconvoluted_peak_set_from_arrays</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="k">pass</span>
 </pre></div>

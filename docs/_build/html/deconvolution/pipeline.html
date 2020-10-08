@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Data Access" href="../data_source/index.html" />
@@ -67,8 +69,8 @@ with fewer configurable parameters.</p>
 <span class="p">})</span>
 
 <span class="n">bunch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">proc</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="class">
@@ -279,7 +281,7 @@ solution</p>
 
 <dl class="method">
 <dt id="ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan">
-<code class="descname">deconvolute_precursor_scan</code><span class="sig-paren">(</span><em>precursor_scan</em>, <em>priorities=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.deconvolute_precursor_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan" title="Permalink to this definition">¶</a></dt>
+<code class="descname">deconvolute_precursor_scan</code><span class="sig-paren">(</span><em>precursor_scan</em>, <em>priorities=None</em>, <em>product_scans=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.deconvolute_precursor_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deconvolute the given precursor scan, giving priority to its product ions,
 correcting the <code class="xref py py-attr docutils literal notranslate"><span class="pre">precursor_information</span></code> attributes of priority targets,
 as well as calculating the degree of precursor purity and coisolating ions.</p>
@@ -290,6 +292,7 @@ as well as calculating the degree of precursor purity and coisolating ions.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>precursor_scan</strong> (<a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>) – The precursor scan to deconvolute</li>
 <li><strong>priorities</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="#ms_deisotope.processor.PriorityTarget" title="ms_deisotope.processor.PriorityTarget"><code class="xref py py-class docutils literal notranslate"><span class="pre">PriorityTarget</span></code></a>, optional) – The priority targets for the product ions derived from <cite>precursor_scan</cite></li>
+<li><strong>product_scans</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>) – The product ion scans of <cite>precursor_scan</cite>.</li>
 </ul>
 </td>
 </tr>
@@ -494,8 +497,8 @@ a float to set the scale of the denoising process, or 5.0 if the value is
 <li><strong>ms1_max_missed_peaks</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, optional) – The maximum number of missed peaks to permit for MS1 scans. The default is 1.</li>
 <li><strong>pick_only_tandem_envelopes</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether or not to process whole MS1 scans or just the regions around those peaks
 chosen for MSn</li>
-<li><strong>default_precursor_ion_selection_window</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Size of the selection window to use when <code class="xref py py-attr docutils literal notranslate"><span class="pre">pick_only_tandem_envelopes</span></code> is <cite>True</cite>
-and the information is not available in the scan.</li>
+<li><strong>default_precursor_ion_selection_window</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Size of the selection window to use when an explicit isolation window width is not
+available in the scan.</li>
 <li><strong>trust_charge_hint</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether or not to trust the charge provided by the data source when determining
 the charge state of precursor isotopic patterns. Defaults to <cite>True</cite></li>
 <li><strong>terminate_on_error</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether or not  to stop processing on an error. Defaults to <cite>True</cite></li>

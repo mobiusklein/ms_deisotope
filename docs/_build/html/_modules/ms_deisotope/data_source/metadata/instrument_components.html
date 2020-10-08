@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -33,12 +35,12 @@
         
         
   <h1>Source code for ms_deisotope.data_source.metadata.instrument_components</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="n">uid</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">uid</span>
 
 
-<span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span><span class="p">,</span> <span class="n">render_list</span>
+<span class="kn">from</span> <span class="nn">.cv</span> <span class="kn">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span><span class="p">,</span> <span class="n">render_list</span>
 
 
 <div class="viewcode-block" id="Component"><a class="viewcode-back" href="../../../../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.Component">[docs]</a><span class="k">class</span> <span class="nc">Component</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
@@ -2023,6 +2025,17 @@
                     <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific TSQ Endura MS.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
                     <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific instrument model&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;Thermo Fisher Scientific instrument model&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Orbitrap Exploris 480&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1003028&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific Orbitrap Exploris 480 Quadrupole Orbitrap&#39;</span>
+                     <span class="sa">u</span><span class="s1">&#39;MS.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific instrument model&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;Thermo Fisher Scientific instrument model&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Orbitrap Eclipse&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1003029&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific Orbitrap Eclipse mass spectrometer with&#39;</span>
+                     <span class="sa">u</span><span class="s1">&#39;Tribrid architecture consisting of quadrupole mass filter,&#39;</span>
+                     <span class="sa">u</span><span class="s1">&#39;linear ion trap and Orbitrap mass analyzers.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific instrument model&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;Thermo Fisher Scientific instrument model&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
     <span class="n">InstrumentModel</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;LTQ Velos ETD&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000856&#39;</span><span class="p">,</span>
                     <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Thermo Scientific LTQ Velos MS with ETD.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
@@ -2254,25 +2267,25 @@
 <span class="sd">        that analytes take when passing through the instrument.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">members</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">members</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">members</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">members</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">t</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{s.__class__.__name__}</span><span class="s2">(</span><span class="si">{s.type!r}</span><span class="s2">, </span><span class="si">{s.members}</span><span class="s2">, order=</span><span class="si">{s.order}</span><span class="s2">)&quot;</span>
         <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
     <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">)</span></div>
 
 
@@ -2289,7 +2302,7 @@
 <span class="sd">        A convenience list for storing the :class:`Component` objects which are ``analyzer``s</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serial_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serial_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span> <span class="ow">or</span> <span class="n">uid</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">groups</span> <span class="ow">or</span> <span class="p">[],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span> <span class="o">=</span> <span class="p">[]</span>
@@ -2302,13 +2315,13 @@
             <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;analyzer&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{self.__class__.__name__}</span><span class="s2">(</span><span class="si">{self.id!r}</span><span class="s2">, </span><span class="si">{self.groups}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
 

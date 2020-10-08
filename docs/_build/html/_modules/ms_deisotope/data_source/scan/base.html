@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -38,25 +40,27 @@
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Sequence</span> <span class="k">as</span> <span class="n">_SequenceABC</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Sequence</span> <span class="k">as</span> <span class="n">_SequenceABC</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="k">import</span> <span class="n">Sequence</span> <span class="k">as</span> <span class="n">_SequenceABC</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span> <span class="k">as</span> <span class="n">_SequenceABC</span>
 
-<span class="kn">from</span> <span class="nn">numbers</span> <span class="k">import</span> <span class="n">Number</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Number</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="k">import</span> <span class="n">average_signal</span>
-<span class="kn">from</span> <span class="nn">ms_peak_picker.base</span> <span class="k">import</span> <span class="n">PeakLike</span>
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">average_signal</span>
+<span class="kn">from</span> <span class="nn">ms_peak_picker.base</span> <span class="kn">import</span> <span class="n">PeakLike</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">mass_charge_ratio</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.deconvolution</span> <span class="k">import</span> <span class="n">deconvolute_peaks</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="n">neutral_mass</span><span class="p">,</span> <span class="n">mass_charge_ratio</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.deconvolution</span> <span class="kn">import</span> <span class="n">deconvolute_peaks</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.scan_traits</span> <span class="kn">import</span> <span class="n">_IonMobilityMixin</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">ms_deisotope.plot</span> <span class="k">import</span> <span class="n">annotate_scan</span> <span class="k">as</span> <span class="n">_annotate_precursors</span><span class="p">,</span> <span class="n">draw_raw</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope.plot</span> <span class="kn">import</span> <span class="n">annotate_scan</span> <span class="k">as</span> <span class="n">_annotate_precursors</span><span class="p">,</span> <span class="n">draw_raw</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">_missing_matplotlib</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
@@ -64,7 +68,7 @@
     <span class="n">_annotate_precursors</span> <span class="o">=</span> <span class="n">_missing_matplotlib</span>
     <span class="n">draw_raw</span> <span class="o">=</span> <span class="n">_missing_matplotlib</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="n">Constant</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">Constant</span>
 
 
 <span class="n">DEFAULT_CHARGE_WHEN_NOT_RESOLVED</span> <span class="o">=</span> <span class="mi">1</span>
@@ -85,7 +89,7 @@
 <span class="sd">        from it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">inst</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ScanBunch</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">inst</span><span class="o">.</span><span class="n">_id_map</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">precursor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -169,9 +173,12 @@
 <span class="sd">        -------</span>
 <span class="sd">        :class:`ScanBunch`</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">pack</span><span class="p">(),</span> <span class="p">[</span>
-            <span class="n">p</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">products</span>
-        <span class="p">])</span></div></div>
+        <span class="n">precursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span>
+        <span class="n">products</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">]</span>
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">precursor</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
+        <span class="n">precursor</span><span class="o">.</span><span class="n">product_scans</span> <span class="o">=</span> <span class="n">products</span>
+        <span class="k">return</span> <span class="n">inst</span></div></div>
+
 
 
 <div class="viewcode-block" id="RawDataArrays"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.RawDataArrays">[docs]</a><span class="k">class</span> <span class="nc">RawDataArrays</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;RawDataArrays&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mz&#39;</span><span class="p">,</span> <span class="s1">&#39;intensity&#39;</span><span class="p">])):</span>
@@ -191,7 +198,7 @@
 <span class="sd">        The intensity measured at the corresponding m/z of a mass spectrum</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">arrays</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">arrays</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">inst</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">RawDataArrays</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span><span class="p">)</span>
         <span class="n">inst</span><span class="o">.</span><span class="n">data_arrays</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">arrays</span><span class="p">:</span>
@@ -233,7 +240,7 @@
         <span class="n">ax</span> <span class="o">=</span> <span class="n">draw_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ax</span></div>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
@@ -241,16 +248,16 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">/</span> <span class="n">d</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">mz</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -332,11 +339,15 @@
             <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">RawDataArrays</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">arrays</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="o">.</span><span class="n">size</span></div>
 
 
 <span class="k">class</span> <span class="nc">ScanBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -450,6 +461,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Automatically locate the most refined representation of the signal from the :class:`Scan`</span>
+<span class="sd">        object.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`PeakSetMethods`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">PeakSetMethods</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -465,7 +483,7 @@
     <span class="k">def</span> <span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">other</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ScanBase</span><span class="p">):</span>
@@ -539,7 +557,7 @@
 
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
@@ -562,7 +580,7 @@
         <span class="k">return</span> <span class="bp">self</span>
 
 
-<div class="viewcode-block" id="PrecursorInformation"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation">[docs]</a><span class="k">class</span> <span class="nc">PrecursorInformation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="PrecursorInformation"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation">[docs]</a><span class="k">class</span> <span class="nc">PrecursorInformation</span><span class="p">(</span><span class="n">_IonMobilityMixin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Store information relating a tandem MS scan to its precursor MS scan.</span>
 
 <span class="sd">    .. note::</span>
@@ -603,7 +621,7 @@
 <span class="sd">        the precursor scan with :attr:`precursor_scan_id`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">precursor_scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">precursor_scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">extracted_neutral_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">extracted_charge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">extracted_intensity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                  <span class="n">peak</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extracted_peak</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaulted</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">orphan</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">product_scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">annotations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coisolation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -640,7 +658,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span> <span class="o">=</span> <span class="n">annotations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coisolation</span> <span class="o">=</span> <span class="n">coisolation</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;PrecursorInformation(mz=</span><span class="si">%0.4f</span><span class="s2">/</span><span class="si">%0.4f</span><span class="s2">, intensity=</span><span class="si">%0.4f</span><span class="s2">/</span><span class="si">%0.4f</span><span class="s2">, charge=</span><span class="si">%r</span><span class="s2">/</span><span class="si">%r</span><span class="s2">, scan_id=</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">extracted_mz</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_neutral_mass</span> <span class="o">!=</span> <span class="mf">0.</span> <span class="k">else</span> <span class="mf">0.</span><span class="p">,</span>
@@ -665,7 +683,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">14</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">coisolation</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">other</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="n">eq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precursor_scan_id</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">precursor_scan_id</span>
@@ -688,7 +706,11 @@
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">traits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PrecursorInformation.bind"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation.bind">[docs]</a>    <span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
@@ -748,6 +770,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">defaulted</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="n">orphan</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">orphan</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="PrecursorInformation.update_to_extracted"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation.update_to_extracted">[docs]</a>    <span class="k">def</span> <span class="nf">update_to_extracted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override the reference values given by the source with those values</span>
+<span class="sd">        that were extracted from experimental data, if they have been set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_neutral_mass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_mz</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_intensity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_intensity</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_charge</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_charge</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">neutral_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -956,7 +989,7 @@
     <span class="sd">&quot;&quot;&quot;A helper class that will figure out the most refined signal source to</span>
 <span class="sd">    calculate the total ion current from.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan</span> <span class="o">=</span> <span class="n">scan</span>
 
     <span class="k">def</span> <span class="nf">_peak_sequence_tic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaks</span><span class="p">):</span>
@@ -971,7 +1004,7 @@
     <span class="k">def</span> <span class="nf">_tic_raw_data_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arrays</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">arrays</span><span class="o">.</span><span class="n">intensity</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guess</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1047,7 +1080,7 @@
 
     <span class="n">base_peak_t</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;BasePeak&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;mz&quot;</span><span class="p">,</span> <span class="s2">&quot;intensity&quot;</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan</span> <span class="o">=</span> <span class="n">scan</span>
 
     <span class="k">def</span> <span class="nf">_peak_sequence_bp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaks</span><span class="p">):</span>
@@ -1060,7 +1093,7 @@
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">arrays</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_peak_t</span><span class="p">(</span><span class="n">arrays</span><span class="o">.</span><span class="n">mz</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">arrays</span><span class="o">.</span><span class="n">intensity</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guess</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1147,7 +1180,7 @@
 <span class="sd">        Whether or not :attr:`scan` is of a known type or just a sequence.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan</span> <span class="o">=</span> <span class="n">scan</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_scan</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_deconvoluted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_deconvoluted</span><span class="p">()</span>
@@ -1161,7 +1194,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_scan</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="n">DeconvolutedPeakSet</span>
+            <span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="kn">import</span> <span class="n">DeconvolutedPeakSet</span>
             <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">deconvoluted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1211,7 +1244,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_scan</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="k">import</span> <span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span>
+            <span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span>
             <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">,</span> <span class="p">(</span><span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_get_centroided</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1372,7 +1405,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_raw_sequence</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deconvoluted</span><span class="p">:</span>
@@ -1388,7 +1421,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_raw_sequence</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_deconvoluted</span><span class="p">:</span>
@@ -1411,10 +1444,10 @@
 <span class="sd">    When called directly, the behavior is the same as calling :meth:`raw`, :meth:`centroided`,</span>
 <span class="sd">    and meth:`deconvoluted` with a shared ``ax`` argument and common ``**kwargs``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan</span> <span class="o">=</span> <span class="n">scan</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_plot_api</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="kn">from</span> <span class="nn">ms_deisotope</span> <span class="k">import</span> <span class="n">plot</span>
+        <span class="kn">from</span> <span class="nn">ms_deisotope</span> <span class="kn">import</span> <span class="n">plot</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_plot_api</span> <span class="o">=</span> <span class="n">plot</span>
 
     <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1522,6 +1555,32 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_api</span><span class="o">.</span><span class="n">annotate_scan_single</span><span class="p">(</span><span class="n">precursor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">label_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Label a region of the peak list, marking centroids with their m/z or mass. If the peaks</span>
+<span class="sd">        of `scan` have been deconvoluted, the most abundant peak will be annotated with</span>
+<span class="sd">        &quot;&lt;neutral mass&gt; (&lt;charge&gt;)&quot;, otherwise just &quot;&lt;m/z&gt;&quot;.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan : :class:`~.ScanBase`</span>
+<span class="sd">            The scan to annotate</span>
+<span class="sd">        min_mz : float, optional</span>
+<span class="sd">            The minimum m/z to annotate</span>
+<span class="sd">        max_mz : float, optional</span>
+<span class="sd">            The maximum m/z to annotate</span>
+<span class="sd">        ax: :class:`matplotlib._axes.Axes`</span>
+<span class="sd">            An :class:`~.Axes` object to draw the plot on</span>
+<span class="sd">        is_deconvoluted : bool, optional</span>
+<span class="sd">            Whether or not to always use :attr:`Scan.deconvoluted_peak_set`</span>
+<span class="sd">        threshold : float, optional</span>
+<span class="sd">            The intensity threshold under which peaks will be ignored</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ax: :class:`matplotlib._axes.Axes`</span>
+<span class="sd">            The axes the plot was drawn on</span>
+<span class="sd">        annotations: :class:`list` of :class:`matplotlib.text.Text`</span>
+<span class="sd">            The list of :class:`matplotlib.text.Text` annotations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_api</span><span class="o">.</span><span class="n">label_peaks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">annotate_isotopic_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1548,7 +1607,8 @@
     <span class="k">def</span> <span class="nf">_guess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="o">.</span><span class="n">arrays</span><span class="p">:</span>
-                <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="o">.</span><span class="n">is_profile</span><span class="p">:</span>
+                    <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
             <span class="k">pass</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1563,12 +1623,12 @@
             <span class="k">pass</span>
         <span class="k">return</span> <span class="n">ax</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guess</span><span class="p">()</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">ms_deisotope._c.utils</span> <span class="k">import</span> <span class="n">_peak_sequence_tic</span><span class="p">,</span> <span class="n">_peak_sequence_bp</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.utils</span> <span class="kn">import</span> <span class="n">_peak_sequence_tic</span><span class="p">,</span> <span class="n">_peak_sequence_bp</span>
     <span class="n">TICMethods</span><span class="o">.</span><span class="n">_peak_sequence_tic</span> <span class="o">=</span> <span class="n">_peak_sequence_tic</span>
     <span class="n">BasePeakMethods</span><span class="o">.</span><span class="n">_peak_sequence_bp</span> <span class="o">=</span> <span class="n">_peak_sequence_bp</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>

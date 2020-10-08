@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Common MS File Model" href="common_reader.html" />
@@ -445,11 +447,19 @@ to <code class="docutils literal notranslate"><span class="pre">source</span></c
 
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.Scan.clear">
-<code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/scan.html#Scan.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.clear" title="Permalink to this definition">¶</a></dt>
+<code class="descname">clear</code><span class="sig-paren">(</span><em>full=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/scan.html#Scan.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.clear" title="Permalink to this definition">¶</a></dt>
 <dd><p>Releases all associated in-memory data and clears the cached
 attributes.</p>
 <p>The data reference attribute <code class="xref py py-attr docutils literal notranslate"><span class="pre">_data</span></code> is retained
 and unchanged.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>full</strong> (<em>bool</em>) – Whether to clear more attributes to aggressively free memory.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -672,16 +682,26 @@ to MS/MS, and so on. If <a class="reference internal" href="#ms_deisotope.data_s
 
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.Scan.pack">
-<code class="descname">pack</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/scan.html#Scan.pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.pack" title="Permalink to this definition">¶</a></dt>
+<code class="descname">pack</code><span class="sig-paren">(</span><em>bind=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/scan.html#Scan.pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.pack" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pack the (dispersed) representation of the data in this <a class="reference internal" href="#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>
 into a packed <code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedScan</span></code> object.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A reference to <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.precursor_information" title="ms_deisotope.data_source.common.Scan.precursor_information"><code class="xref py py-attr docutils literal notranslate"><span class="pre">precursor_information</span></code></a> is passed to the returned
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedScan</span></code>, so both objects share it. Because the <a class="reference internal" href="#ms_deisotope.data_source.common.PrecursorInformation.product" title="ms_deisotope.data_source.common.PrecursorInformation.product"><code class="xref py py-attr docutils literal notranslate"><span class="pre">product</span></code></a>
+property works by looking up the scan in <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.source" title="ms_deisotope.data_source.common.Scan.source"><code class="xref py py-attr docutils literal notranslate"><span class="pre">source</span></code></a>, it’s not possible to
+retrieve the <code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedScan</span></code> this way.</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bind</strong> (<em>bool</em>) – Whether or not the <code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedScan</span></code> object should also be bound
+to <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.source" title="ms_deisotope.data_source.common.Scan.source"><code class="xref py py-attr docutils literal notranslate"><span class="pre">source</span></code></a></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedScan</span></code></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedScan</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -759,7 +779,7 @@ the precursor scan.</p>
 
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.Scan.reprofile">
-<code class="descname">reprofile</code><span class="sig-paren">(</span><em>max_fwhm=0.2</em>, <em>dx=0.01</em>, <em>model_cls=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/scan.html#Scan.reprofile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.reprofile" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reprofile</code><span class="sig-paren">(</span><em>max_fwhm=0.2</em>, <em>dx=0.005</em>, <em>model_cls=None</em>, <em>override_fwhm=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/scan.html#Scan.reprofile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.Scan.reprofile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the picked peaks in <a class="reference internal" href="#ms_deisotope.data_source.common.Scan.peak_set" title="ms_deisotope.data_source.common.Scan.peak_set"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak_set</span></code></a> to create a new
 profile mass spectrum using a peak shape model.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1265,6 +1285,13 @@ upon information not available in the examined mass spectrum.</li>
 <dt id="ms_deisotope.data_source.common.PrecursorInformation.unbind">
 <code class="descname">unbind</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/base.html#PrecursorInformation.unbind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.unbind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detattch this object the currently bound <a class="reference internal" href="#ms_deisotope.data_source.common.PrecursorInformation.source" title="ms_deisotope.data_source.common.PrecursorInformation.source"><code class="xref py py-attr docutils literal notranslate"><span class="pre">source</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.PrecursorInformation.update_to_extracted">
+<code class="descname">update_to_extracted</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/base.html#PrecursorInformation.update_to_extracted"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.PrecursorInformation.update_to_extracted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the reference values given by the source with those values
+that were extracted from experimental data, if they have been set.</p>
 </dd></dl>
 
 </dd></dl>

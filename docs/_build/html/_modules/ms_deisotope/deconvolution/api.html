@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -42,25 +44,25 @@
 <span class="sd">extracting targets of interest from the result.</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
-<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="k">import</span> <span class="n">FittedPeak</span>
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">FittedPeak</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="n">merge</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="n">DeconvolutionProcessResult</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="kn">import</span> <span class="n">merge</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">DeconvolutionProcessResult</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ERROR_TOLERANCE</span><span class="p">,</span>
     <span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
     <span class="n">MAX_ITERATION</span><span class="p">,</span>
     <span class="n">SCALE_METHOD</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">PROTON</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="n">PROTON</span>
 
-<span class="kn">from</span> <span class="nn">.averagine_based</span> <span class="k">import</span> <span class="n">AveraginePeakDependenceGraphDeconvoluter</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">logger</span><span class="p">,</span> <span class="n">prepare_peaklist</span>
+<span class="kn">from</span> <span class="nn">.averagine_based</span> <span class="kn">import</span> <span class="n">AveraginePeakDependenceGraphDeconvoluter</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">logger</span><span class="p">,</span> <span class="n">prepare_peaklist</span>
 
 
 <div class="viewcode-block" id="deconvolute_peaks"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks">[docs]</a><span class="k">def</span> <span class="nf">deconvolute_peaks</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="n">decon_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span>
-                      <span class="n">priority_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="n">priority_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                       <span class="n">left_search_limit_for_priorities</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_search_limit_for_priorities</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">verbose_priorities</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
                       <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">MAX_ITERATION</span><span class="p">,</span>
@@ -86,7 +88,7 @@
 <span class="sd">        Parameters to use to initialize the deconvoluter instance produced by</span>
 <span class="sd">        ``deconvoluter_type``</span>
 <span class="sd">    charge_range : tuple of integers, optional</span>
-<span class="sd">        The range of charge states to consider.</span>
+<span class="sd">        The range of charge states to consider. The range is inclusive.</span>
 <span class="sd">    error_tolerance : float, optional</span>
 <span class="sd">        PPM error tolerance to use to match experimental to theoretical peaks</span>
 <span class="sd">    priority_list : list, optional</span>
@@ -121,6 +123,14 @@
 <span class="sd">        theoretical charge states to consider for each peak.</span>
 <span class="sd">    **kwargs</span>
 <span class="sd">        Additional keywords included in ``decon_config``</span>
+
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    If speed is an issue, consider setting `use_quick_charge` :const:`True`. This will pre-screen charge</span>
+<span class="sd">    states that are are missing peaks supporting the :term:`monoisotopic peak` or the :term:`A+1 peak`.</span>
+<span class="sd">    Alternatively, you may set the charge range upper bound to something reasonable for your data, such</span>
+<span class="sd">    as the precursor ion&#39;s charge when considering a product ion spectrum.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>

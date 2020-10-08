@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Visualizing Mass Spectra" href="../visualization.html" />
@@ -43,26 +45,104 @@
 <p><a class="reference internal" href="#module-ms_deisotope.output.mgf" title="ms_deisotope.output.mgf"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope.output.mgf</span></code></a> can write an MGF for centroided or deconvoluted spectra.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ms_deisotope.output.mgf</span> <span class="kn">import</span> <span class="n">MGFSerializer</span>
 
-<span class="k">def</span> <span class="nf">to_mgf</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">outstream</span><span class="p">,</span> <span class="n">msn_filters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">to_mgf</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">outstream</span><span class="p">,</span> <span class="n">msn_filters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">msn_filters</span><span class="p">:</span>
         <span class="n">msn_filters</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">reader</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="n">grouped</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-    <span class="n">writer</span> <span class="o">=</span> <span class="n">MGFSerializer</span><span class="p">(</span><span class="n">outstream</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">reader</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="n">grouped</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">MGFSerializer</span><span class="p">(</span><span class="n">outstream</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">writer</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">msn_filters</span><span class="p">:</span>
                 <span class="n">scan</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">msn_filters</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">scan</span><span class="o">.</span><span class="n">pick_peaks</span><span class="p">()</span>
             <span class="n">writer</span><span class="o">.</span><span class="n">save_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
 </pre></div>
 </div>
-<span class="target" id="module-ms_deisotope.output.mgf"></span><dl class="class">
+<span class="target" id="module-ms_deisotope.output.mgf"></span><p>Code for writing Mascot Generic Format files and for reading deconvoluted
+generic format files.</p>
+<dl class="class">
 <dt id="ms_deisotope.output.mgf.MGFSerializer">
 <em class="property">class </em><code class="descclassname">ms_deisotope.output.mgf.</code><code class="descname">MGFSerializer</code><span class="sig-paren">(</span><em>stream</em>, <em>sample_name=None</em>, <em>deconvoluted=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>A MASCOT Generic Format writer which is deconvolution aware.</p>
+<p>Implements :class:<a href="#id1"><span class="problematic" id="id2">`</span></a>~.HeaderedDelimitedWriter, as well as allowing
+global parameters to be included at the beginning of the file.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.output.mgf.MGFSerializer.sample_name">
+<code class="descname">sample_name</code><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.sample_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the sample. This value is currently ignored.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.output.mgf.MGFSerializer.started">
+<code class="descname">started</code><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.started" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether scans have been written out yet or not. Once <a class="reference internal" href="#ms_deisotope.output.mgf.MGFSerializer.started" title="ms_deisotope.output.mgf.MGFSerializer.started"><code class="xref py py-attr docutils literal notranslate"><span class="pre">started</span></code></a> is
+true, it is no longer possible to add global parameters using <a class="reference internal" href="#ms_deisotope.output.mgf.MGFSerializer.add_global_parameter" title="ms_deisotope.output.mgf.MGFSerializer.add_global_parameter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_global_parameter()</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.output.mgf.MGFSerializer.add_global_parameter">
+<code class="descname">add_global_parameter</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.add_global_parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.add_global_parameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a global parameter at the beginning of the file, before scans
+are written.</p>
+<p>Global parameters follow the same <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> format as scan-level
+parameters. New global parameters may not be added once a scan has been
+written.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<em>str</em>) – The parameter name. Will be made upper-case.</li>
+<li><strong>value</strong> (<em>object</em>) – The parameter’s value. Will be converted to a string.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last">ValueError: – If scans have already been written, this method raises a <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ms_deisotope.output.mgf.MGFSerializer.add_parameter">
+<code class="descname">add_parameter</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.add_parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.add_parameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a parameter to the current block.</p>
+<p>Parameters are written <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – The parameter name. Will be made upper-case.</li>
+<li><strong>value</strong> (<em>object</em>) – The parameter’s value. Will be converted to a string.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch">
 <code class="descname">save_scan_bunch</code><span class="sig-paren">(</span><em>bunch</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.save_scan_bunch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a single <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> to the

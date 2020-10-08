@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -42,11 +44,14 @@
 <span class="kn">import</span> <span class="nn">hashlib</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">MutableMapping</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">MutableMapping</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">MutableMapping</span>
 
-<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
+<span class="kn">from</span> <span class="nn">.cv</span> <span class="kn">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="ne">FileNotFoundError</span>
@@ -431,14 +436,12 @@
                  <span class="sa">u</span><span class="s1">&#39;(ultraviolet/visible spectrum).&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
-    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000810&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;A plot of the relative abundance of a beam or other&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;collection of ions as a function of the retention time.&#39;</span><span class="p">),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000810&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of the current of ions versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000811&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of electromagnetic properties as a function&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;of the retention time.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of electromagnetic properties versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;MSn spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000580&#39;</span><span class="p">,</span>
@@ -522,48 +525,41 @@
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;total ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000235&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram obtained by plotting the total ion current&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;detected in each of a series of mass spectra recorded as a&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;function of retention time.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of the total ion current detected in each of&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;a series of mass spectra versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
-                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected reaction monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001473&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a selectively monitored reaction at each&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;time point.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of an array of the measurements of a&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;selectively monitored reaction versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
-                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected ion monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001472&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a selectively monitored ion at each time&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of an array of the measurements of a&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;selectively monitored ion versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
-                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;consecutive reaction monitoring chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1001474&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a series of monitored reactions at each time&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;OBSOLETE Representation of an array of the measurements of a&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;series of monitored reactions versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
-                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;basepeak chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000628&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the most&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;intense peaks at each time point.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of an array of the most intense peaks versus&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
-                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;selected ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000627&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Chromatogram created by creating an array of the&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;measurements of a specific single ion current at each time&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;point.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of an array of the measurements of a specific&#39;</span>
+                 <span class="sa">u</span><span class="s1">&#39;single ion current versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
-                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;mass chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+                <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;ion current chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;absorption chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000812&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of light absorbed by the sample as a&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;function of the retention time.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of light absorbed by the sample versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;emission chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000813&#39;</span><span class="p">,</span>
-                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The measurement of light emitted by the sample as a function&#39;</span>
-                 <span class="sa">u</span><span class="s1">&#39;of the retention time.&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Representation of light emitted by the sample versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;time-delayed fragmentation spectrum&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000790&#39;</span><span class="p">,</span>
@@ -693,7 +689,7 @@
 <span class="sd">        to create the current file if recorded.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contents</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">contents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">contents</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">source_files</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -731,7 +727,8 @@
                         <span class="s2">&quot;Source File </span><span class="si">%r</span><span class="s2"> does not exist&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">source</span><span class="p">,))</span>
             <span class="n">source</span> <span class="o">=</span> <span class="n">SourceFile</span><span class="o">.</span><span class="n">from_path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">SourceFile</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Must pass an object of type </span><span class="si">%r</span><span class="s2">, could not coerce </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">SourceFile</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">source</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Must pass an object of type </span><span class="si">%r</span><span class="s2">, could not coerce </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">SourceFile</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">source</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">source</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FileInformation.add_content"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.add_content">[docs]</a>    <span class="k">def</span> <span class="nf">add_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -786,26 +783,26 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">contents</span></div>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_content</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">remove_content</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;FileInformation(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span>
         <span class="k">return</span> <span class="n">template</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_files</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FileInformation.copy"><a class="viewcode-back" href="../../../../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -891,7 +888,7 @@
         <span class="n">source</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">idfmt</span><span class="p">,</span> <span class="n">file_fmt</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">source</span></div>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="nb">id</span> <span class="o">=</span> <span class="n">name</span>
         <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -964,13 +961,23 @@
 
         <span class="n">parts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">is_compressed</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">ext</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.gz&#39;</span><span class="p">:</span>
+                <span class="n">is_compressed</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">parts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">ext</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">ext</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;.mzml&#39;</span><span class="p">:</span>
                 <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;mzML format&quot;</span>
                 <span class="n">id_fmt</span> <span class="o">=</span> <span class="s2">&quot;no nativeID format&quot;</span>
                 <span class="n">hit</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
-                    <span class="kn">from</span> <span class="nn">..xml_reader</span> <span class="k">import</span> <span class="n">iterparse_until</span>
+                <span class="k">if</span> <span class="n">is_compressed</span><span class="p">:</span>
+                    <span class="kn">from</span> <span class="nn">.._compression</span> <span class="kn">import</span> <span class="n">get_opener</span>
+                    <span class="n">fh</span> <span class="o">=</span> <span class="n">get_opener</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">fh</span><span class="p">:</span>
+                    <span class="kn">from</span> <span class="nn">..xml_reader</span> <span class="kn">import</span> <span class="n">iterparse_until</span>
                     <span class="k">for</span> <span class="n">sf_tag</span> <span class="ow">in</span> <span class="n">iterparse_until</span><span class="p">(</span><span class="n">fh</span><span class="p">,</span> <span class="s1">&#39;sourceFile&#39;</span><span class="p">,</span> <span class="s1">&#39;run&#39;</span><span class="p">):</span>
                         <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">sf_tag</span><span class="o">.</span><span class="n">getchildren</span><span class="p">():</span>
                             <span class="k">if</span> <span class="s2">&quot;nativeID&quot;</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]:</span>
@@ -996,7 +1003,7 @@
                 <span class="k">return</span> <span class="n">format_parameter_map</span><span class="p">[</span><span class="s1">&#39;thermo raw&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;SourceFile(</span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">, </span><span class="si">%r</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s%s</span><span class="s2">)&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
             <span class="n">tail</span> <span class="o">=</span> <span class="s2">&quot;, </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
@@ -1009,9 +1016,10 @@
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_compute_checksum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hash_type</span><span class="o">=</span><span class="s1">&#39;sha1&#39;</span><span class="p">,</span> <span class="n">buffer_size</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.._compression</span> <span class="kn">import</span> <span class="n">get_opener</span>
         <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span>
         <span class="n">buffer_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">buffer_size</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">get_opener</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
             <span class="n">content_buffer</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">buffer_size</span><span class="p">)</span>
             <span class="k">while</span> <span class="n">content_buffer</span><span class="p">:</span>
                 <span class="n">hasher</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">content_buffer</span><span class="p">)</span>
@@ -1052,7 +1060,7 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_checksum_hash_type</span><span class="p">(</span><span class="n">hash_type</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;md5&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;MD5&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">other</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
@@ -1073,7 +1081,7 @@
                             <span class="k">return</span> <span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">hash_type</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">hash_type</span><span class="p">]</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
 
     <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Envelope Search" href="deconvolution.html" />
@@ -49,7 +51,16 @@ monomer isotopic model or <cite>averagine</cite> <a class="reference internal" h
 <p class="caption"><span class="caption-text">Topics</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="deconvolution.html">Envelope Search</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#high-level-api">High Level API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deconvolution.html#high-level-api">High Level API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="deconvolution.html#parameter-recomendations-and-commentary">Parameter Recomendations and Commentary</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="deconvolution.html#missing-high-mass-ions-understanding-how-and-when-to-use-truncate-after">Missing High Mass Ions? Understanding how and when to use <cite>truncate_after</cite></a></li>
+<li class="toctree-l4"><a class="reference internal" href="deconvolution.html#quick-charge-to-speed-things-up"><cite>quick_charge</cite> To Speed Things Up</a></li>
+<li class="toctree-l4"><a class="reference internal" href="deconvolution.html#searching-left-and-right">Searching Left and Right</a></li>
+<li class="toctree-l4"><a class="reference internal" href="deconvolution.html#when-to-use-priority-list">When To Use <cite>priority_list</cite></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="deconvolution.html#algorithms-for-complex-spectra">Algorithms for Complex Spectra</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deconvolution.html#algorithms-for-simple-spectra">Algorithms for Simple Spectra</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deconvolution.html#base-classes">Base Classes</a></li>

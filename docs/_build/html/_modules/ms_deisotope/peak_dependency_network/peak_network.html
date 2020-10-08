@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -36,12 +38,12 @@
 <span></span><span class="kn">import</span> <span class="nn">operator</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 
-<span class="kn">from</span> <span class="nn">.subgraph</span> <span class="k">import</span> <span class="n">ConnectedSubgraph</span>
-<span class="kn">from</span> <span class="nn">.intervals</span> <span class="k">import</span> <span class="n">SpanningMixin</span><span class="p">,</span> <span class="n">IntervalTreeNode</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">Base</span><span class="p">,</span> <span class="n">TargetedDeconvolutionResultBase</span>
-<span class="kn">from</span> <span class="nn">..task</span> <span class="k">import</span> <span class="n">LogUtilsMixin</span>
+<span class="kn">from</span> <span class="nn">.subgraph</span> <span class="kn">import</span> <span class="n">ConnectedSubgraph</span>
+<span class="kn">from</span> <span class="nn">.intervals</span> <span class="kn">import</span> <span class="n">SpanningMixin</span><span class="p">,</span> <span class="n">IntervalTreeNode</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">Base</span><span class="p">,</span> <span class="n">TargetedDeconvolutionResultBase</span>
+<span class="kn">from</span> <span class="nn">..task</span> <span class="kn">import</span> <span class="n">LogUtilsMixin</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;deconvolution_scan_processor&quot;</span><span class="p">)</span>
 
@@ -63,29 +65,29 @@
 <span class="sd">        The peak being depended upon</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">links</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">links</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">links</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peak</span> <span class="o">=</span> <span class="n">peak</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">peak</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
 
-    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;PeakNode(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="p">)</span>
 
 
@@ -106,7 +108,7 @@
 <span class="sd">        isotopic fit score</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span>
         <span class="k">if</span> <span class="n">dependencies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -190,29 +192,29 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">max</span><span class="p">([</span><span class="n">member</span><span class="o">.</span><span class="n">experimental</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mz</span> <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">dependencies</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;DependenceCluster(dependencies=[</span><span class="si">%s</span><span class="s2">], start=</span><span class="si">%0.4f</span><span class="s2">, end=</span><span class="si">%0.4f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">[:</span><span class="mi">10</span><span class="p">])),</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">_has_c</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="kn">from</span> <span class="nn">ms_deisotope._c.peak_dependency_network.peak_network</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.peak_dependency_network.peak_network</span> <span class="kn">import</span> <span class="p">(</span>
         <span class="n">PeakNode</span><span class="p">,</span> <span class="n">DependenceCluster</span><span class="p">,</span> <span class="n">PeakDependenceGraphBase</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">_has_c</span> <span class="o">=</span> <span class="kc">False</span>
@@ -264,9 +266,63 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">fit_record</span><span class="o">.</span><span class="n">experimental</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">peak_count</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
                     <span class="k">return</span> <span class="n">value</span>
 
+        <span class="k">def</span> <span class="nf">drop_fit_dependence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;Remove this fit from the graph, deleting all</span>
+<span class="sd">            hyper-edges.</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">fit_record</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">node</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+        <span class="k">def</span> <span class="nf">best_exact_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;For each distinct group of experimental peaks, retain only</span>
+<span class="sd">            the best scoring fit using exactly those peaks.</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+            <span class="n">by_peaks</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+            <span class="n">best_fits</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
+                <span class="n">by_peaks</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_peak_tuple</span><span class="p">,</span> <span class="n">fits</span> <span class="ow">in</span> <span class="n">by_peaks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">fits</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">fits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                              <span class="n">reverse</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="n">fits</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">drop_fit_dependence</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
+                <span class="n">best_fits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">best_fits</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_gather_independent_clusters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes_for_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">clusters</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nodes_for_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">nodes_for_cache</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">seed_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">seed_node</span> <span class="ow">in</span> <span class="n">seed_nodes</span><span class="p">:</span>
+                <span class="c1"># This peak is depended upon by each fit in `dependencies`</span>
+                <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">seed_node</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># These fits also depend upon these other peaks, and those peaks are depended upon</span>
+                <span class="c1"># for other fits in turn, which depend upon the assignment of this peak.</span>
+                <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dependencies</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="n">nodes_for_cache</span><span class="p">):</span>
+                        <span class="n">dependencies</span> <span class="o">|=</span> <span class="n">clusters</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+
+                <span class="c1"># Create a fresh copy to share out again to avoid eliminate possible errors of shared storage.</span>
+                <span class="c1"># This is likely unecessary under the current implementation.</span>
+                <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span>
+
+                <span class="c1"># Update all co-depended nodes with the full set of all fits which depend upon them</span>
+                <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">dependencies</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="n">nodes_for_cache</span><span class="p">):</span>
+                        <span class="n">clusters</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">dependencies</span>
+            <span class="k">return</span> <span class="n">clusters</span>
+
 
 <div class="viewcode-block" id="PeakDependenceGraph"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.peak_dependency_network.PeakDependenceGraph">[docs]</a><span class="k">class</span> <span class="nc">PeakDependenceGraph</span><span class="p">(</span><span class="n">PeakDependenceGraphBase</span><span class="p">,</span> <span class="n">LogUtilsMixin</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_missed_peaks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_missed_peaks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">use_monoisotopic_superceded_filtering</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="p">{}</span>
@@ -432,16 +488,6 @@
         <span class="n">fit</span> <span class="o">=</span> <span class="n">candidates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">fit</span>
 
-    <span class="k">def</span> <span class="nf">drop_fit_dependence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fit_record</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Remove this fit from the graph, deleting all</span>
-<span class="sd">        hyper-edges.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">fit_record</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">del</span> <span class="n">node</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">fit_record</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="k">pass</span>
-
     <span class="k">def</span> <span class="nf">claimed_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Return all nodes with at least one</span>
 <span class="sd">        fit connecting it.</span>
@@ -491,21 +537,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">drop_fit_dependence</span><span class="p">(</span><span class="n">dropped</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">best_exact_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;For each distinct group of experimental peaks, retain only</span>
-<span class="sd">        the best scoring fit using exactly those peaks.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">by_peaks</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
-        <span class="n">best_fits</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span>
-            <span class="n">by_peaks</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">experimental</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">peak_tuple</span><span class="p">,</span> <span class="n">fits</span> <span class="ow">in</span> <span class="n">by_peaks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">fits</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">fits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">fit</span> <span class="ow">in</span> <span class="n">fits</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">drop_fit_dependence</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
-            <span class="n">best_fits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fits</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">best_fits</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">drop_gapped_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Discard any fit with more missed peaks than</span>
 <span class="sd">        :attr:`max_missed_peaks`.</span>
@@ -521,36 +552,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keep</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">find_non_overlapping_intervals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">clusters</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">drop_gapped_fits</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">best_exact_fits</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_monoisotopic_superceded_filtering</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">drop_superceded_fits</span><span class="p">()</span>
-
-        <span class="n">nodes_for_cache</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="k">for</span> <span class="n">seed_node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="c1"># This peak is depended upon by each fit in `dependencies`</span>
-            <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">seed_node</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span>
-
-            <span class="c1"># These fits also depend upon these other peaks, and those peaks are depended upon</span>
-            <span class="c1"># for other fits in turn, which depend upon the assignment of this peak.</span>
-            <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dependencies</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="n">nodes_for_cache</span><span class="p">):</span>
-                    <span class="n">dependencies</span> <span class="o">|=</span> <span class="n">clusters</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
-
-            <span class="c1"># Create a fresh copy to share out again to avoid eliminate possible errors of shared storage.</span>
-            <span class="c1"># This is likely unecessary under the current implementation.</span>
-            <span class="n">dependencies</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span>
-
-            <span class="c1"># Update all co-depended nodes with the full set of all fits which depend upon them</span>
-            <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">dependencies</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_for</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="n">nodes_for_cache</span><span class="p">):</span>
-                    <span class="n">clusters</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">dependencies</span>
-
+        <span class="n">clusters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gather_independent_clusters</span><span class="p">()</span>
         <span class="c1"># Use an `id` keyed dictionary over these copied sets to ensure we have exactly one reference</span>
         <span class="c1"># to each set of inter-dependent fits, and then convert each set into an instance of `DependenceCluster`</span>
         <span class="n">clusters</span> <span class="o">=</span> <span class="p">[</span><span class="n">DependenceCluster</span><span class="p">(</span><span class="n">dependencies</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">maximize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">maximize</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">{</span>
@@ -559,14 +565,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="o">=</span> <span class="n">clusters</span>
         <span class="k">return</span> <span class="n">clusters</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;PeakDependenceNetwork(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">))</span></div>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;PeakDependenceGraph(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">))</span></div>
 
 
 <span class="n">PeakDependenceGraph</span><span class="o">.</span><span class="n">log_with_logger</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
@@ -585,7 +591,7 @@
 <span class="sd">    solution_peak : DeconvolutedPeak</span>
 <span class="sd">        The optimal solution peak</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deconvoluter</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deconvoluter</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NetworkedTargetedDeconvolutionResult</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">deconvoluter</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query_peak</span> <span class="o">=</span> <span class="n">peak</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">solution_peak</span> <span class="o">=</span> <span class="kc">None</span>
@@ -609,7 +615,7 @@
 
 
 <span class="k">class</span> <span class="nc">NoIsotopicClustersError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="ne">ValueError</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">graph</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_id</span> <span class="o">=</span> <span class="n">scan_id</span>

@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Writing MGF" href="mgf.html" />
@@ -70,7 +72,7 @@ metadata that <a class="reference internal" href="#ms_deisotope.output.mzml.MzML
 </div>
 <dl class="class">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer">
-<em class="property">class </em><code class="descclassname">ms_deisotope.output.mzml.</code><code class="descname">MzMLSerializer</code><span class="sig-paren">(</span><em>handle</em>, <em>n_spectra=200000</em>, <em>compression=None</em>, <em>deconvoluted=True</em>, <em>sample_name=None</em>, <em>build_extra_index=True</em>, <em>data_encoding=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">ms_deisotope.output.mzml.</code><code class="descname">MzMLSerializer</code><span class="sig-paren">(</span><em>handle</em>, <em>n_spectra=200000</em>, <em>compression=None</em>, <em>deconvoluted=True</em>, <em>sample_name=None</em>, <em>build_extra_index=True</em>, <em>data_encoding=None</em>, <em>include_software_entry=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write <code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope</span></code> data structures to a file in mzML format.</p>
 <dl class="attribute">
 <dt id="ms_deisotope.output.mzml.MzMLSerializer.base_peak_chromatogram_tracker">

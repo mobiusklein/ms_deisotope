@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -36,27 +38,27 @@
 <span></span><span class="sd">&#39;&#39;&#39;Deconvolution strategies using a list of compositions.</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">PROTON</span><span class="p">,</span> <span class="n">isotopic_variants</span><span class="p">,</span>
     <span class="n">TheoreticalIsotopicPattern</span><span class="p">,</span>
     <span class="n">neutral_mass</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.envelope_statistics</span> <span class="k">import</span> <span class="n">average_mz</span><span class="p">,</span> <span class="n">a_to_a2_ratio</span><span class="p">,</span> <span class="n">most_abundant_mz</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.envelope_statistics</span> <span class="kn">import</span> <span class="n">average_mz</span><span class="p">,</span> <span class="n">a_to_a2_ratio</span><span class="p">,</span> <span class="n">most_abundant_mz</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">IGNORE_BELOW</span><span class="p">,</span>
     <span class="n">TRUNCATE_AFTER</span><span class="p">,</span>
     <span class="n">ERROR_TOLERANCE</span><span class="p">,</span>
     <span class="n">MAX_ITERATION</span><span class="p">,</span>
     <span class="n">CONVERGENCE</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.peak_dependency_network</span> <span class="k">import</span> <span class="n">PeakDependenceGraph</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.scoring</span> <span class="k">import</span> <span class="n">IsotopicFitRecord</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_dependency_network</span> <span class="kn">import</span> <span class="n">PeakDependenceGraph</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="kn">import</span> <span class="n">DeconvolutedPeakSolution</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.scoring</span> <span class="kn">import</span> <span class="n">IsotopicFitRecord</span>
 
-<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="p">(</span><span class="n">DeconvoluterBase</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DeconvoluterBase</span><span class="p">)</span>
 
 
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">count_placeholders</span><span class="p">,</span> <span class="n">prepare_peaklist</span><span class="p">,</span>
     <span class="n">drop_placeholders</span><span class="p">,</span> <span class="n">first_peak</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">charge_range_</span><span class="p">,</span>
     <span class="p">)</span>
@@ -73,7 +75,7 @@
 <span class="sd">        the :class:`~.Mapping` interface to access their individual elements.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">composition_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">composition_list</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">incremental_truncation</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
             <span class="s2">&quot;incremental_truncation&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -113,7 +115,7 @@
         <span class="n">tid</span><span class="o">.</span><span class="n">truncate_after</span><span class="p">(</span><span class="n">truncate_after</span><span class="p">)</span>
         <span class="n">tid</span><span class="o">.</span><span class="n">ignore_below</span><span class="p">(</span><span class="n">ignore_below</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">mass_shift</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tid</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">mass_shift</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">charge</span><span class="p">))</span>
+            <span class="n">tid</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="n">tid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mz</span> <span class="o">+</span> <span class="n">mass_shift</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">charge</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">tid</span></div>
 
 <div class="viewcode-block" id="CompositionListDeconvoluterBase.recalibrate_theoretical_mz"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.CompositionListDeconvoluterBase.recalibrate_theoretical_mz">[docs]</a>    <span class="k">def</span> <span class="nf">recalibrate_theoretical_mz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theoretical_distribution</span><span class="p">,</span> <span class="n">experimental_mz</span><span class="p">):</span>
@@ -289,7 +291,8 @@
 <span class="sd">        by peak querying methods</span>
 <span class="sd">    scale_method : str</span>
 <span class="sd">        The name of the method to use to scale theoretical isotopic pattern intensities</span>
-<span class="sd">        to match the experimental isotopic pattern</span>
+<span class="sd">        to match the experimental isotopic pattern. For a description of options, see</span>
+<span class="sd">        :meth:`~.TheoreticalIsotopicPattern.scale`.</span>
 <span class="sd">    use_subtraction : bool</span>
 <span class="sd">        Whether or not to apply a subtraction procedure to experimental peaks after they</span>
 <span class="sd">        have been fitted. This is only necessary if the same signal may be examined multiple</span>
@@ -298,7 +301,7 @@
 <span class="sd">        Produce extra logging information</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span>
                  <span class="n">use_subtraction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
                  <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span> <span class="o">=</span> <span class="n">prepare_peaklist</span><span class="p">(</span><span class="n">peaklist</span><span class="p">)</span>
@@ -372,7 +375,8 @@
 <span class="sd">        by peak querying methods</span>
 <span class="sd">    scale_method : str</span>
 <span class="sd">        The name of the method to use to scale theoretical isotopic pattern intensities</span>
-<span class="sd">        to match the experimental isotopic pattern</span>
+<span class="sd">        to match the experimental isotopic pattern. For a description of options, see</span>
+<span class="sd">        :meth:`~.TheoreticalIsotopicPattern.scale`.</span>
 <span class="sd">    use_subtraction : bool</span>
 <span class="sd">        Whether or not to apply a subtraction procedure to experimental peaks after they</span>
 <span class="sd">        have been fitted. This is only necessary if the same signal may be examined multiple</span>
@@ -381,7 +385,7 @@
 <span class="sd">        Produce extra logging information</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="n">composition_list</span><span class="p">,</span> <span class="n">scorer</span><span class="p">,</span>
                  <span class="n">use_subtraction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale_method</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
                  <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_quick_charge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_missed_peaks&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>

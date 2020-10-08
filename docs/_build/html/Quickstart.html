@@ -14,7 +14,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Deconvolution" href="deconvolution/index.html" />
@@ -43,16 +45,16 @@
 /* CSS for nbsphinx extension */
 
 /* remove conflicting styling from Sphinx themes */
-div.nbinput,
-div.nbinput div.prompt,
-div.nbinput div.input_area,
-div.nbinput div[class*=highlight],
-div.nbinput div[class*=highlight] pre,
-div.nboutput,
-div.nbinput div.prompt,
-div.nbinput div.output_area,
-div.nboutput div[class*=highlight],
-div.nboutput div[class*=highlight] pre {
+div.nbinput.container,
+div.nbinput.container div.prompt,
+div.nbinput.container div.input_area,
+div.nbinput.container div[class*=highlight],
+div.nbinput.container div[class*=highlight] pre,
+div.nboutput.container,
+div.nboutput.container div.prompt,
+div.nboutput.container div.output_area,
+div.nboutput.container div[class*=highlight],
+div.nboutput.container div[class*=highlight] pre {
     background: none;
     border: none;
     padding: 0 0;
@@ -61,13 +63,13 @@ div.nboutput div[class*=highlight] pre {
 }
 
 /* avoid gaps between output lines */
-div.nboutput div[class*=highlight] pre {
+div.nboutput.container div[class*=highlight] pre {
     line-height: normal;
 }
 
 /* input/output containers */
-div.nbinput,
-div.nboutput {
+div.nbinput.container,
+div.nboutput.container {
     display: -webkit-flex;
     display: flex;
     align-items: flex-start;
@@ -75,92 +77,91 @@ div.nboutput {
     width: 100%;
 }
 @media (max-width: 540px) {
-    div.nbinput,
-    div.nboutput {
+    div.nbinput.container,
+    div.nboutput.container {
         flex-direction: column;
     }
 }
 
 /* input container */
-div.nbinput {
+div.nbinput.container {
     padding-top: 5px;
 }
 
 /* last container */
-div.nblast {
+div.nblast.container {
     padding-bottom: 5px;
 }
 
 /* input prompt */
-div.nbinput div.prompt pre {
-    color: #303F9F;
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
 }
 
 /* output prompt */
-div.nboutput div.prompt pre {
-    color: #D84315;
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
 }
 
 /* all prompts */
-div.nbinput div.prompt,
-div.nboutput div.prompt {
-    min-width: 9ex;
-    padding-top: 0.4em;
-    padding-right: 0.4em;
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    min-width: 7ex;
+    padding-top: 0.3rem;
+    padding-right: 0.3rem;
     text-align: right;
     flex: 0;
 }
 @media (max-width: 540px) {
-    div.nbinput div.prompt,
-    div.nboutput div.prompt {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
         text-align: left;
         padding: 0.4em;
     }
-    div.nboutput div.prompt.empty {
+    div.nboutput.container div.prompt.empty {
         padding: 0;
     }
 }
 
 /* disable scrollbars on prompts */
-div.nbinput div.prompt pre,
-div.nboutput div.prompt pre {
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
     overflow: hidden;
 }
 
 /* input/output area */
-div.nbinput div.input_area,
-div.nboutput div.output_area {
-    padding: 0.4em;
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
     -webkit-flex: 1;
     flex: 1;
     overflow: auto;
 }
 @media (max-width: 540px) {
-    div.nbinput div.input_area,
-    div.nboutput div.output_area {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
         width: 100%;
     }
 }
 
 /* input area */
-div.nbinput div.input_area {
-    border: 1px solid #cfcfcf;
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
     border-radius: 2px;
-    background: #f7f7f7;
+    background: #f5f5f5;
 }
 
 /* override MathJax center alignment in output cells */
-div.nboutput div[class*=MathJax] {
+div.nboutput.container div[class*=MathJax] {
     text-align: left !important;
 }
 
-/* override sphinx.ext.pngmath center alignment in output cells */
-div.nboutput div.math p {
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
     text-align: left;
 }
 
 /* standard error */
-div.nboutput div.output_area.stderr {
+div.nboutput.container div.output_area.stderr {
     background: #fdd;
 }
 
@@ -203,10 +204,64 @@ div.nboutput div.output_area.stderr {
 
 .ansi-bold { font-weight: bold; }
 .ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 0.3rem;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
 </style>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -222,15 +277,10 @@ div.nboutput div.output_area.stderr {
 </div>
 <div class="section" id="ms_deisotope-Quickstart">
 <h1><code class="docutils literal notranslate"><span class="pre">ms_deisotope</span></code> Quickstart<a class="headerlink" href="#ms_deisotope-Quickstart" title="Permalink to this headline">¶</a></h1>
-<p>This quickstart guide is designed to get you started using the high
-level APIs of <code class="docutils literal notranslate"><span class="pre">ms_deisotope</span></code> to process mass spectra.</p>
-<p>We’ll start by loading a test data file: <em>three_test_scans.mzML</em>, a
-simple mzML file with only one <span class="math notranslate nohighlight">\(\text{MS}\)</span> scan and two
-<span class="math notranslate nohighlight">\(\text{MS}^n\)</span> scans. The first step is to instantiate a reader. We
-can use <code class="docutils literal notranslate"><span class="pre">MSFileLoader</span></code> to automatically pick the right reader.</p>
+<p>This quickstart guide is designed to get you started using the high level APIs of <code class="docutils literal notranslate"><span class="pre">ms_deisotope</span></code> to process mass spectra.</p>
+<p>We’ll start by loading a test data file: <em>three_test_scans.mzML</em>, a simple mzML file with only one <span class="math notranslate nohighlight">\(\text{MS}\)</span> scan and two <span class="math notranslate nohighlight">\(\text{MS}^n\)</span> scans. The first step is to instantiate a reader. We can use <code class="docutils literal notranslate"><span class="pre">MSFileLoader</span></code> to automatically pick the right reader.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -240,11 +290,9 @@ can use <code class="docutils literal notranslate"><span class="pre">MSFileLoade
 </pre></div>
 </div>
 </div>
-<p>Next, we’ll fetch the next set of precursors and products using the
-<code class="docutils literal notranslate"><span class="pre">next()</span></code> method on the <code class="docutils literal notranslate"><span class="pre">reader</span></code>.</p>
+<p>Next, we’ll fetch the next set of precursors and products using the <code class="docutils literal notranslate"><span class="pre">next()</span></code> method on the <code class="docutils literal notranslate"><span class="pre">reader</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -254,24 +302,22 @@ can use <code class="docutils literal notranslate"><span class="pre">MSFileLoade
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>ScanBunch(
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+ScanBunch(
 precursor=
 Scan(&#39;controllerType=0 controllerNumber=1 scan=10014&#39;, index=0, time=22.1283, ms_level=1),
 products=
 [Scan(&#39;controllerType=0 controllerNumber=1 scan=10015&#39;, index=1, time=22.1328, ms_level=2, PrecursorInformation(mz=562.7397/0.0000, intensity=506701696.0000/0.0000, charge=2/0.0, scan_id=&#39;controllerType=0 controllerNumber=1 scan=10014&#39;)),
        Scan(&#39;controllerType=0 controllerNumber=1 scan=10016&#39;, index=2, time=22.1340, ms_level=2, PrecursorInformation(mz=617.2649/0.0000, intensity=3400959.2500/0.0000, charge=2/0.0, scan_id=&#39;controllerType=0 controllerNumber=1 scan=10014&#39;))])
-</pre></div>
-</div>
+</pre></div></div>
 </div>
 <p>The precursor scan is in profile mode</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -280,19 +326,17 @@ products=
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>True
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
 </div>
 <p>We can centroid the peaks using the <code class="docutils literal notranslate"><span class="pre">pick_peaks</span></code> method of the scan.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -302,20 +346,17 @@ products=
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>PeakIndex(27826 points, 2108 peaks)
-</pre></div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+PeakIndex(27826 points, 2108 peaks)
+</pre></div></div>
 </div>
-</div>
-<p>We can annotate the <span class="math notranslate nohighlight">\(\text{MS}^1\)</span> scan areas where precursors are
-isolated</p>
+<p>We can annotate the <span class="math notranslate nohighlight">\(\text{MS}^1\)</span> scan areas where precursors are isolated</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -330,11 +371,9 @@ isolated</p>
 <img alt="_images/Quickstart_10_0.png" src="_images/Quickstart_10_0.png" />
 </div>
 </div>
-<p>We can count the number of peaks in the isolation window around the
-second precursor (617.265) to see how many peaks may be coisolated</p>
+<p>We can count the number of peaks in the isolation window around the second precursor (617.265) to see how many peaks may be coisolated</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -344,24 +383,17 @@ second precursor (617.265) to see how many peaks may be coisolated</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;PeakSet 5 Peaks&gt;
-</pre></div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;PeakSet 5 Peaks&gt;
+</pre></div></div>
 </div>
-</div>
-<p>By eye, we can see there are five peaks, and the <code class="docutils literal notranslate"><span class="pre">between</span></code> query
-returns five peaks as well. That precursor is on the low end of the
-abundance scale, and it may be hard to recognize noise peaks. We can
-deconvolute the <span class="math notranslate nohighlight">\(\text{MS}\)</span> scan to determine the charge and
-monoisotopic m/z for all peaks in the scan and this can help to
-discrminate peaks which may not be reliable.</p>
+<p>By eye, we can see there are five peaks, and the <code class="docutils literal notranslate"><span class="pre">between</span></code> query returns five peaks as well. That precursor is on the low end of the abundance scale, and it may be hard to recognize noise peaks. We can deconvolute the <span class="math notranslate nohighlight">\(\text{MS}\)</span> scan to determine the charge and monoisotopic m/z for all peaks in the scan and this can help to discrminate peaks which may not be reliable.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -371,20 +403,17 @@ discrminate peaks which may not be reliable.</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;DeconvolutedPeakSet 1297 Peaks&gt;
-</pre></div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;DeconvolutedPeakSet 1297 Peaks&gt;
+</pre></div></div>
 </div>
-</div>
-<p>That reduced the number of peaks to consider from over 2,000 to just
-under 1,300.</p>
+<p>That reduced the number of peaks to consider from over 2,000 to just under 1,300.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -393,20 +422,17 @@ under 1,300.</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;DeconvolutedPeakSet 2 Peaks&gt;
-</pre></div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;DeconvolutedPeakSet 2 Peaks&gt;
+</pre></div></div>
 </div>
-</div>
-<p>This tells us there are only two isotopic patterns whose monoisotopic
-m/z falls in the isolation window.</p>
+<p>This tells us there are only two isotopic patterns whose monoisotopic m/z falls in the isolation window.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -421,12 +447,9 @@ m/z falls in the isolation window.</p>
 <img alt="_images/Quickstart_18_0.png" src="_images/Quickstart_18_0.png" />
 </div>
 </div>
-<p>The dark blue lines denote deisotoped peaks. We can see that there is a
-peak to the left of the isolation window whose isotopic envelope also
-overlaps it.</p>
+<p>The dark blue lines denote deisotoped peaks. We can see that there is a peak to the left of the isolation window whose isotopic envelope also overlaps it.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -438,15 +461,14 @@ overlaps it.</p>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>(Scan(&#39;controllerType=0 controllerNumber=1 scan=10015&#39;, index=1, time=22.1328, ms_level=2, PrecursorInformation(mz=562.7397/0.0000, intensity=506701696.0000/0.0000, charge=2/0.0, scan_id=&#39;controllerType=0 controllerNumber=1 scan=10014&#39;)),
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(Scan(&#39;controllerType=0 controllerNumber=1 scan=10015&#39;, index=1, time=22.1328, ms_level=2, PrecursorInformation(mz=562.7397/0.0000, intensity=506701696.0000/0.0000, charge=2/0.0, scan_id=&#39;controllerType=0 controllerNumber=1 scan=10014&#39;)),
  221)
-</pre></div>
-</div>
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -456,8 +478,7 @@ overlaps it.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -468,14 +489,13 @@ overlaps it.</p>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>(500, 550)
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(500, 550)
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -484,11 +504,9 @@ overlaps it.</p>
 <img alt="_images/Quickstart_21_1.png" src="_images/Quickstart_21_1.png" />
 </div>
 </div>
-<p>We can deisotope the product scan to remove the isotopic peaks and
-simplify the spectrum</p>
+<p>We can deisotope the product scan to remove the isotopic peaks and simplify the spectrum</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [35]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -499,18 +517,16 @@ simplify the spectrum</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[35]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>152
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+152
+</pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [36]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -543,16 +559,10 @@ simplify the spectrum</p>
 <img alt="_images/Quickstart_24_1.png" src="_images/Quickstart_24_1.png" />
 </div>
 </div>
-<p>This removed 69 isotopic peaks from the spectrum, including the abundant
-A+1 peaks from the higher m/z peaks in the spectrum. We also see several
-multiply-charged product ions. Some of these ions are small and low in
-abundance, so it might be beneficial to check which masses are present
-both singly and doubly charged.</p>
-<p>We’ll do this by querying the <code class="docutils literal notranslate"><span class="pre">deconvoluted_peak_set</span></code> attribute of
-<code class="docutils literal notranslate"><span class="pre">product</span></code> using <code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.all_peaks_for</span></code>.</p>
+<p>This removed 69 isotopic peaks from the spectrum, including the abundant A+1 peaks from the higher m/z peaks in the spectrum. We also see several multiply-charged product ions. Some of these ions are small and low in abundance, so it might be beneficial to check which masses are present both singly and doubly charged.</p>
+<p>We’ll do this by querying the <code class="docutils literal notranslate"><span class="pre">deconvoluted_peak_set</span></code> attribute of <code class="docutils literal notranslate"><span class="pre">product</span></code> using <code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.all_peaks_for</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [37]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -591,19 +601,10 @@ both singly and doubly charged.</p>
 [(971.4242097498669, 1, 2302.9869681779255), (486.214594278865, 2, 3073.0652030648903)]
 </pre></div></div>
 </div>
-<p>We can use <code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.has_peak</span></code> or
-<code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.all_peaks_for</span></code> to search for peaks by neutral
-mass. <code class="docutils literal notranslate"><span class="pre">has_peak</span></code> will return the first peak to match a neutral mass
-within a parts-per-million mass error tolerance, while <code class="docutils literal notranslate"><span class="pre">all_peaks_for</span></code>
-will return all peaks within that same mass error tolerance.</p>
-<p>If we have a more complex LC-MS/MS we need to deconvolute, we can use
-the <code class="docutils literal notranslate"><span class="pre">ScanProcessor</span></code> class to automate sequential deconvolution of
-precursor-product groups. This class also takes care of correcting
-precursor masses and other conveniences for deconvoluting only part of
-an LC-MS/MS run.</p>
+<p>We can use <code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.has_peak</span></code> or <code class="docutils literal notranslate"><span class="pre">DeconvolutedPeakSet.all_peaks_for</span></code> to search for peaks by neutral mass. <code class="docutils literal notranslate"><span class="pre">has_peak</span></code> will return the first peak to match a neutral mass within a parts-per-million mass error tolerance, while <code class="docutils literal notranslate"><span class="pre">all_peaks_for</span></code> will return all peaks within that same mass error tolerance.</p>
+<p>If we have a more complex LC-MS/MS we need to deconvolute, we can use the <code class="docutils literal notranslate"><span class="pre">ScanProcessor</span></code> class to automate sequential deconvolution of precursor-product groups. This class also takes care of correcting precursor masses and other conveniences for deconvoluting only part of an LC-MS/MS run.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [53]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -611,11 +612,9 @@ an LC-MS/MS run.</p>
 </pre></div>
 </div>
 </div>
-<p>We’ll use an example glycopeptide dataset from an Agilent 6550 QTOF.
-This file has already been denoised and centroided</p>
+<p>We’ll use an example glycopeptide dataset from an Agilent 6550 QTOF. This file has already been denoised and centroided</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [70]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[70]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -624,8 +623,7 @@ This file has already been denoised and centroided</p>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [71]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[71]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -635,8 +633,7 @@ This file has already been denoised and centroided</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [76]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -645,12 +642,12 @@ This file has already been denoised and centroided</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[76]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>ScanBunch(
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+ScanBunch(
 precursor=
 Scan(&#39;scanId=1739784&#39;, index=0, time=28.9963, ms_level=1),
 products=
@@ -659,12 +656,10 @@ products=
        Scan(&#39;scanId=1740226&#39;, index=3, time=29.0037, ms_level=2, PrecursorInformation(mz=929.0112/0.0000, intensity=723340.9692/0.0000, charge=5/0.0, scan_id=&#39;scanId=1739784&#39;)),
        Scan(&#39;scanId=1740344&#39;, index=4, time=29.0056, ms_level=2, PrecursorInformation(mz=1088.2372/0.0000, intensity=149797.8771/0.0000, charge=4/0.0, scan_id=&#39;scanId=1739784&#39;)),
        Scan(&#39;scanId=1740492&#39;, index=5, time=29.0081, ms_level=2, PrecursorInformation(mz=1002.0360/0.0000, intensity=286732.4126/0.0000, charge=5/0.0, scan_id=&#39;scanId=1739784&#39;))])
-</pre></div>
-</div>
+</pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [75]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[75]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -673,18 +668,16 @@ products=
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[75]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[75]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>False
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+False
+</pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [73]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -693,14 +686,13 @@ products=
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[73]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x1cf5d438&gt;
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.axes._subplots.AxesSubplot at 0x1cf5d438&gt;
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -709,18 +701,10 @@ products=
 <img alt="_images/Quickstart_35_1.png" src="_images/Quickstart_35_1.png" />
 </div>
 </div>
-<p>As you can see, this scan is more complex than the previous example,
-having more product ions and higher charge states. Furthermore, the eye
-can readily tell that the second precursor’s reported m/z is not the
-monoisotopic peak.</p>
-<p>Constructing a <code class="docutils literal notranslate"><span class="pre">ScanProcessor</span></code> instance is similar to creating a
-normal file reader, except in addition it takes several arguments which
-affect how <span class="math notranslate nohighlight">\(\text{MS}^1\)</span> and <span class="math notranslate nohighlight">\(\text{MS}^n\)</span> scans are
-centroided. As this file is already centroided, we’ll just specify
-deconvolution arguments.</p>
+<p>As you can see, this scan is more complex than the previous example, having more product ions and higher charge states. Furthermore, the eye can readily tell that the second precursor’s reported m/z is not the monoisotopic peak.</p>
+<p>Constructing a <code class="docutils literal notranslate"><span class="pre">ScanProcessor</span></code> instance is similar to creating a normal file reader, except in addition it takes several arguments which affect how <span class="math notranslate nohighlight">\(\text{MS}^1\)</span> and <span class="math notranslate nohighlight">\(\text{MS}^n\)</span> scans are centroided. As this file is already centroided, we’ll just specify deconvolution arguments.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [74]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[74]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -736,8 +720,7 @@ deconvolution arguments.</p>
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [67]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[67]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -746,8 +729,7 @@ deconvolution arguments.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [68]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[68]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -756,14 +738,13 @@ deconvolution arguments.</p>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[68]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[68]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x13b12f98&gt;
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.axes._subplots.AxesSubplot at 0x13b12f98&gt;
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
@@ -773,8 +754,7 @@ deconvolution arguments.</p>
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [69]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[69]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -783,22 +763,20 @@ deconvolution arguments.</p>
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[69]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[69]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>[Scan(&#39;scanId=1740086&#39;, index=1, time=29.0013, ms_level=2, PrecursorInformation(mz=1161.0110/1161.0075, intensity=795342.7477/1804288.3125, charge=4/4, scan_id=&#39;scanId=1739784&#39;)),
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[Scan(&#39;scanId=1740086&#39;, index=1, time=29.0013, ms_level=2, PrecursorInformation(mz=1161.0110/1161.0075, intensity=795342.7477/1804288.3125, charge=4/4, scan_id=&#39;scanId=1739784&#39;)),
  Scan(&#39;scanId=1740149&#39;, index=2, time=29.0024, ms_level=2, PrecursorInformation(mz=1198.0268/1197.5220, intensity=134530.9754/441541.9316, charge=4/4, scan_id=&#39;scanId=1739784&#39;)),
  Scan(&#39;scanId=1740226&#39;, index=3, time=29.0037, ms_level=2, PrecursorInformation(mz=929.0112/929.0089, intensity=723340.9692/793472.4805, charge=5/5, scan_id=&#39;scanId=1739784&#39;)),
  Scan(&#39;scanId=1740344&#39;, index=4, time=29.0056, ms_level=2, PrecursorInformation(mz=1088.2372/1088.2345, intensity=149797.8771/255720.2891, charge=4/4, scan_id=&#39;scanId=1739784&#39;)),
  Scan(&#39;scanId=1740492&#39;, index=5, time=29.0081, ms_level=2, PrecursorInformation(mz=1002.0360/1002.0339, intensity=286732.4126/201191.5088, charge=5/5, scan_id=&#39;scanId=1739784&#39;))]
-</pre></div>
-</div>
+</pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>In [81]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[81]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
@@ -814,14 +792,13 @@ deconvolution arguments.</p>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre>
-<span></span>Out[81]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[81]:
 </pre></div>
 </div>
-<div class="output_area highlight-none notranslate"><div class="highlight"><pre>
-<span></span>&lt;matplotlib.legend.Legend at 0x37995d30&gt;
-</pre></div>
-</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x37995d30&gt;
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">

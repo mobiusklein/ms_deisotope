@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -37,18 +39,28 @@
 <span class="sd">load data for :class:`~.Scan` objects.</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">abc</span>
-<span class="kn">from</span> <span class="nn">weakref</span> <span class="k">import</span> <span class="n">WeakValueDictionary</span>
+<span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="n">add_metaclass</span>
+<span class="kn">from</span> <span class="nn">weakref</span> <span class="kn">import</span> <span class="n">WeakValueDictionary</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.file_information</span> <span class="k">import</span> <span class="n">FileInformation</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">add_metaclass</span>
 
-<span class="kn">from</span> <span class="nn">.scan</span> <span class="k">import</span> <span class="n">Scan</span>
-<span class="kn">from</span> <span class="nn">.scan_iterator</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.file_information</span> <span class="kn">import</span> <span class="n">FileInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source._compression</span> <span class="kn">import</span> <span class="n">MaybeFastRandomAccess</span>
+
+<span class="kn">from</span> <span class="nn">.scan</span> <span class="kn">import</span> <span class="n">Scan</span>
+<span class="kn">from</span> <span class="nn">.scan_iterator</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">_SingleScanIteratorImpl</span><span class="p">,</span>
     <span class="n">_GroupedScanIteratorImpl</span><span class="p">,</span>
-    <span class="n">_FakeGroupedScanIteratorImpl</span><span class="p">)</span>
+    <span class="n">_FakeGroupedScanIteratorImpl</span><span class="p">,</span>
+    <span class="n">ITERATION_MODE_GROUPED</span><span class="p">,</span>
+    <span class="n">ITERATION_MODE_SINGLE</span><span class="p">)</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 
 
 <div class="viewcode-block" id="ScanDataSource"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanDataSource">[docs]</a><span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)</span>
@@ -285,7 +297,43 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span></div>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">source_file_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the name of the file that backs this data source, if available.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`str` or :const:`None`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">file_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">file_</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">file_</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">name</span>
+
+<div class="viewcode-block" id="ScanDataSource.close"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanDataSource.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close the underlying scan data stream, which may be a file or other</span>
+<span class="sd">        system resource.</span>
+
+<span class="sd">        A closed data source may not be able to serve data requests, but not all</span>
+<span class="sd">        :class:`ScanDataSource` implementations require the data stream be open</span>
+<span class="sd">        for all operations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="ScanIterator"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator">[docs]</a><span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)</span>
@@ -294,9 +342,16 @@
 <span class="sd">    with additional requirements that enable clients of the</span>
 <span class="sd">    class to treat the object as an iterator over the underlying</span>
 <span class="sd">    data file.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iteration_mode: str</span>
+<span class="sd">        A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`</span>
+<span class="sd">        that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced</span>
+<span class="sd">        by iteration.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">iteration_mode</span> <span class="o">=</span> <span class="s1">&#39;group&#39;</span>
+    <span class="n">iteration_mode</span> <span class="o">=</span> <span class="n">ITERATION_MODE_GROUPED</span>
 
 <div class="viewcode-block" id="ScanIterator.has_ms1_scans"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.has_ms1_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Checks if this :class:`ScanDataSource` contains MS1 spectra.</span>
@@ -331,7 +386,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`</span>
 <span class="sd">        depending upon iteration strategy.</span>
 
@@ -341,13 +396,21 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="ScanIterator.reset"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Reset the iterator, if possible, and clear any caches.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_dispose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">extant</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_cache</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">extant</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Disposing of </span><span class="si">%s</span><span class="s2"> with </span><span class="si">%d</span><span class="s2"> extant scans attached to it.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">extant</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_cache</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">_make_default_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -374,10 +437,10 @@
 
         <span class="k">if</span> <span class="n">grouped</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_group_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">iteration_mode</span> <span class="o">=</span> <span class="s1">&#39;group&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iteration_mode</span> <span class="o">=</span> <span class="n">ITERATION_MODE_GROUPED</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_scan_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">iteration_mode</span> <span class="o">=</span> <span class="s1">&#39;single&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iteration_mode</span> <span class="o">=</span> <span class="n">ITERATION_MODE_SINGLE</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
     <span class="k">def</span> <span class="nf">_make_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
@@ -414,7 +477,7 @@
         <span class="sd">&#39;&#39;&#39;Initialize a cache which keeps track of which :class:`~.Scan`</span>
 <span class="sd">        objects are still in memory using a :class:`weakref.WeakValueDictionary`.</span>
 
-<span class="sd">        When a scan is requested, if the scan object is found in the cahce, the</span>
+<span class="sd">        When a scan is requested, if the scan object is found in the cache, the</span>
 <span class="sd">        existing object is returned rather than re-read from disk.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span> <span class="o">=</span> <span class="n">WeakValueDictionary</span><span class="p">()</span></div>
@@ -438,6 +501,26 @@
 <span class="sd">    random access to individual scans. This should be doable by unique</span>
 <span class="sd">    identifier, sequential index, or by scan time.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">has_fast_random_access</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check whether the underlying data stream supports fast random access</span>
+<span class="sd">        or not.</span>
+
+<span class="sd">        Even if the file format supports random access, it may be impractical due</span>
+<span class="sd">        to overhead in parsing the underlying data stream, e.g. calling :meth:`gzip.GzipFile.seek`</span>
+<span class="sd">        can force the file to be decompressed from the *beginning of the file* on each call. This</span>
+<span class="sd">        property can be used to signal to the caller whether or not it should use a different</span>
+<span class="sd">        strategy.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`Constant`:</span>
+<span class="sd">            One of :data:`~.DefinitelyNotFastRandomAccess`, :data:`~.MaybeFastRandomAccess`, or</span>
+<span class="sd">            :data:`~.DefinitelyFastRandomAccess`. The first is a False-y value, the latter two</span>
+<span class="sd">            will evaluate to :const:`True`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MaybeFastRandomAccess</span>
 
 <div class="viewcode-block" id="RandomAccessScanSource.get_scan_by_id"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">get_scan_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
@@ -587,10 +670,10 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan index.</span>
 
 <span class="sd">        This internally calls :meth:`get_scan_by_index` but supports</span>
@@ -615,7 +698,51 @@
         <span class="k">elif</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="n">i</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="n">i</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A indexer facade that lets you index and slice by scan time.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        TimeIndex</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">TimeIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">TimeIndex</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A facade that translates ``[x]`` into</span>
+<span class="sd">    scan time access, and supports slicing over</span>
+<span class="sd">    a time range.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_loader</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span> <span class="o">=</span> <span class="n">scan_loader</span>
+
+    <span class="k">def</span> <span class="nf">is_sorted_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">lo</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span><span class="p">)</span>
+
+        <span class="n">last</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scan_time</span>
+            <span class="k">if</span> <span class="n">last</span> <span class="o">&lt;=</span> <span class="n">current</span><span class="p">:</span>
+                <span class="n">last</span> <span class="o">=</span> <span class="n">current</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="n">start_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span><span class="o">.</span><span class="n">get_scan_by_time</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="n">end_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span><span class="o">.</span><span class="n">get_scan_by_time</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span><span class="p">[</span><span class="n">start_scan</span><span class="o">.</span><span class="n">index</span><span class="p">:</span><span class="n">end_scan</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_loader</span><span class="o">.</span><span class="n">get_scan_by_time</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
 
 
 <span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)</span>

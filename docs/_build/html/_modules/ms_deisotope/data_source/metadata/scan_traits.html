@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -33,9 +35,22 @@
         
         
   <h1>Source code for ms_deisotope.data_source.metadata.scan_traits</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">MutableSequence</span>
+<span></span><span class="sd">&quot;&quot;&quot;A module defining types for describing instrument scans and windows,</span>
+<span class="sd">as well as a :class:`~.Term` subclass for the `scan attribute` family.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">.cv</span> <span class="k">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">MutableSequence</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">MutableSequence</span>
+
+
+<span class="kn">from</span> <span class="nn">pyteomics.auxiliary</span> <span class="kn">import</span> <span class="n">unitfloat</span>  <span class="c1"># pylint: disable=unused-import</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">_MappingOverAttributeProxy</span>
+<span class="kn">from</span> <span class="nn">.cv</span> <span class="kn">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
 
 
 <span class="k">def</span> <span class="nf">_isclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
@@ -64,6 +79,8 @@
 <span class="sd">        The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by</span>
 <span class="sd">        the window</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
 
 <div class="viewcode-block" id="IsolationWindow.make_empty"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.IsolationWindow.make_empty">[docs]</a>    <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">make_empty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">point</span><span class="p">):</span>
@@ -99,7 +116,7 @@
 <span class="sd">        the window&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span>
 
-    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">spans</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="IsolationWindow.spans"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.IsolationWindow.spans">[docs]</a>    <span class="k">def</span> <span class="nf">spans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
@@ -137,16 +154,23 @@
     <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__nonzero__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_isclose</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_isclose</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_MappingOverAttributeProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ScanAcquisitionInformation"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ScanAcquisitionInformation">[docs]</a><span class="k">class</span> <span class="nc">ScanAcquisitionInformation</span><span class="p">(</span><span class="n">MutableSequence</span><span class="p">):</span>
@@ -164,17 +188,23 @@
 <span class="sd">        The list of scan events performed</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">combination</span><span class="p">,</span> <span class="n">scan_list</span><span class="p">):</span>  <span class="c1"># pylint: disable=super-init-not-called</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;combination&quot;</span><span class="p">,</span> <span class="s2">&quot;scan_list&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_MappingOverAttributeProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">combination</span><span class="p">,</span> <span class="n">scan_list</span><span class="p">):</span>  <span class="c1"># pylint: disable=super-init-not-called</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">combination</span> <span class="o">=</span> <span class="n">combination</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span> <span class="o">=</span> <span class="n">scan_list</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-    <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
 <div class="viewcode-block" id="ScanAcquisitionInformation.insert"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ScanAcquisitionInformation.insert">[docs]</a>    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -188,45 +218,127 @@
 <span class="sd">            The event to insert</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ScanEventInformation</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected ScanEventInformation but got </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected ScanEventInformation but got </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;ScanAcquisitionInformation(combination=</span><span class="si">%r</span><span class="s2">, scan_list=</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">combination</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">combination</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">scan_list</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="p">[</span><span class="n">se</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">se</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">])</span></div>
 
 
-<span class="k">class</span> <span class="nc">ScanEventInformation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">window_list</span><span class="p">,</span> <span class="n">drift_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">injection_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">traits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_IonMobilityMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_ion_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">IonMobilityMethods</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">has_ion_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check whether the scan has ion mobility measure.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ion_mobility</span><span class="o">.</span><span class="n">has_ion_mobility</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">drift_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the drift time quantity of the scan</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        value: float or :const:`None`</span>
+<span class="sd">            The measured drift time, or :const:`None`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ion_mobility</span><span class="o">.</span><span class="n">drift_time</span><span class="p">()</span>
+
+    <span class="nd">@drift_time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">drift_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot set drift time directly yet.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ion_mobility_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the ion mobility type of the scan.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ims_type: :class:`ScanAttribute` or :const:`None`</span>
+<span class="sd">            The ion mobility type, or :const:`None`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ion_mobility</span><span class="o">.</span><span class="n">ion_mobility_type</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">ScanEventInformation</span><span class="p">(</span><span class="n">_IonMobilityMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Describe a single instrument scan, one or more of which compose</span>
+<span class="sd">    an actual :class:`Scan` object which describes a spectrum.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    start_time: :class:`unitfloat`</span>
+<span class="sd">        The time since the experiment began when the scan started being acquired.</span>
+<span class="sd">    window_list: :class:`list` of :class:`ScanWindow`</span>
+<span class="sd">        The intervals over the m/z axis that were sampled from during this scan.</span>
+<span class="sd">    injection_time: :class:`unitfloat`</span>
+<span class="sd">        The time spent injecting ions into the analyzer.</span>
+<span class="sd">    traits: :class:`dict`</span>
+<span class="sd">        A mapping from :class:`ScanAttribute` to optional values describing this scan event.</span>
+<span class="sd">    drift_time: :class:`unitfloat`</span>
+<span class="sd">        The IMS drift time, if present, :const:`None` otherwise. Determined from :attr:`traits`.</span>
+<span class="sd">    ion_mobility_type: :class:`ScanAttribute`</span>
+<span class="sd">        The IMS mechanism type, if present, :const:`None` otherwise. Determined from :attr:`traits`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;start_time&quot;</span><span class="p">,</span> <span class="s2">&quot;window_list&quot;</span><span class="p">,</span> <span class="s2">&quot;injection_time&quot;</span><span class="p">,</span> <span class="s2">&quot;traits&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_MappingOverAttributeProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">window_list</span><span class="p">,</span> <span class="n">drift_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">injection_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">traits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traits</span> <span class="o">=</span> <span class="n">traits</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span> <span class="o">=</span> <span class="n">window_list</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span> <span class="o">=</span> <span class="n">drift_time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span> <span class="o">=</span> <span class="n">injection_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">traits</span> <span class="o">=</span> <span class="n">traits</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">has_ion_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scan_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preset scan configuration&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">[:],</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;ScanEventInformation(start_time=</span><span class="si">{}</span><span class="s2">, window_list=</span><span class="si">{}{}</span><span class="s2">)&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ion_mobility</span><span class="p">():</span>
             <span class="n">tail</span> <span class="o">=</span> <span class="s2">&quot;, drift_time=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span><span class="p">)</span>
@@ -239,7 +351,7 @@
         <span class="n">form</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">,</span> <span class="n">tail</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">form</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">eq</span> <span class="o">=</span> <span class="n">_isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">window_list</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">eq</span><span class="p">:</span>
@@ -250,10 +362,17 @@
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">total_scan_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a :class:`ScanWindow` spanning from the lowest m/z of the lowest window</span>
+<span class="sd">        to the highest m/z of the highest window.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`ScanWindow`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
         <span class="n">high</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
@@ -261,12 +380,43 @@
             <span class="n">high</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">high</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ScanWindow</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="p">)</span>
+
 
 <span class="k">class</span> <span class="nc">ScanWindow</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;ScanWindow&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="s1">&#39;upper&#39;</span><span class="p">])):</span>
-    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represent a single contiguous m/z interval that was sampled from during a scan.</span>
+
+<span class="sd">    This type supports spanning testing using the :meth:`__contains__` method, and is</span>
+<span class="sd">    equality comparable and hashable.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lower: float</span>
+<span class="sd">        The lower bound of the window</span>
+<span class="sd">    upper: float</span>
+<span class="sd">        The upper bound of the window</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_MappingOverAttributeProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">&lt;=</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span>
 
     <span class="k">def</span> <span class="nf">is_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test whether the window&#39;s bounds are both equal to :const:`None`</span>
+<span class="sd">        or `0`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">==</span> <span class="mf">0.0</span>
@@ -274,19 +424,22 @@
     <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__nonzero__</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_isclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_isclose</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span> <span class="o">==</span> <span class="n">other</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">ScanAttribute</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
-    <span class="k">pass</span>
+    <span class="sd">&quot;&quot;&quot;Describes a single trait or attribute belonging to a scan,</span>
+<span class="sd">    such as injection time, filter string, or instrument configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
 
 
 <span class="n">scan_attributes</span> <span class="o">=</span> <span class="p">[]</span>
@@ -314,6 +467,12 @@
                   <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;PSM-level attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;single identification result attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;identification attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;analysis attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;spectrum identification result details&#39;</span><span class="p">]),</span>
     <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;scan rate&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000015&#39;</span><span class="p">,</span>
                   <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Rate in Th/sec for scanning analyzers.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;zoom scan&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000497&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Special scan mode where data with improved resolution is&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;acquired. This is typically achieved by scanning a more&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;narrow m/z window or scanning with a lower scan rate.&#39;</span><span class="p">),</span>
                   <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
                   <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
     <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;elution time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000826&#39;</span><span class="p">,</span>
@@ -347,6 +506,11 @@
     <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;interchannel delay&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000880&#39;</span><span class="p">,</span>
                   <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;The duration of intervals between scanning, during which the&#39;</span>
                    <span class="sa">u</span><span class="s1">&#39;instrument configuration is switched.&#39;</span><span class="p">),</span>
+                  <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
+                  <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
+    <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;scan number&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1003057&#39;</span><span class="p">,</span>
+                  <span class="p">(</span><span class="sa">u</span><span class="s1">&#39;Ordinal number of the scan indicating its order of&#39;</span>
+                   <span class="sa">u</span><span class="s1">&#39;acquisition within a mass spectrometry acquisition run.&#39;</span><span class="p">),</span>
                   <span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span>
                   <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
     <span class="n">ScanAttribute</span><span class="p">(</span><span class="sa">u</span><span class="s1">&#39;dwell time&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;MS:1000502&#39;</span><span class="p">,</span>
@@ -408,6 +572,113 @@
                   <span class="p">[</span><span class="sa">u</span><span class="s1">&#39;instrument specific scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;scan attribute&#39;</span><span class="p">,</span> <span class="sa">u</span><span class="s1">&#39;object attribute&#39;</span><span class="p">]),</span>
 <span class="p">])</span>
 <span class="c1"># [[[end]]]</span>
+
+
+<span class="n">FAIMS_compensation_voltage</span> <span class="o">=</span> <span class="n">scan_attributes</span><span class="p">[</span><span class="s1">&#39;MS:1001581&#39;</span><span class="p">]</span>
+<span class="n">ion_mobility_drift_time</span> <span class="o">=</span> <span class="n">scan_attributes</span><span class="p">[</span><span class="s1">&#39;MS:1002476&#39;</span><span class="p">]</span>
+<span class="n">inverse_reduced_ion_mobility</span> <span class="o">=</span> <span class="n">scan_attributes</span><span class="p">[</span><span class="s1">&#39;MS:1002815&#39;</span><span class="p">]</span>
+
+<span class="n">ION_MOBILITY_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">FAIMS_compensation_voltage</span><span class="p">,</span>
+    <span class="n">ion_mobility_drift_time</span><span class="p">,</span>
+    <span class="n">inverse_reduced_ion_mobility</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">IonMobilityMethods</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determine the ion mobility measure of a scan event.</span>
+
+<span class="sd">    This interface attempts to find FAIMS compensation voltage,</span>
+<span class="sd">    ion mobility drift time, and inverse reduced ion mobility.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scan_event: :class:`ScanEventInformation`</span>
+<span class="sd">        The scan to interpret.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_event</span> <span class="o">=</span> <span class="n">scan_event</span>
+
+    <span class="k">def</span> <span class="nf">_get_traits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_event</span><span class="o">.</span><span class="n">traits</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find the first ion mobility trait of the scan.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ims_type: :class:`ScanAttribute`</span>
+<span class="sd">            The ion mobility type.</span>
+<span class="sd">        value: float</span>
+<span class="sd">            The drift time value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ims_type</span> <span class="ow">in</span> <span class="n">ION_MOBILITY_TYPES</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_traits</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ims_type</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">ims_type</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">has_ion_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check whether the scan has ion mobility measure.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">drift_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the drift time quantity of the scan</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        value: float or :const:`None`</span>
+<span class="sd">            The measured drift time, or :const:`None`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_ims_type_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">_ims_type_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">_ims_type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">_ims_type_value</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">add_ion_mobility</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ion_mobility_type</span><span class="p">,</span> <span class="n">drift_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the drift time value for a specific type of ion mobility on</span>
+<span class="sd">        the scan event.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ion_mobility_type : :class:`unitfloat`</span>
+<span class="sd">            The type of ion mobility to set the drift time for</span>
+<span class="sd">        drift_time : :class:`unitfloat`</span>
+<span class="sd">            The drift time, with appropriate units.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_traits</span><span class="p">()[</span><span class="n">ion_mobility_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">drift_time</span>
+
+    <span class="k">def</span> <span class="nf">remove_ion_mobility_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ion_mobility_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a specific type of ion mobility from the scan.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ion_mobility_type : :class:`ScanAttribute`</span>
+<span class="sd">            The type of ion mobility to remove.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_traits</span><span class="p">()</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">ion_mobility_type</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">ion_mobility_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the ion mobility type of the scan.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ims_type: :class:`ScanAttribute` or :const:`None`</span>
+<span class="sd">            The ion mobility type, or :const:`None`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_ims_type_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">_ims_type_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">ims_type</span><span class="p">,</span> <span class="n">_value</span> <span class="o">=</span> <span class="n">_ims_type_value</span>
+        <span class="k">return</span> <span class="n">ims_type</span>
+
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;IsolationWindow&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanAcquisitionInformation&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanEventInformation&quot;</span><span class="p">,</span>

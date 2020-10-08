@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="MGF" href="mgf.html" />
@@ -254,7 +256,7 @@ if it cannot be determined in the case of missing metadata.</td>
 <code class="descname">initialize_scan_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.initialize_scan_cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cache which keeps track of which <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>
 objects are still in memory using a <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code>.</p>
-<p>When a scan is requested, if the scan object is found in the cahce, the
+<p>When a scan is requested, if the scan object is found in the cache, the
 existing object is returned rather than re-read from disk.</p>
 </dd></dl>
 
@@ -378,6 +380,22 @@ scans from memory if available before re-reading them from disk.</p>
 <dd><p>The file parser that this reader consumes.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mzxml.MzXMLLoader.source_file_name">
+<code class="descname">source_file_name</code><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.source_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the name of the file that backs this data source, if available.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="ms_deisotope.data_source.mzxml.MzXMLLoader.start_from_scan">
 <code class="descname">start_from_scan</code><span class="sig-paren">(</span><em>scan_id=None</em>, <em>rt=None</em>, <em>index=None</em>, <em>require_ms1=True</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.start_from_scan" title="Permalink to this definition">¶</a></dt>
@@ -400,6 +418,22 @@ exact match is found, the nearest scan time will be found, rounded up.</li>
 <li><strong>grouped</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether the iterator should yield scan bunches or single scans. True by default.</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.mzxml.MzXMLLoader.time">
+<code class="descname">time</code><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>A indexer facade that lets you index and slice by scan time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">TimeIndex</td>
 </tr>
 </tbody>
 </table>

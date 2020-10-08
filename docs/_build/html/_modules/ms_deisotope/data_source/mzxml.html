@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -40,18 +42,18 @@
 
 <span class="sd">The parser is based on :mod:`pyteomics.mzxml`.</span>
 <span class="sd">&#39;&#39;&#39;</span>
-<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">pyteomics</span> <span class="k">import</span> <span class="n">mzxml</span>
-<span class="kn">from</span> <span class="nn">.common</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">pyteomics</span> <span class="kn">import</span> <span class="n">mzxml</span>
+<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">ScanDataSource</span><span class="p">,</span> <span class="n">ChargeNotProvided</span><span class="p">,</span>
     <span class="n">ActivationInformation</span><span class="p">,</span> <span class="n">IsolationWindow</span><span class="p">,</span> <span class="n">ScanAcquisitionInformation</span><span class="p">,</span>
     <span class="n">ScanEventInformation</span><span class="p">,</span> <span class="n">ScanWindow</span><span class="p">,</span>
     <span class="n">ComponentGroup</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">InstrumentInformation</span><span class="p">,</span>
     <span class="n">FileInformation</span><span class="p">,</span> <span class="n">ScanFileMetadataBase</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.metadata</span> <span class="k">import</span> <span class="n">data_transformation</span>
-<span class="kn">from</span> <span class="nn">.xml_reader</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">.metadata</span> <span class="kn">import</span> <span class="n">data_transformation</span>
+<span class="kn">from</span> <span class="nn">.xml_reader</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">XMLReaderBase</span><span class="p">,</span> <span class="n">iterparse_until</span><span class="p">)</span>
 
 
@@ -414,7 +416,7 @@
     <span class="n">_parser_cls</span> <span class="o">=</span> <span class="n">_MzXMLParser</span>
 
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">_MzXMLParser</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">iterative</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                     <span class="n">huge_tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">)</span>

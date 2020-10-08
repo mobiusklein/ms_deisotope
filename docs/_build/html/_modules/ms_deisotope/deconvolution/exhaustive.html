@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -43,31 +45,31 @@
 
 <span class="kn">import</span> <span class="nn">operator</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.constants</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="n">MAX_ITERATION</span><span class="p">,</span>
     <span class="n">CONVERGENCE</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">DeconvolutedPeak</span><span class="p">,</span>
     <span class="n">DeconvolutedPeakSet</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="k">import</span> <span class="n">PROTON</span><span class="p">,</span> <span class="n">neutral_mass</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="n">PROTON</span><span class="p">,</span> <span class="n">neutral_mass</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.envelope_statistics</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.envelope_statistics</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">average_mz</span><span class="p">,</span>
     <span class="n">a_to_a2_ratio</span><span class="p">,</span>
     <span class="n">most_abundant_mz</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">TrivialTargetedDeconvolutionResult</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">ms_deisotope.peak_dependency_network</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_dependency_network</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">PeakDependenceGraph</span><span class="p">,</span>
     <span class="n">NetworkedTargetedDeconvolutionResult</span><span class="p">)</span>
 
 
-<span class="kn">from</span> <span class="nn">.base</span> <span class="k">import</span> <span class="n">DeconvoluterBase</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">DeconvoluterBase</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ChargeIterator</span><span class="p">,</span>
     <span class="n">has_previous_peak_at_charge</span><span class="p">,</span>
     <span class="n">has_successor_peak_at_charge</span><span class="p">,</span>
@@ -102,7 +104,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="p">,</span>
               <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_quick_charge</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_quick_charge&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
@@ -232,11 +234,6 @@
         <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_peaks_at_charges</span><span class="p">(</span>
             <span class="n">target_peaks</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
             <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">incremental_truncation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">solutions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-                <span class="n">solutions</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_incremental_truncation</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">incremental_truncation</span><span class="p">))</span>
-            <span class="n">results</span> <span class="o">=</span> <span class="n">solutions</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">results</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ExhaustivePeakSearchDeconvoluterBase.charge_state_determination"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.ExhaustivePeakSearchDeconvoluterBase.charge_state_determination">[docs]</a>    <span class="k">def</span> <span class="nf">charge_state_determination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
@@ -464,7 +461,7 @@
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="kn">import</span> <span class="p">(</span>
         <span class="n">_get_all_peak_charge_pairs</span> <span class="k">as</span> <span class="n">_c_get_all_peak_charge_pairs</span><span class="p">,</span>
         <span class="n">_make_deconvoluted_peak</span> <span class="k">as</span> <span class="n">_c_make_deconvoluted_peak</span><span class="p">)</span>
     <span class="n">ExhaustivePeakSearchDeconvoluterBase</span><span class="o">.</span><span class="n">_get_all_peak_charge_pairs</span> <span class="o">=</span> <span class="n">_c_get_all_peak_charge_pairs</span>
@@ -497,7 +494,7 @@
 <span class="sd">        are constructed and solved.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peaklist</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">max_missed_peaks</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_missed_peaks&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subgraph_solver_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subgraph_solver&quot;</span><span class="p">,</span> <span class="s1">&#39;top&#39;</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="p">,</span>
@@ -965,13 +962,14 @@
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">_has_c</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope._c.deconvoluter_base</span> <span class="kn">import</span> <span class="p">(</span>
         <span class="n">_explore_local</span> <span class="k">as</span> <span class="n">_c_explore_local</span><span class="p">,</span>
         <span class="n">populate_graph</span> <span class="k">as</span> <span class="n">cpopulate_graph</span><span class="p">)</span>
     <span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="o">.</span><span class="n">_explore_local</span> <span class="o">=</span> <span class="n">_c_explore_local</span>
     <span class="n">PeakDependenceGraphDeconvoluterBase</span><span class="o">.</span><span class="n">populate_graph</span> <span class="o">=</span> <span class="n">cpopulate_graph</span>
 <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">_has_c</span> <span class="o">=</span> <span class="kc">False</span>
 </pre></div>
 
       </div>

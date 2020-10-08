@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Envelope Scoring" href="envelope_scoring.html" />
@@ -50,7 +52,7 @@ a chemical composition using <code class="xref py py-mod docutils literal notran
 <span class="c1"># Senko peptide averagine</span>
 <span class="n">isotopic_pattern</span> <span class="o">=</span> <span class="n">ms_deisotope</span><span class="o">.</span><span class="n">peptide</span><span class="o">.</span><span class="n">isotopic_cluster</span><span class="p">(</span><span class="mf">966.12</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">isotopic_pattern</span><span class="p">:</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="docutils">
@@ -223,15 +225,21 @@ sum to <code class="docutils literal notranslate"><span class="pre">1.0</span></
 experimental isotopic pattern in <code class="docutils literal notranslate"><span class="pre">experimental_distribution</span></code>.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">method</span></code> argument must be one of:</p>
 <dl class="docutils">
-<dt>“sum”</dt>
+<dt><cite>“sum”</cite>:</dt>
 <dd>Scale each peak of the theoretical distribution by the sum of the
 intensity in the experimental distribution such that the sums of their
 intensities are equal.</dd>
-<dt>“max”</dt>
+<dt><cite>“max”</cite>:</dt>
 <dd>Select the most abundant peak in the theoretical distribution <span class="math notranslate nohighlight">\(t_i\)</span>, find it’s
 match in the experimental distribution <span class="math notranslate nohighlight">\(e_i\)</span>, find the scaling factor
 <span class="math notranslate nohighlight">\(\alpha = \frac{e_i}{t_i}\)</span> which will make <span class="math notranslate nohighlight">\(e_i == t_i\)</span> and scale all
-peaks in self by <span class="math notranslate nohighlight">\(alpha\)</span></dd>
+peaks in self by <span class="math notranslate nohighlight">\(\alpha\)</span></dd>
+<dt><cite>“basepeak”</cite>:</dt>
+<dd>As in <cite>“max”</cite>, except the most abundant peak index is taken from the <em>experimental</em>
+distribution</dd>
+<dt><cite>“top3”</cite>:</dt>
+<dd>The as in <cite>“max”</cite>, but the scaling factor is the mean of the scale factors for the
+top three most abundant theoretical peaks.</dd>
 </dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

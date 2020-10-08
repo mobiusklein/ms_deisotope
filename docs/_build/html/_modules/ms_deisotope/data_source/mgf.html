@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -42,18 +44,21 @@
 <span class="sd">The parser is based on :mod:`pyteomics.mgf`.</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
-<span class="kn">from</span> <span class="nn">pyteomics</span> <span class="k">import</span> <span class="n">mgf</span>
+<span class="kn">from</span> <span class="nn">pyteomics</span> <span class="kn">import</span> <span class="n">mgf</span>
+<span class="kn">from</span> <span class="nn">pyteomics.auxiliary</span> <span class="kn">import</span> <span class="n">OffsetIndex</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
-<span class="kn">from</span> <span class="nn">.scan</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">.scan</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ScanFileMetadataBase</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">,</span> <span class="n">ScanDataSource</span><span class="p">,</span>
     <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">_FakeGroupedScanIteratorImpl</span><span class="p">,</span>
     <span class="n">ChargeNotProvided</span><span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">.metadata.file_information</span> <span class="k">import</span> <span class="p">(</span>
+<span class="kn">from</span> <span class="nn">.metadata.file_information</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FileInformation</span><span class="p">,</span> <span class="n">MS_MSn_Spectrum</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">._compression</span> <span class="kn">import</span> <span class="n">test_if_file_has_fast_random_access</span>
 
 
 <span class="k">class</span> <span class="nc">_MGFParser</span><span class="p">(</span><span class="n">mgf</span><span class="o">.</span><span class="n">IndexedMGF</span><span class="p">):</span>
@@ -278,7 +283,7 @@
 <span class="sd">    header: dict</span>
 <span class="sd">        Any top-of-the-file parameters</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">encoding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span> <span class="o">=</span> <span class="n">use_index</span>
@@ -286,6 +291,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">initialize_scan_cache</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_title_to_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_index_lookup</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">has_fast_random_access</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">test_if_file_has_fast_random_access</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">file</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_prepare_index_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">title_to_index</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -316,8 +325,11 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">_MGFParser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                               <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mgf</span><span class="o">.</span><span class="n">MGF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                       <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="n">simple_reader</span> <span class="o">=</span> <span class="n">mgf</span><span class="o">.</span><span class="n">MGF</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">read_charges</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">convert_arrays</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="n">simple_reader</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">OffsetIndex</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">simple_reader</span>
 
 <div class="viewcode-block" id="MGFLoader.get_scan_by_id"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_scan_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan id.</span>
@@ -434,7 +446,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">index</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MGFLoader.close"><a class="viewcode-back" href="../../../data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

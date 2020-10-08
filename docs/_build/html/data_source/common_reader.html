@@ -14,7 +14,9 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="File Metadata" href="metadata/index.html" />
@@ -65,6 +67,32 @@ for a particular format of mass spectrometry data.</p>
 underlying structures. This class provides an API that
 should make features as consistent as possible to clients
 of <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> objects.</p>
+<dl class="method">
+<dt id="ms_deisotope.data_source.common.ScanDataSource.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanDataSource.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanDataSource.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the underlying scan data stream, which may be a file or other
+system resource.</p>
+<p>A closed data source may not be able to serve data requests, but not all
+<a class="reference internal" href="#ms_deisotope.data_source.common.ScanDataSource" title="ms_deisotope.data_source.common.ScanDataSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code></a> implementations require the data stream be open
+for all operations.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ScanDataSource.source_file_name">
+<code class="descname">source_file_name</code><a class="headerlink" href="#ms_deisotope.data_source.common.ScanDataSource.source_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the name of the file that backs this data source, if available.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -74,6 +102,22 @@ of <a class="reference internal" href="common_scan.html#ms_deisotope.data_source
 with additional requirements that enable clients of the
 class to treat the object as an iterator over the underlying
 data file.</p>
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.ScanIterator.iteration_mode">
+<code class="descname">iteration_mode</code><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.iteration_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string denoting <code class="xref py py-const docutils literal notranslate"><span class="pre">ITERATION_MODE_GROUPED</span></code> or <code class="xref py py-const docutils literal notranslate"><span class="pre">ITERATION_MODE_SINGLE</span></code>
+that controls whether <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> are produced
+by iteration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.ScanIterator.has_ms1_scans">
 <code class="descname">has_ms1_scans</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.has_ms1_scans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.has_ms1_scans" title="Permalink to this definition">¶</a></dt>
@@ -113,7 +157,7 @@ if it cannot be determined in the case of missing metadata.</td>
 <code class="descname">initialize_scan_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#ScanIterator.initialize_scan_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.ScanIterator.initialize_scan_cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cache which keeps track of which <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>
 objects are still in memory using a <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code>.</p>
-<p>When a scan is requested, if the scan object is found in the cahce, the
+<p>When a scan is requested, if the scan object is found in the cache, the
 existing object is returned rather than re-read from disk.</p>
 </dd></dl>
 
@@ -273,6 +317,30 @@ use its cache.</p>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.RandomAccessScanSource.has_fast_random_access">
+<code class="descname">has_fast_random_access</code><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.has_fast_random_access" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether the underlying data stream supports fast random access
+or not.</p>
+<p>Even if the file format supports random access, it may be impractical due
+to overhead in parsing the underlying data stream, e.g. calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">gzip.GzipFile.seek()</span></code>
+can force the file to be decompressed from the <em>beginning of the file</em> on each call. This
+property can be used to signal to the caller whether or not it should use a different
+strategy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">One of <code class="xref py py-data docutils literal notranslate"><span class="pre">DefinitelyNotFastRandomAccess</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">MaybeFastRandomAccess</span></code>, or
+<code class="xref py py-data docutils literal notranslate"><span class="pre">DefinitelyFastRandomAccess</span></code>. The first is a False-y value, the latter two
+will evaluate to <code class="xref py py-const docutils literal notranslate"><span class="pre">True</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Constant</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan">
 <code class="descname">start_from_scan</code><span class="sig-paren">(</span><em>scan_id=None</em>, <em>rt=None</em>, <em>index=None</em>, <em>require_ms1=True</em>, <em>grouped=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/scan/loader.html#RandomAccessScanSource.start_from_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan" title="Permalink to this definition">¶</a></dt>
@@ -295,6 +363,22 @@ exact match is found, the nearest scan time will be found, rounded up.</li>
 <li><strong>grouped</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether the iterator should yield scan bunches or single scans. True by default.</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ms_deisotope.data_source.common.RandomAccessScanSource.time">
+<code class="descname">time</code><a class="headerlink" href="#ms_deisotope.data_source.common.RandomAccessScanSource.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>A indexer facade that lets you index and slice by scan time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">TimeIndex</td>
 </tr>
 </tbody>
 </table>

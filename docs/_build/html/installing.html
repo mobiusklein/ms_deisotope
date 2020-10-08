@@ -14,7 +14,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="ms_deisotope Quickstart" href="Quickstart.html" />
@@ -73,6 +75,20 @@ let us know!</p>
 <p>Once you have all of these dependencies installed, running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></code> should take
 care of the rest. If you want to profile the C components, the <code class="docutils literal notranslate"><span class="pre">--include-diagonistics</span></code> will enable
 profiling hooks.</p>
+</div>
+<div class="section" id="installing-from-pypi">
+<h2>Installing From PyPI<a class="headerlink" href="#installing-from-pypi" title="Permalink to this headline">¶</a></h2>
+<p>The Python Package Index includes source distributions for <code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope</span></code> that work with Python 2.7
+and Python 3. Wheels are available for newer version of Python on Windows where C compilers are less common.</p>
+<p>To make sure a source distribution build includes C extensions, you must have <code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code>, <code class="xref py py-mod docutils literal notranslate"><span class="pre">brainpy</span></code>
+(<code class="docutils literal notranslate"><span class="pre">brain-isotopic-distribution</span></code>) and <code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_peak_picker</span></code> compiled and installed first so that their header
+files are available.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install numpy
+pip install -v brain-isotopic-distribution ms_peak_picker
+pip install -v ms_deisotope
+</pre></div>
+</div>
+<p>PEP 517/518 should simplify this process, and this is under active investigation.</p>
 </div>
 </div>
 
