@@ -1,7 +1,10 @@
 import unittest
+import pickle
 
 import numpy as np
 
+
+from ms_deisotope import peak_set as module
 
 def make_peak_set_test_suite(peak_set_cls, peak_cls):
 
@@ -30,6 +33,21 @@ def make_peak_set_test_suite(peak_set_cls, peak_cls):
             for xi in np.arange(1000, 1200, 0.01):
                 for p in ps.all_peaks_for(xi):
                     assert abs((xi - p.neutral_mass) / p.neutral_mass) < 1e-5
+
+        if module.DeconvolutedPeakSet == peak_set_cls:
+
+            def test_pickle(self):
+                x = np.arange(1000, 1200, 0.5)
+                y = np.ones_like(x)
+
+                peaks = [peak_cls(x[i], y[i], 1, 1, None, 0) for i in range(len(x))]
+                ps = peak_set_cls(peaks)
+                ps.reindex()
+
+                reloaded = pickle.loads(pickle.dumps(ps, -1))
+                assert ps == reloaded
+                assert ps._mz_ordered == reloaded._mz_ordered
+
 
     return TestDeconvolutedPeakSet
 

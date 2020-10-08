@@ -32,6 +32,8 @@ cdef class LCMSFeatureSetFit(object):
     cpdef bint _lt(self, LCMSFeatureSetFit other)
     cpdef bint _gt(self, LCMSFeatureSetFit other)
 
+    cpdef int count_null_features(self)
+    cpdef bint has_multiple_real_features(self)
 
     @staticmethod
     cdef LCMSFeatureSetFit _create(list features, TheoreticalIsotopicPattern theoretical,

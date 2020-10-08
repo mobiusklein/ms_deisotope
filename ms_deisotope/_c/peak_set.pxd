@@ -63,6 +63,11 @@ cdef class DeconvolutedPeak(PeakBase):
         double mz, Envelope envelope)
 
 
+cdef class IonMobilityDeconvolutedPeak(DeconvolutedPeak):
+    cdef:
+        public double drift_time
+
+
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
     cdef:
         public object solution

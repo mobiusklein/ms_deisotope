@@ -9,6 +9,12 @@ COM API and to register and create COM wrapper modules on demand.
 
 The public interface of this module should be identical to
 :mod:`ms_deisotope.data_source.thermo_raw_net`.
+
+.. note::
+    This interface was largely based upon the APIs that ProteoWizard used, both
+    in order to understand how the Thermo libraries really worked, and to maintain
+    parity with it.
+
 '''
 # pragma: no cover
 
@@ -27,12 +33,16 @@ from ms_deisotope.data_source.common import (
     ActivationInformation, IsolationWindow,
     ScanAcquisitionInformation, ScanEventInformation, ScanWindow,
     MultipleActivationInformation)
-from ms_deisotope.data_source.metadata.activation import (
-    supplemental_term_map, dissociation_methods_map)
+
 from ms_deisotope.data_source._thermo_helper import (
     _RawFileMetadataLoader, analyzer_map,
     FilterString, _id_template, _InstrumentMethod,
     _make_id, ThermoRawScanPtr)
+
+from ms_deisotope.data_source.metadata.activation import (
+    supplemental_term_map, dissociation_methods_map)
+from ms_deisotope.data_source.metadata.sample import Sample
+from ms_deisotope.data_source.metadata.scan_traits import FAIMS_compensation_voltage
 
 try:
     from ms_deisotope.data_source._vendor.MSFileReader import (  # pylint: disable=unused-import
@@ -356,7 +366,10 @@ class ThermoRawDataInterface(ScanDataSource):
             return None
 
     def _trailer_values(self, scan):
+        if scan.trailer_values is not None:
+            return scan.trailer_values
         trailer_extras = self._source.GetTrailerExtraForScanNum(scan.scan_number)
+        scan.trailer_values = trailer_extras
         return trailer_extras
 
     def _acquisition_information(self, scan):
@@ -367,6 +380,9 @@ class ThermoRawDataInterface(ScanDataSource):
             'preset scan configuration': event,
             'filter string': fline,
         }
+        cv = fline.get("compensation_voltage")
+        if cv is not None:
+            traits[FAIMS_compensation_voltage] = cv
         event = ScanEventInformation(
             self._scan_time(scan),
             injection_time=unitfloat(trailer_extras.get(
@@ -425,6 +441,29 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
 
     def _get_instrument_serial_number(self):
         return self._source.GetInstSerialNumber()
+
+    def samples(self):
+        """Describe the sample(s) used to generate the mass spectrometry
+        data contained in this file.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Sample`
+        """
+        result = []
+        si = self._source
+        sample = Sample(si.GetSeqRowSampleID() or 'sample_1')
+        sample.name = si.GetSeqRowSampleName() or si.GetSeqRowSampleID()
+        if si.GetSeqRowSampleVolume():
+            sample.parameters['sample volume'] = si.GetSeqRowSampleVolume()
+        if si.GetSeqRowSampleWeight():
+            sample.parameters['sample mass'] = si.GetSeqRowSampleWeight()
+        if si.GetSeqRowVial():
+            sample.parameters['sample vial'] = si.GetSeqRowVial()
+        if si.GetSeqRowBarcode():
+            sample.parameters['sample barcode'] = si.GetSeqRowBarcode()
+        result.append(sample)
+        return result
 
     def _parse_method(self):
         return _InstrumentMethod(self._source.GetInstMethod())
@@ -490,6 +529,10 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         self.initialize_scan_cache()
 
     def _scan_time_to_scan_number(self, scan_time):
+        if scan_time < self._first_scan_time:
+            scan_time = self._first_scan_time
+        elif scan_time > self._last_scan_time:
+            scan_time = self._last_scan_time
         scan_number = self._source.ScanNumFromRT(scan_time)
         return scan_number
 

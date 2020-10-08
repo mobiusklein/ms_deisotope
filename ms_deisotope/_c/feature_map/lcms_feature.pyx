@@ -26,7 +26,7 @@ cdef object _zeros = np.zeros
 cdef double INF = float("inf")
 
 
-cdef class LCMSFeatureTreeList(object):  
+cdef class LCMSFeatureTreeList(object):
     def __init__(self, roots=None):
         if roots is None:
             roots = []
@@ -318,7 +318,7 @@ cdef class LCMSFeatureTreeNode(LCMSFeatureTreeNodeBase):
             return self._ne(other)
         else:
             return NotImplemented
-    
+
     def __repr__(self):
         return "%s(%f, %0.4f %s|%d)" % (
             self.__class__.__name__,
@@ -336,6 +336,9 @@ cdef class FeatureBase(object):
 
     cdef double get_mz(self):
         return 0.0
+
+    cdef double get_neutral_mass(self):
+        return self.get_mz()
 
     cdef double get_start_time(self):
         return 0.0
@@ -517,6 +520,9 @@ cdef class LCMSFeature(FeatureBase):
             self_start_time <= other_end_time and self_end_time >= other_end_time))
         return cond
 
+    cpdef bint spans_in_time(self, double time):
+        return self.get_start_time() <= time <= self.get_end_time()
+
     def as_arrays(self):
         rts = np.array(
             [node.time for node in self.nodes], dtype=np.float64)
@@ -539,12 +545,22 @@ cdef class LCMSFeature(FeatureBase):
             i += 1
         return LCMSFeature(self.nodes[:i]), LCMSFeature(self.nodes[i:])
 
-    def split_sparse(self, delta_rt=1.):
+    cpdef list split_sparse(self, double delta_rt=1.):
+        cdef:
+            list chunks, current_chunk
+            double last_rt
+            LCMSFeatureTreeNode node
+            size_t i, n
+
         chunks = []
         current_chunk = []
-        last_rt = self.nodes[0].time
+        n = self.get_size()
+        if n == 0:
+            return chunks
 
-        for node in self.nodes:
+        last_rt = self.getitem(0).time
+        for i in range(n):
+            node = self.getitem(i)
             if (node.time - last_rt) > delta_rt:
                 x = self._copy_chunk(current_chunk)
 
@@ -559,12 +575,6 @@ cdef class LCMSFeature(FeatureBase):
         chunks.append(x)
         for chunk in chunks:
             chunk.created_at = self.created_at
-
-        for member in chunks:
-            for other in chunks:
-                if member == other:
-                    continue
-                assert not member.overlaps_in_time(other)
 
         return chunks
 
@@ -582,7 +592,7 @@ cdef class LCMSFeature(FeatureBase):
         self.nodes = LCMSFeatureTreeList(self.nodes[:i])
         self._invalidate()
 
-    def clone(self, deep=False, cls=None):
+    cpdef LCMSFeature clone(self, deep=False, cls=None):
         if cls is None:
             cls = self.__class__
         c = cls(self.nodes.clone(deep=deep), list(self.adducts), list(self.used_as_adduct))
@@ -723,7 +733,7 @@ cdef class FeatureSetIterator(object):
 
         self.init_indices()
         self.last_time_seen = -1
-    
+
     cdef void _initialize(self, list features):
         cdef:
             size_t i, n
@@ -776,7 +786,7 @@ cdef class FeatureSetIterator(object):
             if feature is None or isinstance(feature, EmptyFeature):
                 continue
             p = <TheoreticalPeak>PyList_GET_ITEM(theoretical_distribution, i)
-            
+
             passed_threshold = p.intensity > detection_threshold
 
             time = feature.get_start_time()
@@ -812,7 +822,7 @@ cdef class FeatureSetIterator(object):
             else:
                 ix = 0
             self.index_list[i] = ix
-    
+
     cpdef double get_next_time(self):
         cdef:
             double time, ix_time
@@ -833,7 +843,7 @@ cdef class FeatureSetIterator(object):
             return -1
         else:
             return time
-    
+
     cpdef bint has_more(self):
         cdef:
             size_t j, i, n, ix
@@ -855,7 +865,7 @@ cdef class FeatureSetIterator(object):
             if done or at_end_time:
                 j += 1
         return j != n
-    
+
     cdef inline size_t get_size(self):
         return PyList_GET_SIZE(self.features)
 
@@ -902,7 +912,7 @@ cdef class FeatureSetIterator(object):
     @property
     def current_time(self):
         return self.last_time_seen
-    
+
     cpdef double get_current_time(self):
         return self.last_time_seen
 
@@ -924,7 +934,7 @@ cdef class FeatureSetIterator(object):
         if peaks is None:
             raise StopIteration()
         return peaks
-    
+
     def __iter__(self):
         return self
 

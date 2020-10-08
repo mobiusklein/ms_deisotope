@@ -24,6 +24,8 @@ def extract_intervals(scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
     intervals = []
     for scan, products in scan_iterator:
         for product in products:
+            if product.precursor_information is None:
+                continue
             intervals.append(BoundingBox(
                 Interval(max(0, product.precursor_information.mz - mz_lower),
                          product.precursor_information.mz + mz_higher),

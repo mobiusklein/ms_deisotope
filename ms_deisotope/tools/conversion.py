@@ -13,7 +13,7 @@ from ms_deisotope.data_source._compression import GzipFile
 from ms_deisotope.data_source.metadata import activation as activation_module, data_transformation
 from ms_deisotope.output import MzMLSerializer, MGFSerializer
 
-from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook
+from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook, progress
 
 
 @click.group()
@@ -49,7 +49,7 @@ def to_mgf(reader, outstream, msn_filters=None):
         n_spectra = len(reader)
     except TypeError:
         n_spectra = None
-    progbar = click.progressbar(
+    progbar = progress(
         reader,
         label="Processed Spectra", length=n_spectra,
         item_show_func=lambda x: str(x.id) if x else '')
@@ -62,22 +62,31 @@ def to_mgf(reader, outstream, msn_filters=None):
             if scan.peak_set is None:
                 scan.pick_peaks()
             writer.save_scan(scan)
+    outstream.flush()
 
 
 @ms_conversion.command('mgf', short_help="Convert a mass spectrometry data file to MGF")
 @click.argument("source")
-@click.argument("output", type=click.File(mode='w'))
+@click.argument("output", type=click.Path(writable=True))
+@click.option("-z", "--compress", is_flag=True, help=("Compress the output file using gzip"))
 @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
-def mgf(source, output, msn_filters=None):
+def mgf(source, output, compress=False, msn_filters=None):
     """Convert a mass spectrometry data file to MGF. MGF can only represent centroid spectra
     and generally does not contain any MS1 information.
     """
+    if compress:
+        if not output.endswith(".gz") and output != '-':
+            output += '.gz'
+        stream = click.open_file(output, 'wb')
+        stream = GzipFile(fileobj=stream, mode='wb')
+    else:
+        stream = click.open_file(output, 'wb')
     reader = ms_deisotope.MSFileLoader(source)
-    to_mgf(reader, output, msn_filters=msn_filters)
+    to_mgf(reader, stream, msn_filters=msn_filters)
 
 
-def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=None, default_activation=None,
-            correct_precursor_mz=False, write_index=True):
+def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
+            default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -92,6 +101,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
         The output stream to write mzML to.
     pick_peaks : bool, optional
         Whether to centroid profile spectra (the default is False)
+    reprofile: bool, optional
+        Whether to reprofile spectra from their centroids (the default is False)
     ms1_filters : list, optional
         An optional list of strings or :class:`~.ScanFilterBase` instances which will be
         used to transform the m/z and intensity arrays of MS1 spectra before they are further
@@ -113,15 +124,19 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
         msn_filters = []
     reader.make_iterator(grouped=True)
     writer = MzMLSerializer(outstream, len(
-        reader), deconvoluted=False, build_extra_index=write_index)
+        reader), deconvoluted=False, build_extra_index=write_index,
+        include_software_entry=update_metadata)
     writer.copy_metadata_from(reader)
-    method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
-    if pick_peaks:
-        method.add('MS:1000035')
-    if correct_precursor_mz:
-        method.add('MS:1000780')
-    method.add('MS:1000544')
-    writer.add_data_processing(method)
+    if update_metadata:
+        method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
+        if pick_peaks:
+            method.add('MS:1000035')
+        if correct_precursor_mz:
+            method.add('MS:1000780')
+        if reprofile:
+            method.add('MS:1000784')
+        method.add('MS:1000544')
+        writer.add_data_processing(method)
     if default_activation is not None:
         if isinstance(default_activation, basestring):
             default_activation = activation_module.ActivationInformation(
@@ -139,8 +154,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
             pass
         writer.add_file_contents("centroid spectrum")
     n_spectra = len(reader)
-    progbar = click.progressbar(
-        label="Loading Spectra", length=n_spectra,
+    progbar = progress(
+        label="Processed Spectra", length=n_spectra,
         item_show_func=lambda x: str(x.precursor.id if x.precursor else
                                      x.products[0].id) if x else '')
     with progbar:
@@ -149,6 +164,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
             progbar.update((bunch.precursor is not None) + len(bunch.products))
             discard_peaks = False
             if bunch.precursor is not None:
+                if (reprofile):
+                    bunch = bunch._replace(precursor=bunch.precursor.reprofile())
                 if ms1_filters:
                     bunch = bunch._replace(precursor=bunch.precursor.transform(ms1_filters))
                 if (pick_peaks or not bunch.precursor.is_profile):
@@ -160,6 +177,8 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
                             discard_peaks = True
 
             for i, product in enumerate(bunch.products):
+                # if reprofile:
+                #     product = bunch.products[i] = product.reprofile()
                 if msn_filters:
                     product = bunch.products[i] = product.transform(msn_filters)
                 if pick_peaks or not product.is_profile:
@@ -181,30 +200,42 @@ def to_mzml(reader, outstream, pick_peaks=False, ms1_filters=None, msn_filters=N
 @click.option("-r", "--ms1-filter", "ms1_filters", multiple=True, type=parse_filter)
 @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
 @click.option("-p", "--pick-peaks", is_flag=True, help=("Enable peak picking, centroiding profile data"))
+@click.option("-f", "--reprofile", is_flag=True, help=(
+    "Enable reprofiling, converting all MS1 spectra into smoothed profile data"))
 @click.option("-z", "--compress", is_flag=True, help=("Compress the output file using gzip"))
 @click.option("-c", "--correct-precursor-mz", is_flag=True, help=(
     "Adjust the precursor m/z of each MSn scan to the nearest peak m/z in the precursor"))
-def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, compress=False,
-         correct_precursor_mz=False):
+@click.option("--update-metadata/--no-update-metadata", default=True, help=(
+    "Whether or not to add the conversion"
+    " program's metadata to the mzML file."))
+def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False, compress=False,
+         correct_precursor_mz=False, update_metadata=True):
     """Convert `source` into mzML format written to `output`, applying a collection of optional data
     transformations along the way.
     """
     reader = ms_deisotope.MSFileLoader(source)
+    is_a_tty = False
     if compress:
-        if not output.endswith(".gz"):
+        if not output.endswith(".gz") and output != '-':
             output += '.gz'
         stream = click.open_file(output, 'wb')
         stream = GzipFile(fileobj=stream, mode='wb')
     else:
         stream = click.open_file(output, 'wb')
-    if stream.isatty():
+
+    try:
+        is_a_tty = stream.isatty()
+    except AttributeError: # Not all file-like objects have this method...
+        if output == "-":
+            is_a_tty = True
+    if is_a_tty:
         write_index = False
     else:
         write_index = True
     with stream:
-        to_mzml(reader, stream, pick_peaks=pick_peaks, ms1_filters=ms1_filters,
+        to_mzml(reader, stream, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
-                write_index=write_index)
+                write_index=write_index, update_metadata=update_metadata)
 
 
 if is_debug_mode():

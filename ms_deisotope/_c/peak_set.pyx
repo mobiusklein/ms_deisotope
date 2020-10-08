@@ -422,7 +422,7 @@ cdef class DeconvolutedPeak(PeakBase):
             return not (self._eq(other))
 
     def __repr__(self):
-        return ("DeconvolutedPeak(a_to_a2_ratio={self.a_to_a2_ratio}, area={self.area}, "
+        return ("{self.__class__.__name__}(a_to_a2_ratio={self.a_to_a2_ratio}, area={self.area}, "
             "average_mass={self.average_mass}, charge={self.charge}, chosen_for_msms={self.chosen_for_msms}, "
             "envelope={self.envelope}, full_width_at_half_max={self.full_width_at_half_max}, index={self.index}, "
             "intensity={self.intensity}, most_abundant_mass={self.most_abundant_mass}, mz={self.mz}, "
@@ -450,6 +450,48 @@ cdef class DeconvolutedPeak(PeakBase):
         inst.area = 0
 
         return inst
+
+
+cdef class IonMobilityDeconvolutedPeak(DeconvolutedPeak):
+    def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
+                 a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0, score=0,
+                 envelope=(), mz=0, fit=None, chosen_for_msms=False, area=0, drift_time=0):
+        super(IonMobilityDeconvolutedPeak, self).__init__(
+            neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
+            a_to_a2_ratio, most_abundant_mass, average_mass, score,
+            envelope, mz, fit, chosen_for_msms, area)
+        self.drift_time = drift_time
+
+    cpdef PeakBase clone(self):
+        return IonMobilityDeconvolutedPeak(
+            self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
+            self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
+            self.most_abundant_mass, self.average_mass, self.score,
+            self.envelope, self.mz, self.fit, self.chosen_for_msms, self.area,
+            self.drift_time)
+
+    def __reduce__(self):
+        return IonMobilityDeconvolutedPeak, (
+            self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
+            self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
+            self.most_abundant_mass, self.average_mass, self.score,
+            self.envelope, self.mz, self.fit, self.chosen_for_msms, self.area,
+            self.drift_time)
+
+    cpdef bint _eq(self, DeconvolutedPeak other):
+        return (abs(self.neutral_mass - other.neutral_mass) < epsilon) and (
+            abs(self.intensity - other.intensity) < epsilon) and (
+            self.charge == other.charge) and (
+            abs(self.score - other.score) < epsilon) and (
+            abs(self.drift_time - other.drift_time) < epsilon)
+
+    def __repr__(self):
+        return ("{self.__class__.__name__}(a_to_a2_ratio={self.a_to_a2_ratio}, area={self.area}, "
+            "average_mass={self.average_mass}, charge={self.charge}, chosen_for_msms={self.chosen_for_msms}, "
+            "envelope={self.envelope}, full_width_at_half_max={self.full_width_at_half_max}, index={self.index}, "
+            "intensity={self.intensity}, most_abundant_mass={self.most_abundant_mass}, mz={self.mz}, "
+            "neutral_mass={self.neutral_mass}, score={self.score}, signal_to_noise={self.signal_to_noise},"
+            "drift_time={self.drift_time})").format(self=self)
 
 
 cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
@@ -1094,6 +1136,17 @@ cdef class DeconvolutedPeakSetIndexed(DeconvolutedPeakSet):
 
     def __dealloc__(self):
         self._release_buffers()
+
+    def __reduce__(self):
+        return self.__class__, (self.peaks, ), self.__getstate__()
+
+    def __getstate__(self):
+        d = {"indexed": self.indexed}
+        return d
+
+    def __setstate__(self, d):
+        if d.get("indexed", False):
+            self.reindex()
 
     def _release_buffers(self):
         if self.neutral_mass_array != NULL:

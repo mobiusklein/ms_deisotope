@@ -1,6 +1,7 @@
 '''A collection of little command line utilities for inspecting mass
 spectrum data.
 '''
+import io
 import os
 import math
 
@@ -25,8 +26,8 @@ from ms_deisotope.data_source.metadata.file_information import SourceFile
 
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
-from ms_deisotope.tools import conversion, draw
-from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook
+from ms_deisotope.tools import conversion, draw, maintenance
+from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook, spinner
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -52,10 +53,10 @@ def describe(path, diagnostics=False):
     try:
         sf = SourceFile.from_path(path)
     except IOError:
-        click.echo("Could not open", err=True)
+        raise click.Abort("Could not open file \"%s\"" % (path, ), err=True)
+
     if sf.file_format is None:
-        click.echo("It doesn't appear to be a mass spectrometry data file")
-        return -1
+        raise click.Abort("\"%s\" doesn't appear to be a mass spectrometry data file" % (path, ))
     click.echo("File Format: %s" % (sf.file_format, ))
     click.echo("ID Format: %s" % (sf.id_format, ))
     reader = MSFileLoader(path)
@@ -154,6 +155,7 @@ def byte_index(paths):
     Supported Formats: mzML, mzXML
     '''
     for path in paths:
+        click.echo("Indexing %s" % (path, ))
         reader = ms_deisotope.MSFileLoader(path, use_index=False)
         try:
             fn = reader.prebuild_byte_offset_file
@@ -175,6 +177,7 @@ def metadata_index(paths, processes=4):
     scans, as well as other details. See :class:`~.ExtendedScanIndex` for more information
     '''
     for path in paths:
+        click.echo("Indexing %s" % (path, ))
         reader = MSFileLoader(path)
         try:
             fn = reader.prebuild_byte_offset_file
@@ -201,8 +204,18 @@ def metadata_index(paths, processes=4):
         else:
             index = quick_index.ExtendedScanIndex()
             reader.reset()
-            for bunch in reader:
-                index.add_scan_bunch(bunch)
+            try:
+                n = len(reader)
+                progbar = click.progressbar(label='Building Index', length=n)
+            except TypeError:
+                progbar = spinner(title="Building Index")
+            with progbar:
+                for bunch in reader.make_iterator(grouped=True):
+                    i = 0
+                    i += bunch.precursor is not None
+                    i += len(bunch.products)
+                    index.add_scan_bunch(bunch)
+                    progbar.update(i)
 
         name = path
         index_file_name = index.index_file_name(name)
@@ -275,10 +288,20 @@ def _ensure_metadata_index(path):
         click.secho("Building Index For %s" % (path, ), fg='yellow', err=True)
         index = quick_index.ExtendedScanIndex()
         reader.reset()
-        for bunch in reader:
-            index.add_scan_bunch(bunch)
+        try:
+            n = len(reader)
+            progbar = click.progressbar(label='Building Index', length=n)
+        except TypeError:
+            progbar = spinner(title="Building Index")
+        with progbar:
+            for bunch in reader.make_iterator(grouped=True):
+                i = 0
+                i += bunch.precursor is not None
+                i += len(bunch.products)
+                index.add_scan_bunch(bunch)
+                progbar.update(i)
         reader.reset()
-        with open(index_file_name, 'w') as fh:
+        with open(index_file_name, 'wt') as fh:
             index.serialize(fh)
     else:
         with open(index_file_name, 'rt') as fh:
@@ -372,12 +395,15 @@ def precursor_clustering(path, grouping_error=2e-5):
 @click.option("-t", "--similarity-threshold", "similarity_thresholds", multiple=True, type=float)
 @click.option("-o", "--output", "output_path", type=click.Path(writable=True, file_okay=True, dir_okay=False),
               required=False)
+@click.option("-c", "--cache-size", type=int, default=2**10, help=(
+    "The number of scans to cache in memory when not using --in-memory. If you are clustering multiple "
+    "files, this number will be apply to each file separately."))
 @click.option("-M", "--in-memory", is_flag=True, default=False, help=(
     "Whether to load the entire dataset into memory for better performance"))
 @click.option("-D", "--deconvoluted", is_flag=True, default=False, help=(
     "Whether to assume the spectrum is deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
-                        in_memory=False, deconvoluted=False):
+                        in_memory=False, deconvoluted=False, cache_size=2**10):
     '''Cluster spectra by precursor mass and cosine similarity.
 
     Spectrum clusters are written out to a text file recording
@@ -408,7 +434,11 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                            item_show_func=lambda x: str(x) if x else '') as progbar:
         for reader, index in key_seqs:
             if not in_memory:
-                proxy_context = ScanProxyContext(reader)
+                if not reader.has_fast_random_access:
+                    click.secho(
+                        "%s does not have fast random access, scan fetching may be slow!" % (
+                            reader, ), fg='yellow')
+                proxy_context = ScanProxyContext(reader, cache_size=cache_size)
                 pinfo_map = {
                     pinfo.product_scan_id: pinfo for pinfo in
                     index.get_precursor_information()
@@ -420,13 +450,32 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                     scan.precursor_information = pinfo_map[i]
                     msn_scans.append(scan)
             else:
-                for i in index.msn_ids:
-                    progbar.current_item = i
-                    progbar.update(1)
-                    scan = reader.get_scan_by_id(i)
-                    if scan.peak_set is None and not deconvoluted:
-                        scan.pick_peaks()
-                    msn_scans.append(scan)
+                if reader.has_fast_random_access:
+                    # We have fast random access so we can just loop over the index and pull out
+                    # the MSn scans directly without completely traversing the file.
+                    for i in index.msn_ids:
+                        progbar.current_item = i
+                        progbar.update(1)
+                        scan = reader.get_scan_by_id(i)
+                        if scan.peak_set is None and not deconvoluted:
+                            scan = scan.pick_peaks().pack()
+                        msn_scans.append(scan)
+                else:
+                    # If we don't  have fast random access, it's better just to loop over the file,
+                    # and absorb the cost of parsing the MS1 scans
+                    reader.reset()
+                    reader.make_iterator(grouped=False)
+                    for scan in reader:
+                        if scan.ms_level != 1:
+                            progbar.current_item = scan.id
+                            progbar.update(1)
+                            if scan.peak_set is None and not deconvoluted:
+                                scan = scan.pick_peaks().pack(bind=True)
+                            msn_scans.append(scan)
+                # Dispose of the state that is no longer required.
+                reader.reset()
+                index.clear()
+
 
     click.echo("Begin Clustering", err=True)
     clusters = iterative_clustering(
@@ -475,11 +524,19 @@ if _compression.has_idzip:
         with click.open_file(output, mode='wb') as outfh:
             writer = _compression.GzipFile(fileobj=outfh, mode='wb')
             with click.open_file(path, 'rb') as infh:
+                try:
+                    infh_wrap = io.BufferedReader(infh)
+                    header = infh_wrap.peek(2)
+                    if _compression.starts_with_gz_magic(header):
+                        click.echo("Detected gzip input file", err=True)
+                        infh_wrap = _compression.GzipFile(fileobj=infh_wrap)
+                except AttributeError:
+                    infh_wrap = infh
                 buffer_size = _compression.WRITE_BUFFER_SIZE
-                chunk = infh.read(buffer_size)
+                chunk = infh_wrap.read(buffer_size)
                 while chunk:
                     writer.write(chunk)
-                    chunk = infh.read(buffer_size)
+                    chunk = infh_wrap.read(buffer_size)
             writer.close()
 
 
@@ -495,7 +552,7 @@ def _mount_group(group):
 _mount_group(conversion.ms_conversion)
 
 cli.add_command(draw.draw)
-
+cli.add_command(maintenance.maintenance)
 main = cli.main
 
 if is_debug_mode():

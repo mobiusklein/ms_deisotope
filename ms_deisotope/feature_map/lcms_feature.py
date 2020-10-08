@@ -121,6 +121,9 @@ class LCMSFeature(FeatureBase):
             self.start_time <= interval.end_time and self.end_time >= interval.end_time))
         return cond
 
+    def spans_in_time(self, time):
+        return self.start_time <= time <= self.end_time
+
     def as_arrays(self):
         rts = np.array(
             [node.time for node in self.nodes], dtype=np.float64)

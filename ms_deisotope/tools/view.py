@@ -1,10 +1,12 @@
+'''A Tk-based spectrum viewer that integrates :mod:`ms_deisotope`'s spectrum processing
+features.
+'''
 import sys
 import os
+
+import array
+
 import matplotlib as mpl
-try:
-    mpl.use('TkAgg')
-except Exception:
-    pass
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,)
@@ -27,10 +29,9 @@ except ImportError:
     import tkinter.filedialog as tkfiledialog
 
 import ms_deisotope
-from ms_deisotope.data_source import ScanBunch, Scan
+from ms_deisotope.data_source import ScanBunch
 from ms_deisotope.peak_set import EnvelopePair
-from ms_deisotope.plot import (draw_raw, draw_peaklist, annotate_isotopic_peaks, label_peaks)
-from ms_deisotope.output import ProcessedMzMLDeserializer
+from ms_deisotope.plot import (draw_raw, draw_peaklist, annotate_isotopic_peaks)
 
 averagine_label_map = {
     "peptide": ms_deisotope.peptide,
@@ -61,7 +62,31 @@ class Cursor(object):
         self.binding.set(text)
 
 
-class SpectrumViewer(object, ttk.Frame):
+class SummaryChromatogramBuilder(object):
+    def __init__(self):
+        self.tic = array.array('d')
+        self.bpc = array.array('d')
+        self.time = array.array('d')
+
+    def add(self, scan):
+        self.time.append(scan.scan_time)
+        self.tic.append(scan.arrays.intensity.sum())
+        self.bpc.append(scan.arrays.intensity.max())
+
+    def reset(self):
+        self.tic = array.array('d')
+        self.bpc = array.array('d')
+        self.time = array.array('d')
+
+
+if issubclass(ttk.Frame, object):
+    _BaseFrame = ttk.Frame
+else:
+    class _BaseFrame(object, ttk.Frame):
+        pass
+
+
+class SpectrumViewer(_BaseFrame):
     def __init__(self, master):
         ttk.Frame.__init__(self, master)
         self.root = master
@@ -140,6 +165,10 @@ class SpectrumViewer(object, ttk.Frame):
         if len(subset) > 0 and subset.max() > 0 and subset.min() < subset.max():
             most_intense = np.max(subset)
             y_cap = most_intense * 1.2
+            delta = max_mz - min_mz
+            if delta > 20:
+                max_mz += min(delta * 0.1, 100)
+                min_mz -= min(delta * 0.1, 100)
             self.mz_span = (min_mz, max_mz)
             self.axis.set_xlim(min_mz, max_mz)
             self.axis.set_ylim(0, y_cap)
@@ -151,12 +180,13 @@ class SpectrumViewer(object, ttk.Frame):
         if not self.scan:
             return
         arrays = self.scan.arrays
-        if (xmax - xmin) <= 1:
+        # Default zoom
+        if (xmax - xmin) <= .1:
             min_peak = 0
             max_peak = len(arrays[0]) - 1
             self.mz_span = None
             xmin, xmax = arrays.mz[min_peak], arrays.mz[max_peak]
-            xmin = max(min(xmin, 100), 0)
+            xmin = max(xmin - 100, 0)
         if (xmin - 50) < 0:
             if xmin > -20:
                 xmin = -20
@@ -210,12 +240,20 @@ class SpectrumViewer(object, ttk.Frame):
             averagine_value = averagine_label_map[averagine_value]
             truncate_to = 0.8
             scorer = ms_deisotope.MSDeconVFitter(10.)
+        max_charge_state = self.max_charge_state_var.get()
+        min_charge_state = self.min_charge_state_var.get()
+        if self.scan.ms_level > 1:
+            prec_charge = self.scan.precursor_information.charge
+            if prec_charge:
+                max_charge_state = prec_charge
+                if prec_charge < 0:
+                    min_charge_state = -abs(min_charge_state)
         self.scan.deconvolute(
             averagine=averagine_value,
             scorer=scorer,
             truncate_after=1 - 1e-4,
             incremental_truncation=truncate_to,
-            charge_range=(self.min_charge_state_var.get(), self.max_charge_state_var.get()))
+            charge_range=(min_charge_state, max_charge_state))
 
     def draw_plot(self, scan=None, children=None):
         if children is None:
@@ -226,26 +264,38 @@ class SpectrumViewer(object, ttk.Frame):
         self.scan = scan
         self.children_scans = children
         if scan.ms_level == 1:
-            if scan.arrays.mz.shape[0] > 1:
-                self.scan = scan.average(self.ms1_scan_averaging_var.get())
+            averaging_level = self.ms1_scan_averaging_var.get()
+            if averaging_level > 0:
+                print("Averaging")
+                if scan.arrays.mz.shape[0] > 1 :
+                    self.scan = scan = scan.average(averaging_level)
+            print("Denoising")
             self.scan = scan.denoise(4)
+        print("Processing Peaks")
         self._process_scan()
+        print("Begin Drawing")
         scan = self.scan
         if scan.is_profile:
+            print("Drawing Profile")
             draw_raw(*scan.arrays, ax=self.axis, color='black', lw=0.75)
-        self.axis.set_xlim(0, max(self.axis.get_xlim()))
-        draw_peaklist(
-            [i for p in scan.deconvoluted_peak_set for i in p.envelope],
-            ax=self.axis, alpha=0.6, lw=0.5, color='orange')
-        draw_peaklist(
-            [p.envelope[0] for p in scan.deconvoluted_peak_set if p.envelope[0].intensity > 0],
-            ax=self.axis, alpha=0.6, lw=1,
-            color='red')
-        draw_peaklist(
-            [EnvelopePair(p.mz, p.intensity / len(self.envelope))
-             for p in scan.deconvoluted_peak_set if not (p.envelope[0].intensity > 0)],
-            ax=self.axis, alpha=0.6, lw=0.5,
-            color='red', linestyle='--')
+            # lock in axis dimensions for profile spectra according to the raw profile
+            self.axis.set_xlim(0, max(self.axis.get_xlim()))
+        if scan.peak_set:
+            print("Drawing Centroids")
+            draw_peaklist(scan.peak_set, ax=self.axis, alpha=0.5, lw=1, color='grey', linestyle='--')
+            if not scan.is_profile:
+                # lock in axis dimensions for centroid spectra according to the picked peaks
+                self.axis.set_xlim(0, max(self.axis.get_xlim()) + 2)
+        if scan.deconvoluted_peak_set:
+            print("Drawing Isotopic Envelope")
+            draw_peaklist(
+                [i for p in scan.deconvoluted_peak_set for i in p.envelope],
+                ax=self.axis, alpha=0.6, lw=0.5, color='orange')
+            draw_peaklist(
+                [p.envelope[0] for p in scan.deconvoluted_peak_set if p.envelope[0].intensity > 0],
+                ax=self.axis, alpha=0.6, lw=1,
+                color='red')
+
         # draw isolation window and instrument reported precursor
         if children:
             ylim = scan.arrays.intensity.max()
@@ -343,7 +393,6 @@ class SpectrumViewer(object, ttk.Frame):
         self.max_charge_state['textvariable'] = self.max_charge_state_var
         self.max_charge_state.grid(row=0, column=10, padx=(1, 3))
 
-
     def configure_treeview(self):
         self.treeview = ttk.Treeview(self)
         self.treeview['columns'] = ["id", "time", 'ms_level', 'precursor_mz', 'precursor_charge', 'activation']
@@ -373,7 +422,6 @@ class SpectrumViewer(object, ttk.Frame):
             self.treeview.delete(*children)
 
     def _populate_range(self, start, stop):
-        print("populate range", start, stop)
         scans = []
         ended = False
         for i in range(start, stop):
@@ -392,8 +440,10 @@ class SpectrumViewer(object, ttk.Frame):
             else:
                 values.extend(['-', '-', '-'])
             scans.append(values)
+        i = start
         for values in scans:
             self.treeview.insert('', 'end', values=values, text=i)
+            i += 1
         if not ended:
             self.after(100, self._populate_range, stop, stop + 500)
 
@@ -402,19 +452,7 @@ class SpectrumViewer(object, ttk.Frame):
             self.clear_treeview()
         if self.reader is not None:
             self.reader.make_iterator(grouped=False)
-            for scan in self.reader:
-                if scan.index % 5000 == 0:
-                    print(scan)
-                i = scan.index
-                values = [scan.id, "%0.4f" % scan.scan_time, scan.ms_level]
-                if scan.ms_level > 1:
-                    values.extend([scan.precursor_information.mz, scan.precursor_information.charge,
-                                   str(scan.activation)])
-                else:
-                    values.extend(['-', '-', '-'])
-                self.treeview.insert('', 'end', values=values, text=i)
-            self.reader.reset()
-            # self.after(10, self._populate_range, 0, 500)
+            self.after(10, self._populate_range, 0, 500)
 
 
 def main():

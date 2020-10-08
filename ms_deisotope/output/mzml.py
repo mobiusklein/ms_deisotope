@@ -56,13 +56,14 @@ except ImportError:
     writer = None
 
 from ms_deisotope import version as lib_version
-from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
+from ms_deisotope.peak_set import (DeconvolutedPeak, DeconvolutedPeakSet, Envelope, IonMobilityDeconvolutedPeak)
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.qc.isolation import CoIsolation
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided,
     _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
 from ms_deisotope.data_source.metadata import data_transformation
+from ms_deisotope.data_source.metadata.software import (Software, software_name)
 from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.feature_map import ExtendedScanIndex
 
@@ -258,7 +259,7 @@ class MzMLSerializer(ScanSerializerBase):
 
     def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
-                 data_encoding=None):
+                 data_encoding=None, include_software_entry=True):
         if data_encoding is None:
             data_encoding = {
                 writer.MZ_ARRAY: np.float64,
@@ -296,6 +297,8 @@ class MzMLSerializer(ScanSerializerBase):
         self.indexer = None
         if build_extra_index:
             self.indexer = ExtendedScanIndex()
+        self._include_software_entry = include_software_entry
+        self._this_software = None
 
     def _init_sample(self, sample_name, **kwargs):
         self.sample_name = sample_name
@@ -540,7 +543,12 @@ class MzMLSerializer(ScanSerializerBase):
 
     def _create_software_list(self):
         software_list = []
-        ms_deisotope_entries = []
+        if self._include_software_entry:
+            if self._this_software is None:
+                self._this_software = this_software = self._make_software_entry()
+            else:
+                this_software = self._this_software
+            self.software_list.append(this_software)
         for sw in self.software_list:
             d = {
                 'id': sw.id,
@@ -551,10 +559,15 @@ class MzMLSerializer(ScanSerializerBase):
             else:
                 d['MS:1000799'] = sw.name
             d['params'] = list(sw.options.items())
-            if 'ms_deisotope' in str(sw.id):
-                ms_deisotope_entries.append(str(sw.id))
             software_list.append(d)
 
+        self.writer.software_list(software_list)
+
+    def _make_software_entry(self):
+        ms_deisotope_entries = []
+        for sw in self.software_list:
+            if 'ms_deisotope' in str(sw.id):
+                ms_deisotope_entries.append(str(sw.id))
         for i in range(1, 100):
             query = 'ms_deisotope_%d' % i
             if query in ms_deisotope_entries:
@@ -564,13 +577,8 @@ class MzMLSerializer(ScanSerializerBase):
                 break
         else:
             new_entry_id = 'ms_deisotope_%s' % str(uuid4())
-
-        software_list.append({
-            "id": new_entry_id,
-            'version': lib_version,
-            'ms_deisotope': "",
-        })
-        self.writer.software_list(software_list)
+        self._this_software = inst = Software("ms_deisotope", new_entry_id, lib_version)
+        return inst
 
     def _create_sample_list(self):
         self.writer.sample_list(self.sample_list)
@@ -579,7 +587,9 @@ class MzMLSerializer(ScanSerializerBase):
                                 baseline_reduction=True, additional_parameters=tuple(),
                                 software_id=None, data_processing_id=None):
         if software_id is None:
-            software_id = "ms_deisotope_1"
+            if self._this_software is None:
+                self._make_software_entry()
+            software_id = self._this_software.id
         if data_processing_id is None:
             data_processing_id = 'ms_deisotope_processing_%d' % len(
                 self.data_processing_list)
@@ -655,7 +665,8 @@ class MzMLSerializer(ScanSerializerBase):
         params.append({
             "name": "collision energy",
             "value": activation_information.energy,
-            "unitName": "electron volt"
+            "unit_name": "electronvolt",
+            'unit_accession': 'UO:0000266'
         })
         if activation_information.is_multiple_dissociation():
             energies = activation_information.energies[1:]
@@ -667,13 +678,15 @@ class MzMLSerializer(ScanSerializerBase):
                 params.append({
                     "name": "collision energy",
                     "value": energy,
-                    "unitName": "electron volt"
+                    "unit_name": "electronvolt",
+                    'unit_accession': 'UO:0000266'
                 })
             if supplemental_energy is not None:
                 params.append({
                     "name": 'supplemental collision energy',
                     "value": supplemental_energy,
-                    "unitName": "electron volt"
+                    "unit_name": "electronvolt",
+                    'unit_accession': 'UO:0000266'
                 })
 
         for key, val in activation_information.data.items():
@@ -721,19 +734,25 @@ class MzMLSerializer(ScanSerializerBase):
                         {"ms_deisotope:orphan": precursor_information.orphan}
                     ]
                 }
-                if precursor_information.coisolation:
-                    for p in precursor_information.coisolation:
-                        package['params'].append({
-                            "name": "ms_deisotope:coisolation",
-                            "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
-                        })
             else:
                 package = {
                     "mz": precursor_information.mz,
                     "intensity": precursor_information.intensity,
                     "charge": precursor_information.charge,
-                    "scan_id": precursor_information.precursor_scan_id
+                    "scan_id": precursor_information.precursor_scan_id,
+                    "params": []
                 }
+            # This implicitly captures ion mobility which is stored as an annotation key-value pair.
+            for key, value in precursor_information.annotations.items():
+                package['params'].append({
+                    key: value
+                })
+            if precursor_information.coisolation:
+                for p in precursor_information.coisolation:
+                    package['params'].append({
+                        "name": "ms_deisotope:coisolation",
+                        "value": "%f %f %d" % (p.neutral_mass, p.intensity, p.charge)
+                    })
         else:
             package['mz'] = None
             package["charge"] = None
@@ -761,6 +780,10 @@ class MzMLSerializer(ScanSerializerBase):
             envelope_array = envelopes_to_array(
                 [peak.envelope for peak in scan.deconvoluted_peak_set])
             extra_arrays.append(("isotopic envelopes array", envelope_array))
+            if score_array and isinstance(scan.deconvoluted_peak_set, IonMobilityDeconvolutedPeak):
+                extra_arrays.append(('mean drift time array', [
+                    peak.drift_time for peak in scan.deconvoluted_peak_set
+                ]))
         return extra_arrays
 
     def _get_annotations(self, scan):
@@ -917,14 +940,6 @@ class MzMLSerializer(ScanSerializerBase):
             scan_parameters.append({"name": "filter string", "value": filter_string})
         if acquisition_info is not None and len(acquisition_info) > 0:
             scan_event = acquisition_info[0]
-            if scan_event.has_ion_mobility():
-                scan_parameters.append({
-                    "name": "ion mobility drift time",
-                    "value": scan_event.drift_time,
-                    "unit_name": "millisecond",
-                    'unit_cv_ref': "UO",
-                    "unit_accession": 'UO:0000028'
-                })
             if scan_event.injection_time is not None:
                 scan_parameters.append({
                     "accession": 'MS:1000927', "value": scan_event.injection_time,
@@ -1040,9 +1055,60 @@ def deserialize_deconvoluted_peak_set(scan_dict):
         )
         peaks.append(peak)
     peaks = DeconvolutedPeakSet(peaks)
-    peaks._reindex()
+    peaks.reindex()
     return peaks
 
+
+def deserialize_deconvoluted_ion_mobility_peak_set(scan_dict):
+    envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    peaks = []
+    mz_array = scan_dict['m/z array']
+    intensity_array = scan_dict['intensity array']
+    charge_array = scan_dict['charge array']
+    score_array = scan_dict['deconvolution score array']
+    drift_time_array = scan_dict['mean drift time array']
+    n = len(scan_dict['m/z array'])
+    for i in range(n):
+        mz = mz_array[i]
+        charge = charge_array[i]
+        peak = IonMobilityDeconvolutedPeak(
+            neutral_mass(mz, charge), intensity_array[i], charge=charge, signal_to_noise=score_array[i],
+            index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
+            average_mass=0, score=score_array[i], envelope=envelopes[i], mz=mz, drift_time=drift_time_array[i],
+        )
+        peaks.append(peak)
+    peaks = DeconvolutedPeakSet(peaks)
+    peaks.reindex()
+    return peaks
+
+
+def deserialize_external_deconvoluted_peaks(scan_dict, fill_envelopes=True, averagine=None):
+    if averagine is None:
+        from ms_deisotope import peptide
+        averagine = peptide
+    peaks = []
+    mz_array = scan_dict['m/z array']
+    intensity_array = scan_dict['intensity array']
+    charge_array = scan_dict['charge array']
+    for i in range(len(mz_array)):
+        mz = mz_array[i]
+        charge = charge_array[i]
+        mass = neutral_mass(mz, charge)
+        intensity = intensity_array[i]
+        if fill_envelopes:
+            envelope = averagine.isotopic_cluster(mz, charge, truncate_after=0.8)
+            envelope = Envelope([(p.mz, p.intensity) for p in envelope.scale_raw(intensity)])
+        else:
+            envelope = Envelope([])
+        peak = DeconvolutedPeak(
+            mass, intensity, charge=charge, signal_to_noise=intensity,
+            index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
+            average_mass=0, score=intensity, envelope=envelope, mz=mz
+        )
+        peaks.append(peak)
+    peaks = DeconvolutedPeakSet(peaks)
+    peaks.reindex()
+    return peaks
 
 def deserialize_peak_set(scan_dict):
     mz_array = scan_dict['m/z array']
@@ -1092,6 +1158,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                     pass
                 self._build_scan_id_to_rt_cache()
 
+    def _dispose(self):
+        self._scan_id_to_rt.clear()
+        self.extended_index.clear()
+        super(ProcessedMzMLDeserializer, self)._dispose()
+
     def require_extended_index(self):
         if not self.has_extended_index():
             try:
@@ -1119,7 +1190,18 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
-        return deserialize_deconvoluted_peak_set(scan_dict)
+        try:
+            if "mean drift time array" in scan_dict:
+                return deserialize_deconvoluted_ion_mobility_peak_set(scan_dict)
+            return deserialize_deconvoluted_peak_set(scan_dict)
+        except KeyError as err:
+            if "charge array" in scan_dict and "isotopic envelopes array" not in scan_dict:
+                return self.deserialize_external_deconvoluted_peak_set(scan_dict)
+            else:
+                raise err
+
+    def deserialize_external_deconvoluted_peak_set(self, scan_dict):
+        return deserialize_external_deconvoluted_peaks(scan_dict)
 
     def deserialize_peak_set(self, scan_dict):
         return deserialize_peak_set(scan_dict)
@@ -1154,8 +1236,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         precursor = super(ProcessedMzMLDeserializer, self)._precursor_information(scan)
         if precursor is None:
             return None
-        pinfo_dict = self._get_selected_ion(scan)
-        coisolation_params = pinfo_dict.get("ms_deisotope:coisolation", [])
+        precursor.orphan = precursor.annotations.pop(
+            "ms_deisotope:orphan", None) == "true"
+        precursor.defaulted = precursor.annotations.pop(
+            "ms_deisotope:defaulted", None) == "true"
+        coisolation_params = precursor.annotations.pop("ms_deisotope:coisolation", [])
         if not isinstance(coisolation_params, list):
             coisolation_params = [coisolation_params]
         coisolation = []
@@ -1276,7 +1361,11 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
                     'precursor purity', 0)
         except KeyError:
             pass
-        if "isotopic envelopes array" in data:
+        if "m/z array" not in data:
+            warnings.warn("No m/z array found for scan %r" % (scan.id, ))
+            scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
+            scan.deconvoluted_peak_set = DeconvolutedPeakSet([])
+        elif "charge array" in data:
             scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
             scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
                 data)
@@ -1323,12 +1412,16 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
             precursor_scan_id = info['precursor_scan_id']
             product_scan_id = info['product_scan_id']
             orphan = info.get('orphan', False)
+            coisolation = info.get('coisolation', [])[:]
             defaulted = info.get('defaulted', False)
             pinfo = PrecursorInformation(
                 mz, intensity, charge, precursor_scan_id,
                 self, prec_neutral_mass, charge, intensity,
                 product_scan_id=product_scan_id, orphan=orphan,
+                coisolation=coisolation,
                 defaulted=defaulted)
+            if prec_neutral_mass is None or charge is None:
+                continue
             out.append(pinfo)
         return out
 
@@ -1356,29 +1449,27 @@ class ProcessedMzMLDeserializer(MzMLLoader, ScanDeserializerBase):
         return np.array(current)
 
     def msms_for(self, query_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
-        m = query_mass
-        w = query_mass * mass_error_tolerance
-        lo = m - w
-        hi = m + w
         out = []
-        for pinfo in self.precursor_information():
-            if lo <= pinfo.neutral_mass <= hi:
-                valid = True
-                product = None
-                if start_time is not None or end_time is not None:
-                    product = self.get_scan_header_by_id(pinfo.product_scan_id)
-                if start_time is not None and product.scan_time < start_time:
-                    valid = False
-                elif end_time is not None and product.scan_time > end_time:
-                    valid = False
-                if valid:
-                    out.append(pinfo)
+        pinfos = self.extended_index.find_msms_by_precursor_mass(
+            query_mass, mass_error_tolerance, bind=self)
+        for pinfo in pinfos:
+            valid = True
+            product = None
+            if start_time is not None or end_time is not None:
+                product = self.get_scan_header_by_id(pinfo.product_scan_id)
+            if start_time is not None and product.scan_time < start_time:
+                valid = False
+            elif end_time is not None and product.scan_time > end_time:
+                valid = False
+            if valid:
+                out.append(pinfo)
         return out
 
 
 try:
     has_c = True
     _deserialize_deconvoluted_peak_set = deserialize_deconvoluted_peak_set
-    from ms_deisotope._c.utils import deserialize_deconvoluted_peak_set
+    _deserialize_peak_set = deserialize_peak_set
+    from ms_deisotope._c.utils import deserialize_deconvoluted_peak_set, deserialize_peak_set
 except ImportError:
     has_c = False

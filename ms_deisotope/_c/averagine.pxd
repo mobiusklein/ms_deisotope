@@ -67,7 +67,7 @@ cdef class TheoreticalIsotopicPattern(object):
     cdef inline list get_processed_peaks(self)
 
     @cython.final
-    cpdef size_t _basepeak_index(self)
+    cpdef size_t basepeak_index(self)
 
     @cython.final
     cpdef list incremental_truncation(TheoreticalIsotopicPattern self, double threshold)

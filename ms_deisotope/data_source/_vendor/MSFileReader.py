@@ -106,6 +106,7 @@ _default_paths = [
 
 
 def _register_dll(search_paths=None):
+    from ms_deisotope.config import get_config
     global DLL_IS_LOADED
     if DLL_IS_LOADED:
         return True
@@ -113,6 +114,7 @@ def _register_dll(search_paths=None):
         search_paths = []
     search_paths = list(search_paths)
     search_paths.extend(_default_paths)
+    search_paths.extend(get_config().get('vendor_readers', {}).get('thermo-com', []))
     paths_yet_to_search = list(search_paths)
     for path in paths_yet_to_search:
         try:
@@ -263,18 +265,18 @@ class ThermoRawfile(object):
     @staticmethod
     def create_com_object():
         try:
-            log.debug("obj = CreateObject('MSFileReader.XRawfile')")
+            log.debug("Trying COM Name 'MSFileReader.XRawfile'")
             obj = CreateObject('MSFileReader.XRawfile')
         except Exception as e:
             log.debug(e)
             try:
-                log.debug("obj = CreateObject('XRawfile.XRawfile')")
+                log.debug("Trying COM Name ('XRawfile.XRawfile'")
                 obj = CreateObject('XRawfile.XRawfile')
             except Exception as e:
                 log.debug(e)
                 raise ImportError(
                     ('Please install the appropriate Thermo MSFileReader'
-                     'version depending of your Python version (32bits or 64bits)\n%r') % e)
+                     'version depending of your Python version (32 bit or 64 bit)\n%r') % e)
         return obj
 
     def __init__(self, filename, **kwargs):

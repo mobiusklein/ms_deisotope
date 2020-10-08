@@ -25,7 +25,7 @@ from .utils import logger, prepare_peaklist
 
 def deconvolute_peaks(peaklist, decon_config=None,
                       charge_range=(1, 8), error_tolerance=ERROR_TOLERANCE,
-                      priority_list=None, left_search_limit=3, right_search_limit=0,
+                      priority_list=None, left_search_limit=1, right_search_limit=0,
                       left_search_limit_for_priorities=None, right_search_limit_for_priorities=None,
                       verbose_priorities=False, verbose=False, charge_carrier=PROTON,
                       truncate_after=TRUNCATE_AFTER, iterations=MAX_ITERATION,
@@ -51,7 +51,7 @@ def deconvolute_peaks(peaklist, decon_config=None,
         Parameters to use to initialize the deconvoluter instance produced by
         ``deconvoluter_type``
     charge_range : tuple of integers, optional
-        The range of charge states to consider.
+        The range of charge states to consider. The range is inclusive.
     error_tolerance : float, optional
         PPM error tolerance to use to match experimental to theoretical peaks
     priority_list : list, optional
@@ -86,6 +86,14 @@ def deconvolute_peaks(peaklist, decon_config=None,
         theoretical charge states to consider for each peak.
     **kwargs
         Additional keywords included in ``decon_config``
+
+
+    Notes
+    -----
+    If speed is an issue, consider setting `use_quick_charge` :const:`True`. This will pre-screen charge
+    states that are are missing peaks supporting the :term:`monoisotopic peak` or the :term:`A+1 peak`.
+    Alternatively, you may set the charge range upper bound to something reasonable for your data, such
+    as the precursor ion's charge when considering a product ion spectrum.
 
     Returns
     -------

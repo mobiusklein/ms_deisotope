@@ -403,6 +403,11 @@ software_names = TermSet([
                  (u'Thermo Scientific PepFinder BioPharma analysis software.'),
                  'software',
                  [u'data processing software', u'software']),
+    SoftwareName(u'LPPtiger', u'MS:1003010',
+                 (u'Software for lipidome-specific prediction and identification'
+                  u'of oxidized phospholipids from LC-MS datasets.'),
+                 'software',
+                 [u'lipidomics analysis software', u'data processing software', u'small molecule analysis software', u'software', u'analysis software']),
     SoftwareName(u'Spectrum Mill for MassHunter Workstation', u'MS:1000687',
                  (u'Software for protein identification and characterization of'
                   u'complex protein digest mixtures.'),
@@ -609,6 +614,12 @@ software_names = TermSet([
                  (u'TOPP (The OpenMS proteomics pipeline) software.'),
                  'software',
                  [u'analysis software', u'data processing software', u'software']),
+    SoftwareName(u'MS-DIAL', u'MS:1003082',
+                 (u'Data processing software for untargeted metabolomics and'
+                  u'lipidomics that supports multiple instruments and MS'
+                  u'vendors.'),
+                 'software',
+                 [u'small molecule software', u'data processing software', u'analysis software', u'software']),
     SoftwareName(u'ProteoWizard software', u'MS:1000615',
                  (u'ProteoWizard software for data processing and analysis.'
                   u'Primarily developed by the labs of P. Malick and D. Tabb.'),
@@ -700,6 +711,23 @@ software_names = TermSet([
                  [u'analysis software', u'software']),
     SoftwareName(u'mzidLib', u'MS:1002237',
                  (u'A library of Java routines for manipulating mzIdentML files.'),
+                 'software',
+                 [u'analysis software', u'software']),
+    SoftwareName(u'i3tms', u'MS:1003013',
+                 (u'i3-tms search engine and data-analysis software.'),
+                 'software',
+                 [u'analysis software', u'software']),
+    SoftwareName(u'pFind', u'MS:1003011',
+                 (u'Sequence-tag-based search engine pFind.'),
+                 'software',
+                 [u'analysis software', u'software']),
+    SoftwareName(u'MSFragger', u'MS:1003014',
+                 (u'A database search-based peptide identification tool.'),
+                 'software',
+                 [u'analysis software', u'software']),
+    SoftwareName(u'Philosopher', u'MS:1003018',
+                 (u'General proteomics processing toolkit for shotgun'
+                  u'proteomics.'),
                  'software',
                  [u'analysis software', u'software']),
     SoftwareName(u'Pepitome', u'MS:1001588',
@@ -969,9 +997,7 @@ software_names = TermSet([
                  (u'Software used to predict, select, and optimize transitions'
                   u'as well as analyze the results of selected reaction'
                   u'monitoring runs developed and distributed by the MacCoss lab'
-                  u'at the University of Washington." [https://brendanx-uw1.gs.w'
-                  u'ashington.edu/labkey/wiki/home/software/Skyline/page.view?na'
-                  u'me=defaul'),
+                  u'at the University of Washington.'),
                  'software',
                  [u'SRM software', u'quantitation software name', u'software', u'quantification information']),
     SoftwareName(u'TIQAM', u'MS:1000923',
@@ -1091,6 +1117,10 @@ software_names = TermSet([
                  [u'TOPP software', u'analysis software', u'data processing software', u'software']),
     SoftwareName(u'TOPP IDFileConverter', u'MS:1002156',
                  (u'Converts identification engine file formats.'),
+                 'software',
+                 [u'TOPP software', u'analysis software', u'data processing software', u'software']),
+    SoftwareName(u'OpenPepXL', u'MS:1003023',
+                 (u'Cross-Linking MS search engine.'),
                  'software',
                  [u'TOPP software', u'analysis software', u'data processing software', u'software']),
     SoftwareName(u'TOPP PrecursorMassCorrector', u'MS:1002160',

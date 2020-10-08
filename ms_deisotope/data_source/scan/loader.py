@@ -2,18 +2,28 @@
 load data for :class:`~.Scan` objects.
 '''
 import abc
+import logging
+
 from weakref import WeakValueDictionary
+
+from six import string_types as basestring
 
 from ms_deisotope.utils import add_metaclass
 
 from ms_deisotope.data_source.metadata.file_information import FileInformation
-
+from ms_deisotope.data_source._compression import MaybeFastRandomAccess
 
 from .scan import Scan
 from .scan_iterator import (
     _SingleScanIteratorImpl,
     _GroupedScanIteratorImpl,
-    _FakeGroupedScanIteratorImpl)
+    _FakeGroupedScanIteratorImpl,
+    ITERATION_MODE_GROUPED,
+    ITERATION_MODE_SINGLE)
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 @add_metaclass(abc.ABCMeta)
@@ -252,6 +262,42 @@ class ScanDataSource(object):
     def _annotations(self, scan):
         return dict()
 
+    @property
+    def source_file_name(self):
+        """Return the name of the file that backs this data source, if available.
+
+        Returns
+        -------
+        :class:`str` or :const:`None`
+        """
+        try:
+            file_ = self.source_file
+        except AttributeError:
+            return None
+        if isinstance(file_, basestring):
+            return file_
+        try:
+            name = file_.name
+        except AttributeError:
+            return None
+        return name
+
+    def close(self):
+        """Close the underlying scan data stream, which may be a file or other
+        system resource.
+
+        A closed data source may not be able to serve data requests, but not all
+        :class:`ScanDataSource` implementations require the data stream be open
+        for all operations.
+        """
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, exc_value, traceback):
+        self.close()
+
 
 @add_metaclass(abc.ABCMeta)
 class ScanIterator(ScanDataSource):
@@ -259,9 +305,16 @@ class ScanIterator(ScanDataSource):
     with additional requirements that enable clients of the
     class to treat the object as an iterator over the underlying
     data file.
+
+    Attributes
+    ----------
+    iteration_mode: str
+        A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`
+        that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced
+        by iteration.
     """
 
-    iteration_mode = 'group'
+    iteration_mode = ITERATION_MODE_GROUPED
 
     def has_ms1_scans(self):
         '''Checks if this :class:`ScanDataSource` contains MS1 spectra.
@@ -314,6 +367,14 @@ class ScanIterator(ScanDataSource):
         '''
         raise NotImplementedError()
 
+    def _dispose(self):
+        extant = len(self.scan_cache)
+        if extant > 0:
+            logger.info("Disposing of %s with %d extant scans attached to it.", self, extant)
+            for _key, value in list(self.scan_cache.items()):
+                value.clear()
+        self.scan_cache.clear()
+
     @abc.abstractmethod
     def _make_default_iterator(self):
         '''Set up the default iterator for the :class:`ScanIterator`.
@@ -339,10 +400,10 @@ class ScanIterator(ScanDataSource):
 
         if grouped:
             self._producer = self._scan_group_iterator(iterator)
-            self.iteration_mode = 'group'
+            self.iteration_mode = ITERATION_MODE_GROUPED
         else:
             self._producer = self._single_scan_iterator(iterator)
-            self.iteration_mode = 'single'
+            self.iteration_mode = ITERATION_MODE_SINGLE
         return self
 
     def _make_cache_key(self, scan):
@@ -379,7 +440,7 @@ class ScanIterator(ScanDataSource):
         '''Initialize a cache which keeps track of which :class:`~.Scan`
         objects are still in memory using a :class:`weakref.WeakValueDictionary`.
 
-        When a scan is requested, if the scan object is found in the cahce, the
+        When a scan is requested, if the scan object is found in the cache, the
         existing object is returned rather than re-read from disk.
         '''
         self._scan_cache = WeakValueDictionary()
@@ -403,6 +464,26 @@ class RandomAccessScanSource(ScanIterator):
     random access to individual scans. This should be doable by unique
     identifier, sequential index, or by scan time.
     """
+
+    @property
+    def has_fast_random_access(self):
+        """Check whether the underlying data stream supports fast random access
+        or not.
+
+        Even if the file format supports random access, it may be impractical due
+        to overhead in parsing the underlying data stream, e.g. calling :meth:`gzip.GzipFile.seek`
+        can force the file to be decompressed from the *beginning of the file* on each call. This
+        property can be used to signal to the caller whether or not it should use a different
+        strategy.
+
+        Returns
+        -------
+        :class:`Constant`:
+            One of :data:`~.DefinitelyNotFastRandomAccess`, :data:`~.MaybeFastRandomAccess`, or
+            :data:`~.DefinitelyFastRandomAccess`. The first is a False-y value, the latter two
+            will evaluate to :const:`True`
+        """
+        return MaybeFastRandomAccess
 
     @abc.abstractmethod
     def get_scan_by_id(self, scan_id):
@@ -581,6 +662,50 @@ class RandomAccessScanSource(ScanIterator):
             n = len(self)
             i = n + i
         return self.get_scan_by_index(i)
+
+    @property
+    def time(self):
+        '''A indexer facade that lets you index and slice by scan time.
+
+        Returns
+        -------
+        TimeIndex
+        '''
+        return TimeIndex(self)
+
+
+class TimeIndex(object):
+    """A facade that translates ``[x]`` into
+    scan time access, and supports slicing over
+    a time range.
+
+    """
+    def __init__(self, scan_loader):
+        self.scan_loader = scan_loader
+
+    def is_sorted_by_time(self):
+        lo = 0
+        hi = len(self.scan_loader)
+
+        last = 0.0
+        for i in range(lo, hi):
+            current = self.scan_loader[i].scan_time
+            if last <= current:
+                last = current
+            else:
+                return False
+        return True
+
+    def __len__(self):
+        return len(self.scan_loader)
+
+    def __getitem__(self, time):
+        if isinstance(time, slice):
+            start_scan = self.scan_loader.get_scan_by_time(time.start)
+            end_scan = self.scan_loader.get_scan_by_time(time.stop)
+            return self.scan_loader[start_scan.index:end_scan.index]
+        else:
+            return self.scan_loader.get_scan_by_time(time)
 
 
 @add_metaclass(abc.ABCMeta)

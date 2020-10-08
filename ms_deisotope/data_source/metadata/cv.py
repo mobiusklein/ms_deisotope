@@ -249,21 +249,25 @@ def type_path(term, seed):  # pragma: no cover
     path = []
     i = 0
     steps = []
-    try:
-        steps.append(term.is_a.comment)
-    except AttributeError:
-        steps.extend(t.comment for t in term.is_a)
-    except KeyError:
-        pass
+    if not isinstance(term.is_a, (list, tuple)):
+        steps.append(term.is_a)
+    else:
+        steps.extend(t for t in term.is_a)
     while i < len(steps):
         step = steps[i]
         i += 1
-        path.append(step)
-        term = cv_psims[step]
         try:
-            steps.append(term.is_a.comment)
-        except AttributeError:
-            steps.extend(t.comment for t in term.is_a)
+            path.append(step.comment)
+            term = cv_psims[step.accession]
+        except AttributeError as err:
+            print(step, err)
+            path.append(step)
+            term = cv_psims[step]
+        try:
+            if not isinstance(term.is_a, (list, tuple)):
+                steps.append(term.is_a)
+            else:
+                steps.extend(t for t in term.is_a)
         except KeyError:
             continue
     return _unique_list(path)

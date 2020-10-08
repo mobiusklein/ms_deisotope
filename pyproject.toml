@@ -1,0 +1,8 @@
+[build-system]
+requires = ["setuptools",
+            "wheel",
+            "Cython",
+            "oldest-supported-numpy;  python_version>='3'",
+            "numpy==1.13.3; python_version=='2.7'",
+            "brain-isotopic-distribution",
+            "ms-peak-picker"]

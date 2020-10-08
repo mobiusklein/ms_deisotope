@@ -12,7 +12,8 @@ except ImportError:
 from .version import version
 
 from .averagine import (
-    Averagine, peptide, glycan, glycopeptide, heparin,
+    Averagine, AveragineCache,
+    peptide, glycan, glycopeptide, heparin,
     heparan_sulfate, permethylated_glycan,
     mass_charge_ratio, neutral_mass,
     calculate_mass, isotopic_shift)
@@ -22,9 +23,9 @@ from .deconvolution import (
     CompositionListPeakDependenceGraphDeconvoluter,
     deconvolute_peaks)
 from .scoring import MSDeconVFitter, PenalizedMSDeconVFitter, DistinctPatternFitter, IsotopicFitRecord
-from .peak_set import DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSolution
-from .processor import ScanProcessor
-from .data_source import MzMLLoader, MzXMLLoader, MSFileLoader
+from .peak_set import (DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSolution, decharge)
+from .processor import ScanProcessor, process
+from .data_source import (MzMLLoader, MzXMLLoader, MSFileLoader, MGFLoader)
 
 
 def get_include():
@@ -49,5 +50,22 @@ __all__ = [
     "MSDeconVFitter", "PenalizedMSDeconVFitter", "DistinctPatternFitter", "IsotopicFitRecord",
     "DeconvolutedPeak", "DeconvolutedPeakSet", "DeconvolutedPeakSolution",
     "MzMLLoader", "MzXMLLoader", "MSFileLoader", "ScanProcessor",
-    "deconvolute_peaks", 'version'
+    "deconvolute_peaks", 'version', "process", "decharge"
 ]
+
+
+try:
+    from ms_deisotope._c import deconvoluter_base as _cdeconvoluter_base
+    has_c = True
+    _has_c_error = None
+except ImportError as _has_c_error:
+    has_c = False
+
+
+def check_c_extensions():
+    if has_c:
+        print("C extensions appear to have imported successfully.")
+        return True
+    else:
+        print("Could not import deconvolution machinery: %r" % (_has_c_error, ))
+    return False

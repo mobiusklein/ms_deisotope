@@ -76,7 +76,8 @@ class SignatureIonDetector(object):
         peak_list = PeakSetMethods(peak_list)
         if peak_list.is_deconvoluted:
             for sig in self.signature_ions:
-                matches = peak_list.all_peaks_for(sig.mass, error_tolerance)
+                matches = peak_list.all_peaks_for(
+                    sig.neutral_mass, error_tolerance)
                 for match in matches:
                     if match.charge in sig.charge_states:
                         result.append((sig, match))
@@ -162,7 +163,7 @@ class SignatureIonExtractor(SignatureIonDetector):
         if peak_list.is_deconvoluted:
             for sig in self.signature_ions:
                 result[sig.name] = 0
-                matches = peak_list.all_peaks_for(sig.mass, error_tolerance)
+                matches = peak_list.all_peaks_for(sig.neutral_mass, error_tolerance)
                 for match in matches:
                     if match.charge in sig.charge_states:
                         result[sig.name] += match.intensity

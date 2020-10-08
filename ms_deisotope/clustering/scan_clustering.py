@@ -527,9 +527,7 @@ class ScanClusterBuilder(LogUtilsMixin):
         self = cls([], precursor_error_tolerance, minimum_similarity,
                    peak_getter, track_incremental_similarity)
         if sort:
-            if len(scans) > 100:
-                self.log("Sorting Scans By TIC")
-            scans = sorted(scans, key=self._get_tic, reverse=True)
+            scans = self._sort_by_tic(scans)
         if len(scans) > 100:
             self.log("Clustering %d Scans" % (len(scans), ))
         n = len(scans)
@@ -539,6 +537,20 @@ class ScanClusterBuilder(LogUtilsMixin):
                 self.log("... Handled %d Scans (%0.2f%%)" % (i, i * 100.0 / n))
             self.add_scan(scan)
         return self.clusters
+
+    def _sort_by_tic(self, scans):
+        should_log = len(scans) > 100
+        if should_log:
+            self.log("Sorting Scans By TIC")
+        augmented = []
+        n = len(scans)
+        for i, scan in enumerate(scans):
+            if i % 1000 == 0 and i > 0:
+                self.log("... Loaded TIC for %d Scans (%0.2f%%)" % (i, i * 100.0 / n))
+            augmented.append((self._get_tic(scan), scan))
+        augmented.sort(key=lambda x: x[0], reverse=True)
+        scans = [a[1] for a in augmented]
+        return scans
 
     @classmethod
     def iterative_clustering(cls, scans, precursor_error_tolerance=1e-5, similarity_thresholds=None,
@@ -576,7 +588,7 @@ class ScanClusterBuilder(LogUtilsMixin):
                 logger.log("Clustering %d Scans" % (len(to_bisect[0])))
             else:
                 logger.log("Nothing to cluster...")
-                return SpectrumClusterCollection([])
+                break
             n = len(to_bisect)
             report_interval = max(min(n // 10, 1000), 1)
             for i, group in enumerate(to_bisect):

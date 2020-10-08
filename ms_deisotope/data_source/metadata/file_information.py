@@ -7,7 +7,10 @@ import os
 import hashlib
 import warnings
 
-from collections import MutableMapping
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 
 from six import string_types as basestring
 
@@ -396,14 +399,12 @@ content_keys = TermSet([
                  u'(ultraviolet/visible spectrum).'),
                 'data file content',
                 [u'data file content', u'spectrum type']),
-    FileContent(u'mass chromatogram', u'MS:1000810',
-                (u'A plot of the relative abundance of a beam or other'
-                 u'collection of ions as a function of the retention time.'),
+    FileContent(u'ion current chromatogram', u'MS:1000810',
+                (u'Representation of the current of ions versus time.'),
                 'data file content',
                 [u'data file content', u'chromatogram type']),
     FileContent(u'electromagnetic radiation chromatogram', u'MS:1000811',
-                (u'The measurement of electromagnetic properties as a function'
-                 u'of the retention time.'),
+                (u'Representation of electromagnetic properties versus time.'),
                 'data file content',
                 [u'data file content', u'chromatogram type']),
     FileContent(u'MSn spectrum', u'MS:1000580',
@@ -487,48 +488,41 @@ content_keys = TermSet([
                 'data file content',
                 [u'mass spectrum', u'data file content', u'spectrum type']),
     FileContent(u'total ion current chromatogram', u'MS:1000235',
-                (u'Chromatogram obtained by plotting the total ion current'
-                 u'detected in each of a series of mass spectra recorded as a'
-                 u'function of retention time.'),
+                (u'Representation of the total ion current detected in each of'
+                 u'a series of mass spectra versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'selected reaction monitoring chromatogram', u'MS:1001473',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a selectively monitored reaction at each'
-                 u'time point.'),
+                (u'Representation of an array of the measurements of a'
+                 u'selectively monitored reaction versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'selected ion monitoring chromatogram', u'MS:1001472',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a selectively monitored ion at each time'
-                 u'point.'),
+                (u'Representation of an array of the measurements of a'
+                 u'selectively monitored ion versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'consecutive reaction monitoring chromatogram', u'MS:1001474',
-                (u'OBSOLETE Chromatogram created by creating an array of the'
-                 u'measurements of a series of monitored reactions at each time'
-                 u'point.'),
+                (u'OBSOLETE Representation of an array of the measurements of a'
+                 u'series of monitored reactions versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'basepeak chromatogram', u'MS:1000628',
-                (u'Chromatogram created by creating an array of the most'
-                 u'intense peaks at each time point.'),
+                (u'Representation of an array of the most intense peaks versus'
+                 u'time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'selected ion current chromatogram', u'MS:1000627',
-                (u'Chromatogram created by creating an array of the'
-                 u'measurements of a specific single ion current at each time'
-                 u'point.'),
+                (u'Representation of an array of the measurements of a specific'
+                 u'single ion current versus time.'),
                 'data file content',
-                [u'mass chromatogram', u'data file content', u'chromatogram type']),
+                [u'ion current chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'absorption chromatogram', u'MS:1000812',
-                (u'The measurement of light absorbed by the sample as a'
-                 u'function of the retention time.'),
+                (u'Representation of light absorbed by the sample versus time.'),
                 'data file content',
                 [u'electromagnetic radiation chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'emission chromatogram', u'MS:1000813',
-                (u'The measurement of light emitted by the sample as a function'
-                 u'of the retention time.'),
+                (u'Representation of light emitted by the sample versus time.'),
                 'data file content',
                 [u'electromagnetic radiation chromatogram', u'data file content', u'chromatogram type']),
     FileContent(u'time-delayed fragmentation spectrum', u'MS:1000790',
@@ -696,7 +690,8 @@ class FileInformation(MutableMapping):
                         "Source File %r does not exist" % (source,))
             source = SourceFile.from_path(source)
         elif not isinstance(source, SourceFile):
-            raise TypeError("Must pass an object of type %r, could not coerce %r" % (SourceFile, type(source)))
+            raise TypeError("Must pass an object of type %r, could not coerce %r" % (
+                SourceFile, type(source)))
         self.source_files.append(source)
 
     def add_content(self, key, value=None):
@@ -929,12 +924,22 @@ class SourceFile(object):
 
         parts = os.path.splitext(path)
         if len(parts) > 1:
+            is_compressed = False
             ext = parts[1]
+            if ext.lower() == '.gz':
+                is_compressed = True
+                parts = os.path.splitext(parts[0])
+                ext = parts[1]
             if ext.lower() == '.mzml':
                 fmt = "mzML format"
                 id_fmt = "no nativeID format"
                 hit = False
-                with open(path, 'rb') as fh:
+                if is_compressed:
+                    from .._compression import get_opener
+                    fh = get_opener(path)
+                else:
+                    fh = open(path, 'rb')
+                with fh:
                     from ..xml_reader import iterparse_until
                     for sf_tag in iterparse_until(fh, 'sourceFile', 'run'):
                         for param in sf_tag.getchildren():
@@ -974,9 +979,10 @@ class SourceFile(object):
         )
 
     def _compute_checksum(self, hash_type='sha1', buffer_size=2**16):
+        from .._compression import get_opener
         hasher = hashlib.new(hash_type)
         buffer_size = int(buffer_size)
-        with open(self.path, 'rb') as fh:
+        with get_opener(self.path) as fh:
             content_buffer = fh.read(buffer_size)
             while content_buffer:
                 hasher.update(content_buffer)

@@ -94,18 +94,6 @@ def is_random_access(fp):
 
 
 try:
-    from .thermo_raw import (
-        ThermoRawLoader, infer_reader as _check_is_thermo_raw,
-        register_dll as register_thermo_dll)
-
-    reader_types.append(ThermoRawLoader)
-    register_type_guesser(_check_is_thermo_raw)
-
-except ImportError:  # pragma: no cover
-    def register_thermo_dll(*args, **kwargs):
-        pass
-
-try:
     from .thermo_raw_net import (
         ThermoRawLoader as ThermoRawNetLoader, infer_reader as _check_is_thermo_raw_net,
         register_dll as register_thermo_net_dll)
@@ -117,6 +105,19 @@ except ImportError:  # pragma: no cover
         pass
 
 try:
+    from .thermo_raw import (
+        ThermoRawLoader, infer_reader as _check_is_thermo_raw,
+        register_dll as register_thermo_dll)
+
+    reader_types.append(ThermoRawLoader)
+    register_type_guesser(_check_is_thermo_raw)
+
+except ImportError:  # pragma: no cover
+    def register_thermo_dll(*args, **kwargs):
+        pass
+
+
+try:
     from .agilent_d import (
         AgilentDLoader,
         infer_reader as _check_is_agilent_d,
@@ -126,4 +127,16 @@ try:
     register_type_guesser(_check_is_agilent_d)
 except ImportError:  # pragma: no cover
     def register_agilent_dll_dir(*args, **kwargs):
+        pass
+
+
+try:
+    from .masslynx import (
+        MassLynxRawLoader, infer_reader as _check_mass_lynx_raw,
+        register_waters_masslynx_dll)
+
+    reader_types.append(MassLynxRawLoader)
+    register_type_guesser(_check_mass_lynx_raw)
+except ImportError:
+    def register_waters_masslynx_dll(*args, **kwargs):
         pass

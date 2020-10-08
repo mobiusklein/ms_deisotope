@@ -10,6 +10,11 @@ Runtime.
 
 The public interface of this module should be identical to
 :mod:`ms_deisotope.data_source.thermo_raw`.
+
+.. note::
+    This interface was largely based upon the APIs that ProteoWizard used, both
+    in order to understand how the Thermo libraries really worked, and to maintain
+    parity with it.
 '''
 
 import sys
@@ -21,17 +26,32 @@ import numpy as np
 
 from pyteomics.auxiliary import unitfloat
 
+from six import string_types as basestring
+
+
 from ms_peak_picker import PeakSet, PeakIndex, simple_peak
+
 from ms_deisotope.data_source.common import (
     PrecursorInformation, ChargeNotProvided, Scan,
     ActivationInformation, MultipleActivationInformation,
     IsolationWindow, ScanDataSource, ScanEventInformation,
     ScanAcquisitionInformation, ScanWindow, RandomAccessScanSource)
-from ms_deisotope.data_source.metadata.activation import (
-    supplemental_term_map, dissociation_methods_map)
+
 from ms_deisotope.data_source._thermo_helper import (
     _InstrumentMethod, ThermoRawScanPtr, FilterString,
     _make_id, _id_template, _RawFileMetadataLoader, analyzer_map)
+
+from ms_deisotope.data_source.metadata.activation import (
+    supplemental_term_map, dissociation_methods_map)
+from ms_deisotope.data_source.metadata.sample import Sample
+from ms_deisotope.data_source.metadata.scan_traits import FAIMS_compensation_voltage
+
+def _try_number(string):
+    try:
+        x = float(string)
+        return x
+    except (TypeError, ValueError):
+        return string
 
 
 _DEFAULT_DLL_PATH = os.path.join(
@@ -106,12 +126,8 @@ def infer_reader(path):
 
 
 def determine_if_available():
-    '''Checks whether or not the COM-based Thermo
+    '''Checks whether or not the .NET-based Thermo
     RAW file reading feature is available.
-
-    This is done by attempting to instantiate the
-    COM-provided object, which queries the Windows
-    registry for the MSFileReader.dll.
 
     Returns
     -------
@@ -140,8 +156,13 @@ def _register_dll(search_paths=None):
     :class:`bool`:
         Whether or not the .NET library successfully loaded
     '''
+    from ms_deisotope.config import get_config
     if search_paths is None:
         search_paths = []
+    search_paths = list(search_paths)
+    search_paths.append(_DEFAULT_DLL_PATH)
+    # Take user-specified search paths first.
+    search_paths = get_config().get('vendor_readers', {}).get('thermo-net', []) + search_paths
     global _RawFileReader, Business, clr, NullReferenceException   # pylint: disable=global-statement
     global Marshal, IntPtr, Int64   # pylint: disable=global-statement
     if _test_dll_loaded():
@@ -183,8 +204,6 @@ def register_dll(search_paths=None):
     '''
     if search_paths is None:
         search_paths = []
-    search_paths = list(search_paths)
-    search_paths.append(_DEFAULT_DLL_PATH)
     loaded = _register_dll(search_paths)
     if not loaded:
         msg = '''The ThermoFisher.CommonCore libraries could not be located and loaded.'''
@@ -204,6 +223,12 @@ def _copy_double_array(src):
     ``int_ptr_tp`` must be an integer type that can hold a pointer. On Python 2
     this is :class:`long`, and on Python 3 it is :class:`int`.
     '''
+    # When the input .NET array pointer is None, return an empty array. On Py2
+    # this would happen automatically, but not on Py3, and perhaps not safely on
+    # all Py2 because it relies on pythonnet and the .NET runtime properly checking
+    # for nulls.
+    if src is None:
+        return np.array([], dtype=np.float64)
     dest = np.empty(len(src), dtype=np.float64)
     Marshal.Copy(
         src, 0,
@@ -254,8 +279,10 @@ class RawReaderInterface(ScanDataSource):
         return "%s %r" % (self._scan_id(scan), self._filter_string(scan))
 
     def _filter_string(self, scan):
-        scan_number = scan.scan_number
-        return FilterString(self._source.GetFilterForScanNumber(scan_number + 1).Filter)
+        if scan.filter_string is None:
+            scan_number = scan.scan_number
+            scan.filter_string = FilterString(self._source.GetFilterForScanNumber(scan_number + 1).Filter)
+        return scan.filter_string
 
     def _scan_index(self, scan):
         scan_number = scan.scan_number
@@ -272,17 +299,31 @@ class RawReaderInterface(ScanDataSource):
 
     def _isolation_window(self, scan):
         scan_number = scan.scan_number
+        ms_level = self._ms_level(scan)
+        width = 0
+        trailer = self._trailer_values(scan)
         filt = self._source.GetFilterForScanNumber(scan_number + 1)
         seq_index = filt.MSOrder - 2
-        width = filt.GetIsolationWidth(seq_index)
+        try:
+            # Fetch the isolation window width from the old location first, which
+            # will be correct on old files, where the new API won't be right.
+            width = trailer['MS%d Isolation Width' % ms_level]
+        except KeyError:
+            # Fall back to the new API, which is akin to our only hope here?
+            width = filt.GetIsolationWidth(seq_index)
+        width /= 2.0
         offset = filt.GetIsolationWidthOffset(seq_index)
         precursor_mz = filt.GetMass(seq_index)
         return IsolationWindow(width, precursor_mz + offset, width)
 
     def _trailer_values(self, scan):
+        if scan.trailer_values is not None:
+            return scan.trailer_values
         scan_number = scan.scan_number
         trailers = self._source.GetTrailerExtraInformation(scan_number + 1)
-        return OrderedDict(zip([label.strip(":") for label in trailers.Labels], trailers.Values))
+        scan.trailer_values = OrderedDict(
+            zip([label.strip(":") for label in trailers.Labels], map(_try_number, trailers.Values)))
+        return scan.trailer_values
 
     def _infer_precursor_scan_number(self, scan):
         precursor_scan_number = None
@@ -334,6 +375,10 @@ class RawReaderInterface(ScanDataSource):
                 i += 1
         if precursor_scan_number is not None:
             precursor_scan_id = self.get_scan_by_index(precursor_scan_number).id
+        else:
+            import warnings
+            warnings.warn("Could not resolve precursor scan for %s" % (self._scan_id(scan), ))
+            precursor_scan_id = None
         return PrecursorInformation(
             precursor_mz, inten, charge, precursor_scan_id,
             source=self, product_scan_id=self._scan_id(scan))
@@ -390,6 +435,9 @@ class RawReaderInterface(ScanDataSource):
             'preset scan configuration': event,
             'filter string': fline,
         }
+        cv = fline.get("compensation_voltage")
+        if cv is not None:
+            traits[FAIMS_compensation_voltage] = cv
         event = ScanEventInformation(
             self._scan_time(scan),
             injection_time=unitfloat(trailer_extras.get('Ion Injection Time (ms)', 0.0), 'millisecond'),
@@ -423,13 +471,31 @@ class RawReaderInterface(ScanDataSource):
         mono_mz = float(trailer_extras.get("Monoisotopic M/Z", 0))
         if mono_mz is not None and mono_mz > 0:
             annots['[Thermo Trailer Extra]Monoisotopic M/Z'] = mono_mz
-        hcd_ev = trailer_extras.get('HCD Energy eV')
+        hcd_ev = _trailer_float(trailer_extras.get('HCD Energy eV'))
         if hcd_ev is not None and hcd_ev > 0:
-            annots['[Thermo Trailer Extra]HCD Energy eV'] = hcd_ev
+            annots['[Thermo Trailer Extra]HCD Energy eV'] = float(hcd_ev)
         hcd_energies = trailer_extras.get('HCD Energy')
-        if hcd_energies is not None and hcd_energies:
-            annots['[Thermo Trailer Extra]HCD Energy'] = hcd_energies
+        if hcd_energies is not None:
+            if isinstance(hcd_energies, basestring) and not hcd_energies.strip():
+                pass
+            else:
+                annots['[Thermo Trailer Extra]HCD Energy'] = hcd_energies
         return annots
+
+
+def _trailer_float(value):
+    if value is None:
+        return None
+    try:
+        value = value.strip()
+    except AttributeError:
+        return value
+    if not value:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
 
 
 class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetadataLoader):
@@ -519,7 +585,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return index
 
     def _get_instrument_model_name(self):
-        return self._source.GetInstrumentData().Model;
+        return self._source.GetInstrumentData().Model
 
     def _get_instrument_serial_number(self):
         return self._source.GetInstrumentData().SerialNumber
@@ -537,6 +603,29 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
     def _scan_time_to_scan_number(self, scan_time):
         scan_number = self._source.ScanNumberFromRetentionTime(scan_time) - 1
         return scan_number
+
+    def samples(self):
+        """Describe the sample(s) used to generate the mass spectrometry
+        data contained in this file.
+
+        Returns
+        -------
+        :class:`list` of :class:`~.Sample`
+        """
+        result = []
+        si = self._source.SampleInformation
+        sample = Sample(si.SampleId or 'sample_1')
+        sample.name = si.SampleName or si.SampleId
+        if si.SampleVolume:
+            sample.parameters['sample volume'] = si.SampleVolume
+        if si.SampleWeight:
+            sample.parameters['sample mass'] = si.SampleWeight
+        if si.Vial:
+            sample.parameters['sample vial'] = si.Vial
+        if si.Barcode:
+            sample.parameters['sample barcode'] = si.Barcode
+        result.append(sample)
+        return result
 
     def get_scan_by_index(self, index):
         """Retrieve the scan object for the specified scan index.
@@ -664,7 +753,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     def _make_scan_index_producer(self, start_index=None, start_time=None):
         if start_index is not None:
-            return range(start_index, self._source.RunHeaderEx.LastSpectrum - 1)
+            return range(start_index, self._source.RunHeaderEx.LastSpectrum)
         elif start_time is not None:
             start_index = self._scan_time_to_scan_number(start_time)
             while start_index != 0:
@@ -673,9 +762,9 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
                     start_index -= 1
                 else:
                     break
-            return range(start_index, self._source.RunHeaderEx.LastSpectrum - 1)
+            return range(start_index, self._source.RunHeaderEx.LastSpectrum)
         else:
-            return range(0, self._source.RunHeaderEx.LastSpectrum - 1)
+            return range(0, self._source.RunHeaderEx.LastSpectrum)
 
     def _make_pointer_iterator(self, start_index=None, start_time=None):
         iterator = self._make_scan_index_producer(start_index, start_time)

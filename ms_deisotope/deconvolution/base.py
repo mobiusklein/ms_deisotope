@@ -43,7 +43,8 @@ class DeconvoluterBase(Base):
         by peak querying methods
     scale_method : str
         The name of the method to use to scale theoretical isotopic pattern intensities
-        to match the experimental isotopic pattern
+        to match the experimental isotopic pattern. For a description of options, see
+        :meth:`~.TheoreticalIsotopicPattern.scale`. The default method is `"sum"`.
     use_subtraction : bool
         Whether or not to apply a subtraction procedure to experimental peaks after they
         have been fitted. This is only necessary if the same signal may be examined multiple
@@ -139,7 +140,8 @@ class DeconvoluterBase(Base):
         This assumes that the sum of intensities in `theoretical_distribution` is 1.0. This method is also
         not particularly kind to isotopic patterns where there are missing peaks.
 
-        The scaling algorithm used is controlled by :attr:`scale_method`
+        The scaling algorithm used is controlled by :attr:`scale_method`. For a description of options, see
+        :meth:`~.TheoreticalIsotopicPattern.scale`.
 
         Parameters
         ----------
@@ -338,7 +340,8 @@ class DeconvoluterBase(Base):
 
 
 try:
+    _has_c = True
     _DeconvoluterBase = DeconvoluterBase
     from ms_deisotope._c.deconvoluter_base import DeconvoluterBase
 except ImportError as e:
-    print(e)
+    _has_c = False

@@ -12,7 +12,36 @@ to streamline processing raw data.
 Installing
 ----------
 
-Building from source requires a version of Cython >= 0.27.0
+``ms_deisotope`` uses PEP 517 and 518 build system definition and isolation to ensure all of its
+compile-time dependencies are installed prior to building. Normal installation should work with `pip`,
+and pre-built wheels are available for Windows.
+
+C Extensions
+============
+
+``ms_deisotope`` and several of its dependencies use C extensions to make iterative operations *much*
+faster. If you plan to use this library on a large amount of data, I highly recommend you ensure they
+are installed:
+
+.. code:: python
+
+    >>> import ms_deisotope
+    >>> ms_deisotope.DeconvolutedPeak
+    <type 'ms_deisotope._c.peak_set.DeconvolutedPeak'>
+
+Building C extensions from source requires a version of Cython >= 0.27.0
+
+Compiling C extensions requires that ``numpy``, ``brain-isotopic-distribution``, and ``ms_peak_picker``
+be compiled and installed prior to building ``ms_deisotope``:
+
+.. code:: bash
+
+    pip install numpy
+    pip install -v brain-isotopic-distribution ms_peak_picker
+    pip install -v ms_deisotope
+
+If these libraries are not installed, ``ms_deisotope`` will fall back to using pure Python implementations,
+which are much slower.
 
 
 API
@@ -30,11 +59,11 @@ to read Thermo RAW files on Windows and Linux (and presumably Mac, too).
 
 .. code:: python
 
-    from ms_deisotope import MSFileReader
+    from ms_deisotope import MSFileLoader
     from ms_deisotope.data_source import mzxml
 
     # open a file, selecting the appropriate reader automatically
-    reader = MSFileReader("path/to/data.mzML")
+    reader = MSFileLoader("path/to/data.mzML")
 
     # or specify the reader type directly
     reader = mzxml.MzXMLLoader("path/to/data.mzXML")
@@ -52,6 +81,11 @@ interface.
     scan_bunch = next(reader)
     print(scan_bunch.precursor, len(scan_bunch.products))
 
+
+Gzip compressed mzML, mzXML, and MGF files are transparently decompressed with unaffected sequential
+access time but can be very slow for random access. `ms_deisotope` supports `idzip`-flavor gzip
+compressed files which provide the same degree of data compression as gzip (and backwards-compatible
+with programs expecting gzip) but offers near-uncompressed random access speed.
 
 Averagine
 =========

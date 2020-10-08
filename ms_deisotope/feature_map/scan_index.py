@@ -85,11 +85,28 @@ class MSnRecord(MSRecordBase):
         package['defaulted'] = self.defaulted
         package['orphan'] = self.orphan
         package['coisolation'] = self.coisolation
-        package['activation'] = self.activation.to_dict()
+        package['activation'] = self.activation.to_dict() if self.activation is not None else None
         return package
 
 
 class ExtendedScanIndex(object):
+    """An extra index that holds scan-level metadata in memory independent of
+    the :class:`~.ScanBase` object itself.
+
+    Attributes
+    ----------
+    ms1_ids : :class:`~.OrderedDict`
+        An ordered mapping from :term:`scan_id` to :class:`MS1Record`
+    msn_ids : :class:`~.OrderedDict`
+        An ordered mapping from :term:`scan_id` to :class:`MSNRecord`
+    schema_version : str
+        The version string for the schema of the serialization format
+    _index_bind : :class:`~.RandomAccessScanSource`
+        The data source to bind when calling :meth:`get_precursor_information` and
+        :meth:`find_msms_by_precursor_mass`
+    _mass_search_index : :class:`~.NeutralMassIndex`
+        A fast-to-search collection to make :meth:`find_msms_by_precursor_mass` faster
+    """
     SCHEMA_VERSION = "1.1"
 
     def __init__(self, ms1_ids=None, msn_ids=None, schema_version=None):
@@ -106,6 +123,13 @@ class ExtendedScanIndex(object):
         self._index_bind = None
         self._mass_search_index = None
 
+    def clear(self):
+        """Discard all information held in memory, analogous to :meth:`dict.clear`.
+        """
+        self.ms1_ids.clear()
+        self.msn_ids.clear()
+        self._mass_search_index = None
+
     def get_scan_dict(self, key):
         try:
             return self.ms1_ids[key]
@@ -117,40 +141,42 @@ class ExtendedScanIndex(object):
 
     def _package_precursor_information(self, product):
         precursor_information = product.precursor_information
-        if precursor_information.extracted_neutral_mass != 0:
+        package = {
+            "product_scan_id": product.id,
+            "scan_time": product.scan_time,
+        }
+        if precursor_information is None:
+            pass
+        elif precursor_information.extracted_neutral_mass != 0:
             charge = precursor_information.extracted_charge
             if charge == ChargeNotProvided:
                 charge = 'ChargeNotProvided'
-            package = {
+            package.update({
                 "neutral_mass": precursor_information.extracted_neutral_mass,
                 "mz": precursor_information.extracted_mz,
                 "intensity": precursor_information.extracted_intensity,
                 "charge": charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
-                "product_scan_id": product.id,
-                "scan_time": product.scan_time,
                 "defaulted": precursor_information.defaulted,
                 "orphan": precursor_information.orphan,
                 "coisolation": precursor_information.coisolation,
                 "activation": product.activation,
-            }
+            })
         else:
             charge = precursor_information.charge
             if charge == ChargeNotProvided:
                 charge = 'ChargeNotProvided'
-            package = {
+            package.update({
                 "neutral_mass": precursor_information.neutral_mass,
                 "mz": precursor_information.mz,
                 "intensity": precursor_information.intensity,
                 "charge": charge,
                 "precursor_scan_id": precursor_information.precursor_scan_id,
-                "product_scan_id": product.id,
-                "scan_time": product.scan_time,
                 "defaulted": precursor_information.defaulted,
                 "orphan": precursor_information.orphan,
                 "coisolation": precursor_information.coisolation,
                 "activation": product.activation,
-            }
+            })
         if product.has_ion_mobility():
             package['drift_time'] = product.drift_time
         return package
@@ -299,6 +325,8 @@ class ExtendedScanIndex(object):
         for _, info in self.msn_ids.items():
             mz = info['mz']
             neutral_mass = info['neutral_mass']
+            if neutral_mass is None:
+                continue
             charge = info['charge']
             if charge == "ChargeNotProvided":
                 charge = ChargeNotProvided

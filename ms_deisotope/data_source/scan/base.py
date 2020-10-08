@@ -20,6 +20,8 @@ from ms_peak_picker.base import PeakLike
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
 from ms_deisotope.deconvolution import deconvolute_peaks
 
+from ms_deisotope.data_source.metadata.scan_traits import _IonMobilityMixin
+
 try:
     from ms_deisotope.plot import annotate_scan as _annotate_precursors, draw_raw
 except ImportError:
@@ -134,9 +136,12 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         -------
         :class:`ScanBunch`
         '''
-        return self.__class__(self.precursor.pack(), [
-            p.pack() for p in self.products
-        ])
+        precursor = self.precursor.pack()
+        products = [p.pack() for p in self.products]
+        inst = self.__class__(precursor, products)
+        precursor.product_scans = products
+        return inst
+
 
 
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
@@ -303,6 +308,10 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         else:
             return self.arrays[i]
 
+    @property
+    def size(self):
+        return self.mz.size
+
 
 class ScanBase(object):
     '''Abstract base class for Scan-like objects
@@ -415,6 +424,13 @@ class ScanBase(object):
 
     @property
     def peaks(self):
+        """Automatically locate the most refined representation of the signal from the :class:`Scan`
+        object.
+
+        Returns
+        -------
+        :class:`PeakSetMethods`
+        """
         return PeakSetMethods(self)
 
     def copy(self, deep=True):
@@ -527,7 +543,7 @@ class ScanBase(object):
         return self
 
 
-class PrecursorInformation(object):
+class PrecursorInformation(_IonMobilityMixin):
     """Store information relating a tandem MS scan to its precursor MS scan.
 
     .. note::
@@ -653,6 +669,10 @@ class PrecursorInformation(object):
             return False
         return True
 
+    @property
+    def traits(self):
+        return self.annotations
+
     def __ne__(self, other):
         return not (self == other)
 
@@ -713,6 +733,17 @@ class PrecursorInformation(object):
         self.defaulted = True
         if orphan:
             self.orphan = True
+
+    def update_to_extracted(self):
+        """Override the reference values given by the source with those values
+        that were extracted from experimental data, if they have been set.
+        """
+        if self.extracted_neutral_mass is not None:
+            self.mz = self.extracted_mz
+        if self.extracted_intensity is not None:
+            self.intensity = self.extracted_intensity
+        if self.extracted_charge is not None:
+            self.charge = self.extracted_charge
 
     @property
     def neutral_mass(self):
@@ -1487,6 +1518,32 @@ class PlottingMethods(object):
         return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
 
     def label_peaks(self, *args, **kwargs):
+        """Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
+        of `scan` have been deconvoluted, the most abundant peak will be annotated with
+        "<neutral mass> (<charge>)", otherwise just "<m/z>".
+
+        Parameters
+        ----------
+        scan : :class:`~.ScanBase`
+            The scan to annotate
+        min_mz : float, optional
+            The minimum m/z to annotate
+        max_mz : float, optional
+            The maximum m/z to annotate
+        ax: :class:`matplotlib._axes.Axes`
+            An :class:`~.Axes` object to draw the plot on
+        is_deconvoluted : bool, optional
+            Whether or not to always use :attr:`Scan.deconvoluted_peak_set`
+        threshold : float, optional
+            The intensity threshold under which peaks will be ignored
+
+        Returns
+        -------
+        ax: :class:`matplotlib._axes.Axes`
+            The axes the plot was drawn on
+        annotations: :class:`list` of :class:`matplotlib.text.Text`
+            The list of :class:`matplotlib.text.Text` annotations
+        """
         return self._plot_api.label_peaks(self.scan, *args, **kwargs)
 
     def annotate_isotopic_peaks(self, *args, **kwargs):
@@ -1513,7 +1570,8 @@ class PlottingMethods(object):
     def _guess(self, ax=None, **kwargs):
         try:
             if self.scan.arrays:
-                ax = self.raw(ax=ax)
+                if self.scan.is_profile:
+                    ax = self.raw(ax=ax)
         except (AttributeError, TypeError):
             pass
         try:

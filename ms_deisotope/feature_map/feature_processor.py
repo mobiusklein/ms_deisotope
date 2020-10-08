@@ -7,7 +7,8 @@ from ms_peak_picker import FittedPeak
 
 from .feature_map import (
     LCMSFeatureMap,
-    DeconvolutedLCMSFeatureMap)
+    DeconvolutedLCMSFeatureMap,
+    smooth_overlaps_neutral)
 from .lcms_feature import (
     LCMSFeature,
     EmptyFeature,
@@ -277,11 +278,17 @@ class PrecursorMap(object):
 
 class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
     def __init__(self, feature_map, averagine, scorer, precursor_map=None, minimum_size=3,
-                 maximum_time_gap=0.25):
+                 maximum_time_gap=0.25, prefer_multiply_charged=True):
         if precursor_map is None:
             precursor_map = PrecursorMap({})
-        self.feature_map = LCMSFeatureMap([f.clone(deep=True) for f in feature_map])
+        if isinstance(feature_map, LCMSFeatureMap):
+            feature_map = feature_map.clone(deep=True)
+        else:
+            feature_map = LCMSFeatureMap(
+                [f.clone(deep=True) for f in feature_map])
+        self.feature_map = feature_map
         self.averagine = AveragineCache(averagine)
+        self.prefer_multiply_charged = prefer_multiply_charged
         self.scorer = scorer
         self.precursor_map = precursor_map
         self.minimum_size = minimum_size
@@ -333,20 +340,27 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
                 truncate_after=truncate_after,
                 max_missed_peaks=max_missed_peaks,
                 threshold_scale=threshold_scale)
+            is_multiply_charged = abs(charge) > 1
             if self.scorer.is_maximizing():
                 for fit in current_fits:
                     if fit.score > best_fit_score:
+                        if is_multiply_charged and not fit.has_multiple_real_features():
+                            continue
                         best_fit_score = fit.score
                         best_fit_charge = charge
             else:
                 for fit in current_fits:
                     if fit.score < best_fit_score:
+                        if is_multiply_charged and not fit.has_multiple_real_features():
+                            continue
                         best_fit_score = fit.score
                         best_fit_charge = charge
-            if abs(charge) == 1:
+            if abs(charge) == 1 and self.prefer_multiply_charged:
                 holdout = current_fits
             else:
                 for fit in current_fits:
+                    if is_multiply_charged and not fit.has_multiple_real_features():
+                        continue
                     self.dependence_network.add_fit_dependence(fit)
                     fits.append(fit)
         if holdout is not None and best_fit_charge == 1:
@@ -409,7 +423,8 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         charge = feature_fit.charge
         abs_charge = abs(charge)
         for eid in feat_iter:
-            cleaned_eid, tid, n_missing = conform_envelopes(eid, base_tid.truncated_tid)
+            cleaned_eid, tid, n_missing = conform_envelopes(
+                eid, base_tid.peaklist)
             rep_eid = drop_placeholders(cleaned_eid)
             n_real_peaks = len(rep_eid)
             if n_real_peaks == 0 or (n_real_peaks == 1 and abs_charge > 1) or \
@@ -525,6 +540,8 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         for fit in fits:
             extracted = extract_fitted_region(
                 fit, detection_threshold=detection_threshold)
+            if extracted is None:
+                continue
             solution = self.finalize_fit(
                 extracted, charge_carrier=charge_carrier, subtract=subtract,
                 detection_threshold=detection_threshold, max_missed_peaks=max_missed_peaks)
@@ -688,7 +705,10 @@ class FeatureDeconvolutionIterationState(object):
             if converged or self.iteration_count >= self.maxiter:
                 keep_going = False
         self.solutions = self.processor._clean_solutions(self.solutions)
-        return DeconvolutedLCMSFeatureMap(self.solutions)
+        return DeconvolutedLCMSFeatureMap(
+            smooth_overlaps_neutral(
+                self.solutions,
+                self.error_tolerance))
 
 
 def find_bounds(fit, detection_threshold=0.1, find_separation=True):
@@ -730,6 +750,8 @@ def find_bounds(fit, detection_threshold=0.1, find_separation=True):
 
 def extract_fitted_region(feature_fit, detection_threshold=0.1):
     fitted_features = []
+    if feature_fit.n_points == 0:
+        return None
     start_time, end_time = find_bounds(feature_fit, detection_threshold)
     for feature in feature_fit:
         if feature is None or isinstance(feature, EmptyFeature):

@@ -225,9 +225,9 @@ class IntervalTreeNode(object):
 
     def _overlaps_interval(self, start, end):
         result = []
+        query = Interval(start, end)
         for i in self.contained:
-            if ((start < i.start and i.end <= end) or
-                    (i.start <= start and i.end >= end)):
+            if query.overlaps(i):
                 result.append(i)
         return result
 

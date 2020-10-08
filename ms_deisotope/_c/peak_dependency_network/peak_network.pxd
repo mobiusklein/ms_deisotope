@@ -79,3 +79,6 @@ cdef class PeakDependenceGraphBase(object):
     cpdef _populate_initial_graph(self)
     cpdef add_fit_dependence(self, IsotopicFitRecord fit_record)
     cpdef list nodes_for(self, IsotopicFitRecord fit_record, dict cache=*)
+    cpdef drop_fit_dependence(self, IsotopicFitRecord fit_record)
+    cpdef best_exact_fits(self)
+    cpdef _gather_independent_clusters(self, dict nodes_for_cache=*)

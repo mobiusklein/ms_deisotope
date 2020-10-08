@@ -1,3 +1,5 @@
+"""The main entry point for the `ms-deisotope` command line program.
+"""
 import os
 
 import click
@@ -11,19 +13,50 @@ from ms_deisotope import MSFileLoader
 from ms_deisotope.data_source import RandomAccessScanSource
 
 from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_debug_mode, register_debug_hook
-from ms_deisotope.tools.deisotoper import workflow
+from ms_deisotope.tools.deisotoper import workflow, output
 
 
-def check_random_access(loader, start_time, end_time):
+
+def configure_iterator(loader, start_time, end_time):
+    """Configure `loader` to run between the time ranges specified, or
+    if the `loader` does not support random access, the bounds are set to
+    the start and end of the iterator.
+
+    This function will also set the iteration mode of `loader` to "grouped".
+
+    Parameters
+    ----------
+    loader : :class:`ScanDataSource`
+        The source to load scans from
+    start_time : float
+        The start time to load scans from
+    end_time : float
+        The end time to stop loading scans at
+
+    Returns
+    -------
+    str: start_scan_id
+        The id value of the scan to start from, will be :cosnt:`None` if there is no random access.
+    float: start_scan_time
+        The actual time associated with the start scan
+    str: end_scan_id
+        The id value of the scan to stop at, will be :cosnt:`None` if there is no random access.
+    float: end_scan_time
+        The actual time associated with the end scan
+    """
     if isinstance(loader, RandomAccessScanSource):
         last_scan = loader[len(loader) - 1]
         last_time = last_scan.scan_time
-        start_scan = loader._locate_ms1_scan(
-            loader.get_scan_by_time(start_time))
+
+        start_scan = loader.get_scan_by_time(start_time)
+        if loader.has_ms1_scans():
+            start_scan = loader._locate_ms1_scan(start_scan)
+
         if end_time > last_time:
             end_time = last_time
-        end_scan = loader._locate_ms1_scan(
-            loader.get_scan_by_time(end_time))
+        end_scan = loader.get_scan_by_time(end_time)
+        if loader.has_ms1_scans():
+            end_scan = loader._locate_ms1_scan(end_scan)
 
         start_scan_id = start_scan.id
         end_scan_id = end_scan.id
@@ -47,6 +80,19 @@ def check_random_access(loader, start_time, end_time):
 
 
 def check_if_profile(loader):
+    """Check if the spectra in `loader` are stored in profile mode,
+    established by querying the next scan bunch.
+
+    Parameters
+    ----------
+    loader : :class:`ScanIterator`
+        The source to load scans from
+
+    Returns
+    -------
+    :class:`bool`:
+        Whether or not the spectra are profile mode.
+    """
     first_bunch = next(loader)
     if first_bunch.precursor is not None:
         is_profile = (first_bunch.precursor.is_profile)
@@ -60,19 +106,34 @@ def check_if_profile(loader):
     return is_profile
 
 
-@click.command("deisotope", short_help=(
-    "Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML."
-    " Can accept mzML, mzXML, MGF with either profile or centroided scans."),
-    context_settings=dict(help_option_names=['-h', '--help']))
+def determine_output_format(output_file):
+    base, ext = os.path.splitext(output_file)
+    if ext.lower() == '.mzml':
+        return output.ThreadedMzMLScanStorageHandler
+    elif ext.lower() == '.mgf':
+        return output.ThreadedMGFScanStorageHandler
+    else:
+        click.secho("Could not infer output file format. Assuming mzML.", fg='yellow')
+        return output.ThreadedMzMLScanStorageHandler
+
+
+@click.command("deisotope",
+               short_help=(
+                   "Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML."
+                   " Can accept mzML, mzXML, MGF with either profile or centroided scans."),
+               context_settings=dict(help_option_names=['-h', '--help']))
 @click.argument("ms-file", type=click.Path(exists=True))
 @click.argument("outfile-path", type=click.Path(writable=True))
 @click.option("-a", "--averagine", default=["peptide"],
               type=AveragineParamType(),
-              help='Averagine model to use for MS1 scans. Either a name or formula',
+              help=('Averagine model to use for MS1 scans. '
+                    'Either a name or formula. May specify multiple times.'),
               multiple=True)
-@click.option("-an", "--msn-averagine", default="peptide",
+@click.option("-an", "--msn-averagine", default=["peptide"],
               type=AveragineParamType(),
-              help='Averagine model to use for MS^n scans. Either a name or formula')
+              help=('Averagine model to use for MS^n scans. '
+                    'Either a name or formula. May specify multiple times.'),
+              multiple=True)
 @click.option("-s", "--start-time", type=float, default=0.0,
               help='Scan time to begin processing at in minutes')
 @click.option("-e", "--end-time", type=float, default=float('inf'),
@@ -91,11 +152,11 @@ def check_if_profile(loader):
               help="Number of missing peaks to permit before an isotopic fit is discarded in an MSn scan")
 @processes_option
 @click.option("-b", "--background-reduction", type=float, default=0., help=(
-              "Background reduction factor. Larger values more aggresively remove low abundance"
-              " signal in MS1 scans."))
+    "Background reduction factor. Larger values more aggresively remove low abundance"
+    " signal in MS1 scans."))
 @click.option("-bn", "--msn-background-reduction", type=float, default=0., help=(
-              "Background reduction factor. Larger values more aggresively remove low abundance"
-              " signal in MS^n scans."))
+    "Background reduction factor. Larger values more aggresively remove low abundance"
+    " signal in MS^n scans."))
 @click.option("-r", '--transform', multiple=True, type=parse_filter, help=(
     "Scan transformations to apply to MS1 scans. May specify more than once."))
 @click.option("-rn", '--msn-transform', multiple=True, type=parse_filter, help=(
@@ -112,13 +173,15 @@ def check_if_profile(loader):
 @click.option("-snr", "--signal-to-noise-threshold", default=1.0, type=float, help=(
     "Signal-to-noise ratio threshold to apply when filtering peaks"))
 @click.option("-mo", "--mass-offset", default=0.0, type=float, help=("Shift peak masses by the given amount"))
+@click.option("-D", "--default-precursor-ion-selection-window", default=1.5, type=float,
+              help="The isolation window width to assume when it is not specified.")
 def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=None, maximum_charge=None,
               name=None, msn_averagine=None, score_threshold=35., msn_score_threshold=10., missed_peaks=1,
               msn_missed_peaks=1, background_reduction=0., msn_background_reduction=0.,
               transform=None, msn_transform=None, processes=4, extract_only_tandem_envelopes=False,
               ignore_msn=False, isotopic_strictness=2.0, ms1_averaging=0,
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
-              deconvolute=True, verbose=False):
+              default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
     '''Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.
     '''
     if transform is None:
@@ -132,14 +195,14 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
             fg='red')
         raise click.Abort("Cannot use both --ignore-msn and --extract-only-tandem-envelopes")
 
-    cache_handler_type = workflow.ThreadedMzMLScanStorageHandler
+    cache_handler_type = determine_output_format(outfile_path)
     click.echo("Preprocessing %s" % ms_file)
     minimum_charge = 1 if maximum_charge > 0 else -1
     charge_range = (minimum_charge, maximum_charge)
 
     loader = MSFileLoader(ms_file)
     (start_scan_id, start_scan_time,
-     end_scan_id, end_scan_time) = check_random_access(loader, start_time, end_time)
+     end_scan_id, end_scan_time) = configure_iterator(loader, start_time, end_time)
 
     is_profile = check_if_profile(loader)
 
@@ -217,13 +280,20 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         else:
             msn_isotopic_scorer = ms_deisotope.scoring.MSDeconVFitter(msn_score_threshold)
 
+        if len(msn_averagine) == 1:
+            msn_averagine = msn_averagine[0]
+            msn_deconvoluter_type = ms_deisotope.deconvolution.AveraginePeakDependenceGraphDeconvoluter
+        else:
+            msn_deconvoluter_type = ms_deisotope.deconvolution.MultiAveraginePeakDependenceGraphDeconvoluter
+
         msn_deconvolution_args = {
             "scorer": msn_isotopic_scorer,
             "averagine": msn_averagine,
             "max_missed_peaks": msn_missed_peaks,
             "truncate_after": workflow.SampleConsumer.MSN_ISOTOPIC_PATTERN_WIDTH,
             "ignore_below": workflow.SampleConsumer.MSN_IGNORE_BELOW,
-            "use_quick_charge": True
+            "use_quick_charge": True,
+            "deconvoluter_type": msn_deconvoluter_type,
         }
     else:
         ms1_deconvolution_args = None
@@ -241,6 +311,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         extract_only_tandem_envelopes=extract_only_tandem_envelopes,
         ignore_tandem_scans=ignore_msn,
         ms1_averaging=ms1_averaging,
+        default_precursor_ion_selection_window=default_precursor_ion_selection_window,
         deconvolute=deconvolute,
         verbose=verbose)
     consumer.start()

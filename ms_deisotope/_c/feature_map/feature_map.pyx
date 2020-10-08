@@ -3,7 +3,7 @@
 cimport cython
 
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
-from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice
+from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyList_GetItem
 
 
 cdef class LCMSFeatureMap(object):
@@ -11,7 +11,7 @@ cdef class LCMSFeatureMap(object):
         self.features = sorted(features, key=lambda x: x.mz)
 
     def __len__(self):
-        return len(self.features)
+        return PyList_GET_SIZE(self.features)
 
     def __iter__(self):
         return iter(self.features)
@@ -21,6 +21,12 @@ cdef class LCMSFeatureMap(object):
             return self.features[i]
         else:
             return [self.features[j] for j in i]
+
+    cdef Py_ssize_t get_size(self):
+        return PyList_GET_SIZE(self.features)
+
+    cdef LCMSFeature get(self, size_t i):
+        return <LCMSFeature>PyList_GetItem(self.features, i)
 
     cpdef LCMSFeature _search(self, double mz, double error_tolerance):
         cdef:
@@ -54,28 +60,79 @@ cdef class LCMSFeatureMap(object):
             binary_search_with_flag(
                 self.features, hi, error_tolerance)[0][0])
 
-    def between(self, lo, hi, error_tolerance=2e-5):
+    cpdef list spanning_time(self, double time_point):
+        cdef:
+            size_t i, n
+            LCMSFeature feature
+            list result
+        result = []
+        n = self.get_size()
+        for i in range(n):
+            feature = self.get(i)
+            if feature.spans_in_time(time_point):
+                result.append(feature)
+        return result
+
+    def between(self, double lo, double hi, double error_tolerance=2e-5):
+        cdef:
+            Py_ssize_t n, i, lo_ix, hi_ix
+            LCMSFeature f
+
+        n = self.get_size()
+        if n == 0:
+            return []
         lo_ix = binary_search_with_flag(
             self.features, lo, error_tolerance)[0][0]
-        hi_ix = binary_search_with_flag(
-            self.features, hi, error_tolerance)[0][0]
-        if self[lo_ix].mz < lo:
+        if self.get(lo_ix).get_mz() < lo:
             lo_ix += 1
-        if self[hi_ix] > hi:
-            hi_ix -= 1
-        if hi_ix < 0:
-            hi_ix = 0
-        if lo_ix > len(self):
-            lo_ix = len(self) - 1
+        if lo_ix > n:
+            lo_ix = n - 1
+        i = lo_ix
+        while i < n:
+            f = self.get(i)
+            if f.get_mz() > hi:
+                break
+            i += 1
+        hi_ix = i
         return self[lo_ix:hi_ix]
 
     def __repr__(self):
         return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
 
+    cpdef LCMSFeatureMap clone(self, bint deep=True):
+        cdef:
+            size_t i, n
+            list result
+        result = []
+        n = self.get_size()
+        for i in range(n):
+            feature = self.get(i).clone(deep)
+            result.append(feature)
+        return self.__class__(result)
+
+
+@cython.binding(True)
+cpdef list split_sparse(LCMSFeatureMap self, double delta_rt=1.0, size_t min_size=2):
+    cdef:
+        list result, chunks
+        size_t i, n, j, m
+        LCMSFeature feature, chunk
+    result = []
+    n = self.get_size()
+    for i in range(n):
+        feature = self.get(i)
+        chunks = feature.split_sparse(delta_rt)
+        m = PyList_GET_SIZE(chunks)
+        for j in range(m):
+            chunk = <LCMSFeature>PyList_GET_ITEM(chunks, j)
+            if chunk.get_size() >= min_size:
+                result.append(chunk)
+    return result
+
 
 cpdef tuple binary_search_with_flag(list array, double mz, double error_tolerance):
     cdef:
-        int n, lo, hi, mid, low_end, high_end
+        int i, n, lo, hi, mid, low_end, high_end
         double err
         LCMSFeature x
     lo = 0
@@ -132,7 +189,7 @@ cdef long binary_search(list array, double mz, double error_tolerance):
         err = (x.get_mz() - mz) / mz
         if abs(err) <= error_tolerance:
             best_index = mid
-            best_error = err
+            best_error = abs(err)
             i = mid - 1
             while i > 0:
                 x = <LCMSFeature>PyList_GET_ITEM(array, i)

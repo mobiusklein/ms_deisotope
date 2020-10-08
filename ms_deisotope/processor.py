@@ -45,7 +45,8 @@ import numpy as np
 from ms_peak_picker import pick_peaks, PeakSet, PeakIndex
 from ms_peak_picker.scan_filter import FTICRBaselineRemoval
 
-from .averagine import AveragineCache, peptide
+from ms_deisotope import constants
+from .averagine import AveragineCache, peptide, PROTON
 from .scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 from .deconvolution import deconvolute_peaks
 from .data_source import MSFileLoader, ScanIterator
@@ -299,17 +300,56 @@ class ScanProcessor(Base, LogUtilsMixin):
     def _prepopulate_averagine_cache(self):
         if 'averagine' in self.ms1_deconvolution_args:
             averagine = self.ms1_deconvolution_args['averagine']
-            if isinstance(averagine, list):
-                averagine = [AveragineCache(a).populate() for a in averagine]
+            ms1_truncate_after = self.ms1_deconvolution_args.get(
+                'truncate_after', constants.TRUNCATE_AFTER)
+            ms1_ignore_below = self.ms1_deconvolution_args.get(
+                'ignore_below', constants.IGNORE_BELOW)
+            ms1_charge_range = self.ms1_deconvolution_args.get('charge_range', (1, 8))
+            ms1_charge_carrier = self.ms1_deconvolution_args.get(
+                'charge_carrier', PROTON)
+            if isinstance(averagine, (list, tuple)):
+                averagine = [
+                    AveragineCache(a).populate(
+                        truncate_after=ms1_truncate_after,
+                        ignore_below=ms1_ignore_below,
+                        min_charge=ms1_charge_range[0],
+                        max_charge=ms1_charge_range[1],
+                        charge_carrier=ms1_charge_carrier)
+                    for a in averagine]
             else:
-                averagine = AveragineCache(averagine).populate()
+                averagine = AveragineCache(averagine).populate(
+                    truncate_after=ms1_truncate_after,
+                    ignore_below=ms1_ignore_below,
+                    min_charge=ms1_charge_range[0],
+                    max_charge=ms1_charge_range[1],
+                    charge_carrier=ms1_charge_carrier)
             self.ms1_deconvolution_args['averagine'] = averagine
         if 'averagine' in self.msn_deconvolution_args:
             averagine = self.msn_deconvolution_args['averagine']
-            if isinstance(averagine, list):
-                averagine = [AveragineCache(a).populate() for a in averagine]
+            msn_truncate_after = self.msn_deconvolution_args.get(
+                'truncate_after', constants.TRUNCATE_AFTER)
+            msn_ignore_below = self.msn_deconvolution_args.get(
+                'ignore_below', constants.IGNORE_BELOW)
+            msn_charge_range = self.msn_deconvolution_args.get(
+                'charge_range', (1, 8))
+            msn_charge_carrier = self.msn_deconvolution_args.get(
+                'charge_carrier', PROTON)
+            if isinstance(averagine, (list, tuple)):
+                averagine = [
+                    AveragineCache(a).populate(
+                        truncate_after=msn_truncate_after,
+                        ignore_below=msn_ignore_below,
+                        min_charge=msn_charge_range[0],
+                        max_charge=msn_charge_range[1],
+                        charge_carrier=msn_charge_carrier
+                    ) for a in averagine]
             else:
-                averagine = AveragineCache(averagine).populate()
+                averagine = AveragineCache(averagine).populate(
+                    truncate_after=msn_truncate_after,
+                    ignore_below=msn_ignore_below,
+                    min_charge=msn_charge_range[0],
+                    max_charge=msn_charge_range[1],
+                    charge_carrier=msn_charge_carrier)
             self.msn_deconvolution_args['averagine'] = averagine
 
     def _reject_candidate_precursor_peak(self, peak, product_scan):
@@ -396,6 +436,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         -------
         PeakSet
         """
+        # averaged scans are always profile mode
         new_scan = precursor_scan.average(self.ms1_averaging)
         prec_peaks = pick_peaks(*new_scan.arrays,
                                 target_envelopes=self._get_envelopes(precursor_scan),
@@ -522,6 +563,8 @@ class ScanProcessor(Base, LogUtilsMixin):
 
         for scan in product_scans:
             precursor_ion = scan.precursor_information
+            if precursor_ion is None:
+                continue
             peak = prec_peaks.has_peak(precursor_ion.mz)
             if peak is not None:
                 err = abs(peak.mz - precursor_ion.mz)
@@ -550,7 +593,7 @@ class ScanProcessor(Base, LogUtilsMixin):
             if scan.ms_level > 1:
                 scan.precursor_information.default(orphan=True)
 
-    def deconvolute_precursor_scan(self, precursor_scan, priorities=None):
+    def deconvolute_precursor_scan(self, precursor_scan, priorities=None, product_scans=None):
         """Deconvolute the given precursor scan, giving priority to its product ions,
         correcting the :attr:`precursor_information` attributes of priority targets,
         as well as calculating the degree of precursor purity and coisolating ions.
@@ -561,6 +604,8 @@ class ScanProcessor(Base, LogUtilsMixin):
             The precursor scan to deconvolute
         priorities : :class:`list` of :class:`PriorityTarget`, optional
             The priority targets for the product ions derived from `precursor_scan`
+        product_scans: :class:`list` of :class:`~.Scan`
+            The product ion scans of `precursor_scan`.
 
         Returns
         -------
@@ -577,6 +622,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         if priorities is None:
             priorities = []
+        if product_scans is None:
+            product_scans = []
 
         self.log("Deconvoluting Precursor Scan %r" % precursor_scan)
         self.log("Priorities: %r" % priorities)
@@ -620,9 +667,13 @@ class ScanProcessor(Base, LogUtilsMixin):
             precursor_scan.id, [
                 (p.mz, p.charge) if p is not None else None for p in priorities
             ]))
-        for product_scan in precursor_scan.product_scans:
+        if priorities:
+            if not product_scans:
+                self.debug("Priority targets were passed without product scans")
+        for product_scan in product_scans:
             precursor_information = product_scan.precursor_information
-
+            if precursor_information is None:
+                continue
             # unknown precursor purity
             product_scan.annotations['precursor purity'] = 0.0
             i = _get_nearest_index(precursor_information.mz, priorities)
@@ -644,7 +695,9 @@ class ScanProcessor(Base, LogUtilsMixin):
                     "Could not find deconvolution for %r (No solution was found for this region)" %
                     precursor_information)
                 precursor_information.default(orphan=True)
-
+                coisolation = coisolation_detection.coisolation(
+                    precursor_scan, None, product_scan.isolation_window, 0.0)
+                precursor_information.coisolation = coisolation
                 continue
             elif peak.charge == 1 or (peak.charge != precursor_information.charge and self.trust_charge_hint):
                 if precursor_information.charge != ChargeNotProvided:
@@ -667,6 +720,10 @@ class ScanProcessor(Base, LogUtilsMixin):
                         ', '.join(["(%0.4f, %0.1f)" % (p.mz, p.intensity) for p in peak.envelope]),
                         ', '.join(["(%0.4f, %0.1f)" % (p.mz, p.intensity) for p in peak.fit.theoretical]))
                 )
+            else:
+                coisolation = coisolation_detection.coisolation(
+                    precursor_scan, None, product_scan.isolation_window, 0.0)
+                precursor_information.coisolation = coisolation
 
             product_scan.annotations['precursor purity'] = precursor_purity
             precursor_information.extract(peak)
@@ -699,16 +756,16 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         self.log("Deconvoluting Product Scan %r" % (product_scan, ))
         precursor_ion = product_scan.precursor_information
-        top_charge_state = precursor_ion.extracted_charge
-        if not top_charge_state:
-            top_charge_state = precursor_ion.charge
         deconargs = dict(self.msn_deconvolution_args)
-        charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
-        if top_charge_state is not None and top_charge_state is not ChargeNotProvided and\
-           top_charge_state != 0 and abs(top_charge_state) < abs(charge_range[1]):
-            charge_range[1] = top_charge_state
-
-        deconargs["charge_range"] = charge_range
+        if precursor_ion is not None:
+            top_charge_state = precursor_ion.extracted_charge
+            if not top_charge_state:
+                top_charge_state = precursor_ion.charge
+            charge_range = list(deconargs.get("charge_range", [1, top_charge_state]))
+            if top_charge_state is not None and top_charge_state is not ChargeNotProvided and\
+                    top_charge_state != 0 and abs(top_charge_state) < abs(charge_range[1]):
+                charge_range[1] = top_charge_state
+            deconargs["charge_range"] = charge_range
 
         if product_scan.polarity in (-1, 1):
             polarity = product_scan.polarity
@@ -766,7 +823,8 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         precursor_scan, priorities, product_scans = self.process_scan_group(precursor, products)
         if precursor_scan is not None:
-            self.deconvolute_precursor_scan(precursor_scan, priorities)
+            self.deconvolute_precursor_scan(
+                precursor_scan, priorities, product_scans)
         else:
             self._default_all_precursor_information(product_scans)
 
@@ -866,8 +924,8 @@ def process(data_source, ms1_averagine=peptide, msn_averagine=peptide,
         Whether or not to process whole MS1 scans or just the regions around those peaks
         chosen for MSn
     default_precursor_ion_selection_window : :class:`float`
-        Size of the selection window to use when :attr:`pick_only_tandem_envelopes` is `True`
-        and the information is not available in the scan.
+        Size of the selection window to use when an explicit isolation window width is not
+        available in the scan.
     trust_charge_hint : :class:`bool`
         Whether or not to trust the charge provided by the data source when determining
         the charge state of precursor isotopic patterns. Defaults to `True`

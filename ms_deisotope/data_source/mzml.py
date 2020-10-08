@@ -5,11 +5,12 @@ implementation.
 The parser is based on :mod:`pyteomics.mzml`.
 '''
 import warnings
-
+import zlib
 from six import string_types as basestring
 
 import numpy as np
 from pyteomics import mzml
+from pyteomics.auxiliary import unitfloat
 from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
@@ -26,14 +27,27 @@ from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .metadata.sample import Sample
+from .metadata.scan_traits import FAIMS_compensation_voltage, ION_MOBILITY_TYPES
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
 
 
+def _open_if_not_file(obj, mode='rt'):
+    if obj is None:
+        return obj
+    if hasattr(obj, 'read'):
+        return obj
+    return open(obj, mode)
+
+
 class _MzMLParser(mzml.MzML):
     # we do not care about chromatograms
     _indexed_tags = {'spectrum', }
+
+    def __init__(self, *args, **kwargs):
+        self._index_file_obj = _open_if_not_file(kwargs.pop("index_file", None))
+        super(_MzMLParser, self).__init__(*args, **kwargs)
 
     def _handle_param(self, element, **kwargs):
         try:
@@ -62,12 +76,33 @@ class _MzMLParser(mzml.MzML):
                         break
         return dtype
 
+    def _check_has_byte_offset_file(self):
+        if self._index_file_obj is not None:
+            return True
+        return super(_MzMLParser, self)._check_has_byte_offset_file()
+
+    def _read_byte_offsets(self):
+        if self._index_file_obj is not None:
+            index = self._index_class.load(self._index_file_obj)
+            try:
+                self._index_file_obj.close()
+            except (AttributeError, OSError, IOError):
+                pass
+            self._offset_index = index
+        else:
+            super(_MzMLParser, self)._read_byte_offsets()
 
 def _find_arrays(data_dict, decode=False):
     arrays = dict()
     for key, value in data_dict.items():
         if " array" in key:
-            arrays[key] = value.decode() if decode else value
+            if decode:
+                if value.data:
+                    arrays[key] = value.decode()
+                else:
+                    arrays[key] = np.array([], dtype=value.dtype)
+            else:
+                arrays[key] = value
     return arrays
 
 
@@ -99,7 +134,14 @@ class MzMLDataInterface(ScanDataSource):
             decode = not self._decode_binary
         except AttributeError:
             decode = False
-        arrays = _find_arrays(scan, decode=decode)
+        try:
+            arrays = _find_arrays(scan, decode=decode)
+        except zlib.error as zerr:
+            warnings.warn(
+                "An error occurred while decompressing the spectrum data arrays for scan %r: %r" % (
+                    self._scan_id(scan), zerr))
+            # Fall back assuming the missing key error handling below will just work *tm*
+            arrays = {}
         try:
             return arrays.pop('m/z array'), arrays.pop("intensity array"), arrays
         except KeyError:
@@ -154,13 +196,19 @@ class MzMLDataInterface(ScanDataSource):
                         precursor_scan_id = self._scan_id(prev_scan._data)
                         break
                     i += 1
+
+        keys = set(pinfo_dict) - {"selected ion m/z", 'peak intensity', 'charge state'}
+
         pinfo = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),
             charge=pinfo_dict.get('charge state', ChargeNotProvided),
             precursor_scan_id=precursor_scan_id,
             source=self,
-            product_scan_id=self._scan_id(scan))
+            product_scan_id=self._scan_id(scan),
+            annotations={
+                k: pinfo_dict[k] for k in keys
+            })
         return pinfo
 
     def _scan_title(self, scan):
@@ -389,20 +437,22 @@ class MzMLDataInterface(ScanDataSource):
             combination = "mean of spectra"
         scan_info['combination'] = combination
         scan_info_scan_list = []
-        for scan in scan_list_struct.get("scan", []):
-            scan = scan.copy()
+        misplaced_FAIMS_value = scan.get(FAIMS_compensation_voltage.name, None)
+        for i, scan_ in enumerate(scan_list_struct.get("scan", [])):
+            scan_ = scan_.copy()
+            if misplaced_FAIMS_value is not None and i == 0:
+                scan[FAIMS_compensation_voltage.name] = misplaced_FAIMS_value
             struct = {}
-            struct['start_time'] = scan.pop('scan start time', 0)
-            struct['drift_time'] = scan.pop('ion mobility drift time', 0)
-            struct['injection_time'] = scan.pop("ion injection time", 0)
+            struct['start_time'] = scan_.pop('scan start time', unitfloat(0, 'minute'))
+            struct['injection_time'] = scan_.pop("ion injection time", unitfloat(0, 'millisecond'))
             windows = []
-            for window in scan.pop("scanWindowList", {}).get("scanWindow", []):
+            for window in scan_.pop("scanWindowList", {}).get("scanWindow", []):
                 windows.append(ScanWindow(
                     window['scan window lower limit'],
                     window['scan window upper limit']))
             struct['window_list'] = windows
-            scan.pop("instrumentConfigurationRef", None)
-            struct['traits'] = scan
+            scan_.pop("instrumentConfigurationRef", None)
+            struct['traits'] = scan_
             scan_info_scan_list.append(ScanEventInformation(**struct))
         scan_info['scan_list'] = scan_info_scan_list
         return ScanAcquisitionInformation(**scan_info)
@@ -570,6 +620,62 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         return get_tag_attributes(self.source, "run")
 
 
+def checksum_mzml_stream(stream):
+    """Calculate the SHA1 checksum of an indexed mzML file for the purposes
+    of validating the checksum at the end of the file.
+
+    Parameters
+    ----------
+    stream : file-like
+        A file-like object supporting a `read` method.
+
+    Returns
+    -------
+    calculated_checksum: str
+        The checksum calculated from the file's contents up to the first occurrence
+        of <fileChecksum>, exclusive.
+    obsesrved_checksum: str or :const:`None`
+        The checksum written in the file within the <fileChecksum> tag. Will be :const:`None`
+        if the tag is not found and closed. Expected to match the calculated checksum.
+    """
+    import re
+    import hashlib
+    hasher = hashlib.sha1()
+    target = b"<fileChecksum>"
+    target_pattern = re.compile(b"(" + target + b")")
+    extract_checksum = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
+    block_size = int(2 ** 12)
+    chunk = stream.read(block_size)
+    hit_target = False
+    observed_checksum = None
+    while chunk:
+        tokens = target_pattern.split(chunk)
+        for token in tokens:
+            hasher.update(token)
+            if token == target:
+                hit_target = True
+                chunk += stream.read(5000)
+                observed_checksum = extract_checksum.findall(chunk)
+                if observed_checksum:
+                    observed_checksum = observed_checksum[0]
+                else:
+                    observed_checksum = None
+                break
+        if hit_target:
+            break
+        chunk = stream.read(block_size)
+    return hasher.hexdigest(), observed_checksum
+
+
+def read_file_checksum(stream):
+    import re
+    stream.seek(-5000, 2)
+    chunk = stream.read(5001)
+    target = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
+    matches = target.findall(chunk)
+    return matches
+
+
 class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     """Reads scans from PSI-HUPO mzML XML files. Provides both iterative and
     random access.
@@ -585,11 +691,11 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     _parser_cls = _MzMLParser
 
 
-    def __init__(self, source_file, use_index=True, decode_binary=True, **kwargs):
+    def __init__(self, source_file, use_index=True, decode_binary=True, index_file=None, **kwargs):
         self.source_file = source_file
         self._source = self._parser_cls(source_file, read_schema=True, iterative=True,
                                         huge_tree=True, decode_binary=decode_binary,
-                                        use_index=use_index)
+                                        use_index=use_index, index_file=index_file)
         self.initialize_scan_cache()
         self._use_index = use_index
         self._decode_binary = decode_binary

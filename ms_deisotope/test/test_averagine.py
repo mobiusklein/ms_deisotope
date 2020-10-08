@@ -4,7 +4,7 @@ from ms_deisotope.averagine import (
     peptide, calculate_mass, average_compositions,
     _Averagine, Averagine, add_compositions,
     AveragineCache, _AveragineCache, TheoreticalIsotopicPattern,
-    _TheoreticalIsotopicPattern)
+    _TheoreticalIsotopicPattern, BasePeakToMonoisotopicOffsetEstimator)
 
 
 tid1 = [
@@ -72,6 +72,18 @@ class TestSupportMethods(unittest.TestCase):
         avgd = add_compositions({}, composition)
         for k, v in avgd.items():
             self.assertAlmostEqual(v, composition[k], 3)
+
+
+class TestBasePeakToMonoisotopicOffsetEstimator(unittest.TestCase):
+    def test_binned(self):
+        est = BasePeakToMonoisotopicOffsetEstimator(peptide)
+        assert est(1000) == 0
+        assert est(2500) == 1
+        assert est(3500) == 2
+
+    def test_exact(self):
+        est = BasePeakToMonoisotopicOffsetEstimator(peptide)
+        assert est(3460.0, False) == 2
 
 
 if __name__ == '__main__':

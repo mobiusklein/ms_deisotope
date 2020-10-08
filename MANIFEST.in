@@ -3,9 +3,7 @@ recursive-include ms_deisotope *.pxd
 recursive-include ms_deisotope *.c
 recursive-include ms_deisotope *.h
 recursive-include ms_deisotope/data_source/_vendor *
-
-graft ms_deisotope/test/test_data
-
-recursive-exclude ms_deisotope *.pyd
-
 include README.rst
+include pyproject.toml
+recursive-exclude ms_deisotope *.pyd
+recursive-exclude ms_deisotope/test/test_data *

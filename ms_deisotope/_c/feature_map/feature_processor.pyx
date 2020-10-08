@@ -1,5 +1,5 @@
 # cython: embedsignature=True
-# 
+#
 
 from libc.stdlib cimport malloc, free
 
@@ -57,6 +57,7 @@ cdef object double_vector_to_ndarray(dvec* vec):
     return out
 
 
+@cython.final
 cdef class CartesianProductIterator(object):
     cdef:
         public list collections
@@ -66,12 +67,12 @@ cdef class CartesianProductIterator(object):
         public bint done
         public size_t total_combinations
 
-    def __cinit__(self, collections):
+    cdef inline void _initialize(self, list collections):
         cdef:
             size_t i, n
             list sublist
 
-        self.collections = list(map(list, collections))
+        self.collections = collections
         self.size = PyList_GET_SIZE(self.collections)
         self.lengths = <int*>malloc(sizeof(int) * self.size)
         self.indices = <int*>malloc(sizeof(int) * self.size)
@@ -86,6 +87,16 @@ cdef class CartesianProductIterator(object):
                 self.done = True
             self.indices[i] = 0
 
+    @staticmethod
+    cdef CartesianProductIterator _create(list collections):
+        cdef CartesianProductIterator self = CartesianProductIterator.__new__(CartesianProductIterator)
+        self._initialize(collections)
+        return self
+
+    def __init__(self, collections):
+        self.collections = list(map(list, collections))
+        self._initialize(self.collections)
+
     def __dealloc__(self):
         free(self.lengths)
         free(self.indices)
@@ -96,10 +107,10 @@ cdef class CartesianProductIterator(object):
     def get_indices(self):
         return [self.indices[i] for i in range(self.size)]
 
-    cpdef bint has_more(self):
+    cdef inline bint has_more(self):
         return not self.done
 
-    cpdef list compose_next_value(self):
+    cdef inline list compose_next_value(self):
         cdef:
             int i, ix
             list result, sublist
@@ -114,7 +125,7 @@ cdef class CartesianProductIterator(object):
             result.append(value)
         return result
 
-    cpdef advance(self):
+    cdef inline void advance(self):
         for i in range(self.size - 1, -1, -1):
             if self.indices[i] == self.lengths[i] - 1:
                 self.indices[i] = 0
@@ -124,7 +135,7 @@ cdef class CartesianProductIterator(object):
                 self.indices[i] += 1
                 break
 
-    cpdef list get_next_value(self):
+    cdef inline list get_next_value(self):
         cdef list value
         if self.done:
             return None
@@ -163,6 +174,7 @@ cdef tuple _conform_envelopes(list experimental, list base_theoretical, size_t* 
     return (cleaned_eid, tid)
 
 
+@cython.final
 cdef class envelope_conformer:
     cdef:
         list experimental
@@ -173,12 +185,12 @@ cdef class envelope_conformer:
     cdef envelope_conformer _create():
         return envelope_conformer.__new__(envelope_conformer)
 
-    cdef void acquire(self, list experimental, list theoretical):
+    cdef inline void acquire(self, list experimental, list theoretical):
         self.experimental = experimental
         self.theoretical = theoretical
         self.n_missing = 0
 
-    cdef void conform(self, double minimum_theoretical_abundance=0.05):
+    cdef inline void conform(self, double minimum_theoretical_abundance=0.05):
         cdef:
             double total = 0
             size_t n_missing = 0
@@ -189,7 +201,7 @@ cdef class envelope_conformer:
             TheoreticalPeak tpeak, peak
 
         cleaned_eid = []
-        
+
         for i in range(PyList_GET_SIZE(self.experimental)):
             fpeak = <FittedPeak>PyList_GET_ITEM(self.experimental, i)
             if fpeak is None:
@@ -243,13 +255,13 @@ cdef class LCMSFeatureProcessorBase(object):
         public IsotopicFitterBase scorer
         public AveragineCache averagine
 
-    cpdef list create_theoretical_distribution(self, double mz, int charge, double charge_carrier=PROTON, double truncate_after=0.8,
-                                               double ignore_below=0.05):
+    cpdef TheoreticalIsotopicPattern create_theoretical_distribution(self, double mz, int charge, double charge_carrier=PROTON, double truncate_after=0.8,
+                                                                     double ignore_below=0.05):
         cdef:
             TheoreticalIsotopicPattern base_tid
         base_tid = self.averagine.isotopic_cluster(
             mz, charge, truncate_after=truncate_after, ignore_below=ignore_below,
-            charge_carrier=charge_carrier)        
+            charge_carrier=charge_carrier)
         return base_tid
 
     cpdef list find_all_features(self, double mz, double error_tolerance=2e-5):
@@ -341,9 +353,12 @@ cdef class LCMSFeatureProcessorBase(object):
                 count += 1
         if count == 0:
             return 0
+        if count == 1:
+            # Penalize singletons? This may harm more than help
+            count += 1
         return acc / count
 
-    cpdef LCMSFeatureSetFit _fit_single_feature_set(self, list features, list base_tid, double error_tolerance, 
+    cpdef LCMSFeatureSetFit _fit_single_feature_set(self, list features, list base_tid, double error_tolerance,
                                                     int charge, double charge_carrier=PROTON, int max_missed_peaks=1,
                                                     double threshold_scale=0.3):
         cdef:
@@ -421,12 +436,12 @@ cdef class LCMSFeatureProcessorBase(object):
             dvec* time_vec
 
         feature_groups = self.match_theoretical_isotopic_distribution(
-            base_tid.truncated_tid, error_tolerance, interval=feature)
+            base_tid.peaklist, error_tolerance, interval=feature)
         feature_fits = []
 
         conformer = envelope_conformer._create()
 
-        combn_iter = CartesianProductIterator(feature_groups)
+        combn_iter = CartesianProductIterator._create(feature_groups)
         combn_i = 0
         while combn_iter.has_more():
             features = combn_iter.get_next_value()
@@ -462,7 +477,7 @@ cdef class LCMSFeatureProcessorBase(object):
                 if eid is None:
                     continue
                 counter += 1
-                conformer.acquire(eid, snapped_tid.truncated_tid)
+                conformer.acquire(eid, snapped_tid.peaklist)
                 conformer.conform()
                 cleaned_eid = conformer.experimental
                 tid = conformer.theoretical

@@ -6,10 +6,15 @@ cdef class LCMSFeatureMap(object):
     cdef:
         public list features
 
+    cdef Py_ssize_t get_size(self)
+    cdef LCMSFeature get(self, size_t i)
     cpdef list _find_all(self, double mz, double error_tolerance)
     cpdef LCMSFeature _search(self, double mz, double error_tolerance)
+    cpdef list spanning_time(self, double time_point)
+    cpdef LCMSFeatureMap clone(self, bint deep=*)
 
 cpdef tuple binary_search_with_flag(list array, double mz, double error_tolerance)
 cdef long binary_search(list array, double mz, double error_tolerance)
 cdef void search_sweep(list array, double mz, double error_tolerance, long* loout, long* hiout)
 
+cpdef list split_sparse(LCMSFeatureMap self, double delta_rt=*, size_t min_size=*)

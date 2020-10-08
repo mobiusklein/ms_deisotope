@@ -178,16 +178,26 @@ class Scan(ScanBase):
         self._isolation_window = None
         self._instrument_configuration = None
 
-    def clear(self):
+    def clear(self, full=False):
         """Releases all associated in-memory data and clears the cached
         attributes.
 
         The data reference attribute :attr:`_data` is retained
         and unchanged.
+
+        Parameters
+        ----------
+        full: bool
+            Whether to clear more attributes to aggressively free memory.
         """
         if self.source is not None:
             self.source._scan_cleared(self)
         self._unload()
+        if full:
+            self.peak_set = None
+            self.deconvoluted_peak_set = None
+            self.product_scans = []
+            self._external_annotations = {}
 
     @property
     def ms_level(self):
@@ -281,7 +291,10 @@ class Scan(ScanBase):
             if len(value) == 2:
                 self._arrays = RawDataArrays(*map(np.asanyarray, value))
             elif len(value) == 3:
-                RawDataArrays(*map(np.asanyarray, value[:2]), arrays=dict(value[2]))
+                self._arrays = RawDataArrays(*map(np.asanyarray, value[:2]), arrays=dict(value[2]))
+            else:
+                raise ValueError("Too many values to convert. Please provide two arrays, "
+                                 "or two arrays and a dictionary of additional arrays.")
         else:
             raise TypeError(
                 "arrays must be an instance of RawDataArrays or a pair of numpy arrays")
@@ -665,16 +678,28 @@ class Scan(ScanBase):
         self.deconvoluted_peak_set = decon_results.peak_set
         return self
 
-    def pack(self):
+    def pack(self, bind=False):
         '''Pack the (dispersed) representation of the data in this :class:`Scan`
         into a packed :class:`ProcessedScan` object.
+
+        .. note::
+            A reference to :attr:`precursor_information` is passed to the returned
+            :class:`ProcessedScan`, so both objects share it. Because the :attr:`~.PrecursorInformation.product`
+            property works by looking up the scan in :attr:`source`, it's not possible to
+            retrieve the :class:`ProcessedScan` this way.
+
+        Parameters
+        ----------
+        bind: bool
+            Whether or not the :class:`ProcessedScan` object should also be bound
+            to :attr:`source`
 
         Returns
         -------
         :class:`ProcessedScan`
         '''
         precursor_info = self.precursor_information
-        return ProcessedScan(
+        scan = ProcessedScan(
             self.id, self.title, precursor_info,
             self.ms_level, self.scan_time, self.index,
             self.peak_set.pack() if self.peak_set is not None else None,
@@ -685,11 +710,13 @@ class Scan(ScanBase):
             self.isolation_window,
             self.instrument_configuration,
             self.product_scans,
-            self.annotations)
+            self.annotations,
+            source=self.source if bind else None)
+        return scan
 
     # signal transformation
 
-    def reprofile(self, max_fwhm=0.2, dx=0.01, model_cls=None):
+    def reprofile(self, max_fwhm=0.2, dx=0.005, model_cls=None, override_fwhm=None):
         """Use the picked peaks in :attr:`peak_set` to create a new
         profile mass spectrum using a peak shape model.
 
@@ -724,7 +751,8 @@ class Scan(ScanBase):
         if not self.peak_set:
             arrays = (np.array([], dtype=float), np.array([], dtype=float))
         else:
-            arrays = reprofile(self.peak_set, max_fwhm, dx, model_cls)
+            arrays = reprofile(self.peak_set, max_fwhm, dx,
+                               model_cls, override_fwhm=override_fwhm)
         scan = WrappedScan(
             self._data, self.source, arrays,
             list(self.product_scans), is_profile=True,
@@ -760,6 +788,7 @@ class Scan(ScanBase):
         mzs, intensities = transform(mzs, intensities)
         return WrappedScan(self._data, self.source,
                            (mzs, intensities), list(self.product_scans),
+                           is_profile=self.is_profile,
                            annotations=self._external_annotations)
 
     def transform(self, filters=None):
@@ -783,6 +812,7 @@ class Scan(ScanBase):
             mzs, intensities, filters=filters)
         return WrappedScan(self._data, self.source,
                            (mzs, intensities), list(self.product_scans),
+                           is_profile=self.is_profile,
                            annotations=self._external_annotations)
 
     def average_with(self, scans, dx=None, weight_sigma=None):
@@ -814,9 +844,14 @@ class Scan(ScanBase):
         arrays = []
         for scan in scans:
             if scan.is_profile:
+                if scan.arrays.mz.size == 0:
+                    continue
                 arrays.append(scan.arrays)
             else:
-                arrays.append(scan.reprofile(dx=dx).arrays)
+                scan_arrays = scan.reprofile(dx=dx).arrays
+                if scan_arrays.mz.size == 0:
+                    continue
+                arrays.append(scan_arrays)
         if weight_sigma:
             if weight_sigma == 1:
                 weight_sigma = 0.025
@@ -1125,7 +1160,7 @@ class ProcessedScan(ScanBase):
                  deconvoluted_peak_set, polarity=None, activation=None,
                  acquisition_information=None, isolation_window=None,
                  instrument_configuration=None, product_scans=None,
-                 annotations=None):
+                 annotations=None, source=None):
         if product_scans is None:
             product_scans = []
         if annotations is None:
@@ -1145,10 +1180,15 @@ class ProcessedScan(ScanBase):
         self.instrument_configuration = instrument_configuration
         self.product_scans = product_scans
         self.annotations = annotations
-        self.source = None
+        self.source = source
 
-    def clear(self):
+    def clear(self, full=False):
         '''Clear storage-heavy attribute values
+
+        Parameters
+        ----------
+        full: bool
+            Whether to clear attributes more aggressively to free up space.
         '''
         self.peak_set = None
         self.deconvoluted_peak_set = None

@@ -197,11 +197,6 @@ class ExhaustivePeakSearchDeconvoluterBase(DeconvoluterBase):
         results = self._fit_peaks_at_charges(
             target_peaks, error_tolerance, charge_carrier=charge_carrier, truncate_after=truncate_after,
             ignore_below=ignore_below)
-        if self.incremental_truncation is not None:
-            solutions = set()
-            for result in results:
-                solutions.update(self.fit_incremental_truncation(result, self.incremental_truncation))
-            results = solutions
         return (results)
 
     def charge_state_determination(self, peak, error_tolerance=ERROR_TOLERANCE, charge_range=(1, 8),
@@ -930,10 +925,11 @@ class PeakDependenceGraphDeconvoluterBase(ExhaustivePeakSearchDeconvoluterBase):
 
 
 try:
+    _has_c = True
     from ms_deisotope._c.deconvoluter_base import (
         _explore_local as _c_explore_local,
         populate_graph as cpopulate_graph)
     PeakDependenceGraphDeconvoluterBase._explore_local = _c_explore_local
     PeakDependenceGraphDeconvoluterBase.populate_graph = cpopulate_graph
 except ImportError as e:
-    print(e)
+    _has_c = False

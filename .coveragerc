@@ -15,6 +15,7 @@ omit =
     ms_deisotope/plot.py
     ms_deisotope/scoring.py
     ms_deisotope/peak_dependency_network/intervals.py
+    ms_deisotope/test/*
 
 [report]
 # Regexes for lines to exclude from consideration

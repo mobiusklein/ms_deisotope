@@ -8,6 +8,7 @@ The parser is based on :mod:`pyteomics.mgf`.
 '''
 
 from pyteomics import mgf
+from pyteomics.auxiliary import OffsetIndex
 import numpy as np
 
 from six import string_types as basestring
@@ -19,6 +20,8 @@ from .scan import (
 
 from .metadata.file_information import (
     FileInformation, MS_MSn_Spectrum)
+
+from ._compression import test_if_file_has_fast_random_access
 
 
 class _MGFParser(mgf.IndexedMGF):
@@ -252,6 +255,10 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
         self.make_iterator()
         self._title_to_index = self._prepare_index_lookup()
 
+    @property
+    def has_fast_random_access(self):
+        return test_if_file_has_fast_random_access(self.source.file)
+
     def _prepare_index_lookup(self):
         title_to_index = dict()
         for i, key in enumerate(self.index):
@@ -281,8 +288,11 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
         if self._use_index:
             return _MGFParser(self.source_file, read_charges=False,
                               convert_arrays=1, encoding=self.encoding)
-        return mgf.MGF(self.source_file, read_charges=False,
-                       convert_arrays=1, encoding=self.encoding)
+        simple_reader = mgf.MGF(
+            self.source_file, read_charges=False,
+            convert_arrays=1, encoding=self.encoding)
+        simple_reader.index = OffsetIndex()
+        return simple_reader
 
     def get_scan_by_id(self, scan_id):
         """Retrieve the scan object for the specified scan id.

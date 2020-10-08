@@ -1,5 +1,18 @@
-from collections import namedtuple, MutableSequence
+"""A module defining types for describing instrument scans and windows,
+as well as a :class:`~.Term` subclass for the `scan attribute` family.
+"""
 
+from collections import namedtuple
+
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
+
+
+from pyteomics.auxiliary import unitfloat  # pylint: disable=unused-import
+
+from ms_deisotope.utils import _MappingOverAttributeProxy
 from .cv import Term, TermSet
 
 
@@ -29,6 +42,8 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
         The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
         the window
     """
+
+    __slots__ = ()
 
     @classmethod
     def make_empty(cls, point):
@@ -113,6 +128,13 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     def __ne__(self, other):
         return not (self == other)
 
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
+
+    def __reduce__(self):
+        return self.__class__, (self.lower, self.target, self.upper)
+
 
 class ScanAcquisitionInformation(MutableSequence):
     """Describes the set distinct scans along the measurable range by
@@ -128,6 +150,12 @@ class ScanAcquisitionInformation(MutableSequence):
     scan_list : :class:`list` of :class:`ScanEventInformation`
         The list of scan events performed
     """
+
+    __slots__ = ("combination", "scan_list")
+
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
 
     def __init__(self, combination, scan_list):  # pylint: disable=super-init-not-called
         self.combination = combination
@@ -153,7 +181,8 @@ class ScanAcquisitionInformation(MutableSequence):
             The event to insert
         """
         if not isinstance(value, ScanEventInformation):
-            raise TypeError("Expected ScanEventInformation but got %r" % (type(value), ))
+            raise TypeError(
+                "Expected ScanEventInformation but got %r" % (type(value), ))
         self.scan_list.insert(index, value)
 
     def __len__(self):
@@ -169,18 +198,99 @@ class ScanAcquisitionInformation(MutableSequence):
     def __ne__(self, other):
         return not (self == other)
 
+    def __reduce__(self):
+        return self.__class__, (self.combination, self.scan_list)
 
-class ScanEventInformation(object):
+    def copy(self):
+        return self.__class__(self.combination, [se.copy() for se in self.scan_list])
+
+
+class _IonMobilityMixin(object):
+    __slots__ = ()
+
+    @property
+    def _ion_mobility(self):
+        return IonMobilityMethods(self)
+
+    def has_ion_mobility(self):
+        """Check whether the scan has ion mobility measure.
+
+        Returns
+        -------
+        bool
+        """
+        return self._ion_mobility.has_ion_mobility()
+
+    @property
+    def drift_time(self):
+        """Fetch the drift time quantity of the scan
+
+        Returns
+        -------
+        value: float or :const:`None`
+            The measured drift time, or :const:`None`
+        """
+        return self._ion_mobility.drift_time()
+
+    @drift_time.setter
+    def drift_time(self, value):
+        if value is None or value == 0:
+            return
+        else:
+            raise ValueError("Cannot set drift time directly yet.")
+
+    @property
+    def ion_mobility_type(self):
+        """Fetch the ion mobility type of the scan.
+
+        Returns
+        -------
+        ims_type: :class:`ScanAttribute` or :const:`None`
+            The ion mobility type, or :const:`None`
+        """
+        return self._ion_mobility.ion_mobility_type()
+
+
+class ScanEventInformation(_IonMobilityMixin):
+    """Describe a single instrument scan, one or more of which compose
+    an actual :class:`Scan` object which describes a spectrum.
+
+    Attributes
+    ----------
+    start_time: :class:`unitfloat`
+        The time since the experiment began when the scan started being acquired.
+    window_list: :class:`list` of :class:`ScanWindow`
+        The intervals over the m/z axis that were sampled from during this scan.
+    injection_time: :class:`unitfloat`
+        The time spent injecting ions into the analyzer.
+    traits: :class:`dict`
+        A mapping from :class:`ScanAttribute` to optional values describing this scan event.
+    drift_time: :class:`unitfloat`
+        The IMS drift time, if present, :const:`None` otherwise. Determined from :attr:`traits`.
+    ion_mobility_type: :class:`ScanAttribute`
+        The IMS mechanism type, if present, :const:`None` otherwise. Determined from :attr:`traits`.
+    """
+
+    __slots__ = ("start_time", "window_list", "injection_time", "traits")
+
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
+
     def __init__(self, start_time, window_list, drift_time=None, injection_time=None, traits=None, **options):
+        self.traits = traits or {}
+        self.traits.update(options)
         self.start_time = start_time
         self.window_list = window_list or []
         self.drift_time = drift_time
         self.injection_time = injection_time
-        self.traits = traits or {}
-        self.traits.update(options)
 
-    def has_ion_mobility(self):
-        return self.drift_time is not None and self.drift_time > 0
+    @property
+    def scan_configuration(self):
+        return self.traits.get('preset scan configuration')
+
+    def copy(self):
+        return self.__class__(self.start_time, self.window_list[:], None, self.injection_time, self.traits.copy())
 
     def __getitem__(self, i):
         return self.window_list[i]
@@ -219,6 +329,13 @@ class ScanEventInformation(object):
         return not (self == other)
 
     def total_scan_window(self):
+        """Create a :class:`ScanWindow` spanning from the lowest m/z of the lowest window
+        to the highest m/z of the highest window.
+
+        Returns
+        -------
+        :class:`ScanWindow`
+        """
         low = float('inf')
         high = 0
         for window in self:
@@ -226,12 +343,43 @@ class ScanEventInformation(object):
             high = max(high, window.upper)
         return ScanWindow(low, high)
 
+    def __reduce__(self):
+        return self.__class__, (self.start_time, self.window_list, None, self.injection_time, self.traits)
+
 
 class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
+    """Represent a single contiguous m/z interval that was sampled from during a scan.
+
+    This type supports spanning testing using the :meth:`__contains__` method, and is
+    equality comparable and hashable.
+
+    Attributes
+    ----------
+    lower: float
+        The lower bound of the window
+    upper: float
+        The upper bound of the window
+    """
+    __slots__ = ()
+
+    @property
+    def __dict__(self):
+        return _MappingOverAttributeProxy(self)
+
+    def __reduce__(self):
+        return self.__class__, (self.lower, self.upper)
+
     def __contains__(self, i):
         return self.lower <= i <= self.upper
 
     def is_empty(self):
+        """Test whether the window's bounds are both equal to :const:`None`
+        or `0`.
+
+        Returns
+        -------
+        bool
+        """
         if self.lower is None:
             return self.upper is None
         return self.lower == self.upper == 0.0
@@ -251,7 +399,10 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
 
 
 class ScanAttribute(Term):
-    pass
+    """Describes a single trait or attribute belonging to a scan,
+    such as injection time, filter string, or instrument configuration.
+    """
+    __slots__ = ()
 
 
 scan_attributes = []
@@ -279,6 +430,12 @@ scan_attributes = TermSet([
                   [u'scan attribute', u'PSM-level attribute', u'object attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
     ScanAttribute(u'scan rate', u'MS:1000015',
                   (u'Rate in Th/sec for scanning analyzers.'),
+                  'scan attribute',
+                  [u'scan attribute', u'object attribute']),
+    ScanAttribute(u'zoom scan', u'MS:1000497',
+                  (u'Special scan mode where data with improved resolution is'
+                   u'acquired. This is typically achieved by scanning a more'
+                   u'narrow m/z window or scanning with a lower scan rate.'),
                   'scan attribute',
                   [u'scan attribute', u'object attribute']),
     ScanAttribute(u'elution time', u'MS:1000826',
@@ -312,6 +469,11 @@ scan_attributes = TermSet([
     ScanAttribute(u'interchannel delay', u'MS:1000880',
                   (u'The duration of intervals between scanning, during which the'
                    u'instrument configuration is switched.'),
+                  'scan attribute',
+                  [u'scan attribute', u'object attribute']),
+    ScanAttribute(u'scan number', u'MS:1003057',
+                  (u'Ordinal number of the scan indicating its order of'
+                   u'acquisition within a mass spectrometry acquisition run.'),
                   'scan attribute',
                   [u'scan attribute', u'object attribute']),
     ScanAttribute(u'dwell time', u'MS:1000502',
@@ -373,6 +535,113 @@ scan_attributes = TermSet([
                   [u'instrument specific scan attribute', u'scan attribute', u'object attribute']),
 ])
 # [[[end]]]
+
+
+FAIMS_compensation_voltage = scan_attributes['MS:1001581']
+ion_mobility_drift_time = scan_attributes['MS:1002476']
+inverse_reduced_ion_mobility = scan_attributes['MS:1002815']
+
+ION_MOBILITY_TYPES = {
+    FAIMS_compensation_voltage,
+    ion_mobility_drift_time,
+    inverse_reduced_ion_mobility,
+}
+
+
+class IonMobilityMethods(object):
+    """Determine the ion mobility measure of a scan event.
+
+    This interface attempts to find FAIMS compensation voltage,
+    ion mobility drift time, and inverse reduced ion mobility.
+
+    Attributes
+    ----------
+    scan_event: :class:`ScanEventInformation`
+        The scan to interpret.
+    """
+
+    def __init__(self, scan_event):
+        self.scan_event = scan_event
+
+    def _get_traits(self):
+        return self.scan_event.traits
+
+    def get(self):
+        """Find the first ion mobility trait of the scan.
+
+        Returns
+        -------
+        ims_type: :class:`ScanAttribute`
+            The ion mobility type.
+        value: float
+            The drift time value.
+        """
+        for ims_type in ION_MOBILITY_TYPES:
+            result = self._get_traits().get(ims_type.name)
+            if result is not None:
+                return (ims_type, result)
+        return None
+
+    def has_ion_mobility(self):
+        """Check whether the scan has ion mobility measure.
+
+        Returns
+        -------
+        bool
+        """
+        return self.get() is not None
+
+    def drift_time(self):
+        """Fetch the drift time quantity of the scan
+
+        Returns
+        -------
+        value: float or :const:`None`
+            The measured drift time, or :const:`None`
+        """
+        _ims_type_value = self.get()
+        if _ims_type_value is None:
+            return None
+        _ims_type, value = _ims_type_value
+        return value
+
+    def add_ion_mobility(self, ion_mobility_type, drift_time):
+        """Set the drift time value for a specific type of ion mobility on
+        the scan event.
+
+        Parameters
+        ----------
+        ion_mobility_type : :class:`unitfloat`
+            The type of ion mobility to set the drift time for
+        drift_time : :class:`unitfloat`
+            The drift time, with appropriate units.
+        """
+        self._get_traits()[ion_mobility_type] = drift_time
+
+    def remove_ion_mobility_type(self, ion_mobility_type):
+        """Remove a specific type of ion mobility from the scan.
+
+        Parameters
+        ----------
+        ion_mobility_type : :class:`ScanAttribute`
+            The type of ion mobility to remove.
+        """
+        self._get_traits().pop(ion_mobility_type)
+
+    def ion_mobility_type(self):
+        """Fetch the ion mobility type of the scan.
+
+        Returns
+        -------
+        ims_type: :class:`ScanAttribute` or :const:`None`
+            The ion mobility type, or :const:`None`
+        """
+        _ims_type_value = self.get()
+        if _ims_type_value is None:
+            return None
+        ims_type, _value = _ims_type_value
+        return ims_type
+
 
 __all__ = [
     "IsolationWindow", "ScanAcquisitionInformation", "ScanEventInformation",

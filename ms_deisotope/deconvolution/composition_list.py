@@ -78,7 +78,7 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
         tid.truncate_after(truncate_after)
         tid.ignore_below(ignore_below)
         if mass_shift is not None:
-            tid.shift(mass_shift / abs(charge))
+            tid.shift(tid[0].mz + mass_shift / abs(charge))
         return tid
 
     def recalibrate_theoretical_mz(self, theoretical_distribution, experimental_mz):
@@ -254,7 +254,8 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
         by peak querying methods
     scale_method : str
         The name of the method to use to scale theoretical isotopic pattern intensities
-        to match the experimental isotopic pattern
+        to match the experimental isotopic pattern. For a description of options, see
+        :meth:`~.TheoreticalIsotopicPattern.scale`.
     use_subtraction : bool
         Whether or not to apply a subtraction procedure to experimental peaks after they
         have been fitted. This is only necessary if the same signal may be examined multiple
@@ -337,7 +338,8 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
         by peak querying methods
     scale_method : str
         The name of the method to use to scale theoretical isotopic pattern intensities
-        to match the experimental isotopic pattern
+        to match the experimental isotopic pattern. For a description of options, see
+        :meth:`~.TheoreticalIsotopicPattern.scale`.
     use_subtraction : bool
         Whether or not to apply a subtraction procedure to experimental peaks after they
         have been fitted. This is only necessary if the same signal may be examined multiple

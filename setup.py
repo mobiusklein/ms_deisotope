@@ -237,7 +237,7 @@ install_requires = [
     "brain-isotopic-distribution",
     "pyteomics >= 4.0",
     "lxml",
-    "psims >= 0.1.19",
+    "psims >= 0.1.28",
 ]
 
 
@@ -247,6 +247,9 @@ extra_requires = {
     ],
     "net": [
         "pythonnet"
+    ],
+    "plot": [
+        "matplotlib",
     ]
 }
 
@@ -277,7 +280,7 @@ def run_setup(include_cext=True):
         version=version,
         packages=find_packages(),
         author=', '.join(["Joshua Klein"]),
-        author_email=["jaklein@bu.edu"],
+        author_email=','.join(["jaklein@bu.edu"]),
         description='Access, Deisotope, and Charge Deconvolute Mass Spectra',
         long_description=long_description,
         ext_modules=make_extensions() if include_cext else None,
@@ -295,6 +298,7 @@ def run_setup(include_cext=True):
             'License :: OSI Approved :: Apache Software License',
             'Topic :: Scientific/Engineering :: Bio-Informatics'],
         install_requires=install_requires,
+        extras_require=extra_requires,
         include_package_data=True,
         zip_safe=False,
         project_urls={
@@ -308,6 +312,7 @@ try:
     run_setup(True)
 except Exception as exc:
     print(exc)
+    traceback.print_exc()
     run_setup(False)
 
     status_msgs(

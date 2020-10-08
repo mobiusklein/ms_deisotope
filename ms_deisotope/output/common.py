@@ -11,7 +11,7 @@ class ScanSerializerBase(object):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ScanSerializerBase, self).__init__(*args, **kwargs)
+        pass
 
     def __enter__(self):
         return self

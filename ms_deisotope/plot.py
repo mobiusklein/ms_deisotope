@@ -9,9 +9,10 @@ try:
     from matplotlib import pyplot as plt, gridspec
     from ms_peak_picker.plot import draw_peaklist, draw_raw
     has_plot = True
-except ImportError:
+except ImportError as err:
     import warnings
-    warnings.warn("Could not import matplotlib, plotting tools will not work")
+    import traceback
+    warnings.warn("Could not import matplotlib, plotting tools will not work\n%s" % (err, ))
     pyplot = None
     gridspec = None
     has_plot = False
@@ -126,13 +127,13 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
                 lower = pinfo.mz - 4
                 upper = pinfo.mz + 4
             try:
-                peak = max(scan.peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
+                peak = max(scan.peak_set.between(lower - 1.2, upper + 1.2), key=lambda x: x.intensity)
                 local_intensity = peak.intensity
             except ValueError:
                 if scan.deconvoluted_peak_set:
                     try:
-                        peak = max(scan.deconvoluted_peak_set.between(lower + 1.2, upper - 1.2),
-                                   key=lambda x: x.intensity, use_mz=True)
+                        peak = max(scan.deconvoluted_peak_set.between(lower - 1.2, upper + 1.2, use_mz=True),
+                                   key=lambda x: x.intensity)
                         local_intensity = peak.intensity
                     except ValueError:
                         local_intensity = 1e3
@@ -246,13 +247,13 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
 
     peak_set = scan.peak_set
     try:
-        peak = max(peak_set.between(lower + 1.2, upper - 1.2), key=lambda x: x.intensity)
+        peak = max(peak_set.between(lower - 1.2, upper + 1.2), key=lambda x: x.intensity)
         local_intensity = peak.intensity
     except ValueError:
         if scan.deconvoluted_peak_set:
             try:
-                peak = max(scan.deconvoluted_peak_set.between(lower + 1.2, upper - 1.2),
-                           key=lambda x: x.intensity, use_mz=True)
+                peak = max(scan.deconvoluted_peak_set.between(lower - 1.2, upper + 1.2, use_mz=True),
+                           key=lambda x: x.intensity)
                 local_intensity = peak.intensity
             except ValueError:
                 local_intensity = 1e3
@@ -354,6 +355,7 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
         peaks = scan
     else:
         peaks = getattr(scan, "deconvoluted_peak_set", [])
+    peaks = sorted(peaks, key=lambda x: x.mz)
     for peak in peaks:
         color = next(color_cycle)
         draw_peaklist(peak.envelope, ax=ax, color=color, alpha=0.75, **kwargs)

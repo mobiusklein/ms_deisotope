@@ -1,6 +1,7 @@
 *.c
 *.pyc
 *.pyd
+*.so
 ms_deisotope/_c/**/*.html
 .coverage
 .noseids

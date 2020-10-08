@@ -71,7 +71,7 @@ class ScanIDYieldingProcess(Process):
         return batch, scan_ids
 
     def run(self):
-        self.loader = MSFileLoader(self.ms_file_path)
+        self.loader = MSFileLoader(self.ms_file_path, decode_binary=False)
 
         if self.start_scan is not None:
             try:
@@ -190,8 +190,8 @@ class ScanBunchLoader(object):
         return (precursor, products)
 
 
-class ScanTransformingProcess(Process, ScanTransformMixin):
-    """ScanTransformingProcess describes a child process that consumes scan id bunches
+class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
+    """DeconvolutingScanTransformingProcess describes a child process that consumes scan id bunches
     from a shared input queue, retrieves the relevant scans, and preprocesses them using an
     instance of :class:`ms_deisotope.processor.ScanProcessor`, sending the reduced result
     to a shared output queue.
@@ -226,7 +226,8 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
                  msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
                  envelope_selector=None, ms1_averaging=0, log_handler=None,
-                 deconvolute=True, verbose=False, too_many_peaks_threshold=7000):
+                 deconvolute=True, verbose=False, too_many_peaks_threshold=7000,
+                 default_precursor_ion_selection_window=1.5):
         if log_handler is None:
             log_handler = show_message
 
@@ -276,6 +277,7 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
         self._work_complete = multiprocessing.Event()
         self.log_handler = log_handler
         self.too_many_peaks_threshold = too_many_peaks_threshold
+        self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
 
     def make_scan_transformer(self, loader=None):
         transformer = ScanProcessor(
@@ -286,68 +288,85 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
             msn_deconvolution_args=self.msn_deconvolution_args,
             loader_type=lambda x: x,
             envelope_selector=self.envelope_selector,
-            ms1_averaging=self.ms1_averaging)
+            ms1_averaging=self.ms1_averaging,
+            default_precursor_ion_selection_window=self.default_precursor_ion_selection_window)
         return transformer
 
     def handle_scan_bunch(self, scan, product_scans, scan_id, product_scan_ids, process_msn=True):
         transformer = self.transformer
         # handle the MS1 scan if it is present
         if scan is not None:
-            if len(scan.arrays[0]) == 0:
-                self.skip_scan(scan)
-                return
-
             try:
-                scan, priorities, product_scans = transformer.process_scan_group(
-                    scan, product_scans)
-                if scan is None:
-                    # no way to report skip
-                    pass
+                if len(scan.arrays[0]) == 0:
+                    self.skip_scan(scan)
                 else:
-                    if self.verbose:
-                        self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
-                    if self.deconvolute:
-                        transformer.deconvolute_precursor_scan(scan, priorities)
-                    self.send_scan(scan)
-            except NoIsotopicClustersError as e:
-                self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
-                    e.scan_id, len(scan.peak_set)))
+                    try:
+                        scan, priorities, product_scans = transformer.process_scan_group(
+                            scan, product_scans)
+                        if scan is None:
+                            # no way to report skip
+                            pass
+                        else:
+                            if self.verbose:
+                                self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
+                            if self.deconvolute:
+                                transformer.deconvolute_precursor_scan(
+                                    scan, priorities, product_scans)
+                            self.send_scan(scan)
+                    except (KeyboardInterrupt, SystemExit) as e:
+                        raise
+                    except NoIsotopicClustersError as e:
+                        self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
+                            e.scan_id, len(scan.peak_set)))
+                        self.skip_scan(scan)
+                    except EmptyScanError as e:
+                        self.skip_scan(scan)
+                    except Exception as e:
+                        self.skip_scan(scan)
+                        self.log_error(e, scan_id, scan, (product_scan_ids))
+            except (KeyboardInterrupt, SystemExit) as e:
+                raise
+            except Exception as err:
                 self.skip_scan(scan)
-            except EmptyScanError as e:
-                self.skip_scan(scan)
-            except Exception as e:
-                self.skip_scan(scan)
-                self.log_error(e, scan_id, scan, (product_scan_ids))
-
+                self.log_error(err, scan_id, scan, product_scan_ids)
         for product_scan in product_scans:
             # no way to report skip
-            if product_scan is None:
-                continue
-            if len(product_scan.arrays[0]) == 0 or (not process_msn):
-                self.skip_scan(product_scan)
-                continue
             try:
-                transformer.pick_product_scan_peaks(product_scan)
-                if self.verbose:
-                    self.log_message("Handling Product Scan %r with %d peaks (%0.3f/%0.3f, %r)" % (
-                        product_scan.id, len(product_scan.peak_set), product_scan.precursor_information.mz,
-                        product_scan.precursor_information.extracted_mz,
-                        product_scan.precursor_information.defaulted))
-                if self.deconvolute:
-                    transformer.deconvolute_product_scan(product_scan)
-                    if scan is None:
-                        product_scan.precursor_information.default(orphan=True)
-                self.send_scan(product_scan)
-            except NoIsotopicClustersError as e:
-                self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
-                    e.scan_id, len(product_scan.peak_set)))
+                if product_scan is None:
+                    continue
+                if len(product_scan.arrays[0]) == 0 or (not process_msn):
+                    self.skip_scan(product_scan)
+                    continue
+                try:
+                    transformer.pick_product_scan_peaks(product_scan)
+                    if self.verbose:
+                        self.log_message("Handling Product Scan %r with %d peaks (%0.3f/%0.3f, %r)" % (
+                            product_scan.id, len(product_scan.peak_set), product_scan.precursor_information.mz,
+                            product_scan.precursor_information.extracted_mz,
+                            product_scan.precursor_information.defaulted))
+                    if self.deconvolute:
+                        transformer.deconvolute_product_scan(product_scan)
+                        if scan is None:
+                            product_scan.precursor_information.default(orphan=True)
+                    self.send_scan(product_scan)
+                except (KeyboardInterrupt, SystemExit) as e:
+                    raise
+                except NoIsotopicClustersError as e:
+                    self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
+                        e.scan_id, len(product_scan.peak_set)))
+                    self.skip_scan(product_scan)
+                except EmptyScanError as e:
+                    self.skip_scan(product_scan)
+                except Exception as e:
+                    self.skip_scan(product_scan)
+                    self.log_error(e, product_scan.id,
+                                   product_scan, (product_scan_ids))
+            except (KeyboardInterrupt, SystemExit) as e:
+                raise
+            except Exception as err:
                 self.skip_scan(product_scan)
-            except EmptyScanError as e:
-                self.skip_scan(product_scan)
-            except Exception as e:
-                self.skip_scan(product_scan)
-                self.log_error(e, product_scan.id,
-                               product_scan, (product_scan_ids))
+                self.log_error(err, product_scan.id,
+                               product_scan, [])
 
     def _silence_loggers(self):
         nologs = ["deconvolution_scan_processor"]
@@ -372,7 +391,7 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
                 logger_to_silence.addHandler(logging.NullHandler())
 
     def run(self):
-        loader = MSFileLoader(self.ms_file_path)
+        loader = MSFileLoader(self.ms_file_path, decode_binary=False)
         queued_loader = ScanBunchLoader(loader)
 
         has_input = True
@@ -399,6 +418,9 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
             try:
                 queued_loader.put(scan_id, product_scan_ids)
                 scan, product_scans = queued_loader.get()
+            except (KeyboardInterrupt, SystemExit) as e:
+                self.log_message("Interrupt received.")
+                break
             except Exception as e:
                 self.log_message("Something went wrong when loading bunch (%s): %r.\nRecovery is not possible." % (
                     (scan_id, product_scan_ids), e))
@@ -414,3 +436,5 @@ class ScanTransformingProcess(Process, ScanTransformMixin):
             self.output_queue.put((DONE, DONE, DONE))
 
         self._work_complete.set()
+
+

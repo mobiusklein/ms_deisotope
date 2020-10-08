@@ -1,5 +1,6 @@
 # cython: embedsignature=True
 from collections import defaultdict
+from itertools import combinations_with_replacement
 
 cimport cython
 from cpython cimport PyObject
@@ -40,6 +41,20 @@ cdef class NodeBase(object):
         elif self.key != other.key:
             return False
         return True
+
+    def __hash__(self):
+        return hash(self.get_index())
+
+    def __eq__(self, other):
+        cdef:
+            NodeBase other_typed
+        if not isinstance(other, NodeBase):
+            return False
+        other_typed = <NodeBase>other
+        return self._eq(other_typed)
+
+    def __ne__(self, other):
+        return not self == other
 
     @property
     def index(self):
@@ -438,7 +453,26 @@ cdef class MassWrapper(object):
         The mass of :attr:`obj`
     '''
 
+    @classmethod
+    def wrap(cls, components, combinations=1):
+        components = list(map(cls, components))
+        if combinations > 1:
+            result = []
+            for i in range(1, combinations + 1):
+                for combos in combinations_with_replacement(components, i):
+                    mass = sum(c.mass for c in combos)
+                    obj = tuple(c.obj for c in combos)
+                    result.append(cls(obj, mass))
+            components = result
+        components = sorted(components, key=lambda x: x.mass)
+        return components
+
     def __init__(self, obj, mass=None):
+        if isinstance(obj, MassWrapper):
+            if mass is None:
+                mass = obj.mass
+            obj = obj.obj
+
         self.obj = obj
         if mass is not None:
             self.mass = mass
@@ -585,6 +619,9 @@ def collect_edges(paths):
     return Path([create_edge_group(g) for g in edges])
 
 
+cdef double INF = float('inf')
+
+
 cdef class PathFinder(object):
     cdef:
         public list components
@@ -594,7 +631,7 @@ cdef class PathFinder(object):
         self.components = sorted(map(MassWrapper, components), key=lambda x: x.mass)
         self.product_error_tolerance = product_error_tolerance
 
-    def _find_edges(self, scan, max_mass=None):
+    cpdef find_edges(self, scan, max_mass=None):
         cdef:
             SpectrumGraph graph
             size_t pi, pn
@@ -607,20 +644,10 @@ cdef class PathFinder(object):
             double upper_limit, query_mass
 
         graph = SpectrumGraph()
-        if not isinstance(scan, DeconvolutedPeakSet):
-            deconvoluted_peak_set = scan.deconvoluted_peak_set
-            if max_mass is not None:
-                upper_limit = max_mass
-            elif scan.precursor_information is not None:
-                upper_limit = scan.precursor_information.neutral_mass
-            else:
-                upper_limit = float('inf')
-        else:
-            deconvoluted_peak_set = scan
-            if max_mass is not None:
-                upper_limit = max_mass
-            else:
-                upper_limit = float('inf')
+        upper_limit = INF
+        deconvoluted_peak_set = self._guess_limit_and_get_peaks(scan, &upper_limit)
+        if max_mass is not None:
+            upper_limit = max_mass
 
         cn = PyList_Size(self.components)
         pn = deconvoluted_peak_set.get_size()
@@ -641,7 +668,80 @@ cdef class PathFinder(object):
                     graph.add(peak, other_peak, component.obj)
         return graph
 
-    def _init_paths(self, graph, limit=200):
+    cdef DeconvolutedPeakSet _guess_limit_and_get_peaks(self, scan, double* upper_limit):
+        cdef:
+            DeconvolutedPeakSet deconvoluted_peak_set
+        if not isinstance(scan, DeconvolutedPeakSet):
+            # Assume we have a Python object with Scan-like interface
+            deconvoluted_peak_set = scan.deconvoluted_peak_set
+            if scan.precursor_information is not None:
+                upper_limit[0] = scan.precursor_information.neutral_mass + 1
+            else:
+                upper_limit[0] = INF
+        else:
+            deconvoluted_peak_set = scan
+            upper_limit[0] = INF
+        return deconvoluted_peak_set
+
+    cpdef add_edges_for(self, scan, SpectrumGraph graph, MassWrapper component, max_mass=None):
+        cdef:
+            size_t pi, pn
+            size_t oi, on
+            DeconvolutedPeakSet deconvoluted_peak_set
+            DeconvolutedPeak peak, other_peak
+            tuple complements
+            double upper_limit, query_mass
+
+        upper_limit = INF
+        deconvoluted_peak_set = self._guess_limit_and_get_peaks(scan, &upper_limit)
+        if max_mass is not None:
+            upper_limit = max_mass
+
+        pn = deconvoluted_peak_set.get_size()
+        for pi in range(pn):
+            peak = <DeconvolutedPeak>deconvoluted_peak_set.getitem(pi)
+            if peak.neutral_mass > upper_limit:
+                break
+            query_mass = peak.neutral_mass + component.mass
+            if (query_mass - upper_limit) / upper_limit > self.product_error_tolerance:
+                break
+            complements = deconvoluted_peak_set.all_peaks_for(
+                query_mass, self.product_error_tolerance)
+            on = PyTuple_Size(complements)
+            for oi in range(on):
+                other_peak = <DeconvolutedPeak>PyTuple_GetItem(complements, oi)
+                graph.add(peak, other_peak, component.obj)
+
+    cpdef find_complements(self, scan, SpectrumGraph graph,  MassWrapper component, max_mass=None):
+        cdef:
+            size_t pi, pn
+            size_t oi, on
+            DeconvolutedPeakSet deconvoluted_peak_set
+            DeconvolutedPeak peak, other_peak
+            tuple complements
+            double upper_limit, query_mass
+
+        upper_limit = INF
+        deconvoluted_peak_set = self._guess_limit_and_get_peaks(scan, &upper_limit)
+        if max_mass is not None:
+            upper_limit = max_mass
+
+        pn = deconvoluted_peak_set.get_size()
+        for pi in range(pn):
+            peak = <DeconvolutedPeak>deconvoluted_peak_set.getitem(pi)
+            if peak.neutral_mass > upper_limit:
+                break
+            query_mass = component.mass - peak.neutral_mass
+            if (query_mass - upper_limit) / upper_limit > self.product_error_tolerance:
+                break
+            complements = deconvoluted_peak_set.all_peaks_for(
+                query_mass, self.product_error_tolerance)
+            on = PyTuple_Size(complements)
+            for oi in range(on):
+                other_peak = <DeconvolutedPeak>PyTuple_GetItem(complements, oi)
+                graph.add(peak, other_peak, component.obj)
+
+    cpdef init_paths(self, graph, limit=200):
         cdef:
             double min_start_mass
             list paths, edge_list
@@ -697,8 +797,8 @@ cdef class PathFinder(object):
         return merged_paths
 
     def paths(self, scan, limit=200, merge=False, max_mass=None):
-        graph = self._find_edges(scan, max_mass=max_mass)
-        paths = self._init_paths(graph, limit)
+        graph = self.find_edges(scan, max_mass=max_mass)
+        paths = self.init_paths(graph, limit)
         if merge:
             paths = self.merge_paths(paths)
         return paths

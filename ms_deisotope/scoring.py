@@ -558,7 +558,7 @@ class DotProductFitter(IsotopicFitterBase):
 
 
 try:
-    _c = True
+    _has_c = True
     _IsotopicFitRecord = IsotopicFitRecord
     _LeastSquaresFitter = LeastSquaresFitter
     _MSDeconVFitter = MSDeconVFitter
@@ -572,8 +572,7 @@ try:
         ScaledGTestFitter, PenalizedMSDeconVFitter, DistinctPatternFitter,
         DotProductFitter)
 except ImportError as e:
-    print(e)
-    _c = False
+    _has_c = False
 
 msdeconv = MSDeconVFitter()
 least_squares = LeastSquaresFitter()

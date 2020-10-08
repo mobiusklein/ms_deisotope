@@ -1,4 +1,4 @@
-from libc.math cimport sqrt, exp, pi
+from libc.math cimport sqrt, exp
 
 cimport cython
 import numpy as np
@@ -8,6 +8,8 @@ np.import_array()
 
 
 cdef:
+    # libc.math.pi is translated to M_PI which isn't always defined
+    double pi = np.pi
     double sqrt2pi = sqrt(2 * pi)
     double sqrt2 = sqrt(2)
     double SIGMA_EPSILON = 1e-3

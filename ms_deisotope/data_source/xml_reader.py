@@ -12,7 +12,7 @@ from pyteomics.xml import unitfloat
 
 from .common import (
     RandomAccessScanSource)
-from ._compression import get_opener
+from ._compression import get_opener, test_if_file_has_fast_random_access
 
 
 def in_minutes(x):
@@ -56,6 +56,9 @@ class XMLReaderBase(RandomAccessScanSource):
 
     _parser_cls = None
 
+    @property
+    def has_fast_random_access(self):
+        return test_if_file_has_fast_random_access(self.source.file)
 
     @classmethod
     def prebuild_byte_offset_file(cls, path):
@@ -140,6 +143,10 @@ class XMLReaderBase(RandomAccessScanSource):
 
     def _make_default_iterator(self):
         return iter(self._source)
+
+    def _dispose(self):
+        super(XMLReaderBase, self)._dispose()
+        self.index.clear()
 
     def next(self):
         try:
@@ -259,8 +266,10 @@ class XMLReaderBase(RandomAccessScanSource):
         """
         if not self._use_index:
             raise TypeError("This method requires the index. Please pass `use_index=True` during initialization")
-        index_keys = tuple(self.index)
-        id_str = index_keys[index]
+        # index_keys = tuple(self.index)
+        # id_str = index_keys[index]
+        # Use pyteomics index structure to avoid re-traversing the whole index again and again
+        id_str = self.index.from_index(index)
         scan = self.get_scan_by_id(id_str)
         if not self._validate(scan):
             warnings.warn("index %d, id=%r does not appear to be a mass spectrum. Most behaviors will fail." % (

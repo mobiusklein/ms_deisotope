@@ -20,7 +20,7 @@ Building From Source
 
 :mod:`ms_deisotope` is written for direct use from Python, but large
 chunks of its internals have optional but highly recommended C implementations
-that significantly improve the speed of the provided algorithms. To build the 
+that significantly improve the speed of the provided algorithms. To build the
 library from source with the C extensions included, you'll need:
 
     1. A C compiler matching your Python version
@@ -40,3 +40,20 @@ care of the rest. If you want to profile the C components, the ``--include-diago
 profiling hooks.
 
 
+Installing From PyPI
+====================
+
+The Python Package Index includes source distributions for :mod:`ms_deisotope` that work with Python 2.7
+and Python 3. Wheels are available for newer version of Python on Windows where C compilers are less common.
+
+To make sure a source distribution build includes C extensions, you must have :mod:`numpy`, :mod:`brainpy`
+(``brain-isotopic-distribution``) and :mod:`ms_peak_picker` compiled and installed first so that their header
+files are available.
+
+.. code:: bash
+
+    pip install numpy
+    pip install -v brain-isotopic-distribution ms_peak_picker
+    pip install -v ms_deisotope
+
+PEP 517/518 should simplify this process, and this is under active investigation.

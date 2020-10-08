@@ -3,6 +3,8 @@ from collections import defaultdict
 
 import numpy as np
 
+from pyteomics.auxiliary import unitfloat
+
 from ms_deisotope.utils import Base
 
 from .metadata.instrument_components import (
@@ -18,6 +20,8 @@ point_type_pat = re.compile(r"(?P<point_type>[CP])")
 ionization_pat = re.compile(r"(?P<ionization_type>EI|CI|FAB|APCI|ESI|APCI|NSI|TSP|FD|MALDI|GD)")
 scan_type_pat = re.compile(r"(?P<scan_type>FULL|SIM|SRM|CRM|Z|Q1MS|Q3MS)")
 ms_level_pat = re.compile(r" ms(?P<level>\d*) ")
+compensation_voltage_pat = re.compile(r"CV=(-?\d+(?:\.\d+))?")
+
 activation_pat = re.compile(
     r"""(?:(?P<isolation_mz>\d+\.\d*)@
         (?P<activation_type>[a-z]+)
@@ -130,6 +134,7 @@ def filter_string_parser(line):
             values['analyzer'] = analyzer_info.group(0)
             word = words[i]
             i += 1
+
         polarity_info = polarity_pat.search(word)
         if polarity_info is not None:
             polarity_sigil = polarity_info.group(0)
@@ -142,6 +147,7 @@ def filter_string_parser(line):
             values["polarity"] = polarity
             word = words[i]
             i += 1
+
         if word in "PC":
             if word == 'P':
                 values['peak_mode'] = 'profile'
@@ -149,9 +155,16 @@ def filter_string_parser(line):
                 values['peak_mode'] = 'centroid'
             word = words[i]
             i += 1
+
         ionization_info = ionization_pat.search(word)
         if ionization_info is not None:
             values['ionization'] = ionization_info.group(0)
+            word = words[i]
+            i += 1
+
+        cv_info = compensation_voltage_pat.search(word)
+        if cv_info is not None:
+            values['compensation_voltage'] = unitfloat(cv_info.group(1), None)
             word = words[i]
             i += 1
 
@@ -352,6 +365,7 @@ class ThermoRawScanPtr(Base):
     def __init__(self, scan_number):
         self.scan_number = scan_number
         self.filter_string = None
+        self.trailer_values = None
 
     def validate(self, source):
         try:

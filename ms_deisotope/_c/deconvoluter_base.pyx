@@ -127,7 +127,8 @@ cdef class DeconvoluterBase(object):
         by peak querying methods
     scale_method : str
         The name of the method to use to scale theoretical isotopic pattern intensities
-        to match the experimental isotopic pattern
+        to match the experimental isotopic pattern. For a description of options, see
+        :meth:`~.TheoreticalIsotopicPattern.scale`.
     use_subtraction : bool
         Whether or not to apply a subtraction procedure to experimental peaks after they
         have been fitted. This is only necessary if the same signal may be examined multiple
@@ -467,9 +468,13 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
             tuple peak_charge
             IsotopicFitRecord fit
             size_t i
-
+            bint has_incremental_truncation
+            double incremental_truncation
             int charge
             list peak_charge_list
+        has_incremental_truncation = getattr(self, "incremental_truncation", None) is not None
+        if has_incremental_truncation:
+            incremental_truncation = self.incremental_truncation
         results = set()
         for obj in peak_charge_set:
             peak_charge = <tuple>obj
@@ -486,6 +491,9 @@ cdef class AveragineDeconvoluterBase(DeconvoluterBase):
             if not self._check_fit(fit):
                 continue
             results.add(fit)
+            if has_incremental_truncation:
+                results.update(self.fit_incremental_truncation(
+                        fit, incremental_truncation))
         return results
 
 
@@ -521,6 +529,12 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
             size_t i, j, n_averagine
             int charge
             list peak_charge_list
+            bint has_incremental_truncation
+            double incremental_truncation
+
+        has_incremental_truncation = getattr(self, "incremental_truncation", None) is not None
+        if has_incremental_truncation:
+            incremental_truncation = self.incremental_truncation
         results = []
         n_averagine = PyList_GET_SIZE(self.averagines)
         peak_charge_list = list(peak_charge_set)
@@ -544,6 +558,10 @@ cdef class MultiAveragineDeconvoluterBase(DeconvoluterBase):
                 # and only add the best one to the result set? This would save time
                 # later.
                 results.append(fit)
+                if has_incremental_truncation:
+                    results.extend(
+                        self.fit_incremental_truncation(
+                            fit, incremental_truncation))
 
         return set(results)
 

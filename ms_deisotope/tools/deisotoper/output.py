@@ -35,7 +35,7 @@ class ScanStorageHandlerBase(TaskBase):
         raise NotImplementedError()
 
     def save(self):
-        if self.current_precursor is not None:
+        if self.current_precursor is not None or self.current_products:
             self.save_bunch(
                 self.current_precursor, self.current_products)
             self.reset()
@@ -52,7 +52,15 @@ class ScanStorageHandlerBase(TaskBase):
 
     def accumulate(self, scan):
         if self.current_precursor is None:
-            self.current_precursor = scan
+            if scan is not None:
+                # If the scan is an MS1 scan, start accumulating a new bunch of scans
+                if scan.ms_level == 1:
+                    self.current_precursor = scan
+                else:
+                    # Otherwise this scan source may not have formal bunches of scans so we should
+                    # just save the incoming scan.
+                    self.current_products.append(scan)
+                    self.save()
         elif scan.ms_level == self.current_precursor.ms_level:
             self.save()
             self.current_precursor = scan
@@ -222,6 +230,10 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
                     inst.register_parameter("parameter: ignore-tandem-scans", "")
                 if source.extract_only_tandem_envelopes:
                     inst.register_parameter("parameter: extract-only-tandem-envelopes", "")
+                if source.default_precursor_ion_selection_window:
+                    inst.register_parameter(
+                        "parameter: default-precursor-ion-selection-window",
+                        source.default_precursor_ion_selection_window)
 
             if source.msn_peak_picking_args is not None:
                 for trans in source.msn_peak_picking_args.get("transforms", []):
@@ -257,7 +269,7 @@ class ThreadedMzMLScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLScanSt
 
 
 class MGFScanStorageHandler(ScanStorageHandlerBase):
-    def __init__(self, path, sample_name, deconvoluted=True, **kwargs):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
         super(MGFScanStorageHandler, self).__init__()
         self.path = path
         self.handle = open(path, "wb")

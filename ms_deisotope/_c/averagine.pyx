@@ -270,13 +270,13 @@ cdef list clone_peak_list(list peaklist):
     return result
 
 
-cdef double sum_intensity(list peaklist):
+cdef double sum_intensity(list peaklist, size_t n):
     cdef:
         size_t i
         double total
         FittedPeak peak
     total = 0
-    for i in range(PyList_GET_SIZE(peaklist)):
+    for i in range(n):
         total += (<FittedPeak>PyList_GET_ITEM(peaklist, i)).intensity
     return total
 
@@ -532,16 +532,25 @@ cdef class TheoreticalIsotopicPattern(object):
 
         The ``method`` argument must be one of:
 
-        "sum"
+        `"sum"`:
             Scale each peak of the theoretical distribution by the sum of the
             intensity in the experimental distribution such that the sums of their
             intensities are equal.
 
-        "max"
+        `"max"`:
             Select the most abundant peak in the theoretical distribution :math:`t_i`, find it's
             match in the experimental distribution :math:`e_i`, find the scaling factor
             :math:`\alpha = \frac{e_i}{t_i}` which will make :math:`e_i == t_i` and scale all
-            peaks in self by :math:`alpha`
+            peaks in self by :math:`\alpha`
+
+        `"basepeak"`:
+            As in `"max"`, except the most abundant peak index is taken from the *experimental*
+            distribution
+
+        `"top3"`:
+            The as in `"max"`, but the scaling factor is the mean of the scale factors for the
+            top three most abundant theoretical peaks.
+
 
         Parameters
         ----------
@@ -571,7 +580,7 @@ cdef class TheoreticalIsotopicPattern(object):
         if n == 0:
             raise ValueError("Isotopic Pattern has length 0 (%f, %r)" % (self.origin, self.peaklist))
         if method == "sum":
-            total_abundance = sum_intensity(experimental_distribution)
+            total_abundance = sum_intensity(experimental_distribution, n)
             for i in range(n):
                 (<TheoreticalPeak>self.get(i)).intensity *= total_abundance
         elif method == "max":
@@ -604,7 +613,7 @@ cdef class TheoreticalIsotopicPattern(object):
                 peak.intensity *= scale_factor
         elif method == 'basepeak':
             i = 1
-            j = self._basepeak_index()
+            j = self.basepeak_index()
             scale_factor =  (<FittedPeak>PyList_GET_ITEM(
                 experimental_distribution, j)).intensity / self.get(j).intensity
             if j < n:
@@ -626,7 +635,7 @@ cdef class TheoreticalIsotopicPattern(object):
                 peak.intensity *= scale_factor
         return self
 
-    cpdef size_t _basepeak_index(self):
+    cpdef size_t basepeak_index(self):
         cdef:
             size_t i, n, bp_index
             double bp_intensity
@@ -638,7 +647,7 @@ cdef class TheoreticalIsotopicPattern(object):
             if p.intensity > bp_intensity:
                 bp_intensity = p.intensity
                 bp_index = i
-        return 0
+        return bp_index
 
     @cython.cdivision
     cpdef TheoreticalIsotopicPattern normalize(self):
@@ -880,8 +889,9 @@ cdef class AveragineCache(object):
             cache_key = (key_mz, charge, charge_carrier, truncate_after)
             pvalue = PyDict_GetItem(self.backend, cache_key)
             if pvalue == NULL:
-                tid = self.averagine._isotopic_cluster(mz, charge, charge_carrier, truncate_after, ignore_below)
+                tid = self.averagine._isotopic_cluster(key_mz, charge, charge_carrier, truncate_after, ignore_below)
                 PyDict_SetItem(self.backend, cache_key, tid.clone())
+                tid.shift(mz)
                 return tid
             else:
                 tid = <TheoreticalIsotopicPattern>pvalue
@@ -952,7 +962,8 @@ cdef class AveragineCache(object):
                  truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
         for i in range(int(min_mz), int(max_mz)):
             for j in range(min(max_charge, min_charge), max(min_charge, max_charge)):
-                self.isotopic_cluster(i, j, PROTON, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW)
+                self.isotopic_cluster(
+                    i, j, charge_carrier, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW)
         return self
 
 

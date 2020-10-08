@@ -61,16 +61,20 @@ _default_paths = []
 
 
 def _register_dll_dir(search_paths=None):
+    from ms_deisotope.config import get_config
     if search_paths is None:
         search_paths = []
+    global DLL_IS_LOADED
+    if DLL_IS_LOADED:
+        return True
     search_paths = list(search_paths)
     search_paths.extend(_default_paths)
+    search_paths.extend(get_config().get('vendor_readers', {}).get('agilent-com', []))
     for dll_dir in search_paths:
         try:
             GetModule(os.path.join(dll_dir, 'MassSpecDataReader.tlb'))
             GetModule(os.path.join(dll_dir, 'BaseCommon.tlb'))
             GetModule(os.path.join(dll_dir, 'BaseDataAccess.tlb'))
-            global DLL_IS_LOADED
             DLL_IS_LOADED = True
             return True
         except Exception:
@@ -97,7 +101,28 @@ def register_dll_dir(search_paths=None):
         raise ImportError(msg)
 
 
-device_to_component_group_map = {
+class CaseInsensitiveDict(dict):
+    def __init__(self, template=None):
+        if isinstance(template, dict):
+            template = {k.lower(): v for k, v in template.items()}
+        dict.__init__(self, template)
+
+    def __getitem__(self, key):
+        key = key.lower()
+        return dict.__getitem__(self, key)
+
+    def __delitem__(self, key):
+        return super(CaseInsensitiveDict, self).__delitem__(key.lower())
+
+    def __setitem__(self, key, value):
+        key = key.lower()
+        return dict.__setitem__(self, key, value)
+
+    def __contains__(self, key):
+        return super(CaseInsensitiveDict, self).__contains__(key.lower())
+
+
+device_to_component_group_map = CaseInsensitiveDict({
     "QTOF": [
         ComponentGroup("analyzer", [component("quadrupole")], 2),
         ComponentGroup("analyzer", [component("quadrupole")], 3),
@@ -118,7 +143,7 @@ device_to_component_group_map = {
         ComponentGroup("analyzer", [component("time-of-flight")], 2)
     ]
 
-}
+})
 
 
 polarity_map = {
@@ -144,7 +169,7 @@ ion_mode_map = {
     2048: 'Jetstream'
 }
 
-ionization_map = {
+ionization_map = CaseInsensitiveDict({
     "EI": component("electron ionization"),
     "CI": component("chemical ionization"),
     "ESI": component("electrospray ionization"),
@@ -155,10 +180,10 @@ ionization_map = {
     "MsChip": component("nanoelectrospray"),
     "ICP": component("plasma desorption ionization"),
     "Jetstream": component("nanoelectrospray")
-}
+})
 
 
-inlet_map = {
+inlet_map = CaseInsensitiveDict({
     "EI": component("direct inlet"),
     "CI": component("direct inlet"),
     "Maldi": component("particle beam"),
@@ -169,7 +194,7 @@ inlet_map = {
     "MsChip": component("nanospray inlet"),
     "ICP": component("component(inductively coupled plasma"),
     "JetStream": component("nanospray inlet"),
-}
+})
 
 
 peak_mode_map = {
@@ -212,7 +237,7 @@ device_type_map = {
 }
 
 
-scan_type_map = {
+scan_type_map = CaseInsensitiveDict({
     "Unspecified": 0,
     "All": 7951,
     "AllMS": 15,
@@ -226,7 +251,7 @@ scan_type_map = {
     "PrecursorIon": 1024,
     "NeutralLoss": 2048,
     "NeutralGain": 4096
-}
+})
 
 
 PEAK_MODE = 0
@@ -532,6 +557,14 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
             rec = self._get_scan_record(AgilentDScanPtr(sn))
             index[make_scan_id_string(rec.ScanId)] = sn
         return index
+
+    def _make_pointer_iterator(self, start_index=None, start_time=None):
+        iterator = self._make_scan_index_producer(start_index, start_time)
+        for i in iterator:
+            yield AgilentDScanPtr(i)
+
+    def _make_default_iterator(self):
+        return self._make_pointer_iterator()
 
     def _make_scan_index_producer(self, start_index=None, start_time=None):
         if start_index is not None:
