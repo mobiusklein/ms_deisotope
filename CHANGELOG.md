@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
 ## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+---
+
+## [Released]
+
+## [v0.0.18]  - 2020-10-09
 ### Added
 0. Added `CHANGELOG.md`
 1. Added the option for `ProcessedMzMLLoader` to detect and handle deconvoluted peak lists from other tools and to load
@@ -43,15 +62,12 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ---
 
-## [Released]
-
----
-
 <!-- Links -->
 [Keep a Changelog]: https://keepachangelog.com/
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.16...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.18...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
 [0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
+[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
