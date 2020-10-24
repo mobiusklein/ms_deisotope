@@ -224,8 +224,8 @@ class DeconvolutedPeakSolution(DeconvolutedPeak):
 
     def __init__(self, solution, fit, *args, **kwargs):
         self.solution = solution
-        self.fit = fit
         super(DeconvolutedPeakSolution, self).__init__(*args, **kwargs)
+        self.fit = fit
 
     def clone(self):
         return DeconvolutedPeakSolution(
@@ -245,6 +245,15 @@ class DeconvolutedPeakSolution(DeconvolutedPeak):
         yield self.solution
         yield self
         yield self.fit
+
+    @classmethod
+    def from_peak(cls, peak, solution):
+        inst = cls(
+            solution, peak.fit, peak.neutral_mass, peak.intensity,
+            peak.charge, peak.signal_to_noise, peak.index, peak.full_width_at_half_max,
+            peak.a_to_a2_ratio, peak.most_abundant_mass, peak.average_mass,
+            peak.score, peak.envelope, peak.mz, peak.chosen_for_msms, peak.area)
+        return inst
 
 
 class DeconvolutedPeakSet(Base):
@@ -368,7 +377,7 @@ class DeconvolutedPeakSet(Base):
         return self.__class__(acc)._reindex()
 
 
-def merge(peaks_a, peaks_b, copy=True):
+def merge(peaks_a, *peaks_b, **kwargs):
     '''Combine two :class:`DeconvolutedPeakSet` objects.
 
     Parameters
@@ -384,13 +393,18 @@ def merge(peaks_a, peaks_b, copy=True):
     -------
     :class:`DeconvolutedPeakSet`
     '''
+    copy = kwargs.get("copy", True)
     tp = peaks_a.__class__
     if copy:
-        peaks = tp(
-            tuple(p.clone() for p in peaks_a) +
-            tuple(p.clone() for p in peaks_b))
+        peaks = ()
+        peaks += tuple(p.clone() for p in peaks_a)
+        for b in peaks_b:
+            peaks += tuple(p.clone() for p in b)
     else:
-        peaks = tp(tuple(peaks_a) + tuple(peaks_b))
+        peaks = tuple(peaks_a)
+        for b in peaks_b:
+            peaks += tuple(b)
+    peaks = tp(peaks)
     try:
         peaks.reindex()
     except AttributeError:

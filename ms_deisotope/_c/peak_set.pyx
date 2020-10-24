@@ -509,8 +509,8 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
     """
     def __init__(self, solution, fit, *args, **kwargs):
         self.solution = solution
-        self.fit = fit
         super(DeconvolutedPeakSolution, self).__init__(*args, **kwargs)
+        self.fit = fit
 
     cpdef PeakBase clone(self):
         return DeconvolutedPeakSolution(
@@ -530,6 +530,15 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
         yield self.solution
         yield self
         yield self.fit
+
+    @classmethod
+    def from_peak(cls, peak, solution):
+        inst = cls(
+            solution, peak.fit, peak.neutral_mass, peak.intensity,
+            peak.charge, peak.signal_to_noise, peak.index, peak.full_width_at_half_max,
+            peak.a_to_a2_ratio, peak.most_abundant_mass, peak.average_mass,
+            peak.score, peak.envelope, peak.mz, peak.chosen_for_msms, peak.area)
+        return inst
 
 
 cdef class DeconvolutedPeakSet:
