@@ -337,6 +337,9 @@ cdef class FeatureBase(object):
     cdef double get_mz(self):
         return 0.0
 
+    cdef double get_neutral_mass(self):
+        return self.get_mz()
+
     cdef double get_start_time(self):
         return 0.0
 

@@ -269,7 +269,7 @@ class ThreadedMzMLScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLScanSt
 
 
 class MGFScanStorageHandler(ScanStorageHandlerBase):
-    def __init__(self, path, sample_name, deconvoluted=True, **kwargs):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
         super(MGFScanStorageHandler, self).__init__()
         self.path = path
         self.handle = open(path, "wb")

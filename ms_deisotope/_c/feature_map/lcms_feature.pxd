@@ -61,6 +61,7 @@ cdef class FeatureBase(object):
         public double _end_time
 
     cdef double get_mz(self)
+    cdef double get_neutral_mass(self)
     cdef double get_start_time(self)
     cdef double get_end_time(self)
 

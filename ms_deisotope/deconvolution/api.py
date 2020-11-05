@@ -95,6 +95,10 @@ def deconvolute_peaks(peaklist, decon_config=None,
     Alternatively, you may set the charge range upper bound to something reasonable for your data, such
     as the precursor ion's charge when considering a product ion spectrum.
 
+    When you do not expect a complete isotopic pattern for large ions, as is often the case for low
+    abundance FT-MS/MS it may be useful to shrink the `truncate_after` parameter from the default (|TRUNCATE_AFTER|)
+    to a slightly smaller value.
+
     Returns
     -------
     :class:`~.DeconvolutionProcessResult`

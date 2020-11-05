@@ -667,6 +667,9 @@ class ScanProcessor(Base, LogUtilsMixin):
             precursor_scan.id, [
                 (p.mz, p.charge) if p is not None else None for p in priorities
             ]))
+        if priorities:
+            if not product_scans:
+                self.debug("Priority targets were passed without product scans")
         for product_scan in product_scans:
             precursor_information = product_scan.precursor_information
             if precursor_information is None:

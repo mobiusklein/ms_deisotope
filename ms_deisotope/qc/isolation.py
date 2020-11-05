@@ -158,7 +158,11 @@ class PrecursorPurityEstimator(object):
         peaks = peak_set.between(extended_lower_bound,
                                  upper_bound, use_mz=True)
         if intensity_threshold is None:
-            intensity_threshold = sum([p.intensity for p in peaks]) / float(len(peaks)) * relative_intensity_threshold
+            n = len(peaks)
+            if n != 0:
+                intensity_threshold = sum([p.intensity for p in peaks]) / float(len(peaks)) * relative_intensity_threshold
+            else:
+                return []
         others = [
             CoIsolation(p.neutral_mass, p.intensity, p.charge)
             for p in peaks if p != precursor_peak and (p.intensity > intensity_threshold) and

@@ -173,7 +173,7 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
     ax.set_xlim(minimum_ident_time - 0.02,
                 maximum_ident_time + 0.02)
     ax.set_ylim(0, maximum_intensity * 1.1)
-    ax.legend(bbox_to_anchor=(1.7, 1.), ncol=2, fontsize=10)
+    ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1.), ncol=2, fontsize=10)
     ax.axes.spines['right'].set_visible(False)
     ax.axes.spines['top'].set_visible(False)
     ax.yaxis.tick_left()
