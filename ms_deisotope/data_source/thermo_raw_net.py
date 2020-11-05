@@ -511,6 +511,11 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         self.source_file = source_file
         self._producer = None
         self._scan_type_index = dict()
+
+        self._method = None
+        self._analyzer_to_configuration_index = {}
+        self._instrument_config = {}
+
         self.make_iterator()
         self.initialize_scan_cache()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
@@ -544,7 +549,22 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return self._has_ms1_scans()
 
     def __reduce__(self):
-        return self.__class__, (self.source_file, False)
+        return self.__class__, (self.source_file, False), self.__getstate__()
+
+    def __getstate__(self):
+        state = {
+            "method": self._method,
+            "scan_type_index": self._scan_type_index,
+            "analyzer_to_configuration_index": self._analyzer_to_configuration_index,
+            "instrument_config": self._instrument_config,
+        }
+        return state
+
+    def __setstate__(self, state):
+        self._method = state['method']
+        self._scan_type_index = state['scan_type_index']
+        self._analyzer_to_configuration_index = state['analyzer_to_configuration_index']
+        self._instrument_config = state['instrument_config']
 
     @property
     def index(self):
