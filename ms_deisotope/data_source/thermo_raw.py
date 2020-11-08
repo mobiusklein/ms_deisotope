@@ -235,7 +235,12 @@ class ThermoRawDataInterface(ScanDataSource):
             return None
         scan_number = scan.scan_number
         pinfo_struct = self._source.GetPrecursorInfoFromScanNum(scan_number)
+        trailer = self._trailer_values(scan)
         precursor_scan_number = None
+        precursor_scan_number = trailer.get('Master Scan Number')
+        if precursor_scan_number is not None:
+            precursor_scan_number = int(precursor_scan_number)
+
         labels, _, _ = self._source.GetAllMSOrderData(scan_number)
         if pinfo_struct:
             # this struct field is unreliable and may fall outside the
@@ -251,7 +256,6 @@ class ThermoRawDataInterface(ScanDataSource):
             charge = labels.charge[0]
         if not charge:
             charge = ChargeNotProvided
-        trailer = self._trailer_values(scan)
         _mz = trailer.get('Monoisotopic M/Z', 0.0)
         # prefer the trailer m/z if available?
         if _mz > 0:
