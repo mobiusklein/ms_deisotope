@@ -18,9 +18,23 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Security
 
 
----
-
 ## [Released]
+
+## [v0.0.19]  - 2020-11-24
+
+### Added
+
+### Changed
+1. Make `peak_set.merge` able to merge more than 2 `DeconvolutedPeakSet` instances
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Always infer the precursor scan relationship in ThermoRaw readers using the "Master Scan Number" header
+
+### Security
 
 ## [v0.0.18]  - 2020-10-09
 ### Added
@@ -67,7 +81,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.18...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.19...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
 [0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
 [0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
+[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
