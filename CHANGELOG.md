@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Removed
 
 ### Fixed
+1. Retrieving the precursor scan is now safer with `thermo_raw_net.ThermoRawLoader`
+2. `ms-index spectrum-clustering` now remembers source files when scans are loaded in memory
 
 ### Security
 

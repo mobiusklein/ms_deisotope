@@ -362,6 +362,8 @@ class RawReaderInterface(ScanDataSource):
         inten = 0
         precursor_scan_number = None
         precursor_scan_number = trailers.get('Master Scan Number')
+        if precursor_scan_number == 0:
+            precursor_scan_number = None
         if precursor_scan_number is not None:
             precursor_scan_number = int(precursor_scan_number) - 1
         elif precursor_scan_number is None:
