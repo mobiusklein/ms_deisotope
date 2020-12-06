@@ -19,8 +19,12 @@ from ms_deisotope.utils import Base
 from ms_deisotope.data_source.metadata import software
 from ms_deisotope.data_source.scan.loader import ScanDataSource, RandomAccessScanSource
 from ms_deisotope.data_source.scan import PrecursorInformation, RawDataArrays
+from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
+
 from ms_deisotope.data_source.metadata.activation import ActivationInformation, dissociation_methods
-from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, inverse_reduced_ion_mobility
+from ms_deisotope.data_source.metadata.scan_traits import (
+    IsolationWindow, inverse_reduced_ion_mobility,
+    ScanAcquisitionInformation, ScanWindow, ScanEventInformation)
 from ms_deisotope.peak_dependency_network import Interval
 from ms_deisotope.averagine import neutral_mass as calculate_neutral_mass
 
@@ -70,18 +74,22 @@ def _load_library(lib_path):
         c_uint64, c_int64, c_uint32, c_uint32, c_void_p, c_uint32]
     dll.tims_read_scans_v2.restype = c_uint32
 
-    dll.tims_oneoverk0_to_ccs_for_mz.argtypes = [c_double, c_int32, c_double]
-    dll.tims_oneoverk0_to_ccs_for_mz.restype = c_double
+    # dll.tims_oneoverk0_to_ccs_for_mz.argtypes = [c_double, c_int32, c_double]
+    # dll.tims_oneoverk0_to_ccs_for_mz.restype = c_double
 
-    dll.tims_ccs_to_oneoverk0_for_mz.argtypes = [c_double, c_int32, c_double]
-    dll.tims_ccs_to_oneoverk0_for_mz.restype = c_double
+    # dll.tims_ccs_to_oneoverk0_for_mz.argtypes = [c_double, c_int32, c_double]
+    # dll.tims_ccs_to_oneoverk0_for_mz.restype = c_double
 
 
     convfunc_argtypes = [c_uint64, c_int64, POINTER(
         c_double), POINTER(c_double), c_uint32]
 
-    for fn in [dll.tims_index_to_mz, dll.tims_mz_to_index, dll.tims_scannum_to_oneoverk0,
-               dll.tims_oneoverk0_to_scannum, dll.tims_scannum_to_voltage, dll.tims_voltage_to_scannum]:
+    for fn in [dll.tims_index_to_mz,
+               dll.tims_mz_to_index,
+               dll.tims_scannum_to_oneoverk0,
+               dll.tims_oneoverk0_to_scannum,
+               dll.tims_scannum_to_voltage,
+               dll.tims_voltage_to_scannum]:
         fn.argtypes = convfunc_argtypes
         fn.restype = c_uint32
     return dll
@@ -128,7 +136,7 @@ class TIMSMetadata(object):
             "acquisition_software": {},
             "control_software": {},
         }
-        q = self.conn.execute("SELECT Key, Value FROM GlobalMetadata;")
+        q = self.connection.execute("SELECT Key, Value FROM GlobalMetadata;")
         for key, value in q:
             if key == "AcquistionSoftware":
                 software_map['acquisition_software']['name'] = value
@@ -151,14 +159,14 @@ class TIMSMetadata(object):
 
     def _build_frame_index(self):
         self._frame_counts = {}
-        q = self.conn.execute(
+        q = self.connection.execute(
             "SELECT MsMsType, Count(*) FROM Frames GROUP BY MsMsType;")
         total = 0
         for scan_type_enum, count in q:
             self._frame_counts[msms_type_to_label[scan_type_enum]] = count
             total += count
         self._frame_counts['Total'] = total
-        frame_id_scan_count = self.conn.execute("SELECT Id, NumScans, Time FROM Frames ORDER BY Id;")
+        frame_id_scan_count = self.connection.execute("SELECT Id, NumScans, Time FROM Frames ORDER BY Id;")
         count_to_id = []
         time_to_id = []
         total = 0
@@ -181,7 +189,7 @@ class TIMSMetadata(object):
         return self._total_scans
 
 
-class TIMSFrame(Base):
+class TIMSFrameInformation(Base):
     def __init__(self, source, id, accumulation_time, max_intensity, msms_type, mz_calibration, num_peaks, num_scans,
                  polarity, property_group, ramp_time, scan_mode, summed_intensities, t1, t2, time, tims_calibration,
                  tims_id, pasef_precursors=None):
@@ -419,8 +427,41 @@ class TIMSAPI(object):
                 scan_intensities.append(np.array([], float))
         return scan_numbers, scan_mzs, scan_intensities
 
+    def _decode_activation_method(self, frame):
+        mode = frame.scan_mode
+        if mode in (2, 8, 9):
+            method = dissociation_methods["collision-induced dissociation"]
+        elif mode in (3, 4, 5):
+            method = dissociation_methods['in-source collision-induced dissociation']
+        else:
+            print("Unknown Scan Mode %d, Unknown Dissociation. Returning CID" % (mode, ))
+            method = dissociation_methods["collision-induced dissociation"]
+        return method
 
-class TIMSScanDataSource(ScanDataSource):
+    def _query_frame_by_id_number(self, frame_id):
+        cursor = self.connection.execute(
+            "SELECT * FROM Frames WHERE Id={0};".format(frame_id))
+        frame = TIMSFrameInformation.from_query(self, dict(cursor.fetchone()))
+        # MS1
+        if frame.msms_type == 0:
+            pass
+        # PASEF MS2
+        elif frame.msms_type == 8:
+            pasef_cursor = self.connection.execute(
+                """SELECT Frame, ScanNumBegin, ScanNumEnd, IsolationMz, IsolationWidth, CollisionEnergy, MonoisotopicMz,
+                          Charge, ScanNumber, Intensity, Parent FROM PasefFrameMsMsInfo f JOIN Precursors p on p.id=f.precursor
+                          WHERE Frame = ?
+                          ORDER BY ScanNumBegin
+                          """, (frame_id, ))
+            frame.pasef_precursors.extend(
+                map(PASEFPrecursorInformation.from_query, pasef_cursor))
+        else:
+            warnings.warn("No support for MSMSType %r yet" %
+                          (frame.msms_type, ))
+        return frame
+
+
+class BrukerTIMSScanDataSource(ScanDataSource):
     _scan_merging_parameters = default_scan_merging_parameters.copy()
 
     def _is_profile(self, scan):
@@ -451,14 +492,7 @@ class TIMSScanDataSource(ScanDataSource):
             return None
 
     def _activation(self, scan):
-        mode = scan.frame.scan_mode
-        if mode in (2, 8, 9):
-            method = dissociation_methods["collision-induced dissociation"]
-        elif mode in (3, 4, 5):
-            method = dissociation_methods['in-source collision-induced dissociation']
-        else:
-            print("Unknown Scan Mode %d, Unknown Dissociation. Returning CID" % (mode, ))
-            method = dissociation_methods["collision-induced dissociation"]
+        method = self._decode_activation_method(scan.frame)
         precursor = self._locate_pasef_precursor_for(scan)
         if precursor is not None:
             collision_energy = precursor.collision_energy
@@ -502,7 +536,7 @@ class TIMSScanDataSource(ScanDataSource):
                     current_drift_time = self.scan_number_to_one_over_K0(
                         scan.frame.id, [np.ceil(precursor.average_scan_number)])
 
-                parent_frame = self.get_frame_by_id(parent_frame_id)
+                parent_frame = self.get_frame_by_id(parent_frame_id)._data
                 precursor_scan_id = TIMSPASEFSpectrumData(parent_frame, precursor.start_scan, None, precursor.end_scan).make_id_string()
                 product_scan_id = scan.make_id_string()
                 pinfo = PrecursorInformation(
@@ -523,14 +557,23 @@ class TIMSScanDataSource(ScanDataSource):
         return None
 
     def _scan_index(self, scan):
-        cursor = self.conn.execute("SELECT sum(NumScans) FROM Frames WHERE Id < ?", (scan.frame.id, ))
+        cursor = self.connection.execute("SELECT sum(NumScans) FROM Frames WHERE Id < ?", (scan.frame.id, ))
         result = cursor.fetchone()[0]
         if result is None:
             result = 0
         return result + scan.start_scan
 
     def _acquisition_information(self, scan):
-        pass
+        idx = self._scan_index(scan) - \
+            self._scan_count_to_frame_id[scan.frame.id - 1, 0]
+        drift_time = self.scan_number_to_one_over_K0(scan.frame.id, [idx])[0]
+        scan_time = self._scan_time(scan)
+        evt = ScanEventInformation(scan_time, [
+            ScanWindow(self._acquisition_parameters['scan_window_lower'],
+                       self._acquisition_parameters['scan_window_upper'])
+                       ])
+        evt._ion_mobility.add_ion_mobility(inverse_reduced_ion_mobility, drift_time)
+        return ScanAcquisitionInformation('none', [evt])
 
     def _get_centroids(self, scan):
         mzs, intensities = self.read_spectrum(
@@ -565,17 +608,130 @@ class TIMSScanDataSource(ScanDataSource):
             return mzs, intensities
 
 
+class BrukerTIMSFrameSource(IonMobilitySourceRandomAccessFrameSource):
+    def _frame_id(self, data):
+        return "frame=%d startScan=%d endScan=%d" % (data.id, 1, data.num_scans)
+
+    def _frame_index(self, data):
+        return data.id - 1
+
+    def _frame_time(self, data):
+        return data.time
+
+    def _frame_ms_level(self, data):
+        if data.msms_type == 0:
+            return 1
+        return 2
+
+    def _frame_start_scan_index(self, data):
+        start_i, frame_id = self._scan_count_to_frame_id[data.id - 1, :]
+        assert frame_id == data.id
+        return start_i
+
+    def _frame_end_scan_index(self, data):
+        start_i, frame_id = self._scan_count_to_frame_id[data.id - 1, :]
+        assert frame_id == data.id
+        return start_i + data.num_scans
+
+    def _frame_precursor_information(self, data):
+        pinfos = []
+        for pasef in data.pasef_precursors:
+            mz = pasef.monoisotopic_mz
+            inten = pasef.intensity
+            charge = pasef.charge
+            parent_merged_id = 'frame=%d startScan=%d endScan=%d' % (pasef.parent, pasef.start_scan, pasef.end_scan)
+            product_merged_id = 'frame=%d startScan=%d endScan=%d' % (pasef.frame_id, pasef.start_scan, pasef.end_scan)
+            pinfos.append(PrecursorInformation(
+                mz, inten, charge, parent_merged_id, self,
+                product_scan_id=product_merged_id))
+        if not pinfos:
+            return None
+        return pinfos
+
+    def _frame_activation(self, data):
+        activations = []
+        method = self._decode_activation_method(data)
+        for pasef in data.pasef_precursors:
+            collision_energy = pasef.collision_energy
+            activations.append(ActivationInformation(method, collision_energy))
+        if not activations:
+            return None
+        return activations
+
+    def _frame_isolation_window(self, data):
+        isolations = []
+        for pasef in data.pasef_precursors:
+            width = pasef.isolation_width / 2.
+            isolations.append(IsolationWindow(width, pasef.isolation_mz, width))
+        if not isolations:
+            return None
+        return isolations
+
+    def _frame_polarity(self, data):
+        if data.polarity == "+":
+            return 1
+        elif data.polarity == '-':
+            return -1
+        else:
+            warnings.warn("Unknown polarity %r" % (data.polarity, ))
+            return 1
+
+    def get_frame_by_time(self, frame_time):
+        i = np.searchsorted(self._scan_time_to_frame_id[:, 0], frame_time) - 1
+        _time, fi = self._scan_time_to_frame_id[i, :]
+        return self.get_frame_by_id(fi)
+
+    def get_frame_by_index(self, index):
+        return self.get_frame_by_id(index + 1)
+
+    def get_frame_by_id(self, frame_id):
+        if frame_id in self._frame_cache:
+            return self._frame_cache[frame_id]
+        frame = self._query_frame_by_id_number(frame_id)
+        frame = self._make_frame(frame)
+        self._frame_cache[frame_id] = frame
+        return frame
+
+    def _ms2_frames_for_parent_id(self, parent_frame_id):
+        product_frame_ids = self.connection.execute("""
+            SELECT Frame
+            FROM PasefFrameMsMsInfo JOIN Precursors ON Precursors.id = PasefFrameMsMsInfo.precursor
+            WHERE Parent = ?;""", (parent_frame_id, )).fetchall()
+        product_frames = [self.get_frame_by_id(
+            i) for i, in product_frame_ids]
+        return product_frames
+
+    def _validate_frame(self, data):
+        return True
+
+    def _make_frame(self, data):
+        return IonMobilityFrame(data, self)
+
+    def _cache_frame(self, frame):
+        pass
+
+    def _default_frame_iterator(self, start_index=None):
+        if start_index is None:
+            start_index = 0
+        for i in range(start_index, self.frame_count()):
+            yield self._query_frame_by_id_number(i + 1)
+
+
 single_scan_id_parser = re.compile(r"frame=(\d+) scan=(\d+)")
 multi_scan_id_parser = re.compile(r"frame=(\d+) startScan=(\d+) endScan=(\d+)")
 
 
-class TIMSData(TIMSMetadata, TIMSAPI, TIMSScanDataSource):
+class BrukerTIMSLoader(TIMSMetadata, TIMSAPI, BrukerTIMSScanDataSource, BrukerTIMSFrameSource):
 
     def __init__(self, analysis_directory, use_recalibrated_state=False, scan_merging_parameters=None):
         if sys.version_info.major == 2:
+            if isinstance(analysis_directory, str):
+                analysis_directory = analysis_directory.decode('utf8')
             if not isinstance(analysis_directory, unicode):
                 raise ValueError("analysis_directory must be a Unicode string.")
         if sys.version_info.major == 3:
+            if isinstance(analysis_directory, bytes):
+                analysis_directory = analysis_directory.decode('utf8')
             if not isinstance(analysis_directory, str):
                 raise ValueError("analysis_directory must be a string.")
         if scan_merging_parameters is None:
@@ -591,28 +747,32 @@ class TIMSData(TIMSMetadata, TIMSAPI, TIMSScanDataSource):
         if self.handle == 0:
             throw_tims_error(self.dll)
 
-        self.conn = sqlite3.connect(os.path.join(analysis_directory, "analysis.tdf"))
-        self.conn.row_factory = sqlite3.Row
+        self.connection = sqlite3.connect(os.path.join(analysis_directory, "analysis.tdf"))
+        self.connection.row_factory = sqlite3.Row
 
         self.initial_frame_buffer_size = 128 # may grow in readScans()
         self._read_metadata()
         self._frame_cache = WeakValueDictionary()
         self._scan_merging_parameters = scan_merging_parameters
+        self._producer = self.make_frame_iterator(grouped=True)
 
     def __del__(self):
         if hasattr(self, 'handle'):
             self.dll.tims_close(self.handle)
 
     def _describe_frame(self, frame_id):
-        cursor = self.conn.execute("SELECT * FROM Frames WHERE Id={0};".format(frame_id))
+        cursor = self.connection.execute("SELECT * FROM Frames WHERE Id={0};".format(frame_id))
         return dict(cursor.fetchone())
 
     def get_scan_by_index(self, scan_index):
-        c, i = self._scan_count_to_frame_id[np.searchsorted(
-            self._scan_count_to_frame_id[:, 0], scan_index) - 1, :]
+        frame_index = np.searchsorted(
+            self._scan_count_to_frame_id[:, 0], scan_index + 1)
+        if frame_index > 0:
+            frame_index -= 1
+        c, i = self._scan_count_to_frame_id[frame_index, :]
         frame_id = i
-        remainder = scan_index - c
-        scan_number = remainder + 1
+        remainder = scan_index - c + 1
+        scan_number = remainder
         scan_id = "frame=%d scan=%d" % (frame_id, scan_number)
         return self.get_scan_by_id(scan_id)
 
@@ -629,7 +789,7 @@ class TIMSData(TIMSMetadata, TIMSAPI, TIMSScanDataSource):
             else:
                 raise
         duration = next_time - time
-        n_scans = self.get_frame_by_id(fi).num_scans
+        n_scans = self.get_frame_by_id(fi)._data.num_scans
         grid_space = np.linspace(0, duration, n_scans)
         i = np.searchsorted(grid_space, remainder) - 1
         scan_id = 'frame=%d scan=%d' % (fi, i)
@@ -643,7 +803,7 @@ class TIMSData(TIMSMetadata, TIMSAPI, TIMSScanDataSource):
                 raise ValueError("%r does not look like a TIMS nativeID" % (scan_id, ))
             else:
                 frame_id, start_scan, end_scan = map(int, match.groups())
-                frame = self.get_frame_by_id(frame_id)
+                frame = self.get_frame_by_index(frame_id - 1)._data
                 if frame.msms_type == 8:
                     pasef_scan = TIMSPASEFSpectrumData(
                         frame, start_scan - 1, None, end_scan)
@@ -653,7 +813,7 @@ class TIMSData(TIMSMetadata, TIMSAPI, TIMSScanDataSource):
                     scan_obj = self._make_scan(TIMSSpectrumDataBase(frame, start_scan - 1, end_scan))
         else:
             frame_id, scan_number = map(int, match.groups())
-            frame = self.get_frame_by_id(frame_id)
+            frame = self.get_frame_by_index(frame_id - 1)._data
             if frame.msms_type == 8:
                 pasef_scan = TIMSPASEFSpectrumData(frame, scan_number - 1, None)
                 pasef_scan.pasef_precursor = self._locate_pasef_precursor_for(pasef_scan)
@@ -663,51 +823,12 @@ class TIMSData(TIMSMetadata, TIMSAPI, TIMSScanDataSource):
         # Cache scan here
         return scan_obj
 
-    def get_frame_by_time(self, frame_time):
-        i = np.searchsorted(self._scan_time_to_frame_id[:, 0], frame_time) - 1
-        _time, fi = self._scan_time_to_frame_id[i, :]
-        return self.get_frame_by_id(fi)
-
-    def get_frame_by_index(self, index):
-        return self.get_frame_by_id(index + 1)
-
-    def get_frame_by_id(self, frame_id):
-        if frame_id in self._frame_cache:
-            return self._frame_cache[frame_id]
-        cursor = self.conn.execute("SELECT * FROM Frames WHERE Id={0};".format(frame_id))
-        frame = TIMSFrame.from_query(self, dict(cursor.fetchone()))
-        # MS1
-        if frame.msms_type == 0:
-            pass
-        # PASEF MS2
-        elif frame.msms_type == 8:
-            pasef_cursor = self.conn.execute(
-                """SELECT Frame, ScanNumBegin, ScanNumEnd, IsolationMz, IsolationWidth, CollisionEnergy, MonoisotopicMz,
-                          Charge, ScanNumber, Intensity, Parent FROM PasefFrameMsMsInfo f JOIN Precursors p on p.id=f.precursor
-                          WHERE Frame = ?
-                          ORDER BY ScanNumBegin
-                          """, (frame_id, ))
-            frame.pasef_precursors.extend(map(PASEFPrecursorInformation.from_query, pasef_cursor))
-        else:
-            warnings.warn("No support for MSMSType %r yet" % (frame.msms_type, ))
-        self._frame_cache[frame_id] = frame
-        return frame
-
-    def _ms2_frames_for_parent_id(self, parent_frame_id):
-        product_frame_ids = self.conn.execute("""
-            SELECT Frame
-            FROM PasefFrameMsMsInfo JOIN Precursors ON Precursors.id = PasefFrameMsMsInfo.precursor
-            WHERE Parent = ?;""", (parent_frame_id, )).fetchall()
-        product_frames = [self.get_frame_by_id(
-            i) for i, in product_frame_ids]
-        return product_frames
-
     def make_iterator(self, iterator=None, grouped=True, frame=True):
         if iterator is None:
             iterator = self._make_default_iterator()
 
     def _ms1_frame_iterator(self):
-        ms1_frame_ids = self.conn.execute("SELECT Id FROM Frames WHERE MsMsType = 0;").fetchall()
+        ms1_frame_ids = self.connection.execute("SELECT Id FROM Frames WHERE MsMsType = 0;").fetchall()
         for frame_id, in ms1_frame_ids:
             yield frame_id
 
