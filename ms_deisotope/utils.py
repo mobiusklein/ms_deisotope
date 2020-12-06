@@ -59,7 +59,7 @@ def simple_repr(self):  # pragma: no cover
         else:
             return str(v)
 
-    if not hasattr(self, "__slots__"):
+    if not hasattr(self, "__slots__") or len(self.__slots__) == 0 or hasattr(self, '__dict__'):
         d = [
             "%s=%s" % (k, formatvalue(v)) if v is not self else "(...)" for k, v in sorted(
                 self.__dict__.items(), key=lambda x: x[0])
