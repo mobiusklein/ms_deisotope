@@ -18,6 +18,7 @@ from .scan_iterator import (
     _SingleScanIteratorImpl,
     _GroupedScanIteratorImpl,
     _FakeGroupedScanIteratorImpl,
+    _InterleavedGroupedScanIteratorImpl,
     ITERATION_MODE_GROUPED,
     ITERATION_MODE_SINGLE)
 
@@ -399,10 +400,10 @@ class ScanIterator(ScanDataSource):
             grouped = self.has_ms1_scans()
 
         if grouped:
-            self._producer = self._scan_group_iterator(iterator)
+            self._producer = self._scan_group_iterator(iterator, grouped)
             self.iteration_mode = ITERATION_MODE_GROUPED
         else:
-            self._producer = self._single_scan_iterator(iterator)
+            self._producer = self._single_scan_iterator(iterator, grouped)
             self.iteration_mode = ITERATION_MODE_SINGLE
         return self
 
@@ -417,18 +418,18 @@ class ScanIterator(ScanDataSource):
     def _validate(self, scan):
         return True
 
-    def _single_scan_iterator(self, iterator=None):
+    def _single_scan_iterator(self, iterator=None, mode=None):
         if iterator is None:
             iterator = self._make_default_iterator()
 
         impl = _SingleScanIteratorImpl.from_scan_source(iterator, self)
         return impl
 
-    def _scan_group_iterator(self, iterator=None):
+    def _scan_group_iterator(self, iterator=None, mode=None):
         if iterator is None:
             iterator = self._make_default_iterator()
         if self.has_ms1_scans():
-            impl = _GroupedScanIteratorImpl.from_scan_source(iterator, self)
+                impl = _InterleavedGroupedScanIteratorImpl.from_scan_source(iterator, self)
         else:
             impl = _FakeGroupedScanIteratorImpl.from_scan_source(iterator, self)
         return impl
