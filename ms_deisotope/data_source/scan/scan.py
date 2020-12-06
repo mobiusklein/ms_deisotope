@@ -859,7 +859,7 @@ class Scan(ScanBase):
                 scans, mean=self.scan_time, sigma=weight_sigma)
         else:
             weights = None
-        if default_dx:
+        if default_dx and arrays:
             if len(arrays) > 2:
                 reference = arrays[len(arrays) // 2 + 1]
             else:
