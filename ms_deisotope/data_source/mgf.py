@@ -520,7 +520,7 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
         self.make_iterator(iterator, grouped=grouped)
         return self
 
-    def _scan_group_iterator(self, iterator=None):
+    def _scan_group_iterator(self, iterator=None, mode=None):
         if iterator is None:
             iterator = self._make_default_iterator()
 

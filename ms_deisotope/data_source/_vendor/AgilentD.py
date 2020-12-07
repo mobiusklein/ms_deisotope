@@ -697,7 +697,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
     def _make_cache_key(self, scan):
         return scan._data.index
 
-    def _single_scan_iterator(self, iterator=None):
+    def _single_scan_iterator(self, iterator=None, mode=None):
         if iterator is None:
             iterator = self._make_scan_index_producer()
         for ix in iterator:
@@ -705,7 +705,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
             self._cache_scan(packed)
             yield packed
 
-    def _scan_group_iterator(self, iterator=None):
+    def _scan_group_iterator(self, iterator=None, mode=None):
         if iterator is None:
             iterator = self._make_scan_index_producer()
 
