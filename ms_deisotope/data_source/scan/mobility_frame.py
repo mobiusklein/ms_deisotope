@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from weakref import WeakValueDictionary
 from itertools import chain
 
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
@@ -104,6 +105,26 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     @abstractmethod
     def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
         raise NotImplementedError()
+
+    def initialize_frame_cache(self):
+        '''Initialize a cache which keeps track of which :class:`~.IonMobilityFrame`
+        objects are still in memory using a :class:`weakref.WeakValueDictionary`.
+
+        When a frame is requested, if the frame object is found in the cache, the
+        existing object is returned rather than re-read from disk.
+        '''
+        self._frame_cache = WeakValueDictionary()
+
+    @property
+    def frame_cache(self):
+        '''A :class:`weakref.WeakValueDictionary` mapping used to retrieve
+        frames from memory if available before re-reading them from disk.
+        '''
+        return self._frame_cache
+
+    @frame_cache.setter
+    def frame_cache(self, value):
+        self._frame_cache = value
 
 
 class IonMobilityFrame(object):

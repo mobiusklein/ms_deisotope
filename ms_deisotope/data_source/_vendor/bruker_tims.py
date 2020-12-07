@@ -461,7 +461,7 @@ class TIMSAPI(object):
         return frame
 
 
-class BrukerTIMSScanDataSource(ScanDataSource):
+class BrukerTIMSScanDataSource(RandomAccessScanSource):
     _scan_merging_parameters = default_scan_merging_parameters.copy()
 
     def _is_profile(self, scan):
@@ -643,7 +643,11 @@ class BrukerTIMSFrameSource(IonMobilitySourceRandomAccessFrameSource):
             product_merged_id = 'frame=%d startScan=%d endScan=%d' % (pasef.frame_id, pasef.start_scan, pasef.end_scan)
             pinfos.append(PrecursorInformation(
                 mz, inten, charge, parent_merged_id, self,
-                product_scan_id=product_merged_id))
+                product_scan_id=product_merged_id, annotations={
+                    "parent_frame_index": pasef.parent - 1,
+                    "start_scan": pasef.start_scan,
+                    "end_scan": pasef.end_scan,
+                }))
         if not pinfos:
             return None
         return pinfos
@@ -685,6 +689,11 @@ class BrukerTIMSFrameSource(IonMobilitySourceRandomAccessFrameSource):
         return self.get_frame_by_id(index + 1)
 
     def get_frame_by_id(self, frame_id):
+        if isinstance(frame_id, str):
+            match = multi_scan_id_parser.search(frame_id)
+            if match is None:
+                raise KeyError(frame_id)
+            frame_id = int(match.group(1))
         if frame_id in self._frame_cache:
             return self._frame_cache[frame_id]
         frame = self._query_frame_by_id_number(frame_id)
@@ -716,12 +725,49 @@ class BrukerTIMSFrameSource(IonMobilitySourceRandomAccessFrameSource):
         for i in range(start_index, self.frame_count()):
             yield self._query_frame_by_id_number(i + 1)
 
+    def make_frame_iterator(self, iterator=None, grouped=False):
+        from ms_deisotope.data_source.scan.scan_iterator import (
+            _SingleScanIteratorImpl, _InterleavedGroupedScanIteratorImpl)
+        if iterator is None:
+            iterator = self._default_frame_iterator()
+        if grouped:
+            strategy = _InterleavedGroupedScanIteratorImpl(
+                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+        else:
+            strategy = _SingleScanIteratorImpl(
+                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+        return strategy
+
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        if scan_id is not None:
+            frame = self.get_frame_by_id(scan_id)
+            start_index = frame.index
+        elif index is not None:
+            start_index = index
+        elif rt is not None:
+            frame = self.get_frame_by_time(rt)
+            start_index = frame.index
+        if require_ms1:
+            base_frame = self.get_frame_by_index(start_index)
+            if base_frame.ms_level > 1:
+                precursors = base_frame.precursor_information
+
+            while start_index != 0:
+                frame = self.get_frame_by_index(start_index)
+                if frame.ms_level > 1:
+                    start_index -= 1
+                else:
+                    break
+        iterator = self.make_frame_iterator(
+            self._default_frame_iterator(start_index), grouped=grouped)
+        return iterator
+
 
 single_scan_id_parser = re.compile(r"frame=(\d+) scan=(\d+)")
 multi_scan_id_parser = re.compile(r"frame=(\d+) startScan=(\d+) endScan=(\d+)")
 
 
-class BrukerTIMSLoader(TIMSMetadata, TIMSAPI, BrukerTIMSScanDataSource, BrukerTIMSFrameSource):
+class BrukerTIMSLoader(BrukerTIMSFrameSource, BrukerTIMSScanDataSource, TIMSMetadata, TIMSAPI):
 
     def __init__(self, analysis_directory, use_recalibrated_state=False, scan_merging_parameters=None):
         if sys.version_info.major == 2:
@@ -747,14 +793,21 @@ class BrukerTIMSLoader(TIMSMetadata, TIMSAPI, BrukerTIMSScanDataSource, BrukerTI
         if self.handle == 0:
             throw_tims_error(self.dll)
 
+        self._source_file_name = analysis_directory
         self.connection = sqlite3.connect(os.path.join(analysis_directory, "analysis.tdf"))
         self.connection.row_factory = sqlite3.Row
 
+        self.initialize_frame_cache()
+        self.initialize_scan_cache()
+
         self.initial_frame_buffer_size = 128 # may grow in readScans()
         self._read_metadata()
-        self._frame_cache = WeakValueDictionary()
         self._scan_merging_parameters = scan_merging_parameters
         self._producer = self.make_frame_iterator(grouped=True)
+
+    @property
+    def source_file_name(self):
+        return self._source_file_name
 
     def __del__(self):
         if hasattr(self, 'handle'):
@@ -763,6 +816,12 @@ class BrukerTIMSLoader(TIMSMetadata, TIMSAPI, BrukerTIMSScanDataSource, BrukerTI
     def _describe_frame(self, frame_id):
         cursor = self.connection.execute("SELECT * FROM Frames WHERE Id={0};".format(frame_id))
         return dict(cursor.fetchone())
+
+    def __len__(self):
+        return self.frame_count()
+
+    def next(self):
+        return next(self._producer)
 
     def get_scan_by_index(self, scan_index):
         frame_index = np.searchsorted(
@@ -823,16 +882,38 @@ class BrukerTIMSLoader(TIMSMetadata, TIMSAPI, BrukerTIMSScanDataSource, BrukerTI
         # Cache scan here
         return scan_obj
 
-    def make_iterator(self, iterator=None, grouped=True, frame=True):
-        if iterator is None:
-            iterator = self._make_default_iterator()
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        ``rt``, or ``index``. Only one may be provided.
+
+        After invoking this method, the iterator this object wraps will be changed to begin
+        yielding scan bunchs (or single scans if ``grouped`` is ``False``).
+
+        This method will trigger several random-access operations, making it prohibitively
+        expensive for normally compressed files.
+
+        Arguments
+        ---------
+        scan_id: str, optional
+            Start from the scan with the specified id.
+        rt: float, optional
+            Start from the scan nearest to specified time (in minutes) in the run. If no
+            exact match is found, the nearest scan time will be found, rounded up.
+        index: int, optional
+            Start from the scan with the specified index.
+        require_ms1: bool, optional
+            Whether the iterator must start from an MS1 scan. True by default.
+        grouped: bool, optional
+            whether the iterator should yield scan bunches or single scans. True by default.
+        '''
+        raise NotImplementedError()
 
     def _ms1_frame_iterator(self):
         ms1_frame_ids = self.connection.execute("SELECT Id FROM Frames WHERE MsMsType = 0;").fetchall()
         for frame_id, in ms1_frame_ids:
             yield frame_id
 
-    def _make_default_iterator(self, frame=True):
+    def _make_default_iterator(self, frame=False):
         if frame:
             return self._ms1_frame_iterator()
         else:
