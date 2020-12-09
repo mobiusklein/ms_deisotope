@@ -79,7 +79,6 @@ class _ScanIteratorImplBase(object):
         return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan, **kwargs)
 
 
-
 class _SingleScanIteratorImpl(_ScanIteratorImplBase):
     """Iterate over individual scans.
 

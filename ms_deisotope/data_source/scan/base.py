@@ -542,6 +542,19 @@ class ScanBase(object):
             self.precursor_information.unbind()
         return self
 
+    @property
+    def source_file_name(self):
+        '''Get the name of the source file this :class:`~.ScanBase` object is bound to
+
+        Returns
+        -------
+        :class:`str`
+        '''
+        source = self.source
+        if source is None:
+            return None
+        return source.source_file_name
+
 
 class PrecursorInformation(_IonMobilityMixin):
     """Store information relating a tandem MS scan to its precursor MS scan.
