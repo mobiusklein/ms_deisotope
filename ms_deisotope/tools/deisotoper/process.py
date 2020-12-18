@@ -39,6 +39,8 @@ class ScanIDYieldingProcess(Process):
         self.start_scan = start_scan
         self.max_scans = max_scans
         self.end_scan = end_scan
+        self.end_scan_index = None
+        self.passed_first_batch = False
         self.ignore_tandem_scans = ignore_tandem_scans
         self.batch_size = batch_size
 
@@ -53,6 +55,7 @@ class ScanIDYieldingProcess(Process):
             try:
                 bunch = next(self.loader)
                 scan, products = bunch
+                products = [prod for prod in products if prod.index <= self.end_scan_index]
                 if scan is not None:
                     scan_id = scan.id
                 else:
@@ -96,6 +99,8 @@ class ScanIDYieldingProcess(Process):
             max_scans = self.max_scans
 
         end_scan = self.end_scan
+        self.end_scan_index = self.loader.get_scan_by_id(end_scan).index
+
         while count < max_scans:
             try:
                 batch, ids = self._make_scan_batch()

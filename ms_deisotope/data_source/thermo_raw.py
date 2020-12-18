@@ -236,10 +236,11 @@ class ThermoRawDataInterface(ScanDataSource):
         scan_number = scan.scan_number
         pinfo_struct = self._source.GetPrecursorInfoFromScanNum(scan_number)
         trailer = self._trailer_values(scan)
-        precursor_scan_number = None
         precursor_scan_number = trailer.get('Master Scan Number')
         if precursor_scan_number is not None:
-            precursor_scan_number = int(precursor_scan_number)
+            precursor_scan_number = int(precursor_scan_number) - 1
+            if self.get_scan_by_index(precursor_scan_number).ms_level >= self._ms_level(scan):
+                precursor_scan_number = None
 
         labels, _, _ = self._source.GetAllMSOrderData(scan_number)
         if pinfo_struct:

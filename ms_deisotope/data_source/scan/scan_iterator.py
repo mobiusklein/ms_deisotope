@@ -177,16 +177,27 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
     present, even if MSn scans are not.
     """
 
-    def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, buffering=2):
+    def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, buffering=5):
         super(_InterleavedGroupedScanIteratorImpl, self).__init__(iterator, scan_packer, scan_validator, scan_cacher)
+        if buffering < 2:
+            raise ValueError("Interleaved buffering must be greater than 1")
         self.buffering = buffering
         self.ms1_buffer = deque()
         self.product_mapping = defaultdict(list)
+        self.passed_first_ms1 = False
 
     def deque_group(self):
         precursor = self.ms1_buffer.popleft()
         products = self.product_mapping.pop(precursor.id, [])
         precursor.product_scans = products
+        if not self.passed_first_ms1 and self.ms1_buffer:
+            current_ms1_time = precursor.scan_time
+            next_ms1_time = self.ms1_buffer[0].scan_time
+            for prec_id, prods in list(self.product_mapping.items()):
+                for prod in prods:
+                    if current_ms1_time <= prod.scan_time <= next_ms1_time:
+                        products.append(prod)
+            self.passed_first_ms1 = True
         return ScanBunch(precursor, products)
 
     def add_product(self, scan):

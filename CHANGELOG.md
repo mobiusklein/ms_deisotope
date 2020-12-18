@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Added
 
 ### Changed
+1. All grouped scan iterators now use an interleaved iteration strategy to handle interleaving of MS1 scans that are
+   not the precursor of a subsequent series of MSn scans. When using `start_from_scan`, product scans which follow the
+   first MS1 but not actually produced from that first MS1 scan will be included in the product scan list for that
+   `ScanBunch`.
 
 ### Deprecated
 
@@ -16,6 +20,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Fixed
 1. Retrieving the precursor scan is now safer with `thermo_raw_net.ThermoRawLoader`
 2. `ms-index spectrum-clustering` now remembers source files when scans are loaded in memory
+3. Use a more thorough precursor scan determination algorithm for `ThermoRawLoader` implementations
+4. Fixed `ms-deisotope`'s sequential scan numbering when there is scan interleaving
 
 ### Security
 

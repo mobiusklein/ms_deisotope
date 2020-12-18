@@ -366,7 +366,9 @@ class RawReaderInterface(ScanDataSource):
             precursor_scan_number = None
         if precursor_scan_number is not None:
             precursor_scan_number = int(precursor_scan_number) - 1
-        elif precursor_scan_number is None:
+            if self.get_scan_by_index(precursor_scan_number).ms_level >= self._ms_level(scan):
+                precursor_scan_number = None
+        if precursor_scan_number is None:
             last_index = self._scan_index(scan) - 1
             current_level = self._ms_level(scan)
             i = 0
