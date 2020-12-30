@@ -1,6 +1,7 @@
 '''A collection of different strategies for iterating over streams
 of :class:`~.Scan`-like objects.
 '''
+import warnings
 from collections import deque, defaultdict
 
 from . import ScanBunch
@@ -244,7 +245,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         while self.ms1_buffer:
             yield self.deque_group()
         if self.product_mapping:
-            raise ValueError("Lingering Product Sets For %r!" % (list(self.product_mapping), ))
+            warnings.warn("Lingering Product Sets For %r!" % (list(self.product_mapping), ))
 
 
 class MSEIterator(_GroupedScanIteratorImpl):

@@ -118,7 +118,7 @@ class JSONScanFormatter(object):
             package['activation'] = self._pack_activation(
                 activation_information)
         if isolation_window is not None:
-            package['isolation_window_args'] = {
+            package['isolation_window'] = {
                 "lower": isolation_window.lower,
                 "target": isolation_window.target,
                 "upper": isolation_window.upper
@@ -169,8 +169,10 @@ class JSONScanFormatter(object):
         if scan.deconvoluted_peak_set is not None:
             data['deconvoluted_peak_set'] = self.deconvoluted_peak_set_to_json(scan.deconvoluted_peak_set)
         if scan.precursor_information is not None:
-            data['precursor'] = self._pack_precursor_information(
+            pinfo = data['precursor_information'] = self._pack_precursor_information(
                 scan.precursor_information, scan.activation, scan.isolation_window)
+            data['activation'] = pinfo.pop("activation", None)
+            data['isolation_window'] = pinfo.pop("isolation_window")
         return data
 
     def dump(self, scan, fh, **kwargs):
