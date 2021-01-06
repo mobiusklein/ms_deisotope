@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
    not the precursor of a subsequent series of MSn scans. When using `start_from_scan`, product scans which follow the
    first MS1 but not actually produced from that first MS1 scan will be included in the product scan list for that
    `ScanBunch`.
+2. `guess_type` now includes the input object in the error message when it fails to locate a loader type to reduce the
+   amount of blind guessing at the problem.
 
 ### Deprecated
 

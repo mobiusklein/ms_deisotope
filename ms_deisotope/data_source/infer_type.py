@@ -65,7 +65,7 @@ def guess_type(file_path):
             return reader_type
         except (ValueError, IOError, ImportError, TypeError, AttributeError):
             continue
-    raise ValueError("Cannot determine ScanLoader type")
+    raise ValueError("Cannot determine ScanLoader type from %r" % (file_path, ))
 
 
 def MSFileLoader(file_path, *args, **kwargs):
