@@ -137,6 +137,7 @@ cdef class RunningWeightedAverage(object):
         public size_t current_count
         public double total_weight
 
+    cpdef _initialize(self)
     cpdef add(self, PeakBase peak)
     cpdef double recompute(self)
     cpdef RunningWeightedAverage update(self, iterable)

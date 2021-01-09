@@ -8,8 +8,9 @@ cdef class LCMSFeatureMap(object):
 
     cdef Py_ssize_t get_size(self)
     cdef LCMSFeature get(self, size_t i)
-    cpdef list _find_all(self, double mz, double error_tolerance)
-    cpdef LCMSFeature _search(self, double mz, double error_tolerance)
+    cpdef list find_all(self, double mz, double error_tolerance=*)
+    cpdef LCMSFeature search(self, double mz, double error_tolerance=*)
+    cpdef list between(self, double lo, double hi, double error_tolerance=*)
     cpdef list spanning_time(self, double time_point)
     cpdef LCMSFeatureMap clone(self, bint deep=*)
 

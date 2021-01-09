@@ -32,6 +32,25 @@ class LCMSFeatureMap(object):
             return [self.features[j] for j in i]
 
     def search(self, mz, error_tolerance=2e-5):
+        '''Search for a single feature within `error_tolerance` of `mz`.
+
+        Parameters
+        ----------
+        mz : float
+            The m/z to search for
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+
+        Returns
+        -------
+        :class:`~.LCMSFeature`
+            The a feature matching the query m/z, or :const:`None`.
+
+        See Also
+        --------
+        find_all
+        between
+        '''
         i = binary_search(self.features, mz, error_tolerance)
         if i is None:
             return None
@@ -39,6 +58,25 @@ class LCMSFeatureMap(object):
         return match
 
     def find_all(self, mz, error_tolerance=2e-5):
+        '''Search for all features within `error_tolerance` of `mz`.
+
+        Parameters
+        ----------
+        mz : float
+            The m/z to search for
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+
+        Returns
+        -------
+        list of :class:`~.LCMSFeature`
+            A list of all features matching the query m/z, or the empty list.
+
+        See Also
+        --------
+        between
+        '''
+
         bounds = search_sweep(self.features, mz, error_tolerance)
         if bounds is not None:
             lo, hi = bounds
@@ -57,6 +95,27 @@ class LCMSFeatureMap(object):
                 self.features, hi, error_tolerance)[0][0])
 
     def between(self, lo, hi, error_tolerance=2e-5):
+        '''Search for all features between `lo` and `hi`, allowing `error_tolerance`
+        around the edges.
+
+        Parameters
+        ----------
+        lo : float
+            The m/z to search for the lower bound
+        hi : float
+            The m/z to search for the upper bound
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+
+        Returns
+        -------
+        list of :class:`~.LCMSFeature`
+            The features between the query bounds with the permitted error, or an empty list.
+
+        See Also
+        --------
+        find_all
+        '''
         n = len(self)
         if n == 0:
             return []
@@ -561,24 +620,72 @@ class DeconvolutedLCMSFeatureMap(object):
     def spanning_time(self, time_point):
         return [feature for feature in self if feature.spans_in_time(time_point)]
 
-    def search(self, mz, error_tolerance=2e-5, use_mz=False):
+    def search(self, mass, error_tolerance=2e-5, use_mz=False):
+        '''Search for a single feature within `error_tolerance` of `mass`.
+
+        By default, this searches in the neutral mass domain, to search in
+        the m/z domain, pass `use_mz=True`.
+
+        Parameters
+        ----------
+        mass : float
+            The mass or m/z to search for
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+        use_mz : bool
+            Whether `mass` is interpreted as neutral or mass to charge ratio
+
+        Returns
+        -------
+        :class:`~.LCMSFeature`
+            The a feature matching the query mass, or :const:`None`.
+
+        See Also
+        --------
+        find_all
+        between
+        '''
         if use_mz:
-            i = binary_search(self._by_mz, mz, error_tolerance)
+            i = binary_search(self._by_mz, mass, error_tolerance)
             if i is None:
                 return None
             return self._by_mz[i]
-        i = binary_search_neutral(self.features, mz, error_tolerance)
+        i = binary_search_neutral(self.features, mass, error_tolerance)
         if i is None:
             return None
         match = self[i]
         return match
 
-    def find_all(self, mz, error_tolerance=2e-5, use_mz=False):
+    def find_all(self, mass, error_tolerance=2e-5, use_mz=False):
+        '''Search for all features within `error_tolerance` of `mass`.
+
+        By default, this searches in the neutral mass domain, to search in
+        the m/z domain, pass `use_mz=True`.
+
+        Parameters
+        ----------
+        mass : float
+            The mass or m/z to search for
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+        use_mz : bool
+            Whether `mass` is interpreted as neutral or mass to charge ratio
+
+        Returns
+        -------
+        list of :class:`~.LCMSFeature`
+            The features matching the query mass with the permitted error, or an empty list.
+
+        See Also
+        --------
+        between
+        search
+        '''
         if use_mz:
-            bounds = search_sweep(self._by_mz, mz, error_tolerance)
+            bounds = search_sweep(self._by_mz, mass, error_tolerance)
             collection = self._by_mz
         else:
-            bounds = search_sweep_neutral(self.features, mz, error_tolerance)
+            bounds = search_sweep_neutral(self.features, mass, error_tolerance)
             collection = self
         if bounds is not None:
             lo, hi = bounds
@@ -594,6 +701,32 @@ class DeconvolutedLCMSFeatureMap(object):
                 self.features, hi, error_tolerance)[0][0])
 
     def between(self, lo, hi, error_tolerance=2e-5, use_mz=False):
+        '''Search for all features between `lo` and `hi`, allowing `error_tolerance`
+        around the edges.
+
+        By default, this searches in the neutral mass domain, to search in
+        the m/z domain, pass `use_mz=True`.
+
+        Parameters
+        ----------
+        lo : float
+            The mass or m/z to search for the lower bound
+        hi : float
+            The mass or m/z to search for the upper bound
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+        use_mz : bool
+            Whether `lo` and `hi` are interpreted as neutral or mass to charge ratio
+
+        Returns
+        -------
+        list of :class:`~.LCMSFeature`
+            The features between the query bounds with the permitted error, or an empty list.
+
+        See Also
+        --------
+        find_all
+        '''
         n = len(self)
         if n == 0:
             return []
