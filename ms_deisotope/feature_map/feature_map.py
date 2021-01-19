@@ -13,12 +13,7 @@ from .feature_fit import DeconvolutedLCMSFeature, IonMobilityDeconvolutedLCMSFea
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-
-class LCMSFeatureMap(object):
-
-    def __init__(self, features):
-        self.features = sorted(features, key=lambda x: x.mz)
-
+class _FeatureCollection(object):
     def __len__(self):
         return len(self.features)
 
@@ -30,6 +25,12 @@ class LCMSFeatureMap(object):
             return self.features[i]
         else:
             return [self.features[j] for j in i]
+
+
+class LCMSFeatureMap(_FeatureCollection):
+
+    def __init__(self, features):
+        self.features = sorted(features, key=lambda x: x.mz)
 
     def search(self, mz, error_tolerance=2e-5):
         '''Search for a single feature within `error_tolerance` of `mz`.
@@ -709,23 +710,11 @@ def binary_search_exact_neutral(array, neutral_mass):
     return 0
 
 
-class DeconvolutedLCMSFeatureMap(object):
+class DeconvolutedLCMSFeatureMap(_FeatureCollection):
 
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: x.neutral_mass)
         self._by_mz = sorted(features, key=lambda x: x.mz)
-
-    def __len__(self):
-        return len(self.features)
-
-    def __iter__(self):
-        return iter(self.features)
-
-    def __getitem__(self, i):
-        if isinstance(i, (int, slice)):
-            return self.features[i]
-        else:
-            return [self.features[j] for j in i]
 
     def spanning_time(self, time_point):
         return [feature for feature in self if feature.spans_in_time(time_point)]
@@ -971,7 +960,7 @@ def build_rt_interval_tree(chromatogram_list, interval_tree_type=IntervalTreeNod
     return interval_tree
 
 
-class LCMSFeatureMerger(object):
+class LCMSFeatureMerger(_FeatureCollection):
     def __init__(self, features=None, error_tolerance=1e-5):
         if features is None:
             features = []
@@ -979,18 +968,6 @@ class LCMSFeatureMerger(object):
             features, key=self._mass_coordinate)
         self.error_tolerance = error_tolerance
         self.count = 0
-
-    def __len__(self):
-        return len(self.features)
-
-    def __iter__(self):
-        return iter(self.features)
-
-    def __getitem__(self, i):
-        if isinstance(i, (int, slice)):
-            return self.features[i]
-        else:
-            return [self.features[j] for j in i]
 
     def _mass_coordinate(self, x):
         return x.mz
@@ -1032,23 +1009,23 @@ class LCMSFeatureMerger(object):
             has_merged = self.merge_overlaps(new_feature, chroma)
             if not has_merged:
                 insertion_point = self.find_insertion_point(new_feature)
-                self.insert_feature(new_feature, [insertion_point])
+                self.insert_feature(new_feature, insertion_point)
         else:
             self.insert_feature(new_feature, index)
         self.count += 1
 
     def insert_feature(self, feature, index):
-        if index[0] != 0:
-            self.features.insert(index[0] + 1, feature)
+        if index != 0:
+            self.features.insert(index + 1, feature)
         else:
             if len(self) == 0:
-                new_index = index[0]
+                new_index = index
             else:
-                x = self.features[index[0]]
+                x = self.features[index]
                 if self._mass_coordinate(x) < self._mass_coordinate(feature):
-                    new_index = index[0] + 1
+                    new_index = index + 1
                 else:
-                    new_index = index[0]
+                    new_index = index
             self.features.insert(new_index, feature)
 
     def aggregate_features(self, features):
@@ -1095,22 +1072,19 @@ def layered_traversal(nodes):
     return sorted(nodes, key=lambda x: (x.level, x.center), reverse=True)
 
 
-class LCMSFeatureOverlapSmoother(object):
+class LCMSFeatureOverlapSmoother(_FeatureCollection):
+    '''Merge features which overlap in time but which are within :attr:`error_tolerance`
+    mass units of another, recursively merging upwards from smallest to largest intervals.
+
+    Attributes
+    ----------
+    '''
     def __init__(self, features, error_tolerance=1e-5, time_bridge=0):
         self.retention_interval_tree = build_rt_interval_tree(features)
         self.error_tolerance = error_tolerance
         self.time_bridge = time_bridge
         self.solution_map = {None: []}
         self.features = self.smooth()
-
-    def __iter__(self):
-        return iter(self.features)
-
-    def __getitem__(self, i):
-        return self.features[i]
-
-    def __len__(self):
-        return len(self.features)
 
     def _merge_features(self, features):
         merger = LCMSFeatureMerger(error_tolerance=self.error_tolerance)
