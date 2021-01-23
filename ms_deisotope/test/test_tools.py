@@ -89,12 +89,10 @@ def compare_peaks(peaks_a, peaks_b):
     return missing
 
 
-
 def diff_deconvoluted_peak_set(peaks_a, peaks_b):
     a_missing = compare_peaks(peaks_a, peaks_b)
     b_missing = compare_peaks(peaks_b, peaks_a)
     return a_missing, b_missing
-
 
 
 def test_ms_deisotope():
@@ -113,19 +111,20 @@ def test_ms_deisotope():
         aprec = a_bunch.precursor
         bprec = b_bunch.precursor
         assert aprec.id == bprec.id
-        diff = diff_deconvoluted_peak_set(
+        diffa, diffb = diff_deconvoluted_peak_set(
             aprec.deconvoluted_peak_set, bprec.deconvoluted_peak_set)
         assert len(aprec.deconvoluted_peak_set) == len(
-            bprec.deconvoluted_peak_set), "Peak Counts Diff On %r, (%r, %r)" % (aprec.id, ) + diff
+            bprec.deconvoluted_peak_set), "Peak Counts Diff On %r, (%r, %r)" % (aprec.id, diffa, diffb)
         assert aprec.deconvoluted_peak_set == bprec.deconvoluted_peak_set, "Peaks Diff On %r, (%r, %r)" % (
-            aprec.id, ) + diff
+            aprec.id, diffa, diffb)
 
         for aprod, bprod in zip(a_bunch.products, b_bunch.products):
             assert aprod.id == bprod.id
-            diff = diff_deconvoluted_peak_set(aprod.deconvoluted_peak_set, bprod.deconvoluted_peak_set)
-            assert len(aprod.deconvoluted_peak_set) == len(bprod.deconvoluted_peak_set), "Peak Counts Diff On %r, (%r, %r)" % (aprod.id, ) + diff
+            diffa, diffb = diff_deconvoluted_peak_set(aprod.deconvoluted_peak_set, bprod.deconvoluted_peak_set)
+            assert len(aprod.deconvoluted_peak_set) == len(
+                bprod.deconvoluted_peak_set), "Peak Counts Diff On %r, (%r, %r)" % (aprod.id, diffa, diffb)
             assert aprod.deconvoluted_peak_set == bprod.deconvoluted_peak_set, "Peaks Diff On %r" % (
-                aprod.id, ) + diff
+                aprod.id, diffa, diffb)
 
     result_reader.close()
     reference_reader.close()

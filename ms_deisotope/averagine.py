@@ -516,7 +516,7 @@ class AveragineCache(object):
             return self.backend[key_mz, charge, charge_carrier].clone().shift(mz)
         else:
             tid = self.averagine.isotopic_cluster(
-                mz, charge, charge_carrier, truncate_after, ignore_below)
+                key_mz, charge, charge_carrier, truncate_after, ignore_below)
             self.backend[key_mz, charge, charge_carrier] = tid.clone()
             return tid
 
