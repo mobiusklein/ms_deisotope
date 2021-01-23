@@ -24,6 +24,8 @@ jobs:
         pip install coverage pytest pytest-cov -U
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy numpy scipy -U
+        pip install -r requirements.txt
+        pip install click
         pip install -e .
     - name: Test with pytest
       run: |
