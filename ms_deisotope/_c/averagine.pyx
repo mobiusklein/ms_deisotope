@@ -970,6 +970,12 @@ cdef class AveragineCache(object):
                     i, sign * j, charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
         return self
 
+    def __richcmp__(self, other, int code):
+        if code == 2:
+            return self.averagine == other.averagine and self.backend == other.backend
+        elif code == 3:
+            return self.averagine != other.averagine and self.backend != other.backend
+
 
 cdef double _neutron_shift
 _neutron_shift = _py_calculate_mass({"C[13]": 1}) - _py_calculate_mass({"C[12]": 1})
