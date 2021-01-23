@@ -250,6 +250,9 @@ extra_requires = {
     ],
     "plot": [
         "matplotlib",
+    ],
+    "cli": [
+        'cli'
     ]
 }
 
