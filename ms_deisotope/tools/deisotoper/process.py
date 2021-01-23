@@ -10,6 +10,11 @@ try:
     from Queue import Empty as QueueEmpty
 except ImportError:
     from queue import Empty as QueueEmpty
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 
 import ms_deisotope
 
@@ -446,6 +451,15 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         if self.no_more_event is None:
             self.output_queue.put((DONE, DONE, DONE))
 
+        if os.getenv("MS_DEISOTOPE_DEBUG"):
+            self._dump_averagine_caches(transformer)
+
         self._work_complete.set()
 
-
+    def _dump_averagine_caches(self, transformer):
+        pid = os.getpid()
+        fname = "ms_deisotope_averagine_cache_ms$_%s.pkl" % pid
+        with open(fname.replace("$", '1'), 'wb') as fh:
+            pickle.dump(transformer.ms1_deconvolution_args.get('averagine'), fh, 2)
+        with open(fname.replace("$", 'n'), 'wb') as fh:
+            pickle.dump(transformer.msn_deconvolution_args.get('averagine'), fh, 2)

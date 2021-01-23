@@ -844,7 +844,7 @@ cdef class AveragineCache(object):
             self.backend = averagine.backend.copy()
         else:
             self.averagine = Averagine(averagine)
-        self.cache_truncation = cache_truncation
+            self.cache_truncation = cache_truncation
         self.enabled = True
 
     def __reduce__(self):
@@ -958,12 +958,16 @@ cdef class AveragineCache(object):
     def clear(self):
         self.backend.clear()
 
-    def populate(self, min_mz=10, max_mz=3000, min_charge=1, max_charge=8, charge_carrier=PROTON,
+    def populate(self, min_mz=10, max_mz=3005, min_charge=1, max_charge=8, charge_carrier=PROTON,
                  truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+        sign = min_charge / abs(min_charge)
+        assert sign == (max_charge / abs(max_charge)), "The polarity of min_charge must match the polarity of max_charge"
+        min_charge = abs(min_charge)
+        max_charge = abs(max_charge)
         for i in range(int(min_mz), int(max_mz)):
-            for j in range(min(max_charge, min_charge), max(min_charge, max_charge)):
+            for j in range(min(max_charge, min_charge), max(min_charge, max_charge) + 1):
                 self.isotopic_cluster(
-                    i, j, charge_carrier, truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW)
+                    i, sign * j, charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
         return self
 
 
