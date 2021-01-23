@@ -1,5 +1,6 @@
 import os
 import logging
+import sys
 import multiprocessing
 import traceback
 
@@ -99,8 +100,13 @@ class ScanIDYieldingProcess(Process):
             max_scans = self.max_scans
 
         end_scan = self.end_scan
-        self.end_scan_index = self.loader.get_scan_by_id(end_scan).index
-
+        if end_scan is None:
+            try:
+                self.end_scan_index = len(self.loader)
+            except AttributeError:
+                self.end_scan_index = sys.maxint
+        else:
+            self.end_scan_index = self.loader.get_scan_by_id(end_scan).index
         while count < max_scans:
             try:
                 batch, ids = self._make_scan_batch()
