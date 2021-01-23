@@ -1,12 +1,14 @@
 import unittest
 import os
 import io
+import tempfile
 
 from click.testing import CliRunner
 
 from ms_deisotope.data_source.mzml import MzMLLoader
+from ms_deisotope.output import ProcessedMzMLDeserializer
 from ms_deisotope.data_source import _compression
-from ms_deisotope.tools import indexing, conversion
+from ms_deisotope.tools import indexing, conversion, deisotoper
 from ms_deisotope.test.common import datafile
 
 
@@ -72,6 +74,34 @@ def test_mzml():
     if os.path.exists("-idx.json"):
         raise IOError("Orphan index file exists after running compressed test")
 
+
+def test_ms_deisotope():
+    runner = CliRunner(mix_stderr=False)
+    path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+    reference = datafile("20150710_3um_AGP_001_29_30.preprocessed.mzML.gz")
+    outpath = tempfile.mktemp()
+    result = runner.invoke(deisotoper.deisotope, [
+        "-b", 0, "-t", 20, "-tn", 10, "-m", 3, "-mn", 1, path, outpath
+    ])
+    result_reader = ProcessedMzMLDeserializer(outpath)
+    reference_reader = ProcessedMzMLDeserializer(_compression.get_opener(reference))
+    assert len(result_reader) == len(reference_reader)
+    for a_bunch, b_bunch in zip(result_reader, reference_reader):
+        assert len(a_bunch.products) == len(b_bunch.products)
+        aprec = a_bunch.precursor
+        bprec = b_bunch.precursor
+        assert aprec.id == bprec.id
+        assert len(aprec.deconvoluted_peak_set) == len(bprec.deconvoluted_peak_set)
+        assert aprec.deconvoluted_peak_set == bprec.deconvoluted_peak_set
+
+        for aprod, bprod in zip(a_bunch.products, b_bunch.products):
+            assert aprod.id == bprod.id
+            assert len(aprod.deconvoluted_peak_set) == len(bprod.deconvoluted_peak_set)
+            assert aprod.deconvoluted_peak_set == bprod.deconvoluted_peak_set
+
+    result_reader.close()
+    reference_reader.close()
+    os.remove(outpath)
 
 
 def test_idzip():

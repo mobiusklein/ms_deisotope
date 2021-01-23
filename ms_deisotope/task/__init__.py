@@ -1,5 +1,5 @@
 from .task import TaskBase
-from .log_utils import LogUtilsMixin, logger, CallInterval, printer as show_message
+from .log_utils import LogUtilsMixin, logger, CallInterval, show_message
 
 
 __all__ = [

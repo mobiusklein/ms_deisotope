@@ -25,6 +25,10 @@ def printer(obj, *message):
     print(fmt_msg(*message))
 
 
+def show_message(*message):
+    print(fmt_msg(*message))
+
+
 def debug_printer(obj, *message):
     if obj.in_debug_mode():
         print(u"DEBUG:" + fmt_msg(*message))
