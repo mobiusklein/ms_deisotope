@@ -15,11 +15,15 @@ from ms_deisotope.test.common import datafile
 def run_ms_deisotope():
     runner = CliRunner(mix_stderr=False)
     path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
-    reference = datafile("20150710_3um_AGP_001_29_30.preprocessed.mzML.gz")
+    reference = datafile("20150710_3um_AGP_001_29_30.preprocessed.mzML")
     result = runner.invoke(deisotoper.deisotope, [
         "-b", 0, "-t", 20, "-tn", 10, "-m", 3, "-mn", 1, path, reference
     ])
+    print(runner.exit_code)
     print(result.stdout)
+    runner.invoke(indexing.idzip_compression, reference, "-o", reference + '.gz')
+    print(result.exit_code)
+    os.remove(reference)
 
 
 if __name__ == "__main__":
