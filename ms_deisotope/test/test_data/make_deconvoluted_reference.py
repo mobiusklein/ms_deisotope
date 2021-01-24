@@ -19,6 +19,7 @@ def run_ms_deisotope():
     result = runner.invoke(deisotoper.deisotope, [
         "-b", 0, "-t", 20, "-tn", 10, "-m", 3, "-mn", 1, path, reference
     ])
+    print(result.stdout)
 
 
 if __name__ == "__main__":

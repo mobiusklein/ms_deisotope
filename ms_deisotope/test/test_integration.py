@@ -23,6 +23,7 @@ class TestIntegration(unittest.TestCase):
         scan.deconvolute(averagine=peptide, scorer=MSDeconVFitter(10.0),
                          ignore_below=0.05, truncate_after=0.8, charge_range=(1, 4))
         reference = self.get_reference()
+        assert len(scan.deconvoluted_peak_set) == len(reference.deconvoluted_peak_set)
         for peak in scan.deconvoluted_peak_set:
             peaks = reference.deconvoluted_peak_set.all_peaks_for(peak.neutral_mass, 1e-6)
             for ref in peaks:
