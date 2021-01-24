@@ -22,7 +22,8 @@ jobs:
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy numpy scipy -U
         pip install -r test-requirements.txt
-        pip install .
+        pip install git+https://github.com/mobiusklein/ms_peak_picker.git
+        pip install -e .
     - name: Check Imports
       run: |
         mkdir tmp
