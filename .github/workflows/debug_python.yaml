@@ -22,11 +22,11 @@ jobs:
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy numpy scipy -U
         pip install -r test-requirements.txt
-        pip install -e .
+        pip install .
     - name: Check Imports
       run: |
         mkdir tmp
         cd tmp/
-        python -c "import ms_peak_picker; print(ms_peak_picker)"
+        python -c "import ms_peak_picker; print(ms_peak_picker); print(ms_peak_picker.FittedPeak)"
         python -c "import ms_deisotope; print(ms_deisotope); print(ms_deisotope.check_c_extensions())"
         pytest -l -s -v --cov=ms_deisotope --cov-report=html --cov-report term --pyargs ms_deisotope
