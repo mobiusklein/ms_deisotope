@@ -414,7 +414,6 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         transformer = self.make_scan_transformer(loader)
         self.transformer = transformer
         self._silence_loggers()
-        self.log_message(str((os.getpid(), self, self.transformer.msn_deconvolution_args)))
         i = 0
         last = 0
         while has_input:

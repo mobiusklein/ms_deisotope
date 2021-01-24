@@ -3,7 +3,7 @@
 
 name: tests
 
-on: [tag]
+on: [release]
 
 jobs:
   build:
