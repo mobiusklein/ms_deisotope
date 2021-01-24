@@ -20,3 +20,4 @@ cythonize.py
 test.py
 experiment/
 .coverage.*
+__pycache__
