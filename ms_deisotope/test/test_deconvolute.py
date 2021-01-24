@@ -22,6 +22,8 @@ from ms_deisotope.test.test_scan import (
     FittedPeak)
 from ms_deisotope.test.common import datafile
 
+import pickle
+
 
 logger = logging.getLogger('ms_deisotope.test.test_deconvolution')
 
@@ -387,7 +389,14 @@ class TestIncrementalGraphExtraction(unittest.TestCase):
 
         peak, deconvoluter = self.build_deconvoluter(scan, peptide)
         deconvoluter._deconvolution_step(0, truncate_after=0.8, charge_range=(1, 4))
+
+        with open(datafile("extraction_base_averagine.pkl"), 'rb') as fh:
+            reference_averagine = pickle.load(fh)
+
+        diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
+        assert len(diff) == 0
         assert len(deconvoluter.averagine.backend) == 8868
+        assert reference_averagine == deconvoluter.averagine
 
         cluster = deconvoluter.peak_dependency_network.find_cluster_for(peak)
         spanned = cluster.fits_using_mz(peak.mz)
@@ -400,12 +409,19 @@ class TestIncrementalGraphExtraction(unittest.TestCase):
         scan = self.scan
         cache = AveragineCache(peptide)
         cache.populate(truncate_after=0.8)
-        peak2, deconvoluter2 = self.build_deconvoluter(scan, cache)
-        deconvoluter2._deconvolution_step(
+        peak2, deconvoluter = self.build_deconvoluter(scan, cache)
+        deconvoluter._deconvolution_step(
             0, truncate_after=0.8, charge_range=(1, 4))
-        assert len(deconvoluter2.averagine.backend) == 23960
 
-        cluster2 = deconvoluter2.peak_dependency_network.find_cluster_for(peak2)
+        with open(datafile("extraction_cached_averagine.pkl"), 'rb') as fh:
+            reference_averagine = pickle.load(fh)
+
+        diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
+        assert len(diff) == 0
+        assert len(deconvoluter.averagine.backend) == 23960
+        assert reference_averagine == deconvoluter.averagine
+
+        cluster2 = deconvoluter.peak_dependency_network.find_cluster_for(peak2)
         spanned2 = cluster2.fits_using_mz(peak2.mz)
         assert len(cluster2) == 4
         assert len(spanned2) == 2
@@ -415,12 +431,18 @@ class TestIncrementalGraphExtraction(unittest.TestCase):
     def test_extraction_quick_charge(self):
         scan = self.scan
 
-        peak3, deconvoluter3 = self.build_deconvoluter(scan, peptide, use_quick_charge=True)
-        deconvoluter3._deconvolution_step(
-            0, truncate_after=0.8, charge_range=(1, 4))
-        assert len(deconvoluter3.averagine.backend) == 5136
+        peak3, deconvoluter = self.build_deconvoluter(scan, peptide, use_quick_charge=True)
+        deconvoluter._deconvolution_step(0, truncate_after=0.8, charge_range=(1, 4))
 
-        cluster3 = deconvoluter3.peak_dependency_network.find_cluster_for(peak3)
+        with open(datafile("extraction_quick_charge_averagine.pkl"), 'rb') as fh:
+            reference_averagine = pickle.load(fh)
+
+        diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
+        assert len(diff) == 0
+        assert len(deconvoluter.averagine.backend) == 5136
+        assert reference_averagine == deconvoluter.averagine
+
+        cluster3 = deconvoluter.peak_dependency_network.find_cluster_for(peak3)
         spanned3 = cluster3.fits_using_mz(peak3.mz)
         assert len(cluster3) == 1
         assert len(spanned3) == 1

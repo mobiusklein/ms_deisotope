@@ -33,7 +33,7 @@ jobs:
       python -m pip install --upgrade pip
       pip install Cython click
       pip install --only-binary=numpy,scipy numpy scipy
-      pip install -r requirements.txt
+      pip install -r test-requirements.txt
     displayName: 'Install dependencies'
   - script: |
       python setup.py develop
