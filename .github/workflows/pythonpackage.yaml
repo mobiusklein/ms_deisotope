@@ -3,7 +3,7 @@
 
 name: tests
 
-on: []
+on: [tag]
 
 jobs:
   build:
