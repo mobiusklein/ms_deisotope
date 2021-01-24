@@ -28,4 +28,4 @@ jobs:
         pip install -e .
     - name: Test with pytest
       run: |
-        make test
+        py.test -l -s -v  ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
