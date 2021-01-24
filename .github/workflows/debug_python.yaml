@@ -21,12 +21,11 @@ jobs:
         pip install coverage pytest pytest-cov -U
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy numpy scipy -U
-        pip install git+https://github.com/mobiusklein/ms_peak_picker.git
         pip install -r test-requirements.txt
         pip install -e .
     - name: Check Imports
       run: |
         mkdir tmp
         cd tmp/
-        python -c "import ms_peak_picker; print(ms_peak_picker); print(ms_peak_picker.check_c_extensions())"
+        python -c "import ms_peak_picker; print(ms_peak_picker)"
         python -c "import ms_deisotope; print(ms_deisotope); print(ms_deisotope.check_c_extensions())"
