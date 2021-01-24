@@ -1,9 +1,6 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+name: debug
 
-name: tests
-
-on: []
+on: [push]
 
 jobs:
   build:
@@ -11,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['2.7', '3.5', '3.6', '3.7', '3.8']
+        python-version: ['3.8']
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -24,9 +21,11 @@ jobs:
         pip install coverage pytest pytest-cov -U
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy numpy scipy -U
-        pip install git+https://github.com/mobiusklein/ms_peak_picker.git
         pip install -r test-requirements.txt
         pip install -e .
-    - name: Test with pytest
+    - name: Check Imports
       run: |
-        py.test -l -s -v  ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
+        mkdir tmp
+        cd tmp/
+        python -c "import ms_peak_picker; print(ms_peak_picker); print(ms_peak_picker.check_c_extensions())"
+        python -c "import ms_deisotope; print(ms_deisotope); print(ms_deisotope.check_c_extensions())"
