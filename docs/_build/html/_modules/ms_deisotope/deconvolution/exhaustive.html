@@ -1,22 +1,21 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ms_deisotope.deconvolution.exhaustive &#8212; ms_deisotope  documentation</title>
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -876,6 +875,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_priority_map</span><span class="p">[</span><span class="n">peak</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
         <span class="k">return</span> <span class="n">result</span></div>
 
+    <span class="k">def</span> <span class="nf">_deconvolution_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iteration_step</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>   <span class="c1"># pylint: disable=arguments-differ</span>
+                            <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span>
+                            <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">iteration_step</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">populate_graph</span><span class="p">(</span>
+            <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
+            <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+            <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_fits</span><span class="p">(</span>
+            <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
+            <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">select_best_disjoint_subgraphs</span><span class="p">(</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_slice_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
 <div class="viewcode-block" id="PeakDependenceGraphDeconvoluterBase.deconvolute"><a class="viewcode-back" href="../../../deconvolution/deconvolution.html#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.deconvolute">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">ERROR_TOLERANCE</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>   <span class="c1"># pylint: disable=arguments-differ</span>
                     <span class="n">left_search_limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">MAX_ITERATION</span><span class="p">,</span>
                     <span class="n">charge_carrier</span><span class="o">=</span><span class="n">PROTON</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">TRUNCATE_AFTER</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">IGNORE_BELOW</span><span class="p">,</span>
@@ -925,24 +941,12 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                 <span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;== Starting Iteration </span><span class="si">%d</span><span class="s2"> ===================&gt;&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">))</span>
-            <span class="c1"># The first iteration doesn&#39;t need to have the entire graph</span>
-            <span class="c1"># rebuilt and might have been seeded with targeted queries</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">peak_dependency_network</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">populate_graph</span><span class="p">(</span>
-                <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deconvolution_step</span><span class="p">(</span>
+                <span class="n">i</span><span class="p">,</span> <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
                 <span class="n">left_search_limit</span><span class="o">=</span><span class="n">left_search_limit</span><span class="p">,</span> <span class="n">right_search_limit</span><span class="o">=</span><span class="n">right_search_limit</span><span class="p">,</span>
-                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
-                <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span> <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_fits</span><span class="p">(</span>
-                <span class="n">charge_range</span><span class="o">=</span><span class="n">charge_range</span><span class="p">,</span>
-                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span>
-                <span class="n">error_tolerance</span><span class="o">=</span><span class="n">error_tolerance</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">select_best_disjoint_subgraphs</span><span class="p">(</span>
-                <span class="n">error_tolerance</span><span class="p">,</span> <span class="n">charge_carrier</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_slice_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">charge_carrier</span><span class="o">=</span><span class="n">charge_carrier</span><span class="p">,</span> <span class="n">truncate_after</span><span class="o">=</span><span class="n">truncate_after</span><span class="p">,</span>
+                <span class="n">ignore_below</span><span class="o">=</span><span class="n">ignore_below</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">end_signal</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaklist</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
-
             <span class="k">if</span> <span class="p">(</span><span class="n">begin_signal</span> <span class="o">-</span> <span class="n">end_signal</span><span class="p">)</span> <span class="o">/</span> <span class="n">end_signal</span> <span class="o">&lt;</span> <span class="n">convergence</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
                     <span class="n">info</span><span class="p">(</span><span class="s2">&quot;(</span><span class="si">%0.4e</span><span class="s2"> - </span><span class="si">%0.4e</span><span class="s2">) / </span><span class="si">%0.4e</span><span class="s2"> &lt; </span><span class="si">%0.2g</span><span class="s2">, Converged!&quot;</span><span class="p">,</span>
@@ -983,7 +987,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
     </div>
   </body>
 </html>

@@ -1,22 +1,21 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ms_deisotope Quickstart &#8212; ms_deisotope  documentation</title>
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Deconvolution" href="deconvolution/index.html" />
@@ -45,21 +44,35 @@
 /* CSS for nbsphinx extension */
 
 /* remove conflicting styling from Sphinx themes */
-div.nbinput.container,
-div.nbinput.container div.prompt,
-div.nbinput.container div.input_area,
-div.nbinput.container div[class*=highlight],
-div.nbinput.container div[class*=highlight] pre,
-div.nboutput.container,
-div.nboutput.container div.prompt,
-div.nboutput.container div.output_area,
-div.nboutput.container div[class*=highlight],
-div.nboutput.container div[class*=highlight] pre {
-    background: none;
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
     border: none;
-    padding: 0 0;
+    padding: 0;
     margin: 0;
     box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
 }
 
 /* avoid gaps between output lines */
@@ -106,20 +119,33 @@ div.nboutput.container div.prompt pre {
 /* all prompts */
 div.nbinput.container div.prompt,
 div.nboutput.container div.prompt {
-    min-width: 7ex;
-    padding-top: 0.3rem;
-    padding-right: 0.3rem;
-    text-align: right;
-    flex: 0;
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
 }
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
 @media (max-width: 540px) {
     div.nbinput.container div.prompt,
     div.nboutput.container div.prompt {
+        width: unset;
         text-align: left;
         padding: 0.4em;
     }
     div.nboutput.container div.prompt.empty {
         padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
     }
 }
 
@@ -147,7 +173,7 @@ div.nboutput.container div.output_area {
 div.nbinput.container div.input_area {
     border: 1px solid #e0e0e0;
     border-radius: 2px;
-    background: #f5f5f5;
+    /*background: #f5f5f5;*/
 }
 
 /* override MathJax center alignment in output cells */
@@ -212,7 +238,8 @@ div.nboutput.container div.output_area div[class*=highlight].math,
 div.nboutput.container div.output_area.rendered_html,
 div.nboutput.container div.output_area > div.output_javascript,
 div.nboutput.container div.output_area:not(.rendered_html) > img{
-    padding: 0.3rem;
+    padding: 5px;
+    margin: 0;
 }
 
 /* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
@@ -417,7 +444,7 @@ PeakIndex(27826 points, 2108 peaks)
 </pre></div>
 </div>
 <div class="input_area highlight-ipython2 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span></span><span class="n">bunch</span><span class="o">.</span><span class="n">precursor</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="n">use_mz</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -537,7 +564,7 @@ PeakIndex(27826 points, 2108 peaks)
     <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span>
                 <span class="s2">&quot;$</span><span class="si">%0.2f</span><span class="s2">^</span><span class="si">%d</span><span class="s2">$&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">),</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-                <span class="n">clip_on</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">clip_on</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">display</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="p">)</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">550</span><span class="p">)</span>
@@ -574,8 +601,8 @@ PeakIndex(27826 points, 2108 peaks)
     <span class="n">all_for</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="o">.</span><span class="n">all_peaks_for</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_for</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">all_for</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_for</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">print</span> <span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span>
-        <span class="k">print</span> <span class="p">[(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">score</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">all_for</span><span class="p">]</span>
+        <span class="nb">print</span> <span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span>
+        <span class="nb">print</span> <span class="p">[(</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">score</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">all_for</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">all_for</span><span class="p">:</span>
             <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 
@@ -719,6 +746,8 @@ False
 </pre></div>
 </div>
 </div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ScanProcessor</span></code> type takes a <code class="docutils literal notranslate"><span class="pre">dict</span></code> describing the parameters passed to the <code class="docutils literal notranslate"><span class="pre">ms_deisotope.deconvolute_peaks</span></code> function which does the actual deconvoluting. These parameters control how the deconvolution process grades peaks against theoretical isotopic patterns (<code class="docutils literal notranslate"><span class="pre">scorer</span></code>), which theoretical isotopic model to use (<code class="docutils literal notranslate"><span class="pre">averagine</span></code>), and how much of the isotopic pattern to look for (<code class="docutils literal notranslate"><span class="pre">truncate_after</span></code>). The <code class="docutils literal notranslate"><span class="pre">MSDeconVFitter</span></code> and <code class="docutils literal notranslate"><span class="pre">PenalizedMSDeconVFitter</span></code> scorers are sensitive to
+intensity scale, so adjusting their threshold parameter may be helpful. See more in the documentation.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[67]:
 </pre></div>
@@ -750,7 +779,7 @@ False
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_40_1.png" src="_images/Quickstart_40_1.png" />
+<img alt="_images/Quickstart_41_1.png" src="_images/Quickstart_41_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -786,7 +815,7 @@ False
     <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="o">&gt;</span> <span class="mi">400</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span>
                 <span class="s2">&quot;$</span><span class="si">%0.2f</span><span class="s2">^</span><span class="si">%d</span><span class="s2">$&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">),</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-                <span class="n">clip_on</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">clip_on</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -804,7 +833,7 @@ False
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="_images/Quickstart_42_1.png" src="_images/Quickstart_42_1.png" />
+<img alt="_images/Quickstart_43_1.png" src="_images/Quickstart_43_1.png" />
 </div>
 </div>
 </div>
@@ -825,7 +854,7 @@ False
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
     </div>
   </body>
 </html>

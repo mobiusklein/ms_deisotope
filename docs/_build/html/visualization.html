@@ -1,22 +1,21 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Visualizing Mass Spectra &#8212; ms_deisotope  documentation</title>
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Writing MGF" href="output/mgf.html" /> 
@@ -66,79 +65,71 @@ mass spectra using <code class="xref py py-mod docutils literal notranslate"><sp
 </pre></div>
 </div>
 <p>(<a class="reference external" href=".//visualization-1.py">Source code</a>)</p>
-<div class="figure" id="id1">
+<div class="figure align-default" id="id1">
 <img alt="_images/visualization-1_00.png" src="_images/visualization-1_00.png" />
-<p class="caption"><span class="caption-text">(<a class="reference external" href=".//visualization-1_00.png">png</a>, <a class="reference external" href=".//visualization-1_00.hires.png">hires.png</a>, <a class="reference external" href=".//visualization-1_00.pdf">pdf</a>)</span></p>
+<p class="caption"><span class="caption-text">(<a class="reference external" href=".//visualization-1_00.png">png</a>, <a class="reference external" href=".//visualization-1_00.hires.png">hires.png</a>, <a class="reference external" href=".//visualization-1_00.pdf">pdf</a>)</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
 </div>
-<div class="figure" id="id2">
+<div class="figure align-default" id="id2">
 <img alt="_images/visualization-1_01.png" src="_images/visualization-1_01.png" />
-<p class="caption"><span class="caption-text">(<a class="reference external" href=".//visualization-1_01.png">png</a>, <a class="reference external" href=".//visualization-1_01.hires.png">hires.png</a>, <a class="reference external" href=".//visualization-1_01.pdf">pdf</a>)</span></p>
+<p class="caption"><span class="caption-text">(<a class="reference external" href=".//visualization-1_01.png">png</a>, <a class="reference external" href=".//visualization-1_01.hires.png">hires.png</a>, <a class="reference external" href=".//visualization-1_01.pdf">pdf</a>)</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
 </div>
 <div class="section" id="basic-spectrum-drawing">
 <h2>Basic Spectrum Drawing<a class="headerlink" href="#basic-spectrum-drawing" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div><dl class="function">
+<div><dl class="py function">
 <dt id="ms_deisotope.plot.draw_raw">
-<code class="descclassname">ms_deisotope.plot.</code><code class="descname">draw_raw</code><span class="sig-paren">(</span><em>mz_array</em>, <em>intensity_array=None</em>, <em>ax=None</em>, <em>normalize=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_peak_picker/plot.html#draw_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.draw_raw" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">ms_deisotope.plot.</code><code class="sig-name descname">draw_raw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mz_array</span></em>, <em class="sig-param"><span class="n">intensity_array</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">normalize</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_peak_picker/plot.html#draw_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.draw_raw" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws un-centroided profile data, visualizing continuous
 data points</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mz_array</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>) – Either the m/z array to be visualized, or if <cite>intensity_array</cite>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mz_array</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>) – Either the m/z array to be visualized, or if <cite>intensity_array</cite>
 is <cite>None</cite>, <cite>mz_array</cite> will be unpacked, looking to find a sequence
 of two <cite>np.ndarray</cite> objects for the m/z (X) and intensity (Y)
-coordinates</li>
-<li><strong>intensity_array</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code>, optional) – The intensity array to be visualized. If <cite>None</cite>, will attempt to
-unpack <cite>mz_array</cite></li>
-<li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.Axes</span></code>, optional) – The axis to draw the plot on. If missing, a new one will be created using
-<code class="xref py py-func docutils literal notranslate"><span class="pre">matplotlib.pyplot.subplots()</span></code></li>
-<li><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <cite>True</cite>, will normalize the abundance dimension to be between 0 and 100%</li>
-<li><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></li>
-<li><strong>**kwargs</strong> – Passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">matplotlib.Axes.plot()</span></code></li>
+coordinates</p></li>
+<li><p><strong>intensity_array</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">np.ndarray</span></code>, optional) – The intensity array to be visualized. If <cite>None</cite>, will attempt to
+unpack <cite>mz_array</cite></p></li>
+<li><p><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.Axes</span></code>, optional) – The axis to draw the plot on. If missing, a new one will be created using
+<code class="xref py py-func docutils literal notranslate"><span class="pre">matplotlib.pyplot.subplots()</span></code></p></li>
+<li><p><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <cite>True</cite>, will normalize the abundance dimension to be between 0 and 100%</p></li>
+<li><p><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></p></li>
+<li><p><strong>**kwargs</strong> – Passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">matplotlib.Axes.plot()</span></code></p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="ms_deisotope.plot.draw_peaklist">
-<code class="descclassname">ms_deisotope.plot.</code><code class="descname">draw_peaklist</code><span class="sig-paren">(</span><em>peaklist</em>, <em>ax=None</em>, <em>normalize=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_peak_picker/plot.html#draw_peaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.draw_peaklist" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">ms_deisotope.plot.</code><code class="sig-name descname">draw_peaklist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peaklist</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">normalize</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_peak_picker/plot.html#draw_peaklist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.draw_peaklist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws centroided peak data, visualizing peak apexes.</p>
 <p>The peaks will be converted into a single smooth curve using
 <code class="xref py py-func docutils literal notranslate"><span class="pre">peaklist_to_vector()</span></code>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">PeakLike</span></code>) – The peaks to draw.</li>
-<li><strong>ax</strong> (<em>matplotlib.Axes</em><em>, </em><em>optional</em>) – The axis to draw the plot on. If missing, a new one will be created using
-<code class="xref py py-func docutils literal notranslate"><span class="pre">matplotlib.pyplot.subplots()</span></code></li>
-<li><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <cite>True</cite>, will normalize the abundance dimension to be between 0 and 100%</li>
-<li><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></li>
-<li><strong>**kwargs</strong> – Passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">matplotlib.Axes.plot()</span></code></li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>peaklist</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">PeakLike</span></code>) – The peaks to draw.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.Axes</em><em>, </em><em>optional</em>) – The axis to draw the plot on. If missing, a new one will be created using
+<code class="xref py py-func docutils literal notranslate"><span class="pre">matplotlib.pyplot.subplots()</span></code></p></li>
+<li><p><strong>normalize</strong> (<em>bool</em><em>, </em><em>optional</em>) – if <cite>True</cite>, will normalize the abundance dimension to be between 0 and 100%</p></li>
+<li><p><strong>pretty</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, will call <code class="xref py py-func docutils literal notranslate"><span class="pre">_beautify_axes()</span></code> on <cite>ax</cite></p></li>
+<li><p><strong>**kwargs</strong> – Passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">matplotlib.Axes.plot()</span></code></p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">matplotlib.Axes</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib.Axes</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div></blockquote>
@@ -146,9 +137,9 @@ unpack <cite>mz_array</cite></li>
 <div class="section" id="annotating-peaks-and-envelopes">
 <h2>Annotating Peaks and Envelopes<a class="headerlink" href="#annotating-peaks-and-envelopes" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div><dl class="function">
+<div><dl class="py function">
 <dt id="ms_deisotope.plot.annotate_isotopic_peaks">
-<code class="descclassname">ms_deisotope.plot.</code><code class="descname">annotate_isotopic_peaks</code><span class="sig-paren">(</span><em>scan</em>, <em>ax=None</em>, <em>color_cycle=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#annotate_isotopic_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.annotate_isotopic_peaks" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">ms_deisotope.plot.</code><code class="sig-name descname">annotate_isotopic_peaks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scan</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">color_cycle</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#annotate_isotopic_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.annotate_isotopic_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mark distinct isotopic peaks from the <code class="xref py py-class docutils literal notranslate"><span class="pre">DeconvolutedPeakSet</span></code>
 in <code class="docutils literal notranslate"><span class="pre">scan</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ms_deisotope</span>
@@ -170,64 +161,56 @@ in <code class="docutils literal notranslate"><span class="pre">scan</span></cod
 </pre></div>
 </div>
 <p>(<a class="reference external" href=".//visualization-2.py">Source code</a>, <a class="reference external" href=".//visualization-2.png">png</a>, <a class="reference external" href=".//visualization-2.hires.png">hires.png</a>, <a class="reference external" href=".//visualization-2.pdf">pdf</a>)</p>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/visualization-2.png" src="_images/visualization-2.png" />
 </div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>scan</strong> (<em>ScanBase</em>) – The scan to annotate</li>
-<li><strong>color_cycle</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>) – An iterable to draw isotopic cluster colors from</li>
-<li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to draw the plot on</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scan</strong> (<em>ScanBase</em>) – The scan to annotate</p></li>
+<li><p><strong>color_cycle</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>) – An iterable to draw isotopic cluster colors from</p></li>
+<li><p><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to draw the plot on</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="ms_deisotope.plot.label_peaks">
-<code class="descclassname">ms_deisotope.plot.</code><code class="descname">label_peaks</code><span class="sig-paren">(</span><em>scan</em>, <em>min_mz=None</em>, <em>max_mz=None</em>, <em>ax=None</em>, <em>is_deconvoluted=None</em>, <em>threshold=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#label_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.label_peaks" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">ms_deisotope.plot.</code><code class="sig-name descname">label_peaks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scan</span></em>, <em class="sig-param"><span class="n">min_mz</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_mz</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">is_deconvoluted</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#label_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.label_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
 of <cite>scan</cite> have been deconvoluted, the most abundant peak will be annotated with
 “&lt;neutral mass&gt; (&lt;charge&gt;)”, otherwise just “&lt;m/z&gt;”.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>scan</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>) – The scan to annotate</li>
-<li><strong>min_mz</strong> (<em>float</em><em>, </em><em>optional</em>) – The minimum m/z to annotate</li>
-<li><strong>max_mz</strong> (<em>float</em><em>, </em><em>optional</em>) – The maximum m/z to annotate</li>
-<li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to draw the plot on</li>
-<li><strong>is_deconvoluted</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to always use <code class="xref py py-attr docutils literal notranslate"><span class="pre">Scan.deconvoluted_peak_set</span></code></li>
-<li><strong>threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – The intensity threshold under which peaks will be ignored</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scan</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>) – The scan to annotate</p></li>
+<li><p><strong>min_mz</strong> (<em>float</em><em>, </em><em>optional</em>) – The minimum m/z to annotate</p></li>
+<li><p><strong>max_mz</strong> (<em>float</em><em>, </em><em>optional</em>) – The maximum m/z to annotate</p></li>
+<li><p><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to draw the plot on</p></li>
+<li><p><strong>is_deconvoluted</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to always use <code class="xref py py-attr docutils literal notranslate"><span class="pre">Scan.deconvoluted_peak_set</span></code></p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – The intensity threshold under which peaks will be ignored</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
-<li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – The axes the plot was drawn on</li>
-<li><strong>annotations</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.text.Text</span></code>) – The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.text.Text</span></code> annotations</li>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – The axes the plot was drawn on</p></li>
+<li><p><strong>annotations</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.text.Text</span></code>) – The list of <code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib.text.Text</span></code> annotations</p></li>
 </ul>
 </p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="ms_deisotope.plot.annotate_scan_single">
-<code class="descclassname">ms_deisotope.plot.</code><code class="descname">annotate_scan_single</code><span class="sig-paren">(</span><em>scan</em>, <em>product_scan</em>, <em>ax=None</em>, <em>label=True</em>, <em>standalone=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#annotate_scan_single"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.annotate_scan_single" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">ms_deisotope.plot.</code><code class="sig-name descname">annotate_scan_single</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scan</span></em>, <em class="sig-param"><span class="n">product_scan</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">standalone</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#annotate_scan_single"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.annotate_scan_single" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draw a zoomed-in view of the MS1 spectrum <code class="docutils literal notranslate"><span class="pre">scan</span></code> surrounding the
 area around each precursor ion that gave rise to <code class="docutils literal notranslate"><span class="pre">product_scan</span></code>
 with monoisotopic peaks and isolation windows marked.</p>
@@ -248,33 +231,29 @@ with monoisotopic peaks and isolation windows marked.</p>
 </pre></div>
 </div>
 <p>(<a class="reference external" href=".//visualization-3.py">Source code</a>, <a class="reference external" href=".//visualization-3.png">png</a>, <a class="reference external" href=".//visualization-3.hires.png">hires.png</a>, <a class="reference external" href=".//visualization-3.pdf">pdf</a>)</p>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/visualization-3.png" src="_images/visualization-3.png" />
 </div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>scan</strong> (<em>ScanBase</em>) – The MS1 scan to annotate</li>
-<li><strong>product_scan</strong> (<em>ScanBase</em>) – The product scan to annotate the precursor ion of</li>
-<li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to draw the plot on</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scan</strong> (<em>ScanBase</em>) – The MS1 scan to annotate</p></li>
+<li><p><strong>product_scan</strong> (<em>ScanBase</em>) – The product scan to annotate the precursor ion of</p></li>
+<li><p><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to draw the plot on</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="ms_deisotope.plot.annotate_scan">
-<code class="descclassname">ms_deisotope.plot.</code><code class="descname">annotate_scan</code><span class="sig-paren">(</span><em>scan</em>, <em>products</em>, <em>nperrow=4</em>, <em>ax=None</em>, <em>label=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#annotate_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.annotate_scan" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">ms_deisotope.plot.</code><code class="sig-name descname">annotate_scan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scan</span></em>, <em class="sig-param"><span class="n">products</span></em>, <em class="sig-param"><span class="n">nperrow</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ms_deisotope/plot.html#annotate_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.plot.annotate_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given an MS1 <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> <code class="docutils literal notranslate"><span class="pre">scan</span></code> and a <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code> of
 <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> product scans, draw the MS1 spectrum in full profile,
 and then in a subplot grid below it, draw a zoomed-in view of the MS1 spectrum
@@ -298,31 +277,27 @@ surrounding the area around each precursor ion that gave rise to the scans in
 </pre></div>
 </div>
 <p>(<a class="reference external" href=".//visualization-4.py">Source code</a>, <a class="reference external" href=".//visualization-4.png">png</a>, <a class="reference external" href=".//visualization-4.hires.png">hires.png</a>, <a class="reference external" href=".//visualization-4.pdf">pdf</a>)</p>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/visualization-4.png" src="_images/visualization-4.png" />
 </div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>scan</strong> (<em>ScanBase</em>) – The precursor MS1 scan</li>
-<li><strong>products</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>) – The collection of MSn scans based upon <code class="docutils literal notranslate"><span class="pre">scan</span></code></li>
-<li><strong>nperrow</strong> (<em>int</em>) – The number of precursor ion subplots to draw per row
-of the grid. Defaults to <code class="xref py py-const docutils literal notranslate"><span class="pre">4</span></code>.</li>
-<li><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to use to find the figure to
-draw the plot on.</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scan</strong> (<em>ScanBase</em>) – The precursor MS1 scan</p></li>
+<li><p><strong>products</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>) – The collection of MSn scans based upon <code class="docutils literal notranslate"><span class="pre">scan</span></code></p></li>
+<li><p><strong>nperrow</strong> (<em>int</em>) – The number of precursor ion subplots to draw per row
+of the grid. Defaults to <code class="xref py py-const docutils literal notranslate"><span class="pre">4</span></code>.</p></li>
+<li><p><strong>ax</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code>) – An <code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code> object to use to find the figure to
+draw the plot on.</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The axes of the full MS1 profile plot</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The axes of the full MS1 profile plot</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">matplotlib._axes.Axes</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 </div></blockquote>
@@ -343,7 +318,7 @@ draw the plot on.</li>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
     </div>
   </body>
 </html>
