@@ -1,0 +1,76 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: publish
+
+on:
+  create:
+    tags:
+      - "v*"
+
+jobs:
+  build-manylinux:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9']
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel twine
+        pip install coverage pytest pytest-cov -U
+        pip install Cython --install-option="--no-cython-compile"
+        pip install --only-binary=numpy,scipy numpy scipy -U
+        python setup.py build sdist
+        pip install -r test-requirements.txt
+        pip install -e .
+    - name: Test with pytest
+      run: |
+        make test
+    - name: Build manylinux Python wheels
+      uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
+      with:
+        build-requirements: 'cython'
+    - name: "Publish ManyLinux"
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        TWINE_USERNAME: __token__
+      run: |
+        twine upload dist/*manylinux*.whl dist/*.tar.gz
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8', '3.9']
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel twine
+        pip install coverage pytest pytest-cov -U
+        pip install Cython --install-option="--no-cython-compile"
+        pip install --only-binary=numpy,scipy numpy scipy -U
+        pip install -r test-requirements.txt
+        pip install -e .
+    - name: Test with pytest
+      run: |
+        make test
+    - name: "Windows"
+      env:
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        TWINE_USERNAME: __token__
+      run: |
+        mkdir -p dist/
+        pip wheel -w dist/ .
+        twine upload dist/*.whl
+      shell: bash

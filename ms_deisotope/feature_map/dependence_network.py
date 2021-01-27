@@ -394,7 +394,7 @@ class FeatureDependenceGraph(object):
         features = set()
         for fit in self.dependencies:
             for feature in fit.features:
-                if feature is 0:
+                if feature == 0:
                     continue
                 features.add(self.nodes[feature])
         return features

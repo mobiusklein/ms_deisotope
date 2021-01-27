@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from weakref import WeakValueDictionary
 from itertools import chain
 
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
@@ -104,6 +105,26 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     @abstractmethod
     def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
         raise NotImplementedError()
+
+    def initialize_frame_cache(self):
+        '''Initialize a cache which keeps track of which :class:`~.IonMobilityFrame`
+        objects are still in memory using a :class:`weakref.WeakValueDictionary`.
+
+        When a frame is requested, if the frame object is found in the cache, the
+        existing object is returned rather than re-read from disk.
+        '''
+        self._frame_cache = WeakValueDictionary()
+
+    @property
+    def frame_cache(self):
+        '''A :class:`weakref.WeakValueDictionary` mapping used to retrieve
+        frames from memory if available before re-reading them from disk.
+        '''
+        return self._frame_cache
+
+    @frame_cache.setter
+    def frame_cache(self, value):
+        self._frame_cache = value
 
 
 class IonMobilityFrame(object):
@@ -222,11 +243,20 @@ class IonMobilityFrame(object):
             else:
                 lo = mid
 
-    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, **kwargs):
+    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average=0, dx=0.001, **kwargs):
         from ms_deisotope.feature_map import feature_map
         scans = self.scans()
         lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
-        for scan in scans:
+        n = len(scans)
+        for i, scan in enumerate(scans):
+            if average:
+                acc = []
+                if i > 0:
+                    for j in range(max((i - average, 0)), i):
+                        acc.append(scans[j])
+                    for j in range(i + 1, min(i + average + 1, n)):
+                        acc.append(scans[j])
+                scan = scan.average_with(acc, dx=dx)
             scan.pick_peaks(**kwargs)
             for peak in scan:
                 lff.handle_peak(peak, scan.drift_time)
@@ -236,7 +266,7 @@ class IonMobilityFrame(object):
         return self
 
     def deconvolute_features(self, averagine=None, scorer=None, truncate_after=0.95,
-                             minimum_intensity=5, minimum_size=2, maximum_gap_size=0.25, **kwargs):
+                             minimum_intensity=5, min_size=2, max_gap_size=0.25, **kwargs):
         from ms_deisotope.feature_map import feature_processor
         if averagine is None:
             from ms_deisotope.averagine import peptide
@@ -248,8 +278,8 @@ class IonMobilityFrame(object):
             raise ValueError(
                 "IM-MS Features must be extracted before they can be charge state deconvoluted")
         decon = feature_processor.LCMSFeatureProcessor(
-            self.features, averagine, scorer, minimum_size=minimum_size,
-            maximum_time_gap=maximum_gap_size)
+            self.features, averagine, scorer, minimum_size=min_size,
+            maximum_time_gap=max_gap_size)
         self.deconvoluted_features = decon.deconvolute(
             minimum_intensity=minimum_intensity, truncate_after=truncate_after, **kwargs)
         return self

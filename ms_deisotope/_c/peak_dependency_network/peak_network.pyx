@@ -187,6 +187,28 @@ cdef class DependenceCluster(SpanningMixin):
     def __getitem__(self, i):
         return self.dependencies[i]
 
+    def uses_mz(self, double mz):
+        cdef:
+            FittedPeak peak
+            IsotopicFitRecord fit
+        for fit in self:
+            for peak in fit.experimental:
+                if peak.mz == mz:
+                    return True
+        return False
+
+    def fits_using_mz(self, double mz):
+        cdef:
+            FittedPeak peak
+            IsotopicFitRecord fit
+        fits = []
+        for fit in self:
+            for peak in fit.experimental:
+                if peak.mz == mz:
+                    fits.append(fit)
+                    break
+        return fits
+
 
 cdef class PeakDependenceGraphBase(object):
 

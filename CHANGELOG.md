@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
 ## [Unreleased]
+
+### Added
+
+### Changed
+1. All grouped scan iterators now use an interleaved iteration strategy to handle interleaving of MS1 scans that are
+   not the precursor of a subsequent series of MSn scans. When using `start_from_scan`, product scans which follow the
+   first MS1 but not actually produced from that first MS1 scan will be included in the product scan list for that
+   `ScanBunch`.
+2. `guess_type` now includes the input object in the error message when it fails to locate a loader type to reduce the
+   amount of blind guessing at the problem.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Retrieving the precursor scan is now safer with `thermo_raw_net.ThermoRawLoader`
+2. `ms-index spectrum-clustering` now remembers source files when scans are loaded in memory
+3. Use a more thorough precursor scan determination algorithm for `ThermoRawLoader` implementations
+4. Fixed `ms-deisotope`'s sequential scan numbering when there is scan interleaving
+
+### Security
+
+
+## [Released]
+
+## [v0.0.19]  - 2020-11-24
+
+### Added
+
+### Changed
+1. Make `peak_set.merge` able to merge more than 2 `DeconvolutedPeakSet` instances
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Always infer the precursor scan relationship in ThermoRaw readers using the "Master Scan Number" header
+
+### Security
+
+## [v0.0.18]  - 2020-10-09
 ### Added
 0. Added `CHANGELOG.md`
 1. Added the option for `ProcessedMzMLLoader` to detect and handle deconvoluted peak lists from other tools and to load
@@ -16,6 +59,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 4. Added `RawDataArray.size` property to report the length of the m/z and intensity array.
 5. Added `default_precursor_ion_selection_window` (`-D`) to the `ms-deisotope` command line tool.
 6. Add drift time aware variant of `DeconvolutedPeak`, `IonMobilityDeconvolutedPeak` which has a `drift_time` attribute.
+7. Added more documentation on the `truncate_after` parameter for deconvolution.
 
 ### Changed
 1. The `_reindex` method of `DeconvolutedPeakSet` has been renamed `reindex` to reflect that it should be part of the type's
@@ -42,15 +86,13 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ---
 
-## [Released]
-
----
-
 <!-- Links -->
 [Keep a Changelog]: https://keepachangelog.com/
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.16...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.19...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
 [0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
+[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
+[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19

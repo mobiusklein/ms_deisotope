@@ -8,6 +8,7 @@ import json
 
 from collections import deque
 
+import numpy as np
 from scipy.special import comb
 
 from ms_deisotope.task.log_utils import LogUtilsMixin
@@ -118,13 +119,16 @@ class SpectrumCluster(object):
                                    ) / n
 
     def _full_similarity(self, *args, **kwargs):
+        similarity_method = kwargs.pop(
+            "similarity_method", peak_set_similarity)
         ratings = []
         n = len(self)
         for i in range(n):
             scan_i = self[i]
             for j in range(i + 1, n):
                 scan_j = self[j]
-                ratings.append(peak_set_similarity(scan_i, scan_j, *args, **kwargs))
+                ratings.append(similarity_method(
+                    scan_i, scan_j, *args, **kwargs))
         self._average_similarity = sum(ratings) / len(ratings)
 
     def average_similarity(self, *args, **kwargs):
@@ -136,6 +140,12 @@ class SpectrumCluster(object):
         If the cluster is a singleton or smaller, by definition its similarity
         is ``1.0``.
 
+        Parameters
+        ----------
+        similarity_method: Callable, optional
+            The peak set similarity method to use. Defaults to :func:`~.peak_set_similarity`
+            All other arguments are forwarded to this function.
+
         Returns
         -------
         :class:`float`
@@ -145,8 +155,33 @@ class SpectrumCluster(object):
             return 1.0
         if self._average_similarity is not None:
             return self._average_similarity
-        self._full_similarity()
+        self._full_similarity(*args, **kwargs)
         return self._average_similarity
+
+    def similarity_matrix(self, *args, **kwargs):
+        '''Compute a symmetric similarity matrix comparing each
+        spectrum within the cluster to each other spectrum.
+
+        Parameters
+        ----------
+        similarity_method: Callable, optional
+            The peak set similarity method to use. Defaults to :func:`~.peak_set_similarity`
+            All other arguments are forwarded to this function.
+
+        Returns
+        -------
+        :class:`np.ndarray`: m
+            The value at position ``m[i,j]`` is the simiarlity of ``self[i]`` with ``self[j]``
+        '''
+        similarity_method = kwargs.pop("similarity_method", peak_set_similarity)
+        n = len(self)
+        mat = np.identity(n)
+        for i in range(n):
+            scan_i = self[i]
+            for j in range(i + 1, n):
+                scan_j = self[j]
+                mat[i, j] = mat[j, i] = (similarity_method(scan_i, scan_j, *args, **kwargs))
+        return mat
 
     def to_dict(self):
         '''Convert the cluster to a JSON-safe :class:`dict`
@@ -781,7 +816,10 @@ class ScanClusterReaderBase(object):
 
     def _resolve(self, source, scan_id):
         resolver = self.resolver_map[source]
-        return resolver(scan_id)
+        try:
+            return resolver.get_scan_by_id(scan_id)
+        except AttributeError:
+            return resolver(scan_id)
 
     def _parse(self):
         '''Parse the cluster collection from :attr:`stream`

@@ -458,7 +458,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
                         progbar.update(1)
                         scan = reader.get_scan_by_id(i)
                         if scan.peak_set is None and not deconvoluted:
-                            scan = scan.pick_peaks().pack()
+                            scan = scan.pick_peaks().pack(bind=True)
                         msn_scans.append(scan)
                 else:
                     # If we don't  have fast random access, it's better just to loop over the file,

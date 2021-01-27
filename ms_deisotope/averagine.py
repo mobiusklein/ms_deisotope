@@ -516,7 +516,7 @@ class AveragineCache(object):
             return self.backend[key_mz, charge, charge_carrier].clone().shift(mz)
         else:
             tid = self.averagine.isotopic_cluster(
-                mz, charge, charge_carrier, truncate_after, ignore_below)
+                key_mz, charge, charge_carrier, truncate_after, ignore_below)
             self.backend[key_mz, charge, charge_carrier] = tid.clone()
             return tid
 
@@ -556,11 +556,17 @@ class AveragineCache(object):
     def clear(self):
         self.backend.clear()
 
-    def populate(self, min_mz=10, max_mz=3000, min_charge=1, max_charge=8, charge_carrier=PROTON,
+    def populate(self, min_mz=10, max_mz=3005, min_charge=1, max_charge=8, charge_carrier=PROTON,
                  truncate_after=TRUNCATE_AFTER, ignore_below=IGNORE_BELOW):
+        sign = min_charge / abs(min_charge)
+        assert sign == (max_charge / abs(max_charge)
+                        ), "The polarity of min_charge must match the polarity of max_charge"
+        min_charge = abs(min_charge)
+        max_charge = abs(max_charge)
         for i in range(int(min_mz), int(max_mz)):
-            for j in range(min(max_charge, min_charge), max(min_charge, max_charge)):
-                self.isotopic_cluster(i, j, PROTON, TRUNCATE_AFTER, IGNORE_BELOW)
+            for j in range(min(max_charge, min_charge), max(min_charge, max_charge) + 1):
+                self.isotopic_cluster(
+                    i, sign * j, charge_carrier, truncate_after=truncate_after, ignore_below=ignore_below)
         return self
 
 

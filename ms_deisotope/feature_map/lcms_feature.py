@@ -722,3 +722,22 @@ class SimpleLCMSFeature(object):
     @property
     def end_time(self):
         return tuple(self.storage.keys())[-1]
+
+
+def smooth_feature(feature, level=1):
+    from ms_deisotope.feature_map.profile_transform import smooth_leveled
+    time, intensity = feature.as_arrays()
+    smoothed = smooth_leveled(time, intensity, level)
+    for i, node in enumerate(feature):
+        peaks = node.members
+        if len(peaks) > 1:
+            peaks.sort(key=lambda x: x.intensity, reverse=True)
+            peak = peaks[0]
+            for other in peaks[1:]:
+                peak.intensity += other.intensity
+            node.members = [peak]
+        else:
+            peak = node.members[0]
+        peak.intensity = smoothed[i]
+    feature.invalidate(True)
+    return feature

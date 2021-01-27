@@ -5,7 +5,7 @@ import numpy as np
 import brainpy
 
 from ms_deisotope.data_source import common, mzml, MSFileLoader
-from ms_deisotope.averagine import peptide, glycopeptide, TheoreticalIsotopicPattern
+from ms_deisotope.averagine import peptide, glycopeptide, TheoreticalIsotopicPattern, AveragineCache
 from ms_peak_picker import reprofile
 from ms_deisotope.deconvolution import (
     deconvolute_peaks, AveragineDeconvoluter,
@@ -21,6 +21,8 @@ from ms_deisotope.test.test_scan import (
     make_profile, points, fwhm,
     FittedPeak)
 from ms_deisotope.test.common import datafile
+
+import pickle
 
 
 logger = logging.getLogger('ms_deisotope.test.test_deconvolution')
@@ -356,6 +358,96 @@ class TestSolutionRetrieval(unittest.TestCase):
                 assert 0 <= abs(result.mz - query) < 1
                 anchor_peak = scan.peak_set.has_peak(query)
                 assert deconvoluter.peak_dependency_network.find_solution_for(anchor_peak) is not None
+
+
+class TestIncrementalGraphExtraction(unittest.TestCase):
+    @staticmethod
+    def make_scan():
+        reader = MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+        scan = reader.get_scan_by_id("scanId=1740086")
+        return scan
+
+    @classmethod
+    def setUpClass(cls):
+        cls.scan = cls.make_scan()
+        cls.scan.pick_peaks()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.scan.clear()
+        cls.scan.source.close()
+
+    def build_deconvoluter(self, scan, averagine, **kwargs):
+        deconvoluter = AveraginePeakDependenceGraphDeconvoluter(
+            scan.peak_set, averagine=averagine, scorer=MSDeconVFitter(10),
+            **kwargs)
+        peak = deconvoluter.has_peak(138.5309, 2e-5)
+        return peak, deconvoluter
+
+    def test_extraction(self):
+        scan = self.scan
+
+        peak, deconvoluter = self.build_deconvoluter(scan, peptide)
+        deconvoluter._deconvolution_step(0, truncate_after=0.8, charge_range=(1, 4))
+
+        with open(datafile("extraction_base_averagine.pkl"), 'rb') as fh:
+            reference_averagine = pickle.load(fh)
+
+        diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
+        assert len(diff) == 0
+        assert len(deconvoluter.averagine.backend) == 8868
+        assert reference_averagine == deconvoluter.averagine
+
+        cluster = deconvoluter.peak_dependency_network.find_cluster_for(peak)
+        spanned = cluster.fits_using_mz(peak.mz)
+        assert len(cluster) == 4
+        assert len(spanned) == 2
+        assert np.isclose(cluster.best_fit.monoisotopic_peak.mz, 138.19520)
+        assert cluster.best_fit.charge == 3
+
+    def test_extraction_cached_averagine(self):
+        scan = self.scan
+        cache = AveragineCache(peptide)
+        cache.populate(truncate_after=0.8)
+        peak2, deconvoluter = self.build_deconvoluter(scan, cache)
+        deconvoluter._deconvolution_step(
+            0, truncate_after=0.8, charge_range=(1, 4))
+
+        with open(datafile("extraction_cached_averagine.pkl"), 'rb') as fh:
+            reference_averagine = pickle.load(fh)
+
+        diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
+        assert len(diff) == 0
+        assert len(deconvoluter.averagine.backend) == 23960
+        assert reference_averagine == deconvoluter.averagine
+
+        cluster2 = deconvoluter.peak_dependency_network.find_cluster_for(peak2)
+        spanned2 = cluster2.fits_using_mz(peak2.mz)
+        assert len(cluster2) == 4
+        assert len(spanned2) == 2
+        assert np.isclose(cluster2.best_fit.monoisotopic_peak.mz, 138.19520)
+        assert cluster2.best_fit.charge == 3
+
+    def test_extraction_quick_charge(self):
+        scan = self.scan
+
+        peak3, deconvoluter = self.build_deconvoluter(scan, peptide, use_quick_charge=True)
+        deconvoluter._deconvolution_step(0, truncate_after=0.8, charge_range=(1, 4))
+
+        with open(datafile("extraction_quick_charge_averagine.pkl"), 'rb') as fh:
+            reference_averagine = pickle.load(fh)
+
+        diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
+        assert len(diff) == 0
+        assert len(deconvoluter.averagine.backend) == 5136
+        assert reference_averagine == deconvoluter.averagine
+
+        cluster3 = deconvoluter.peak_dependency_network.find_cluster_for(peak3)
+        spanned3 = cluster3.fits_using_mz(peak3.mz)
+        assert len(cluster3) == 1
+        assert len(spanned3) == 1
+        assert np.isclose(cluster3.best_fit.monoisotopic_peak.mz, 138.53090)
+        assert cluster3.best_fit.charge == 4
 
 
 if __name__ == '__main__':

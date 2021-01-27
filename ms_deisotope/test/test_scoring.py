@@ -35,7 +35,6 @@ class IsotopicFitScoringTests(unittest.TestCase):
         # score = scorer.evaluate(None, experimental, theoretical)
         scores = [scorer.evaluate(None, experimental, theoretical) for i in range(10)]
         score = scores[0]
-        print(scores)
         assert all([np.isclose(s, score) for s in scores[1:]]), scores
         self.assertAlmostEqual(score, 293.47483621051316, 3)
         score = scorer(None, experimental, theoretical)

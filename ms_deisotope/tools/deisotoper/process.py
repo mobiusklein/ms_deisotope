@@ -1,5 +1,6 @@
 import os
 import logging
+import sys
 import multiprocessing
 import traceback
 
@@ -9,6 +10,11 @@ try:
     from Queue import Empty as QueueEmpty
 except ImportError:
     from queue import Empty as QueueEmpty
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 
 import ms_deisotope
 
@@ -39,6 +45,8 @@ class ScanIDYieldingProcess(Process):
         self.start_scan = start_scan
         self.max_scans = max_scans
         self.end_scan = end_scan
+        self.end_scan_index = None
+        self.passed_first_batch = False
         self.ignore_tandem_scans = ignore_tandem_scans
         self.batch_size = batch_size
 
@@ -53,6 +61,7 @@ class ScanIDYieldingProcess(Process):
             try:
                 bunch = next(self.loader)
                 scan, products = bunch
+                products = [prod for prod in products if prod.index <= self.end_scan_index]
                 if scan is not None:
                     scan_id = scan.id
                 else:
@@ -96,6 +105,13 @@ class ScanIDYieldingProcess(Process):
             max_scans = self.max_scans
 
         end_scan = self.end_scan
+        if end_scan is None:
+            try:
+                self.end_scan_index = len(self.loader)
+            except AttributeError:
+                self.end_scan_index = sys.maxint
+        else:
+            self.end_scan_index = self.loader.get_scan_by_id(end_scan).index
         while count < max_scans:
             try:
                 batch, ids = self._make_scan_batch()
@@ -398,7 +414,6 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         transformer = self.make_scan_transformer(loader)
         self.transformer = transformer
         self._silence_loggers()
-
         i = 0
         last = 0
         while has_input:
@@ -435,6 +450,15 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         if self.no_more_event is None:
             self.output_queue.put((DONE, DONE, DONE))
 
+        if os.getenv("MS_DEISOTOPE_DEBUG"):
+            self._dump_averagine_caches(transformer)
+
         self._work_complete.set()
 
-
+    def _dump_averagine_caches(self, transformer):
+        pid = os.getpid()
+        fname = "ms_deisotope_averagine_cache_ms$_%s.pkl" % pid
+        with open(fname.replace("$", '1'), 'wb') as fh:
+            pickle.dump(transformer.ms1_deconvolution_args.get('averagine'), fh, 2)
+        with open(fname.replace("$", 'n'), 'wb') as fh:
+            pickle.dump(transformer.msn_deconvolution_args.get('averagine'), fh, 2)

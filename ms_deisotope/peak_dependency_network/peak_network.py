@@ -174,6 +174,21 @@ class DependenceCluster(SpanningMixin):
     def __getitem__(self, i):
         return self.dependencies[i]
 
+    def uses_mz(self, mz):
+        for fit in self:
+            for peak in fit.experimental:
+                if peak.mz == mz:
+                    return True
+        return False
+
+    def fits_using_mz(self, mz):
+        fits = []
+        for fit in self:
+            for peak in fit.experimental:
+                if peak.mz == mz:
+                    fits.append(fit)
+                    break
+        return fits
 
 try:
     _has_c = True
@@ -284,6 +299,24 @@ except ImportError:
             return clusters
 
 
+def dependency_cluster_uses_mz(self, mz):
+    for fit in self:
+        for peak in fit.experimental:
+            if peak.mz == mz:
+                return True
+    return False
+
+
+def dependency_cluster_fits_using_mz(self, mz):
+    fits = []
+    for fit in self:
+        for peak in fit.experimental:
+            if peak.mz == mz:
+                fits.append(fit)
+                break
+    return fits
+
+
 class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
     def __init__(self, peaklist, nodes=None, dependencies=None, max_missed_peaks=1,
                  use_monoisotopic_superceded_filtering=True, maximize=True):
@@ -369,6 +402,17 @@ class PeakDependenceGraph(PeakDependenceGraphBase, LogUtilsMixin):
                         continue
                 # No solution could be found
                 return None
+
+    def find_cluster_for(self, peak):
+        tree = self.interval_tree
+        if tree is None:
+            raise TypeError(
+                "This network hasn't constructed clusters yet. Call find_non_overlapping_intervals first!")
+        clusters = tree.contains_point(peak.mz)
+        for cluster in clusters:
+            # by construction, only one cluster contains a particular peak
+            if dependency_cluster_uses_mz(cluster, peak.mz):
+                return cluster
 
     def find_solution_for(self, peak):
         '''Find the best isotopic pattern fit which includes ``peak``

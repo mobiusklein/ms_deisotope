@@ -28,7 +28,27 @@ cdef class LCMSFeatureMap(object):
     cdef LCMSFeature get(self, size_t i):
         return <LCMSFeature>PyList_GetItem(self.features, i)
 
-    cpdef LCMSFeature _search(self, double mz, double error_tolerance):
+    cpdef LCMSFeature search(self, double mz, double error_tolerance=2e-5):
+        '''Search for a single feature within `error_tolerance` of `mz`.
+
+        Parameters
+        ----------
+        mz : float
+            The m/z to search for
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+
+        Returns
+        -------
+        :class:`~.LCMSFeature`
+            The a feature matching the query m/z, or :const:`None`.
+
+        See Also
+        --------
+        find_all
+        between
+        '''
+
         cdef:
             long i
             LCMSFeature out
@@ -39,19 +59,31 @@ cdef class LCMSFeatureMap(object):
             out = <LCMSFeature>PyList_GET_ITEM(self.features, i)
             return out
 
-    def search(self, mz, error_tolerance=2e-5):
-        return self._search(mz, error_tolerance)
+    cpdef list find_all(self, double mz, double error_tolerance=2e-5):
+        '''Search for all features within `error_tolerance` of `mz`.
 
-    cpdef list _find_all(self, double mz, double error_tolerance):
+        Parameters
+        ----------
+        mz : float
+            The m/z to search for
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+
+        Returns
+        -------
+        list of :class:`~.LCMSFeature`
+            A list of all features matching the query m/z, or the empty list.
+
+        See Also
+        --------
+        between
+        '''
         cdef:
             long loout, hiout
             list result
         search_sweep(self.features, mz, error_tolerance, &loout, &hiout)
         result = <list>PyList_GetSlice(self.features, loout, hiout)
         return result
-
-    def find_all(self, mz, error_tolerance=2e-5):
-        return self._find_all(mz, error_tolerance)
 
     def index_range(self, lo, hi, error_tolerance=2e-5):
         return (
@@ -73,7 +105,28 @@ cdef class LCMSFeatureMap(object):
                 result.append(feature)
         return result
 
-    def between(self, double lo, double hi, double error_tolerance=2e-5):
+    cpdef list between(self, double lo, double hi, double error_tolerance=2e-5):
+        '''Search for all features between `lo` and `hi`, allowing `error_tolerance`
+        around the edges.
+
+        Parameters
+        ----------
+        lo : float
+            The m/z to search for the lower bound
+        hi : float
+            The m/z to search for the upper bound
+        error_tolerance : float, optional
+            The error tolerance to search with, defaults to 2e-5, 20 PPM
+
+        Returns
+        -------
+        list of :class:`~.LCMSFeature`
+            The features between the query bounds with the permitted error, or an empty list.
+
+        See Also
+        --------
+        find_all
+        '''
         cdef:
             Py_ssize_t n, i, lo_ix, hi_ix
             LCMSFeature f

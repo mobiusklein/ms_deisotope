@@ -361,6 +361,13 @@ class RawReaderInterface(ScanDataSource):
             charge = ChargeNotProvided
         inten = 0
         precursor_scan_number = None
+        precursor_scan_number = trailers.get('Master Scan Number')
+        if precursor_scan_number == 0:
+            precursor_scan_number = None
+        if precursor_scan_number is not None:
+            precursor_scan_number = int(precursor_scan_number) - 1
+            if self.get_scan_by_index(precursor_scan_number).ms_level >= self._ms_level(scan):
+                precursor_scan_number = None
         if precursor_scan_number is None:
             last_index = self._scan_index(scan) - 1
             current_level = self._ms_level(scan)
@@ -511,6 +518,11 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         self.source_file = source_file
         self._producer = None
         self._scan_type_index = dict()
+
+        self._method = None
+        self._analyzer_to_configuration_index = {}
+        self._instrument_config = {}
+
         self.make_iterator()
         self.initialize_scan_cache()
         self._first_scan_time = self.get_scan_by_index(0).scan_time
@@ -544,7 +556,22 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return self._has_ms1_scans()
 
     def __reduce__(self):
-        return self.__class__, (self.source_file, False)
+        return self.__class__, (self.source_file, False), self.__getstate__()
+
+    def __getstate__(self):
+        state = {
+            "method": self._method,
+            "scan_type_index": self._scan_type_index,
+            "analyzer_to_configuration_index": self._analyzer_to_configuration_index,
+            "instrument_config": self._instrument_config,
+        }
+        return state
+
+    def __setstate__(self, state):
+        self._method = state['method']
+        self._scan_type_index = state['scan_type_index']
+        self._analyzer_to_configuration_index = state['analyzer_to_configuration_index']
+        self._instrument_config = state['instrument_config']
 
     @property
     def index(self):

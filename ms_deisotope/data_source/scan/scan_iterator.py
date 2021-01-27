@@ -1,6 +1,9 @@
 '''A collection of different strategies for iterating over streams
 of :class:`~.Scan`-like objects.
 '''
+import warnings
+from collections import deque, defaultdict
+
 from . import ScanBunch
 
 
@@ -32,7 +35,7 @@ class _ScanIteratorImplBase(object):
         out unwanted entries, or a no-op
     """
 
-    def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None):
+    def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, **kwargs):
         if scan_validator is None:
             scan_validator = _null_scan_validator
         if scan_cacher is None:
@@ -64,7 +67,7 @@ class _ScanIteratorImplBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def from_scan_source(cls, iterator, scan_source):
+    def from_scan_source(cls, iterator, scan_source, **kwargs):
         """Create an iterator strategy for `iterator` from `scan_source`
 
         Parameters
@@ -74,8 +77,7 @@ class _ScanIteratorImplBase(object):
         scan_source : :class:`~.ScanIterator`
             The data extraction wrapper to provide with an iteration strategy
         """
-        return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan)
-
+        return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan, **kwargs)
 
 
 class _SingleScanIteratorImpl(_ScanIteratorImplBase):
@@ -167,6 +169,83 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
                 raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
+
+
+class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
+    """Iterate over related scan bunches.
+
+    The default strategy when MS1 scans are known to be
+    present, even if MSn scans are not.
+    """
+
+    def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, buffering=5):
+        super(_InterleavedGroupedScanIteratorImpl, self).__init__(iterator, scan_packer, scan_validator, scan_cacher)
+        if buffering < 2:
+            raise ValueError("Interleaved buffering must be greater than 1")
+        self.buffering = buffering
+        self.ms1_buffer = deque()
+        self.product_mapping = defaultdict(list)
+        self.passed_first_ms1 = False
+
+    def deque_group(self):
+        precursor = self.ms1_buffer.popleft()
+        products = self.product_mapping.pop(precursor.id, [])
+        precursor.product_scans = products
+        if not self.passed_first_ms1 and self.ms1_buffer:
+            current_ms1_time = precursor.scan_time
+            next_ms1_time = self.ms1_buffer[0].scan_time
+            for prec_id, prods in list(self.product_mapping.items()):
+                for prod in prods:
+                    if current_ms1_time <= prod.scan_time <= next_ms1_time:
+                        products.append(prod)
+            self.passed_first_ms1 = True
+        return ScanBunch(precursor, products)
+
+    def add_product(self, scan):
+        pinfo = scan.precursor_information
+        if pinfo is None:
+            precursor_id = None
+        else:
+            precursor_id = pinfo.precursor_scan_id
+        if precursor_id is None:
+            precursor_id = self.ms1_buffer[-1].id
+        self.product_mapping[precursor_id].append(scan)
+
+    def add_precursor(self, scan):
+        self.ms1_buffer.append(scan)
+        return len(self.ms1_buffer) >= self.buffering
+
+    def _make_producer(self):
+        _make_scan = self.scan_packer
+        _validate = self.scan_validator
+        _cache_scan = self.scan_cacher
+
+        current_level = 1
+
+        for scan in self.iterator:
+            packed = _make_scan(scan)
+            if not _validate(packed):
+                continue
+            _cache_scan(packed)
+            if packed.ms_level > 1:
+                # inceasing ms level
+                if current_level < packed.ms_level:
+                    current_level = packed.ms_level
+                # decreasing ms level
+                elif current_level > packed.ms_level:
+                    current_level = packed.ms_level
+                self.add_product(packed)
+            elif packed.ms_level == 1:
+                do_emit = self.add_precursor(packed)
+                if do_emit:
+                    yield self.deque_group()
+            else:
+                raise ValueError("Could not interpret MS Level %r" %
+                                 (packed.ms_level,))
+        while self.ms1_buffer:
+            yield self.deque_group()
+        if self.product_mapping:
+            warnings.warn("Lingering Product Sets For %r!" % (list(self.product_mapping), ))
 
 
 class MSEIterator(_GroupedScanIteratorImpl):
