@@ -238,6 +238,7 @@ install_requires = [
     "pyteomics >= 4.0",
     "lxml",
     "psims >= 0.1.28",
+    "python-idzip >=0.3.2"
 ]
 
 
@@ -252,7 +253,7 @@ extra_requires = {
         "matplotlib",
     ],
     "cli": [
-        'cli'
+        'click'
     ]
 }
 

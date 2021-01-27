@@ -35,6 +35,17 @@ class Scan(ScanBase):
     provided by the source is wrapped and queried lazily when an attribute is requested, delegated through
     :attr:`source`.
 
+    To access the raw mass spectral signal, see :attr:`arrays`. This can be converted to a centroided peak
+    list using :meth:`pick_peaks`, populating :attr:`peak_set`. After picking peaks, :meth:`deconvolute`
+    can be used to deconvolute the spectrum, populating :attr:`deconvoluted_peak_set`.
+
+    To apply signal processing filters to the spectrum, :meth:`reprofile` can create a copy of the object
+    replacing :attr:`arrays` with a synthetic profile created from the fitted peaks in :attr:`peak_set`.
+    Multiple spectra may be averaged together to form a new synthetic profile spectrum using :meth:`average_with`
+    (when the scans are already chosen) or :meth:`average` (when selecting nearby scans automatically, MS1-only).
+    The :meth:`denoise` method can remove local unstructured noise. :meth:`transform` can apply any filter
+    from :mod:`ms_peak_picker.scan_filter`, returning a copy.
+
     Attributes
     ----------
     deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None

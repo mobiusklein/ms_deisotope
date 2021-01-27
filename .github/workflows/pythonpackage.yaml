@@ -28,12 +28,3 @@ jobs:
     - name: Test with pytest
       run: |
         py.test -l -s -v  ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
-    - uses: RalfG/python-wheels-manylinux-build@v0.3.3
-      with:
-        python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38'
-    - name: 'Upload manylinux Wheels'
-      uses: actions/upload-artifact@v2
-      with:
-        name: manylinux_wheels
-        path: dist/*manylinux*.whl
-        retention-days: 5
