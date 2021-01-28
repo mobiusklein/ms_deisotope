@@ -155,9 +155,9 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
     Attributes
     ----------
-    mz: np.ndarray
+    mz: :class:`np.ndarray`
         The m/z axis of a mass spectrum
-    intensity: np.ndarray
+    intensity: :class:`np.ndarray`
         The intensity measured at the corresponding m/z of a mass spectrum
     """
 

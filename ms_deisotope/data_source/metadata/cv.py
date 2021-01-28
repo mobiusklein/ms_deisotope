@@ -297,7 +297,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
     while i < len(component_type_list):
         component_type = component_type_list[i]
         i += 1
-        for term in cv_psims[component_type].children:
+        for term in sorted(cv_psims[component_type].children, key=lambda x: x.id):
             if term.name in seen:
                 continue
             seen.add(term.name)
