@@ -71,6 +71,6 @@ jobs:
         TWINE_USERNAME: __token__
       run: |
         mkdir -p dist/
-        pip wheel -w dist/ .
+        pip wheel --no-deps -w dist/ .
         twine upload dist/ms_deisotope*.whl
       shell: bash
