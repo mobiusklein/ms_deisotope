@@ -72,5 +72,5 @@ jobs:
       run: |
         mkdir -p dist/
         pip wheel -w dist/ .
-        twine upload dist/*.whl
+        twine upload dist/ms_deisotope*.whl
       shell: bash
