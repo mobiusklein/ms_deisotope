@@ -3,6 +3,7 @@ import os
 import io
 import tempfile
 
+import pytest
 from click.testing import CliRunner
 
 from ms_deisotope.data_source.mzml import MzMLLoader
@@ -95,6 +96,7 @@ def diff_deconvoluted_peak_set(peaks_a, peaks_b):
     return a_missing, b_missing
 
 
+@pytest.mark.slow
 def test_ms_deisotope():
     runner = CliRunner(mix_stderr=False)
     path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
