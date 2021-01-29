@@ -1,3 +1,4 @@
+from ms_deisotope.utils import dict_proxy
 from .cv import Term, TermSet
 
 
@@ -5,6 +6,7 @@ class SoftwareName(Term):
     pass
 
 
+@dict_proxy('options')
 class Software(object):
 
     @classmethod
