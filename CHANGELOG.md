@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Added
 
 ### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.21]
+
+### Added
+
+### Changed
 1. All grouped scan iterators now use an interleaved iteration strategy to handle interleaving of MS1 scans that are
    not the precursor of a subsequent series of MSn scans. When using `start_from_scan`, product scans which follow the
    first MS1 but not actually produced from that first MS1 scan will be included in the product scan list for that
@@ -93,6 +108,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 <!-- Versions -->
 [Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.19...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
-[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
-[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
+[v0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
+[v0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
+[v0.0.19]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
+[v0.0.21]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.21
