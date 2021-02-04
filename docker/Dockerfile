@@ -18,5 +18,7 @@ RUN pip install ms_deisotope==0.0.21
 
 ENV PYTHONUNBUFFERED 1
 
+LABEL description="A container for the ms_deisotope Python package, ms-deisotope CLI tool, and ms-index CLI tool"
+
 # ms-deisotope and ms-index tools are readily accessible
 CMD ["/bin/bash"]
