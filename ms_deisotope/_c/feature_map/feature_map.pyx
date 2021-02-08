@@ -225,7 +225,7 @@ cpdef tuple binary_search_with_flag(list array, double mz, double error_toleranc
             hi = mid
         elif err < 0:
             lo = mid
-    return 0, False
+    return [0], False
 
 
 @cython.cdivision(True)

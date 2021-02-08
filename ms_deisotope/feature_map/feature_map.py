@@ -454,7 +454,7 @@ def binary_search_with_flag(array, mz, error_tolerance=1e-5):
             hi = mid
         elif err < 0:
             lo = mid
-    return 0, False
+    return [0], False
 
 
 def binary_search(array, mz, error_tolerance=1e-5):
@@ -601,7 +601,7 @@ def binary_search_with_flag_neutral(array, neutral_mass, error_tolerance=1e-5):
             hi = mid
         elif err < 0:
             lo = mid
-    return 0, False
+    return [0], False
 
 
 def binary_search_neutral(array, neutral_mass, error_tolerance=1e-5):
