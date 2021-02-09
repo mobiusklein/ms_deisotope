@@ -1,5 +1,6 @@
 from .scan.scan_iterator import ITERATION_MODE_GROUPED, ITERATION_MODE_SINGLE
 from .scan.loader import ScanIterator
+from .scan.base import ScanBunch
 
 
 class ScanIteratorProxyBase(object):
@@ -442,3 +443,52 @@ class CallableFilter(_PredicateFilterIterator):
 
 
 filter_scans = CallableFilter
+
+
+class MS1MergingTransformer(ScanIteratorProxyBase):
+
+    def __init__(self, scan_source, ms1_bin_width=10, mz_resolution=None, *args, **kwargs):
+        super(MS1MergingTransformer, self).__init__(scan_source, *args, **kwargs)
+        self._generator = None
+        self.ms1_bin_width = ms1_bin_width
+        self.mz_resolution = mz_resolution
+        self.ms1_buffer = []
+        self.msn_buffer = []
+
+    def _redirect_precursor_ids(self, products, precursor):
+        level_to_redirect = precursor.ms_level + 1
+        # Don't re-direct MS3+ scans
+        for product in products:
+            if product.ms_level == level_to_redirect:
+                product.precursor_information.precursor_scan_id = precursor.id
+        return products
+
+    def _generate(self):
+        half_width = self.ms1_bin_width // 2
+        for batch in self.scan_source:
+            if len(self.ms1_buffer) == self.ms1_bin_width:
+                ref_scan = self.ms1_buffer[0]
+                merged_scan = ref_scan.average_with(self.ms1_buffer[1:], self.mz_resolution)
+                # Scale up to be the sum not the mean
+                merged_scan.arrays *= self.ms1_bin_width
+                bunch = ScanBunch(merged_scan, self._redirect_precursor_ids(self.msn_buffer, merged_scan))
+                yield bunch
+                self.msn_buffer = []
+                self.ms1_buffer = self.ms1_buffer[half_width:]
+
+            self.ms1_buffer.append(batch.precursor)
+            self.msn_buffer.extend(batch.products)
+
+        if self.ms1_buffer:
+            ref_scan = self.ms1_buffer[0]
+            merged_scan = ref_scan.average_with(self.ms1_buffer[1:], self.mz_resolution)
+            # Scale up to be the sum not the mean
+            merged_scan.arrays *= self.ms1_bin_width
+            bunch = ScanBunch(merged_scan, self._redirect_precursor_ids(self.msn_buffer, merged_scan))
+            yield bunch
+
+
+    def next(self):
+        if self._generator is None:
+            self._generator = self._generate()
+        return next(self._generator)
