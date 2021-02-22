@@ -166,7 +166,8 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
                 precursor_scan = packed
                 product_scans = []
             else:
-                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
+                raise ValueError("Could not interpret MS Level %r" %
+                                 (packed.ms_level,))
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
 
@@ -179,7 +180,8 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
     """
 
     def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, buffering=5):
-        super(_InterleavedGroupedScanIteratorImpl, self).__init__(iterator, scan_packer, scan_validator, scan_cacher)
+        super(_InterleavedGroupedScanIteratorImpl, self).__init__(
+            iterator, scan_packer, scan_validator, scan_cacher)
         if buffering < 2:
             raise ValueError("Interleaved buffering must be greater than 1")
         self.buffering = buffering
@@ -190,6 +192,8 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
     def deque_group(self):
         precursor = self.ms1_buffer.popleft()
         products = self.product_mapping.pop(precursor.id, [])
+        if None in self.product_mapping:
+            products += self.product_mapping.pop(None, [])
         precursor.product_scans = products
         if not self.passed_first_ms1 and self.ms1_buffer:
             current_ms1_time = precursor.scan_time
@@ -208,7 +212,10 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         else:
             precursor_id = pinfo.precursor_scan_id
         if precursor_id is None:
-            precursor_id = self.ms1_buffer[-1].id
+            try:
+                precursor_id = self.ms1_buffer[-1].id
+            except IndexError:
+                precursor_id = None
         self.product_mapping[precursor_id].append(scan)
 
     def add_precursor(self, scan):
@@ -245,12 +252,14 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         while self.ms1_buffer:
             yield self.deque_group()
         if self.product_mapping:
-            warnings.warn("Lingering Product Sets For %r!" % (list(self.product_mapping), ))
+            warnings.warn("Lingering Product Sets For %r!" %
+                          (list(self.product_mapping), ))
 
 
 class MSEIterator(_GroupedScanIteratorImpl):
     def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None, scan_cacher=None):
-        super(MSEIterator, self).__init__(iterator, scan_packer, scan_validator, scan_cacher)
+        super(MSEIterator, self).__init__(
+            iterator, scan_packer, scan_validator, scan_cacher)
         self.low_energy_config = low_energy_config
         self.lock_mass_config = lock_mass_config
 
@@ -287,6 +296,7 @@ class MSEIterator(_GroupedScanIteratorImpl):
                 precursor_scan = packed
                 product_scans = []
             else:
-                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
+                raise ValueError("Could not interpret MS Level %r" %
+                                 (packed.ms_level,))
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
