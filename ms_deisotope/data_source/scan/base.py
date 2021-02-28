@@ -523,6 +523,9 @@ class ScanBase(object):
     def __ne__(self, other):
         return not (self == other)
 
+    __hash__ = None
+    # Scan objects shouldn't be hashed.
+
     def bind(self, source):
         '''Attach this object and its other referent members
         to ``source``, letting them load information.

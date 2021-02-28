@@ -6,8 +6,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+1. `ms_deisotope.data_source` now exports `scan_from_csv` and `make_scan` helper methods.
 
 ### Changed
+1. `Scan` objects explicitly are not hashable.
 
 ### Deprecated
 

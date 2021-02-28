@@ -804,6 +804,7 @@ cpdef np.ndarray[np.int32_t, ndim=1] quick_charge(FittedPeakCollection peak_set,
             raise IndexError("%d is out of bounds for peak list of size %d in quick_charge" % (index, peaks.get_size()))
     n = 1000
     result_size = 0
+    # TODO: Make the scaling term a parameterized value
     min_intensity = peaks.getitem(index).intensity / 4.
     for i in range(n):
         charges[i] = 0
