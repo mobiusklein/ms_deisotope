@@ -9,6 +9,7 @@ services:
   - xvfb
 before_install:
   - "export DISPLAY=:99.0"
+  - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)"
 cache: pip
 # command to install dependencies
 install:
