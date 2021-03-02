@@ -199,7 +199,7 @@ class MzMLDataInterface(ScanDataSource):
 
         keys = set(pinfo_dict) - {"selected ion m/z", 'peak intensity', 'charge state'}
 
-        pinfo = PrecursorInformation(
+        precursor = PrecursorInformation(
             mz=pinfo_dict['selected ion m/z'],
             intensity=pinfo_dict.get('peak intensity', 0.0),
             charge=pinfo_dict.get('charge state', ChargeNotProvided),
@@ -209,7 +209,7 @@ class MzMLDataInterface(ScanDataSource):
             annotations={
                 k: pinfo_dict[k] for k in keys
             })
-        return pinfo
+        return precursor
 
     def _scan_title(self, scan):
         """Returns a verbose name for this scan, if one

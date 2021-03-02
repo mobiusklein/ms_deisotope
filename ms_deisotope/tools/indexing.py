@@ -167,8 +167,10 @@ def byte_index(paths):
 
 @cli.command("metadata-index", short_help='Build an external scan metadata index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
+@click.option("-D", '--deconvoluted', is_flag=True, help='Whether or not to assume this file has been '
+              'processed specifically by ms_deisotope\'s deconvolution algorithm')
 @processes_option
-def metadata_index(paths, processes=4):
+def metadata_index(paths, processes=4, deconvoluted=False):
     '''Build an external scan metadata index for a mass spectrometry data file
 
     This extended index is saved in a separate JSON file that can be loaded with
@@ -178,7 +180,10 @@ def metadata_index(paths, processes=4):
     '''
     for path in paths:
         click.echo("Indexing %s" % (path, ))
-        reader = MSFileLoader(path)
+        if deconvoluted:
+            reader = ProcessedMzMLDeserializer(path, use_extended_index=False)
+        else:
+            reader = MSFileLoader(path)
         try:
             fn = reader.prebuild_byte_offset_file
             if not reader.source._check_has_byte_offset_file():
@@ -401,7 +406,7 @@ def precursor_clustering(path, grouping_error=2e-5):
 @click.option("-M", "--in-memory", is_flag=True, default=False, help=(
     "Whether to load the entire dataset into memory for better performance"))
 @click.option("-D", "--deconvoluted", is_flag=True, default=False, help=(
-    "Whether to assume the spectrum is deconvoluted or not"))
+    "Whether to assume the spectra are deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
                         in_memory=False, deconvoluted=False, cache_size=2**10):
     '''Cluster spectra by precursor mass and cosine similarity.
