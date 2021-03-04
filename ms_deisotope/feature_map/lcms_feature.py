@@ -270,7 +270,7 @@ class LCMSFeatureTreeList(object):
         lo = 0
         hi = len(self.roots)
         while lo != hi:
-            i = int((lo + hi) / 2)
+            i = (lo + hi) // 2
             node = self.roots[i]
             if node.time == time:
                 return node, i
