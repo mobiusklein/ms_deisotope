@@ -1,4 +1,5 @@
 from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureForest
+from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow
 
 class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(object):
     '''Aggregate MS2 features per isolation window over the course of a

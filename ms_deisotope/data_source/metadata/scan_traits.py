@@ -44,6 +44,7 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     """
 
     __slots__ = ()
+    __hash__ = namedtuple.__hash__
 
     @classmethod
     def make_empty(cls, point):

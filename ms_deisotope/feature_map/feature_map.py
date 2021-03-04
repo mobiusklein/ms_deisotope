@@ -1011,7 +1011,7 @@ class LCMSFeatureMerger(_FeatureCollection):
                 insertion_point = self.find_insertion_point(new_feature)
                 self.insert_feature(new_feature, insertion_point)
         else:
-            self.insert_feature(new_feature, index)
+            self.insert_feature(new_feature, index[0])
         self.count += 1
 
     def insert_feature(self, feature, index):
@@ -1160,8 +1160,10 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         if features is None:
             features = []
         self.features = sorted(features, key=lambda x: x.neutral_mass)
+        self._by_mz = sorted(features, key=lambda x: x.mz)
         self.error_tolerance = error_tolerance
         self.count = 0
+
 
     def find_insertion_point(self, peak):
         '''Find the position in `self` where the peak's matching feature
@@ -1329,6 +1331,7 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         if error_tolerance is None:
             error_tolerance = self.error_tolerance
         self.features = smooth_overlaps_neutral(self.features, error_tolerance)
+        self._by_mz = sorted(self.features, key=lambda x: x.mz)
         return self
 
     def aggregate_peaks(self, scans, minimum_mass=160, minimum_intensity=10., maximum_mass=float('inf')):
