@@ -19,8 +19,9 @@ from .cv import Term, TermSet
 def _isclose(x, y, atol=1e-3):
     return abs(x - y) < atol
 
+_IsolationWindowBase = namedtuple("IsolationWindow", ['lower', 'target', 'upper'])
 
-class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
+class IsolationWindow(_IsolationWindowBase):
     r"""Describes the m/z interval a precursor ion was isolated from in the precursor scan
 
     An :class:`IsolationWindow` instance is comparable, hashable, and orderable. It is based
@@ -44,7 +45,7 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     """
 
     __slots__ = ()
-    __hash__ = namedtuple.__hash__
+    __hash__ = _IsolationWindowBase.__hash__
 
     @classmethod
     def make_empty(cls, point):
@@ -394,6 +395,9 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
     def __eq__(self, other):
         return _isclose(self.lower, other.lower) and _isclose(
             self.upper, other.upper)
+    
+    def __hash__(self):
+        return super(ScanWindow, self).__hash__()
 
     def __ne__(self, other):
         return not (self == other)
