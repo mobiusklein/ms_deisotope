@@ -17,7 +17,15 @@ except ImportError:
 
 try:
     import idzip
-    GzipFile = idzip.IdzipFile
+
+    # Fixes io.BufferedWriter compatibility until merged upstream
+    class IdzipFile(idzip.IdzipFile):
+        def write(self, b):
+            self._check_can_write()
+            value = self._impl.write(b)
+            return value
+
+    GzipFile = IdzipFile
     WRITE_BUFFER_SIZE = idzip.MAX_MEMBER_SIZE
     has_idzip = True
 except (ImportError, AttributeError):
