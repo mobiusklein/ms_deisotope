@@ -639,7 +639,6 @@ def iterpeaks(feature):
 class RunningWeightedAverage(object):
 
     def __init__(self, iterable=None):
-        self.accumulator = []
         self.total_weight = 0
         self.current_mean = 0
         self.current_count = 0
@@ -654,7 +653,6 @@ class RunningWeightedAverage(object):
                 self.total_weight = 1
             else:
                 return
-        self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             (peak.mz * peak.intensity)
         self.total_weight += peak.intensity
@@ -662,33 +660,9 @@ class RunningWeightedAverage(object):
         self.current_count += 1
         return self
 
-    def recompute(self):
-        weight = 0
-        total = 0
-        for peak in self.accumulator:
-            weight += peak.intensity
-            total += peak.intensity * peak.mz
-        return total / weight
-
     def update(self, iterable):
         for x in iterable:
             self.add(x)
-        return self
-
-    def _bootstrap(self, n=150, k=40):
-        traces = []
-        if len(self.accumulator) < k:
-            k = len(self.accumulator)
-        for i in range(n):
-            inst = RunningWeightedAverage(random.sample(self.accumulator, k))
-            traces.append(inst)
-        center = sum(
-            [t.current_mean * t.total_weight for t in traces
-             ]) / sum([t.total_weight for t in traces])
-        return center
-
-    def bootstrap(self, n=150, k=40):
-        self.current_mean = self._bootstrap(n, k)
         return self
 
     def __repr__(self):

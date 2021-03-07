@@ -227,21 +227,12 @@ class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
                 self.total_weight = 1
             else:
                 return
-        self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             (peak.neutral_mass * peak.intensity)
         self.total_weight += peak.intensity
         self.current_mean = agg / self.total_weight
         self.current_count += 1
         return self
-
-    def recompute(self):
-        weight = 0
-        total = 0
-        for peak in self.accumulator:
-            weight += peak.intensity
-            total += peak.intensity * peak.neutral_mass
-        return total / weight
 
 
 class DriftTimeRunningWeightedAverage(RunningWeightedAverage):
@@ -252,21 +243,12 @@ class DriftTimeRunningWeightedAverage(RunningWeightedAverage):
                 self.total_weight = 1
             else:
                 return
-        self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             (peak.drift_time * peak.intensity)
         self.total_weight += peak.intensity
         self.current_mean = agg / self.total_weight
         self.current_count += 1
         return self
-
-    def recompute(self):
-        weight = 0
-        total = 0
-        for peak in self.accumulator:
-            weight += peak.intensity
-            total += peak.intensity * peak.drift_time
-        return total / weight
 
 
 class IonMobilityDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):

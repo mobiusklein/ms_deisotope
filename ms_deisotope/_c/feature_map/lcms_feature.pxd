@@ -132,18 +132,13 @@ cdef class FeatureSetIterator(object):
 
 cdef class RunningWeightedAverage(object):
     cdef:
-        public list accumulator
         public double current_mean
         public size_t current_count
         public double total_weight
 
     cpdef _initialize(self)
     cpdef add(self, PeakBase peak)
-    cpdef double recompute(self)
     cpdef RunningWeightedAverage update(self, iterable)
-    cpdef double _bootstrap(self, size_t n=*, size_t k=*)
-    cpdef RunningWeightedAverage bootstrap(self, size_t n=*, size_t k=*)
-    cpdef RunningWeightedAverage subsample(self, size_t k)
 
     @staticmethod
     cdef RunningWeightedAverage _create(list peaks)

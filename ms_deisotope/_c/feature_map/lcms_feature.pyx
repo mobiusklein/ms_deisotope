@@ -1046,7 +1046,6 @@ cdef class FeatureSetIterator(object):
 cdef class RunningWeightedAverage(object):
 
     cpdef _initialize(self):
-        self.accumulator = []
         self.current_mean = 0
         self.total_weight = 0
         self.current_count = 0
@@ -1079,7 +1078,6 @@ cdef class RunningWeightedAverage(object):
             else:
                 return
 
-        self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             (peak.mz * peak.intensity)
         self.total_weight += peak.intensity
@@ -1090,19 +1088,6 @@ cdef class RunningWeightedAverage(object):
         else:
             print("NaN produced in add()")
         return self
-
-    cpdef double recompute(self):
-        cdef:
-            size_t i
-            PeakBase peak
-            double weight, total
-        weight = 0
-        total = 0
-        for i in range(self.current_count):
-            peak = <PeakBase>PyList_GET_ITEM(self.accumulator, i)
-            weight += peak.intensity
-            total += peak.intensity * peak.mz
-        return total / weight
 
     cpdef RunningWeightedAverage update(self, iterable):
         for x in iterable:
@@ -1121,40 +1106,6 @@ cdef class RunningWeightedAverage(object):
     def __repr__(self):
         return "%s(%r, %d)" % (self.__class__.__name__, self.current_mean, self.current_count)
 
-    cpdef RunningWeightedAverage subsample(self, size_t k):
-        sampled_peaks = sample(self.accumulator, k)
-        inst = RunningWeightedAverage._create(sampled_peaks)
-        return inst
-
-    @cython.nonecheck(False)
-    @cython.cdivision(True)
-    cpdef double _bootstrap(self, size_t n=150, size_t k=40):
-        cdef:
-            size_t i
-            size_t tn, ti
-            list traces, sampled_peaks
-            RunningWeightedAverage inst
-            double total_weight, accumulation, center
-        traces = []
-        if self.current_count < k:
-            k = self.current_count
-        for i in range(n):
-            inst = self.subsample(k)
-            traces.append(inst)
-        tn = i + 1
-        total_weight = 0
-        accumulation = 0
-        for ti in range(tn):
-            inst = traces[ti]
-            accumulation += inst.total_weight * inst.current_mean
-            total_weight += inst.total_weight
-        center = accumulation / total_weight
-        return center
-
-    cpdef RunningWeightedAverage bootstrap(self, size_t n=150, size_t k=40):
-        self.current_mean = self._bootstrap(n, k)
-        return self
-
 
 cdef class RunningWeightedAverageNeutralMass(RunningWeightedAverage):
 
@@ -1171,11 +1122,6 @@ cdef class RunningWeightedAverageNeutralMass(RunningWeightedAverage):
             inst._update(peaks)
             return inst
 
-    cpdef RunningWeightedAverage subsample(self, size_t k):
-        sampled_peaks = sample(self.accumulator, k)
-        inst = RunningWeightedAverageNeutralMass._create(sampled_peaks)
-        return inst
-
     @cython.nonecheck(False)
     @cython.cdivision(True)
     cpdef add(self, PeakBase peak):
@@ -1186,7 +1132,6 @@ cdef class RunningWeightedAverageNeutralMass(RunningWeightedAverage):
             else:
                 return
 
-        self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             ((<DeconvolutedPeak?>peak).neutral_mass * peak.intensity)
         self.total_weight += peak.intensity
