@@ -1,4 +1,5 @@
-import csv
+import re
+import functools
 
 import numpy as np
 
@@ -8,7 +9,7 @@ from ms_deisotope.data_source._compression import get_opener
 
 
 def scan_from_csv(file_handle, delimiter=',', ms_level=2, is_profile=True, polarity=1,
-                  precursor_mz=None, precursor_charge=None):
+                  precursor_mz=None, precursor_charge=None, skiprows=None):
     """Read an m/z-intensity point list from a text file stream.
 
     Parameters
@@ -16,7 +17,8 @@ def scan_from_csv(file_handle, delimiter=',', ms_level=2, is_profile=True, polar
     file_handle : file
         The file to read from.
     delimiter : str, optional
-        The field separator between m/z and intensity. (the default is ',')
+        The field separator between m/z and intensity. (the default is ','). The
+        delimiter can be a regular expression or escape sequence.
     ms_level : int, optional
         The MS level of the read scan. (the default is 2)
     is_profile : bool, optional
@@ -29,17 +31,25 @@ def scan_from_csv(file_handle, delimiter=',', ms_level=2, is_profile=True, polar
     precursor_charge : int, optional
         If provided, and `precursor_mz` is not :const:`None`, then it will be provided
         in :attr:`~.Scan.precursor_information`.
+    skiprows : int, optional
+        The number of rows to skip before starting to parse data, if there is a more elaborate
+        header.
 
     Returns
     -------
     :class:`~.Scan`
     """
+    if skiprows is None:
+        skiprows = 0
     file_handle = get_opener(file_handle)
-    reader = csv.reader(file_handle, delimiter=delimiter)
     mzs = []
     intensities = []
-    for i, line in enumerate(reader):
-        if i == 0:
+    tokenizer = re.compile(delimiter)
+    for i, line in enumerate(file_handle):
+        if i < skiprows:
+            continue
+        line = tokenizer.split(line.strip())
+        if i == skiprows:
             try:
                 float(line[0])
             except Exception:
@@ -60,3 +70,5 @@ def scan_from_csv(file_handle, delimiter=',', ms_level=2, is_profile=True, polar
         polarity,
         precursor_information=pinfo)
     return scan
+
+scan_from_table = functools.partial(scan_from_csv, delimiter=r'\s+')
