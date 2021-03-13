@@ -10,12 +10,19 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Changed
 1. `Scan` objects explicitly are not hashable.
+2. Changed the `delimiter` argument of `ms_deisotope.data_source.text.scan_from_csv` to be a regular expression to handle
+   arbitrary whitespace delimiters, and added an optional `skiprow` argument to allow you to skip headers in the all-too-common
+   text spectrum exports that spectrum viewers provide.
+3. Removed the resampling API from `RunningWeightedAverage`, improving memory efficiency.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+1. Made random-access gzip compressor interface `idzip` compatible with Py3 buffered IO streams.
+2. Added an additional flag `-D` to indicate to `ms-index metadata-index` that the input file is an
+   a deisotoped and charge state deconvolved mzML to extract additional fields.
 
 ### Security
 
