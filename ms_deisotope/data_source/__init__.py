@@ -32,7 +32,7 @@ from .scan import ScanProxyContext
 from ._compression import get_opener
 
 from .text import scan_from_csv
-from .memory import make_scan
+from .memory import make_scan, ScanCollection, make_scan_collection
 
 
 __all__ = [
@@ -52,5 +52,5 @@ __all__ = [
     "ScanDataSource", "ScanIterator", "ScanBunch",
     "ScanWindow", "RandomAccessScanSource", "ChargeNotProvided",
     "get_opener", "ScanProxyContext", 'scan_from_csv',
-    "make_scan"
+    "make_scan", "ScanCollection", "make_scan_collection"
 ]
