@@ -21,7 +21,7 @@ class TestMemoryScanSource(unittest.TestCase):
     @property
     def prepare_source(self):
         source = self.source_reader
-        loader = memory.MemoryScanLoader.build(source)
+        loader = memory.ScanCollection.build(source)
         return loader
 
     def test_iteration(self):
