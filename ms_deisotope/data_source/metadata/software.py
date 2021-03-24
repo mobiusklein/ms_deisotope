@@ -937,6 +937,11 @@ software_names = TermSet([
                  ('TDPortal: Database search engine for top-down proteomics.'),
                  'software',
                  ['analysis software', 'software']),
+    SoftwareName('pyteomics', 'MS:1003146',
+                 ('Python module that helps handling various proteomics data'
+                  'analysis tasks." [DOI:10.1021/acs.jproteome.8b00717'),
+                 'software',
+                 ['analysis software', 'software']),
     SoftwareName('massWolf', 'MS:1000538',
                  ('A software for converting Waters raw directory format to'
                   'mzXML or mzML. MassWolf was originally developed at the'
@@ -1086,6 +1091,11 @@ software_names = TermSet([
                   'vendors.'),
                  'software',
                  ['small molecule analysis software', 'data processing software', 'analysis software', 'software']),
+    SoftwareName('ThermoRawFileParser', 'MS:1003145',
+                 ('Cross-platform software to convert Thermo RAW files to a'
+                  'number of open formats." [DOI:10.1021/acs.jproteome.9b00328'),
+                 'software',
+                 ['data processing software', 'software']),
     SoftwareName('MALDI Solutions Microbial Identification', 'MS:1001878',
                  ('Shimadzu Biotech software for data acquisition, processing,'
                   'and analysis.'),

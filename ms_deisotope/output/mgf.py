@@ -121,8 +121,8 @@ class ProcessedMGFLoader(MGFLoader):
     precursor ion.
 
     """
-    def __init__(self, source_file, encoding='ascii'):
-        super(ProcessedMGFDeserializer, self).__init__(source_file, encoding)
+    def __init__(self, source_file, encoding='ascii', **kwargs):
+        super(ProcessedMGFDeserializer, self).__init__(source_file, encoding, **kwargs)
 
     def _create_parser(self):
         if self._use_index:

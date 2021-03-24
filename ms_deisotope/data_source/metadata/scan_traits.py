@@ -19,7 +19,10 @@ from .cv import Term, TermSet
 def _isclose(x, y, atol=1e-3):
     return abs(x - y) < atol
 
-_IsolationWindowBase = namedtuple("IsolationWindow", ['lower', 'target', 'upper'])
+
+_IsolationWindowBase = namedtuple(
+    "IsolationWindow", ['lower', 'target', 'upper'])
+
 
 class IsolationWindow(_IsolationWindowBase):
     r"""Describes the m/z interval a precursor ion was isolated from in the precursor scan
@@ -395,7 +398,7 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
     def __eq__(self, other):
         return _isclose(self.lower, other.lower) and _isclose(
             self.upper, other.upper)
-    
+
     def __hash__(self):
         return super(ScanWindow, self).__hash__()
 
