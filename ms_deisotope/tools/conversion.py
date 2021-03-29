@@ -1,6 +1,7 @@
 '''A collection of utilities for using :mod:`ms_deisotope` to convert between mass spectrometry
 data file formats.
 '''
+import os
 
 import click
 from six import string_types as basestring
@@ -14,6 +15,12 @@ from ms_deisotope.data_source.metadata import activation as activation_module, d
 from ms_deisotope.output import MzMLSerializer, MGFSerializer
 
 from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook, progress
+
+
+try:
+    from ms_deisotope.output import MzMLbSerializer
+except ImportError:
+    MzMLbSerializer = None
 
 
 @click.group()
@@ -86,7 +93,8 @@ def mgf(source, output, compress=False, msn_filters=None):
 
 
 def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
-            default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True):
+            default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True,
+            writer_type=None):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -118,12 +126,14 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
         m/z in the precursor's peak list. (the default is False, which results in no correction)
 
     """
+    if writer_type is None:
+        writer_type = MzMLSerializer
     if ms1_filters is None:
         ms1_filters = []
     if msn_filters is None:
         msn_filters = []
     reader.make_iterator(grouped=True)
-    writer = MzMLSerializer(outstream, len(
+    writer = writer_type(outstream, len(
         reader), deconvoluted=False, build_extra_index=write_index,
         include_software_entry=update_metadata)
     writer.copy_metadata_from(reader)
@@ -236,6 +246,45 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
         to_mzml(reader, stream, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
                 write_index=write_index, update_metadata=update_metadata)
+
+
+if MzMLbSerializer is not None:
+    @ms_conversion.command("mzmlb", short_help="Convert a mass spectrometry data file to mzMLb")
+    @click.argument("source")
+    @click.argument("output", type=click.Path(writable=True), required=False)
+    @click.option("-r", "--ms1-filter", "ms1_filters", multiple=True, type=parse_filter)
+    @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
+    @click.option("-p", "--pick-peaks", is_flag=True, help=("Enable peak picking, centroiding profile data"))
+    @click.option("-f", "--reprofile", is_flag=True, help=(
+        "Enable reprofiling, converting all MS1 spectra into smoothed profile data"))
+    @click.option("-c", "--correct-precursor-mz", is_flag=True, help=(
+        "Adjust the precursor m/z of each MSn scan to the nearest peak m/z in the precursor"))
+    @click.option("--update-metadata/--no-update-metadata", default=True, help=(
+        "Whether or not to add the conversion"
+        " program's metadata to the mzML file."))
+    def mzmlb(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False,
+              correct_precursor_mz=False, update_metadata=True):
+        """Convert `source` into mzML format written to `output`, applying a collection of optional data
+        transformations along the way.
+        """
+        reader = ms_deisotope.MSFileLoader(source)
+        is_a_tty = False
+        if output == '-':
+            raise ValueError("Cannot write HDF5 to STDOUT")
+        elif output is None:
+            if reader.source_file_name.endswith('.gz'):
+                out = reader.source_file_name[:-3]
+            else:
+                out = reader.source_file_name
+            out = os.path.basename(out)
+            base, ext = out.rsplit(".", 1)
+            base += '.mzMLb'
+            output = base
+
+        write_index = False
+        to_mzml(reader, output, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
+                msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
+                write_index=write_index, update_metadata=update_metadata, writer_type=MzMLbSerializer)
 
 
 if is_debug_mode():

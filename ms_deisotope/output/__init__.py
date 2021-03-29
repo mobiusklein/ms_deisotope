@@ -2,7 +2,7 @@ from .common import (
     ScanSerializerBase, ScanDeserializerBase)
 
 from .mzml import (
-    ProcessedMzMLDeserializer, MzMLSerializer)
+    ProcessedMzMLDeserializer, MzMLSerializer, MzMLbSerializer)
 
 from .text import (
     TextScanSerializerBase, HeaderedDelimitedWriter)
@@ -21,3 +21,8 @@ __all__ = [
     "TextScanSerializerBase",
     "HeaderedDelimitedWriter"
 ]
+
+if MzMLbSerializer is None:
+    del MzMLbSerializer
+else:
+    __all__.append('MzMLbSerializer')

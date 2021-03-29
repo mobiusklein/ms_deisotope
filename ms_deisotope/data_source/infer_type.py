@@ -140,3 +140,11 @@ try:
 except ImportError:
     def register_waters_masslynx_dll(*args, **kwargs):
         pass
+
+try:
+    from .mzmlb import MzMLbLoader, infer_reader as _infer_mzmlb
+
+    reader_types.append(MzMLbLoader)
+    register_type_guesser(_infer_mzmlb)
+except ImportError:
+    pass

@@ -55,6 +55,12 @@ try:
 except ImportError:
     writer = None
 
+try:
+    from psims.mzmlb.writer import MzMLbWriter as _MzMLbWriter
+except ImportError:
+    _MzMLbWriter = None
+
+
 from ms_deisotope import version as lib_version
 from ms_deisotope.peak_set import (DeconvolutedPeak, DeconvolutedPeakSet, Envelope, IonMobilityDeconvolutedPeak)
 from ms_deisotope.averagine import neutral_mass
@@ -257,6 +263,11 @@ class MzMLSerializer(ScanSerializerBase):
         The lower level writer implementation
     """
 
+    try:
+        default_compression = writer.COMPRESSION_ZLIB
+    except AttributeError:
+        default_compression = None
+
     def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
                  data_encoding=None, include_software_entry=True):
@@ -270,16 +281,16 @@ class MzMLSerializer(ScanSerializerBase):
             raise ImportError(
                 "Cannot write mzML without psims. Please install psims to use this feature.")
         if compression is None:
-            compression = writer.COMPRESSION_ZLIB
+            compression = self.default_compression
         super(MzMLSerializer, self).__init__()
         self.handle = handle
-        self.writer = writer.MzMLWriter(handle)
         self.n_spectra = n_spectra
         self.compression = compression
         self.data_encoding = data_encoding
         self._has_started_writing_spectra = False
 
-        self.writer.__enter__()
+        self.writer = self._make_writer(handle)
+        self.writer.begin()
         self._run_tag = None
         self._spectrum_list_tag = None
         self._chromatogram_list_tag = None
@@ -299,6 +310,9 @@ class MzMLSerializer(ScanSerializerBase):
             self.indexer = ExtendedScanIndex()
         self._include_software_entry = include_software_entry
         self._this_software = None
+
+    def _make_writer(self, handle):
+        return writer.MzMLWriter(handle)
 
     def _init_sample(self, sample_name, **kwargs):
         self.sample_name = sample_name
@@ -1032,6 +1046,21 @@ class MzMLSerializer(ScanSerializerBase):
                 self.handle.close()
             except (AttributeError, ValueError, TypeError, OSError):
                 pass
+
+
+class MzMLbSerializer(MzMLSerializer):
+    def _make_writer(self, handle):
+        if self.compression == writer.COMPRESSION_ZLIB:
+            compression = 'gzip'
+            self.compression = 'none'
+            compression_opts = 4
+        else:
+            compression = None
+            compression_opts = None
+        return _MzMLbWriter(self.handle, h5_compression=compression, h5_compression_options=compression_opts)
+
+if _MzMLbWriter is None:
+    MzMLbSerializer = None
 
 
 MzMLScanSerializer = MzMLSerializer
