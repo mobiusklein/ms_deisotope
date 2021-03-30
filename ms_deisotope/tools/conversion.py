@@ -94,7 +94,7 @@ def mgf(source, output, compress=False, msn_filters=None):
 
 def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
             default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True,
-            writer_type=None):
+            writer_type=None, compression='zlib'):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -135,7 +135,7 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
     reader.make_iterator(grouped=True)
     writer = writer_type(outstream, len(
         reader), deconvoluted=False, build_extra_index=write_index,
-        include_software_entry=update_metadata)
+        include_software_entry=update_metadata, compression=compression)
     writer.copy_metadata_from(reader)
     if update_metadata:
         method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
@@ -262,8 +262,11 @@ if MzMLbSerializer is not None:
     @click.option("--update-metadata/--no-update-metadata", default=True, help=(
         "Whether or not to add the conversion"
         " program's metadata to the mzML file."))
+    @click.option("-z", "--compression", type=click.Choice(
+        ['gzip', 'blosc', 'blosc:lz4', 'blosc:lz4hc', 'blosc:zlib', 'blosc:zstd', 'zlib']), default='gzip',
+        help="The compressor to use")
     def mzmlb(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False,
-              correct_precursor_mz=False, update_metadata=True):
+              correct_precursor_mz=False, update_metadata=True, compression='gzip'):
         """Convert `source` into mzML format written to `output`, applying a collection of optional data
         transformations along the way.
         """
@@ -284,7 +287,8 @@ if MzMLbSerializer is not None:
         write_index = False
         to_mzml(reader, output, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
-                write_index=write_index, update_metadata=update_metadata, writer_type=MzMLbSerializer)
+                write_index=write_index, update_metadata=update_metadata,
+                writer_type=MzMLbSerializer, compression=compression)
 
 
 if is_debug_mode():
