@@ -92,13 +92,17 @@ def is_thermo_raw_file(path):
             register_dll()
         except ImportError:
             return False
-    try:
-        source = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
-        source.SelectInstrument(Business.Device.MS, 1)
-        return True
-    except NullReferenceException:   # pylint: disable=broad-except
+    with open(path, 'rb') as fh:
+        lead_bytes = fh.read(32)
+        decoded = lead_bytes.decode("utf-16")[1:9]
+        if decoded == "Finnigan":
+            try:
+                source = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
+                source.SelectInstrument(Business.Device.MS, 1)
+                return True
+            except NullReferenceException:   # pylint: disable=broad-except
+                return False
         return False
-
 
 def infer_reader(path):
     '''If the file referenced by ``path`` is a Thermo RAW

@@ -52,11 +52,11 @@ def describe(path, diagnostics=False):
     click.echo("Describing \"%s\"" % (path,))
     try:
         sf = SourceFile.from_path(path)
-    except IOError:
-        raise click.Abort("Could not open file \"%s\"" % (path, ), err=True)
+    except IOError as err:
+        raise click.ClickException("Could not open file \"%s\"" % (path, ), err=True)
 
     if sf.file_format is None:
-        raise click.Abort("\"%s\" doesn't appear to be a mass spectrometry data file" % (path, ))
+        raise click.ClickException("\"%s\" doesn't appear to be a mass spectrometry data file" % (path, ))
     click.echo("File Format: %s" % (sf.file_format, ))
     click.echo("ID Format: %s" % (sf.id_format, ))
     reader = MSFileLoader(path)

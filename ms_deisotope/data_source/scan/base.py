@@ -6,9 +6,9 @@ import warnings
 from collections import namedtuple
 
 try:
-    from collections import Sequence as _SequenceABC
-except ImportError:
     from collections.abc import Sequence as _SequenceABC
+except ImportError:
+    from collections import Sequence as _SequenceABC
 
 from numbers import Number
 

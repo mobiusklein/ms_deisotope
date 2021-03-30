@@ -1,11 +1,18 @@
+import logging
+logging.getLogger("hdf5plugin").addHandler(logging.NullHandler())
 
-from pyteomics import mzmlb
+try:
+    from pyteomics import mzmlb
+    _BaseParser = mzmlb.MzMLb
+except ImportError:
+    mzmlb = None
+    _BaseParser = object
 
-from .mzml import MzMLLoader
+from .mzml import MzMLLoader as _MzMLLoader
 from ._compression import DefinitelyFastRandomAccess
 
 
-class _MzMLbParser(mzmlb.MzMLb):
+class _MzMLbParser(_BaseParser):
 
     def _handle_param(self, element, **kwargs):
         try:
@@ -15,7 +22,7 @@ class _MzMLbParser(mzmlb.MzMLb):
         return super(_MzMLbParser, self)._handle_param(element, **kwargs)
 
 
-class MzMLbLoader(MzMLLoader):
+class MzMLbLoader(_MzMLLoader):
     _parser_cls = _MzMLbParser
 
     @property
@@ -50,6 +57,8 @@ def is_mzmlb_file(path):
     '''
     try:
         import h5py
+        if _BaseParser == object:
+            raise ImportError('pyteomics.mzmlb')
     except ImportError:
         return False
     try:
@@ -82,12 +91,12 @@ def infer_reader(path):
     '''
     if is_mzmlb_file(path):
         return MzMLbLoader
-    raise ValueError("Not Thermo Raw File")
+    raise ValueError("Not mzMLb File")
 
 
 def determine_if_available():
-    '''Checks whether or not the .NET-based Thermo
-    RAW file reading feature is available.
+    '''Checks whether or not the mzMLb HDF5-based
+    file reading feature is available.
 
     Returns
     -------
@@ -96,6 +105,8 @@ def determine_if_available():
     '''
     try:
         import h5py
+        if _BaseParser == object:
+            raise ImportError('pyteomics.mzmlb')
         return True
     except (OSError, ImportError):
         return False

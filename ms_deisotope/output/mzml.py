@@ -1050,13 +1050,12 @@ class MzMLSerializer(ScanSerializerBase):
 
 class MzMLbSerializer(MzMLSerializer):
     def _make_writer(self, handle):
+        compression = self.compression
+        compression_opts = None
         if self.compression == writer.COMPRESSION_ZLIB:
             compression = 'gzip'
-            self.compression = 'none'
             compression_opts = 4
-        else:
-            compression = None
-            compression_opts = None
+        self.compression = 'none'
         return _MzMLbWriter(self.handle, h5_compression=compression, h5_compression_options=compression_opts)
 
 if _MzMLbWriter is None:

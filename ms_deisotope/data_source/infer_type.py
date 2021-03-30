@@ -94,6 +94,16 @@ def is_random_access(fp):
 
 
 try:
+    from .mzmlb import MzMLbLoader, infer_reader as _infer_mzmlb, determine_if_available
+
+    if determine_if_available():
+        reader_types.append(MzMLbLoader)
+        register_type_guesser(_infer_mzmlb)
+except ImportError:
+    pass
+
+
+try:
     from .thermo_raw_net import (
         ThermoRawLoader as ThermoRawNetLoader, infer_reader as _check_is_thermo_raw_net,
         register_dll as register_thermo_net_dll)
@@ -140,11 +150,3 @@ try:
 except ImportError:
     def register_waters_masslynx_dll(*args, **kwargs):
         pass
-
-try:
-    from .mzmlb import MzMLbLoader, infer_reader as _infer_mzmlb
-
-    reader_types.append(MzMLbLoader)
-    register_type_guesser(_infer_mzmlb)
-except ImportError:
-    pass

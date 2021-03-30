@@ -3,9 +3,9 @@ and provide an interface for manipulating that data.
 '''
 import warnings
 try:
-    from collections import Sequence
-except ImportError:
     from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
 
 import numpy as np
 

@@ -931,7 +931,7 @@ class SourceFile(object):
                 parts = os.path.splitext(parts[0])
                 ext = parts[1]
             if ext.lower() == '.mzml':
-                fmt = "mzML format"
+                fmt = file_formats['MS:1000584']
                 id_fmt = "no nativeID format"
                 hit = False
                 if is_compressed:
@@ -953,11 +953,15 @@ class SourceFile(object):
             elif ext.lower() == '.mzxml':
                 fmt = "ISB mzXML format"
                 id_fmt = "no nativeID format"
-                return fmt, id_fmt
+                return id_fmt, fmt
             elif ext.lower() == '.mgf':
-                fmt = "Mascot MGF format"
+                fmt = file_formats['MS:1001062']
                 id_fmt = "no nativeID format"
-                return fmt, id_fmt
+                return id_fmt, fmt
+            elif ext.lower() == '.mzmlb':
+                fmt = file_formats['MS:1002838']
+                id_fmt = "no nativeID format"
+                return id_fmt, fmt
         with open(path, 'rb') as fh:
             lead_bytes = fh.read(30)
             # looking for pattern matching b'\x01\xa1F\x00i\x00n\x00n\x00i\x00g\x00a\x00n\x00'
