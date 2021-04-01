@@ -798,6 +798,9 @@ class MzMLSerializer(ScanSerializerBase):
                 extra_arrays.append(('mean drift time array', [
                     peak.drift_time for peak in scan.deconvoluted_peak_set
                 ]))
+        else:
+            if scan.arrays.data_arrays:
+                extra_arrays.extend(scan.arrays.data_arrays.items())
         return extra_arrays
 
     def _get_annotations(self, scan):

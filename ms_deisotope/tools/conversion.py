@@ -249,6 +249,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
 
 
 if MzMLbSerializer is not None:
+    from psims.mzmlb.writer import DEFAULT_COMPRESSOR
     @ms_conversion.command("mzmlb", short_help="Convert a mass spectrometry data file to mzMLb")
     @click.argument("source")
     @click.argument("output", type=click.Path(writable=True), required=False)
@@ -266,7 +267,7 @@ if MzMLbSerializer is not None:
         ['gzip', 'blosc', 'blosc:lz4', 'blosc:lz4hc', 'blosc:zlib', 'blosc:zstd', 'zlib']), default='gzip',
         help="The compressor to use")
     def mzmlb(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False,
-              correct_precursor_mz=False, update_metadata=True, compression='gzip'):
+              correct_precursor_mz=False, update_metadata=True, compression=DEFAULT_COMPRESSOR):
         """Convert `source` into mzML format written to `output`, applying a collection of optional data
         transformations along the way.
         """
