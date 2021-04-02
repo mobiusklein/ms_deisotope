@@ -1,6 +1,7 @@
 import os
 import glob
 import re
+import sys
 
 from collections import defaultdict, OrderedDict
 
@@ -267,6 +268,9 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
 
 class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
     def __init__(self, raw_path, lockmass_config=None):
+        if sys.version_info.major == 2:
+            if not isinstance(raw_path, str):
+                raw_path = str(raw_path)
         self.source_file = raw_path
 
         self.info_reader = MassLynxRawInfoReader.MassLynxRawInfoReader(
