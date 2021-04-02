@@ -265,7 +265,7 @@ cdef class LCMSFeatureProcessorBase(object):
         return base_tid
 
     cpdef list find_all_features(self, double mz, double error_tolerance=2e-5):
-        return self.feature_map._find_all(mz, error_tolerance)
+        return self.feature_map.find_all(mz, error_tolerance)
 
     cpdef list find_features(self, double mz, double error_tolerance=2e-5, LCMSFeature interval=None):
         cdef:
