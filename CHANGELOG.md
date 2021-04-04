@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.22] - 2021-4-4
+
+### Added
 1. `ms_deisotope.data_source` now exports `scan_from_csv` and `make_scan` helper methods.
 2. `ms_deisotope.data_source.mzmlb.MzMLbLoader` is now available for reading mzMLb HDF5 files when `pyteomics.mzmlb` is available.
 3. `ms_deisotope.output.MzMLbSerializer` is now available for writing mzMLb HDF5 files when `psims.mzmlb` is available. This is further
@@ -120,9 +136,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.19...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.22...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[v0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
-[v0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
-[v0.0.19]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
+[v0.0.22]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.22
 [v0.0.21]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.21
+[v0.0.19]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
+[v0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
+[v0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
