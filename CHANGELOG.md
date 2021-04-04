@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Added
 1. `ms_deisotope.data_source` now exports `scan_from_csv` and `make_scan` helper methods.
+2. `ms_deisotope.data_source.mzmlb.MzMLbLoader` is now available for reading mzMLb HDF5 files when `pyteomics.mzmlb` is available.
+3. `ms_deisotope.output.MzMLbSerializer` is now available for writing mzMLb HDF5 files when `psims.mzmlb` is available. This is further
+   exposed through `ms-index mzmlb` for CLI conversion. Expect this feature to undergo further evolution as the extended indices used
+   for other features may also be stored in mzMLb as extra datasets.
 
 ### Changed
 1. `Scan` objects explicitly are not hashable.
@@ -23,6 +27,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 1. Made random-access gzip compressor interface `idzip` compatible with Py3 buffered IO streams.
 2. Added an additional flag `-D` to indicate to `ms-index metadata-index` that the input file is an
    a deisotoped and charge state deconvolved mzML to extract additional fields.
+3. Fixed an interface error in `ms_deisotope._c.feature_map.processor`.
 
 ### Security
 
