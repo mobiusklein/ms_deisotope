@@ -38,7 +38,6 @@ def cli():
     '''A collection of utilities for inspecting and manipulating
     mass spectrometry data.
     '''
-    pass
 
 
 @cli.command("describe", short_help=("Produce a minimal textual description"
@@ -53,7 +52,7 @@ def describe(path, diagnostics=False):
     try:
         sf = SourceFile.from_path(path)
     except IOError as err:
-        raise click.ClickException("Could not open file \"%s\"" % (path, ), err=True)
+        raise click.ClickException("Could not open file \"%s\":\n%s" % (path, err))
 
     if sf.file_format is None:
         raise click.ClickException("\"%s\" doesn't appear to be a mass spectrometry data file" % (path, ))
