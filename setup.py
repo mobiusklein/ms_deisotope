@@ -254,6 +254,10 @@ extra_requires = {
     ],
     "cli": [
         'click'
+    ],
+    'mzmlb': [
+        'h5py',
+        'hdf5plugin'
     ]
 }
 

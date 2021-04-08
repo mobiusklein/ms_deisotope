@@ -1,6 +1,6 @@
 pyteomics >= 4.0
 lxml
-psims
+psims[all]
 six
 numpy
 scipy
@@ -9,3 +9,5 @@ brain-isotopic-distribution
 dill
 python-idzip >=0.3.2
 click
+h5py
+hdf5plugin
