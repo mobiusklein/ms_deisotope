@@ -525,6 +525,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         if self._source is not None:
             self._source.Close()
             self._source = None
+        self._dispose()
 
     def __del__(self):
         self.close()

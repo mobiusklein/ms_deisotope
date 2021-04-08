@@ -111,7 +111,9 @@ class XMLReaderBase(RandomAccessScanSource):
         '''
         if self.source is not None:
             self.source.close()
+            self._dispose()
             self.source = None
+        super(XMLReaderBase, self).close()
 
     def __del__(self):
         try:

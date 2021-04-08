@@ -2,7 +2,11 @@ from .common import (
     ScanSerializerBase, ScanDeserializerBase)
 
 from .mzml import (
-    ProcessedMzMLDeserializer, MzMLSerializer, MzMLbSerializer)
+    ProcessedMzMLDeserializer, MzMLSerializer)
+
+from .mzmlb import (
+    MzMLbSerializer, ProcessedMzMLbDeserializer
+)
 
 from .text import (
     TextScanSerializerBase, HeaderedDelimitedWriter)

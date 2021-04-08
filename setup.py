@@ -237,7 +237,7 @@ install_requires = [
     "brain-isotopic-distribution",
     "pyteomics >= 4.0",
     "lxml",
-    "psims >= 0.1.28",
+    "psims >= 0.1.35",
     "python-idzip >=0.3.2"
 ]
 

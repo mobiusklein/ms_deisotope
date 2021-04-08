@@ -291,6 +291,8 @@ class ScanDataSource(object):
         :class:`ScanDataSource` implementations require the data stream be open
         for all operations.
         """
+
+    def _dispose(self):
         pass
 
     def __enter__(self):
@@ -375,6 +377,8 @@ class ScanIterator(ScanDataSource):
             for _key, value in list(self.scan_cache.items()):
                 value.clear()
         self.scan_cache.clear()
+        # Break reference cycle between the iterator and the iteration strategy
+        self._producer = iter([])
 
     @abc.abstractmethod
     def _make_default_iterator(self):
