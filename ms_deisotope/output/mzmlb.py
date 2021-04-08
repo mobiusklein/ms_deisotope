@@ -2,8 +2,10 @@ from psims.mzml.writer import COMPRESSION_ZLIB
 
 try:
     from psims.mzmlb.writer import MzMLbWriter as _MzMLbWriter
+    is_available = True
 except ImportError:
     _MzMLbWriter = None
+    is_available = False
 
 from ms_deisotope.data_source.mzmlb import MzMLbLoader
 
