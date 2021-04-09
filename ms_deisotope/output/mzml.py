@@ -8,7 +8,7 @@ and data transformations. The :class:`~.MzMLSerializer` class handles all facets
 this process.
 
 This module also contains a specialized version of :class:`~.MzMLLoader`,
-:class:`~.ProcessedMzMLDeserializer`, which can directly reconstruct each
+:class:`~.ProcessedMzMLLoader`, which can directly reconstruct each
 deconvoluted peak list and provides fast access to an extended index of
 metadata that :class:`~.MzMLSerializer` writes to an external file.
 
@@ -262,6 +262,11 @@ class MzMLSerializer(ScanSerializerBase):
         default_compression = writer.COMPRESSION_ZLIB
     except AttributeError:
         default_compression = None
+
+    file_extensions = {
+        "mzml",
+        "mzml.gz",
+    }
 
     def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
@@ -1233,7 +1238,7 @@ class PeakSetDeserializingMixin(object):
 
 
 
-class ProcessedMzMLDeserializer(PeakSetDeserializingMixin, MzMLLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):
+class ProcessedMzMLLoader(PeakSetDeserializingMixin, MzMLLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):
     """Extends :class:`.MzMLLoader` to support deserializing preprocessed data
     and to take advantage of additional indexing information.
 
@@ -1253,7 +1258,7 @@ class ProcessedMzMLDeserializer(PeakSetDeserializingMixin, MzMLLoader, ScanDeser
     }
 
     def __init__(self, source_file, use_index=True, use_extended_index=True):
-        super(ProcessedMzMLDeserializer, self).__init__(source_file, use_index=use_index, decode_binary=True)
+        super(ProcessedMzMLLoader, self).__init__(source_file, use_index=use_index, decode_binary=True)
         self.extended_index = None
         self._scan_id_to_rt = dict()
         self._sample_run = None
@@ -1265,7 +1270,7 @@ class ProcessedMzMLDeserializer(PeakSetDeserializingMixin, MzMLLoader, ScanDeser
     def _dispose(self):
         self._scan_id_to_rt.clear()
         self.extended_index.clear()
-        super(ProcessedMzMLDeserializer, self)._dispose()
+        super(ProcessedMzMLLoader, self)._dispose()
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index, self._use_extended_index)
@@ -1281,6 +1286,8 @@ class ProcessedMzMLDeserializer(PeakSetDeserializingMixin, MzMLLoader, ScanDeser
             self._sample_run = self._make_sample_run()
         return self._sample_run
 
+
+ProcessedMzMLDeserializer = ProcessedMzMLLoader
 
 try:
     has_c = True

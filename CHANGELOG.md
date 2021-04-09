@@ -9,12 +9,15 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 
 ### Changed
+1. Re-aliased `Processed*Deserializer` to `Processed*Loader` where `*` is MzML, MGF, or MzMLb.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+1. The Waters SDK no longer uses absolute local imports.
+2. The Waters driver registration code no longer introduces `None` into the list of paths and breaks on Py3.
 
 ### Security
 

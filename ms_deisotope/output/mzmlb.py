@@ -14,6 +14,12 @@ from .mzml import MzMLSerializer as _MzMLSerializer, PeakSetDeserializingMixin
 
 
 class MzMLbSerializer(_MzMLSerializer):
+
+    file_extensions = {
+        "mzmlb",
+    }
+
+
     def _make_writer(self, handle):
         compression = self.compression
         compression_opts = None
@@ -25,10 +31,14 @@ class MzMLbSerializer(_MzMLSerializer):
 
 
 
-class ProcessedMzMLbDeserializer(PeakSetDeserializingMixin, MzMLbLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):
+class ProcessedMzMLbLoader(PeakSetDeserializingMixin, MzMLbLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):
+
+    file_extensions = {
+        "mzmlb",
+    }
 
     def __init__(self, source_file, use_index=True, use_extended_index=True):
-        super(ProcessedMzMLbDeserializer, self).__init__(
+        super(ProcessedMzMLbLoader, self).__init__(
             source_file, use_index=use_index, decode_binary=True)
         self.extended_index = None
         self._scan_id_to_rt = dict()
@@ -41,7 +51,7 @@ class ProcessedMzMLbDeserializer(PeakSetDeserializingMixin, MzMLbLoader, ScanDes
     def _dispose(self):
         self._scan_id_to_rt.clear()
         self.extended_index.clear()
-        super(ProcessedMzMLbDeserializer, self)._dispose()
+        super(ProcessedMzMLbLoader, self)._dispose()
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index, self._use_extended_index)
@@ -57,3 +67,5 @@ class ProcessedMzMLbDeserializer(PeakSetDeserializingMixin, MzMLbLoader, ScanDes
             self._sample_run = self._make_sample_run()
         return self._sample_run
 
+
+ProcessedMzMLbDeserializer = ProcessedMzMLbLoader
