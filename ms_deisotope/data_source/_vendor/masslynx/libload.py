@@ -23,7 +23,10 @@ def _register_dll(search_paths=None, override=True):
         search_paths = []
     elif isinstance(search_paths, str):
         search_paths = [search_paths]
+    elif not isinstance(search_paths, list):
+        raise TypeError("Expected a list of paths or a single path string")
     from ms_deisotope.config import get_config
+    search_paths = list(search_paths)
     search_paths.extend(get_config().get('vendor_readers', {}).get('waters-masslynx', []))
     search_paths.append(find_library("MassLynx.dll"))
     global dll

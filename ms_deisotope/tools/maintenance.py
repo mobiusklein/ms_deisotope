@@ -134,7 +134,7 @@ def register_waters_masslynx(path):
                 config.setdefault('vendor_readers', {})
                 config['vendor_readers'].setdefault("waters-masslynx", [])
                 rest = sorted(
-                    set(path) - set(config.get('vendor_readers', {}).get('waters-masslynx', [])))
+                    filter(bool, set(path) - set(config.get('vendor_readers', {}).get('waters-masslynx', []))))
                 config['vendor_readers']['waters-masslynx'].extend(rest)
                 save_config(config)
         else:
