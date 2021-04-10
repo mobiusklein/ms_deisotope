@@ -9,6 +9,23 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 
 ### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Made `feature_fit.map_coord` helper structure properly comparable.
+
+### Security
+
+
+## [v0.0.23rc] - 2021-4-9
+
+### Added
+
+
+### Changed
 1. Re-aliased `Processed*Deserializer` to `Processed*Loader` where `*` is MzML, MGF, or MzMLb.
 
 ### Deprecated
@@ -139,8 +156,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.22...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.23rc...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.23]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.23rc
 [v0.0.22]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.22
 [v0.0.21]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.21
 [v0.0.19]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
