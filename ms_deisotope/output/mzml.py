@@ -71,6 +71,8 @@ from ms_deisotope.feature_map import ExtendedScanIndex
 from .common import ScanSerializerBase, ScanDeserializerBase, SampleRun, LCMSMSQueryInterfaceMixin
 from .text_utils import (envelopes_to_array, decode_envelopes)
 
+from ms_deisotope.data_source.common import (
+    _SingleScanIteratorImpl, _InterleavedGroupedScanIteratorImpl)
 
 class SpectrumDescription(Sequence):
     '''A helper class to calculate properties of a spectrum derived from
@@ -1235,6 +1237,56 @@ class PeakSetDeserializingMixin(object):
         packed = scan.pack()
         packed.bind(self)
         return packed
+
+    # These methods have to be replicated over from LCMSQueryInterface because of the extra
+    # round of overloading `_make_scan`
+
+    def iter_scan_headers(self, iterator=None, grouped=True):
+        try:
+            if not self._has_ms1_scans():
+                grouped = False
+        except Exception:
+            pass
+        self.reset()
+        if iterator is None:
+            iterator = iter(self._source)
+
+        _make_scan = super(PeakSetDeserializingMixin, self)._make_scan
+        _validate = super(PeakSetDeserializingMixin, self)._validate
+
+        if grouped:
+            impl = _InterleavedGroupedScanIteratorImpl(
+                iterator, _make_scan, _validate)
+        else:
+            impl = _SingleScanIteratorImpl(iterator, _make_scan, _validate)
+
+        for x in impl:
+            yield x
+
+        self.reset()
+
+    def get_scan_header_by_id(self, scan_id):
+        """Retrieve the scan object for the specified scan id. If the
+        scan object is still bound and in memory somewhere, a reference
+        to that same object will be returned. Otherwise, a new object will
+        be created.
+
+        Parameters
+        ----------
+        scan_id : str
+            The unique scan id value to be retrieved
+
+        Returns
+        -------
+        Scan
+        """
+        try:
+            packed = super(PeakSetDeserializingMixin, self)._make_scan(
+                self._source.get_by_id(scan_id))
+            return packed
+        except AttributeError as ae:
+            raise AttributeError("Could not read attribute (%s) while looking up scan %s" % (
+                ae, scan_id))
 
 
 
