@@ -10,8 +10,8 @@ import numpy as np
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.common import (
     Scan, ActivationInformation, PrecursorInformation,
-    ChargeNotProvided, IsolationWindow,
-    RandomAccessScanSource)
+    ChargeNotProvided, IsolationWindow)
+from ms_deisotope.data_source.scan.loader import ScanDataSource, RandomAccessScanSource
 from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
 from ms_deisotope.data_source.metadata.scan_traits import (
     ScanAcquisitionInformation, ScanWindow, ScanEventInformation,
@@ -266,7 +266,120 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
         return iterator
 
 
-class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
+class WatersMassLynxScanSource(ScanDataSource):
+    def _make_scan(self, data):
+        return Scan(data, self)
+
+    def _scan_time(self, scan):
+        if scan.block >= 0:
+            return self.info_reader.GetRetentionTime(scan.function, scan.block)
+        else:
+            return self.info_reader.GetRetentionTime(scan.function, scan.scan)
+
+    def _drift_time(self, scan):
+        if scan.block >= 0:
+            return self.info_reader.GetDriftTime(scan.function, scan.scan)
+        else:
+            return None
+
+    def _scan_id(self, scan):
+        return scan.id
+
+    def _scan_index(self, scan):
+        return scan.index
+
+    def _ms_level(self, scan):
+        ms_level, _scan_type = self._translate_function_type(scan.function)
+        return ms_level
+
+    def _scan_arrays(self, scan):
+        if scan.block >= 0:
+            mz, inten = self.scan_reader.ReadDriftScan(
+                scan.function, scan.block, scan.scan)
+        else:
+            mz, inten = self.scan_reader.ReadScan(scan.function, scan.scan)
+        return np.array(mz), np.array(inten)
+
+    def _precursor_information(self, scan):
+        if self._ms_level(scan) == 1:
+            return None
+        set_mass_str = self.info_reader.GetScanItem(
+            scan.function,
+            scan.block if scan.block >= 0 else scan.scan,
+            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
+        )
+        if set_mass_str:
+            set_mass = float(set_mass_str)
+        else:
+            set_mass = 0.0
+        if set_mass == 0:
+            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
+                scan.function)
+            set_mass = (lower_bound + upper_bound) / 2.
+        pinfo = PrecursorInformation(
+            set_mass, 0, ChargeNotProvided, source=self, product_scan_id=scan.id)
+        return pinfo
+
+    def _isolation_window(self, scan):
+        if self._ms_level(scan) == 1:
+            return None
+        set_mass_str = self.info_reader.GetScanItem(
+            scan.function,
+            scan.block if scan.block >= 0 else scan.scan,
+            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
+        )
+        if set_mass_str:
+            set_mass = float(set_mass_str)
+        else:
+            set_mass = 0.0
+        if set_mass == 0:
+            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
+                scan.function)
+            set_mass = (lower_bound + upper_bound) / 2.
+            lower_bound_offset = upper_bound_offset = upper_bound - set_mass
+        else:
+            lower_bound_offset = upper_bound_offset = 0
+        return IsolationWindow(
+            lower_bound_offset, set_mass, upper_bound_offset)
+
+    def _is_profile(self, scan):
+        return self.info_reader.IsContinuum(scan.function)
+
+    def _scan_title(self, scan):
+        return self._scan_id(scan)
+
+    def _acquisition_information(self, scan):
+        scan_window = ScanWindow(
+            *self.info_reader.GetAcquisitionMassRange(scan.function))
+        scan_time = self._scan_time(scan)
+        drift_time = self._drift_time(scan)
+        event = ScanEventInformation(scan_time, [scan_window], traits={
+            'preset scan configuration': scan.function + 1,
+        })
+        if drift_time is not None:
+            event._ion_mobility.add_ion_mobility(
+                ion_mobility_drift_time, drift_time)
+        return ScanAcquisitionInformation('no combination', [event])
+
+    def _polarity(self, scan):
+        mode = self.info_reader.GetIonMode(scan.function)
+        s = self.info_reader.GetIonModeString(mode)
+        if s.endswith('+'):
+            return 1
+        elif s.endswith('-'):
+            return -1
+        raise ValueError("Unknown Ion Mode %r" % (s, ))
+        # return 1
+
+    def _activation(self, scan):
+        energy_str = self.info_reader.GetScanItem(
+            scan.function, scan.block if scan.block >= 0 else scan.scan, MassLynxRawDefs.MassLynxScanItem.COLLISION_ENERGY)
+        if energy_str:
+            energy = float(energy_str)
+            return ActivationInformation(HCD, energy)
+
+
+class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, WatersMSECycleSourceMixin):
     def __init__(self, raw_path, lockmass_config=None):
         if sys.version_info.major == 2:
             if not isinstance(raw_path, str):
@@ -291,6 +404,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
         self._build_scan_index()
         self.lockmass_function = self.function_index_list[-1] + 1
         self.low_energy_function = self.function_index_list[0] + 1
+        self._producer = self.make_frame_iterator()
 
     def configure_lockmass(self, lockmass_config=None):
         if lockmass_config is None:
@@ -581,114 +695,6 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMSECycleSourceMixin):
         for i in iterator:
             yield self.index[i]
 
-    # ScanSource methods
-    def _make_scan(self, data):
-        return Scan(data, self)
-
-    def _scan_time(self, scan):
-        if scan.block >= 0:
-            return self.info_reader.GetRetentionTime(scan.function, scan.block)
-        else:
-            return self.info_reader.GetRetentionTime(scan.function, scan.scan)
-
-    def _drift_time(self, scan):
-        if scan.block >= 0:
-            return self.info_reader.GetDriftTime(scan.function, scan.scan)
-        else:
-            return None
-
-    def _scan_id(self, scan):
-        return scan.id
-
-    def _scan_index(self, scan):
-        return scan.index
-
-    def _ms_level(self, scan):
-        ms_level, _scan_type = self._translate_function_type(scan.function)
-        return ms_level
-
-    def _scan_arrays(self, scan):
-        if scan.block >= 0:
-            mz, inten = self.scan_reader.ReadDriftScan(
-                scan.function, scan.block, scan.scan)
-        else:
-            mz, inten = self.scan_reader.ReadScan(scan.function, scan.scan)
-        return np.array(mz), np.array(inten)
-
-    def _precursor_information(self, scan):
-        if self._ms_level(scan) == 1:
-            return None
-        set_mass_str = self.info_reader.GetScanItem(
-            scan.function,
-            scan.block if scan.block >= 0 else scan.scan,
-            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
-        )
-        if set_mass_str:
-            set_mass = float(set_mass_str)
-        else:
-            set_mass = 0.0
-        if set_mass == 0:
-            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
-                scan.function)
-            set_mass = (lower_bound + upper_bound) / 2.
-        pinfo = PrecursorInformation(
-            set_mass, 0, ChargeNotProvided, source=self, product_scan_id=scan.id)
-        return pinfo
-
-    def _isolation_window(self, scan):
-        if self._ms_level(scan) == 1:
-            return None
-        set_mass_str = self.info_reader.GetScanItem(
-            scan.function,
-            scan.block if scan.block >= 0 else scan.scan,
-            MassLynxRawDefs.MassLynxScanItem.SET_MASS.value
-        )
-        if set_mass_str:
-            set_mass = float(set_mass_str)
-        else:
-            set_mass = 0.0
-        if set_mass == 0:
-            lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
-                scan.function)
-            set_mass = (lower_bound + upper_bound) / 2.
-            lower_bound_offset = upper_bound_offset = upper_bound - set_mass
-        else:
-            lower_bound_offset = upper_bound_offset = 0
-        return IsolationWindow(
-            lower_bound_offset, set_mass, upper_bound_offset)
-
-    def _is_profile(self, scan):
-        return self.info_reader.IsContinuum(scan.function)
-
-    def _scan_title(self, scan):
-        return self._scan_id(scan)
-
-    def _acquisition_information(self, scan):
-        scan_window = ScanWindow(
-            *self.info_reader.GetAcquisitionMassRange(scan.function))
-        scan_time = self._scan_time(scan)
-        drift_time = self._drift_time(scan)
-        event = ScanEventInformation(scan_time, [scan_window], traits={
-            'preset scan configuration': scan.function + 1,
-        })
-        if drift_time is not None:
-            event._ion_mobility.add_ion_mobility(
-                ion_mobility_drift_time, drift_time)
-        return ScanAcquisitionInformation('no combination', [event])
-
-    def _polarity(self, scan):
-        mode = self.info_reader.GetIonMode(scan.function)
-        s = self.info_reader.GetIonModeString(mode)
-        if s.endswith('+'):
-            return 1
-        elif s.endswith('-'):
-            return -1
-        raise ValueError("Unknown Ion Mode %r" % (s, ))
-        # return 1
-
-    def _activation(self, scan):
-        energy_str = self.info_reader.GetScanItem(
-            scan.function, scan.block if scan.block >= 0 else scan.scan, MassLynxRawDefs.MassLynxScanItem.COLLISION_ENERGY)
-        if energy_str:
-            energy = float(energy_str)
-            return ActivationInformation(HCD, energy)
+    def reset(self):
+        self.initialize_scan_cache()
+        self._producer = self.make_frame_iterator()

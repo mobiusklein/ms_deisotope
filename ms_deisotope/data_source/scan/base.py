@@ -161,11 +161,11 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         The intensity measured at the corresponding m/z of a mass spectrum
     """
 
-    def __new__(cls, mz, intensity, arrays=None):
+    def __new__(cls, mz, intensity, data_arrays=None):
         inst = super(RawDataArrays, cls).__new__(cls, mz, intensity)
         inst.data_arrays = dict()
-        if arrays:
-            inst.data_arrays.update(arrays)
+        if data_arrays:
+            inst.data_arrays.update(data_arrays)
         return inst
 
     def __copy__(self):
@@ -182,6 +182,12 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         :class:`RawDataArray`
         """
         return self.__copy__()
+
+    def _slice(self, i):
+        inst = self.__class__(self.mz[i], self.intensity[i], {
+            k: v[i] for k, v in self.data_arrays.items()
+        })
+        return inst
 
     def plot(self, *args, **kwargs):
         """Draw the profile spectrum described by the
@@ -302,11 +308,17 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             i += 1
         return self.__class__(self.mz[i:j], self.intensity[i:j])
 
+    @classmethod
+    def empty(cls):
+        return cls(np.array(), np.array())
+
     def __getitem__(self, i):
         if isinstance(i, int):
             return super(RawDataArrays, self).__getitem__(i)
+        elif isinstance(i, (slice, list, tuple, np.ndarray)):
+            return self._slice(i)
         else:
-            return self.arrays[i]
+            return self.data_arrays[i]
 
     @property
     def size(self):

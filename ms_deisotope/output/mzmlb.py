@@ -1,3 +1,39 @@
+'''
+Writing mzML
+------------
+
+Using the :mod:`psims` library, :mod:`ms_deisotope.output.mzmlb` can write an mzMLb
+file with all associated metadata. This uses the same machinery as :mod:`ms_deisotope.output.mzml`
+to accomplish this.
+
+This module also contains a specialized version of :class:`~.MzMLbLoader`,
+:class:`~.ProcessedMzMLbLoader`, which can directly reconstruct each
+deconvoluted peak list and provides fast access to an extended index of
+metadata that :class:`~.MzMLbSerializer` writes to an external file.
+
+All behavior available for the :class:`~.ProcessedMzMLLoader` are available for
+:class:`~.ProcessedMzMLbLoader`.
+
+
+.. code:: python
+
+    import ms_deisotope
+    from ms_deisotope.test.common import datafile
+    from ms_deisotope.output.mzmlb import MzMLbSerializer
+
+    reader = ms_deisotope.MSFileLoader(datafile("small.mzML"))
+    with MzMLbSerializer('small.deconvoluted.mzMLb', n_spectra=len(reader)) as writer:
+        writer.copy_metadata_from(reader)
+        for bunch in reader:
+            bunch.precursor.pick_peaks()
+            bunch.precursor.deconvolute()
+            for product in bunch.products:
+                product.pick_peaks()
+                product.deconvolute()
+            writer.save(bunch)
+
+'''
+
 from psims.mzml.writer import COMPRESSION_ZLIB
 
 try:

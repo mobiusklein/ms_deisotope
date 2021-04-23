@@ -1,9 +1,16 @@
+import array
 from abc import abstractmethod
 from weakref import WeakValueDictionary
 from itertools import chain
 
+from collections import namedtuple, defaultdict
+
+import numpy as np
+
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
+
+from .base import RawDataArrays
 
 class IonMobilitySource(object):
     @abstractmethod
@@ -59,6 +66,17 @@ class IonMobilitySource(object):
             scans.append(scan.drift_time)
         return scans
 
+    def _frame_scans(self, data):
+        scans = []
+        for i in range(self._frame_start_scan_index(data), self._frame_end_scan_index(data)):
+            scan = self.get_scan_by_index(i)
+            scans.append(scan)
+        return scans
+
+    def _frame_arrays(self, data):
+        scans = self._frame_scans(data)
+        return RawDataArrays3D.stack(scans)
+
     def _frame_acquisition_information(self, data):
         scan = self.get_scan_by_index(self._frame_start_scan_index(data))
         acq = scan.acquisition_information
@@ -82,17 +100,14 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     def get_frame_by_time(self, time):
         raise NotImplementedError()
 
-    @abstractmethod
     def _validate_frame(self, data):
-        raise NotImplementedError()
+        return True
 
-    @abstractmethod
     def _make_frame(self, data):
-        raise NotImplementedError()
+        return IonMobilityFrame(data, self)
 
-    @abstractmethod
     def _cache_frame(self, frame):
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     def _default_frame_iterator(self, start_index=None):
@@ -125,6 +140,323 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     @frame_cache.setter
     def frame_cache(self, value):
         self._frame_cache = value
+
+
+class _upto_index(object):
+    def __init__(self, values, last_value):
+        self.values = values
+        self.last_value = last_value
+        self.index = np.searchsorted(self.values, last_value)
+
+    def values_up_to(self, value):
+        i = np.searchsorted(self.values, value)
+        intermediate = self.values[self.index:i]
+        self.index = i
+        self.last_value = self.values[i - 1]
+        return intermediate
+
+    def __call__(self, value):
+        return self.values_up_to(value)
+
+
+class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mobility'])):
+    """Represent the m/z, intensity, and ion mobility arrays associated with a raw
+    ion mobility frame of mass spectra.
+
+    Thin wrapper around a ``namedtuple``, so this object supports
+    the same interfaces as a tuple.
+
+    Attributes
+    ----------
+    mz : :class:`np.ndarray`
+        The m/z axis of a mass spectrum
+    intensity : :class:`np.ndarray`
+        The intensity measured at the corresponding m/z of a mass spectrum
+    ion_mobility : :class:`np.ndarray`
+        The ion mobility of each data point
+    distinct_ion_mobility : :class:`np.ndarray`
+        The distinct ion mobility values in the multidimensional space, independent
+        of whether there are data points at that point
+    ion_mobility_array_type : :class:`~.Term`
+        The type of ion mobility array
+    data_arrays : dict
+        Any other data arrays
+    """
+    def __new__(cls, mz, intensity, ion_mobility, distinct_ion_mobility, ion_mobility_array_type=None, data_arrays=None):
+        inst = super(RawDataArrays3D, cls).__new__(
+            cls, mz, intensity, ion_mobility)
+        inst.distinct_ion_mobility = distinct_ion_mobility
+        inst.ion_mobility_array_type = ion_mobility_array_type
+        inst.data_arrays = dict()
+        if data_arrays:
+            inst.data_arrays.update(data_arrays)
+        return inst
+
+    def __copy__(self):
+        inst = self.__class__(self.mz.copy(), self.intensity.copy(), self.ion_mobility.copy(),
+                              self.distinct_ion_mobility.copy(), self.ion_mobility_array_type, {
+            k: v.copy() for k, v in self.data_arrays.items()
+        })
+        return inst
+
+    def copy(self):
+        """Make a deep copy of this object.
+
+        Returns
+        -------
+        :class:`RawDataArrays3D`
+        """
+        return self.__copy__()
+
+    def __eq__(self, other):
+        try:
+            return np.allclose(
+                self[0], other[0]) and np.allclose(
+                    self[1], other[1]) and np.allclose(self[2], other[2])
+        except ValueError:
+            return False
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __mul__(self, i):
+        return self.__class__(self.mz, self.intensity * i, self.ion_mobility,
+                              self.distinct_ion_mobility, self.ion_mobility_array_type, self.data_arrays)
+
+    def __div__(self, d):
+        return self.__class__(self.mz, self.intensity / d, self.ion_mobility,
+                              self.distinct_ion_mobility, self.ion_mobility_array_type, self.data_arrays)
+    def __getitem__(self, i):
+        if isinstance(i, int):
+            return super(RawDataArrays3D, self).__getitem__(i)
+        elif isinstance(i, (slice, list, tuple, np.ndarray)):
+            return self._slice(i)
+        else:
+            return self.data_arrays[i]
+
+    @classmethod
+    def stack(cls, scans, ion_mobility_array_type=None):
+        '''Combine multiple :class:`~.Scan` objects or (ion mobility, :class:`~.RawDataArrays`)
+        pairs into a single :class:`~.RawDataArrays3D`
+
+        Parameters
+        ----------
+        scans : list of :class:`~.Scan`
+            The single ion mobility point arrays to combine
+        ion_mobility_array_type : :class:`~.Term` or :class:`str`
+            The type of ion mobility array
+        '''
+        mz = array.array('d')
+        intensity = array.array('d')
+        ion_mobility = array.array('d')
+        data_arrays = defaultdict(lambda: array.array('d'))
+
+        distinct_ion_mobility = array.array('d')
+        for scan in scans:
+            try:
+                arrays = scan.arrays
+                im = scan.drift_time
+            except AttributeError:
+                im = scan[0]
+                arrays = scan[1]
+            distinct_ion_mobility.append(im)
+            if arrays.mz.size > 0:
+                mz.extend(arrays.mz)
+                intensity.extend(arrays.intensity)
+                ion_mobility.extend([im] * arrays.mz.size)
+                for key, val in arrays.data_arrays.items():
+                    data_arrays[key].extend(val)
+        mz = np.array(mz)
+        ion_mobility = np.array(ion_mobility)
+        mask = np.lexsort(np.stack((ion_mobility, mz,)))
+        return cls(mz[mask], np.array(intensity)[mask], ion_mobility[mask],
+                   np.sort(distinct_ion_mobility), ion_mobility_array_type,
+                   {k: np.array(v)[mask] for k, v in data_arrays.items()})
+
+    @classmethod
+    def from_arrays(cls, mz_array, intensity_array, ion_mobility_array, ion_mobility_array_type=None, data_arrays=None):
+        '''Build a new :class:`~.RawDataArrays3D` from parallel arrays.
+
+        This will sort all arrays w.r.t. m/z and ion mobility.
+
+        Parameters
+        ----------
+        mz_array : np.ndarray
+            The m/z array
+        intensity_array : np.ndarray
+            The intensity array
+        ion_mobility_array : np.ndarray
+            The ion mobility array
+        data_arrays : dict
+            Any extra data arrays
+
+        Returns
+        -------
+        :class:`~.RawDataArrays3D`
+        '''
+        mz_array = np.asarray(mz_array)
+        ion_mobility_array = np.asarray(ion_mobility_array)
+        distinct_ion_mobility = np.sort(np.unique(ion_mobility_array))
+        mask = np.lexsort(np.stack((ion_mobility_array, mz_array)))
+        if data_arrays:
+            data_arrays = {
+                k: np.asarray(v)[mask] for k, v in data_arrays.items()
+            }
+        return cls(
+            mz_array[mask], np.asarray(intensity_array)[mask], ion_mobility_array[mask],
+            distinct_ion_mobility, ion_mobility_array_type, data_arrays=data_arrays)
+
+
+    @classmethod
+    def empty(cls):
+        return cls(np.array([]), np.array([]), np.array([]), np.array([]))
+
+    def _slice(self, i, include_ion_mobility=True):
+        mz = self.mz[i]
+        intensity = self.intensity[i]
+        data_arrays = {k: v[i] for k, v in self.data_arrays.items()}
+        if not include_ion_mobility:
+            return RawDataArrays(mz, intensity, data_arrays)
+        return RawDataArrays3D(
+            mz, intensity, self.ion_mobility[i], self.distinct_ion_mobility,
+            self.ion_mobility_array_type, data_arrays)
+
+    def unstack(self, include_empty=True):
+        '''Convert this 3D array into a list of (ion mobility, :class:`~.RawDataArrays`) pairs
+
+        Parameters
+        ----------
+        include_empty : bool
+            Whether to include ion mobility values with no signal. Defaults to :const:`True`.
+
+        Returns
+        -------
+        arrays : list[tuple[float, :class:`~.RawDataArrays`]]
+            The split arrays arranged by drift time
+        '''
+        mask = mask = np.lexsort(np.stack((self.mz, self.ion_mobility)))
+        sorted_dim = self.ion_mobility[mask]
+        acc = []
+        # re-sort all arrays along the mask, and then slice out in chunks.
+        boundaries = np.where(np.diff(sorted_dim) != 0)[0]
+        if len(boundaries) == 0:
+            return [RawDataArrays(self.mz, self.intensity, self.data_arrays)]
+        if boundaries[-1] < len(sorted_dim) - 1:
+            boundaries = np.append(boundaries, [len(sorted_dim) - 1])
+        last_boundary = 0
+        index = _upto_index(self.distinct_ion_mobility, -1)
+        for boundary in boundaries:
+            drift_time = self.ion_mobility[mask[last_boundary]]
+            for i in index(drift_time):
+                acc.append((i, self._slice(slice(0, 0), False)))
+            chunk = self._slice(mask[last_boundary:boundary + 1], False)
+            acc.append((drift_time, chunk))
+            last_boundary = boundary + 1
+        return acc
+
+    def grid(self):
+        '''Convert this 3D array into an intensity grid with
+        m/z along the rows and ion mobility along the columns.
+
+        Returns
+        -------
+        mz_axis : np.ndarray
+            The m/z value for each row
+        im_axis : np.ndarray
+            The ion mobility value for each column
+        intensity : np.ndarray
+            A 2D array of intensity values at each axis position
+        '''
+        mz_axis = np.unique(self.mz)
+        im_axis = (self.distinct_ion_mobility)
+        intensity = np.zeros((mz_axis.shape[0], im_axis.shape[0]))
+        i1 = np.searchsorted(mz_axis, self.mz)
+        i2 = np.searchsorted(im_axis, self.ion_mobility)
+        intensity[i1, i2] += self.intensity
+        return mz_axis, im_axis, intensity
+
+    def find_mz(self, mz):
+        """Find the nearest index to the query ``mz``
+
+        Parameters
+        ----------
+        mz : float
+            The m/z value to search for
+
+        Returns
+        -------
+        int
+            The index nearest to the query m/z
+        """
+        n = len(self.mz)
+        lo = 0
+        hi = n
+
+        while hi != lo:
+            mid = int((hi + lo) // 2)
+            y = self.mz[mid]
+            err = y - mz
+            if abs(err) < 0.1:
+                best_index = mid
+                best_err = abs(err)
+                i = mid
+                while i >= 0:
+                    y = self.mz[i]
+                    err = y - mz
+                    if err <= -0.1:
+                        break
+                    abs_err = abs(err)
+                    if abs_err < best_err:
+                        best_err = abs_err
+                        best_index = i
+                    i -= 1
+                i = mid
+                while i < n:
+                    y = self.mz[i]
+                    err = y - mz
+                    if err >= 0.1:
+                        break
+                    abs_err = abs(err)
+                    if abs_err < best_err:
+                        best_err = abs_err
+                        best_index = i
+                    i += 1
+                return best_index
+            elif hi - lo == 1:
+                return mid
+            elif err > 0:
+                hi = mid
+            else:
+                lo = mid
+        return 0
+
+    def between_mz(self, low, high):
+        """Returns a slice of the arrays between ``low`` and ``high``
+        m/z
+
+        Parameters
+        ----------
+        low : float
+            The lower bound m/z
+        high : float
+            The upper bound m/z
+
+        Returns
+        -------
+        :class:`.RawDataArrays`
+        """
+        i = self.find_mz(low)
+        mz_i = self.mz[i]
+        while self.mz[i] == mz_i:
+            i -= 1
+        i += 1
+        j = self.find_mz(high)
+        mz_j = self.mz[j]
+        while self.mz[j] == mz_j:
+            j += 1
+        if not (low <= self.mz[i] <= high):
+            i += 1
+        return self._slice(slice(i, j), True)
 
 
 class IonMobilityFrame(object):
@@ -190,11 +522,11 @@ class IonMobilityFrame(object):
         return self.source._frame_acquisition_information(self._data)
 
     def scans(self):
-        scans = []
-        for i in range(self.start_scan_index, self.end_scan_index):
-            scan = self.source.get_scan_by_index(i)
-            scans.append(scan)
-        return scans
+        return self.source._frame_scans(self._data)
+
+    @property
+    def arrays(self):
+        return self.source._frame_arrays(self._data)
 
     @property
     def drift_times(self):
