@@ -6,7 +6,23 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+1.
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+
+## [v0.0.24] - 2021-4-10
+
+### Added
 
 ### Changed
 
@@ -156,8 +172,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.23rc...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.24...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.24]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.24
 [v0.0.23]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.23rc
 [v0.0.22]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.22
 [v0.0.21]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.21

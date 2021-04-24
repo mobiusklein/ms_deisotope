@@ -1,3 +1,5 @@
+from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame
+from ms_deisotope.data_source.scan import ScanBunch, ScanBase
 from .scan.scan_iterator import ITERATION_MODE_GROUPED, ITERATION_MODE_SINGLE
 from .scan.loader import ScanIterator
 from .scan.base import ScanBunch
@@ -492,3 +494,71 @@ class MS1MergingTransformer(ScanIteratorProxyBase):
         if self._generator is None:
             self._generator = self._generate()
         return next(self._generator)
+
+
+class TimeOrderMergingIterator(object):
+    def __init__(self, sources):
+        self.sources = list(sources)
+        self._init_heads()
+
+    def _init_heads(self):
+        n = len(self.sources)
+        self.heads = [None] * n
+        for i in range(n):
+            self._advance(i)
+
+    def __next__(self):
+        result = self.get_next_head()
+        if result is None:
+            raise StopIteration()
+        return result
+
+    next = __next__
+
+    def __iter__(self):
+        return self
+
+    def count_exhausted(self):
+        n = 0
+        for h in self.heads:
+            n += h is None
+        return n
+
+    def _advance(self, i):
+        try:
+            self.heads[i] = next(self.sources[i])
+        except StopIteration:
+            self.heads[i] = None
+
+    def get_next_head(self):
+        best = None
+        best_i = None
+        best_time = float('inf')
+        for i, head in enumerate(self.heads):
+            if head is None:
+                continue
+            time = self.get_time(head)
+            assert time is not None
+            if time < best_time:
+                best = head
+                best_i = i
+                best_time = time
+        if best is None:
+            return best
+        i = best_i
+        self._advance(i)
+        return best
+
+    def get_time(self, obj):
+        if isinstance(obj, ScanBunch):
+            if obj.precursor is not None:
+                return self.get_time(obj.precursor)
+            elif obj.products:
+                return self.get_time(obj.products[0])
+        elif isinstance(obj, ScanBase):
+            return obj.scan_time
+        elif isinstance(obj, IonMobilityFrame):
+            return obj.time
+        else:
+            # Just guessing at this point
+            return obj.scan_time
