@@ -1612,6 +1612,13 @@ class PlottingMethods(object):
                 ax = self.deconvoluted(ax=ax)
         except (AttributeError, TypeError):
             pass
+        if ax is None:
+            try:
+                if not self.scan.is_profile:
+                    self.scan.pick_peaks()
+                    ax = self.centroided(ax=ax)
+            except (AttributeError, TypeError):
+                pass
         return ax
 
     def __call__(self, ax=None, **kwargs):

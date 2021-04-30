@@ -21,6 +21,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
+          build-args: MS_DEISOTOPE_VERSION="${{ env.RELEASE_VERSION }}"
           tags: mobiusklein/ms_deisotope:latest,mobiusklein/ms_deisotope:${{ env.RELEASE_VERSION }}
           context: ./docker
 

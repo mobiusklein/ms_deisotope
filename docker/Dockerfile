@@ -10,11 +10,13 @@ RUN pip install six Cython click numpy scipy matplotlib lxml \
                 pyteomics python-idzip jinja2
 
 # Install simple dependencies
-RUN pip install brain-isotopic-distribution psims==0.1.33
+RUN pip install brain-isotopic-distribution psims
+
+ARG MS_DEISOTOPE_VERSION=master
 
 # Install heavy dependencies
-RUN pip install ms_peak_picker==0.1.33
-RUN pip install ms_deisotope==0.0.21
+RUN pip install ms_peak_picker
+RUN pip install ms_deisotope==git+https://github.com/mobiusklein/ms_deisotope.git@${MS_DEISOTOPE_VERSION}
 
 ENV PYTHONUNBUFFERED 1
 
