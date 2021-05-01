@@ -174,6 +174,47 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         })
         return inst
 
+    def has_array(self, array_type):
+        '''Check if this array set contains an array of the
+        requested type.
+
+        This method uses the semantic lookup mechanism to test
+        "is-a" relationships so if a more abstract term is used,
+        a wider range of terms may be matched.
+
+        Parameters
+        ----------
+        array_type : str or :class:`~.Term`
+            The array type name to test.
+
+        Returns
+        -------
+        bool
+        '''
+        from ms_deisotope.data_source.metadata.scan_traits import binary_data_arrays
+        try:
+            term = binary_data_arrays[array_type]
+        except KeyError:
+            warnings.warn("Array type %r could not be resolved, treating as a plain string" % (array_type, ))
+            return array_type in self.binary_data_arrays
+        if self.mz is not None and len(self.mz):
+            k = binary_data_arrays['m/z array']
+            if term.is_a(k):
+                return k
+        if self.intensity is not None and len(self.intensity):
+            k = binary_data_arrays['intensity array']
+            if term.is_a(k):
+                return k
+        for k in self.data_arrays:
+            try:
+                k = binary_data_arrays[k]
+                if term.is_a(k):
+                    return k
+            except KeyError:
+                if term == k:
+                    return k
+        return False
+
     def copy(self):
         """Make a deep copy of this object.
 

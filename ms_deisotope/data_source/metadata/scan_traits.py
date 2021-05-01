@@ -207,7 +207,8 @@ class ScanAcquisitionInformation(MutableSequence):
         return self.__class__, (self.combination, self.scan_list)
 
     def copy(self):
-        return self.__class__(self.combination, [se.copy() for se in self.scan_list])
+        return self.__class__(
+            self.combination, [se.copy() for se in self.scan_list])
 
 
 class _IonMobilityMixin(object):
@@ -282,7 +283,8 @@ class ScanEventInformation(_IonMobilityMixin):
     def __dict__(self):
         return _MappingOverAttributeProxy(self)
 
-    def __init__(self, start_time, window_list, drift_time=None, injection_time=None, traits=None, **options):
+    def __init__(self, start_time, window_list, drift_time=None,
+                 injection_time=None, traits=None, **options):
         self.traits = traits or {}
         self.traits.update(options)
         self.start_time = start_time
@@ -295,7 +297,9 @@ class ScanEventInformation(_IonMobilityMixin):
         return self.traits.get('preset scan configuration')
 
     def copy(self):
-        return self.__class__(self.start_time, self.window_list[:], None, self.injection_time, self.traits.copy())
+        return self.__class__(
+            self.start_time, self.window_list[:],
+            None, self.injection_time, self.traits.copy())
 
     def __getitem__(self, i):
         return self.window_list[i]
@@ -435,9 +439,7 @@ scan_attributes = TermSet([
                   (u'The time that an analyzer started a scan, relative to the'
                    u'start of the MS run.'),
                   'scan attribute',
-                  [u'scan attribute', u'PSM-level attribute', u'object attribute',
-                   u'single identification result attribute', u'identification attribute',
-                   u'analysis attribute', u'spectrum identification result details']),
+                  [u'scan attribute', u'PSM-level attribute', u'object attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
     ScanAttribute(u'zoom scan', u'MS:1000497',
                   (u'Special scan mode where data with improved resolution is'
                    u'acquired. This is typically achieved by scanning a more'
@@ -513,9 +515,7 @@ scan_attributes = TermSet([
     ScanAttribute(u'ion mobility attribute', u'MS:1002892',
                   (u'An attribute describing ion mobility searches.'),
                   'scan attribute',
-                  [u'scan attribute', u'PSM-level attribute', u'object attribute',
-                   u'single identification result attribute', u'identification attribute',
-                   u'analysis attribute', u'spectrum identification result details']),
+                  [u'scan attribute', u'PSM-level attribute', u'object attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
     ScanAttribute(u'scan number', u'MS:1003057',
                   (u'Ordinal number of the scan indicating its order of'
                    u'acquisition within a mass spectrometry acquisition run.'),
@@ -530,27 +530,21 @@ scan_attributes = TermSet([
                    u'that compensates for the difference between high and low'
                    u'field mobility of an ion.'),
                   'scan attribute',
-                  [u'ion mobility attribute', u'scan attribute', u'PSM-level attribute', u'object attribute',
-                   u'single identification result attribute', u'identification attribute', u'analysis attribute',
-                   u'spectrum identification result details']),
+                  [u'ion mobility attribute', u'scan attribute', u'PSM-level attribute', u'object attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
     ScanAttribute(u'ion mobility drift time', u'MS:1002476',
                   (u'Drift time of an ion or spectrum of ions as measured in an'
                    u'ion mobility mass spectrometer. This time might refer to the'
                    u'central value of a bin into which all ions within a narrow'
                    u'range of drift time have been aggregated.'),
                   'scan attribute',
-                  [u'ion selection attribute', u'ion mobility attribute', u'object attribute', u'scan attribute',
-                   u'PSM-level attribute', u'single identification result attribute', u'identification attribute',
-                   u'analysis attribute', u'spectrum identification result details']),
+                  [u'ion selection attribute', u'ion mobility attribute', u'object attribute', u'scan attribute', u'PSM-level attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
     ScanAttribute(u'inverse reduced ion mobility', u'MS:1002815',
                   (u'Ion mobility measurement for an ion or spectrum of ions as'
                    u'measured in an ion mobility mass spectrometer. This might'
                    u'refer to the central value of a bin into which all ions'
                    u'within a narrow range of mobilities have been aggregated.'),
                   'scan attribute',
-                  [u'ion selection attribute', u'ion mobility attribute', u'object attribute', u'scan attribute',
-                   u'PSM-level attribute', u'single identification result attribute', u'identification attribute',
-                   u'analysis attribute', u'spectrum identification result details']),
+                  [u'ion selection attribute', u'ion mobility attribute', u'object attribute', u'scan attribute', u'PSM-level attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
 ])
 # [[[end]]]
 
