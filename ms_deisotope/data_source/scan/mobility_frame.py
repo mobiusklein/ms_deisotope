@@ -194,6 +194,10 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             inst.data_arrays.update(data_arrays)
         return inst
 
+    @property
+    def drift_time(self):
+        return self.ion_mobility
+
     def has_array(self, array_type):
         '''Check if this array set contains an array of the
         requested type.
@@ -727,3 +731,204 @@ def features_to_peak_set(features):
     peak_set = DeconvolutedPeakSet(tuple(map(feature_to_peak, features)))
     peak_set.reindex()
     return peak_set
+
+
+class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
+    def __init__(self, loader, **kwargs):
+        self.loader = loader
+        self.initialize_frame_cache()
+
+    def _frame_acquisition_information(self, data):
+        return self.loader._acquisition_information(data)
+
+    def _frame_activation(self, data):
+        return self.loader._activation(data)
+
+    def _frame_id(self, data):
+        return self.loader._scan_id(data)
+
+    def _frame_index(self, data):
+        return self.loader._scan_index(data)
+
+    def _frame_time(self, data):
+        return self.loader._scan_time(data)
+
+    def _frame_ms_level(self, data):
+        return self.loader._ms_level(data)
+
+    def _frame_polarity(self, data):
+        return self.loader._polarity(data)
+
+    def _frame_isolation_window(self, data):
+        return self.loader._isolation_window(data)
+
+    def _frame_start_scan_index(self, data):
+        return self._frame_index(data)
+
+    def _frame_end_scan_index(self, data):
+        return self._frame_index(data) + 1
+
+    def _frame_arrays(self, data):
+        from ms_deisotope.data_source.metadata.scan_traits import binary_data_arrays
+
+        mz, intensity, data_arrays = self.loader._scan_arrays(data)
+        ion_mobility = None
+        ion_mobility_type = None
+        for key, value in data_arrays.items():
+            try:
+                acc = key.accession
+                term = binary_data_arrays[acc]
+            except (KeyError, AttributeError):
+                continue
+            if term.is_a('ion mobility array'):
+                ion_mobility = value
+                ion_mobility_type = key
+                break
+        if ion_mobility_type is None:
+            raise ValueError(
+                "Expected an ion mobility array type, but none were found.")
+        d = data_arrays.copy()
+        d.pop(ion_mobility_type)
+        array3d = RawDataArrays3D.from_arrays(
+            mz, intensity, ion_mobility, ion_mobility_type, d)
+        return array3d
+
+    def _frame_scans(self, data):
+        from ms_deisotope.data_source.metadata.scan_traits import ion_mobility_attribute
+
+        arrays = self._frame_arrays(data)
+        scan_id_base = self._frame_id(data)
+        i = 1
+        scans = []
+        for drift_time, arrays_i in arrays.unstack():
+            subdat = data.copy()
+            subdat['m/z array'] = arrays_i.mz
+            subdat['intensity array'] = arrays_i.intensity
+            subdat['id'] = scan_id_base + (' scan=%d' % i)
+            i += 1
+            scan = self.loader._make_scan(subdat)
+            acq = scan.acquisition_information
+            event = acq[0]
+            tp = event.ion_mobility_type
+            if tp:
+                event._ion_mobility.remove_ion_mobility_type(tp)
+            event._ion_mobility.add_ion_mobility(
+                ion_mobility_attribute, drift_time)
+            scans.append(scan)
+        return scans
+
+    def get_frame_by_index(self, index):
+        scan = self.loader.get_scan_by_index(index)
+        frame = self._make_frame(scan._data)
+        self._cache_frame(frame)
+        return frame
+
+    def get_frame_by_id(self, id):
+        scan = self.loader.get_scan_by_id(id)
+        frame = self._make_frame(scan._data)
+        self._cache_frame(frame)
+        return frame
+
+    def get_frame_by_time(self, time):
+        scan = self.loader.get_scan_by_time(time)
+        frame = self._make_frame(scan._data)
+        self._cache_frame(frame)
+        return frame
+
+
+class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
+    def __init__(self, loader, **kwargs):
+        self.loader = loader
+        self.initialize_frame_cache()
+
+    def _find_cycle_start(self, scan):
+        dt = scan.drift_time
+        if dt is None:
+            return scan
+        index = scan.index
+        best_scan = scan
+        while index >= 0:
+            prev = self.loader[index]
+            p_dt = prev.drift_time
+            if p_dt is None:
+                return best_scan
+            if p_dt < dt:
+                best_scan = scan
+            else:
+                return best_scan
+            index -= 1
+        return best_scan
+
+    def _collect_cycle(self, scan):
+        acc = []
+        orig_scan = scan
+        start_scan = self._find_cycle_start(scan)
+        dt = start_scan.drift_time
+        if dt is None:
+            raise ValueError("Could not find a start scan with drift time from %r" % (scan, ))
+        acc.append(start_scan)
+        index = start_scan.index + 1
+        while True:
+            next_scan = self.loader.get_scan_by_index(index)
+            next_dt = next_scan.drift_time
+            if next_dt is None:
+                break
+            if next_dt < dt:
+                break
+            dt = next_dt
+            acc.append(next_scan)
+            index += 1
+        return acc
+
+    def _frame_id(self, frame):
+        scans = self._frame_scans(frame)
+        return ','.join([s.id for s in scans])
+
+    def _frame_acquisition_information(self, data):
+        return self.loader._acquisition_information(data)
+
+    def _frame_activation(self, data):
+        scans = self._frame_scans(data)
+        return scans[0].activation
+
+    def _frame_index(self, data):
+        scans = self._frame_scans(data)
+        return scans[0].index
+
+    def _frame_time(self, data):
+        scans = self._frame_scans(data)
+        return scans[0].scan_time
+
+    def _frame_ms_level(self, data):
+        scans = self._frame_scans(data)
+        return scans[0].ms_level
+
+    def _frame_polarity(self, data):
+        scans = self._frame_scans(data)
+        return scans[0].polarity
+
+    def _frame_isolation_window(self, data):
+        scans = self._frame_scans(data)
+        return scans[0].isolation_window
+
+    def _frame_start_scan_index(self, data):
+        scans = self._frame_scans(data)
+        return scans[0].index
+
+    def _frame_end_scan_index(self, data):
+        scans = self._frame_scans(data)
+        return scans[-1].index + 1
+
+    def _frame_scans(self, data):
+        try:
+            return data['scans']
+        except KeyError:
+            pass
+        source_id = data['_source_scan_id']
+        scan = self.loader.get_scan_by_id(source_id)
+        scans = self._collect_cycle(scan)
+        data['scans'] = scans
+        return data['scans']
+
+    def get_scan_by_index(self, index):
+        return self.loader.get_scan_by_index(index)
