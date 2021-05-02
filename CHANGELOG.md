@@ -3,6 +3,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [v0.0.26] - Unreleased
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
 ## [v0.0.25] - 2021-5-02
 
 ### Added
@@ -180,8 +195,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.24...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.25...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.24]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.25
 [v0.0.24]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.24
 [v0.0.23]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.23rc
 [v0.0.22]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.22
