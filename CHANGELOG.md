@@ -3,18 +3,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [Unreleased]
+## [v0.0.25] - 2021-5-02
 
 ### Added
-1.
+1. Added `has_array` method to `RawDataArrays` and `RawDataArrays3D` to semantically query whether an
+    array collection has an array of a particular type (like a flavor of ion mobility) without iteratively
+    probing.
+2. Added `ms_deisotope.data_source.scan.mobility_frame.Generic3DIonMobilityFrameSource` which can serve a
+   ion mobility-aware data structure when there is a profile-mode m/z, intensity and ion mobility array
+   in a single spectrum like the one produced by MSConvert's combine-ion-mobility-spectra option.
 
 ### Changed
+1. `Scan.plot` will automatically call `pick_peaks` if `not self.is_profile and self.peak_set is None` to avoid
+   unexpectedly ending up without a plot in this common scenario.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+1. Fixed Docker container build process to use latest released versions of libraries.
 
 ### Security
 
