@@ -36,12 +36,13 @@ metadata that :class:`~.MzMLSerializer` writes to an external file.
 
 '''
 import os
+import hashlib
 from collections import OrderedDict
 try:
     from collections import Sequence, Mapping
 except ImportError:
     from collections.abc import Sequence, Mapping
-from uuid import uuid4
+from uuid import uuid4, UUID
 import warnings
 
 import numpy as np
@@ -1330,7 +1331,16 @@ class ProcessedMzMLLoader(PeakSetDeserializingMixin, MzMLLoader, ScanDeserialize
     def _make_sample_run(self):
         samples = self.samples()
         sample = samples[0]
-        return SampleRun(name=sample.name, uuid=sample['SampleRun-UUID'], **dict(sample.items()))
+        uuid_from_sample = None
+        try:
+            uuid_from_sample = sample['SampleRun-UUID']
+        except KeyError:
+            try:
+                source_name = self.source_file_name
+            except AttributeError:
+                source_name = str(self)
+            uuid_from_sample = str(UUID(hashlib.new('md5', source_name).hexdigest()))
+        return SampleRun(name=sample.name, uuid=uuid_from_sample, **dict(sample.items()))
 
     @property
     def sample_run(self):
