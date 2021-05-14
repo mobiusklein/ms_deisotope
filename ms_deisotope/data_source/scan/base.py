@@ -1663,7 +1663,7 @@ class PlottingMethods(object):
         return ax
 
     def __call__(self, ax=None, **kwargs):
-        return self._guess()
+        return self._guess(ax=ax, **kwargs)
 
 
 try:
