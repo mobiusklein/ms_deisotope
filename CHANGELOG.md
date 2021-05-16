@@ -6,8 +6,13 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [v0.0.26] - Unreleased
 
 ### Added
+1. Add `ion_mobility_type` property to `ScanBase` to allow checking ion mobility type on the scan object itself.
+2. Add a prototype `FAIMSFilter` and `FAIMSDemultiplexingIterator` to `data_source.query`.
+3. Add a new examples set to the repository showing other ways to use the library's features.
 
 ### Changed
+1. Ensure that any lingering MSn scans are flushed with the final MS1 scan when an interleaved scan iteration
+   strategy is wrapping up.
 
 ### Deprecated
 
