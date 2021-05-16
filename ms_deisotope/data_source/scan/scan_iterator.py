@@ -195,6 +195,9 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         if None in self.product_mapping:
             products += self.product_mapping.pop(None, [])
         if flush_products:
+            if self.product_mapping:
+                warnings.warn("Lingering Product Sets For %r!" %
+                              (list(self.product_mapping), ))
             for _, value in self.product_mapping.items():
                 products += value
             self.product_mapping.clear()
@@ -260,9 +263,6 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         if self.ms1_buffer:
             yield self.deque_group(flush_products=True)
 
-        if self.product_mapping:
-            warnings.warn("Lingering Product Sets For %r!" %
-                          (list(self.product_mapping), ))
 
 
 class MSEIterator(_GroupedScanIteratorImpl):
