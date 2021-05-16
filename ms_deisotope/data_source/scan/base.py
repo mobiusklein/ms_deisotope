@@ -384,6 +384,21 @@ class ScanBase(object):
         return scan_event.has_ion_mobility()
 
     @property
+    def ion_mobility_type(self):
+        """Fetch the ion mobility type of the scan.
+
+        Returns
+        -------
+        ims_type: :class:`ScanAttribute` or :const:`None`
+            The ion mobility type, or :const:`None`
+        """
+        acq = self.acquisition_information
+        if acq is None:
+            return None
+        scan_event = acq[0]
+        return scan_event.ion_mobility_type
+
+    @property
     def drift_time(self):
         '''A convenience method to access the first
         scan event to retrieve its drift time.
