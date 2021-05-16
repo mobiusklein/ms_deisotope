@@ -189,11 +189,15 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         self.product_mapping = defaultdict(list)
         self.passed_first_ms1 = False
 
-    def deque_group(self):
+    def deque_group(self, flush_products=False):
         precursor = self.ms1_buffer.popleft()
         products = self.product_mapping.pop(precursor.id, [])
         if None in self.product_mapping:
             products += self.product_mapping.pop(None, [])
+        if flush_products:
+            for _, value in self.product_mapping.items():
+                products += value
+            self.product_mapping.clear()
         precursor.product_scans = products
         if not self.passed_first_ms1 and self.ms1_buffer:
             current_ms1_time = precursor.scan_time
@@ -249,8 +253,13 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
             else:
                 raise ValueError("Could not interpret MS Level %r" %
                                  (packed.ms_level,))
-        while self.ms1_buffer:
+
+        while len(self.ms1_buffer) > 1:
             yield self.deque_group()
+
+        if self.ms1_buffer:
+            yield self.deque_group(flush_products=True)
+
         if self.product_mapping:
             warnings.warn("Lingering Product Sets For %r!" %
                           (list(self.product_mapping), ))
