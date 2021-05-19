@@ -6,7 +6,7 @@ import hashlib
 import json
 
 from collections import defaultdict
-from threading import RLock, Thread
+from threading import RLock, Thread, local
 
 import idzip
 
@@ -160,6 +160,9 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
             base = member.split("/")[-1]
             if base.startswith(run_name):
                 result.append(member)
+            elif base.endswith("json"):
+                if base.startswith(run_name.rsplit(".", 1)[0]):
+                    result.append(member)
         # Validate that there is only one MS file for the name
         i = 0
         for res in sorted(result):
@@ -200,6 +203,9 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
         raise NotImplementedError()
 
     def open_ms_file(self, mzml_uri, index_uri=None):
+        if mzml_uri in self.cache:
+            logger.info("Found %r in the cache", mzml_uri)
+            return self.cache[mzml_uri]
         logger.info("Opening %r", mzml_uri)
         mzml_fh = self._opener(mzml_uri)
         if mzml_uri.endswith("gz"):
@@ -210,7 +216,9 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
         else:
             logger.warning("Byte offset index is missing for %r", mzml_uri)
         reader = ms_deisotope.MSFileLoader(mzml_fh, index_file=index_fh)
+        logger.info("Finished opening %r", mzml_uri)
         lock = RLock()
+        self.cache[mzml_uri] = (reader, lock)
         return reader, lock
 
     def list_collections(self):
@@ -329,6 +337,11 @@ class FSMassSpectraDataArchive(MassSpectraDataArchiveBase):
     def _opener(self, uri, block_size=None, **kwargs):
         return get_opener(uri)
 
+    def _datafile_uri(self, dataset_id, data_file):
+        if os.sep in self.base_uri or os.sep in data_file:
+            return os.path.join(self.base_uri, data_file)
+        return '/'.join([self.base_uri, data_file])
+
     def _traverse_files(self, file_types, index):
         for prefix, dirs, files in os.walk(self.base_uri):
             if os.sep in prefix:
@@ -346,6 +359,51 @@ class FSMassSpectraDataArchive(MassSpectraDataArchiveBase):
                     ext = f.rsplit(".", 2)[1]
                 if ext in file_types:
                     index[base].append(os.path.join(prefix, f))
+
+
+class S3MassSpectraDataArchive(MassSpectraDataArchiveBase):
+    def __init__(self, base_uri, cache_size=None, s3_args=None, **kwargs):
+        if s3_args is None:
+            s3_args = {}
+        self._tls = local()
+        self.s3_args = s3_args
+        super(S3MassSpectraDataArchive, self).__init__(
+            base_uri=base_uri, cache_size=cache_size, **kwargs)
+
+    @property
+    def s3_service(self):
+        try:
+            return self._tls.s3_service
+        except (AttributeError, KeyError):
+            from s3fs import S3FileSystem
+            self._tls.s3_service = S3FileSystem(**self.s3_args)
+            return self._tls.s3_service
+
+    def _opener(self, uri, block_size=None, **kwargs):
+        if block_size is None:
+            block_size = BLOCK_SIZE
+        return self.s3_service.open(uri, block_size=block_size)
+
+    def _datafile_uri(self, dataset_id, data_file):
+        return "s3://" + data_file
+
+    def _traverse_files(self, file_types, index):
+        for prefix, _dirs, files in self.s3_service.walk(self.base_uri):
+            for f in files:
+                query = f
+                if query.endswith(".gz"):
+                    query = query[:-3]
+                ext = query.rsplit(".", 1)[-1]
+                for t in file_types:
+                    if t == ext:
+                        index[prefix.replace(self.base_uri, '')].append(
+                            prefix + '/' + f)
+                        break
+        for group, members in list(index.items()):
+            if "/" in group:
+                base, _rest = group.split("/", 1)
+                index[base].extend(members)
+                index.pop(group)
 
 
 class ScanProcessingMixin(object):
