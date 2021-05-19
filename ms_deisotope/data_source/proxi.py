@@ -12,6 +12,7 @@ import idzip
 
 import ms_deisotope
 from ms_deisotope.utils import LRUDict
+from ms_deisotope.data_source._compression import get_opener
 from ms_deisotope.data_source.usi import USI
 
 
@@ -71,15 +72,16 @@ class PROXIDatasetAPIMixinBase(object):
 class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
     valid_file_types = ['mzML', 'mzXML', 'mgf', 'mzMLb']
 
-    def __init__(self, cache_size=None, **kwargs):
+    def __init__(self, base_uri, cache_size=None, **kwargs):
         if cache_size is None:
             cache_size = 1
+        self.base_uri = base_uri
         self.cache = LRUDict(cache_size=cache_size)
         self.index = self.build_index()
         self.monitor_thread = self.monitor_index(
             kwargs.get("update_frequency"))
 
-    def _monitor_index(self, update_frequency: float = None):
+    def _monitor_index(self, update_frequency=None):
         if update_frequency is None:
             # Default to one hour, 60^2 seconds
             update_frequency = 60.0 ** 2
@@ -90,22 +92,20 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
             logger.info("Rebuilding Index!")
             self.index = self.build_index(use_cache=False)
 
-    def monitor_index(self, update_frequency: float = None):
+    def monitor_index(self, update_frequency=None):
         update_thread = Thread(
             target=self._monitor_index,
-            args=(update_frequency, ), daemon=True)
+            args=(update_frequency, ))
+        update_thread.daemon = True
         update_thread.start()
         return update_thread
 
     def _checksum(self, string):
         return hashlib.new("md5", string).hexdigest()
 
-    def build_index(self, use_cache=True):
-        raise NotImplementedError()
-
-    def _find_index_cache(self, path, use_cache=True):
+    def _find_index_cache(self, use_cache=True):
         cache_name = hashlib.md5(
-            path.encode('utf8')).hexdigest() + '.json'
+            self.base_uri.encode('utf8')).hexdigest() + '.json'
         if os.path.exists(cache_name) and use_cache:
             logger.info("Reading cache from %r", cache_name)
             try:
@@ -116,10 +116,10 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
                 logger.error("Failed to read index from disk", exc_info=True)
         return cache_name, None
 
-    def _build_index(self, path, use_cache=True):
+    def build_index(self, use_cache=True):
         file_types = self.valid_file_types + ['json']
 
-        cache_name, index = self._find_index_cache(path, use_cache=use_cache)
+        cache_name, index = self._find_index_cache(use_cache=use_cache)
         if index is not None and use_cache:
             return index
 
@@ -144,6 +144,7 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
                 json.dump(index, fh, indent=2, sort_keys=True)
         except IOError:
             logger.error("Failed to write index to disk", exc_info=True)
+        return index
 
     def _traverse_files(self, file_types, index):
         raise NotImplementedError()
@@ -322,6 +323,29 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
 
     def __call__(self, usi):
         return self.handle_usi(usi)
+
+
+class FSMassSpectraDataArchive(MassSpectraDataArchiveBase):
+    def _opener(self, uri, block_size=None, **kwargs):
+        return get_opener(uri)
+
+    def _traverse_files(self, file_types, index):
+        for prefix, dirs, files in os.walk(self.base_uri):
+            if os.sep in prefix:
+                tokens = prefix.split(os.sep)
+            else:
+                tokens = prefix.split("/")
+            if tokens[-1] == '':
+                base = tokens[-2]
+            else:
+                base = tokens[-1]
+
+            for f in files:
+                ext = f.rsplit(".", 1)[1]
+                if ext == 'gz':
+                    ext = f.rsplit(".", 2)[1]
+                if ext in file_types:
+                    index[base].append(os.path.join(prefix, f))
 
 
 class ScanProcessingMixin(object):
