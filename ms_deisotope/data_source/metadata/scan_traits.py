@@ -747,37 +747,99 @@ binary_data_arrays = TermSet([
          'binary data array',
          [u'binary data array']),
     Term(u'ion mobility array', u'MS:1002893',
-         (u'An array of ion mobility data.'),
+         (u'Abstract array of ion mobility data values. A more specific'
+          u'child term concept should be specified in data files to make'
+          u'precise the nature of the data being provided.'),
          'binary data array',
          [u'binary data array']),
     Term(u'mass array', u'MS:1003143',
          (u'A data array of mass values.'),
          'binary data array',
          [u'binary data array']),
-    Term(u'mean drift time array', u'MS:1002477',
-         (u'Array of drift times, averaged from a matrix of binned m/z'
-          u'and drift time values, corresponding to spectrum of'
-          u'individual peaks encoded with an m/z array.'),
+    Term(u'scanning quadrupole position lower bound m/z array', u'MS:1003157',
+         (u'Array of m/z values representing the lower bound m/z of the'
+          u'quadrupole position at each point in the spectrum.'),
+         'binary data array',
+         [u'binary data array']),
+    Term(u'scanning quadrupole position upper bound m/z array', u'MS:1003158',
+         (u'Array of m/z values representing the upper bound m/z of the'
+          u'quadrupole position at each point in the spectrum.'),
+         'binary data array',
+         [u'binary data array']),
+    Term(u'mean ion mobility drift time array', u'MS:1002477',
+         (u'Array of population mean ion mobility values from a drift'
+          u'time device, reported in seconds (or milliseconds),'
+          u'corresponding to a spectrum of individual peaks encoded with'
+          u'an m/z array.'),
          'binary data array',
          [u'ion mobility array', u'binary data array']),
     Term(u'mean ion mobility array', u'MS:1002816',
-         (u'Array of drift times, averaged from a matrix of binned m/z'
-          u'and ion mobility values, corresponding to a spectrum of'
-          u'individual peaks encoded with an m/z array.'),
+         (u'Array of population mean ion mobility values (K or K0) based'
+          u'on ion separation in gaseous phase due to different ion'
+          u'mobilities under an electric field based on ion size, m/z'
+          u'and shape, corresponding to a spectrum of individual peaks'
+          u'encoded with an m/z array.'),
          'binary data array',
          [u'ion mobility array', u'binary data array']),
     Term(u'mean inverse reduced ion mobility array', u'MS:1003006',
-         (u'Array of inverse reduced ion mobilities, averaged from a'
-          u'matrix of binned m/z and ion mobility values, corresponding'
-          u'to a spectrum of individual peaks encoded with an m/z array.'),
+         (u'Array of population mean ion mobility values based on ion'
+          u'separation in gaseous phase due to different ion mobilities'
+          u'under an electric field based on ion size, m/z and shape,'
+          u'normalized for the local conditions and reported in volt-'
+          u'second per square centimeter, corresponding to a spectrum of'
+          u'individual peaks encoded with an m/z array.'),
          'binary data array',
          [u'ion mobility array', u'binary data array']),
     Term(u'raw ion mobility array', u'MS:1003007',
-         (u'Array of raw drift times.'),
+         (u'Array of raw ion mobility values (K or K0) based on ion'
+          u'separation in gaseous phase due to different ion mobilities'
+          u'under an electric field based on ion size, m/z and shape,'
+          u'corresponding to a spectrum of individual peaks encoded with'
+          u'an m/z array.'),
          'binary data array',
          [u'ion mobility array', u'binary data array']),
     Term(u'raw inverse reduced ion mobility array', u'MS:1003008',
-         (u'Array of raw inverse reduced ion mobilities.'),
+         (u'Array of raw ion mobility values based on ion separation in'
+          u'gaseous phase due to different ion mobilities under an'
+          u'electric field based on ion size, m/z and shape, normalized'
+          u'for the local conditions and reported in volt-second per'
+          u'square centimeter, corresponding to a spectrum of individual'
+          u'peaks encoded with an m/z array.'),
+         'binary data array',
+         [u'ion mobility array', u'binary data array']),
+    Term(u'raw ion mobility drift time array', u'MS:1003153',
+         (u'Array of raw ion mobility values from a drift time device,'
+          u'reported in seconds (or milliseconds), corresponding to a'
+          u'spectrum of individual peaks encoded with an m/z array.'),
+         'binary data array',
+         [u'ion mobility array', u'binary data array']),
+    Term(u'deconvoluted ion mobility array', u'MS:1003154',
+         (u'Array of ion mobility values (K or K0) based on ion'
+          u'separation in gaseous phase due to different ion mobilities'
+          u'under an electric field based on ion size, m/z and shape, as'
+          u'an average property of an analyte post peak-detection,'
+          u'weighted charge state reduction, and/or adduct aggregation,'
+          u'corresponding to a spectrum of individual peaks encoded with'
+          u'an m/z array.'),
+         'binary data array',
+         [u'ion mobility array', u'binary data array']),
+    Term(u'deconvoluted inverse reduced ion mobility array', u'MS:1003155',
+         (u'Array of ion mobility values based on ion separation in'
+          u'gaseous phase due to different ion mobilities under an'
+          u'electric field based on ion size, m/z and shape, normalized'
+          u'for the local conditions and reported in volt-second per'
+          u'square centimeter, as an average property of an analyte post'
+          u'peak-detection, weighted charge state reduction, and/or'
+          u'adduct aggregation, corresponding to a spectrum of'
+          u'individual peaks encoded with an m/z array.'),
+         'binary data array',
+         [u'ion mobility array', u'binary data array']),
+    Term(u'deconvoluted ion mobility drift time array', u'MS:1003156',
+         (u'Array of mean ion mobility values from a drift time device,'
+          u'reported in seconds (or milliseconds), as an average'
+          u'property of an analyte post peak-detection, weighted charge'
+          u'state reduction, and/or adduct aggregation, corresponding to'
+          u'a spectrum of individual peaks encoded with an m/z array.'),
          'binary data array',
          [u'ion mobility array', u'binary data array']),
 ])
