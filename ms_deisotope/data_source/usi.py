@@ -65,7 +65,7 @@ class _PROXIScanSource(ScanDataSource):
         return None
 
 
-class PROXIService(_PROXIScanSource):
+class PROXIServiceClient(_PROXIScanSource):
     def __init__(self, backend='peptide_atlas'):
         self.backend = backend
 
@@ -81,8 +81,8 @@ class PROXIService(_PROXIScanSource):
         return "{self.__class__.__name__}({self.backend})".format(self=self)
 
 
-peptide_atlas = PROXIService("peptide_atlas")
-massive = PROXIService("massive")
-pride = PROXIService("pride")
+peptide_atlas = PROXIServiceClient("peptide_atlas")
+massive = PROXIServiceClient("massive")
+pride = PROXIServiceClient("pride")
 
 parse = USI.parse
