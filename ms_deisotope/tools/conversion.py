@@ -248,7 +248,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
                 write_index=write_index, update_metadata=update_metadata)
 
 
-if MzMLbSerializer is not None:
+try:
     from psims.mzmlb.writer import DEFAULT_COMPRESSOR
     @ms_conversion.command("mzmlb", short_help="Convert a mass spectrometry data file to mzMLb")
     @click.argument("source")
@@ -290,6 +290,8 @@ if MzMLbSerializer is not None:
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
                 write_index=write_index, update_metadata=update_metadata,
                 writer_type=MzMLbSerializer, compression=compression)
+except ImportError:
+    pass
 
 
 if is_debug_mode():
