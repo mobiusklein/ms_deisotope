@@ -66,6 +66,9 @@ class _PROXIScanSource(ScanDataSource):
 
 
 class PROXIServiceClient(_PROXIScanSource):
+    '''A :class:`~.ScanDataSource` client that provides random access to individual spectra
+    by USI.
+    '''
     def __init__(self, backend='peptide_atlas'):
         self.backend = backend
 
