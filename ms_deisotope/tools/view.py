@@ -29,7 +29,7 @@ except ImportError:
     import tkinter.filedialog as tkfiledialog
 
 import ms_deisotope
-from ms_deisotope.data_source import ScanBunch
+from ms_deisotope.data_source import ScanBunch, ChargeNotProvided
 from ms_deisotope.peak_set import EnvelopePair
 from ms_deisotope.plot import (draw_raw, draw_peaklist, annotate_isotopic_peaks)
 
@@ -244,7 +244,7 @@ class SpectrumViewer(_BaseFrame):
         min_charge_state = self.min_charge_state_var.get()
         if self.scan.ms_level > 1:
             prec_charge = self.scan.precursor_information.charge
-            if prec_charge:
+            if prec_charge and prec_charge != ChargeNotProvided:
                 max_charge_state = prec_charge
                 if prec_charge < 0:
                     min_charge_state = -abs(min_charge_state)
