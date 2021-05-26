@@ -1,4 +1,4 @@
-from pyteomics.usi import USI, proxi
+from pyteomics.usi import USI, proxi, _PROXIBackend
 
 from .scan import ScanDataSource, Scan, RawDataArrays, PrecursorInformation, ChargeNotProvided
 from .metadata.scan_traits import IsolationWindow
@@ -68,16 +68,71 @@ class _PROXIScanSource(ScanDataSource):
 class PROXIServiceClient(_PROXIScanSource):
     '''A :class:`~.ScanDataSource` client that provides random access to individual spectra
     by USI.
+
+    Attributes
+    ----------
+    backend : str or :class:`pyteomics.usi._PROXIBackend`
+        The server to fetch spectra from. If a name is given, the server will
+        be inferred, else if a URL template is given, a new :class:`pyteomics.usi._PROXIBackend`
+        is created from it.
     '''
     def __init__(self, backend='peptide_atlas'):
-        self.backend = backend
+        self.backend = self._make_backend(backend)
+
+    def _make_backend(self, backend):
+        if isinstance(backend, _PROXIBackend):
+            return backend
+        if isinstance(backend, str):
+            # We're given a URL
+            if backend.startswith("http"):
+                return _PROXIBackend(backend, backend)
+        return backend
 
     def get_scan_by_id(self, scan_id):
+        '''Get a spectrum by USI from the server.
+
+        Parameters
+        ----------
+        scan_id : str
+            The USI to fetch.
+
+
+        Returns
+        -------
+        Scan
+        '''
         payload = proxi(scan_id, self.backend)
         payload[USI_KEY] = scan_id
         return self._make_scan(payload)
 
     def get(self, usi):
+        '''Get a spectrum by USI from the server.
+
+        Parameters
+        ----------
+        scan_id : str
+            The USI to fetch.
+
+
+        Returns
+        -------
+        Scan
+        '''
+        return self.get_scan_by_id(usi)
+
+    def __call__(self, usi):
+        '''Get a spectrum by USI from the server.
+
+        Parameters
+        ----------
+        scan_id : str
+            The USI to fetch.
+
+
+        Returns
+        -------
+        Scan
+        '''
         return self.get_scan_by_id(usi)
 
     def __repr__(self):
