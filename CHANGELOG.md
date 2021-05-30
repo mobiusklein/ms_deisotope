@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Changed
 1. Ensure that any lingering MSn scans are flushed with the final MS1 scan when an interleaved scan iteration
    strategy is wrapping up.
+2. Made `LCMSFeatureProcessor` substantially faster and more memory efficient during dependence graph solving
+   by introducing a Cython implementation. The solver is still vulnerable to high density noise clusters slowing
+   it down, but will no longer completely OOM when these are wide enough.
 
 ### Deprecated
 
