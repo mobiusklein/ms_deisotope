@@ -152,6 +152,8 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
     def find_ms_files_for(self, dataset, run_name):
         result = []
         members = self.index.get(dataset)
+        if run_name is None:
+            return members
 
         if members is None:
             raise ValueError("DatasetNotAvailable")
@@ -287,6 +289,8 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
 
     def build_response(self, usi, scan):
         payload = {
+            "usi": str(usi),
+            "status": "READABLE",
             "attributes": [
                 {"accession": "MS:1000511", "name": "ms level",
                     "value": str(scan.ms_level)},
@@ -315,6 +319,9 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
                     "value": str(charge),
                 })
         return payload
+
+    def enumerate_spectra_for(self, dataset, ms_run=None):
+        pass
 
     def handle_usi(self, usi, convert_json=True):
         usi = USI.parse(str(usi))
