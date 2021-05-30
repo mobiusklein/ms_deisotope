@@ -16,7 +16,7 @@ ARG MS_DEISOTOPE_VERSION=master
 
 # Install heavy dependencies
 RUN pip install ms_peak_picker
-RUN pip install ms_deisotope==git+https://github.com/mobiusklein/ms_deisotope.git@${MS_DEISOTOPE_VERSION}
+RUN pip install git+https://github.com/mobiusklein/ms_deisotope.git@${MS_DEISOTOPE_VERSION}
 
 ENV PYTHONUNBUFFERED 1
 
