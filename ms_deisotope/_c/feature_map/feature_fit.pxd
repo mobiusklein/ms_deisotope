@@ -10,6 +10,14 @@ cdef class map_coord:
         public double mz
         public double time
 
+    cdef bint ge(self, map_coord other)
+    cdef bint le(self, map_coord other)
+
+    @staticmethod
+    cdef map_coord _create(double mz, double time)
+
+    cpdef map_coord copy(self)
+
 
 cdef class LCMSFeatureSetFit(object):
     cdef:
@@ -34,6 +42,9 @@ cdef class LCMSFeatureSetFit(object):
 
     cpdef int count_null_features(self)
     cpdef bint has_multiple_real_features(self)
+
+    cdef map_coord get_start(self)
+    cdef map_coord get_end(self)
 
     @staticmethod
     cdef LCMSFeatureSetFit _create(list features, TheoreticalIsotopicPattern theoretical,
