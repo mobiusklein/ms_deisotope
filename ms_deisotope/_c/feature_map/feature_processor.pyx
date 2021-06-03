@@ -249,6 +249,9 @@ cdef int has_no_valid_features(list features):
     return cnt == n
 
 
+cdef size_t MAX_COMBINATIONS = 10000 / 2
+
+
 cdef class LCMSFeatureProcessorBase(object):
     cdef:
         public LCMSFeatureMap feature_map
@@ -448,7 +451,9 @@ cdef class LCMSFeatureProcessorBase(object):
             if features is None:
                 break
             combn_i += 1
-            if combn_i % (100000) == 0:
+            if combn_i > MAX_COMBINATIONS:
+                break
+            elif combn_i % (100000) == 0:
                 print("\t%d combinations have been considered for m/z %0.3f at charge %d in %s (%0.2f%%)" % (
                     combn_i, mz, charge, "-" if feature is None else (
                         "%0.2f-%0.2f" % (feature.start_time, feature.end_time)),
