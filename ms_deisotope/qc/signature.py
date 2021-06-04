@@ -150,8 +150,11 @@ TMT10_INFO = [
     TMTInfo('TMT10-130N', 229.162932, 129.12754853323, 116.12419153323),
     TMTInfo('TMT10-130C', 229.162932, 129.13386853323, 117.13386453323001),
     TMTInfo('TMT10-131', 229.162932, 130.13090353323, 118.13089953323001),
-    TMTInfo('TMT11-131C', 229.162932, 130.13722253323, 117.13386453323001),
 ]
+
+TMT11_INFO = TMT10_INFO[:]
+TMT11_INFO.append(
+    TMTInfo('TMT11-131C', 229.162932, 130.13722253323, 117.13386453323001))
 
 
 class SignatureIonExtractor(SignatureIonDetector):
@@ -183,6 +186,7 @@ class SignatureIonExtractor(SignatureIonDetector):
 
 class TMTReporterExtractor(SignatureIonExtractor):
     TMT_REAGENTS = {
+        "tmt11": TMT11_INFO,
         "tmt10": TMT10_INFO,
         "tmt2": TMT2_INFO,
         "tmt6": TMT6_INFO,
