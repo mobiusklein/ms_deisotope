@@ -188,12 +188,27 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         self.ms1_buffer = deque()
         self.product_mapping = defaultdict(list)
         self.passed_first_ms1 = False
+        self.highest_ms_level = 0
 
     def deque_group(self, flush_products=False):
         precursor = self.ms1_buffer.popleft()
         products = self.product_mapping.pop(precursor.id, [])
         if None in self.product_mapping:
             products += self.product_mapping.pop(None, [])
+        # Look for MSn for n > 2
+        if self.highest_ms_level > 2:
+            extra_blocks = [products]
+            for _ in range(self.highest_ms_level - 2):
+                new_block = []
+                for prod in extra_blocks[-1]:
+                    new_block.extend(self.product_mapping.pop(prod.id, []))
+                if not new_block:
+                    break
+                extra_blocks.append(new_block)
+            if len(extra_blocks) > 1:
+                products = extra_blocks[0]
+                for block in extra_blocks[1:]:
+                    products.extend(block)
         if flush_products:
             if self.product_mapping:
                 warnings.warn("Lingering Product Sets For %r!" %
@@ -205,7 +220,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         if not self.passed_first_ms1 and self.ms1_buffer:
             current_ms1_time = precursor.scan_time
             next_ms1_time = self.ms1_buffer[0].scan_time
-            for prec_id, prods in list(self.product_mapping.items()):
+            for _prec_id, prods in list(self.product_mapping.items()):
                 for prod in prods:
                     if current_ms1_time <= prod.scan_time <= next_ms1_time:
                         products.append(prod)
@@ -245,6 +260,9 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
                 # inceasing ms level
                 if current_level < packed.ms_level:
                     current_level = packed.ms_level
+                    if current_level > self.highest_ms_level:
+                        self.highest_ms_level = current_level
+
                 # decreasing ms level
                 elif current_level > packed.ms_level:
                     current_level = packed.ms_level
@@ -266,7 +284,8 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
 
 
 class MSEIterator(_GroupedScanIteratorImpl):
-    def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None, scan_cacher=None):
+    def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None,
+                 scan_cacher=None):
         super(MSEIterator, self).__init__(
             iterator, scan_packer, scan_validator, scan_cacher)
         self.low_energy_config = low_energy_config
