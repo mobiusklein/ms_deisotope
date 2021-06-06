@@ -3,7 +3,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [v0.0.26] - Unreleased
+## [v0.0.27] - Unreleased
+
+### Added
+1. Added TMT11 to `ms_deisotope.qc.signature`.
+
+### Changed
+1. Made `LCMSFeatureProcessor` consider fewer cominbations of feature sets, lowering the upper bound on the
+   combinations. Such cases that required this should be quite rare.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Iterating over MS3-containing datasets in grouped mode will now properly group MS3 spectra with their MS2
+   spectra. Applies for higher exponentiated MSn as well.
+
+### Security
+
+
+## [v0.0.26] - 2021-5-30
 
 ### Added
 1. Add `ion_mobility_type` property to `ScanBase` to allow checking ion mobility type on the scan object itself.
@@ -203,9 +223,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.25...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.26...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[v0.0.24]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.25
+[v0.0.26]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.26
+[v0.0.25]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.25
 [v0.0.24]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.24
 [v0.0.23]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.23rc
 [v0.0.22]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.22
