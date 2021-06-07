@@ -351,7 +351,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
     @classmethod
     def empty(cls):
-        return cls(np.array(), np.array())
+        return cls(np.array([]), np.array([]))
 
     def __getitem__(self, i):
         if isinstance(i, int):
@@ -1309,6 +1309,22 @@ class PeakSetMethods(_SequenceABC):
             if hasattr(self.scan, 'has_peak'):
                 return False
             return isinstance(self.scan, _SequenceABC)
+
+    def get_nearest_peak(self, m):
+        if self.is_deconvoluted:
+            return self._get_deconvoluted().get_nearest_peak(m)
+        elif self.is_centroided:
+            return self._get_centroided().get_nearest_peak(m)
+        elif self.is_scan:
+            self.scan.pick_peaks()
+            self.is_centroided = self._is_centroided()
+            return self._get_centroided().get_nearest_peak(m)
+        elif self.is_raw_sequence:
+            if not hasattr(self.scan, 'get_nearest_peak'):
+                raise NotImplementedError()
+            return self.scan.get_nearest_peak(m)
+        else:
+            raise NotImplementedError()
 
     def has_peak(self, m, error_tolerance=2e-5):
         """Search the most refined representation available for a peak at the

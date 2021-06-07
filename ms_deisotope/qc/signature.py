@@ -174,8 +174,8 @@ class SignatureIonExtractor(SignatureIonDetector):
             for sig in self.signature_ions:
                 result[sig.name] = 0
                 for mz in sig.iter_mz():
-                    matches = peak_list.all_peaks_for(mz, error_tolerance)
-                    for match in matches:
+                    match, error = peak_list.get_nearest_peak(mz)
+                    if abs(error) / mz < error_tolerance:
                         result[sig.name] += match.intensity
         return result
 
