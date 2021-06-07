@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 1. Added TMT11 to `ms_deisotope.qc.signature`.
 
 ### Changed
-1. Made `LCMSFeatureProcessor` consider fewer cominbations of feature sets, lowering the upper bound on the
+1. Made `LCMSFeatureProcessor` consider fewer combinations of feature sets, lowering the upper bound on the
    combinations. Such cases that required this should be quite rare.
 
 ### Deprecated
