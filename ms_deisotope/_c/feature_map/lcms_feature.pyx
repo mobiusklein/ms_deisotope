@@ -289,7 +289,8 @@ cdef class LCMSFeatureTreeNode(LCMSFeatureTreeNodeBase):
 
     cpdef _recalculate(self):
         self._calculate_most_abundant_member()
-        self._mz = self._most_abundant_member.mz
+        if self._most_abundant_member is not None:
+            self._mz = self._most_abundant_member.mz
 
     @property
     def mz(self):

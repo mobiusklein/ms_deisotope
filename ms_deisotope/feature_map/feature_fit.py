@@ -131,9 +131,10 @@ class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
 
     def _recalculate(self):
         self._calculate_most_abundant_member()
-        self._mz = self._most_abundant_member.mz
-        self._neutral_mass = self._most_abundant_member.neutral_mass
-        self.charge = self._most_abundant_member.charge
+        if self._most_abundant_member is not None:
+            self._mz = self._most_abundant_member.mz
+            self._neutral_mass = self._most_abundant_member.neutral_mass
+            self.charge = self._most_abundant_member.charge
 
     @property
     def neutral_mass(self):
@@ -156,6 +157,10 @@ class DeconvolutedLCMSFeature(LCMSFeature):
         self.n_features = n_features
         self.supporters = supporters
         super(DeconvolutedLCMSFeature, self).__init__(nodes, adducts, used_as_adduct, feature_id=feature_id)
+
+    def __reduce__(self):
+        return self.__class__, (self.nodes, self.charge, self.adducts,
+                                self.used_as_adduct, self.score, self.feature_id, self.supporters)
 
     @property
     def precursor_information(self):
