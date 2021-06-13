@@ -797,13 +797,9 @@ class MzMLSerializer(ScanSerializerBase):
             envelope_array = envelopes_to_array(
                 [peak.envelope for peak in scan.deconvoluted_peak_set])
             extra_arrays.append(("isotopic envelopes array", envelope_array))
-            if score_array and isinstance(scan.deconvoluted_peak_set, IonMobilityDeconvolutedPeak):
-                extra_arrays.append(('mean drift time array', [
-                    peak.drift_time for peak in scan.deconvoluted_peak_set
-                ]))
         else:
             if scan.arrays.data_arrays:
-                extra_arrays.extend(scan.arrays.data_arrays.items())
+                extra_arrays.extend(sorted(scan.arrays.data_arrays.items()))
         return extra_arrays
 
     def _get_annotations(self, scan):
@@ -817,6 +813,36 @@ class MzMLSerializer(ScanSerializerBase):
                 key: value
             })
         return annotations
+
+    def _get_peak_data(self, scan, kwargs):
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
+        if deconvoluted:
+            centroided = True
+            peak_data = scan.deconvoluted_peak_set
+        elif scan.peak_set:
+            centroided = True
+            peak_data = scan.peak_set
+        else:
+            centroided = False
+            peak_data = scan.arrays
+        if deconvoluted:
+            charge_array = [p.charge for p in peak_data]
+        else:
+            charge_array = None
+
+        if centroided:
+            descriptors = SpectrumDescription.from_peak_set(peak_data)
+            mz_array = [p.mz for p in peak_data]
+            intensity_array = [p.intensity for p in peak_data]
+        else:
+            descriptors = SpectrumDescription.from_arrays(peak_data)
+            mz_array = peak_data.mz
+            intensity_array = peak_data.intensity
+
+        other_arrays = self._prepare_extra_arrays(scan, deconvoluted=deconvoluted)
+
+        return (centroided, descriptors, mz_array, intensity_array,
+                charge_array, other_arrays)
 
     def save_scan(self, scan, **kwargs):
         """Write a :class:`~.Scan` to the output document
@@ -841,30 +867,9 @@ class MzMLSerializer(ScanSerializerBase):
             self._has_started_writing_spectra = True
 
         deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
-        if deconvoluted:
-            centroided = True
-            precursor_peaks = scan.deconvoluted_peak_set
-        elif scan.peak_set:
-            centroided = True
-            precursor_peaks = scan.peak_set
-        else:
-            centroided = False
-            precursor_peaks = scan.arrays
+        (centroided, descriptors, mz_array, intensity_array,
+         charge_array, other_arrays) = self._get_peak_data(scan, kwargs)
         polarity = scan.polarity
-        if deconvoluted:
-            charge_array = [p.charge for p in precursor_peaks]
-        else:
-            charge_array = None
-
-        if centroided:
-            descriptors = SpectrumDescription.from_peak_set(precursor_peaks)
-            mz_array = [p.mz for p in precursor_peaks]
-            intensity_array = [p.intensity for p in precursor_peaks]
-        else:
-            descriptors = SpectrumDescription.from_arrays(precursor_peaks)
-            mz_array = precursor_peaks.mz
-            intensity_array = precursor_peaks.intensity
-
         instrument_config = scan.instrument_configuration
         if instrument_config is None:
             instrument_config_id = None
@@ -897,7 +902,7 @@ class MzMLSerializer(ScanSerializerBase):
             polarity=polarity,
             scan_start_time=scan.scan_time,
             compression=self.compression,
-            other_arrays=self._prepare_extra_arrays(scan, deconvoluted=deconvoluted),
+            other_arrays=other_arrays,
             instrument_configuration_id=instrument_config_id,
             precursor_information=precursor_information,
             scan_params=scan_parameters,
