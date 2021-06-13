@@ -280,19 +280,10 @@ class DeconvolutedPeakSet(Base):
         -------
         self: DeconvolutedPeakSet
         """
-        return self._reindex()
-
-    def _reindex(self):
-        """
-        Updates the :attr:`index` of each peak in `self` and updates the
-        sorted order.
-
-        Returns
-        -------
-        self: DeconvolutedPeakSet
-        """
-        self.peaks = tuple(sorted(self.peaks, key=operator.attrgetter("neutral_mass")))
-        self._mz_ordered = tuple(sorted(self.peaks, key=operator.attrgetter("mz")))
+        self.peaks = tuple(
+            sorted(self.peaks, key=operator.attrgetter("neutral_mass")))
+        self._mz_ordered = tuple(
+            sorted(self.peaks, key=operator.attrgetter("mz")))
         for i, peak in enumerate(self.peaks):
             peak.index = _Index()
             peak.index.neutral_mass = i
@@ -606,3 +597,25 @@ def envelopes_to_peak_set(self):
     new_peak_set = FittedPeakSet(peaks)
     new_peak_set.reindex()
     return new_peak_set
+
+
+class IonMobilityDeconvolutedPeakSet(DeconvolutedPeakSet):
+    def reindex(self):
+        """
+        Updates the :attr:`index` of each peak in `self` and updates the
+        sorted order.
+
+        Returns
+        -------
+        self: DeconvolutedPeakSet
+        """
+        self.peaks = tuple(
+            sorted(self.peaks, key=lambda x: (x.neutral_mass, x.drift_time)))
+        self._mz_ordered = tuple(
+            sorted(self.peaks, key=lambda x: (x.mz, x.drift_time)))
+        for i, peak in enumerate(self.peaks):
+            peak.index = _Index()
+            peak.index.neutral_mass = i
+        for i, peak in enumerate(self._mz_ordered):
+            peak.index.mz = i
+        return self
