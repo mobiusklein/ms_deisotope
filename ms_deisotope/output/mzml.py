@@ -278,15 +278,17 @@ class MzMLSerializer(ScanSerializerBase):
         "mzml.gz",
     }
 
+    default_data_encoding = {
+        writer.MZ_ARRAY: np.float64,
+        writer.INTENSITY_ARRAY: np.float32,
+        writer.CHARGE_ARRAY: np.int32,
+    }
+
     def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
                  data_encoding=None, include_software_entry=True):
         if data_encoding is None:
-            data_encoding = {
-                writer.MZ_ARRAY: np.float64,
-                writer.INTENSITY_ARRAY: np.float32,
-                writer.CHARGE_ARRAY: np.int32,
-            }
+            data_encoding = self.default_data_encoding
         if writer is None:
             raise ImportError(
                 "Cannot write mzML without psims. Please install psims to use this feature.")
@@ -885,11 +887,7 @@ class MzMLSerializer(ScanSerializerBase):
         else:
             instrument_config_id = instrument_config.id
 
-        try:
-            scan_parameters, scan_window_list = self.extract_scan_event_parameters(scan)
-        except AttributeError:
-            scan_parameters = []
-            scan_window_list = []
+        scan_parameters, scan_window_list = self.extract_scan_event_parameters(scan)
 
         if (scan.precursor_information or scan.isolation_window or scan.activation):
             precursor_information = self._pack_precursor_information(
@@ -1494,6 +1492,10 @@ def deserialize_deconvoluted_features(scan_dict, ion_mobility_array_name='raw io
 
 
 class IonMobilityAware3DMzMLSerializer(MzMLSerializer):
+    default_data_encoding = MzMLSerializer.default_data_encoding.copy()
+    default_data_encoding.update({
+        "feature id array": np.int32,
+    })
     def _get_peak_data(self, scan, kwargs):
         deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
         if deconvoluted:
