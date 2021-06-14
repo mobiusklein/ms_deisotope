@@ -9,7 +9,7 @@ from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyL
 cimport numpy as np
 import numpy as np
 
-np.import_arrays()
+np.import_array()
 
 from cpython cimport array
 import array
