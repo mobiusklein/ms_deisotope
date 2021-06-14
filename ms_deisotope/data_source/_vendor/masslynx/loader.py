@@ -261,9 +261,9 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
                     start_index -= 1
                 else:
                     break
-        iterator = self.make_frame_iterator(
+        self._producer = self.make_frame_iterator(
             self._default_frame_iterator(start_index), grouped=grouped)
-        return iterator
+        return self
 
 
 class WatersMassLynxScanSource(ScanDataSource):
@@ -404,6 +404,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self._build_scan_index()
         self.lockmass_function = self.function_index_list[-1] + 1
         self.low_energy_function = self.function_index_list[0] + 1
+
         self._producer = self.make_frame_iterator()
 
     def configure_lockmass(self, lockmass_config=None):
@@ -555,7 +556,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
                     ))
                 self.cycle_index.append(cyc)
 
-    # RandaomAccessScanSource methods
+    # RandomAccessScanSource methods
     def __len__(self):
         return len(self.index)
 

@@ -6,13 +6,14 @@ from weakref import WeakValueDictionary
 from itertools import chain
 
 from collections import namedtuple, defaultdict
+from click.decorators import group
 
 import numpy as np
 
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
 
-from .base import RawDataArrays
+from .base import RawDataArrays, ScanBunch
 
 class IonMobilitySource(object):
     @abstractmethod
@@ -742,6 +743,7 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def __init__(self, loader, **kwargs):
         self.loader = loader
         self.initialize_frame_cache()
+        self._producer = self._wrap_iterator(self.loader)
 
     def _frame_acquisition_information(self, data):
         return self.loader._acquisition_information(data)
@@ -857,6 +859,44 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
             frame = self._make_frame(scan._data)
             self._cache_frame(frame)
             return frame
+
+    def _wrap_iterator(self, iterator):
+        for val in iterator:
+            if isinstance(val, ScanBunch):
+                precursor = self._make_frame(val.precursor)
+                self._cache_frame(precursor)
+                products = []
+                for product in val.products:
+                    product = self._make_frame(product)
+                    self._cache_frame(product)
+                    products.append(product)
+
+                yield ScanBunch(precursor, products)
+            else:
+                frame = self._make_frame(val)
+                self._cache_frame(frame)
+                yield frame
+
+    def _default_frame_iterator(self, start_index=None):
+        self.loader.start_from_scan(index=start_index, grouped=False)
+        return self._wrap_iterator(self.loader)
+
+    def make_frame_iterator(self, iterator=None, grouped=False):
+        self.loader.make_iterator(iterator, grouped=grouped)
+        return self._wrap_iterator(self.loader)
+
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+        self.loader.start_from_scan(
+            scan_id=scan_id, rt=rt, index=index, require_ms1=require_ms1, grouped=grouped)
+        self._producer = self._wrap_iterator(self.loader)
+        return self
+
+    def __next__(self):
+        return next(self._producer)
+
+    def next(self):
+        return next(self._producer)
+
 
 class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def __init__(self, loader, **kwargs):

@@ -196,13 +196,12 @@ class ExtendedScanIndex(object):
                 "scan_time": scan.scan_time,
                 # would be populated if add_scan_bunch were used
                 "product_scan_ids": [],
-                "msms_peaks": [
-                    p.index.neutral_mass for p in scan.deconvoluted_peak_set
-                    if p.chosen_for_msms
-                ] if scan.deconvoluted_peak_set is not None else [],
             }
-            if scan.has_ion_mobility():
-                package['drift_time'] = scan.drift_time
+            try:
+                if scan.has_ion_mobility():
+                    package['drift_time'] = scan.drift_time
+            except AttributeError:
+                pass
             self.ms1_ids[scan.id] = MS1Record(**package)
         else:
             self.msn_ids[scan.id] = MSnRecord(**self._package_precursor_information(scan))
@@ -220,10 +219,6 @@ class ExtendedScanIndex(object):
                 "product_scan_ids": [
                     product.id for product in bunch.products
                 ],
-                "msms_peaks": [
-                    p.index.neutral_mass for p in bunch.precursor.deconvoluted_peak_set
-                    if p.chosen_for_msms
-                ] if bunch.precursor.deconvoluted_peak_set is not None else [],
             }
             if bunch.precursor.has_ion_mobility():
                 package['drift_time'] = bunch.precursor.drift_time
