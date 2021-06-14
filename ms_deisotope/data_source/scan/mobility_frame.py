@@ -76,6 +76,9 @@ class IonMobilitySource(object):
             scans.append(scan)
         return scans
 
+    def _frame_annotations(self, data):
+        return {}
+
     def _frame_arrays(self, data):
         scans = self._frame_scans(data)
         return RawDataArrays3D.stack(scans)
@@ -590,6 +593,10 @@ class IonMobilityFrame(object):
     def ion_mobilities(self):
         return self.source._frame_ion_mobilities(self._data)
 
+    @property
+    def annotations(self):
+        return self.source._frame_annotations(self._data)
+
     def get_scan_by_drift_time(self, drift_time):
         dt_axis = self.drift_times
         lo = 0
@@ -863,17 +870,17 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def _wrap_iterator(self, iterator):
         for val in iterator:
             if isinstance(val, ScanBunch):
-                precursor = self._make_frame(val.precursor)
+                precursor = self._make_frame(val.precursor._data)
                 self._cache_frame(precursor)
                 products = []
                 for product in val.products:
-                    product = self._make_frame(product)
+                    product = self._make_frame(product._data)
                     self._cache_frame(product)
                     products.append(product)
 
                 yield ScanBunch(precursor, products)
             else:
-                frame = self._make_frame(val)
+                frame = self._make_frame(val._data)
                 self._cache_frame(frame)
                 yield frame
 
@@ -896,6 +903,11 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
 
     def next(self):
         return next(self._producer)
+
+    def reset(self):
+        self.loader.reset()
+        self.initialize_frame_cache()
+        return self
 
 
 class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
