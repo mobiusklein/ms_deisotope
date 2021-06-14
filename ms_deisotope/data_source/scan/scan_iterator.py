@@ -282,7 +282,6 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
             yield self.deque_group(flush_products=True)
 
 
-
 class MSEIterator(_GroupedScanIteratorImpl):
     def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None,
                  scan_cacher=None):

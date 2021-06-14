@@ -177,8 +177,11 @@ class ExtendedScanIndex(object):
                 "coisolation": precursor_information.coisolation,
                 "activation": product.activation,
             })
-        if product.has_ion_mobility():
-            package['drift_time'] = product.drift_time
+        try:
+            if product.has_ion_mobility():
+                package['drift_time'] = product.drift_time
+        except AttributeError:
+            pass
         return package
 
     def add_scan(self, scan):

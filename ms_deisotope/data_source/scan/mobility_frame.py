@@ -386,7 +386,8 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         arrays : list[tuple[float, :class:`~.RawDataArrays`]]
             The split arrays arranged by drift time
         '''
-        mask = mask = np.lexsort(np.stack((self.mz, self.ion_mobility)))
+        # Sort by m/z first, then by ion mobility
+        mask = np.lexsort(np.stack((self.mz, self.ion_mobility)))
         sorted_dim = self.ion_mobility[mask]
         acc = []
         # re-sort all arrays along the mask, and then slice out in chunks.
@@ -542,6 +543,10 @@ class IonMobilityFrame(object):
         return self.source._frame_time(self._data)
 
     @property
+    def scan_time(self):
+        return self.time
+
+    @property
     def ms_level(self):
         return self.source._frame_ms_level(self._data)
 
@@ -581,8 +586,8 @@ class IonMobilityFrame(object):
         return self.source._frame_arrays(self._data)
 
     @property
-    def drift_times(self):
-        return self.source._frame_drift_times(self._data)
+    def ion_mobilities(self):
+        return self.source._frame_ion_mobilities(self._data)
 
     def get_scan_by_drift_time(self, drift_time):
         dt_axis = self.drift_times
@@ -835,6 +840,23 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
         self._cache_frame(frame)
         return frame
 
+    def __len__(self):
+        return len(self.loader)
+
+    def __getitem__(self, i):
+        result = self.loader[i]
+        if isinstance(result, list):
+            out = []
+            for scan in result:
+                frame = self._make_frame(scan._data)
+                self._cache_frame(frame)
+                out.append(frame)
+            return out
+        else:
+            scan = result
+            frame = self._make_frame(scan._data)
+            self._cache_frame(frame)
+            return frame
 
 class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def __init__(self, loader, **kwargs):

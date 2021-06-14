@@ -37,13 +37,15 @@ metadata that :class:`~.MzMLSerializer` writes to an external file.
 '''
 import os
 import hashlib
+import array
+import warnings
+
 from collections import OrderedDict
 try:
     from collections import Sequence, Mapping
 except ImportError:
     from collections.abc import Sequence, Mapping
 from uuid import uuid4, UUID
-import warnings
 
 import numpy as np
 
@@ -61,19 +63,24 @@ from ms_deisotope import version as lib_version
 from ms_deisotope.peak_set import (DeconvolutedPeak, DeconvolutedPeakSet, Envelope, IonMobilityDeconvolutedPeak)
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.qc.isolation import CoIsolation
+
 from ms_deisotope.data_source.common import (
-    PrecursorInformation, ChargeNotProvided,
-    _SingleScanIteratorImpl, _GroupedScanIteratorImpl)
+    ChargeNotProvided,
+    _SingleScanIteratorImpl,
+    _InterleavedGroupedScanIteratorImpl)
 from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.metadata.software import (Software, software_name)
 from ms_deisotope.data_source.mzml import MzMLLoader
+from ms_deisotope.data_source.scan.mobility_frame import Generic3DIonMobilityFrameSource
+
 from ms_deisotope.feature_map import ExtendedScanIndex
+from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature
+from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureMap, LCMSFeature, LCMSFeatureMap
+
 
 from .common import ScanSerializerBase, ScanDeserializerBase, SampleRun, LCMSMSQueryInterfaceMixin
 from .text_utils import (envelopes_to_array, decode_envelopes)
 
-from ms_deisotope.data_source.common import (
-    _SingleScanIteratorImpl, _InterleavedGroupedScanIteratorImpl)
 
 class SpectrumDescription(Sequence):
     '''A helper class to calculate properties of a spectrum derived from
@@ -823,7 +830,7 @@ class MzMLSerializer(ScanSerializerBase):
             centroided = True
             peak_data = scan.peak_set
         else:
-            centroided = False
+            centroided = scan.is_profile
             peak_data = scan.arrays
         if deconvoluted:
             charge_array = [p.charge for p in peak_data]
@@ -866,18 +873,23 @@ class MzMLSerializer(ScanSerializerBase):
             self._add_spectrum_list()
             self._has_started_writing_spectra = True
 
-        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
         (centroided, descriptors, mz_array, intensity_array,
          charge_array, other_arrays) = self._get_peak_data(scan, kwargs)
         polarity = scan.polarity
-        instrument_config = scan.instrument_configuration
+        try:
+            instrument_config = scan.instrument_configuration
+        except AttributeError:
+            instrument_config = None
         if instrument_config is None:
             instrument_config_id = None
         else:
             instrument_config_id = instrument_config.id
 
-        scan_parameters, scan_window_list = self.extract_scan_event_parameters(
-            scan)
+        try:
+            scan_parameters, scan_window_list = self.extract_scan_event_parameters(scan)
+        except AttributeError:
+            scan_parameters = []
+            scan_window_list = []
 
         if (scan.precursor_information or scan.isolation_window or scan.activation):
             precursor_information = self._pack_precursor_information(
@@ -892,7 +904,10 @@ class MzMLSerializer(ScanSerializerBase):
             {"name": "MS1 spectrum"} if scan.ms_level == 1 else {"name": "MSn spectrum"},
         ] + list(descriptors)
 
-        spectrum_params.extend(self._get_annotations(scan))
+        try:
+            spectrum_params.extend(self._get_annotations(scan))
+        except AttributeError:
+            pass
 
         self.writer.write_spectrum(
             mz_array, intensity_array,
@@ -1295,7 +1310,6 @@ class PeakSetDeserializingMixin(object):
                 ae, scan_id))
 
 
-
 class ProcessedMzMLLoader(PeakSetDeserializingMixin, MzMLLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):
     """Extends :class:`.MzMLLoader` to support deserializing preprocessed data
     and to take advantage of additional indexing information.
@@ -1363,3 +1377,175 @@ try:
     from ms_deisotope._c.utils import deserialize_deconvoluted_peak_set, deserialize_peak_set
 except ImportError:
     has_c = False
+
+
+def extracted_features_to_3d_arrays(features):
+    mz_array = array.array('d')
+    intensity_array = array.array('d')
+    ion_mobility_array = array.array('d')
+    feature_id_array = array.array('L')
+    for i, feature in enumerate(features):
+        for node in feature:
+            time = node.time
+            for peak in node.members:
+                ion_mobility_array.append(time)
+                mz_array.append(peak.mz)
+                intensity_array.append(peak.intensity)
+                feature_id_array.append(i)
+    mz_array = np.array(mz_array, copy=False)
+    intensity_array = np.array(intensity_array, copy=False)
+    ion_mobility_array = np.array(ion_mobility_array, copy=False)
+    feature_id_array = np.array(feature_id_array, copy=False)
+    mask = np.lexsort(np.stack((ion_mobility_array, mz_array)))
+    return (mz_array[mask], intensity_array[mask], ion_mobility_array[mask], feature_id_array[mask])
+
+
+def deserialize_features(scan_dict, ion_mobility_array_name='raw ion mobility array'):
+    mz_array = scan_dict['m/z array']
+    intensity_array = scan_dict['intensity array']
+    drift_time_array = scan_dict[ion_mobility_array_name]
+    feature_id_array = scan_dict['feature id array']
+    n = len(mz_array)
+    features = dict()
+    for i in range(n):
+        mz = mz_array[i]
+        im = drift_time_array[i]
+        inten = intensity_array[i]
+        peak = FittedPeak(
+            mz, inten, signal_to_noise=inten,
+            index=0, full_width_at_half_max=0)
+        try:
+            feature = features[feature_id_array[i]]
+        except KeyError:
+            feature = features[feature_id_array[i]] = LCMSFeature([])
+        feature.insert(peak, im)
+    feature_map = LCMSFeatureMap(list(features.values()))
+    return feature_map
+
+
+def deconvoluted_features_to_3d_arrays(features):
+    mz_array = array.array('d')
+    intensity_array = array.array('d')
+    charge_array = array.array('i')
+    score_array = array.array('d')
+    ion_mobility_array = array.array('d')
+    envelopes = []
+    feature_id_array = array.array('L')
+    point_count = 0
+    for i, feature in enumerate(features):
+        for node in feature:
+            time = node.time
+            for peak in node.members:
+                ion_mobility_array.append(time)
+                mz_array.append(peak.mz)
+                intensity_array.append(peak.intensity)
+                score_array.append(peak.score)
+                charge_array.append(peak.charge)
+                envelopes.append(peak.envelope)
+                point_count += (len(peak.envelope) + 1) * 2
+                feature_id_array.append(i)
+    mz_array = np.array(mz_array, copy=False)
+    intensity_array = np.array(intensity_array, copy=False)
+    charge_array = np.array(charge_array, copy=False)
+    score_array = np.array(score_array, copy=False)
+    ion_mobility_array = np.array(ion_mobility_array, copy=False)
+    feature_id_array = np.array(feature_id_array, copy=False)
+    mask = np.lexsort(np.stack((ion_mobility_array, mz_array)))
+    envelope_array = np.zeros(point_count, dtype=np.float32)
+    k = 0
+    for j in mask:
+        for point in envelopes[j]:
+            envelope_array[k] = point.mz
+            envelope_array[k+1] = point.intensity
+            k += 2
+        k += 2
+    return (mz_array[mask], intensity_array[mask], charge_array[mask],
+            score_array[mask], ion_mobility_array[mask], envelope_array,
+            feature_id_array[mask])
+
+
+def deserialize_deconvoluted_features(scan_dict, ion_mobility_array_name='raw ion mobility array'):
+    envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    mz_array = scan_dict['m/z array']
+    intensity_array = scan_dict['intensity array']
+    drift_time_array = scan_dict[ion_mobility_array_name]
+    feature_id_array = scan_dict['feature id array']
+    charge_array = scan_dict['charge array']
+    score_array = scan_dict['deconvolution score array']
+    n = len(mz_array)
+    features = dict()
+    for i in range(n):
+        mz = mz_array[i]
+        charge = charge_array[i]
+        im = drift_time_array[i]
+        peak = DeconvolutedPeak(
+            neutral_mass(mz, charge), intensity_array[i], charge=charge, signal_to_noise=score_array[i],
+            index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
+            average_mass=0, score=score_array[i], envelope=envelopes[i], mz=mz
+        )
+        try:
+            feature = features[feature_id_array[i]]
+        except KeyError:
+            feature = features[feature_id_array[i]
+                               ] = DeconvolutedLCMSFeature([], charge)
+        feature.insert(peak, im)
+    feature_map = DeconvolutedLCMSFeatureMap(list(features.values()))
+    return feature_map
+
+
+class IonMobilityAware3DMzMLSerializer(MzMLSerializer):
+    def _get_peak_data(self, scan, kwargs):
+        deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
+        if deconvoluted:
+            centroided = True
+            peak_data = scan.deconvoluted_features
+        elif scan.features:
+            centroided = True
+            peak_data = scan.features
+        else:
+            centroided = False
+            peak_data = scan.arrays
+
+        if centroided:
+            descriptors = SpectrumDescription.from_peak_set(peak_data)
+        else:
+            descriptors = SpectrumDescription.from_arrays(peak_data)
+
+        if deconvoluted:
+            (mz_array, intensity_array, charge_array, score_array,
+             ion_mobility_array, envelope_array, feature_id_array) = deconvoluted_features_to_3d_arrays(peak_data)
+            other_arrays = [
+                ('raw ion mobility array', ion_mobility_array),
+                ('isotopic envelopes array', envelope_array),
+                ('deconvolution score array', score_array),
+                ('feature id array', feature_id_array),
+            ]
+        elif centroided:
+            (mz_array, intensity_array, ion_mobility_array,
+             feature_id_array) = extracted_features_to_3d_arrays(peak_data)
+            charge_array = None
+            other_arrays = [
+                ('raw ion mobility array', ion_mobility_array),
+                ('feature id array', feature_id_array),
+            ]
+        else:
+            mz_array = peak_data.mz
+            intensity_array = peak_data.intensity
+            charge_array = None
+            ion_mobility_array = peak_data.ion_mobility
+            other_arrays = [
+                ('raw ion mobility array', ion_mobility_array),
+            ]
+        return (centroided, descriptors, mz_array, intensity_array,
+                charge_array, other_arrays)
+
+
+class ProcessedGeneric3DIonMobilityFrameSource(Generic3DIonMobilityFrameSource):
+    def _make_frame(self, data):
+        frame = super(ProcessedGeneric3DIonMobilityFrameSource, self)._make_frame(data)
+        if 'feature id array' in frame._data:
+            if 'charge array' in frame._data:
+                frame.deconvoluted_features = deserialize_deconvoluted_features(frame._data)
+            else:
+                frame.features = deserialize_features(frame._data)
+        return frame

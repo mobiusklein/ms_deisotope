@@ -1,5 +1,8 @@
 import logging
+import array
 from collections import defaultdict
+
+import numpy as np
 
 from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope import DeconvolutedPeakSet
@@ -26,11 +29,19 @@ class _FeatureCollection(object):
         else:
             return [self.features[j] for j in i]
 
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.features == other.features
+
+    def __ne__(self, other):
+        return not self == other
+
 
 class LCMSFeatureMap(_FeatureCollection):
 
     def __init__(self, features):
-        self.features = sorted(features, key=lambda x: x.mz)
+        self.features = sorted(features, key=lambda x: (x.mz, x.start_time))
 
     def search(self, mz, error_tolerance=2e-5):
         '''Search for a single feature within `error_tolerance` of `mz`.
@@ -137,6 +148,26 @@ class LCMSFeatureMap(_FeatureCollection):
 
     def __repr__(self):
         return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
+
+    def as_arrays(self):
+        mz_array = array.array('d')
+        intensity_array = array.array('d')
+        ion_mobility_array = array.array('d')
+        feature_id_array = array.array('L')
+        for i, feature in enumerate(self):
+            for node in feature:
+                time = node.time
+                for peak in node.members:
+                    ion_mobility_array.append(time)
+                    mz_array.append(peak.mz)
+                    intensity_array.append(peak.intensity)
+                    feature_id_array.append(i)
+        mz_array = np.array(mz_array, copy=False)
+        intensity_array = np.array(intensity_array, copy=False)
+        ion_mobility_array = np.array(ion_mobility_array, copy=False)
+        feature_id_array = np.array(feature_id_array, copy=False)
+        mask = np.lexsort(np.stack((ion_mobility_array, mz_array)))
+        return (mz_array[mask], intensity_array[mask], ion_mobility_array[mask], feature_id_array[mask])
 
 
 try:
@@ -713,8 +744,8 @@ def binary_search_exact_neutral(array, neutral_mass):
 class DeconvolutedLCMSFeatureMap(_FeatureCollection):
 
     def __init__(self, features):
-        self.features = sorted(features, key=lambda x: x.neutral_mass)
-        self._by_mz = sorted(features, key=lambda x: x.mz)
+        self.features = sorted(features, key=lambda x: (round(x.neutral_mass, 6), x.start_time))
+        self._by_mz = sorted(features, key=lambda x: (x.mz, x.start_time))
 
     def spanning_time(self, time_point):
         return [feature for feature in self if feature.spans_in_time(time_point)]
@@ -862,6 +893,49 @@ class DeconvolutedLCMSFeatureMap(_FeatureCollection):
 
     def __repr__(self):
         return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
+
+    def as_arrays(self):
+        mz_array = array.array('d')
+        intensity_array = array.array('d')
+        charge_array = array.array('i')
+        score_array = array.array('d')
+        ion_mobility_array = array.array('d')
+        feature_id_array = array.array('L')
+        envelopes = []
+
+        point_count = 0
+        for i, feature in enumerate(self):
+            for node in feature:
+                time = node.time
+                for peak in node.members:
+                    ion_mobility_array.append(time)
+                    mz_array.append(peak.mz)
+                    intensity_array.append(peak.intensity)
+                    score_array.append(peak.score)
+                    charge_array.append(peak.charge)
+                    envelopes.append(peak.envelope)
+                    point_count += (len(peak.envelope) + 1) * 2
+                    feature_id_array.append(i)
+
+        mz_array = np.array(mz_array, copy=False)
+        intensity_array = np.array(intensity_array, copy=False)
+        charge_array = np.array(charge_array, copy=False)
+        score_array = np.array(score_array, copy=False)
+        ion_mobility_array = np.array(ion_mobility_array, copy=False)
+        feature_id_array = np.array(feature_id_array, copy=False)
+        mask = np.lexsort(np.stack((ion_mobility_array, mz_array)))
+        envelope_array = np.zeros(point_count, dtype=np.float32)
+
+        k = 0
+        for j in mask:
+            for point in envelopes[j]:
+                envelope_array[k] = point.mz
+                envelope_array[k+1] = point.intensity
+                k += 2
+            k += 2
+        return (mz_array[mask], intensity_array[mask], charge_array[mask],
+                score_array[mask], ion_mobility_array[mask], envelope_array,
+                feature_id_array[mask])
 
 
 def convert_map_to_scan_peak_list(feature_map, peak_loader, time_precision=4, deconvoluted=True):
