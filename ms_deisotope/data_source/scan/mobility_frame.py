@@ -1,4 +1,5 @@
 import array
+from ms_deisotope.data_source.metadata import activation
 import warnings
 
 from abc import abstractmethod
@@ -6,7 +7,6 @@ from weakref import WeakValueDictionary
 from itertools import chain
 
 from collections import namedtuple, defaultdict
-from click.decorators import group
 
 import numpy as np
 
@@ -516,7 +516,58 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return self._slice(slice(i, j), True)
 
 
-class IonMobilityFrame(object):
+class FrameBase(object):
+
+    @property
+    def scan_time(self):
+        return self.time
+
+    @property
+    def ion_mobilities(self):
+        return self.source._frame_ion_mobilities(self._data)
+
+    def scans(self):
+        return self.source._frame_scans(self._data)
+
+    def bind(self, source):
+        self.source = source
+        if self.precursor_information is not None:
+            self.precursor_information.bind(source)
+        return self
+
+    def unbind(self):
+        self.source = None
+        if self.precursor_information:
+            self.precursor_information.unbind()
+        return self
+
+    def __repr__(self):
+        template = ("{self.__class__.__name__}({self.id}, index={self.index},"
+                    " time={self.time}, ms_level={self.ms_level})")
+        return template.format(self=self)
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if self.id != other.id:
+            return False
+        elif self.ms_level != other.ms_level:
+            return False
+        elif self.time != other.time:
+            return False
+        elif self.deconvoluted_features != other.deconvoluted_features:
+            return False
+        elif self.features != other.features:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self == other
+
+    __hash__ = None
+
+
+class IonMobilityFrame(FrameBase):
     '''A :class:`IonMobilityFrame` represents an single time point acquisition of
     multiple mass spectra across multiple ion mobility drift time points. Because
     of its drift time by m/z structure, it does not have 1-D peak sets, but pseudo-
@@ -529,73 +580,154 @@ class IonMobilityFrame(object):
         self.features = None
         self.deconvoluted_features = None
 
-    def __repr__(self):
-        template = ("{self.__class__.__name__}({self.id}, index={self.index},"
-                    " time={self.time}, ms_level={self.ms_level})")
-        return template.format(self=self)
+        self._unload()
+
+    def _unload(self):
+        self._id = None
+        self._ms_level = None
+        self._time = None
+        self._polarity = None
+        self._index = None
+        self._start_scan_index = None
+        self._end_scan_index = None
+
+        self._arrays = None
+        self._annotations = None
+
+        self._isolation_window = None
+        self._precursor_information = None
+        self._activation = None
+        self._acquisition_information = None
 
     @property
     def id(self):
-        return self.source._frame_id(self._data)
+        if self._id is None:
+            self._id = self.source._frame_id(self._data)
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        self._id = value
 
     @property
     def index(self):
-        return self.source._frame_index(self._data)
+        if self._index is None:
+            self._index = self.source._frame_index(self._data)
+        return self._index
+
+    @index.setter
+    def index(self, value):
+        self._index = value
 
     @property
     def time(self):
-        return self.source._frame_time(self._data)
+        if self._time is None:
+            self._time = self.source._frame_time(self._data)
+        return self._time
 
-    @property
-    def scan_time(self):
-        return self.time
+    @time.setter
+    def time(self, value):
+        self._time = value
 
     @property
     def ms_level(self):
-        return self.source._frame_ms_level(self._data)
+        if self._ms_level is None:
+            self._ms_level = self.source._frame_ms_level(self._data)
+        return self._ms_level
+
+    @ms_level.setter
+    def ms_level(self, value):
+        self._ms_level = value
 
     @property
     def polarity(self):
-        return self.source._frame_polarity(self._data)
+        if self._polarity is None:
+            self._polarity = self.source._frame_polarity(self._data)
+        return self._polarity
+
+    @polarity.setter
+    def polarity(self, value):
+        self._polarity = value
 
     @property
     def start_scan_index(self):
-        return self.source._frame_start_scan_index(self._data)
+        if self._start_scan_index is None:
+            self._start_scan_index = self.source._frame_start_scan_index(self._data)
+        return self._start_scan_index
+
+    @start_scan_index.setter
+    def start_scan_index(self, value):
+        self._start_scan_index = value
 
     @property
     def end_scan_index(self):
-        return self.source._frame_end_scan_index(self._data)
+        if self._end_scan_index is None:
+            self._end_scan_index = self.source._frame_end_scan_index(self._data)
+        return self._end_scan_index
+
+    @end_scan_index.setter
+    def end_scan_index(self, value):
+        self._end_scan_index = value
 
     @property
     def precursor_information(self):
-        return self.source._frame_precursor_information(self._data)
+        if self._precursor_information is None:
+            self._precursor_information = self.source._frame_precursor_information(self._data)
+        return self._precursor_information
+
+    @precursor_information.setter
+    def precursor_information(self, value):
+        self._precursor_information = value
 
     @property
     def activation(self):
-        return self.source._frame_activation(self._data)
+        if self._activation is None:
+            self._activation = self.source._frame_activation(self._data)
+        return self._activation
+
+    @activation.setter
+    def activation(self, value):
+        self._activation = value
 
     @property
     def isolation_window(self):
-        return self.source._frame_isolation_window(self._data)
+        if self._isolation_window is None:
+            self._isolation_window = self.source._frame_isolation_window(self._data)
+        return self._isolation_window
+
+    @isolation_window.setter
+    def isolation_window(self, value):
+        self._isolation_window = value
 
     @property
     def acquisition_information(self):
-        return self.source._frame_acquisition_information(self._data)
+        if self._acquisition_information is None:
+            self._acquisition_information = self.source._frame_acquisition_information(self._data)
+        return self._acquisition_information
 
-    def scans(self):
-        return self.source._frame_scans(self._data)
+    @acquisition_information.setter
+    def acquisition_information(self, value):
+        self._acquisition_information = value
 
     @property
     def arrays(self):
-        return self.source._frame_arrays(self._data)
+        if self._arrays is None:
+            self._arrays = self.source._frame_arrays(self._data)
+        return self._arrays
 
-    @property
-    def ion_mobilities(self):
-        return self.source._frame_ion_mobilities(self._data)
+    @arrays.setter
+    def arrays(self, value):
+        self._arrays = value
 
     @property
     def annotations(self):
-        return self.source._frame_annotations(self._data)
+        if self._annotations is None:
+            self._annotations = self.source._frame_annotations(self._data)
+        return self._annotations
+
+    @annotations.setter
+    def annotations(self, value):
+        self._annotations = dict(value)
 
     def get_scan_by_drift_time(self, drift_time):
         dt_axis = self.drift_times
@@ -692,6 +824,43 @@ class IonMobilityFrame(object):
             features = self.deconvoluted_features
         return features_to_peak_set(features)
 
+    def pack(self, bind=False):
+        packed = ProcessedIonMobilityFrame(
+            self.id, self.precursor_information, self.ms_level,
+            self.time, self.index, self.features, self.deconvoluted_features,
+            self.start_scan_index, self.end_scan_index,
+            self.polarity, self.activation, self.acquisition_information,
+            self.isolation_window, self.annotations,
+            self.source if bind else None)
+        return packed
+
+
+class ProcessedIonMobilityFrame(FrameBase):
+    def __init__(self, id, precursor_information, ms_level, time, index,
+                 features=None, deconvoluted_features=None,
+                 start_scan_index=None, end_scan_index=None,
+                 polarity=None, activation=None, acquisition_information=None,
+                 isolation_window=None, annotations=None, source=None):
+        if annotations is None:
+            annotations = dict()
+        self.source = source
+
+        self.id = id
+        self.precursor_information = precursor_information
+        self.ms_level = ms_level
+        self.time = time
+        self.index = index
+        self.features = features
+        self.deconvoluted_features = deconvoluted_features
+
+        self.start_scan_index = start_scan_index
+        self.end_scan_index = end_scan_index
+        self.polarity = polarity
+        self.activation = activation
+        self.acquisition_information = acquisition_information
+        self.isolation_window = isolation_window
+        self.annotations = annotations
+
 
 def weighted_centroid(feature):
     total = 0
@@ -766,6 +935,9 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
 
     def _frame_time(self, data):
         return self.loader._scan_time(data)
+
+    def _frame_precursor_information(self, data):
+        return self.loader._precursor_information(data)
 
     def _frame_ms_level(self, data):
         return self.loader._ms_level(data)
