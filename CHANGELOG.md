@@ -7,10 +7,16 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Added
 1. Added TMT11 to `ms_deisotope.qc.signature`.
+2. Added `ms_deisotope.output.mzml.IonMobilityAware3DMzMLSerializer` to write processed 3D IMS-MS spectra
+    from mobility frames with feature maps.
+3. Added `ms_deisotope.output.mzml.ProcessedGeneric3DIonMobilityFrameSource` to read processed feature maps
+   out from 3D IMS-MS spectra.
+4. Made `Generic3DIonMobilityFrameSource` wrapper iterable and more sequence-like.
 
 ### Changed
 1. Made `LCMSFeatureProcessor` consider fewer combinations of feature sets, lowering the upper bound on the
    combinations. Such cases that required this should be quite rare.
+2. `IonMobilityFrame` is closer to being a first-class object instead of an immutable data wrapper.
 
 ### Deprecated
 
@@ -19,6 +25,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Fixed
 1. Iterating over MS3-containing datasets in grouped mode will now properly group MS3 spectra with their MS2
    spectra. Applies for higher exponentiated MSn as well.
+2. `TheoreticalIsotopicPattern.incremental_truncation` consistently respects its truncation threshold.
 
 ### Security
 

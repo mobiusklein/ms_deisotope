@@ -813,7 +813,7 @@ cdef class TheoreticalIsotopicPattern(object):
 
         i = n - 1
         while i > 0:
-            if cumulative_intensities[i] < threshold:
+            if cumulative_intensities[i - 1] < threshold:
                 break
             template = template.clone_drop_last()
             accumulator.append(template)

@@ -291,7 +291,7 @@ class TheoreticalIsotopicPattern(object):
         n = len(self)
         i = n - 1
         while i > 0:
-            if cumulative_intensities[i] < threshold:
+            if cumulative_intensities[i - 1] < threshold:
                 break
             template = template.clone()
             template.drop_last_peak()
