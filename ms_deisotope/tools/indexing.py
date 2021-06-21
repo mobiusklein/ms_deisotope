@@ -4,10 +4,14 @@ spectrum data.
 import io
 import os
 import math
-
+import csv
+import sys
 from collections import Counter
 
 import click
+import six
+
+import numpy as np
 
 import ms_deisotope
 
@@ -27,7 +31,7 @@ from ms_deisotope.data_source.metadata.file_information import SourceFile
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
 from ms_deisotope.tools import conversion, draw, maintenance
-from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook, spinner
+from ms_deisotope.tools.utils import processes_option, is_debug_mode, progress, register_debug_hook, spinner
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -514,6 +518,77 @@ def cluster_evaluation(path):
         for key, value in sorted(by_size.items()):
             click.echo("Size {:d}: {:d}".format(key, value))
 
+
+
+@cli.command('ms1-spectrum-diagnostics')
+@click.argument('path', type=click.Path(exists=True, readable=True))
+@click.option("-o", "--output-path", type=click.Path(writable=True))
+def ms1_spectrum_diagnostics(path, output_path=None):
+    '''Collect diagnostic information from MS1 spectra.
+    '''
+    reader = ms_deisotope.MSFileLoader(path)
+
+    reader.make_iterator(grouped=True)
+
+    ms1_metric_names = [
+        'scan_id', 'scan_index', 'scan_time', 'duty_cycle', 'tic',
+        'base_peak_mz', 'base_peak_intensity', 'data_point_count',
+        'injection_time', 'n_ms2_scans'
+    ]
+    ms1_metrics = []
+
+    last_ms1 = None
+    prog = progress(length=len(reader), label='Processing Scans',
+                    file=sys.stderr, item_show_func=lambda x: x.id if x else '')
+    with prog:
+        for precursor, products in reader:
+            ms1_time = precursor.scan_time
+            if last_ms1 is not None:
+                duty_cycle = ms1_time - last_ms1
+                ms1_metrics[-1]['duty_cycle'] = duty_cycle
+            last_ms1 = ms1_time
+            bp = precursor.base_peak()
+            acquisition_info = precursor.acquisition_information
+            if acquisition_info:
+                scan_event = acquisition_info[0]
+                inj = scan_event.injection_time
+            else:
+                inj = np.nan
+            ms1_record = {
+                "scan_id": precursor.id,
+                "scan_index": precursor.index,
+                "scan_time": precursor.scan_time,
+                "duty_cycle": np.nan,
+                "tic": precursor.tic(),
+                "base_peak_mz": bp.mz,
+                "base_peak_intensity": bp.intensity,
+                "data_point_count": precursor.arrays.mz.size,
+                "injection_time": inj,
+                "n_ms2_scans": len([p for p in products if p.ms_level == 2])
+            }
+            ms1_metrics.append(ms1_record)
+            prog.current_item = precursor
+            prog.update(1 + len(products))
+
+    if last_ms1 is not None:
+        if products:
+            last_time = max([p.scan_time for p in products])
+            duty_cycle = last_time - last_ms1
+            ms1_metrics[-1]['duty_cycle'] = duty_cycle
+
+
+    if output_path is None:
+        outfh = click.open_file("-", mode='wb')
+    else:
+        outfh = io.open(output_path, mode='wb')
+    if six.PY3:
+        stream = io.TextIOWrapper(outfh, encoding='utf8', newline='')
+    else:
+        stream = outfh
+    writer = csv.DictWriter(stream, fieldnames=ms1_metric_names)
+    writer.writeheader()
+    writer.writerows(ms1_metrics)
+    stream.flush()
 
 if _compression.has_idzip:
     @cli.command("idzip", short_help='Compress a file with idzip, a gzip-compatible format with random access support')

@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 3. Added `ms_deisotope.output.mzml.ProcessedGeneric3DIonMobilityFrameSource` to read processed feature maps
    out from 3D IMS-MS spectra.
 4. Made `Generic3DIonMobilityFrameSource` wrapper iterable and more sequence-like.
+5. Added `ms-index ms1-spectrum-diagnostics` to the CLI to collect relatively low level MS1 spectrum metadata.
 
 ### Changed
 1. Made `LCMSFeatureProcessor` consider fewer combinations of feature sets, lowering the upper bound on the
