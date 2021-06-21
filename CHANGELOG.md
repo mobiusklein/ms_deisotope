@@ -3,7 +3,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [v0.0.27] - Unreleased
+## [Unreleased]
+
+### Added
+
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [v0.0.27] - 2021-6-21
 
 ### Added
 1. Added TMT11 to `ms_deisotope.qc.signature`.
@@ -231,8 +246,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.26...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.27...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.27]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.27
 [v0.0.26]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.26
 [v0.0.25]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.25
 [v0.0.24]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.24

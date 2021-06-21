@@ -322,6 +322,7 @@ def run_setup(include_cext=True):
             'Documentation': 'https://mobiusklein.github.io/ms_deisotope',
             'Source Code': 'https://github.com/mobiusklein/ms_deisotope',
             'Issue Tracker': 'https://github.com/mobiusklein/ms_deisotope/issues',
+            'Change Log': 'https://github.com/mobiusklein/ms_deisotope/blob/master/CHANGELOG.md'
         })
 
 
