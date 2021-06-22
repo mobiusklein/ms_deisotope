@@ -21,293 +21,294 @@ class Component(Term):
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('ionization type', term_cls_name="Component", writer=cog.out)
 # ]]]
+# CV Version: 4.1.55
 ionization_types = TermSet([
-    Component(u'chemical ionization', u'MS:1000071',
-              (u'The formation of a new ion by the reaction of a neutral'
-               u'species with an ion. The process may involve transfer of an'
-               u'electron, a proton or other charged species between the'
-               u'reactants. When a positive ion results from chemical'
-               u'ionization the term may be used without qualification. When'
-               u'a negative ion results the term negative ion chemical'
-               u'ionization should be used. Note that this term is not'
-               u'synonymous with chemi-ionization.'),
+    Component('chemical ionization', 'MS:1000071',
+              ('The formation of a new ion by the reaction of a neutral'
+               'species with an ion. The process may involve transfer of an'
+               'electron, a proton or other charged species between the'
+               'reactants. When a positive ion results from chemical'
+               'ionization the term may be used without qualification. When'
+               'a negative ion results the term negative ion chemical'
+               'ionization should be used. Note that this term is not'
+               'synonymous with chemi-ionization.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'electrospray ionization', u'MS:1000073',
-              (u'A process in which ionized species in the gas phase are'
-               u'produced from an analyte-containing solution via highly'
-               u'charged fine droplets, by means of spraying the solution'
-               u'from a narrow-bore needle tip at atmospheric pressure in the'
-               u'presence of a high electric field. When a pressurized gas is'
-               u'used to aid in the formation of a stable spray, the term'
-               u'pneumatically assisted electrospray ionization is used. The'
-               u'term ion spray is not recommended.'),
+              ['ionization type']),
+    Component('electrospray ionization', 'MS:1000073',
+              ('A process in which ionized species in the gas phase are'
+               'produced from an analyte-containing solution via highly'
+               'charged fine droplets, by means of spraying the solution'
+               'from a narrow-bore needle tip at atmospheric pressure in the'
+               'presence of a high electric field. When a pressurized gas is'
+               'used to aid in the formation of a stable spray, the term'
+               'pneumatically assisted electrospray ionization is used. The'
+               'term ion spray is not recommended.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'fast atom bombardment ionization', u'MS:1000074',
-              (u'The ionization of any species by the interaction of a'
-               u'focused beam of neutral atoms having a translational energy'
-               u'of several thousand eV with a sample that is typically'
-               u'dissolved in a solvent matrix. See also secondary'
-               u'ionization.'),
+              ['ionization type']),
+    Component('fast atom bombardment ionization', 'MS:1000074',
+              ('The ionization of any species by the interaction of a'
+               'focused beam of neutral atoms having a translational energy'
+               'of several thousand eV with a sample that is typically'
+               'dissolved in a solvent matrix. See also secondary'
+               'ionization.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'multiphoton ionization', u'MS:1000227',
-              (u'Photoionization of an atom or molecule in which in two or'
-               u'more photons are absorbed.'),
+              ['ionization type']),
+    Component('multiphoton ionization', 'MS:1000227',
+              ('Photoionization of an atom or molecule in which in two or'
+               'more photons are absorbed.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'atmospheric pressure ionization', u'MS:1000240',
-              (u'Any ionization process in which ions are formed in the gas'
-               u'phase at atmospheric pressure.'),
+              ['ionization type']),
+    Component('atmospheric pressure ionization', 'MS:1000240',
+              ('Any ionization process in which ions are formed in the gas'
+               'phase at atmospheric pressure.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'desorption ionization', u'MS:1000247',
-              (u'The formation of ions from a solid or liquid material after'
-               u'the rapid vaporization of that sample.'),
+              ['ionization type']),
+    Component('desorption ionization', 'MS:1000247',
+              ('The formation of ions from a solid or liquid material after'
+               'the rapid vaporization of that sample.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'flowing afterglow', u'MS:1000255',
-              (u'An ion source immersed in a flow of helium or other inert'
-               u'buffer gas that carries the ions through a meter-long'
-               u'reactor at pressures around 100 Pa.'),
+              ['ionization type']),
+    Component('flowing afterglow', 'MS:1000255',
+              ('An ion source immersed in a flow of helium or other inert'
+               'buffer gas that carries the ions through a meter-long'
+               'reactor at pressures around 100 Pa.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'field ionization', u'MS:1000258',
-              (u'The removal of electrons from any species by interaction'
-               u'with a high electric field.'),
+              ['ionization type']),
+    Component('field ionization', 'MS:1000258',
+              ('The removal of electrons from any species by interaction'
+               'with a high electric field.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'glow discharge ionization', u'MS:1000259',
-              (u'The formation of ions in the gas phase and from solid'
-               u'samples at the cathode by application of a voltage to a low'
-               u'pressure gas.'),
+              ['ionization type']),
+    Component('glow discharge ionization', 'MS:1000259',
+              ('The formation of ions in the gas phase and from solid'
+               'samples at the cathode by application of a voltage to a low'
+               'pressure gas.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'Negative Ion chemical ionization', u'MS:1000271',
-              (u'Chemical ionization that results in the formation of'
-               u'negative ions.'),
+              ['ionization type']),
+    Component('Negative Ion chemical ionization', 'MS:1000271',
+              ('Chemical ionization that results in the formation of'
+               'negative ions.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'neutralization reionization mass spectrometry', u'MS:1000272',
-              (u'With this technique, m/z selected ions form neutrals by'
-               u'charge transfer to a collision gas or by dissociation. The'
-               u'neutrals are separated from the remaining ions and ionized'
-               u'in collisions with a second gas. This method is used to'
-               u'investigate reaction intermediates and other unstable'
-               u'species.'),
+              ['ionization type']),
+    Component('neutralization reionization mass spectrometry', 'MS:1000272',
+              ('With this technique, m/z selected ions form neutrals by'
+               'charge transfer to a collision gas or by dissociation. The'
+               'neutrals are separated from the remaining ions and ionized'
+               'in collisions with a second gas. This method is used to'
+               'investigate reaction intermediates and other unstable'
+               'species.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'photoionization', u'MS:1000273',
-              (u'The ionization of an atom or molecule by a photon, written M'
-               u'+ h? ? M^+ + e. The term photon impact is not recommended.'),
+              ['ionization type']),
+    Component('photoionization', 'MS:1000273',
+              ('The ionization of an atom or molecule by a photon, written M'
+               '+ h? ? M^+ + e. The term photon impact is not recommended.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'pyrolysis mass spectrometry', u'MS:1000274',
-              (u'A mass spectrometry technique in which the sample is heated'
-               u'to the point of decomposition and the gaseous decomposition'
-               u'products are introduced into the ion source.'),
+              ['ionization type']),
+    Component('pyrolysis mass spectrometry', 'MS:1000274',
+              ('A mass spectrometry technique in which the sample is heated'
+               'to the point of decomposition and the gaseous decomposition'
+               'products are introduced into the ion source.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'resonance enhanced multiphoton ionization', u'MS:1000276',
-              (u'Multiphoton ionization in which the ionization cross section'
-               u'is significantly enhanced because the energy of the incident'
-               u'photons is resonant with an intermediate excited state of'
-               u'the neutral species.'),
+              ['ionization type']),
+    Component('resonance enhanced multiphoton ionization', 'MS:1000276',
+              ('Multiphoton ionization in which the ionization cross section'
+               'is significantly enhanced because the energy of the incident'
+               'photons is resonant with an intermediate excited state of'
+               'the neutral species.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'adiabatic ionization', u'MS:1000380',
-              (u'A process whereby an electron is removed from an atom, ion,'
-               u'or molecule to produce an ion in its lowest energy state.'),
+              ['ionization type']),
+    Component('adiabatic ionization', 'MS:1000380',
+              ('A process whereby an electron is removed from an atom, ion,'
+               'or molecule to produce an ion in its lowest energy state.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'associative ionization', u'MS:1000381',
-              (u'An ionization process in which two excited atoms or'
-               u'molecules react to form a single positive ion and an'
-               u'electron.'),
+              ['ionization type']),
+    Component('associative ionization', 'MS:1000381',
+              ('An ionization process in which two excited atoms or'
+               'molecules react to form a single positive ion and an'
+               'electron.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'autodetachment', u'MS:1000383',
-              (u'The formation of a neutral when a negative ion in a discrete'
-               u'state with an energy greater than the detachment threshold'
-               u'loses an electron spontaneously without further interaction'
-               u'with an energy source.'),
+              ['ionization type']),
+    Component('autodetachment', 'MS:1000383',
+              ('The formation of a neutral when a negative ion in a discrete'
+               'state with an energy greater than the detachment threshold'
+               'loses an electron spontaneously without further interaction'
+               'with an energy source.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'autoionization', u'MS:1000384',
-              (u'The formation of an ion when an atom or molecule in a'
-               u'discrete state with an energy greater than the ionization'
-               u'threshold loses an electron spontaneously without further'
-               u'interaction with an energy source.'),
+              ['ionization type']),
+    Component('autoionization', 'MS:1000384',
+              ('The formation of an ion when an atom or molecule in a'
+               'discrete state with an energy greater than the ionization'
+               'threshold loses an electron spontaneously without further'
+               'interaction with an energy source.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'charge exchange ionization', u'MS:1000385',
-              (u'The interaction of an ion with an atom or molecule in which'
-               u'the charge on the ion is transferred to the neutral without'
-               u'the dissociation of either. Synonymous with charge transfer'
-               u'ionization.'),
+              ['ionization type']),
+    Component('charge exchange ionization', 'MS:1000385',
+              ('The interaction of an ion with an atom or molecule in which'
+               'the charge on the ion is transferred to the neutral without'
+               'the dissociation of either. Synonymous with charge transfer'
+               'ionization.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'chemi-ionization', u'MS:1000386',
-              (u'The reaction of a neutral molecule with an internally'
-               u'excited molecule to form an ion. Note that this term is not'
-               u'synonymous with chemical ionization.'),
+              ['ionization type']),
+    Component('chemi-ionization', 'MS:1000386',
+              ('The reaction of a neutral molecule with an internally'
+               'excited molecule to form an ion. Note that this term is not'
+               'synonymous with chemical ionization.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'dissociative ionization', u'MS:1000388',
-              (u'The reaction of a gas-phase molecule that results in its'
-               u'decomposition to form products, one of which is an ion.'),
+              ['ionization type']),
+    Component('dissociative ionization', 'MS:1000388',
+              ('The reaction of a gas-phase molecule that results in its'
+               'decomposition to form products, one of which is an ion.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'electron ionization', u'MS:1000389',
-              (u'The ionization of an atom or molecule by electrons that are'
-               u'typically accelerated to energies between 50 and 150 eV.'
-               u'Usually 70 eV electrons are used to produce positive ions.'
-               u"The term 'electron impact' is not recommended."),
+              ['ionization type']),
+    Component('electron ionization', 'MS:1000389',
+              ('The ionization of an atom or molecule by electrons that are'
+               'typically accelerated to energies between 50 and 150 eV.'
+               'Usually 70 eV electrons are used to produce positive ions.'
+               "The term 'electron impact' is not recommended."),
               'ionization type',
-              [u'ionization type']),
-    Component(u'liquid secondary ionization', u'MS:1000395',
-              (u'The ionization of any species by the interaction of a'
-               u'focused beam of ions with a sample that is dissolved in a'
-               u'solvent matrix. See also fast atom bombardment and secondary'
-               u'ionization.'),
+              ['ionization type']),
+    Component('liquid secondary ionization', 'MS:1000395',
+              ('The ionization of any species by the interaction of a'
+               'focused beam of ions with a sample that is dissolved in a'
+               'solvent matrix. See also fast atom bombardment and secondary'
+               'ionization.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'penning ionization', u'MS:1000399',
-              (u'Ionization that occurs through the interaction of two or'
-               u'more neutral gaseous species, at least one of which is'
-               u'internally excited.'),
+              ['ionization type']),
+    Component('penning ionization', 'MS:1000399',
+              ('Ionization that occurs through the interaction of two or'
+               'more neutral gaseous species, at least one of which is'
+               'internally excited.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'plasma desorption ionization', u'MS:1000400',
-              (u'The ionization of material in a solid sample by bombarding'
-               u'it with ionic or neutral atoms formed as a result of the'
-               u'fission of a suitable nuclide, typically 252Cf. Synonymous'
-               u'with fission fragment ionization.'),
+              ['ionization type']),
+    Component('plasma desorption ionization', 'MS:1000400',
+              ('The ionization of material in a solid sample by bombarding'
+               'it with ionic or neutral atoms formed as a result of the'
+               'fission of a suitable nuclide, typically 252Cf. Synonymous'
+               'with fission fragment ionization.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'secondary ionization', u'MS:1000402',
-              (u'The process in which ions are ejected from a sample surface'
-               u'as a result of bombardment by a primary beam of atoms or'
-               u'ions.'),
+              ['ionization type']),
+    Component('secondary ionization', 'MS:1000402',
+              ('The process in which ions are ejected from a sample surface'
+               'as a result of bombardment by a primary beam of atoms or'
+               'ions.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'soft ionization', u'MS:1000403',
-              (u'The formation of gas-phase ions without extensive'
-               u'fragmentation.'),
+              ['ionization type']),
+    Component('soft ionization', 'MS:1000403',
+              ('The formation of gas-phase ions without extensive'
+               'fragmentation.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'spark ionization', u'MS:1000404',
-              (u'The formation of ions from a solid material by an'
-               u'intermittent electrical discharge.'),
+              ['ionization type']),
+    Component('spark ionization', 'MS:1000404',
+              ('The formation of ions from a solid material by an'
+               'intermittent electrical discharge.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'surface ionization', u'MS:1000406',
-              (u'The ionization of a neutral species when it interacts with a'
-               u'solid surface with an appropriate work function and'
-               u'temperature.'),
+              ['ionization type']),
+    Component('surface ionization', 'MS:1000406',
+              ('The ionization of a neutral species when it interacts with a'
+               'solid surface with an appropriate work function and'
+               'temperature.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'thermal ionization', u'MS:1000407',
-              (u'The ionization of a neutral species through contact with a'
-               u'high temperature surface.'),
+              ['ionization type']),
+    Component('thermal ionization', 'MS:1000407',
+              ('The ionization of a neutral species through contact with a'
+               'high temperature surface.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'vertical ionization', u'MS:1000408',
-              (u'A process in which an electron is removed from or added to a'
-               u'molecule without a change in the positions of the atoms. The'
-               u'resulting ion is typically in an excited vibrational state.'),
+              ['ionization type']),
+    Component('vertical ionization', 'MS:1000408',
+              ('A process in which an electron is removed from or added to a'
+               'molecule without a change in the positions of the atoms. The'
+               'resulting ion is typically in an excited vibrational state.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'fast ion bombardment', u'MS:1000446',
-              (u'The ionization of any species by the interaction of a'
-               u'focused beam of ions having a translational energy of'
-               u'several thousand eV with a solid sample.'),
+              ['ionization type']),
+    Component('fast ion bombardment', 'MS:1000446',
+              ('The ionization of any species by the interaction of a'
+               'focused beam of ions having a translational energy of'
+               'several thousand eV with a solid sample.'),
               'ionization type',
-              [u'ionization type']),
-    Component(u'microelectrospray', u'MS:1000397',
-              (u'Electrospray ionization at a solvent flow rate of 300-800'
-               u'nL/min where the flow is a result of a mechanical pump. See'
-               u'nanoelectrospray.'),
+              ['ionization type']),
+    Component('microelectrospray', 'MS:1000397',
+              ('Electrospray ionization at a solvent flow rate of 300-800'
+               'nL/min where the flow is a result of a mechanical pump. See'
+               'nanoelectrospray.'),
               'ionization type',
-              [u'electrospray ionization', u'ionization type']),
-    Component(u'nanoelectrospray', u'MS:1000398',
-              (u'Electrospray ionization at a flow rate less than ~25 nL/min.'
-               u'Nanoelectrospray is synonymous with nanospray. The flow is'
-               u'dependent on the potenial on the tip of the electrospray'
-               u'needle and/or a gas presure to push the sample through the'
-               u'needle. See also electrospray ionization and'
-               u'microelectrospray.'),
+              ['electrospray ionization', 'ionization type']),
+    Component('nanoelectrospray', 'MS:1000398',
+              ('Electrospray ionization at a flow rate less than ~25 nL/min.'
+               'Nanoelectrospray is synonymous with nanospray. The flow is'
+               'dependent on the potenial on the tip of the electrospray'
+               'needle and/or a gas presure to push the sample through the'
+               'needle. See also electrospray ionization and'
+               'microelectrospray.'),
               'ionization type',
-              [u'electrospray ionization', u'ionization type']),
-    Component(u'atmospheric pressure chemical ionization', u'MS:1000070',
-              (u'Chemical ionization that takes place at atmospheric pressure'
-               u'as opposed to the reduced pressure is normally used for'
-               u'chemical ionization.'),
+              ['electrospray ionization', 'ionization type']),
+    Component('atmospheric pressure chemical ionization', 'MS:1000070',
+              ('Chemical ionization that takes place at atmospheric pressure'
+               'as opposed to the reduced pressure is normally used for'
+               'chemical ionization.'),
               'ionization type',
-              [u'atmospheric pressure ionization', u'ionization type']),
-    Component(u'atmospheric pressure matrix-assisted laser desorption ionization', u'MS:1000239',
-              (u'Matrix-assisted laser desorption ionization in which the'
-               u'sample target is at atmospheric pressure and the ions formed'
-               u'by the pulsed laser are sampled through a small aperture'
-               u'into the mass spectrometer.'),
+              ['atmospheric pressure ionization', 'ionization type']),
+    Component('atmospheric pressure matrix-assisted laser desorption ionization', 'MS:1000239',
+              ('Matrix-assisted laser desorption ionization in which the'
+               'sample target is at atmospheric pressure and the ions formed'
+               'by the pulsed laser are sampled through a small aperture'
+               'into the mass spectrometer.'),
               'ionization type',
-              [u'atmospheric pressure ionization', u'ionization type']),
-    Component(u'atmospheric pressure photoionization', u'MS:1000382',
-              (u'Atmospheric pressure chemical ionization in which the'
-               u'reactant ions are generated by photo-ionization.'),
+              ['atmospheric pressure ionization', 'ionization type']),
+    Component('atmospheric pressure photoionization', 'MS:1000382',
+              ('Atmospheric pressure chemical ionization in which the'
+               'reactant ions are generated by photo-ionization.'),
               'ionization type',
-              [u'atmospheric pressure ionization', u'ionization type']),
-    Component(u'desorption electrospray ionization', u'MS:1002011',
-              (u'Combination of electrospray and desorption ionization method'
-               u'that ionizes gases, liquids and solids in open air under'
-               u'atmospheric pressure." [DOI:10.1126/science.1104404'),
+              ['atmospheric pressure ionization', 'ionization type']),
+    Component('desorption electrospray ionization', 'MS:1002011',
+              ('Combination of electrospray and desorption ionization method'
+               'that ionizes gases, liquids and solids in open air under'
+               'atmospheric pressure." [DOI:10.1126/science.1104404'),
               'ionization type',
-              [u'atmospheric pressure ionization', u'ionization type']),
-    Component(u'matrix-assisted laser desorption ionization', u'MS:1000075',
-              (u'The formation of gas-phase ions from molecules that are'
-               u'present in a solid or solvent matrix that is irradiated with'
-               u'a pulsed laser. See also laser desorption/ionization.'),
+              ['atmospheric pressure ionization', 'ionization type']),
+    Component('matrix-assisted laser desorption ionization', 'MS:1000075',
+              ('The formation of gas-phase ions from molecules that are'
+               'present in a solid or solvent matrix that is irradiated with'
+               'a pulsed laser. See also laser desorption/ionization.'),
               'ionization type',
-              [u'desorption ionization', u'ionization type']),
-    Component(u'field desorption', u'MS:1000257',
-              (u'The formation of gas-phase ions from a material deposited on'
-               u'a solid surface in the presence of a high electric field.'
-               u'Because this process may encompass ionization by field'
-               u'ionization or other mechanisms, it is not recommended as a'
-               u'synonym for field desorption ionization.'),
+              ['desorption ionization', 'ionization type']),
+    Component('field desorption', 'MS:1000257',
+              ('The formation of gas-phase ions from a material deposited on'
+               'a solid surface in the presence of a high electric field.'
+               'Because this process may encompass ionization by field'
+               'ionization or other mechanisms, it is not recommended as a'
+               'synonym for field desorption ionization.'),
               'ionization type',
-              [u'desorption ionization', u'ionization type']),
-    Component(u'desorption/ionization on silicon', u'MS:1000387',
-              (u'The formation of ions by laser desorption ionization of a'
-               u'sample deposited on a porous silicon surface.'),
+              ['desorption ionization', 'ionization type']),
+    Component('desorption/ionization on silicon', 'MS:1000387',
+              ('The formation of ions by laser desorption ionization of a'
+               'sample deposited on a porous silicon surface.'),
               'ionization type',
-              [u'desorption ionization', u'ionization type']),
-    Component(u'laser desorption ionization', u'MS:1000393',
-              (u'The formation of gas-phase ions by the interaction of a'
-               u'pulsed laser with a solid or liquid material.'),
+              ['desorption ionization', 'ionization type']),
+    Component('laser desorption ionization', 'MS:1000393',
+              ('The formation of gas-phase ions by the interaction of a'
+               'pulsed laser with a solid or liquid material.'),
               'ionization type',
-              [u'desorption ionization', u'ionization type']),
-    Component(u'surface-assisted laser desorption ionization', u'MS:1000405',
-              (u'The formation of gas-phase ions from molecules that are'
-               u'deposited on a particular surface substrate that is'
-               u'irradiated with a pulsed laser. See also matrix-assisted'
-               u'laser desorption ionization.'),
+              ['desorption ionization', 'ionization type']),
+    Component('surface-assisted laser desorption ionization', 'MS:1000405',
+              ('The formation of gas-phase ions from molecules that are'
+               'deposited on a particular surface substrate that is'
+               'irradiated with a pulsed laser. See also matrix-assisted'
+               'laser desorption ionization.'),
               'ionization type',
-              [u'desorption ionization', u'ionization type']),
-    Component(u'surface enhanced laser desorption ionization', u'MS:1000278',
-              (u'The formation of ionized species in the gas phase from'
-               u'analytes deposited on a particular surface substrate which'
-               u'is irradiated with a laser beam of which wavelength is'
-               u'absorbed by the surface. See also desorption/ionization on'
-               u'silicon and laser desorption/ionization.'),
+              ['desorption ionization', 'ionization type']),
+    Component('surface enhanced laser desorption ionization', 'MS:1000278',
+              ('The formation of ionized species in the gas phase from'
+               'analytes deposited on a particular surface substrate which'
+               'is irradiated with a laser beam of which wavelength is'
+               'absorbed by the surface. See also desorption/ionization on'
+               'silicon and laser desorption/ionization.'),
               'ionization type',
-              [u'surface ionization', u'ionization type']),
-    Component(u'surface enhanced neat desorption', u'MS:1000279',
-              (u'Matrix-assisted laser desorption ionization in which the'
-               u'matrix is covalently linked to the target surface.'),
+              ['surface ionization', 'ionization type']),
+    Component('surface enhanced neat desorption', 'MS:1000279',
+              ('Matrix-assisted laser desorption ionization in which the'
+               'matrix is covalently linked to the target surface.'),
               'ionization type',
-              [u'surface ionization', u'ionization type']),
+              ['surface ionization', 'ionization type']),
 ])
 # [[[end]]]
 
@@ -317,147 +318,148 @@ ionization_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('detector type', term_cls_name="Component", writer=cog.out)
 # ]]]
+# CV Version: 4.1.55
 detector_types = TermSet([
-    Component(u'channeltron', u'MS:1000107',
-              (u'A horn-shaped (or cone-shaped) continuous dynode particle'
-               u'multiplier. The ion strikes the inner surface of the device'
-               u'and induces the production of secondary electrons that in'
-               u'turn impinge on the inner surfaces to produce more secondary'
-               u'electrons. This avalanche effect produces an increase in'
-               u'signal in the final measured current pulse.'),
+    Component('channeltron', 'MS:1000107',
+              ('A horn-shaped (or cone-shaped) continuous dynode particle'
+               'multiplier. The ion strikes the inner surface of the device'
+               'and induces the production of secondary electrons that in'
+               'turn impinge on the inner surfaces to produce more secondary'
+               'electrons. This avalanche effect produces an increase in'
+               'signal in the final measured current pulse.'),
               'detector type',
-              [u'detector type']),
-    Component(u'daly detector', u'MS:1000110',
-              (u'Detector consisting of a conversion dynode, scintillator and'
-               u'photomultiplier. The metal knob at high potential emits'
-               u'secondary electrons when ions impinge on the surface. The'
-               u'secondary electrons are accelerated onto the scintillator'
-               u'that produces light that is then detected by the'
-               u'photomultiplier detector.'),
+              ['detector type']),
+    Component('daly detector', 'MS:1000110',
+              ('Detector consisting of a conversion dynode, scintillator and'
+               'photomultiplier. The metal knob at high potential emits'
+               'secondary electrons when ions impinge on the surface. The'
+               'secondary electrons are accelerated onto the scintillator'
+               'that produces light that is then detected by the'
+               'photomultiplier detector.'),
               'detector type',
-              [u'detector type']),
-    Component(u'faraday cup', u'MS:1000112',
-              (u'A conducting cup or chamber that intercepts a charged'
-               u'particle beam and is electrically connected to a current'
-               u'measuring device.'),
+              ['detector type']),
+    Component('faraday cup', 'MS:1000112',
+              ('A conducting cup or chamber that intercepts a charged'
+               'particle beam and is electrically connected to a current'
+               'measuring device.'),
               'detector type',
-              [u'detector type']),
-    Component(u'multi-collector', u'MS:1000115',
-              (u'A detector system commonly used in inductively coupled'
-               u'plasma mass spectrometers.'),
+              ['detector type']),
+    Component('multi-collector', 'MS:1000115',
+              ('A detector system commonly used in inductively coupled'
+               'plasma mass spectrometers.'),
               'detector type',
-              [u'detector type']),
-    Component(u'photomultiplier', u'MS:1000116',
-              (u'A detector for conversion of the ion/electron signal into'
-               u'photon(s) which are then amplified and detected.'),
+              ['detector type']),
+    Component('photomultiplier', 'MS:1000116',
+              ('A detector for conversion of the ion/electron signal into'
+               'photon(s) which are then amplified and detected.'),
               'detector type',
-              [u'detector type']),
-    Component(u'electron multiplier', u'MS:1000253',
-              (u'A device to amplify the current of a beam or packet of'
-               u'charged particles or photons by incidence upon the surface'
-               u'of an electrode to produce secondary electrons. The'
-               u'secondary electrons are then accelerated to other electrodes'
-               u'or parts of a continuous electrode to produce further'
-               u'secondary electrons.'),
+              ['detector type']),
+    Component('electron multiplier', 'MS:1000253',
+              ('A device to amplify the current of a beam or packet of'
+               'charged particles or photons by incidence upon the surface'
+               'of an electrode to produce secondary electrons. The'
+               'secondary electrons are then accelerated to other electrodes'
+               'or parts of a continuous electrode to produce further'
+               'secondary electrons.'),
               'detector type',
-              [u'detector type']),
-    Component(u'array detector', u'MS:1000345',
-              (u'Detector comprising several ion collection elements,'
-               u'arranged in a line or grid where each element is an'
-               u'individual detector.'),
+              ['detector type']),
+    Component('array detector', 'MS:1000345',
+              ('Detector comprising several ion collection elements,'
+               'arranged in a line or grid where each element is an'
+               'individual detector.'),
               'detector type',
-              [u'detector type']),
-    Component(u'conversion dynode', u'MS:1000346',
-              (u'A surface that is held at high potential such that ions'
-               u'striking the surface produce electrons that are subsequently'
-               u'detected.'),
+              ['detector type']),
+    Component('conversion dynode', 'MS:1000346',
+              ('A surface that is held at high potential such that ions'
+               'striking the surface produce electrons that are subsequently'
+               'detected.'),
               'detector type',
-              [u'detector type']),
-    Component(u'dynode', u'MS:1000347',
-              (u'One of a series of electrodes in a photomultiplier tube.'
-               u'Such an arrangement is able to amplify the current emitted'
-               u'by the photocathode.'),
+              ['detector type']),
+    Component('dynode', 'MS:1000347',
+              ('One of a series of electrodes in a photomultiplier tube.'
+               'Such an arrangement is able to amplify the current emitted'
+               'by the photocathode.'),
               'detector type',
-              [u'detector type']),
-    Component(u'focal plane collector', u'MS:1000348',
-              (u'A detector for spatially disperse ion beams in which all'
-               u'ions simultaneously impinge on the detector plane.'),
+              ['detector type']),
+    Component('focal plane collector', 'MS:1000348',
+              ('A detector for spatially disperse ion beams in which all'
+               'ions simultaneously impinge on the detector plane.'),
               'detector type',
-              [u'detector type']),
-    Component(u'ion-to-photon detector', u'MS:1000349',
-              (u'A detector in which ions strike a conversion dynode to'
-               u'produce electrons that in turn strike a phosphor and the'
-               u'resulting photons are detected by a photomultiplier.'),
+              ['detector type']),
+    Component('ion-to-photon detector', 'MS:1000349',
+              ('A detector in which ions strike a conversion dynode to'
+               'produce electrons that in turn strike a phosphor and the'
+               'resulting photons are detected by a photomultiplier.'),
               'detector type',
-              [u'detector type']),
-    Component(u'point collector', u'MS:1000350',
-              (u'A detector in which the ion beam is focused onto a point and'
-               u'the individual ions arrive sequentially.'),
+              ['detector type']),
+    Component('point collector', 'MS:1000350',
+              ('A detector in which the ion beam is focused onto a point and'
+               'the individual ions arrive sequentially.'),
               'detector type',
-              [u'detector type']),
-    Component(u'postacceleration detector', u'MS:1000351',
-              (u'A detector in which the charged particles are accelerated to'
-               u'a high velocity and impinge on a conversion dynode, emitting'
-               u'secondary electrons. The electrons are accelerated onto a'
-               u'phosphor screen, which emits photons that are in turn'
-               u'detected using a photomultiplier or other photon detector.'),
+              ['detector type']),
+    Component('postacceleration detector', 'MS:1000351',
+              ('A detector in which the charged particles are accelerated to'
+               'a high velocity and impinge on a conversion dynode, emitting'
+               'secondary electrons. The electrons are accelerated onto a'
+               'phosphor screen, which emits photons that are in turn'
+               'detected using a photomultiplier or other photon detector.'),
               'detector type',
-              [u'detector type']),
-    Component(u'inductive detector', u'MS:1000624',
-              (u'Inductive detector.'),
+              ['detector type']),
+    Component('inductive detector', 'MS:1000624',
+              ('Inductive detector.'),
               'detector type',
-              [u'detector type']),
-    Component(u'fluorescence detector', u'MS:1002308',
-              (u'A detector using a fluorescent signal after excitation with'
-               u'light.'),
+              ['detector type']),
+    Component('fluorescence detector', 'MS:1002308',
+              ('A detector using a fluorescent signal after excitation with'
+               'light.'),
               'detector type',
-              [u'detector type']),
-    Component(u'electron multiplier tube', u'MS:1000111',
-              (u'A device to amplify the current of a beam or packet of'
-               u'charged particles or photons by incidence upon the surface'
-               u'of an electrode to produce secondary electrons.'),
+              ['detector type']),
+    Component('electron multiplier tube', 'MS:1000111',
+              ('A device to amplify the current of a beam or packet of'
+               'charged particles or photons by incidence upon the surface'
+               'of an electrode to produce secondary electrons.'),
               'detector type',
-              [u'electron multiplier', u'detector type']),
-    Component(u'microchannel plate detector', u'MS:1000114',
-              (u'A thin plate that contains a closely spaced array of'
-               u'channels that each act as a continuous dynode particle'
-               u'multiplier. A charged particle, fast neutral particle, or'
-               u'photon striking the plate causes a cascade of secondary'
-               u'electrons that ultimately exits the opposite side of the'
-               u'plate.'),
+              ['electron multiplier', 'detector type']),
+    Component('microchannel plate detector', 'MS:1000114',
+              ('A thin plate that contains a closely spaced array of'
+               'channels that each act as a continuous dynode particle'
+               'multiplier. A charged particle, fast neutral particle, or'
+               'photon striking the plate causes a cascade of secondary'
+               'electrons that ultimately exits the opposite side of the'
+               'plate.'),
               'detector type',
-              [u'array detector', u'detector type']),
-    Component(u'photodiode array detector', u'MS:1000621',
-              (u'An array detector used to record spectra in the ultraviolet'
-               u'and visible region of light.'),
+              ['array detector', 'detector type']),
+    Component('photodiode array detector', 'MS:1000621',
+              ('An array detector used to record spectra in the ultraviolet'
+               'and visible region of light.'),
               'detector type',
-              [u'array detector', u'detector type']),
-    Component(u'conversion dynode electron multiplier', u'MS:1000108',
-              (u'A surface that is held at high potential so that ions'
-               u'striking the surface produce electrons that are subsequently'
-               u'detected.'),
+              ['array detector', 'detector type']),
+    Component('conversion dynode electron multiplier', 'MS:1000108',
+              ('A surface that is held at high potential so that ions'
+               'striking the surface produce electrons that are subsequently'
+               'detected.'),
               'detector type',
-              [u'conversion dynode', u'detector type']),
-    Component(u'conversion dynode photomultiplier', u'MS:1000109',
-              (u'A detector in which ions strike a conversion dynode to'
-               u'produce electrons that in turn generate photons through a'
-               u'phosphorescent screen that are detected by a'
-               u'photomultiplier.'),
+              ['conversion dynode', 'detector type']),
+    Component('conversion dynode photomultiplier', 'MS:1000109',
+              ('A detector in which ions strike a conversion dynode to'
+               'produce electrons that in turn generate photons through a'
+               'phosphorescent screen that are detected by a'
+               'photomultiplier.'),
               'detector type',
-              [u'conversion dynode', u'detector type']),
-    Component(u'focal plane array', u'MS:1000113',
-              (u'An array of detectors for spatially disperse ion beams in'
-               u'which all ions simultaneously impinge on the detector plane.'),
+              ['conversion dynode', 'detector type']),
+    Component('focal plane array', 'MS:1000113',
+              ('An array of detectors for spatially disperse ion beams in'
+               'which all ions simultaneously impinge on the detector plane.'),
               'detector type',
-              [u'focal plane collector', u'detector type']),
-    Component(u'Acquity UPLC FLR', u'MS:1000819',
-              (u'Acquity UPLC Fluorescence Detector.'),
+              ['focal plane collector', 'detector type']),
+    Component('Acquity UPLC FLR', 'MS:1000819',
+              ('Acquity UPLC Fluorescence Detector.'),
               'detector type',
-              [u'Waters instrument model', u'fluorescence detector', u'instrument model', u'detector type']),
-    Component(u'Acquity UPLC PDA', u'MS:1000818',
-              (u'Acquity UPLC Photodiode Array Detector.'),
+              ['Waters instrument model', 'fluorescence detector', 'instrument model', 'detector type']),
+    Component('Acquity UPLC PDA', 'MS:1000818',
+              ('Acquity UPLC Photodiode Array Detector.'),
               'detector type',
-              [u'Waters instrument model', u'photodiode array detector', u'instrument model', u'array detector', u'detector type']),
+              ['Waters instrument model', 'photodiode array detector', 'instrument model', 'array detector', 'detector type']),
 ])
 # [[[end]]]
 
@@ -467,105 +469,106 @@ detector_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('mass analyzer type', 'analyzer_types', term_cls_name="Component", writer=cog.out)
 # ]]]
+# CV Version: 4.1.55
 analyzer_types = TermSet([
-    Component(u'fourier transform ion cyclotron resonance mass spectrometer', u'MS:1000079',
-              (u'A mass spectrometer based on the principle of ion cyclotron'
-               u'resonance in which an ion in a magnetic field moves in a'
-               u'circular orbit at a frequency characteristic of its m/z'
-               u'value. Ions are coherently excited to a larger radius orbit'
-               u'using a pulse of radio frequency energy and their image'
-               u'charge is detected on receiver plates as a time domain'
-               u'signal. Fourier transformation of the time domain signal'
-               u'results in a frequency domain signal which is converted to a'
-               u'mass spectrum based in the inverse relationship between'
-               u'frequency and m/z.'),
+    Component('fourier transform ion cyclotron resonance mass spectrometer', 'MS:1000079',
+              ('A mass spectrometer based on the principle of ion cyclotron'
+               'resonance in which an ion in a magnetic field moves in a'
+               'circular orbit at a frequency characteristic of its m/z'
+               'value. Ions are coherently excited to a larger radius orbit'
+               'using a pulse of radio frequency energy and their image'
+               'charge is detected on receiver plates as a time domain'
+               'signal. Fourier transformation of the time domain signal'
+               'results in a frequency domain signal which is converted to a'
+               'mass spectrum based in the inverse relationship between'
+               'frequency and m/z.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'magnetic sector', u'MS:1000080',
-              (u'A device that produces a magnetic field perpendicular to a'
-               u'charged particle beam that deflects the beam to an extent'
-               u'that is proportional to the particle momentum per unit'
-               u'charge. For a monoenergetic beam, the deflection is'
-               u'proportional to m/z.'),
+              ['mass analyzer type']),
+    Component('magnetic sector', 'MS:1000080',
+              ('A device that produces a magnetic field perpendicular to a'
+               'charged particle beam that deflects the beam to an extent'
+               'that is proportional to the particle momentum per unit'
+               'charge. For a monoenergetic beam, the deflection is'
+               'proportional to m/z.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'quadrupole', u'MS:1000081',
-              (u'A mass spectrometer that consists of four parallel rods'
-               u'whose centers form the corners of a square and whose'
-               u'opposing poles are connected. The voltage applied to the'
-               u'rods is a superposition of a static potential and a'
-               u'sinusoidal radio frequency potential. The motion of an ion'
-               u'in the x and y dimensions is described by the Matthieu'
-               u'equation whose solutions show that ions in a particular m/z'
-               u'range can be transmitted along the z axis.'),
+              ['mass analyzer type']),
+    Component('quadrupole', 'MS:1000081',
+              ('A mass spectrometer that consists of four parallel rods'
+               'whose centers form the corners of a square and whose'
+               'opposing poles are connected. The voltage applied to the'
+               'rods is a superposition of a static potential and a'
+               'sinusoidal radio frequency potential. The motion of an ion'
+               'in the x and y dimensions is described by the Matthieu'
+               'equation whose solutions show that ions in a particular m/z'
+               'range can be transmitted along the z axis.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'time-of-flight', u'MS:1000084',
-              (u'Instrument that separates ions by m/z in a field-free region'
-               u'after acceleration to a fixed acceleration energy.'),
+              ['mass analyzer type']),
+    Component('time-of-flight', 'MS:1000084',
+              ('Instrument that separates ions by m/z in a field-free region'
+               'after acceleration to a fixed acceleration energy.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'electrostatic energy analyzer', u'MS:1000254',
-              (u'A device consisting of conducting parallel plates,'
-               u'concentric cylinders or concentric spheres that separates'
-               u'charged particles according to their kinetic energy by means'
-               u'of an electric field that is constant in time.'),
+              ['mass analyzer type']),
+    Component('electrostatic energy analyzer', 'MS:1000254',
+              ('A device consisting of conducting parallel plates,'
+               'concentric cylinders or concentric spheres that separates'
+               'charged particles according to their kinetic energy by means'
+               'of an electric field that is constant in time.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'ion trap', u'MS:1000264',
-              (u'A device for spatially confining ions using electric and'
-               u'magnetic fields alone or in combination.'),
+              ['mass analyzer type']),
+    Component('ion trap', 'MS:1000264',
+              ('A device for spatially confining ions using electric and'
+               'magnetic fields alone or in combination.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'stored waveform inverse fourier transform', u'MS:1000284',
-              (u'A technique to create excitation waveforms for ions in FT-'
-               u'ICR mass spectrometer or Paul ion trap. An excitation'
-               u'waveform in the time-domain is generated by taking the'
-               u'inverse Fourier transform of an appropriate frequency-domain'
-               u'programmed excitation spectrum, in which the resonance'
-               u'frequencies of ions to be excited are included. This'
-               u'technique may be used for selection of precursor ions in MS2'
-               u'experiments.'),
+              ['mass analyzer type']),
+    Component('stored waveform inverse fourier transform', 'MS:1000284',
+              ('A technique to create excitation waveforms for ions in FT-'
+               'ICR mass spectrometer or Paul ion trap. An excitation'
+               'waveform in the time-domain is generated by taking the'
+               'inverse Fourier transform of an appropriate frequency-domain'
+               'programmed excitation spectrum, in which the resonance'
+               'frequencies of ions to be excited are included. This'
+               'technique may be used for selection of precursor ions in MS2'
+               'experiments.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'cyclotron', u'MS:1000288',
-              (u'A device that uses an oscillating electric field and'
-               u'magnetic field to accelerate charged particles.'),
+              ['mass analyzer type']),
+    Component('cyclotron', 'MS:1000288',
+              ('A device that uses an oscillating electric field and'
+               'magnetic field to accelerate charged particles.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'orbitrap', u'MS:1000484',
-              (u'An ion trapping device that consists of an outer barrel-like'
-               u'electrode and a coaxial inner spindle-like electrode that'
-               u'form an electrostatic field with quadro-logarithmic'
-               u'potential distribution. The frequency of harmonic'
-               u'oscillations of the orbitally trapped ions along the axis of'
-               u'the electrostatic field is independent of the ion velocity'
-               u'and is inversely proportional to the square root of m/z so'
-               u'that the trap can be used as a mass analyzer.'),
+              ['mass analyzer type']),
+    Component('orbitrap', 'MS:1000484',
+              ('An ion trapping device that consists of an outer barrel-like'
+               'electrode and a coaxial inner spindle-like electrode that'
+               'form an electrostatic field with quadro-logarithmic'
+               'potential distribution. The frequency of harmonic'
+               'oscillations of the orbitally trapped ions along the axis of'
+               'the electrostatic field is independent of the ion velocity'
+               'and is inversely proportional to the square root of m/z so'
+               'that the trap can be used as a mass analyzer.'),
               'mass analyzer type',
-              [u'mass analyzer type']),
-    Component(u'quadrupole ion trap', u'MS:1000082',
-              (u'Quadrupole Ion Trap mass analyzer captures the ions in a'
-               u'three dimensional ion trap and then selectively ejects them'
-               u'by varying the RF and DC potentials.'),
+              ['mass analyzer type']),
+    Component('quadrupole ion trap', 'MS:1000082',
+              ('Quadrupole Ion Trap mass analyzer captures the ions in a'
+               'three dimensional ion trap and then selectively ejects them'
+               'by varying the RF and DC potentials.'),
               'mass analyzer type',
-              [u'ion trap', u'mass analyzer type']),
-    Component(u'linear ion trap', u'MS:1000291',
-              (u'A two dimensional Paul ion trap in which ions are confined'
-               u'in the axial dimension by means of an electric field at the'
-               u'ends of the trap.'),
+              ['ion trap', 'mass analyzer type']),
+    Component('linear ion trap', 'MS:1000291',
+              ('A two dimensional Paul ion trap in which ions are confined'
+               'in the axial dimension by means of an electric field at the'
+               'ends of the trap.'),
               'mass analyzer type',
-              [u'ion trap', u'mass analyzer type']),
-    Component(u'axial ejection linear ion trap', u'MS:1000078',
-              (u'A linear ion trap mass spectrometer where ions are ejected'
-               u'along the axis of the analyzer.'),
+              ['ion trap', 'mass analyzer type']),
+    Component('axial ejection linear ion trap', 'MS:1000078',
+              ('A linear ion trap mass spectrometer where ions are ejected'
+               'along the axis of the analyzer.'),
               'mass analyzer type',
-              [u'linear ion trap', u'ion trap', u'mass analyzer type']),
-    Component(u'radial ejection linear ion trap', u'MS:1000083',
-              (u'A linear ion trap mass spectrometer where ions are ejected'
-               u'along the radius of the analyzer.'),
+              ['linear ion trap', 'ion trap', 'mass analyzer type']),
+    Component('radial ejection linear ion trap', 'MS:1000083',
+              ('A linear ion trap mass spectrometer where ions are ejected'
+               'along the radius of the analyzer.'),
               'mass analyzer type',
-              [u'linear ion trap', u'ion trap', u'mass analyzer type']),
+              ['linear ion trap', 'ion trap', 'mass analyzer type']),
 ])
 # [[[end]]]
 
@@ -575,100 +578,101 @@ analyzer_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('inlet type', term_cls_name="Component", writer=cog.out)
 # ]]]
+# CV Version: 4.1.55
 inlet_types = TermSet([
-    Component(u'continuous flow fast atom bombardment', u'MS:1000055',
-              (u'Fast atom bombardment ionization in which the analyte in'
-               u'solution is entrained in a flowing liquid matrix.'),
+    Component('continuous flow fast atom bombardment', 'MS:1000055',
+              ('Fast atom bombardment ionization in which the analyte in'
+               'solution is entrained in a flowing liquid matrix.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'direct inlet', u'MS:1000056',
-              (u'The sample is directly inserted into the ion source, usually'
-               u'on the end of a heatable probe.'),
+              ['inlet type']),
+    Component('direct inlet', 'MS:1000056',
+              ('The sample is directly inserted into the ion source, usually'
+               'on the end of a heatable probe.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'electrospray inlet', u'MS:1000057',
-              (u'Inlet used for introducing the liquid sample into an'
-               u'electrospray ionization source.'),
+              ['inlet type']),
+    Component('electrospray inlet', 'MS:1000057',
+              ('Inlet used for introducing the liquid sample into an'
+               'electrospray ionization source.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'flow injection analysis', u'MS:1000058',
-              (u'Sample is directly injected or infused into the ionization'
-               u'source.'),
+              ['inlet type']),
+    Component('flow injection analysis', 'MS:1000058',
+              ('Sample is directly injected or infused into the ionization'
+               'source.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'inductively coupled plasma', u'MS:1000059',
-              (u'A gas discharge ion source in which the energy to the plasma'
-               u'is supplied by electromagnetic induction.'),
+              ['inlet type']),
+    Component('inductively coupled plasma', 'MS:1000059',
+              ('A gas discharge ion source in which the energy to the plasma'
+               'is supplied by electromagnetic induction.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'infusion', u'MS:1000060',
-              (u'The continuous flow of solution of a sample into the'
-               u'ionization source.'),
+              ['inlet type']),
+    Component('infusion', 'MS:1000060',
+              ('The continuous flow of solution of a sample into the'
+               'ionization source.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'jet separator', u'MS:1000061',
-              (u'A device that separates carrier gas from gaseous analyte'
-               u'molecules on the basis of diffusivity.'),
+              ['inlet type']),
+    Component('jet separator', 'MS:1000061',
+              ('A device that separates carrier gas from gaseous analyte'
+               'molecules on the basis of diffusivity.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'membrane separator', u'MS:1000062',
-              (u'A device to separate carrier molecules from analyte'
-               u'molecules on the basis of ease of diffusion across a'
-               u'semipermeable membrane.'),
+              ['inlet type']),
+    Component('membrane separator', 'MS:1000062',
+              ('A device to separate carrier molecules from analyte'
+               'molecules on the basis of ease of diffusion across a'
+               'semipermeable membrane.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'moving belt', u'MS:1000063',
-              (u'Continuous moving surface in the form of a belt which passes'
-               u'through an ion source carrying analyte molecules.'),
+              ['inlet type']),
+    Component('moving belt', 'MS:1000063',
+              ('Continuous moving surface in the form of a belt which passes'
+               'through an ion source carrying analyte molecules.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'moving wire', u'MS:1000064',
-              (u'Continuous moving surface in the form of a wire which passes'
-               u'through an ion source carrying analyte molecules.'),
+              ['inlet type']),
+    Component('moving wire', 'MS:1000064',
+              ('Continuous moving surface in the form of a wire which passes'
+               'through an ion source carrying analyte molecules.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'open split', u'MS:1000065',
-              (u'A division of flowing stream of liquid into two streams.'),
+              ['inlet type']),
+    Component('open split', 'MS:1000065',
+              ('A division of flowing stream of liquid into two streams.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'particle beam', u'MS:1000066',
-              (u'Method for generating ions from a solution of an analyte.'),
+              ['inlet type']),
+    Component('particle beam', 'MS:1000066',
+              ('Method for generating ions from a solution of an analyte.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'reservoir', u'MS:1000067',
-              (u'A sample inlet method involving a reservoir.'),
+              ['inlet type']),
+    Component('reservoir', 'MS:1000067',
+              ('A sample inlet method involving a reservoir.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'septum', u'MS:1000068',
-              (u'A disc composed of a flexible material that seals the'
-               u'entrance to the reservoir. Can also be entrance to the'
-               u'vacuum chamber.'),
+              ['inlet type']),
+    Component('septum', 'MS:1000068',
+              ('A disc composed of a flexible material that seals the'
+               'entrance to the reservoir. Can also be entrance to the'
+               'vacuum chamber.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'thermospray inlet', u'MS:1000069',
-              (u'A method for generating gas phase ions from a solution of an'
-               u'analyte by rapid heating of the sample.'),
+              ['inlet type']),
+    Component('thermospray inlet', 'MS:1000069',
+              ('A method for generating gas phase ions from a solution of an'
+               'analyte by rapid heating of the sample.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'direct insertion probe', u'MS:1000248',
-              (u'A device for introducing a solid or liquid sample into a'
-               u'mass spectrometer ion source for desorption ionization.'),
+              ['inlet type']),
+    Component('direct insertion probe', 'MS:1000248',
+              ('A device for introducing a solid or liquid sample into a'
+               'mass spectrometer ion source for desorption ionization.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'direct liquid introduction', u'MS:1000249',
-              (u'The delivery of a liquid sample into a mass spectrometer for'
-               u'spray or desorption ionization.'),
+              ['inlet type']),
+    Component('direct liquid introduction', 'MS:1000249',
+              ('The delivery of a liquid sample into a mass spectrometer for'
+               'spray or desorption ionization.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'membrane inlet', u'MS:1000396',
-              (u'A semi-permeable membrane separator that permits the passage'
-               u'of gas sample directly to the mass spectrometer ion source.'),
+              ['inlet type']),
+    Component('membrane inlet', 'MS:1000396',
+              ('A semi-permeable membrane separator that permits the passage'
+               'of gas sample directly to the mass spectrometer ion source.'),
               'inlet type',
-              [u'inlet type']),
-    Component(u'nanospray inlet', u'MS:1000485',
-              (u'Nanospray Inlet.'),
+              ['inlet type']),
+    Component('nanospray inlet', 'MS:1000485',
+              ('Nanospray Inlet.'),
               'inlet type',
-              [u'electrospray inlet', u'inlet type']),
+              ['electrospray inlet', 'inlet type']),
 ])
 # [[[end]]]
 
@@ -703,1556 +707,1557 @@ class InstrumentModel(Term):
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('instrument model', term_cls_name="InstrumentModel", writer=cog.out)
 # ]]]
+# CV Version: 4.1.55
 instrument_models = TermSet([
-    InstrumentModel(u'SCIEX instrument model', u'MS:1000121',
-                    (u'The brand of instruments from the joint venture between'
-                     u'Applied Biosystems and MDS Analytical Technologies (formerly'
-                     u'MDS SCIEX). Previously branded as \\"Applied Biosystems|MDS'
-                     u'SCIEX\\".'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics instrument model', u'MS:1000122',
-                    (u"Bruker Daltonics' instrument model."),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Shimadzu instrument model', u'MS:1000124',
-                    (u'Shimadzu corporation instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Waters instrument model', u'MS:1000126',
-                    (u'Waters Corporation instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Thermo Fisher Scientific instrument model', u'MS:1000483',
-                    (u'Thermo Fisher Scientific instrument model. The company has'
-                     u'gone through several names including Thermo Finnigan, Thermo'
-                     u'Scientific.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Hitachi instrument model', u'MS:1000488',
-                    (u'Hitachi instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Varian instrument model', u'MS:1000489',
-                    (u'Varian instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Agilent instrument model', u'MS:1000490',
-                    (u'Agilent instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Dionex instrument model', u'MS:1000491',
-                    (u'Dionex instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'Applied Biosystems instrument model', u'MS:1000495',
-                    (u'Applied Biosystems instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'LECO instrument model', u'MS:1001800',
-                    (u'LECO instrument model.'),
-                    'instrument model',
-                    [u'instrument model']),
-    InstrumentModel(u'4000 QTRAP', u'MS:1000139',
-                    (u'Applied Biosystems/MDS SCIEX Q 4000 TRAP MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 150EX', u'MS:1000143',
-                    (u'Applied Biosystems/MDS SCIEX API 150EX MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 150EX Prep', u'MS:1000144',
-                    (u'Applied Biosystems/MDS SCIEX API 150EX Prep MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 2000', u'MS:1000145',
-                    (u'Applied Biosystems/MDS SCIEX API 2000 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 3000', u'MS:1000146',
-                    (u'Applied Biosystems/MDS SCIEX API 3000 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 4000', u'MS:1000147',
-                    (u'Applied Biosystems/MDS SCIEX API 4000 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'proteomics solution 1', u'MS:1000186',
-                    (u'Applied Biosystems/MDS SCIEX Proteomics Solution 1 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Q TRAP', u'MS:1000187',
-                    (u'Applied Biosystems/MDS SCIEX Q TRAP MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QSTAR', u'MS:1000190',
-                    (u'Applied Biosystems/MDS SCIEX QSTAR MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'SymBiot I', u'MS:1000194',
-                    (u'Applied Biosystems/MDS SCIEX SymBiot I MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'SymBiot XVI', u'MS:1000195',
-                    (u'Applied Biosystems/MDS SCIEX SymBiot XVI MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'3200 QTRAP', u'MS:1000651',
-                    (u'SCIEX or Applied Biosystems|MDS SCIEX QTRAP 3200.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'4800 Plus MALDI TOF/TOF', u'MS:1000652',
-                    (u'SCIEX or Applied Biosystems|MDS SCIEX 4800 Plus MALDI TOF-'
-                     u'TOF Analyzer.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 3200', u'MS:1000653',
-                    (u'SCIEX or Applied Biosystems|MDS SCIEX API 3200 MS.'),
+    InstrumentModel('SCIEX instrument model', 'MS:1000121',
+                    ('The brand of instruments from the joint venture between'
+                     'Applied Biosystems and MDS Analytical Technologies (formerly'
+                     'MDS SCIEX). Previously branded as \\"Applied Biosystems|MDS'
+                     'SCIEX\\".'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Bruker Daltonics instrument model', 'MS:1000122',
+                    ("Bruker Daltonics' instrument model."),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Shimadzu instrument model', 'MS:1000124',
+                    ('Shimadzu corporation instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Waters instrument model', 'MS:1000126',
+                    ('Waters Corporation instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Thermo Fisher Scientific instrument model', 'MS:1000483',
+                    ('Thermo Fisher Scientific instrument model. The company has'
+                     'gone through several names including Thermo Finnigan, Thermo'
+                     'Scientific.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Hitachi instrument model', 'MS:1000488',
+                    ('Hitachi instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Varian instrument model', 'MS:1000489',
+                    ('Varian instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Agilent instrument model', 'MS:1000490',
+                    ('Agilent instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Dionex instrument model', 'MS:1000491',
+                    ('Dionex instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('Applied Biosystems instrument model', 'MS:1000495',
+                    ('Applied Biosystems instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('LECO instrument model', 'MS:1001800',
+                    ('LECO instrument model.'),
+                    'instrument model',
+                    ['instrument model']),
+    InstrumentModel('4000 QTRAP', 'MS:1000139',
+                    ('Applied Biosystems/MDS SCIEX Q 4000 TRAP MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 150EX', 'MS:1000143',
+                    ('Applied Biosystems/MDS SCIEX API 150EX MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 150EX Prep', 'MS:1000144',
+                    ('Applied Biosystems/MDS SCIEX API 150EX Prep MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 2000', 'MS:1000145',
+                    ('Applied Biosystems/MDS SCIEX API 2000 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 3000', 'MS:1000146',
+                    ('Applied Biosystems/MDS SCIEX API 3000 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 4000', 'MS:1000147',
+                    ('Applied Biosystems/MDS SCIEX API 4000 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('proteomics solution 1', 'MS:1000186',
+                    ('Applied Biosystems/MDS SCIEX Proteomics Solution 1 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Q TRAP', 'MS:1000187',
+                    ('Applied Biosystems/MDS SCIEX Q TRAP MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QSTAR', 'MS:1000190',
+                    ('Applied Biosystems/MDS SCIEX QSTAR MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('SymBiot I', 'MS:1000194',
+                    ('Applied Biosystems/MDS SCIEX SymBiot I MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('SymBiot XVI', 'MS:1000195',
+                    ('Applied Biosystems/MDS SCIEX SymBiot XVI MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('3200 QTRAP', 'MS:1000651',
+                    ('SCIEX or Applied Biosystems|MDS SCIEX QTRAP 3200.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('4800 Plus MALDI TOF/TOF', 'MS:1000652',
+                    ('SCIEX or Applied Biosystems|MDS SCIEX 4800 Plus MALDI TOF-'
+                     'TOF Analyzer.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 3200', 'MS:1000653',
+                    ('SCIEX or Applied Biosystems|MDS SCIEX API 3200 MS.'),
                     'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 5000', u'MS:1000654',
-                    (u'SCIEX or Applied Biosystems|MDS SCIEX API 5000 MS.'),
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 5000', 'MS:1000654',
+                    ('SCIEX or Applied Biosystems|MDS SCIEX API 5000 MS.'),
                     'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QSTAR Elite', u'MS:1000655',
-                    (u'SCIEX or Applied Biosystems|MDS SCIEX QSTAR Elite.'),
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QSTAR Elite', 'MS:1000655',
+                    ('SCIEX or Applied Biosystems|MDS SCIEX QSTAR Elite.'),
                     'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QSTAR Pulsar', u'MS:1000656',
-                    (u'Applied Biosystems|MDS SCIEX QSTAR Pulsar.'),
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QSTAR Pulsar', 'MS:1000656',
+                    ('Applied Biosystems|MDS SCIEX QSTAR Pulsar.'),
                     'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QSTAR XL', u'MS:1000657',
-                    (u'Applied Biosystems|MDS SCIEX QSTAR XL.'),
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QSTAR XL', 'MS:1000657',
+                    ('Applied Biosystems|MDS SCIEX QSTAR XL.'),
                     'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QTRAP 5500', u'MS:1000931',
-                    (u'Applied Biosystems|MDS SCIEX QTRAP 5500.'),
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QTRAP 5500', 'MS:1000931',
+                    ('Applied Biosystems|MDS SCIEX QTRAP 5500.'),
                     'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'TripleTOF 5600', u'MS:1000932',
-                    (u'SCIEX TripleTOF 5600, a quadrupole - quadrupole - time-of-'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'5800 TOF/TOF', u'MS:1001482',
-                    (u'SCIEX 5800 TOF-TOF Analyzer.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'TripleTOF 6600', u'MS:1002533',
-                    (u'SCIEX TripleTOF 6600, a quadrupole - quadrupole - time-of-'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'2000 QTRAP', u'MS:1002577',
-                    (u'SCIEX 2000 QTRAP.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'2500 QTRAP', u'MS:1002578',
-                    (u'SCIEX 2500 QTRAP.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'3500 QTRAP', u'MS:1002579',
-                    (u'SCIEX 3500 QTRAP.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QTRAP 4500', u'MS:1002580',
-                    (u'SCIEX QTRAP 4500.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QTRAP 6500', u'MS:1002581',
-                    (u'SCIEX QTRAP 6500.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'QTRAP 6500+', u'MS:1002582',
-                    (u'SCIEX QTRAP 6500+.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'TripleTOF 4600', u'MS:1002583',
-                    (u'SCIEX TripleTOF 4600 time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'TripleTOF 5600+', u'MS:1002584',
-                    (u'SCIEX TripleTOF 5600+ time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 100', u'MS:1002585',
-                    (u'Applied Biosystems/MDS SCIEX API 100 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 100LC', u'MS:1002586',
-                    (u'Applied Biosystems/MDS SCIEX API 100LC MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 165', u'MS:1002587',
-                    (u'Applied Biosystems/MDS SCIEX API 165 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 300', u'MS:1002588',
-                    (u'Applied Biosystems/MDS SCIEX API 300 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 350', u'MS:1002589',
-                    (u'Applied Biosystems/MDS SCIEX API 350 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'API 365', u'MS:1002590',
-                    (u'Applied Biosystems/MDS SCIEX API 365 MS.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Triple Quad 3500', u'MS:1002591',
-                    (u'SCIEX Triple Quad 3500.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Triple Quad 4500', u'MS:1002592',
-                    (u'SCIEX Triple Quad 4500.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Triple Quad 5500', u'MS:1002593',
-                    (u'SCIEX Triple Quad 5500.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Triple Quad 6500', u'MS:1002594',
-                    (u'SCIEX Triple Quad 6500.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Triple Quad 6500+', u'MS:1002595',
-                    (u'SCIEX Triple Quad 6500+.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'X500R QTOF', u'MS:1002674',
-                    (u'SCIEX X500R QTOF, a quadrupole - quadrupole - time-of-flight'
-                     u'mass spectrometer.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Triple Quad 7500', u'MS:1003144',
-                    (u'SCIEX Triple Quad 7500.'),
-                    'instrument model',
-                    [u'SCIEX instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics HCT Series', u'MS:1000697',
-                    (u"Bruker Daltonics' HCT Series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics esquire series', u'MS:1001533',
-                    (u"Bruker Daltonics' esquire series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics flex series', u'MS:1001534',
-                    (u"Bruker Daltonics' flex series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics BioTOF series', u'MS:1001535',
-                    (u"Bruker Daltonics' BioTOF series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics micrOTOF series', u'MS:1001536',
-                    (u"Bruker Daltonics' micrOTOF series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics amaZon series', u'MS:1001545',
-                    (u"Bruker Daltonics' amaZon series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics maXis series', u'MS:1001547',
-                    (u"Bruker Daltonics' maXis series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics solarix series', u'MS:1001548',
-                    (u"Bruker Daltonics' solarix: ESI quadrupole ion trap, APCI,"
-                     u'APPI, ETD, PTR.'),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics apex series', u'MS:1001556',
-                    (u"Bruker Daltonics' apex series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics SCION series', u'MS:1002293',
-                    (u"Bruker Daltonics' SCION series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics EVOQ series', u'MS:1002294',
-                    (u"Bruker Daltonics' EVOQ series."),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Bruker Daltonics timsTOF series', u'MS:1003123',
-                    (u'Bruker Daltonics timsTOF series'),
-                    'instrument model',
-                    [u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'Shimadzu MALDI-TOF instrument model', u'MS:1000602',
-                    (u'Shimadzu MALDI-TOF instrument model.'),
-                    'instrument model',
-                    [u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'Shimadzu Scientific Instruments instrument model', u'MS:1000603',
-                    (u'Shimadzu Scientific Instruments instrument model.'),
-                    'instrument model',
-                    [u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'Auto Spec Ultima NT', u'MS:1000150',
-                    (u'Waters magnetic sector based AutoSpec Ultima NT MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'GCT', u'MS:1000159',
-                    (u'Waters oa-ToF based GCT.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'IsoPrime', u'MS:1000164',
-                    (u'Waters IsoPrime MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'IsoProbe', u'MS:1000165',
-                    (u'Waters IsoProbe MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'IsoProbe T', u'MS:1000166',
-                    (u'Waters IsoProbe T MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'M@LDI L', u'MS:1000170',
-                    (u'Waters oa-ToF based MALDI L.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'M@LDI LR', u'MS:1000171',
-                    (u'Waters oa-ToF based MALDI LR.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'NG-5400', u'MS:1000180',
-                    (u'Waters NG-5400 MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Platform ICP', u'MS:1000184',
-                    (u'Waters Platform ICP MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Q-Tof micro', u'MS:1000188',
-                    (u'Waters oa-ToF based Q-Tof micro.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Q-Tof Ultima', u'MS:1000189',
-                    (u'Waters oa-ToF based Q-Tof Ultima.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'quattro micro', u'MS:1000191',
-                    (u'Waters (triple) quadrupole based micro.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Quattro Ultima', u'MS:1000192',
-                    (u'Waters (triple) quadrupole based Ultima.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Q-Tof Premier', u'MS:1000632',
-                    (u'Waters oa-ToF based Q-Tof Premier.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Acquity UPLC PDA', u'MS:1000818',
-                    (u'Acquity UPLC Photodiode Array Detector.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'photodiode array detector', u'instrument model', u'array detector', u'detector type']),
-    InstrumentModel(u'Acquity UPLC FLR', u'MS:1000819',
-                    (u'Acquity UPLC Fluorescence Detector.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'fluorescence detector', u'instrument model', u'detector type']),
-    InstrumentModel(u'ACQUITY UPLC', u'MS:1001761',
-                    (u'Waters LC-system ACQUITY UPLC.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'ACQUITY UPLC H-Class', u'MS:1001762',
-                    (u'Waters LC-system ACQUITY UPLC H-Class.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'ACQUITY UPLC H-Class Bio', u'MS:1001763',
-                    (u'Waters LC-system ACQUITY UPLC H-Class Bio.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'ACQUITY UPLC I-Class', u'MS:1001764',
-                    (u'Waters LC-system ACQUITY UPLC I-Class.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'ACQUITY UPLC Systems with 2D Technology', u'MS:1001765',
-                    (u'Waters LC-system ACQUITY UPLC Systems with 2D Technology.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'nanoACQUITY UPLC', u'MS:1001766',
-                    (u'Waters LC-system nanoACQUITY UPLC.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'nanoACQUITY UPLC System with 1D Technology', u'MS:1001767',
-                    (u'Waters LC-system nanoACQUITY UPLC System with 1D Technology.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'nanoACQUITY UPLC with HDX Technology', u'MS:1001768',
-                    (u'Waters LC-system nanoACQUITY UPLC with HDX Technology.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'TRIZAIC UPLC nanoTile', u'MS:1001769',
-                    (u'Waters LC-system TRIZAIC UPLC nanoTile.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'GCT Premier', u'MS:1001770',
-                    (u'Waters oa-ToF based GCT Premier.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI Synapt G2 HDMS', u'MS:1001771',
-                    (u'Waters oa-ToF based MALDI Synapt G2 HDMS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI Synapt G2 MS', u'MS:1001772',
-                    (u'Waters oa-ToF based MALDI Synapt G2 MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI Synapt G2-S HDMS', u'MS:1001773',
-                    (u'Waters oa-ToF based MALDI Synapt G2 MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI Synapt G2-S MS', u'MS:1001774',
-                    (u'Waters oa-ToF based MALDI Synapt G2-S MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI Synapt HDMS', u'MS:1001775',
-                    (u'Waters oa-ToF based MALDI Synapt HDMS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI Synapt MS', u'MS:1001776',
-                    (u'Waters oa-ToF based MALDI Synapt MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Synapt G2 HDMS', u'MS:1001777',
-                    (u'Waters oa-ToF based Synapt G2 HDMS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Synapt G2 MS', u'MS:1001778',
-                    (u'Waters oa-ToF based Synapt G2 MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Synapt G2-S HDMS', u'MS:1001779',
-                    (u'Waters oa-ToF based Synapt G2-S HDMS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Synapt G2-S MS', u'MS:1001780',
-                    (u'Waters oa-ToF based Synapt G2-S MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Synapt HDMS', u'MS:1001781',
-                    (u'Waters oa-ToF based Synapt HDMS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Synapt MS', u'MS:1001782',
-                    (u'Waters oa-ToF based Synapt MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo G2 Q-Tof', u'MS:1001783',
-                    (u'Waters oa-ToF based Xevo G2 Q-Tof.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo G2 Tof', u'MS:1001784',
-                    (u'Waters oa-ToF based Xevo G2 Tof.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo Q-Tof', u'MS:1001785',
-                    (u'Waters oa-ToF based Xevo Q-Tof.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'3100', u'MS:1001786',
-                    (u'Waters quadrupole based 3100.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Acquity SQD', u'MS:1001787',
-                    (u'Waters quadrupole based Acquity SQD.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Acquity TQD', u'MS:1001788',
-                    (u'Waters quadrupole based Acquity TQD.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Quattro micro GC', u'MS:1001789',
-                    (u'Waters (triple) quadrupole based Quattro micro GC.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo TQ MS', u'MS:1001790',
-                    (u'Waters quadrupole based Xevo TQ MS.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo TQD', u'MS:1001791',
-                    (u'Waters quadrupole based Xevo TQD.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo TQ-S', u'MS:1001792',
-                    (u'Waters quadrupole based Xevo TQ-S.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'SQ Detector 2', u'MS:1002274',
-                    (u'Waters quadrupole based SQ Detector 2.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo G2-S Tof', u'MS:1002275',
-                    (u'Waters oa-ToF based Xevo G2-S Tof.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo G2-S QTof', u'MS:1002276',
-                    (u'Waters oa-ToF based Xevo G2-S QTof.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'AutoSpec Premier', u'MS:1002277',
-                    (u'Waters AutoSpec Premier magnetic sector instrument.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'SYNAPT G2-Si', u'MS:1002726',
-                    (u'Waters Corporation SYNAPT G2-Si orthogonal acceleration'
-                     u'time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI SYNAPT G2-Si', u'MS:1002727',
-                    (u'Waters Corporation MALDI SYNAPT G2-Si orthogonal'
-                     u'acceleration time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Vion IMS QTof', u'MS:1002728',
-                    (u'Waters Corporation Vion IMS QTof orthogonal acceleration'
-                     u'time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo G2 XS Tof', u'MS:1002729',
-                    (u'Waters Corporation Xevo G2 XS Tof orthogonal acceleration'
-                     u'time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo TQ-XS', u'MS:1002730',
-                    (u'Waters Corporation Xevo TQ-XS triple quadrupole mass'
-                     u'spectrometer.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Xevo TQ-S micro', u'MS:1002731',
-                    (u'Waters Corporation Xevo TQ-S micro triple quadrupole mass'
-                     u'spectrometer.'),
-                    'instrument model',
-                    [u'Waters instrument model', u'instrument model']),
-    InstrumentModel(u'Thermo Finnigan instrument model', u'MS:1000125',
-                    (u'ThermoFinnigan from Thermo Electron Corporation instrument'
-                     u'model.'),
-                    'instrument model',
-                    [u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Thermo Electron instrument model', u'MS:1000492',
-                    (u'Thermo Electron Corporation instrument model.'),
-                    'instrument model',
-                    [u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Finnigan MAT instrument model', u'MS:1000493',
-                    (u'Finnigan MAT instrument model.'),
-                    'instrument model',
-                    [u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Thermo Scientific instrument model', u'MS:1000494',
-                    (u'Thermo Scientific instrument model.'),
-                    'instrument model',
-                    [u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'IonSpec instrument model', u'MS:1000123',
-                    (u'IonSpec corporation instrument model.'),
-                    'instrument model',
-                    [u'Varian instrument model', u'instrument model']),
-    InstrumentModel(u'1200 series LC/MSD SL', u'MS:1000467',
-                    (u'The 1200 Series LC/MSD SL ion trap belongs to the Agilent'
-                     u'LC/MSD ion trap family. It provides fast polarity switching'
-                     u'and multisignal data acquisition capabilities in a single'
-                     u'run while also providing 5 stages of automated data'
-                     u'dependent MS2 and 11 stages of manual MS2.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6110 Quadrupole LC/MS', u'MS:1000468',
-                    (u'The 6110 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with an entry level'
-                     u'single quadrupole mass spectrometer from the 6100 Series of'
-                     u'Agilent quadrupole mass spectrometers. 6110 Quadrupole mass'
-                     u'spectrometer has m/z range of 10-1500 and 2500 u/s scan'
-                     u'speed. It proves useful for wide range of SIM quantitative'
-                     u'applications.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6120A Quadrupole LC/MS', u'MS:1000469',
-                    (u'The 6120A Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a single quadrupole'
-                     u'mass spectrometer from the 6100 Series of Agilent mass'
-                     u'spectrometers. 6120 quadrupole mass spectrometer has m/z'
-                     u'range of 10-1500, 2500 u/s scan speed and utilizes multiple'
-                     u'signal acquisition.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6130 Quadrupole LC/MS', u'MS:1000470',
-                    (u'The 6130 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a single quadrupole'
-                     u'mass spectrometer from the 6100 series of Agilent mass'
-                     u'spectrometers. The 6130 quadrupole mass spectrometer has m/z'
-                     u'range of 2-3000, 2500 u/s scan speed in standard mode and'
-                     u'5250 u/s speed in fast-scan mode. It also uses multiple'
-                     u'signal acquisition.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6140 Quadrupole LC/MS', u'MS:1000471',
-                    (u'The 6140 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a single quadrupole'
-                     u'mass spectrometer from the 6100 Series of Agilent quadrupole'
-                     u'mass spectrometers. 6140 Quadrupole mass spectrometer has'
-                     u'm/z range of 10-1350, 2500 u/s scan speed in standard mode'
-                     u'and 10000 u/s speed in fast-scan mode. It also uses multiple'
-                     u'signal acquisition.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6210 Time-of-Flight LC/MS', u'MS:1000472',
-                    (u'The 6210 Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer. This time of flight mass'
-                     u'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     u'less than 2 ppm and resolution greater than 13,000 at m/z'
-                     u'2722. It has multiple ion sources and can be used with'
-                     u'multimode ion sources.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6310 Ion Trap LC/MS', u'MS:1000473',
-                    (u'The 6310 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     u'instrument combined with a 6300 series Agilent ion trap. It'
-                     u'has a mass range of 50-2200 between 0.6 to 0.35 resolution'
-                     u'and mass range of 200-4000 with resolution of 3-4. The scan'
-                     u'speed varies from 1650-27000 for the respective mass ranges.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6320 Ion Trap LC/MS', u'MS:1000474',
-                    (u'The 6320 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     u'instrument combined with a 6300 series Agilent ion trap. It'
-                     u'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
-                     u'and mass range of 200-4000 with resolution of less than 3.'
-                     u'The scan speed varies from 1650-27000 for the respective'
-                     u'mass ranges.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6330 Ion Trap LC/MS', u'MS:1000475',
-                    (u'The 6330 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     u'instrument combined with a 6300 series Agilent ion trap. It'
-                     u'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
-                     u'and mass range of 200-4000 with resolution of less than 3.'
-                     u'The scan speed varies from 1650-27000 for the respective'
-                     u'mass ranges.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6340 Ion Trap LC/MS', u'MS:1000476',
-                    (u'The 6340 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     u'instrument combined with a 6300 series Agilent ion trap. It'
-                     u'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
-                     u'and mass range of 200-4000 with resolution of less than 3.'
-                     u'The scan speed varies from 1650-27000 for the respective'
-                     u'mass ranges.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6410 Triple Quadrupole LC/MS', u'MS:1000477',
-                    (u'The 6410 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer. Mass range of the mass'
-                     u'spectrometer is 15-1650 m/z, resolution is at three settings'
-                     u'of 0.7 u (unit), 1.2 u (wide) and 2.5 u (widest). The mass'
-                     u'accuracy for 6410 mass spectrometer is 0.1 across the mass'
-                     u'range. The collision cell is a hexapole with linear'
-                     u'acceleration.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'1200 series LC/MSD VL', u'MS:1000478',
-                    (u'The LC/MSD VL ion trap is part of the family of Agilent ion'
-                     u'trap mass spectrometers. It has ESI, APCI and APPI ion'
-                     u'sources and is a useful ion trap when the amount of sample'
-                     u'is not the limiting factor.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6220 Time-of-Flight LC/MS', u'MS:1000675',
-                    (u'The 6220 Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer. This time of flight mass'
-                     u'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     u'less than 2 ppm and resolution greater than 13,000 at m/z'
-                     u'2722. It has multiple ion sources and can be used with'
-                     u'multimode ion sources.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6510 Quadrupole Time-of-Flight LC/MS', u'MS:1000676',
-                    (u'The 6510 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer. This time of flight mass'
-                     u'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     u'less than 2 ppm and resolution greater than 13,000 at m/z'
-                     u'2722. It has multiple ion sources and can be used with'
-                     u'multimode ion sources.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6520A Quadrupole Time-of-Flight LC/MS', u'MS:1000677',
-                    (u'The 6520A Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     u'liquid chromatography instrument combined with a Agilent'
-                     u'time of flight mass spectrometer. This time of flight mass'
-                     u'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     u'less than 2 ppm and resolution greater than 26,000 at m/z'
-                     u'2722. It has multiple ion sources and can be used with'
-                     u'multimode ion sources.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6420 Triple Quadrupole LC/MS', u'MS:1002444',
-                    (u'The 6420 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6460 Triple Quadrupole LC/MS', u'MS:1002445',
-                    (u'The 6460 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer. It is similar to the 6420 but'
-                     u'adds Agilent Jet Stream (AJS) technology to increase'
-                     u'sensitivity.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6490 Triple Quadrupole LC/MS', u'MS:1002446',
-                    (u'The 6490 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer. It is similar to the 6420 but'
-                     u'adds the Agilent iFunnel technology to increase sensitivity.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6550 iFunnel Q-TOF LC/MS', u'MS:1002783',
-                    (u'The 6550 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6550A iFunnel Q-TOF LC/MS', u'MS:1002784',
-                    (u'The 6550A Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     u'liquid chromatography instrument combined with a Agilent'
-                     u'time of flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6520B Q-TOF LC/MS', u'MS:1002785',
-                    (u'The 6520B Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     u'liquid chromatography instrument combined with a Agilent'
-                     u'time of flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6530A Q-TOF LC/MS', u'MS:1002786',
-                    (u'The 6530A Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     u'liquid chromatography instrument combined with a Agilent'
-                     u'time of flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6530B Q-TOF LC/MS', u'MS:1002787',
-                    (u'The 6530B Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     u'liquid chromatography instrument combined with a Agilent'
-                     u'time of flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6538 Q-TOF LC/MS', u'MS:1002788',
-                    (u'The 6538 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6540 Q-TOF LC/MS', u'MS:1002789',
-                    (u'The 6540 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6542 Q-TOF LC/MS', u'MS:1002790',
-                    (u'The 6542 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6545 Q-TOF LC/MS', u'MS:1002791',
-                    (u'The 6545 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6560 Q-TOF LC/MS', u'MS:1002792',
-                    (u'The 6560 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6570 Q-TOF LC/MS', u'MS:1002793',
-                    (u'The 6570 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6120B Quadrupole LC/MS', u'MS:1002794',
-                    (u'The 6120B Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a single quadrupole'
-                     u'mass spectrometer from the 6100 Series of Agilent mass'
-                     u'spectrometers.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6150 Quadrupole LC/MS', u'MS:1002795',
-                    (u'The 6150 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a single quadrupole'
-                     u'mass spectrometer from the 6100 Series of Agilent mass'
-                     u'spectrometers.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6224 Time-of-Flight LC/MS', u'MS:1002796',
-                    (u'The 6224 Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6230A Time-of-Flight LC/MS', u'MS:1002797',
-                    (u'The 6230A Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6230B Time-of-Flight LC/MS', u'MS:1002798',
-                    (u'The 6230B Time-of-Flight LC/MS is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent time of'
-                     u'flight mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6430 Triple Quadrupole LC/MS', u'MS:1002799',
-                    (u'The 6430 Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6495A Triple Quadrupole LC/MS', u'MS:1002800',
-                    (u'The 6495A Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'6495B Triple Quadrupole LC/MS', u'MS:1002801',
-                    (u'The 6495B Quadrupole LC/MS system is a Agilent liquid'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'7000A Triple Quadrupole GC/MS', u'MS:1002802',
-                    (u'The 7000A Quadrupole GC/MS system is a Agilent gas'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'7000B Triple Quadrupole GC/MS', u'MS:1002803',
-                    (u'The 7000B Quadrupole GC/MS system is a Agilent gas'
-                     u'chromatography instrument combined with a Agilent triple'
-                     u'quadrupole mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'7800 Quadrupole ICP-MS', u'MS:1002804',
-                    (u'The 7800 Quadrupole ICP-MS system is a Agilent inductively'
-                     u'couple plasma instrument combined with a Agilent quadrupole'
-                     u'mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'8800 Triple Quadrupole ICP-MS', u'MS:1002805',
-                    (u'The 8800 Quadrupole ICP-MS system is a Agilent inductively'
-                     u'couple plasma instrument combined with a Agilent quadrupole'
-                     u'mass spectrometer.'),
-                    'instrument model',
-                    [u'Agilent instrument model', u'instrument model']),
-    InstrumentModel(u'4700 Proteomics Analyzer', u'MS:1000140',
-                    (u'Applied Biosystems/MDS SCIEX 4700 Proteomics Analyzer MS.'),
-                    'instrument model',
-                    [u'Applied Biosystems instrument model', u'instrument model']),
-    InstrumentModel(u'Voyager-DE PRO', u'MS:1000203',
-                    (u'Applied Biosystems/MDS SCIEX Voyager-DE PRO MS.'),
-                    'instrument model',
-                    [u'Applied Biosystems instrument model', u'instrument model']),
-    InstrumentModel(u'Voyager-DE STR', u'MS:1000204',
-                    (u'Applied Biosystems/MDS SCIEX Voyager-DE STR MS.'),
-                    'instrument model',
-                    [u'Applied Biosystems instrument model', u'instrument model']),
-    InstrumentModel(u'4800 Proteomics Analyzer', u'MS:1000658',
-                    (u'Applied Biosystems|MDS SCIEX 4800 Proteomics Analyzer.'),
-                    'instrument model',
-                    [u'Applied Biosystems instrument model', u'instrument model']),
-    InstrumentModel(u'Pegasus HRT', u'MS:1001801',
-                    (u'LECO high resolution time-of-flight GC mass spectrometer.'),
-                    'instrument model',
-                    [u'LECO instrument model', u'instrument model']),
-    InstrumentModel(u'Citius HRT', u'MS:1001802',
-                    (u'LECO high resolution time-of-flight LC mass spectrometer.'),
-                    'instrument model',
-                    [u'LECO instrument model', u'instrument model']),
-    InstrumentModel(u'Pegasus', u'MS:1001803',
-                    (u'LECO GC time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'LECO instrument model', u'instrument model']),
-    InstrumentModel(u'TruTOF', u'MS:1001804',
-                    (u'LECO bench-top GC time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'LECO instrument model', u'instrument model']),
-    InstrumentModel(u'Pegasus 4D', u'MS:1001945',
-                    (u'LECO nominal mass resolution time-of-flight GCxGC mass'
-                     u'spectrometer.'),
-                    'instrument model',
-                    [u'LECO instrument model', u'instrument model']),
-    InstrumentModel(u'Pegasus III', u'MS:1002278',
-                    (u'LECO nominal mass resolution time-of-flight GC mass'
-                     u'spectrometer.'),
-                    'instrument model',
-                    [u'LECO instrument model', u'instrument model']),
-    InstrumentModel(u'Pegasus BT', u'MS:1002719',
-                    (u'LECO bench-top GC time-of-flight mass spectrometer.'),
-                    'instrument model',
-                    [u'LECO instrument model', u'instrument model']),
-    InstrumentModel(u'HCT', u'MS:1000160',
-                    (u"Bruker Daltonics' HCT: ESI Q-TOF, Nanospray, APCI, APPI."),
-                    'instrument model',
-                    [u'Bruker Daltonics HCT Series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'HCTplus', u'MS:1000161',
-                    (u"Bruker Daltonics' HCTplus: ESI Q-TOF, Nanospray, APCI, APPI."),
-                    'instrument model',
-                    [u'Bruker Daltonics HCT Series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'HCTultra', u'MS:1000698',
-                    (u"Bruker Daltonics' HCTultra: ESI TOF, Nanospray, APCI, APPI."),
-                    'instrument model',
-                    [u'Bruker Daltonics HCT Series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'HCTultra PTM', u'MS:1000699',
-                    (u"Bruker Daltonics' HCTultra PTM: ESI TOF, Nanospray, APCI,"
-                     u'APPI, PTR.'),
-                    'instrument model',
-                    [u'Bruker Daltonics HCT Series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'HCTultra ETD II', u'MS:1000700',
-                    (u"Bruker Daltonics' HCTultra ETD II: ESI Q-TOF, Nanospray,"
-                     u'APCI, APPI, ETD.'),
-                    'instrument model',
-                    [u'Bruker Daltonics HCT Series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'esquire 4000', u'MS:1000156',
-                    (u"Bruker Daltonics' esquire 4000: linear ion trap, ESI, MALDI,"
-                     u'Nanospray, APCI, APPI.'),
-                    'instrument model',
-                    [u'Bruker Daltonics esquire series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'esquire 6000', u'MS:1000157',
-                    (u"Bruker Daltonics' esquire 6000: linear ion trap, ESI, MALDI,"
-                     u'Nanospray, APCI, APPI.'),
-                    'instrument model',
-                    [u'Bruker Daltonics esquire series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'autoflex II', u'MS:1000148',
-                    (u"Bruker Daltonics' autoflex II: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'autoflex TOF/TOF', u'MS:1000149',
-                    (u"Bruker Daltonics' autoflex TOF/TOF MS: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'microflex', u'MS:1000177',
-                    (u"Bruker Daltonics' microflex: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'OmniFlex', u'MS:1000183',
-                    (u"Bruker Daltonics' OmniFlex: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'ultraflex', u'MS:1000201',
-                    (u"Bruker Daltonics' ultraflex: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'ultraflex TOF/TOF', u'MS:1000202',
-                    (u"Bruker Daltonics' ultraflex TOF/TOF: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'autoflex III smartbeam', u'MS:1000696',
-                    (u"Bruker Daltonics' autoflex III smartbeam: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'microflex LT', u'MS:1000701',
-                    (u"Bruker Daltonics' microflex LT: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'ultraflex III TOF/TOF', u'MS:1000705',
-                    (u"Bruker Daltonics' ultraflex III TOF/TOF: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'microflex LRF', u'MS:1001543',
-                    (u"Bruker Daltonics' microflex LRF: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'ultrafleXtreme', u'MS:1001544',
-                    (u"Bruker Daltonics' ultrafleXtreme: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'microflex II', u'MS:1001550',
-                    (u"Bruker Daltonics' microflex II: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'autoflex II TOF/TOF', u'MS:1001553',
-                    (u"Bruker Daltonics' autoflex II TOF/TOF: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'autoflex III TOF/TOF smartbeam', u'MS:1001554',
-                    (u"Bruker Daltonics' autoflex III TOF/TOF smartbeam: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'autoflex', u'MS:1001555',
-                    (u"Bruker Daltonics' autoflex: MALDI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'rapifleX', u'MS:1003122',
-                    (u"Bruker Daltonics' rapiflex: MALDI TOF/TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics flex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'BioTOF II', u'MS:1000151',
-                    (u"Bruker Daltonics' BioTOF II: ESI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics BioTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'BioTOF-Q', u'MS:1000152',
-                    (u"Bruker Daltonics' BioTOF-Q: ESI Q-TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics BioTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'BioTOF', u'MS:1001537',
-                    (u"Bruker Daltonics' BioTOF: ESI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics BioTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'BioTOF III', u'MS:1001538',
-                    (u"Bruker Daltonics' BioTOF III: ESI TOF."),
-                    'instrument model',
-                    [u'Bruker Daltonics BioTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'UltroTOF-Q', u'MS:1001539',
-                    (u"Bruker Daltonics' UltroTOF-Q: ESI Q-TOF (MALDI optional)."),
-                    'instrument model',
-                    [u'Bruker Daltonics BioTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'microTOF LC', u'MS:1000178',
-                    (u"Bruker Daltonics' microTOF LC: ESI TOF, Nanospray, APCI,"
-                     u'APPI.'),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'micrOTOF', u'MS:1000702',
-                    (u"Bruker Daltonics' micrOTOF: ESI TOF, APCI, APPI."),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'micrOTOF-Q', u'MS:1000703',
-                    (u"Bruker Daltonics' micrOTOF-Q: ESI Q-TOF, Nanospray, APCI,"
-                     u'APPI.'),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'micrOTOF-Q II', u'MS:1000704',
-                    (u"Bruker Daltonics' micrOTOF-Q II: ESI Q-TOF, Nanospray, APCI,"
-                     u'APPI.'),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'micrOTOF II', u'MS:1001540',
-                    (u"Bruker Daltonics' micrOTOF II: ESI TOF, Nanospray, APCI,"
-                     u'APPI.'),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'impact', u'MS:1002077',
-                    (u"Bruker Daltonics' impact: ESI Q-TOF, Nanospray, APCI, APPI,"
-                     u'GC-APCI, CaptiveSpray.'),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'compact', u'MS:1002280',
-                    (u"Bruker Daltonics' compact: ESI Q-TOF, Nanospray, APCI, APPI,"
-                     u'GC-APCI, CaptiveSpray.'),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'micrOTOF-Q III', u'MS:1002299',
-                    (u"Bruker Daltonics' micrOTOF-Q III: ESI Q-TOF, Nanospray,"
-                     u'APCI, APPI, GC-APCI, CaptiveSpray.'),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'impact II', u'MS:1002666',
-                    (u"Bruker Daltonics' impact II."),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'impact HD', u'MS:1002667',
-                    (u"Bruker Daltonics' impact HD."),
-                    'instrument model',
-                    [u'Bruker Daltonics micrOTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'amaZon ETD', u'MS:1001542',
-                    (u"Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap,"
-                     u'Nanospray, APCI, APPI, ETD, PTR.'),
-                    'instrument model',
-                    [u'Bruker Daltonics amaZon series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'amaZon X', u'MS:1001546',
-                    (u"Bruker Daltonics' amaZon X: ESI quadrupole ion trap, APCI,"
-                     u'APPI, ETD, PTR.'),
-                    'instrument model',
-                    [u'Bruker Daltonics amaZon series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'amaZon Speed ETD', u'MS:1002300',
-                    (u"Bruker Daltonics' amaZon Speed ETD: ESI quadrupole ion trap,"
-                     u'Nanospray, APCI, APPI, ETD, PTR, GC-APCI, CaptiveSpray.'),
-                    'instrument model',
-                    [u'Bruker Daltonics amaZon series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'amaZon Speed', u'MS:1002301',
-                    (u"Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap,"
-                     u'Nanospray, APCI, APPI, GC-APCI, CaptiveSpray.'),
-                    'instrument model',
-                    [u'Bruker Daltonics amaZon series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'maXis', u'MS:1001541',
-                    (u"Bruker Daltonics' maXis: ESI Q-TOF, Nanospray, APCI, APPI."),
-                    'instrument model',
-                    [u'Bruker Daltonics maXis series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'maXis 4G', u'MS:1002279',
-                    (u"Bruker Daltonics' maXis 4G: ESI Q-TOF, Nanospray, APCI,"
-                     u'APPI, GC-APCI, CaptiveSpray.'),
-                    'instrument model',
-                    [u'Bruker Daltonics maXis series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'maXis II', u'MS:1003004',
-                    (u"Bruker Daltonics' maXis II."),
-                    'instrument model',
-                    [u'Bruker Daltonics maXis series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'solariX', u'MS:1001549',
-                    (u"Bruker Daltonics' solariX: ESI, MALDI, Qh-FT_ICR."),
-                    'instrument model',
-                    [u'Bruker Daltonics solarix series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'apex IV', u'MS:1000141',
-                    (u"Bruker Daltonics' apex IV: ESI, MALDI, Nanospray, APCI,"
-                     u'APPI, Qh-FT_ICR.'),
-                    'instrument model',
-                    [u'Bruker Daltonics apex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'apex Q', u'MS:1000142',
-                    (u"Bruker Daltonics' apex Q: ESI, MALDI, Nanospray, APCI, APPI,"
-                     u'Qh-FT_ICR.'),
-                    'instrument model',
-                    [u'Bruker Daltonics apex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'apex ultra', u'MS:1000695',
-                    (u"Bruker Daltonics' apex ultra: ESI, MALDI, Nanospray, APCI,"
-                     u'APPI, Qh-FT_ICR.'),
-                    'instrument model',
-                    [u'Bruker Daltonics apex series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'SCION SQ', u'MS:1002295',
-                    (u"Bruker Daltonics' SCION SQ: GC-single quadrupole."),
-                    'instrument model',
-                    [u'Bruker Daltonics SCION series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'SCION TQ', u'MS:1002296',
-                    (u"Bruker Daltonics' SCION TQ: GC-triple quadrupole."),
-                    'instrument model',
-                    [u'Bruker Daltonics SCION series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'EVOQ Elite', u'MS:1002297',
-                    (u"Bruker Daltonics' EVOQ Elite: LC-triple quadrupole."),
-                    'instrument model',
-                    [u'Bruker Daltonics EVOQ series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'EVOQ Qube', u'MS:1002298',
-                    (u"Bruker Daltonics' EVOQ Qube: LC-triple quadrupole."),
-                    'instrument model',
-                    [u'Bruker Daltonics EVOQ series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'timsTOF Pro', u'MS:1003005',
-                    (u"Bruker Daltonics' timsTOF Pro."),
-                    'instrument model',
-                    [u'Bruker Daltonics timsTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'timsTOF fleX', u'MS:1003124',
-                    (u"Bruker Daltonics' timsTOF fleX"),
-                    'instrument model',
-                    [u'Bruker Daltonics timsTOF series', u'Bruker Daltonics instrument model', u'instrument model']),
-    InstrumentModel(u'AXIMA CFR MALDI-TOF', u'MS:1000607',
-                    (u'Shimadzu Biotech AXIMA CFR MALDI-TOF MS.'),
-                    'instrument model',
-                    [u'Shimadzu MALDI-TOF instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'AXIMA-QIT', u'MS:1000608',
-                    (u'Shimadzu Biotech AXIMA-QIT MS.'),
-                    'instrument model',
-                    [u'Shimadzu MALDI-TOF instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'AXIMA-CFR plus', u'MS:1000609',
-                    (u'Shimadzu Biotech AXIMA-CFR plus MS.'),
-                    'instrument model',
-                    [u'Shimadzu MALDI-TOF instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'AXIMA Performance MALDI-TOF/TOF', u'MS:1000610',
-                    (u'Shimadzu Biotech AXIMA Performance MALDI-TOF/TOF MS.'),
-                    'instrument model',
-                    [u'Shimadzu MALDI-TOF instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'AXIMA Confidence MALDI-TOF', u'MS:1000611',
-                    (u'Shimadzu Biotech AXIMA Confidence MALDI-TOF (curved field'
-                     u'reflectron) MS.'),
-                    'instrument model',
-                    [u'Shimadzu MALDI-TOF instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'AXIMA Assurance Linear MALDI-TOF', u'MS:1000612',
-                    (u'Shimadzu Biotech AXIMA Assurance Linear MALDI-TOF MS.'),
-                    'instrument model',
-                    [u'Shimadzu MALDI-TOF instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'Shimadzu MALDI-7090', u'MS:1002382',
-                    (u'Shimadzu MALDI-7090: MALDI-TOF-TOF.'),
-                    'instrument model',
-                    [u'Shimadzu MALDI-TOF instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-IT-TOF', u'MS:1000604',
-                    (u'Shimadzu Scientific Instruments LCMS-IT-TOF MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-2010EV', u'MS:1000605',
-                    (u'Shimadzu Scientific Instruments LCMS-2010EV MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-2010A', u'MS:1000606',
-                    (u'Shimadzu Scientific Instruments LCMS-2010A MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-9030', u'MS:1002998',
-                    (u'Shimadzu Scientific Instruments LCMS-9030 Q-TOF MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-8060', u'MS:1002999',
-                    (u'Shimadzu Scientific Instruments LCMS-8060 MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-8050', u'MS:1003000',
-                    (u'Shimadzu Scientific Instruments LCMS-8050 MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-8045', u'MS:1003001',
-                    (u'Shimadzu Scientific Instruments LCMS-8045 MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-8040', u'MS:1003002',
-                    (u'Shimadzu Scientific Instruments LCMS-8040 MS.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'LCMS-2020', u'MS:1003003',
-                    (u'Shimadzu Scientific Instruments LCMS-2020.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'GCMS-QP2010SE', u'MS:1003152',
-                    (u'Shimadzu Scientific Instruments GCMS-QP2010SE.'),
-                    'instrument model',
-                    [u'Shimadzu Scientific Instruments instrument model', u'Shimadzu instrument model', u'instrument model']),
-    InstrumentModel(u'DELTA plusAdvantage', u'MS:1000153',
-                    (u'ThermoFinnigan DELTA plusAdvantage MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'DELTAplusXP', u'MS:1000154',
-                    (u'ThermoFinnigan DELTAplusXP MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LCQ Advantage', u'MS:1000167',
-                    (u'ThermoFinnigan LCQ Advantage MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LCQ Classic', u'MS:1000168',
-                    (u'ThermoFinnigan LCQ Classic MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LCQ Deca XP Plus', u'MS:1000169',
-                    (u'ThermoFinnigan LCQ Deca XP Plus MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'neptune', u'MS:1000179',
-                    (u'ThermoFinnigan NEPTUNE MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'PolarisQ', u'MS:1000185',
-                    (u'ThermoFinnigan PolarisQ MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Surveyor MSQ', u'MS:1000193',
-                    (u'ThermoFinnigan Surveyor MSQ MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TEMPUS TOF', u'MS:1000196',
-                    (u'ThermoFinnigan TEMPUS TOF MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TRACE DSQ', u'MS:1000197',
-                    (u'ThermoFinnigan TRACE DSQ MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TRITON', u'MS:1000198',
-                    (u'ThermoFinnigan TRITON MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Quantum', u'MS:1000199',
-                    (u'ThermoFinnigan TSQ Quantum MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LCQ Deca', u'MS:1000554',
-                    (u'ThermoFinnigan LCQ Deca.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'GC Quantum', u'MS:1000558',
-                    (u'GC Quantum.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LCQ Fleet', u'MS:1000578',
-                    (u'LCQ Fleet.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'DSQ', u'MS:1000634',
-                    (u'ThermoFinnigan DSQ GC-MS.'),
-                    'instrument model',
-                    [u'Thermo Finnigan instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'MAT253', u'MS:1000172',
-                    (u'ThermoFinnigan MAT253 MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'MAT900XP', u'MS:1000173',
-                    (u'ThermoFinnigan MAT900XP MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'MAT900XP Trap', u'MS:1000174',
-                    (u'ThermoFinnigan MAT900XP Trap MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'MAT95XP', u'MS:1000175',
-                    (u'ThermoFinnigan MAT95XP MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'MAT95XP Trap', u'MS:1000176',
-                    (u'ThermoFinnigan MAT95XP Trap MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'SSQ 7000', u'MS:1000748',
-                    (u'ThermoFinnigan SSQ 7000 MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ 7000', u'MS:1000749',
-                    (u'ThermoFinnigan TSQ 7000 MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ', u'MS:1000750',
-                    (u'ThermoFinnigan TSQ MS.'),
-                    'instrument model',
-                    [u'Finnigan MAT instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ', u'MS:1000447',
-                    (u'Finnigan LTQ MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ FT', u'MS:1000448',
-                    (u'Finnigan LTQ FT MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap', u'MS:1000449',
-                    (u'Finnigan LTQ Orbitrap MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LXQ', u'MS:1000450',
-                    (u'Finnigan LXQ MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap Discovery', u'MS:1000555',
-                    (u'LTQ Orbitrap Discovery.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap XL', u'MS:1000556',
-                    (u'LTQ Orbitrap XL.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ FT Ultra', u'MS:1000557',
-                    (u'LTQ FT Ultra.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Surveyor PDA', u'MS:1000622',
-                    (u'Surveyor PDA.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Accela PDA', u'MS:1000623',
-                    (u'Accela PDA.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'ITQ 700', u'MS:1000635',
-                    (u'Thermo Scientific ITQ 700 GC-MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'ITQ 900', u'MS:1000636',
-                    (u'Thermo Scientific ITQ 900 GC-MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'ITQ 1100', u'MS:1000637',
-                    (u'Thermo Scientific ITQ 1100 GC-MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ XL ETD', u'MS:1000638',
-                    (u'Thermo Scientific LTQ XL MS with ETD.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap XL ETD', u'MS:1000639',
-                    (u'Thermo Scientific LTQ Orbitrap XL MS with ETD.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'DFS', u'MS:1000640',
-                    (u'Thermo Scientific DFS HR GC-MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'DSQ II', u'MS:1000641',
-                    (u'Thermo Scientific DSQ II GC-MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI LTQ XL', u'MS:1000642',
-                    (u'Thermo Scientific MALDI LTQ XL MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'MALDI LTQ Orbitrap', u'MS:1000643',
-                    (u'Thermo Scientific MALDI LTQ Orbitrap MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Quantum Access', u'MS:1000644',
-                    (u'Thermo Scientific TSQ Quantum Access MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Element XR', u'MS:1000645',
-                    (u'Thermo Scientific Element XR HR-ICP-MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Element 2', u'MS:1000646',
-                    (u'Thermo Scientific Element 2 HR-ICP-MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Element GD', u'MS:1000647',
-                    (u'Thermo Scientific Element GD Glow Discharge MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'GC IsoLink', u'MS:1000648',
-                    (u'Thermo Scientific GC IsoLink Isotope Ratio MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Exactive', u'MS:1000649',
-                    (u'Thermo Scientific Exactive MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Quantum Ultra AM', u'MS:1000743',
-                    (u'Thermo Scientific TSQ Quantum Ultra AM.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Quantum Ultra', u'MS:1000751',
-                    (u'Thermo Scientific TSQ Quantum Ultra.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ XL', u'MS:1000854',
-                    (u'Thermo Scientific LTQ XL MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Velos', u'MS:1000855',
-                    (u'Thermo Scientific LTQ Velos MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Velos ETD', u'MS:1000856',
-                    (u'Thermo Scientific LTQ Velos MS with ETD.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Vantage', u'MS:1001510',
-                    (u'TSQ Vantage.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap Velos', u'MS:1001742',
-                    (u'Finnigan LTQ Orbitrap Velos MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'ISQ', u'MS:1001908',
-                    (u'Thermo Scientific ISQ single quadrupole MS with the'
-                     u'ExtractraBrite source.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Velos Plus', u'MS:1001909',
-                    (u'Thermo Scientific second generation Velos.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap Elite', u'MS:1001910',
-                    (u'Thermo Scientific LTQ Orbitrap Elite, often just referred to'
-                     u'as the Orbitrap Elite.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Q Exactive', u'MS:1001911',
-                    (u'Thermo Scientific Q Exactive.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap Fusion', u'MS:1002416',
-                    (u'Thermo Scientific Orbitrap Fusion.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap Fusion ETD', u'MS:1002417',
-                    (u'Thermo Scientific Orbitrap Fusion with ETD.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Quantiva', u'MS:1002418',
-                    (u'Thermo Scientific TSQ Quantiva MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Endura', u'MS:1002419',
-                    (u'Thermo Scientific TSQ Endura MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Q Exactive HF', u'MS:1002523',
-                    (u'Thermo Scientific Q Exactive.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ 8000 Evo', u'MS:1002525',
-                    (u'Thermo Scientific TSQ 8000 Evo MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Exactive Plus', u'MS:1002526',
-                    (u'Thermo Scientific Exactive Plus MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Q Exactive Plus', u'MS:1002634',
-                    (u'Thermo Scientific Q Exactive Plus.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap Fusion Lumos', u'MS:1002732',
-                    (u'Thermo Scientific Orbitrap Fusion Lumos mass spectrometer'
-                     u'with Tribrid architecture consisting of quadrupole mass'
-                     u'filter, linear ion trap and Orbitrap mass analyzers.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap Classic', u'MS:1002835',
-                    (u'Thermo Fisher Scientific LTQ Orbitrap Classic.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Altis', u'MS:1002874',
-                    (u'Thermo Scientific TSQ Altis Triple Quadrupole MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ Quantis', u'MS:1002875',
-                    (u'Thermo Scientific TSQ Quantis Triple Quadrupole MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'TSQ 9000', u'MS:1002876',
-                    (u'Thermo Scientific TSQ 9000 Triple Quadrupole MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Q Exactive HF-X', u'MS:1002877',
-                    (u'Thermo Scientific Q Exactive HF-X Hybrid Quadrupole Orbitrap'
-                     u'MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap Exploris 480', u'MS:1003028',
-                    (u'Thermo Scientific Orbitrap Exploris 480 Quadrupole Orbitrap'
-                     u'MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap Eclipse', u'MS:1003029',
-                    (u'Thermo Scientific Orbitrap Eclipse mass spectrometer with'
-                     u'Tribrid architecture consisting of quadrupole mass filter,'
-                     u'linear ion trap and Orbitrap mass analyzers.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap Exploris 240', u'MS:1003094',
-                    (u'Thermo Scientific Orbitrap Exploris 240 Quadrupole Orbitrap'
-                     u'MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap Exploris 120', u'MS:1003095',
-                    (u'Thermo Scientific Orbitrap Exploris 120 Quadrupole Orbitrap'
-                     u'MS.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'LTQ Orbitrap Velos Pro', u'MS:1003096',
-                    (u'Thermo Scientific LTQ Orbitrap Velos Pro, often just'
-                     u'referred to as the Orbitrap Velos Pro.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'Orbitrap ID-X', u'MS:1003112',
-                    (u'Thermo Scientific Orbitrap ID-X mass spectrometer with'
-                     u'Tribrid architecture consisting of quadrupole mass filter,'
-                     u'linear ion trap and Orbitrap mass analyzers.'),
-                    'instrument model',
-                    [u'Thermo Scientific instrument model', u'Thermo Fisher Scientific instrument model', u'instrument model']),
-    InstrumentModel(u'explorer', u'MS:1000158',
-                    (u'IonSpec Explorer MS.'),
-                    'instrument model',
-                    [u'IonSpec instrument model', u'Varian instrument model', u'instrument model']),
-    InstrumentModel(u'HiRes ESI', u'MS:1000162',
-                    (u'IonSpec HiResESI MS.'),
-                    'instrument model',
-                    [u'IonSpec instrument model', u'Varian instrument model', u'instrument model']),
-    InstrumentModel(u'HiRes MALDI', u'MS:1000163',
-                    (u'IonSpec HiResMALDI MS.'),
-                    'instrument model',
-                    [u'IonSpec instrument model', u'Varian instrument model', u'instrument model']),
-    InstrumentModel(u'OMEGA', u'MS:1000181',
-                    (u'IonSpec OMEGA MS.'),
-                    'instrument model',
-                    [u'IonSpec instrument model', u'Varian instrument model', u'instrument model']),
-    InstrumentModel(u'OMEGA-2001', u'MS:1000182',
-                    (u'IonSpec OMEGA-2001 MS.'),
-                    'instrument model',
-                    [u'IonSpec instrument model', u'Varian instrument model', u'instrument model']),
-    InstrumentModel(u'ultima', u'MS:1000200',
-                    (u'IonSpec Ultima MS.'),
-                    'instrument model',
-                    [u'IonSpec instrument model', u'Varian instrument model', u'instrument model']),
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('TripleTOF 5600', 'MS:1000932',
+                    ('SCIEX TripleTOF 5600, a quadrupole - quadrupole - time-of-'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('5800 TOF/TOF', 'MS:1001482',
+                    ('SCIEX 5800 TOF-TOF Analyzer.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('TripleTOF 6600', 'MS:1002533',
+                    ('SCIEX TripleTOF 6600, a quadrupole - quadrupole - time-of-'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('2000 QTRAP', 'MS:1002577',
+                    ('SCIEX 2000 QTRAP.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('2500 QTRAP', 'MS:1002578',
+                    ('SCIEX 2500 QTRAP.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('3500 QTRAP', 'MS:1002579',
+                    ('SCIEX 3500 QTRAP.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QTRAP 4500', 'MS:1002580',
+                    ('SCIEX QTRAP 4500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QTRAP 6500', 'MS:1002581',
+                    ('SCIEX QTRAP 6500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('QTRAP 6500+', 'MS:1002582',
+                    ('SCIEX QTRAP 6500+.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('TripleTOF 4600', 'MS:1002583',
+                    ('SCIEX TripleTOF 4600 time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('TripleTOF 5600+', 'MS:1002584',
+                    ('SCIEX TripleTOF 5600+ time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 100', 'MS:1002585',
+                    ('Applied Biosystems/MDS SCIEX API 100 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 100LC', 'MS:1002586',
+                    ('Applied Biosystems/MDS SCIEX API 100LC MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 165', 'MS:1002587',
+                    ('Applied Biosystems/MDS SCIEX API 165 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 300', 'MS:1002588',
+                    ('Applied Biosystems/MDS SCIEX API 300 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 350', 'MS:1002589',
+                    ('Applied Biosystems/MDS SCIEX API 350 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('API 365', 'MS:1002590',
+                    ('Applied Biosystems/MDS SCIEX API 365 MS.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Triple Quad 3500', 'MS:1002591',
+                    ('SCIEX Triple Quad 3500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Triple Quad 4500', 'MS:1002592',
+                    ('SCIEX Triple Quad 4500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Triple Quad 5500', 'MS:1002593',
+                    ('SCIEX Triple Quad 5500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Triple Quad 6500', 'MS:1002594',
+                    ('SCIEX Triple Quad 6500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Triple Quad 6500+', 'MS:1002595',
+                    ('SCIEX Triple Quad 6500+.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('X500R QTOF', 'MS:1002674',
+                    ('SCIEX X500R QTOF, a quadrupole - quadrupole - time-of-flight'
+                     'mass spectrometer.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Triple Quad 7500', 'MS:1003144',
+                    ('SCIEX Triple Quad 7500.'),
+                    'instrument model',
+                    ['SCIEX instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics HCT Series', 'MS:1000697',
+                    ("Bruker Daltonics' HCT Series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics esquire series', 'MS:1001533',
+                    ("Bruker Daltonics' esquire series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics flex series', 'MS:1001534',
+                    ("Bruker Daltonics' flex series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics BioTOF series', 'MS:1001535',
+                    ("Bruker Daltonics' BioTOF series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics micrOTOF series', 'MS:1001536',
+                    ("Bruker Daltonics' micrOTOF series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics amaZon series', 'MS:1001545',
+                    ("Bruker Daltonics' amaZon series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics maXis series', 'MS:1001547',
+                    ("Bruker Daltonics' maXis series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics solarix series', 'MS:1001548',
+                    ("Bruker Daltonics' solarix: ESI quadrupole ion trap, APCI,"
+                     'APPI, ETD, PTR.'),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics apex series', 'MS:1001556',
+                    ("Bruker Daltonics' apex series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics SCION series', 'MS:1002293',
+                    ("Bruker Daltonics' SCION series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics EVOQ series', 'MS:1002294',
+                    ("Bruker Daltonics' EVOQ series."),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Bruker Daltonics timsTOF series', 'MS:1003123',
+                    ('Bruker Daltonics timsTOF series'),
+                    'instrument model',
+                    ['Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('Shimadzu MALDI-TOF instrument model', 'MS:1000602',
+                    ('Shimadzu MALDI-TOF instrument model.'),
+                    'instrument model',
+                    ['Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('Shimadzu Scientific Instruments instrument model', 'MS:1000603',
+                    ('Shimadzu Scientific Instruments instrument model.'),
+                    'instrument model',
+                    ['Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('Auto Spec Ultima NT', 'MS:1000150',
+                    ('Waters magnetic sector based AutoSpec Ultima NT MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('GCT', 'MS:1000159',
+                    ('Waters oa-ToF based GCT.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('IsoPrime', 'MS:1000164',
+                    ('Waters IsoPrime MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('IsoProbe', 'MS:1000165',
+                    ('Waters IsoProbe MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('IsoProbe T', 'MS:1000166',
+                    ('Waters IsoProbe T MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('M@LDI L', 'MS:1000170',
+                    ('Waters oa-ToF based MALDI L.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('M@LDI LR', 'MS:1000171',
+                    ('Waters oa-ToF based MALDI LR.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('NG-5400', 'MS:1000180',
+                    ('Waters NG-5400 MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Platform ICP', 'MS:1000184',
+                    ('Waters Platform ICP MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Q-Tof micro', 'MS:1000188',
+                    ('Waters oa-ToF based Q-Tof micro.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Q-Tof Ultima', 'MS:1000189',
+                    ('Waters oa-ToF based Q-Tof Ultima.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('quattro micro', 'MS:1000191',
+                    ('Waters (triple) quadrupole based micro.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Quattro Ultima', 'MS:1000192',
+                    ('Waters (triple) quadrupole based Ultima.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Q-Tof Premier', 'MS:1000632',
+                    ('Waters oa-ToF based Q-Tof Premier.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Acquity UPLC PDA', 'MS:1000818',
+                    ('Acquity UPLC Photodiode Array Detector.'),
+                    'instrument model',
+                    ['Waters instrument model', 'photodiode array detector', 'instrument model', 'array detector', 'detector type']),
+    InstrumentModel('Acquity UPLC FLR', 'MS:1000819',
+                    ('Acquity UPLC Fluorescence Detector.'),
+                    'instrument model',
+                    ['Waters instrument model', 'fluorescence detector', 'instrument model', 'detector type']),
+    InstrumentModel('ACQUITY UPLC', 'MS:1001761',
+                    ('Waters LC-system ACQUITY UPLC.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('ACQUITY UPLC H-Class', 'MS:1001762',
+                    ('Waters LC-system ACQUITY UPLC H-Class.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('ACQUITY UPLC H-Class Bio', 'MS:1001763',
+                    ('Waters LC-system ACQUITY UPLC H-Class Bio.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('ACQUITY UPLC I-Class', 'MS:1001764',
+                    ('Waters LC-system ACQUITY UPLC I-Class.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('ACQUITY UPLC Systems with 2D Technology', 'MS:1001765',
+                    ('Waters LC-system ACQUITY UPLC Systems with 2D Technology.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('nanoACQUITY UPLC', 'MS:1001766',
+                    ('Waters LC-system nanoACQUITY UPLC.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('nanoACQUITY UPLC System with 1D Technology', 'MS:1001767',
+                    ('Waters LC-system nanoACQUITY UPLC System with 1D Technology.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('nanoACQUITY UPLC with HDX Technology', 'MS:1001768',
+                    ('Waters LC-system nanoACQUITY UPLC with HDX Technology.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('TRIZAIC UPLC nanoTile', 'MS:1001769',
+                    ('Waters LC-system TRIZAIC UPLC nanoTile.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('GCT Premier', 'MS:1001770',
+                    ('Waters oa-ToF based GCT Premier.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('MALDI Synapt G2 HDMS', 'MS:1001771',
+                    ('Waters oa-ToF based MALDI Synapt G2 HDMS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('MALDI Synapt G2 MS', 'MS:1001772',
+                    ('Waters oa-ToF based MALDI Synapt G2 MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('MALDI Synapt G2-S HDMS', 'MS:1001773',
+                    ('Waters oa-ToF based MALDI Synapt G2 MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('MALDI Synapt G2-S MS', 'MS:1001774',
+                    ('Waters oa-ToF based MALDI Synapt G2-S MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('MALDI Synapt HDMS', 'MS:1001775',
+                    ('Waters oa-ToF based MALDI Synapt HDMS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('MALDI Synapt MS', 'MS:1001776',
+                    ('Waters oa-ToF based MALDI Synapt MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Synapt G2 HDMS', 'MS:1001777',
+                    ('Waters oa-ToF based Synapt G2 HDMS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Synapt G2 MS', 'MS:1001778',
+                    ('Waters oa-ToF based Synapt G2 MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Synapt G2-S HDMS', 'MS:1001779',
+                    ('Waters oa-ToF based Synapt G2-S HDMS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Synapt G2-S MS', 'MS:1001780',
+                    ('Waters oa-ToF based Synapt G2-S MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Synapt HDMS', 'MS:1001781',
+                    ('Waters oa-ToF based Synapt HDMS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Synapt MS', 'MS:1001782',
+                    ('Waters oa-ToF based Synapt MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo G2 Q-Tof', 'MS:1001783',
+                    ('Waters oa-ToF based Xevo G2 Q-Tof.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo G2 Tof', 'MS:1001784',
+                    ('Waters oa-ToF based Xevo G2 Tof.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo Q-Tof', 'MS:1001785',
+                    ('Waters oa-ToF based Xevo Q-Tof.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('3100', 'MS:1001786',
+                    ('Waters quadrupole based 3100.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Acquity SQD', 'MS:1001787',
+                    ('Waters quadrupole based Acquity SQD.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Acquity TQD', 'MS:1001788',
+                    ('Waters quadrupole based Acquity TQD.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Quattro micro GC', 'MS:1001789',
+                    ('Waters (triple) quadrupole based Quattro micro GC.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo TQ MS', 'MS:1001790',
+                    ('Waters quadrupole based Xevo TQ MS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo TQD', 'MS:1001791',
+                    ('Waters quadrupole based Xevo TQD.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo TQ-S', 'MS:1001792',
+                    ('Waters quadrupole based Xevo TQ-S.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('SQ Detector 2', 'MS:1002274',
+                    ('Waters quadrupole based SQ Detector 2.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo G2-S Tof', 'MS:1002275',
+                    ('Waters oa-ToF based Xevo G2-S Tof.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo G2-S QTof', 'MS:1002276',
+                    ('Waters oa-ToF based Xevo G2-S QTof.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('AutoSpec Premier', 'MS:1002277',
+                    ('Waters AutoSpec Premier magnetic sector instrument.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('SYNAPT G2-Si', 'MS:1002726',
+                    ('Waters Corporation SYNAPT G2-Si orthogonal acceleration'
+                     'time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('MALDI SYNAPT G2-Si', 'MS:1002727',
+                    ('Waters Corporation MALDI SYNAPT G2-Si orthogonal'
+                     'acceleration time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Vion IMS QTof', 'MS:1002728',
+                    ('Waters Corporation Vion IMS QTof orthogonal acceleration'
+                     'time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo G2 XS Tof', 'MS:1002729',
+                    ('Waters Corporation Xevo G2 XS Tof orthogonal acceleration'
+                     'time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo TQ-XS', 'MS:1002730',
+                    ('Waters Corporation Xevo TQ-XS triple quadrupole mass'
+                     'spectrometer.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo TQ-S micro', 'MS:1002731',
+                    ('Waters Corporation Xevo TQ-S micro triple quadrupole mass'
+                     'spectrometer.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Thermo Finnigan instrument model', 'MS:1000125',
+                    ('ThermoFinnigan from Thermo Electron Corporation instrument'
+                     'model.'),
+                    'instrument model',
+                    ['Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Thermo Electron instrument model', 'MS:1000492',
+                    ('Thermo Electron Corporation instrument model.'),
+                    'instrument model',
+                    ['Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Finnigan MAT instrument model', 'MS:1000493',
+                    ('Finnigan MAT instrument model.'),
+                    'instrument model',
+                    ['Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Thermo Scientific instrument model', 'MS:1000494',
+                    ('Thermo Scientific instrument model.'),
+                    'instrument model',
+                    ['Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('IonSpec instrument model', 'MS:1000123',
+                    ('IonSpec corporation instrument model.'),
+                    'instrument model',
+                    ['Varian instrument model', 'instrument model']),
+    InstrumentModel('1200 series LC/MSD SL', 'MS:1000467',
+                    ('The 1200 Series LC/MSD SL ion trap belongs to the Agilent'
+                     'LC/MSD ion trap family. It provides fast polarity switching'
+                     'and multisignal data acquisition capabilities in a single'
+                     'run while also providing 5 stages of automated data'
+                     'dependent MS2 and 11 stages of manual MS2.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6110 Quadrupole LC/MS', 'MS:1000468',
+                    ('The 6110 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with an entry level'
+                     'single quadrupole mass spectrometer from the 6100 Series of'
+                     'Agilent quadrupole mass spectrometers. 6110 Quadrupole mass'
+                     'spectrometer has m/z range of 10-1500 and 2500 u/s scan'
+                     'speed. It proves useful for wide range of SIM quantitative'
+                     'applications.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6120A Quadrupole LC/MS', 'MS:1000469',
+                    ('The 6120A Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a single quadrupole'
+                     'mass spectrometer from the 6100 Series of Agilent mass'
+                     'spectrometers. 6120 quadrupole mass spectrometer has m/z'
+                     'range of 10-1500, 2500 u/s scan speed and utilizes multiple'
+                     'signal acquisition.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6130 Quadrupole LC/MS', 'MS:1000470',
+                    ('The 6130 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a single quadrupole'
+                     'mass spectrometer from the 6100 series of Agilent mass'
+                     'spectrometers. The 6130 quadrupole mass spectrometer has m/z'
+                     'range of 2-3000, 2500 u/s scan speed in standard mode and'
+                     '5250 u/s speed in fast-scan mode. It also uses multiple'
+                     'signal acquisition.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6140 Quadrupole LC/MS', 'MS:1000471',
+                    ('The 6140 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a single quadrupole'
+                     'mass spectrometer from the 6100 Series of Agilent quadrupole'
+                     'mass spectrometers. 6140 Quadrupole mass spectrometer has'
+                     'm/z range of 10-1350, 2500 u/s scan speed in standard mode'
+                     'and 10000 u/s speed in fast-scan mode. It also uses multiple'
+                     'signal acquisition.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6210 Time-of-Flight LC/MS', 'MS:1000472',
+                    ('The 6210 Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer. This time of flight mass'
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
+                     'less than 2 ppm and resolution greater than 13,000 at m/z'
+                     '2722. It has multiple ion sources and can be used with'
+                     'multimode ion sources.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6310 Ion Trap LC/MS', 'MS:1000473',
+                    ('The 6310 Ion Trap LC/MS is a Agilent liquid chromatography'
+                     'instrument combined with a 6300 series Agilent ion trap. It'
+                     'has a mass range of 50-2200 between 0.6 to 0.35 resolution'
+                     'and mass range of 200-4000 with resolution of 3-4. The scan'
+                     'speed varies from 1650-27000 for the respective mass ranges.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6320 Ion Trap LC/MS', 'MS:1000474',
+                    ('The 6320 Ion Trap LC/MS is a Agilent liquid chromatography'
+                     'instrument combined with a 6300 series Agilent ion trap. It'
+                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
+                     'and mass range of 200-4000 with resolution of less than 3.'
+                     'The scan speed varies from 1650-27000 for the respective'
+                     'mass ranges.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6330 Ion Trap LC/MS', 'MS:1000475',
+                    ('The 6330 Ion Trap LC/MS is a Agilent liquid chromatography'
+                     'instrument combined with a 6300 series Agilent ion trap. It'
+                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
+                     'and mass range of 200-4000 with resolution of less than 3.'
+                     'The scan speed varies from 1650-27000 for the respective'
+                     'mass ranges.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6340 Ion Trap LC/MS', 'MS:1000476',
+                    ('The 6340 Ion Trap LC/MS is a Agilent liquid chromatography'
+                     'instrument combined with a 6300 series Agilent ion trap. It'
+                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
+                     'and mass range of 200-4000 with resolution of less than 3.'
+                     'The scan speed varies from 1650-27000 for the respective'
+                     'mass ranges.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6410 Triple Quadrupole LC/MS', 'MS:1000477',
+                    ('The 6410 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer. Mass range of the mass'
+                     'spectrometer is 15-1650 m/z, resolution is at three settings'
+                     'of 0.7 u (unit), 1.2 u (wide) and 2.5 u (widest). The mass'
+                     'accuracy for 6410 mass spectrometer is 0.1 across the mass'
+                     'range. The collision cell is a hexapole with linear'
+                     'acceleration.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('1200 series LC/MSD VL', 'MS:1000478',
+                    ('The LC/MSD VL ion trap is part of the family of Agilent ion'
+                     'trap mass spectrometers. It has ESI, APCI and APPI ion'
+                     'sources and is a useful ion trap when the amount of sample'
+                     'is not the limiting factor.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6220 Time-of-Flight LC/MS', 'MS:1000675',
+                    ('The 6220 Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer. This time of flight mass'
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
+                     'less than 2 ppm and resolution greater than 13,000 at m/z'
+                     '2722. It has multiple ion sources and can be used with'
+                     'multimode ion sources.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6510 Quadrupole Time-of-Flight LC/MS', 'MS:1000676',
+                    ('The 6510 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer. This time of flight mass'
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
+                     'less than 2 ppm and resolution greater than 13,000 at m/z'
+                     '2722. It has multiple ion sources and can be used with'
+                     'multimode ion sources.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6520A Quadrupole Time-of-Flight LC/MS', 'MS:1000677',
+                    ('The 6520A Quadrupole Time-of-Flight LC/MS is a Agilent'
+                     'liquid chromatography instrument combined with a Agilent'
+                     'time of flight mass spectrometer. This time of flight mass'
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
+                     'less than 2 ppm and resolution greater than 26,000 at m/z'
+                     '2722. It has multiple ion sources and can be used with'
+                     'multimode ion sources.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6420 Triple Quadrupole LC/MS', 'MS:1002444',
+                    ('The 6420 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6460 Triple Quadrupole LC/MS', 'MS:1002445',
+                    ('The 6460 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer. It is similar to the 6420 but'
+                     'adds Agilent Jet Stream (AJS) technology to increase'
+                     'sensitivity.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6490 Triple Quadrupole LC/MS', 'MS:1002446',
+                    ('The 6490 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer. It is similar to the 6420 but'
+                     'adds the Agilent iFunnel technology to increase sensitivity.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6550 iFunnel Q-TOF LC/MS', 'MS:1002783',
+                    ('The 6550 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6550A iFunnel Q-TOF LC/MS', 'MS:1002784',
+                    ('The 6550A Quadrupole Time-of-Flight LC/MS is a Agilent'
+                     'liquid chromatography instrument combined with a Agilent'
+                     'time of flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6520B Q-TOF LC/MS', 'MS:1002785',
+                    ('The 6520B Quadrupole Time-of-Flight LC/MS is a Agilent'
+                     'liquid chromatography instrument combined with a Agilent'
+                     'time of flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6530A Q-TOF LC/MS', 'MS:1002786',
+                    ('The 6530A Quadrupole Time-of-Flight LC/MS is a Agilent'
+                     'liquid chromatography instrument combined with a Agilent'
+                     'time of flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6530B Q-TOF LC/MS', 'MS:1002787',
+                    ('The 6530B Quadrupole Time-of-Flight LC/MS is a Agilent'
+                     'liquid chromatography instrument combined with a Agilent'
+                     'time of flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6538 Q-TOF LC/MS', 'MS:1002788',
+                    ('The 6538 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6540 Q-TOF LC/MS', 'MS:1002789',
+                    ('The 6540 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6542 Q-TOF LC/MS', 'MS:1002790',
+                    ('The 6542 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6545 Q-TOF LC/MS', 'MS:1002791',
+                    ('The 6545 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6560 Q-TOF LC/MS', 'MS:1002792',
+                    ('The 6560 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6570 Q-TOF LC/MS', 'MS:1002793',
+                    ('The 6570 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6120B Quadrupole LC/MS', 'MS:1002794',
+                    ('The 6120B Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a single quadrupole'
+                     'mass spectrometer from the 6100 Series of Agilent mass'
+                     'spectrometers.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6150 Quadrupole LC/MS', 'MS:1002795',
+                    ('The 6150 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a single quadrupole'
+                     'mass spectrometer from the 6100 Series of Agilent mass'
+                     'spectrometers.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6224 Time-of-Flight LC/MS', 'MS:1002796',
+                    ('The 6224 Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6230A Time-of-Flight LC/MS', 'MS:1002797',
+                    ('The 6230A Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6230B Time-of-Flight LC/MS', 'MS:1002798',
+                    ('The 6230B Time-of-Flight LC/MS is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent time of'
+                     'flight mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6430 Triple Quadrupole LC/MS', 'MS:1002799',
+                    ('The 6430 Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6495A Triple Quadrupole LC/MS', 'MS:1002800',
+                    ('The 6495A Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6495B Triple Quadrupole LC/MS', 'MS:1002801',
+                    ('The 6495B Quadrupole LC/MS system is a Agilent liquid'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('7000A Triple Quadrupole GC/MS', 'MS:1002802',
+                    ('The 7000A Quadrupole GC/MS system is a Agilent gas'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('7000B Triple Quadrupole GC/MS', 'MS:1002803',
+                    ('The 7000B Quadrupole GC/MS system is a Agilent gas'
+                     'chromatography instrument combined with a Agilent triple'
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('7800 Quadrupole ICP-MS', 'MS:1002804',
+                    ('The 7800 Quadrupole ICP-MS system is a Agilent inductively'
+                     'couple plasma instrument combined with a Agilent quadrupole'
+                     'mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('8800 Triple Quadrupole ICP-MS', 'MS:1002805',
+                    ('The 8800 Quadrupole ICP-MS system is a Agilent inductively'
+                     'couple plasma instrument combined with a Agilent quadrupole'
+                     'mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('4700 Proteomics Analyzer', 'MS:1000140',
+                    ('Applied Biosystems/MDS SCIEX 4700 Proteomics Analyzer MS.'),
+                    'instrument model',
+                    ['Applied Biosystems instrument model', 'instrument model']),
+    InstrumentModel('Voyager-DE PRO', 'MS:1000203',
+                    ('Applied Biosystems/MDS SCIEX Voyager-DE PRO MS.'),
+                    'instrument model',
+                    ['Applied Biosystems instrument model', 'instrument model']),
+    InstrumentModel('Voyager-DE STR', 'MS:1000204',
+                    ('Applied Biosystems/MDS SCIEX Voyager-DE STR MS.'),
+                    'instrument model',
+                    ['Applied Biosystems instrument model', 'instrument model']),
+    InstrumentModel('4800 Proteomics Analyzer', 'MS:1000658',
+                    ('Applied Biosystems|MDS SCIEX 4800 Proteomics Analyzer.'),
+                    'instrument model',
+                    ['Applied Biosystems instrument model', 'instrument model']),
+    InstrumentModel('Pegasus HRT', 'MS:1001801',
+                    ('LECO high resolution time-of-flight GC mass spectrometer.'),
+                    'instrument model',
+                    ['LECO instrument model', 'instrument model']),
+    InstrumentModel('Citius HRT', 'MS:1001802',
+                    ('LECO high resolution time-of-flight LC mass spectrometer.'),
+                    'instrument model',
+                    ['LECO instrument model', 'instrument model']),
+    InstrumentModel('Pegasus', 'MS:1001803',
+                    ('LECO GC time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['LECO instrument model', 'instrument model']),
+    InstrumentModel('TruTOF', 'MS:1001804',
+                    ('LECO bench-top GC time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['LECO instrument model', 'instrument model']),
+    InstrumentModel('Pegasus 4D', 'MS:1001945',
+                    ('LECO nominal mass resolution time-of-flight GCxGC mass'
+                     'spectrometer.'),
+                    'instrument model',
+                    ['LECO instrument model', 'instrument model']),
+    InstrumentModel('Pegasus III', 'MS:1002278',
+                    ('LECO nominal mass resolution time-of-flight GC mass'
+                     'spectrometer.'),
+                    'instrument model',
+                    ['LECO instrument model', 'instrument model']),
+    InstrumentModel('Pegasus BT', 'MS:1002719',
+                    ('LECO bench-top GC time-of-flight mass spectrometer.'),
+                    'instrument model',
+                    ['LECO instrument model', 'instrument model']),
+    InstrumentModel('HCT', 'MS:1000160',
+                    ("Bruker Daltonics' HCT: ESI Q-TOF, Nanospray, APCI, APPI."),
+                    'instrument model',
+                    ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('HCTplus', 'MS:1000161',
+                    ("Bruker Daltonics' HCTplus: ESI Q-TOF, Nanospray, APCI, APPI."),
+                    'instrument model',
+                    ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('HCTultra', 'MS:1000698',
+                    ("Bruker Daltonics' HCTultra: ESI TOF, Nanospray, APCI, APPI."),
+                    'instrument model',
+                    ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('HCTultra PTM', 'MS:1000699',
+                    ("Bruker Daltonics' HCTultra PTM: ESI TOF, Nanospray, APCI,"
+                     'APPI, PTR.'),
+                    'instrument model',
+                    ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('HCTultra ETD II', 'MS:1000700',
+                    ("Bruker Daltonics' HCTultra ETD II: ESI Q-TOF, Nanospray,"
+                     'APCI, APPI, ETD.'),
+                    'instrument model',
+                    ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('esquire 4000', 'MS:1000156',
+                    ("Bruker Daltonics' esquire 4000: linear ion trap, ESI, MALDI,"
+                     'Nanospray, APCI, APPI.'),
+                    'instrument model',
+                    ['Bruker Daltonics esquire series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('esquire 6000', 'MS:1000157',
+                    ("Bruker Daltonics' esquire 6000: linear ion trap, ESI, MALDI,"
+                     'Nanospray, APCI, APPI.'),
+                    'instrument model',
+                    ['Bruker Daltonics esquire series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('autoflex II', 'MS:1000148',
+                    ("Bruker Daltonics' autoflex II: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('autoflex TOF/TOF', 'MS:1000149',
+                    ("Bruker Daltonics' autoflex TOF/TOF MS: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('microflex', 'MS:1000177',
+                    ("Bruker Daltonics' microflex: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('OmniFlex', 'MS:1000183',
+                    ("Bruker Daltonics' OmniFlex: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('ultraflex', 'MS:1000201',
+                    ("Bruker Daltonics' ultraflex: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('ultraflex TOF/TOF', 'MS:1000202',
+                    ("Bruker Daltonics' ultraflex TOF/TOF: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('autoflex III smartbeam', 'MS:1000696',
+                    ("Bruker Daltonics' autoflex III smartbeam: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('microflex LT', 'MS:1000701',
+                    ("Bruker Daltonics' microflex LT: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('ultraflex III TOF/TOF', 'MS:1000705',
+                    ("Bruker Daltonics' ultraflex III TOF/TOF: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('microflex LRF', 'MS:1001543',
+                    ("Bruker Daltonics' microflex LRF: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('ultrafleXtreme', 'MS:1001544',
+                    ("Bruker Daltonics' ultrafleXtreme: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('microflex II', 'MS:1001550',
+                    ("Bruker Daltonics' microflex II: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('autoflex II TOF/TOF', 'MS:1001553',
+                    ("Bruker Daltonics' autoflex II TOF/TOF: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('autoflex III TOF/TOF smartbeam', 'MS:1001554',
+                    ("Bruker Daltonics' autoflex III TOF/TOF smartbeam: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('autoflex', 'MS:1001555',
+                    ("Bruker Daltonics' autoflex: MALDI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('rapifleX', 'MS:1003122',
+                    ("Bruker Daltonics' rapiflex: MALDI TOF/TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics flex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('BioTOF II', 'MS:1000151',
+                    ("Bruker Daltonics' BioTOF II: ESI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics BioTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('BioTOF-Q', 'MS:1000152',
+                    ("Bruker Daltonics' BioTOF-Q: ESI Q-TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics BioTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('BioTOF', 'MS:1001537',
+                    ("Bruker Daltonics' BioTOF: ESI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics BioTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('BioTOF III', 'MS:1001538',
+                    ("Bruker Daltonics' BioTOF III: ESI TOF."),
+                    'instrument model',
+                    ['Bruker Daltonics BioTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('UltroTOF-Q', 'MS:1001539',
+                    ("Bruker Daltonics' UltroTOF-Q: ESI Q-TOF (MALDI optional)."),
+                    'instrument model',
+                    ['Bruker Daltonics BioTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('microTOF LC', 'MS:1000178',
+                    ("Bruker Daltonics' microTOF LC: ESI TOF, Nanospray, APCI,"
+                     'APPI.'),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('micrOTOF', 'MS:1000702',
+                    ("Bruker Daltonics' micrOTOF: ESI TOF, APCI, APPI."),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('micrOTOF-Q', 'MS:1000703',
+                    ("Bruker Daltonics' micrOTOF-Q: ESI Q-TOF, Nanospray, APCI,"
+                     'APPI.'),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('micrOTOF-Q II', 'MS:1000704',
+                    ("Bruker Daltonics' micrOTOF-Q II: ESI Q-TOF, Nanospray, APCI,"
+                     'APPI.'),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('micrOTOF II', 'MS:1001540',
+                    ("Bruker Daltonics' micrOTOF II: ESI TOF, Nanospray, APCI,"
+                     'APPI.'),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('impact', 'MS:1002077',
+                    ("Bruker Daltonics' impact: ESI Q-TOF, Nanospray, APCI, APPI,"
+                     'GC-APCI, CaptiveSpray.'),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('compact', 'MS:1002280',
+                    ("Bruker Daltonics' compact: ESI Q-TOF, Nanospray, APCI, APPI,"
+                     'GC-APCI, CaptiveSpray.'),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('micrOTOF-Q III', 'MS:1002299',
+                    ("Bruker Daltonics' micrOTOF-Q III: ESI Q-TOF, Nanospray,"
+                     'APCI, APPI, GC-APCI, CaptiveSpray.'),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('impact II', 'MS:1002666',
+                    ("Bruker Daltonics' impact II."),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('impact HD', 'MS:1002667',
+                    ("Bruker Daltonics' impact HD."),
+                    'instrument model',
+                    ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('amaZon ETD', 'MS:1001542',
+                    ("Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap,"
+                     'Nanospray, APCI, APPI, ETD, PTR.'),
+                    'instrument model',
+                    ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('amaZon X', 'MS:1001546',
+                    ("Bruker Daltonics' amaZon X: ESI quadrupole ion trap, APCI,"
+                     'APPI, ETD, PTR.'),
+                    'instrument model',
+                    ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('amaZon Speed ETD', 'MS:1002300',
+                    ("Bruker Daltonics' amaZon Speed ETD: ESI quadrupole ion trap,"
+                     'Nanospray, APCI, APPI, ETD, PTR, GC-APCI, CaptiveSpray.'),
+                    'instrument model',
+                    ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('amaZon Speed', 'MS:1002301',
+                    ("Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap,"
+                     'Nanospray, APCI, APPI, GC-APCI, CaptiveSpray.'),
+                    'instrument model',
+                    ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('maXis', 'MS:1001541',
+                    ("Bruker Daltonics' maXis: ESI Q-TOF, Nanospray, APCI, APPI."),
+                    'instrument model',
+                    ['Bruker Daltonics maXis series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('maXis 4G', 'MS:1002279',
+                    ("Bruker Daltonics' maXis 4G: ESI Q-TOF, Nanospray, APCI,"
+                     'APPI, GC-APCI, CaptiveSpray.'),
+                    'instrument model',
+                    ['Bruker Daltonics maXis series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('maXis II', 'MS:1003004',
+                    ("Bruker Daltonics' maXis II."),
+                    'instrument model',
+                    ['Bruker Daltonics maXis series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('solariX', 'MS:1001549',
+                    ("Bruker Daltonics' solariX: ESI, MALDI, Qh-FT_ICR."),
+                    'instrument model',
+                    ['Bruker Daltonics solarix series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('apex IV', 'MS:1000141',
+                    ("Bruker Daltonics' apex IV: ESI, MALDI, Nanospray, APCI,"
+                     'APPI, Qh-FT_ICR.'),
+                    'instrument model',
+                    ['Bruker Daltonics apex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('apex Q', 'MS:1000142',
+                    ("Bruker Daltonics' apex Q: ESI, MALDI, Nanospray, APCI, APPI,"
+                     'Qh-FT_ICR.'),
+                    'instrument model',
+                    ['Bruker Daltonics apex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('apex ultra', 'MS:1000695',
+                    ("Bruker Daltonics' apex ultra: ESI, MALDI, Nanospray, APCI,"
+                     'APPI, Qh-FT_ICR.'),
+                    'instrument model',
+                    ['Bruker Daltonics apex series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('SCION SQ', 'MS:1002295',
+                    ("Bruker Daltonics' SCION SQ: GC-single quadrupole."),
+                    'instrument model',
+                    ['Bruker Daltonics SCION series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('SCION TQ', 'MS:1002296',
+                    ("Bruker Daltonics' SCION TQ: GC-triple quadrupole."),
+                    'instrument model',
+                    ['Bruker Daltonics SCION series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('EVOQ Elite', 'MS:1002297',
+                    ("Bruker Daltonics' EVOQ Elite: LC-triple quadrupole."),
+                    'instrument model',
+                    ['Bruker Daltonics EVOQ series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('EVOQ Qube', 'MS:1002298',
+                    ("Bruker Daltonics' EVOQ Qube: LC-triple quadrupole."),
+                    'instrument model',
+                    ['Bruker Daltonics EVOQ series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('timsTOF Pro', 'MS:1003005',
+                    ("Bruker Daltonics' timsTOF Pro."),
+                    'instrument model',
+                    ['Bruker Daltonics timsTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('timsTOF fleX', 'MS:1003124',
+                    ("Bruker Daltonics' timsTOF fleX"),
+                    'instrument model',
+                    ['Bruker Daltonics timsTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('AXIMA CFR MALDI-TOF', 'MS:1000607',
+                    ('Shimadzu Biotech AXIMA CFR MALDI-TOF MS.'),
+                    'instrument model',
+                    ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('AXIMA-QIT', 'MS:1000608',
+                    ('Shimadzu Biotech AXIMA-QIT MS.'),
+                    'instrument model',
+                    ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('AXIMA-CFR plus', 'MS:1000609',
+                    ('Shimadzu Biotech AXIMA-CFR plus MS.'),
+                    'instrument model',
+                    ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('AXIMA Performance MALDI-TOF/TOF', 'MS:1000610',
+                    ('Shimadzu Biotech AXIMA Performance MALDI-TOF/TOF MS.'),
+                    'instrument model',
+                    ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('AXIMA Confidence MALDI-TOF', 'MS:1000611',
+                    ('Shimadzu Biotech AXIMA Confidence MALDI-TOF (curved field'
+                     'reflectron) MS.'),
+                    'instrument model',
+                    ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('AXIMA Assurance Linear MALDI-TOF', 'MS:1000612',
+                    ('Shimadzu Biotech AXIMA Assurance Linear MALDI-TOF MS.'),
+                    'instrument model',
+                    ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('Shimadzu MALDI-7090', 'MS:1002382',
+                    ('Shimadzu MALDI-7090: MALDI-TOF-TOF.'),
+                    'instrument model',
+                    ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-IT-TOF', 'MS:1000604',
+                    ('Shimadzu Scientific Instruments LCMS-IT-TOF MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-2010EV', 'MS:1000605',
+                    ('Shimadzu Scientific Instruments LCMS-2010EV MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-2010A', 'MS:1000606',
+                    ('Shimadzu Scientific Instruments LCMS-2010A MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-9030', 'MS:1002998',
+                    ('Shimadzu Scientific Instruments LCMS-9030 Q-TOF MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-8060', 'MS:1002999',
+                    ('Shimadzu Scientific Instruments LCMS-8060 MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-8050', 'MS:1003000',
+                    ('Shimadzu Scientific Instruments LCMS-8050 MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-8045', 'MS:1003001',
+                    ('Shimadzu Scientific Instruments LCMS-8045 MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-8040', 'MS:1003002',
+                    ('Shimadzu Scientific Instruments LCMS-8040 MS.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('LCMS-2020', 'MS:1003003',
+                    ('Shimadzu Scientific Instruments LCMS-2020.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('GCMS-QP2010SE', 'MS:1003152',
+                    ('Shimadzu Scientific Instruments GCMS-QP2010SE.'),
+                    'instrument model',
+                    ['Shimadzu Scientific Instruments instrument model', 'Shimadzu instrument model', 'instrument model']),
+    InstrumentModel('DELTA plusAdvantage', 'MS:1000153',
+                    ('ThermoFinnigan DELTA plusAdvantage MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('DELTAplusXP', 'MS:1000154',
+                    ('ThermoFinnigan DELTAplusXP MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LCQ Advantage', 'MS:1000167',
+                    ('ThermoFinnigan LCQ Advantage MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LCQ Classic', 'MS:1000168',
+                    ('ThermoFinnigan LCQ Classic MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LCQ Deca XP Plus', 'MS:1000169',
+                    ('ThermoFinnigan LCQ Deca XP Plus MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('neptune', 'MS:1000179',
+                    ('ThermoFinnigan NEPTUNE MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('PolarisQ', 'MS:1000185',
+                    ('ThermoFinnigan PolarisQ MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Surveyor MSQ', 'MS:1000193',
+                    ('ThermoFinnigan Surveyor MSQ MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TEMPUS TOF', 'MS:1000196',
+                    ('ThermoFinnigan TEMPUS TOF MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TRACE DSQ', 'MS:1000197',
+                    ('ThermoFinnigan TRACE DSQ MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TRITON', 'MS:1000198',
+                    ('ThermoFinnigan TRITON MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Quantum', 'MS:1000199',
+                    ('ThermoFinnigan TSQ Quantum MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LCQ Deca', 'MS:1000554',
+                    ('ThermoFinnigan LCQ Deca.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('GC Quantum', 'MS:1000558',
+                    ('GC Quantum.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LCQ Fleet', 'MS:1000578',
+                    ('LCQ Fleet.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('DSQ', 'MS:1000634',
+                    ('ThermoFinnigan DSQ GC-MS.'),
+                    'instrument model',
+                    ['Thermo Finnigan instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('MAT253', 'MS:1000172',
+                    ('ThermoFinnigan MAT253 MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('MAT900XP', 'MS:1000173',
+                    ('ThermoFinnigan MAT900XP MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('MAT900XP Trap', 'MS:1000174',
+                    ('ThermoFinnigan MAT900XP Trap MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('MAT95XP', 'MS:1000175',
+                    ('ThermoFinnigan MAT95XP MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('MAT95XP Trap', 'MS:1000176',
+                    ('ThermoFinnigan MAT95XP Trap MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('SSQ 7000', 'MS:1000748',
+                    ('ThermoFinnigan SSQ 7000 MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ 7000', 'MS:1000749',
+                    ('ThermoFinnigan TSQ 7000 MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ', 'MS:1000750',
+                    ('ThermoFinnigan TSQ MS.'),
+                    'instrument model',
+                    ['Finnigan MAT instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ', 'MS:1000447',
+                    ('Finnigan LTQ MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ FT', 'MS:1000448',
+                    ('Finnigan LTQ FT MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap', 'MS:1000449',
+                    ('Finnigan LTQ Orbitrap MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LXQ', 'MS:1000450',
+                    ('Finnigan LXQ MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap Discovery', 'MS:1000555',
+                    ('LTQ Orbitrap Discovery.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap XL', 'MS:1000556',
+                    ('LTQ Orbitrap XL.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ FT Ultra', 'MS:1000557',
+                    ('LTQ FT Ultra.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Surveyor PDA', 'MS:1000622',
+                    ('Surveyor PDA.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Accela PDA', 'MS:1000623',
+                    ('Accela PDA.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('ITQ 700', 'MS:1000635',
+                    ('Thermo Scientific ITQ 700 GC-MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('ITQ 900', 'MS:1000636',
+                    ('Thermo Scientific ITQ 900 GC-MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('ITQ 1100', 'MS:1000637',
+                    ('Thermo Scientific ITQ 1100 GC-MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ XL ETD', 'MS:1000638',
+                    ('Thermo Scientific LTQ XL MS with ETD.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap XL ETD', 'MS:1000639',
+                    ('Thermo Scientific LTQ Orbitrap XL MS with ETD.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('DFS', 'MS:1000640',
+                    ('Thermo Scientific DFS HR GC-MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('DSQ II', 'MS:1000641',
+                    ('Thermo Scientific DSQ II GC-MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('MALDI LTQ XL', 'MS:1000642',
+                    ('Thermo Scientific MALDI LTQ XL MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('MALDI LTQ Orbitrap', 'MS:1000643',
+                    ('Thermo Scientific MALDI LTQ Orbitrap MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Quantum Access', 'MS:1000644',
+                    ('Thermo Scientific TSQ Quantum Access MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Element XR', 'MS:1000645',
+                    ('Thermo Scientific Element XR HR-ICP-MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Element 2', 'MS:1000646',
+                    ('Thermo Scientific Element 2 HR-ICP-MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Element GD', 'MS:1000647',
+                    ('Thermo Scientific Element GD Glow Discharge MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('GC IsoLink', 'MS:1000648',
+                    ('Thermo Scientific GC IsoLink Isotope Ratio MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Exactive', 'MS:1000649',
+                    ('Thermo Scientific Exactive MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Quantum Ultra AM', 'MS:1000743',
+                    ('Thermo Scientific TSQ Quantum Ultra AM.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Quantum Ultra', 'MS:1000751',
+                    ('Thermo Scientific TSQ Quantum Ultra.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ XL', 'MS:1000854',
+                    ('Thermo Scientific LTQ XL MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Velos', 'MS:1000855',
+                    ('Thermo Scientific LTQ Velos MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Velos ETD', 'MS:1000856',
+                    ('Thermo Scientific LTQ Velos MS with ETD.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Vantage', 'MS:1001510',
+                    ('TSQ Vantage.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap Velos', 'MS:1001742',
+                    ('Finnigan LTQ Orbitrap Velos MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('ISQ', 'MS:1001908',
+                    ('Thermo Scientific ISQ single quadrupole MS with the'
+                     'ExtractraBrite source.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Velos Plus', 'MS:1001909',
+                    ('Thermo Scientific second generation Velos.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap Elite', 'MS:1001910',
+                    ('Thermo Scientific LTQ Orbitrap Elite, often just referred to'
+                     'as the Orbitrap Elite.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Q Exactive', 'MS:1001911',
+                    ('Thermo Scientific Q Exactive.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap Fusion', 'MS:1002416',
+                    ('Thermo Scientific Orbitrap Fusion.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap Fusion ETD', 'MS:1002417',
+                    ('Thermo Scientific Orbitrap Fusion with ETD.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Quantiva', 'MS:1002418',
+                    ('Thermo Scientific TSQ Quantiva MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Endura', 'MS:1002419',
+                    ('Thermo Scientific TSQ Endura MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Q Exactive HF', 'MS:1002523',
+                    ('Thermo Scientific Q Exactive.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ 8000 Evo', 'MS:1002525',
+                    ('Thermo Scientific TSQ 8000 Evo MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Exactive Plus', 'MS:1002526',
+                    ('Thermo Scientific Exactive Plus MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Q Exactive Plus', 'MS:1002634',
+                    ('Thermo Scientific Q Exactive Plus.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap Fusion Lumos', 'MS:1002732',
+                    ('Thermo Scientific Orbitrap Fusion Lumos mass spectrometer'
+                     'with Tribrid architecture consisting of quadrupole mass'
+                     'filter, linear ion trap and Orbitrap mass analyzers.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap Classic', 'MS:1002835',
+                    ('Thermo Fisher Scientific LTQ Orbitrap Classic.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Altis', 'MS:1002874',
+                    ('Thermo Scientific TSQ Altis Triple Quadrupole MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ Quantis', 'MS:1002875',
+                    ('Thermo Scientific TSQ Quantis Triple Quadrupole MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('TSQ 9000', 'MS:1002876',
+                    ('Thermo Scientific TSQ 9000 Triple Quadrupole MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Q Exactive HF-X', 'MS:1002877',
+                    ('Thermo Scientific Q Exactive HF-X Hybrid Quadrupole Orbitrap'
+                     'MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap Exploris 480', 'MS:1003028',
+                    ('Thermo Scientific Orbitrap Exploris 480 Quadrupole Orbitrap'
+                     'MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap Eclipse', 'MS:1003029',
+                    ('Thermo Scientific Orbitrap Eclipse mass spectrometer with'
+                     'Tribrid architecture consisting of quadrupole mass filter,'
+                     'linear ion trap and Orbitrap mass analyzers.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap Exploris 240', 'MS:1003094',
+                    ('Thermo Scientific Orbitrap Exploris 240 Quadrupole Orbitrap'
+                     'MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap Exploris 120', 'MS:1003095',
+                    ('Thermo Scientific Orbitrap Exploris 120 Quadrupole Orbitrap'
+                     'MS.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('LTQ Orbitrap Velos Pro', 'MS:1003096',
+                    ('Thermo Scientific LTQ Orbitrap Velos Pro, often just'
+                     'referred to as the Orbitrap Velos Pro.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Orbitrap ID-X', 'MS:1003112',
+                    ('Thermo Scientific Orbitrap ID-X mass spectrometer with'
+                     'Tribrid architecture consisting of quadrupole mass filter,'
+                     'linear ion trap and Orbitrap mass analyzers.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('explorer', 'MS:1000158',
+                    ('IonSpec Explorer MS.'),
+                    'instrument model',
+                    ['IonSpec instrument model', 'Varian instrument model', 'instrument model']),
+    InstrumentModel('HiRes ESI', 'MS:1000162',
+                    ('IonSpec HiResESI MS.'),
+                    'instrument model',
+                    ['IonSpec instrument model', 'Varian instrument model', 'instrument model']),
+    InstrumentModel('HiRes MALDI', 'MS:1000163',
+                    ('IonSpec HiResMALDI MS.'),
+                    'instrument model',
+                    ['IonSpec instrument model', 'Varian instrument model', 'instrument model']),
+    InstrumentModel('OMEGA', 'MS:1000181',
+                    ('IonSpec OMEGA MS.'),
+                    'instrument model',
+                    ['IonSpec instrument model', 'Varian instrument model', 'instrument model']),
+    InstrumentModel('OMEGA-2001', 'MS:1000182',
+                    ('IonSpec OMEGA-2001 MS.'),
+                    'instrument model',
+                    ['IonSpec instrument model', 'Varian instrument model', 'instrument model']),
+    InstrumentModel('ultima', 'MS:1000200',
+                    ('IonSpec Ultima MS.'),
+                    'instrument model',
+                    ['IonSpec instrument model', 'Varian instrument model', 'instrument model']),
 ])
 # [[[end]]]
 

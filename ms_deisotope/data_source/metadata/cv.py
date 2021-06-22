@@ -202,6 +202,11 @@ class MappingProxy(object):
         self.loader = loader
         self.mapping = None
 
+    @property
+    def metadata(self):
+        self._ensure_mapping()
+        return self.mapping.metadata
+
     def _ensure_mapping(self):
         if self.mapping is None:
             self.mapping = self.loader()
@@ -292,7 +297,7 @@ def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pra
         lines = textwrap.wrap(text, width=60)
         lines = map(repr, lines)
         return indent[:-1] + '(' + ('\n' + indent).join(lines) + ')'
-
+    writer("# CV Version: %s\n" % cv_psims.metadata['data-version'])
     writer("%s = TermSet([\n" % (list_name,))
     while i < len(component_type_list):
         component_type = component_type_list[i]
