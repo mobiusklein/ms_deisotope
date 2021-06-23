@@ -183,8 +183,6 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Security
 
 
-## [Released]
-
 ## [v0.0.19]  - 2020-11-24
 
 ### Added
