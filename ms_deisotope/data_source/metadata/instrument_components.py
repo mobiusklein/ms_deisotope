@@ -24,288 +24,288 @@ class Component(Term):
 # CV Version: 4.1.55
 ionization_types = TermSet([
     Component('chemical ionization', 'MS:1000071',
-              ('The formation of a new ion by the reaction of a neutral'
-               'species with an ion. The process may involve transfer of an'
-               'electron, a proton or other charged species between the'
-               'reactants. When a positive ion results from chemical'
-               'ionization the term may be used without qualification. When'
-               'a negative ion results the term negative ion chemical'
-               'ionization should be used. Note that this term is not'
+              ('The formation of a new ion by the reaction of a neutral '
+               'species with an ion. The process may involve transfer of an '
+               'electron, a proton or other charged species between the '
+               'reactants. When a positive ion results from chemical '
+               'ionization the term may be used without qualification. When '
+               'a negative ion results the term negative ion chemical '
+               'ionization should be used. Note that this term is not '
                'synonymous with chemi-ionization.'),
               'ionization type',
               ['ionization type']),
     Component('electrospray ionization', 'MS:1000073',
-              ('A process in which ionized species in the gas phase are'
-               'produced from an analyte-containing solution via highly'
-               'charged fine droplets, by means of spraying the solution'
-               'from a narrow-bore needle tip at atmospheric pressure in the'
-               'presence of a high electric field. When a pressurized gas is'
-               'used to aid in the formation of a stable spray, the term'
-               'pneumatically assisted electrospray ionization is used. The'
+              ('A process in which ionized species in the gas phase are '
+               'produced from an analyte-containing solution via highly '
+               'charged fine droplets, by means of spraying the solution '
+               'from a narrow-bore needle tip at atmospheric pressure in the '
+               'presence of a high electric field. When a pressurized gas is '
+               'used to aid in the formation of a stable spray, the term '
+               'pneumatically assisted electrospray ionization is used. The '
                'term ion spray is not recommended.'),
               'ionization type',
               ['ionization type']),
     Component('fast atom bombardment ionization', 'MS:1000074',
-              ('The ionization of any species by the interaction of a'
-               'focused beam of neutral atoms having a translational energy'
-               'of several thousand eV with a sample that is typically'
-               'dissolved in a solvent matrix. See also secondary'
+              ('The ionization of any species by the interaction of a '
+               'focused beam of neutral atoms having a translational energy '
+               'of several thousand eV with a sample that is typically '
+               'dissolved in a solvent matrix. See also secondary '
                'ionization.'),
               'ionization type',
               ['ionization type']),
     Component('multiphoton ionization', 'MS:1000227',
-              ('Photoionization of an atom or molecule in which in two or'
+              ('Photoionization of an atom or molecule in which in two or '
                'more photons are absorbed.'),
               'ionization type',
               ['ionization type']),
     Component('atmospheric pressure ionization', 'MS:1000240',
-              ('Any ionization process in which ions are formed in the gas'
+              ('Any ionization process in which ions are formed in the gas '
                'phase at atmospheric pressure.'),
               'ionization type',
               ['ionization type']),
     Component('desorption ionization', 'MS:1000247',
-              ('The formation of ions from a solid or liquid material after'
+              ('The formation of ions from a solid or liquid material after '
                'the rapid vaporization of that sample.'),
               'ionization type',
               ['ionization type']),
     Component('flowing afterglow', 'MS:1000255',
-              ('An ion source immersed in a flow of helium or other inert'
-               'buffer gas that carries the ions through a meter-long'
+              ('An ion source immersed in a flow of helium or other inert '
+               'buffer gas that carries the ions through a meter-long '
                'reactor at pressures around 100 Pa.'),
               'ionization type',
               ['ionization type']),
     Component('field ionization', 'MS:1000258',
-              ('The removal of electrons from any species by interaction'
+              ('The removal of electrons from any species by interaction '
                'with a high electric field.'),
               'ionization type',
               ['ionization type']),
     Component('glow discharge ionization', 'MS:1000259',
-              ('The formation of ions in the gas phase and from solid'
-               'samples at the cathode by application of a voltage to a low'
+              ('The formation of ions in the gas phase and from solid '
+               'samples at the cathode by application of a voltage to a low '
                'pressure gas.'),
               'ionization type',
               ['ionization type']),
     Component('Negative Ion chemical ionization', 'MS:1000271',
-              ('Chemical ionization that results in the formation of'
+              ('Chemical ionization that results in the formation of '
                'negative ions.'),
               'ionization type',
               ['ionization type']),
     Component('neutralization reionization mass spectrometry', 'MS:1000272',
-              ('With this technique, m/z selected ions form neutrals by'
-               'charge transfer to a collision gas or by dissociation. The'
-               'neutrals are separated from the remaining ions and ionized'
-               'in collisions with a second gas. This method is used to'
-               'investigate reaction intermediates and other unstable'
+              ('With this technique, m/z selected ions form neutrals by '
+               'charge transfer to a collision gas or by dissociation. The '
+               'neutrals are separated from the remaining ions and ionized '
+               'in collisions with a second gas. This method is used to '
+               'investigate reaction intermediates and other unstable '
                'species.'),
               'ionization type',
               ['ionization type']),
     Component('photoionization', 'MS:1000273',
-              ('The ionization of an atom or molecule by a photon, written M'
+              ('The ionization of an atom or molecule by a photon, written M '
                '+ h? ? M^+ + e. The term photon impact is not recommended.'),
               'ionization type',
               ['ionization type']),
     Component('pyrolysis mass spectrometry', 'MS:1000274',
-              ('A mass spectrometry technique in which the sample is heated'
-               'to the point of decomposition and the gaseous decomposition'
+              ('A mass spectrometry technique in which the sample is heated '
+               'to the point of decomposition and the gaseous decomposition '
                'products are introduced into the ion source.'),
               'ionization type',
               ['ionization type']),
     Component('resonance enhanced multiphoton ionization', 'MS:1000276',
-              ('Multiphoton ionization in which the ionization cross section'
-               'is significantly enhanced because the energy of the incident'
-               'photons is resonant with an intermediate excited state of'
+              ('Multiphoton ionization in which the ionization cross section '
+               'is significantly enhanced because the energy of the incident '
+               'photons is resonant with an intermediate excited state of '
                'the neutral species.'),
               'ionization type',
               ['ionization type']),
     Component('adiabatic ionization', 'MS:1000380',
-              ('A process whereby an electron is removed from an atom, ion,'
+              ('A process whereby an electron is removed from an atom, ion, '
                'or molecule to produce an ion in its lowest energy state.'),
               'ionization type',
               ['ionization type']),
     Component('associative ionization', 'MS:1000381',
-              ('An ionization process in which two excited atoms or'
-               'molecules react to form a single positive ion and an'
+              ('An ionization process in which two excited atoms or '
+               'molecules react to form a single positive ion and an '
                'electron.'),
               'ionization type',
               ['ionization type']),
     Component('autodetachment', 'MS:1000383',
-              ('The formation of a neutral when a negative ion in a discrete'
-               'state with an energy greater than the detachment threshold'
-               'loses an electron spontaneously without further interaction'
+              ('The formation of a neutral when a negative ion in a discrete '
+               'state with an energy greater than the detachment threshold '
+               'loses an electron spontaneously without further interaction '
                'with an energy source.'),
               'ionization type',
               ['ionization type']),
     Component('autoionization', 'MS:1000384',
-              ('The formation of an ion when an atom or molecule in a'
-               'discrete state with an energy greater than the ionization'
-               'threshold loses an electron spontaneously without further'
+              ('The formation of an ion when an atom or molecule in a '
+               'discrete state with an energy greater than the ionization '
+               'threshold loses an electron spontaneously without further '
                'interaction with an energy source.'),
               'ionization type',
               ['ionization type']),
     Component('charge exchange ionization', 'MS:1000385',
-              ('The interaction of an ion with an atom or molecule in which'
-               'the charge on the ion is transferred to the neutral without'
-               'the dissociation of either. Synonymous with charge transfer'
+              ('The interaction of an ion with an atom or molecule in which '
+               'the charge on the ion is transferred to the neutral without '
+               'the dissociation of either. Synonymous with charge transfer '
                'ionization.'),
               'ionization type',
               ['ionization type']),
     Component('chemi-ionization', 'MS:1000386',
-              ('The reaction of a neutral molecule with an internally'
-               'excited molecule to form an ion. Note that this term is not'
+              ('The reaction of a neutral molecule with an internally '
+               'excited molecule to form an ion. Note that this term is not '
                'synonymous with chemical ionization.'),
               'ionization type',
               ['ionization type']),
     Component('dissociative ionization', 'MS:1000388',
-              ('The reaction of a gas-phase molecule that results in its'
+              ('The reaction of a gas-phase molecule that results in its '
                'decomposition to form products, one of which is an ion.'),
               'ionization type',
               ['ionization type']),
     Component('electron ionization', 'MS:1000389',
-              ('The ionization of an atom or molecule by electrons that are'
-               'typically accelerated to energies between 50 and 150 eV.'
-               'Usually 70 eV electrons are used to produce positive ions.'
+              ('The ionization of an atom or molecule by electrons that are '
+               'typically accelerated to energies between 50 and 150 eV. '
+               'Usually 70 eV electrons are used to produce positive ions. '
                "The term 'electron impact' is not recommended."),
               'ionization type',
               ['ionization type']),
     Component('liquid secondary ionization', 'MS:1000395',
-              ('The ionization of any species by the interaction of a'
-               'focused beam of ions with a sample that is dissolved in a'
-               'solvent matrix. See also fast atom bombardment and secondary'
+              ('The ionization of any species by the interaction of a '
+               'focused beam of ions with a sample that is dissolved in a '
+               'solvent matrix. See also fast atom bombardment and secondary '
                'ionization.'),
               'ionization type',
               ['ionization type']),
     Component('penning ionization', 'MS:1000399',
-              ('Ionization that occurs through the interaction of two or'
-               'more neutral gaseous species, at least one of which is'
+              ('Ionization that occurs through the interaction of two or '
+               'more neutral gaseous species, at least one of which is '
                'internally excited.'),
               'ionization type',
               ['ionization type']),
     Component('plasma desorption ionization', 'MS:1000400',
-              ('The ionization of material in a solid sample by bombarding'
-               'it with ionic or neutral atoms formed as a result of the'
-               'fission of a suitable nuclide, typically 252Cf. Synonymous'
+              ('The ionization of material in a solid sample by bombarding '
+               'it with ionic or neutral atoms formed as a result of the '
+               'fission of a suitable nuclide, typically 252Cf. Synonymous '
                'with fission fragment ionization.'),
               'ionization type',
               ['ionization type']),
     Component('secondary ionization', 'MS:1000402',
-              ('The process in which ions are ejected from a sample surface'
-               'as a result of bombardment by a primary beam of atoms or'
+              ('The process in which ions are ejected from a sample surface '
+               'as a result of bombardment by a primary beam of atoms or '
                'ions.'),
               'ionization type',
               ['ionization type']),
     Component('soft ionization', 'MS:1000403',
-              ('The formation of gas-phase ions without extensive'
+              ('The formation of gas-phase ions without extensive '
                'fragmentation.'),
               'ionization type',
               ['ionization type']),
     Component('spark ionization', 'MS:1000404',
-              ('The formation of ions from a solid material by an'
+              ('The formation of ions from a solid material by an '
                'intermittent electrical discharge.'),
               'ionization type',
               ['ionization type']),
     Component('surface ionization', 'MS:1000406',
-              ('The ionization of a neutral species when it interacts with a'
-               'solid surface with an appropriate work function and'
+              ('The ionization of a neutral species when it interacts with a '
+               'solid surface with an appropriate work function and '
                'temperature.'),
               'ionization type',
               ['ionization type']),
     Component('thermal ionization', 'MS:1000407',
-              ('The ionization of a neutral species through contact with a'
+              ('The ionization of a neutral species through contact with a '
                'high temperature surface.'),
               'ionization type',
               ['ionization type']),
     Component('vertical ionization', 'MS:1000408',
-              ('A process in which an electron is removed from or added to a'
-               'molecule without a change in the positions of the atoms. The'
+              ('A process in which an electron is removed from or added to a '
+               'molecule without a change in the positions of the atoms. The '
                'resulting ion is typically in an excited vibrational state.'),
               'ionization type',
               ['ionization type']),
     Component('fast ion bombardment', 'MS:1000446',
-              ('The ionization of any species by the interaction of a'
-               'focused beam of ions having a translational energy of'
+              ('The ionization of any species by the interaction of a '
+               'focused beam of ions having a translational energy of '
                'several thousand eV with a solid sample.'),
               'ionization type',
               ['ionization type']),
     Component('microelectrospray', 'MS:1000397',
-              ('Electrospray ionization at a solvent flow rate of 300-800'
-               'nL/min where the flow is a result of a mechanical pump. See'
+              ('Electrospray ionization at a solvent flow rate of 300-800 '
+               'nL/min where the flow is a result of a mechanical pump. See '
                'nanoelectrospray.'),
               'ionization type',
               ['electrospray ionization', 'ionization type']),
     Component('nanoelectrospray', 'MS:1000398',
-              ('Electrospray ionization at a flow rate less than ~25 nL/min.'
-               'Nanoelectrospray is synonymous with nanospray. The flow is'
-               'dependent on the potenial on the tip of the electrospray'
-               'needle and/or a gas presure to push the sample through the'
-               'needle. See also electrospray ionization and'
+              ('Electrospray ionization at a flow rate less than ~25 nL/min. '
+               'Nanoelectrospray is synonymous with nanospray. The flow is '
+               'dependent on the potenial on the tip of the electrospray '
+               'needle and/or a gas presure to push the sample through the '
+               'needle. See also electrospray ionization and '
                'microelectrospray.'),
               'ionization type',
               ['electrospray ionization', 'ionization type']),
     Component('atmospheric pressure chemical ionization', 'MS:1000070',
-              ('Chemical ionization that takes place at atmospheric pressure'
-               'as opposed to the reduced pressure is normally used for'
+              ('Chemical ionization that takes place at atmospheric pressure '
+               'as opposed to the reduced pressure is normally used for '
                'chemical ionization.'),
               'ionization type',
               ['atmospheric pressure ionization', 'ionization type']),
     Component('atmospheric pressure matrix-assisted laser desorption ionization', 'MS:1000239',
-              ('Matrix-assisted laser desorption ionization in which the'
-               'sample target is at atmospheric pressure and the ions formed'
-               'by the pulsed laser are sampled through a small aperture'
+              ('Matrix-assisted laser desorption ionization in which the '
+               'sample target is at atmospheric pressure and the ions formed '
+               'by the pulsed laser are sampled through a small aperture '
                'into the mass spectrometer.'),
               'ionization type',
               ['atmospheric pressure ionization', 'ionization type']),
     Component('atmospheric pressure photoionization', 'MS:1000382',
-              ('Atmospheric pressure chemical ionization in which the'
+              ('Atmospheric pressure chemical ionization in which the '
                'reactant ions are generated by photo-ionization.'),
               'ionization type',
               ['atmospheric pressure ionization', 'ionization type']),
     Component('desorption electrospray ionization', 'MS:1002011',
-              ('Combination of electrospray and desorption ionization method'
-               'that ionizes gases, liquids and solids in open air under'
+              ('Combination of electrospray and desorption ionization method '
+               'that ionizes gases, liquids and solids in open air under '
                'atmospheric pressure." [DOI:10.1126/science.1104404'),
               'ionization type',
               ['atmospheric pressure ionization', 'ionization type']),
     Component('matrix-assisted laser desorption ionization', 'MS:1000075',
-              ('The formation of gas-phase ions from molecules that are'
-               'present in a solid or solvent matrix that is irradiated with'
+              ('The formation of gas-phase ions from molecules that are '
+               'present in a solid or solvent matrix that is irradiated with '
                'a pulsed laser. See also laser desorption/ionization.'),
               'ionization type',
               ['desorption ionization', 'ionization type']),
     Component('field desorption', 'MS:1000257',
-              ('The formation of gas-phase ions from a material deposited on'
-               'a solid surface in the presence of a high electric field.'
-               'Because this process may encompass ionization by field'
-               'ionization or other mechanisms, it is not recommended as a'
+              ('The formation of gas-phase ions from a material deposited on '
+               'a solid surface in the presence of a high electric field. '
+               'Because this process may encompass ionization by field '
+               'ionization or other mechanisms, it is not recommended as a '
                'synonym for field desorption ionization.'),
               'ionization type',
               ['desorption ionization', 'ionization type']),
     Component('desorption/ionization on silicon', 'MS:1000387',
-              ('The formation of ions by laser desorption ionization of a'
+              ('The formation of ions by laser desorption ionization of a '
                'sample deposited on a porous silicon surface.'),
               'ionization type',
               ['desorption ionization', 'ionization type']),
     Component('laser desorption ionization', 'MS:1000393',
-              ('The formation of gas-phase ions by the interaction of a'
+              ('The formation of gas-phase ions by the interaction of a '
                'pulsed laser with a solid or liquid material.'),
               'ionization type',
               ['desorption ionization', 'ionization type']),
     Component('surface-assisted laser desorption ionization', 'MS:1000405',
-              ('The formation of gas-phase ions from molecules that are'
-               'deposited on a particular surface substrate that is'
-               'irradiated with a pulsed laser. See also matrix-assisted'
+              ('The formation of gas-phase ions from molecules that are '
+               'deposited on a particular surface substrate that is '
+               'irradiated with a pulsed laser. See also matrix-assisted '
                'laser desorption ionization.'),
               'ionization type',
               ['desorption ionization', 'ionization type']),
     Component('surface enhanced laser desorption ionization', 'MS:1000278',
-              ('The formation of ionized species in the gas phase from'
-               'analytes deposited on a particular surface substrate which'
-               'is irradiated with a laser beam of which wavelength is'
-               'absorbed by the surface. See also desorption/ionization on'
+              ('The formation of ionized species in the gas phase from '
+               'analytes deposited on a particular surface substrate which '
+               'is irradiated with a laser beam of which wavelength is '
+               'absorbed by the surface. See also desorption/ionization on '
                'silicon and laser desorption/ionization.'),
               'ionization type',
               ['surface ionization', 'ionization type']),
     Component('surface enhanced neat desorption', 'MS:1000279',
-              ('Matrix-assisted laser desorption ionization in which the'
+              ('Matrix-assisted laser desorption ionization in which the '
                'matrix is covalently linked to the target surface.'),
               'ionization type',
               ['surface ionization', 'ionization type']),
@@ -321,87 +321,87 @@ ionization_types = TermSet([
 # CV Version: 4.1.55
 detector_types = TermSet([
     Component('channeltron', 'MS:1000107',
-              ('A horn-shaped (or cone-shaped) continuous dynode particle'
-               'multiplier. The ion strikes the inner surface of the device'
-               'and induces the production of secondary electrons that in'
-               'turn impinge on the inner surfaces to produce more secondary'
-               'electrons. This avalanche effect produces an increase in'
+              ('A horn-shaped (or cone-shaped) continuous dynode particle '
+               'multiplier. The ion strikes the inner surface of the device '
+               'and induces the production of secondary electrons that in '
+               'turn impinge on the inner surfaces to produce more secondary '
+               'electrons. This avalanche effect produces an increase in '
                'signal in the final measured current pulse.'),
               'detector type',
               ['detector type']),
     Component('daly detector', 'MS:1000110',
-              ('Detector consisting of a conversion dynode, scintillator and'
-               'photomultiplier. The metal knob at high potential emits'
-               'secondary electrons when ions impinge on the surface. The'
-               'secondary electrons are accelerated onto the scintillator'
-               'that produces light that is then detected by the'
+              ('Detector consisting of a conversion dynode, scintillator and '
+               'photomultiplier. The metal knob at high potential emits '
+               'secondary electrons when ions impinge on the surface. The '
+               'secondary electrons are accelerated onto the scintillator '
+               'that produces light that is then detected by the '
                'photomultiplier detector.'),
               'detector type',
               ['detector type']),
     Component('faraday cup', 'MS:1000112',
-              ('A conducting cup or chamber that intercepts a charged'
-               'particle beam and is electrically connected to a current'
+              ('A conducting cup or chamber that intercepts a charged '
+               'particle beam and is electrically connected to a current '
                'measuring device.'),
               'detector type',
               ['detector type']),
     Component('multi-collector', 'MS:1000115',
-              ('A detector system commonly used in inductively coupled'
+              ('A detector system commonly used in inductively coupled '
                'plasma mass spectrometers.'),
               'detector type',
               ['detector type']),
     Component('photomultiplier', 'MS:1000116',
-              ('A detector for conversion of the ion/electron signal into'
+              ('A detector for conversion of the ion/electron signal into '
                'photon(s) which are then amplified and detected.'),
               'detector type',
               ['detector type']),
     Component('electron multiplier', 'MS:1000253',
-              ('A device to amplify the current of a beam or packet of'
-               'charged particles or photons by incidence upon the surface'
-               'of an electrode to produce secondary electrons. The'
-               'secondary electrons are then accelerated to other electrodes'
-               'or parts of a continuous electrode to produce further'
+              ('A device to amplify the current of a beam or packet of '
+               'charged particles or photons by incidence upon the surface '
+               'of an electrode to produce secondary electrons. The '
+               'secondary electrons are then accelerated to other electrodes '
+               'or parts of a continuous electrode to produce further '
                'secondary electrons.'),
               'detector type',
               ['detector type']),
     Component('array detector', 'MS:1000345',
-              ('Detector comprising several ion collection elements,'
-               'arranged in a line or grid where each element is an'
+              ('Detector comprising several ion collection elements, '
+               'arranged in a line or grid where each element is an '
                'individual detector.'),
               'detector type',
               ['detector type']),
     Component('conversion dynode', 'MS:1000346',
-              ('A surface that is held at high potential such that ions'
-               'striking the surface produce electrons that are subsequently'
+              ('A surface that is held at high potential such that ions '
+               'striking the surface produce electrons that are subsequently '
                'detected.'),
               'detector type',
               ['detector type']),
     Component('dynode', 'MS:1000347',
-              ('One of a series of electrodes in a photomultiplier tube.'
-               'Such an arrangement is able to amplify the current emitted'
+              ('One of a series of electrodes in a photomultiplier tube. '
+               'Such an arrangement is able to amplify the current emitted '
                'by the photocathode.'),
               'detector type',
               ['detector type']),
     Component('focal plane collector', 'MS:1000348',
-              ('A detector for spatially disperse ion beams in which all'
+              ('A detector for spatially disperse ion beams in which all '
                'ions simultaneously impinge on the detector plane.'),
               'detector type',
               ['detector type']),
     Component('ion-to-photon detector', 'MS:1000349',
-              ('A detector in which ions strike a conversion dynode to'
-               'produce electrons that in turn strike a phosphor and the'
+              ('A detector in which ions strike a conversion dynode to '
+               'produce electrons that in turn strike a phosphor and the '
                'resulting photons are detected by a photomultiplier.'),
               'detector type',
               ['detector type']),
     Component('point collector', 'MS:1000350',
-              ('A detector in which the ion beam is focused onto a point and'
+              ('A detector in which the ion beam is focused onto a point and '
                'the individual ions arrive sequentially.'),
               'detector type',
               ['detector type']),
     Component('postacceleration detector', 'MS:1000351',
-              ('A detector in which the charged particles are accelerated to'
-               'a high velocity and impinge on a conversion dynode, emitting'
-               'secondary electrons. The electrons are accelerated onto a'
-               'phosphor screen, which emits photons that are in turn'
+              ('A detector in which the charged particles are accelerated to '
+               'a high velocity and impinge on a conversion dynode, emitting '
+               'secondary electrons. The electrons are accelerated onto a '
+               'phosphor screen, which emits photons that are in turn '
                'detected using a photomultiplier or other photon detector.'),
               'detector type',
               ['detector type']),
@@ -410,45 +410,45 @@ detector_types = TermSet([
               'detector type',
               ['detector type']),
     Component('fluorescence detector', 'MS:1002308',
-              ('A detector using a fluorescent signal after excitation with'
+              ('A detector using a fluorescent signal after excitation with '
                'light.'),
               'detector type',
               ['detector type']),
     Component('electron multiplier tube', 'MS:1000111',
-              ('A device to amplify the current of a beam or packet of'
-               'charged particles or photons by incidence upon the surface'
+              ('A device to amplify the current of a beam or packet of '
+               'charged particles or photons by incidence upon the surface '
                'of an electrode to produce secondary electrons.'),
               'detector type',
               ['electron multiplier', 'detector type']),
     Component('microchannel plate detector', 'MS:1000114',
-              ('A thin plate that contains a closely spaced array of'
-               'channels that each act as a continuous dynode particle'
-               'multiplier. A charged particle, fast neutral particle, or'
-               'photon striking the plate causes a cascade of secondary'
-               'electrons that ultimately exits the opposite side of the'
+              ('A thin plate that contains a closely spaced array of '
+               'channels that each act as a continuous dynode particle '
+               'multiplier. A charged particle, fast neutral particle, or '
+               'photon striking the plate causes a cascade of secondary '
+               'electrons that ultimately exits the opposite side of the '
                'plate.'),
               'detector type',
               ['array detector', 'detector type']),
     Component('photodiode array detector', 'MS:1000621',
-              ('An array detector used to record spectra in the ultraviolet'
+              ('An array detector used to record spectra in the ultraviolet '
                'and visible region of light.'),
               'detector type',
               ['array detector', 'detector type']),
     Component('conversion dynode electron multiplier', 'MS:1000108',
-              ('A surface that is held at high potential so that ions'
-               'striking the surface produce electrons that are subsequently'
+              ('A surface that is held at high potential so that ions '
+               'striking the surface produce electrons that are subsequently '
                'detected.'),
               'detector type',
               ['conversion dynode', 'detector type']),
     Component('conversion dynode photomultiplier', 'MS:1000109',
-              ('A detector in which ions strike a conversion dynode to'
-               'produce electrons that in turn generate photons through a'
-               'phosphorescent screen that are detected by a'
+              ('A detector in which ions strike a conversion dynode to '
+               'produce electrons that in turn generate photons through a '
+               'phosphorescent screen that are detected by a '
                'photomultiplier.'),
               'detector type',
               ['conversion dynode', 'detector type']),
     Component('focal plane array', 'MS:1000113',
-              ('An array of detectors for spatially disperse ion beams in'
+              ('An array of detectors for spatially disperse ion beams in '
                'which all ions simultaneously impinge on the detector plane.'),
               'detector type',
               ['focal plane collector', 'detector type']),
@@ -472,100 +472,100 @@ detector_types = TermSet([
 # CV Version: 4.1.55
 analyzer_types = TermSet([
     Component('fourier transform ion cyclotron resonance mass spectrometer', 'MS:1000079',
-              ('A mass spectrometer based on the principle of ion cyclotron'
-               'resonance in which an ion in a magnetic field moves in a'
-               'circular orbit at a frequency characteristic of its m/z'
-               'value. Ions are coherently excited to a larger radius orbit'
-               'using a pulse of radio frequency energy and their image'
-               'charge is detected on receiver plates as a time domain'
-               'signal. Fourier transformation of the time domain signal'
-               'results in a frequency domain signal which is converted to a'
-               'mass spectrum based in the inverse relationship between'
+              ('A mass spectrometer based on the principle of ion cyclotron '
+               'resonance in which an ion in a magnetic field moves in a '
+               'circular orbit at a frequency characteristic of its m/z '
+               'value. Ions are coherently excited to a larger radius orbit '
+               'using a pulse of radio frequency energy and their image '
+               'charge is detected on receiver plates as a time domain '
+               'signal. Fourier transformation of the time domain signal '
+               'results in a frequency domain signal which is converted to a '
+               'mass spectrum based in the inverse relationship between '
                'frequency and m/z.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('magnetic sector', 'MS:1000080',
-              ('A device that produces a magnetic field perpendicular to a'
-               'charged particle beam that deflects the beam to an extent'
-               'that is proportional to the particle momentum per unit'
-               'charge. For a monoenergetic beam, the deflection is'
+              ('A device that produces a magnetic field perpendicular to a '
+               'charged particle beam that deflects the beam to an extent '
+               'that is proportional to the particle momentum per unit '
+               'charge. For a monoenergetic beam, the deflection is '
                'proportional to m/z.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('quadrupole', 'MS:1000081',
-              ('A mass spectrometer that consists of four parallel rods'
-               'whose centers form the corners of a square and whose'
-               'opposing poles are connected. The voltage applied to the'
-               'rods is a superposition of a static potential and a'
-               'sinusoidal radio frequency potential. The motion of an ion'
-               'in the x and y dimensions is described by the Matthieu'
-               'equation whose solutions show that ions in a particular m/z'
+              ('A mass spectrometer that consists of four parallel rods '
+               'whose centers form the corners of a square and whose '
+               'opposing poles are connected. The voltage applied to the '
+               'rods is a superposition of a static potential and a '
+               'sinusoidal radio frequency potential. The motion of an ion '
+               'in the x and y dimensions is described by the Matthieu '
+               'equation whose solutions show that ions in a particular m/z '
                'range can be transmitted along the z axis.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('time-of-flight', 'MS:1000084',
-              ('Instrument that separates ions by m/z in a field-free region'
+              ('Instrument that separates ions by m/z in a field-free region '
                'after acceleration to a fixed acceleration energy.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('electrostatic energy analyzer', 'MS:1000254',
-              ('A device consisting of conducting parallel plates,'
-               'concentric cylinders or concentric spheres that separates'
-               'charged particles according to their kinetic energy by means'
+              ('A device consisting of conducting parallel plates, '
+               'concentric cylinders or concentric spheres that separates '
+               'charged particles according to their kinetic energy by means '
                'of an electric field that is constant in time.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('ion trap', 'MS:1000264',
-              ('A device for spatially confining ions using electric and'
+              ('A device for spatially confining ions using electric and '
                'magnetic fields alone or in combination.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('stored waveform inverse fourier transform', 'MS:1000284',
-              ('A technique to create excitation waveforms for ions in FT-'
-               'ICR mass spectrometer or Paul ion trap. An excitation'
-               'waveform in the time-domain is generated by taking the'
-               'inverse Fourier transform of an appropriate frequency-domain'
-               'programmed excitation spectrum, in which the resonance'
-               'frequencies of ions to be excited are included. This'
-               'technique may be used for selection of precursor ions in MS2'
+              ('A technique to create excitation waveforms for ions in FT- '
+               'ICR mass spectrometer or Paul ion trap. An excitation '
+               'waveform in the time-domain is generated by taking the '
+               'inverse Fourier transform of an appropriate frequency-domain '
+               'programmed excitation spectrum, in which the resonance '
+               'frequencies of ions to be excited are included. This '
+               'technique may be used for selection of precursor ions in MS2 '
                'experiments.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('cyclotron', 'MS:1000288',
-              ('A device that uses an oscillating electric field and'
+              ('A device that uses an oscillating electric field and '
                'magnetic field to accelerate charged particles.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('orbitrap', 'MS:1000484',
-              ('An ion trapping device that consists of an outer barrel-like'
-               'electrode and a coaxial inner spindle-like electrode that'
-               'form an electrostatic field with quadro-logarithmic'
-               'potential distribution. The frequency of harmonic'
-               'oscillations of the orbitally trapped ions along the axis of'
-               'the electrostatic field is independent of the ion velocity'
-               'and is inversely proportional to the square root of m/z so'
+              ('An ion trapping device that consists of an outer barrel-like '
+               'electrode and a coaxial inner spindle-like electrode that '
+               'form an electrostatic field with quadro-logarithmic '
+               'potential distribution. The frequency of harmonic '
+               'oscillations of the orbitally trapped ions along the axis of '
+               'the electrostatic field is independent of the ion velocity '
+               'and is inversely proportional to the square root of m/z so '
                'that the trap can be used as a mass analyzer.'),
               'mass analyzer type',
               ['mass analyzer type']),
     Component('quadrupole ion trap', 'MS:1000082',
-              ('Quadrupole Ion Trap mass analyzer captures the ions in a'
-               'three dimensional ion trap and then selectively ejects them'
+              ('Quadrupole Ion Trap mass analyzer captures the ions in a '
+               'three dimensional ion trap and then selectively ejects them '
                'by varying the RF and DC potentials.'),
               'mass analyzer type',
               ['ion trap', 'mass analyzer type']),
     Component('linear ion trap', 'MS:1000291',
-              ('A two dimensional Paul ion trap in which ions are confined'
-               'in the axial dimension by means of an electric field at the'
+              ('A two dimensional Paul ion trap in which ions are confined '
+               'in the axial dimension by means of an electric field at the '
                'ends of the trap.'),
               'mass analyzer type',
               ['ion trap', 'mass analyzer type']),
     Component('axial ejection linear ion trap', 'MS:1000078',
-              ('A linear ion trap mass spectrometer where ions are ejected'
+              ('A linear ion trap mass spectrometer where ions are ejected '
                'along the axis of the analyzer.'),
               'mass analyzer type',
               ['linear ion trap', 'ion trap', 'mass analyzer type']),
     Component('radial ejection linear ion trap', 'MS:1000083',
-              ('A linear ion trap mass spectrometer where ions are ejected'
+              ('A linear ion trap mass spectrometer where ions are ejected '
                'along the radius of the analyzer.'),
               'mass analyzer type',
               ['linear ion trap', 'ion trap', 'mass analyzer type']),
@@ -581,53 +581,53 @@ analyzer_types = TermSet([
 # CV Version: 4.1.55
 inlet_types = TermSet([
     Component('continuous flow fast atom bombardment', 'MS:1000055',
-              ('Fast atom bombardment ionization in which the analyte in'
+              ('Fast atom bombardment ionization in which the analyte in '
                'solution is entrained in a flowing liquid matrix.'),
               'inlet type',
               ['inlet type']),
     Component('direct inlet', 'MS:1000056',
-              ('The sample is directly inserted into the ion source, usually'
+              ('The sample is directly inserted into the ion source, usually '
                'on the end of a heatable probe.'),
               'inlet type',
               ['inlet type']),
     Component('electrospray inlet', 'MS:1000057',
-              ('Inlet used for introducing the liquid sample into an'
+              ('Inlet used for introducing the liquid sample into an '
                'electrospray ionization source.'),
               'inlet type',
               ['inlet type']),
     Component('flow injection analysis', 'MS:1000058',
-              ('Sample is directly injected or infused into the ionization'
+              ('Sample is directly injected or infused into the ionization '
                'source.'),
               'inlet type',
               ['inlet type']),
     Component('inductively coupled plasma', 'MS:1000059',
-              ('A gas discharge ion source in which the energy to the plasma'
+              ('A gas discharge ion source in which the energy to the plasma '
                'is supplied by electromagnetic induction.'),
               'inlet type',
               ['inlet type']),
     Component('infusion', 'MS:1000060',
-              ('The continuous flow of solution of a sample into the'
+              ('The continuous flow of solution of a sample into the '
                'ionization source.'),
               'inlet type',
               ['inlet type']),
     Component('jet separator', 'MS:1000061',
-              ('A device that separates carrier gas from gaseous analyte'
+              ('A device that separates carrier gas from gaseous analyte '
                'molecules on the basis of diffusivity.'),
               'inlet type',
               ['inlet type']),
     Component('membrane separator', 'MS:1000062',
-              ('A device to separate carrier molecules from analyte'
-               'molecules on the basis of ease of diffusion across a'
+              ('A device to separate carrier molecules from analyte '
+               'molecules on the basis of ease of diffusion across a '
                'semipermeable membrane.'),
               'inlet type',
               ['inlet type']),
     Component('moving belt', 'MS:1000063',
-              ('Continuous moving surface in the form of a belt which passes'
+              ('Continuous moving surface in the form of a belt which passes '
                'through an ion source carrying analyte molecules.'),
               'inlet type',
               ['inlet type']),
     Component('moving wire', 'MS:1000064',
-              ('Continuous moving surface in the form of a wire which passes'
+              ('Continuous moving surface in the form of a wire which passes '
                'through an ion source carrying analyte molecules.'),
               'inlet type',
               ['inlet type']),
@@ -644,28 +644,28 @@ inlet_types = TermSet([
               'inlet type',
               ['inlet type']),
     Component('septum', 'MS:1000068',
-              ('A disc composed of a flexible material that seals the'
-               'entrance to the reservoir. Can also be entrance to the'
+              ('A disc composed of a flexible material that seals the '
+               'entrance to the reservoir. Can also be entrance to the '
                'vacuum chamber.'),
               'inlet type',
               ['inlet type']),
     Component('thermospray inlet', 'MS:1000069',
-              ('A method for generating gas phase ions from a solution of an'
+              ('A method for generating gas phase ions from a solution of an '
                'analyte by rapid heating of the sample.'),
               'inlet type',
               ['inlet type']),
     Component('direct insertion probe', 'MS:1000248',
-              ('A device for introducing a solid or liquid sample into a'
+              ('A device for introducing a solid or liquid sample into a '
                'mass spectrometer ion source for desorption ionization.'),
               'inlet type',
               ['inlet type']),
     Component('direct liquid introduction', 'MS:1000249',
-              ('The delivery of a liquid sample into a mass spectrometer for'
+              ('The delivery of a liquid sample into a mass spectrometer for '
                'spray or desorption ionization.'),
               'inlet type',
               ['inlet type']),
     Component('membrane inlet', 'MS:1000396',
-              ('A semi-permeable membrane separator that permits the passage'
+              ('A semi-permeable membrane separator that permits the passage '
                'of gas sample directly to the mass spectrometer ion source.'),
               'inlet type',
               ['inlet type']),
@@ -710,9 +710,9 @@ class InstrumentModel(Term):
 # CV Version: 4.1.55
 instrument_models = TermSet([
     InstrumentModel('SCIEX instrument model', 'MS:1000121',
-                    ('The brand of instruments from the joint venture between'
-                     'Applied Biosystems and MDS Analytical Technologies (formerly'
-                     'MDS SCIEX). Previously branded as \\"Applied Biosystems|MDS'
+                    ('The brand of instruments from the joint venture between '
+                     'Applied Biosystems and MDS Analytical Technologies (formerly '
+                     'MDS SCIEX). Previously branded as \\"Applied Biosystems|MDS '
                      'SCIEX\\".'),
                     'instrument model',
                     ['instrument model']),
@@ -729,8 +729,8 @@ instrument_models = TermSet([
                     'instrument model',
                     ['instrument model']),
     InstrumentModel('Thermo Fisher Scientific instrument model', 'MS:1000483',
-                    ('Thermo Fisher Scientific instrument model. The company has'
-                     'gone through several names including Thermo Finnigan, Thermo'
+                    ('Thermo Fisher Scientific instrument model. The company has '
+                     'gone through several names including Thermo Finnigan, Thermo '
                      'Scientific.'),
                     'instrument model',
                     ['instrument model']),
@@ -807,7 +807,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
     InstrumentModel('4800 Plus MALDI TOF/TOF', 'MS:1000652',
-                    ('SCIEX or Applied Biosystems|MDS SCIEX 4800 Plus MALDI TOF-'
+                    ('SCIEX or Applied Biosystems|MDS SCIEX 4800 Plus MALDI TOF- '
                      'TOF Analyzer.'),
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
@@ -836,7 +836,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
     InstrumentModel('TripleTOF 5600', 'MS:1000932',
-                    ('SCIEX TripleTOF 5600, a quadrupole - quadrupole - time-of-'
+                    ('SCIEX TripleTOF 5600, a quadrupole - quadrupole - time-of- '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
@@ -845,7 +845,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
     InstrumentModel('TripleTOF 6600', 'MS:1002533',
-                    ('SCIEX TripleTOF 6600, a quadrupole - quadrupole - time-of-'
+                    ('SCIEX TripleTOF 6600, a quadrupole - quadrupole - time-of- '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
@@ -926,7 +926,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
     InstrumentModel('X500R QTOF', 'MS:1002674',
-                    ('SCIEX X500R QTOF, a quadrupole - quadrupole - time-of-flight'
+                    ('SCIEX X500R QTOF, a quadrupole - quadrupole - time-of-flight '
                      'mass spectrometer.'),
                     'instrument model',
                     ['SCIEX instrument model', 'instrument model']),
@@ -963,7 +963,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('Bruker Daltonics solarix series', 'MS:1001548',
-                    ("Bruker Daltonics' solarix: ESI quadrupole ion trap, APCI,"
+                    ("Bruker Daltonics' solarix: ESI quadrupole ion trap, APCI, "
                      'APPI, ETD, PTR.'),
                     'instrument model',
                     ['Bruker Daltonics instrument model', 'instrument model']),
@@ -1200,37 +1200,37 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('SYNAPT G2-Si', 'MS:1002726',
-                    ('Waters Corporation SYNAPT G2-Si orthogonal acceleration'
+                    ('Waters Corporation SYNAPT G2-Si orthogonal acceleration '
                      'time-of-flight mass spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('MALDI SYNAPT G2-Si', 'MS:1002727',
-                    ('Waters Corporation MALDI SYNAPT G2-Si orthogonal'
+                    ('Waters Corporation MALDI SYNAPT G2-Si orthogonal '
                      'acceleration time-of-flight mass spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('Vion IMS QTof', 'MS:1002728',
-                    ('Waters Corporation Vion IMS QTof orthogonal acceleration'
+                    ('Waters Corporation Vion IMS QTof orthogonal acceleration '
                      'time-of-flight mass spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('Xevo G2 XS Tof', 'MS:1002729',
-                    ('Waters Corporation Xevo G2 XS Tof orthogonal acceleration'
+                    ('Waters Corporation Xevo G2 XS Tof orthogonal acceleration '
                      'time-of-flight mass spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('Xevo TQ-XS', 'MS:1002730',
-                    ('Waters Corporation Xevo TQ-XS triple quadrupole mass'
+                    ('Waters Corporation Xevo TQ-XS triple quadrupole mass '
                      'spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('Xevo TQ-S micro', 'MS:1002731',
-                    ('Waters Corporation Xevo TQ-S micro triple quadrupole mass'
+                    ('Waters Corporation Xevo TQ-S micro triple quadrupole mass '
                      'spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('Thermo Finnigan instrument model', 'MS:1000125',
-                    ('ThermoFinnigan from Thermo Electron Corporation instrument'
+                    ('ThermoFinnigan from Thermo Electron Corporation instrument '
                      'model.'),
                     'instrument model',
                     ['Thermo Fisher Scientific instrument model', 'instrument model']),
@@ -1251,303 +1251,303 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Varian instrument model', 'instrument model']),
     InstrumentModel('1200 series LC/MSD SL', 'MS:1000467',
-                    ('The 1200 Series LC/MSD SL ion trap belongs to the Agilent'
-                     'LC/MSD ion trap family. It provides fast polarity switching'
-                     'and multisignal data acquisition capabilities in a single'
-                     'run while also providing 5 stages of automated data'
+                    ('The 1200 Series LC/MSD SL ion trap belongs to the Agilent '
+                     'LC/MSD ion trap family. It provides fast polarity switching '
+                     'and multisignal data acquisition capabilities in a single '
+                     'run while also providing 5 stages of automated data '
                      'dependent MS2 and 11 stages of manual MS2.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6110 Quadrupole LC/MS', 'MS:1000468',
-                    ('The 6110 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with an entry level'
-                     'single quadrupole mass spectrometer from the 6100 Series of'
-                     'Agilent quadrupole mass spectrometers. 6110 Quadrupole mass'
-                     'spectrometer has m/z range of 10-1500 and 2500 u/s scan'
-                     'speed. It proves useful for wide range of SIM quantitative'
+                    ('The 6110 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with an entry level '
+                     'single quadrupole mass spectrometer from the 6100 Series of '
+                     'Agilent quadrupole mass spectrometers. 6110 Quadrupole mass '
+                     'spectrometer has m/z range of 10-1500 and 2500 u/s scan '
+                     'speed. It proves useful for wide range of SIM quantitative '
                      'applications.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6120A Quadrupole LC/MS', 'MS:1000469',
-                    ('The 6120A Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a single quadrupole'
-                     'mass spectrometer from the 6100 Series of Agilent mass'
-                     'spectrometers. 6120 quadrupole mass spectrometer has m/z'
-                     'range of 10-1500, 2500 u/s scan speed and utilizes multiple'
+                    ('The 6120A Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a single quadrupole '
+                     'mass spectrometer from the 6100 Series of Agilent mass '
+                     'spectrometers. 6120 quadrupole mass spectrometer has m/z '
+                     'range of 10-1500, 2500 u/s scan speed and utilizes multiple '
                      'signal acquisition.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6130 Quadrupole LC/MS', 'MS:1000470',
-                    ('The 6130 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a single quadrupole'
-                     'mass spectrometer from the 6100 series of Agilent mass'
-                     'spectrometers. The 6130 quadrupole mass spectrometer has m/z'
-                     'range of 2-3000, 2500 u/s scan speed in standard mode and'
-                     '5250 u/s speed in fast-scan mode. It also uses multiple'
+                    ('The 6130 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a single quadrupole '
+                     'mass spectrometer from the 6100 series of Agilent mass '
+                     'spectrometers. The 6130 quadrupole mass spectrometer has m/z '
+                     'range of 2-3000, 2500 u/s scan speed in standard mode and '
+                     '5250 u/s speed in fast-scan mode. It also uses multiple '
                      'signal acquisition.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6140 Quadrupole LC/MS', 'MS:1000471',
-                    ('The 6140 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a single quadrupole'
-                     'mass spectrometer from the 6100 Series of Agilent quadrupole'
-                     'mass spectrometers. 6140 Quadrupole mass spectrometer has'
-                     'm/z range of 10-1350, 2500 u/s scan speed in standard mode'
-                     'and 10000 u/s speed in fast-scan mode. It also uses multiple'
+                    ('The 6140 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a single quadrupole '
+                     'mass spectrometer from the 6100 Series of Agilent quadrupole '
+                     'mass spectrometers. 6140 Quadrupole mass spectrometer has '
+                     'm/z range of 10-1350, 2500 u/s scan speed in standard mode '
+                     'and 10000 u/s speed in fast-scan mode. It also uses multiple '
                      'signal acquisition.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6210 Time-of-Flight LC/MS', 'MS:1000472',
-                    ('The 6210 Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
-                     'flight mass spectrometer. This time of flight mass'
-                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     'less than 2 ppm and resolution greater than 13,000 at m/z'
-                     '2722. It has multiple ion sources and can be used with'
+                    ('The 6210 Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
+                     'flight mass spectrometer. This time of flight mass '
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of '
+                     'less than 2 ppm and resolution greater than 13,000 at m/z '
+                     '2722. It has multiple ion sources and can be used with '
                      'multimode ion sources.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6310 Ion Trap LC/MS', 'MS:1000473',
-                    ('The 6310 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     'instrument combined with a 6300 series Agilent ion trap. It'
-                     'has a mass range of 50-2200 between 0.6 to 0.35 resolution'
-                     'and mass range of 200-4000 with resolution of 3-4. The scan'
+                    ('The 6310 Ion Trap LC/MS is a Agilent liquid chromatography '
+                     'instrument combined with a 6300 series Agilent ion trap. It '
+                     'has a mass range of 50-2200 between 0.6 to 0.35 resolution '
+                     'and mass range of 200-4000 with resolution of 3-4. The scan '
                      'speed varies from 1650-27000 for the respective mass ranges.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6320 Ion Trap LC/MS', 'MS:1000474',
-                    ('The 6320 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     'instrument combined with a 6300 series Agilent ion trap. It'
-                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
-                     'and mass range of 200-4000 with resolution of less than 3.'
-                     'The scan speed varies from 1650-27000 for the respective'
+                    ('The 6320 Ion Trap LC/MS is a Agilent liquid chromatography '
+                     'instrument combined with a 6300 series Agilent ion trap. It '
+                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution '
+                     'and mass range of 200-4000 with resolution of less than 3. '
+                     'The scan speed varies from 1650-27000 for the respective '
                      'mass ranges.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6330 Ion Trap LC/MS', 'MS:1000475',
-                    ('The 6330 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     'instrument combined with a 6300 series Agilent ion trap. It'
-                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
-                     'and mass range of 200-4000 with resolution of less than 3.'
-                     'The scan speed varies from 1650-27000 for the respective'
+                    ('The 6330 Ion Trap LC/MS is a Agilent liquid chromatography '
+                     'instrument combined with a 6300 series Agilent ion trap. It '
+                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution '
+                     'and mass range of 200-4000 with resolution of less than 3. '
+                     'The scan speed varies from 1650-27000 for the respective '
                      'mass ranges.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6340 Ion Trap LC/MS', 'MS:1000476',
-                    ('The 6340 Ion Trap LC/MS is a Agilent liquid chromatography'
-                     'instrument combined with a 6300 series Agilent ion trap. It'
-                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution'
-                     'and mass range of 200-4000 with resolution of less than 3.'
-                     'The scan speed varies from 1650-27000 for the respective'
+                    ('The 6340 Ion Trap LC/MS is a Agilent liquid chromatography '
+                     'instrument combined with a 6300 series Agilent ion trap. It '
+                     'has a mass range of 50-2200 between 0.6 to 0.25 resolution '
+                     'and mass range of 200-4000 with resolution of less than 3. '
+                     'The scan speed varies from 1650-27000 for the respective '
                      'mass ranges.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6410 Triple Quadrupole LC/MS', 'MS:1000477',
-                    ('The 6410 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent triple'
-                     'quadrupole mass spectrometer. Mass range of the mass'
-                     'spectrometer is 15-1650 m/z, resolution is at three settings'
-                     'of 0.7 u (unit), 1.2 u (wide) and 2.5 u (widest). The mass'
-                     'accuracy for 6410 mass spectrometer is 0.1 across the mass'
-                     'range. The collision cell is a hexapole with linear'
+                    ('The 6410 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
+                     'quadrupole mass spectrometer. Mass range of the mass '
+                     'spectrometer is 15-1650 m/z, resolution is at three settings '
+                     'of 0.7 u (unit), 1.2 u (wide) and 2.5 u (widest). The mass '
+                     'accuracy for 6410 mass spectrometer is 0.1 across the mass '
+                     'range. The collision cell is a hexapole with linear '
                      'acceleration.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('1200 series LC/MSD VL', 'MS:1000478',
-                    ('The LC/MSD VL ion trap is part of the family of Agilent ion'
-                     'trap mass spectrometers. It has ESI, APCI and APPI ion'
-                     'sources and is a useful ion trap when the amount of sample'
+                    ('The LC/MSD VL ion trap is part of the family of Agilent ion '
+                     'trap mass spectrometers. It has ESI, APCI and APPI ion '
+                     'sources and is a useful ion trap when the amount of sample '
                      'is not the limiting factor.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6220 Time-of-Flight LC/MS', 'MS:1000675',
-                    ('The 6220 Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
-                     'flight mass spectrometer. This time of flight mass'
-                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     'less than 2 ppm and resolution greater than 13,000 at m/z'
-                     '2722. It has multiple ion sources and can be used with'
+                    ('The 6220 Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
+                     'flight mass spectrometer. This time of flight mass '
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of '
+                     'less than 2 ppm and resolution greater than 13,000 at m/z '
+                     '2722. It has multiple ion sources and can be used with '
                      'multimode ion sources.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6510 Quadrupole Time-of-Flight LC/MS', 'MS:1000676',
-                    ('The 6510 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
-                     'flight mass spectrometer. This time of flight mass'
-                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     'less than 2 ppm and resolution greater than 13,000 at m/z'
-                     '2722. It has multiple ion sources and can be used with'
+                    ('The 6510 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
+                     'flight mass spectrometer. This time of flight mass '
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of '
+                     'less than 2 ppm and resolution greater than 13,000 at m/z '
+                     '2722. It has multiple ion sources and can be used with '
                      'multimode ion sources.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6520A Quadrupole Time-of-Flight LC/MS', 'MS:1000677',
-                    ('The 6520A Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     'liquid chromatography instrument combined with a Agilent'
-                     'time of flight mass spectrometer. This time of flight mass'
-                     'spectrometer has a m/z range of 50-12000, mass accuracy of'
-                     'less than 2 ppm and resolution greater than 26,000 at m/z'
-                     '2722. It has multiple ion sources and can be used with'
+                    ('The 6520A Quadrupole Time-of-Flight LC/MS is a Agilent '
+                     'liquid chromatography instrument combined with a Agilent '
+                     'time of flight mass spectrometer. This time of flight mass '
+                     'spectrometer has a m/z range of 50-12000, mass accuracy of '
+                     'less than 2 ppm and resolution greater than 26,000 at m/z '
+                     '2722. It has multiple ion sources and can be used with '
                      'multimode ion sources.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6420 Triple Quadrupole LC/MS', 'MS:1002444',
-                    ('The 6420 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent triple'
+                    ('The 6420 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
                      'quadrupole mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6460 Triple Quadrupole LC/MS', 'MS:1002445',
-                    ('The 6460 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent triple'
-                     'quadrupole mass spectrometer. It is similar to the 6420 but'
-                     'adds Agilent Jet Stream (AJS) technology to increase'
+                    ('The 6460 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
+                     'quadrupole mass spectrometer. It is similar to the 6420 but '
+                     'adds Agilent Jet Stream (AJS) technology to increase '
                      'sensitivity.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6490 Triple Quadrupole LC/MS', 'MS:1002446',
-                    ('The 6490 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent triple'
-                     'quadrupole mass spectrometer. It is similar to the 6420 but'
+                    ('The 6490 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
+                     'quadrupole mass spectrometer. It is similar to the 6420 but '
                      'adds the Agilent iFunnel technology to increase sensitivity.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6550 iFunnel Q-TOF LC/MS', 'MS:1002783',
-                    ('The 6550 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6550 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6550A iFunnel Q-TOF LC/MS', 'MS:1002784',
-                    ('The 6550A Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     'liquid chromatography instrument combined with a Agilent'
+                    ('The 6550A Quadrupole Time-of-Flight LC/MS is a Agilent '
+                     'liquid chromatography instrument combined with a Agilent '
                      'time of flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6520B Q-TOF LC/MS', 'MS:1002785',
-                    ('The 6520B Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     'liquid chromatography instrument combined with a Agilent'
+                    ('The 6520B Quadrupole Time-of-Flight LC/MS is a Agilent '
+                     'liquid chromatography instrument combined with a Agilent '
                      'time of flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6530A Q-TOF LC/MS', 'MS:1002786',
-                    ('The 6530A Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     'liquid chromatography instrument combined with a Agilent'
+                    ('The 6530A Quadrupole Time-of-Flight LC/MS is a Agilent '
+                     'liquid chromatography instrument combined with a Agilent '
                      'time of flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6530B Q-TOF LC/MS', 'MS:1002787',
-                    ('The 6530B Quadrupole Time-of-Flight LC/MS is a Agilent'
-                     'liquid chromatography instrument combined with a Agilent'
+                    ('The 6530B Quadrupole Time-of-Flight LC/MS is a Agilent '
+                     'liquid chromatography instrument combined with a Agilent '
                      'time of flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6538 Q-TOF LC/MS', 'MS:1002788',
-                    ('The 6538 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6538 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6540 Q-TOF LC/MS', 'MS:1002789',
-                    ('The 6540 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6540 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6542 Q-TOF LC/MS', 'MS:1002790',
-                    ('The 6542 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6542 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6545 Q-TOF LC/MS', 'MS:1002791',
-                    ('The 6545 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6545 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6560 Q-TOF LC/MS', 'MS:1002792',
-                    ('The 6560 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6560 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6570 Q-TOF LC/MS', 'MS:1002793',
-                    ('The 6570 Quadrupole Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6570 Quadrupole Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6120B Quadrupole LC/MS', 'MS:1002794',
-                    ('The 6120B Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a single quadrupole'
-                     'mass spectrometer from the 6100 Series of Agilent mass'
+                    ('The 6120B Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a single quadrupole '
+                     'mass spectrometer from the 6100 Series of Agilent mass '
                      'spectrometers.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6150 Quadrupole LC/MS', 'MS:1002795',
-                    ('The 6150 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a single quadrupole'
-                     'mass spectrometer from the 6100 Series of Agilent mass'
+                    ('The 6150 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a single quadrupole '
+                     'mass spectrometer from the 6100 Series of Agilent mass '
                      'spectrometers.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6224 Time-of-Flight LC/MS', 'MS:1002796',
-                    ('The 6224 Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6224 Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6230A Time-of-Flight LC/MS', 'MS:1002797',
-                    ('The 6230A Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6230A Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6230B Time-of-Flight LC/MS', 'MS:1002798',
-                    ('The 6230B Time-of-Flight LC/MS is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent time of'
+                    ('The 6230B Time-of-Flight LC/MS is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent time of '
                      'flight mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6430 Triple Quadrupole LC/MS', 'MS:1002799',
-                    ('The 6430 Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent triple'
+                    ('The 6430 Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
                      'quadrupole mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6495A Triple Quadrupole LC/MS', 'MS:1002800',
-                    ('The 6495A Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent triple'
+                    ('The 6495A Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
                      'quadrupole mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6495B Triple Quadrupole LC/MS', 'MS:1002801',
-                    ('The 6495B Quadrupole LC/MS system is a Agilent liquid'
-                     'chromatography instrument combined with a Agilent triple'
+                    ('The 6495B Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
                      'quadrupole mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('7000A Triple Quadrupole GC/MS', 'MS:1002802',
-                    ('The 7000A Quadrupole GC/MS system is a Agilent gas'
-                     'chromatography instrument combined with a Agilent triple'
+                    ('The 7000A Quadrupole GC/MS system is a Agilent gas '
+                     'chromatography instrument combined with a Agilent triple '
                      'quadrupole mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('7000B Triple Quadrupole GC/MS', 'MS:1002803',
-                    ('The 7000B Quadrupole GC/MS system is a Agilent gas'
-                     'chromatography instrument combined with a Agilent triple'
+                    ('The 7000B Quadrupole GC/MS system is a Agilent gas '
+                     'chromatography instrument combined with a Agilent triple '
                      'quadrupole mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('7800 Quadrupole ICP-MS', 'MS:1002804',
-                    ('The 7800 Quadrupole ICP-MS system is a Agilent inductively'
-                     'couple plasma instrument combined with a Agilent quadrupole'
+                    ('The 7800 Quadrupole ICP-MS system is a Agilent inductively '
+                     'couple plasma instrument combined with a Agilent quadrupole '
                      'mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('8800 Triple Quadrupole ICP-MS', 'MS:1002805',
-                    ('The 8800 Quadrupole ICP-MS system is a Agilent inductively'
-                     'couple plasma instrument combined with a Agilent quadrupole'
+                    ('The 8800 Quadrupole ICP-MS system is a Agilent inductively '
+                     'couple plasma instrument combined with a Agilent quadrupole '
                      'mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
@@ -1584,12 +1584,12 @@ instrument_models = TermSet([
                     'instrument model',
                     ['LECO instrument model', 'instrument model']),
     InstrumentModel('Pegasus 4D', 'MS:1001945',
-                    ('LECO nominal mass resolution time-of-flight GCxGC mass'
+                    ('LECO nominal mass resolution time-of-flight GCxGC mass '
                      'spectrometer.'),
                     'instrument model',
                     ['LECO instrument model', 'instrument model']),
     InstrumentModel('Pegasus III', 'MS:1002278',
-                    ('LECO nominal mass resolution time-of-flight GC mass'
+                    ('LECO nominal mass resolution time-of-flight GC mass '
                      'spectrometer.'),
                     'instrument model',
                     ['LECO instrument model', 'instrument model']),
@@ -1610,22 +1610,22 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('HCTultra PTM', 'MS:1000699',
-                    ("Bruker Daltonics' HCTultra PTM: ESI TOF, Nanospray, APCI,"
+                    ("Bruker Daltonics' HCTultra PTM: ESI TOF, Nanospray, APCI, "
                      'APPI, PTR.'),
                     'instrument model',
                     ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('HCTultra ETD II', 'MS:1000700',
-                    ("Bruker Daltonics' HCTultra ETD II: ESI Q-TOF, Nanospray,"
+                    ("Bruker Daltonics' HCTultra ETD II: ESI Q-TOF, Nanospray, "
                      'APCI, APPI, ETD.'),
                     'instrument model',
                     ['Bruker Daltonics HCT Series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('esquire 4000', 'MS:1000156',
-                    ("Bruker Daltonics' esquire 4000: linear ion trap, ESI, MALDI,"
+                    ("Bruker Daltonics' esquire 4000: linear ion trap, ESI, MALDI, "
                      'Nanospray, APCI, APPI.'),
                     'instrument model',
                     ['Bruker Daltonics esquire series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('esquire 6000', 'MS:1000157',
-                    ("Bruker Daltonics' esquire 6000: linear ion trap, ESI, MALDI,"
+                    ("Bruker Daltonics' esquire 6000: linear ion trap, ESI, MALDI, "
                      'Nanospray, APCI, APPI.'),
                     'instrument model',
                     ['Bruker Daltonics esquire series', 'Bruker Daltonics instrument model', 'instrument model']),
@@ -1714,7 +1714,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Bruker Daltonics BioTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('microTOF LC', 'MS:1000178',
-                    ("Bruker Daltonics' microTOF LC: ESI TOF, Nanospray, APCI,"
+                    ("Bruker Daltonics' microTOF LC: ESI TOF, Nanospray, APCI, "
                      'APPI.'),
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
@@ -1723,32 +1723,32 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('micrOTOF-Q', 'MS:1000703',
-                    ("Bruker Daltonics' micrOTOF-Q: ESI Q-TOF, Nanospray, APCI,"
+                    ("Bruker Daltonics' micrOTOF-Q: ESI Q-TOF, Nanospray, APCI, "
                      'APPI.'),
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('micrOTOF-Q II', 'MS:1000704',
-                    ("Bruker Daltonics' micrOTOF-Q II: ESI Q-TOF, Nanospray, APCI,"
+                    ("Bruker Daltonics' micrOTOF-Q II: ESI Q-TOF, Nanospray, APCI, "
                      'APPI.'),
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('micrOTOF II', 'MS:1001540',
-                    ("Bruker Daltonics' micrOTOF II: ESI TOF, Nanospray, APCI,"
+                    ("Bruker Daltonics' micrOTOF II: ESI TOF, Nanospray, APCI, "
                      'APPI.'),
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('impact', 'MS:1002077',
-                    ("Bruker Daltonics' impact: ESI Q-TOF, Nanospray, APCI, APPI,"
+                    ("Bruker Daltonics' impact: ESI Q-TOF, Nanospray, APCI, APPI, "
                      'GC-APCI, CaptiveSpray.'),
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('compact', 'MS:1002280',
-                    ("Bruker Daltonics' compact: ESI Q-TOF, Nanospray, APCI, APPI,"
+                    ("Bruker Daltonics' compact: ESI Q-TOF, Nanospray, APCI, APPI, "
                      'GC-APCI, CaptiveSpray.'),
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('micrOTOF-Q III', 'MS:1002299',
-                    ("Bruker Daltonics' micrOTOF-Q III: ESI Q-TOF, Nanospray,"
+                    ("Bruker Daltonics' micrOTOF-Q III: ESI Q-TOF, Nanospray, "
                      'APCI, APPI, GC-APCI, CaptiveSpray.'),
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
@@ -1761,22 +1761,22 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Bruker Daltonics micrOTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('amaZon ETD', 'MS:1001542',
-                    ("Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap,"
+                    ("Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap, "
                      'Nanospray, APCI, APPI, ETD, PTR.'),
                     'instrument model',
                     ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('amaZon X', 'MS:1001546',
-                    ("Bruker Daltonics' amaZon X: ESI quadrupole ion trap, APCI,"
+                    ("Bruker Daltonics' amaZon X: ESI quadrupole ion trap, APCI, "
                      'APPI, ETD, PTR.'),
                     'instrument model',
                     ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('amaZon Speed ETD', 'MS:1002300',
-                    ("Bruker Daltonics' amaZon Speed ETD: ESI quadrupole ion trap,"
+                    ("Bruker Daltonics' amaZon Speed ETD: ESI quadrupole ion trap, "
                      'Nanospray, APCI, APPI, ETD, PTR, GC-APCI, CaptiveSpray.'),
                     'instrument model',
                     ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('amaZon Speed', 'MS:1002301',
-                    ("Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap,"
+                    ("Bruker Daltonics' amaZon ETD: ESI quadrupole ion trap, "
                      'Nanospray, APCI, APPI, GC-APCI, CaptiveSpray.'),
                     'instrument model',
                     ['Bruker Daltonics amaZon series', 'Bruker Daltonics instrument model', 'instrument model']),
@@ -1785,7 +1785,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Bruker Daltonics maXis series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('maXis 4G', 'MS:1002279',
-                    ("Bruker Daltonics' maXis 4G: ESI Q-TOF, Nanospray, APCI,"
+                    ("Bruker Daltonics' maXis 4G: ESI Q-TOF, Nanospray, APCI, "
                      'APPI, GC-APCI, CaptiveSpray.'),
                     'instrument model',
                     ['Bruker Daltonics maXis series', 'Bruker Daltonics instrument model', 'instrument model']),
@@ -1798,17 +1798,17 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Bruker Daltonics solarix series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('apex IV', 'MS:1000141',
-                    ("Bruker Daltonics' apex IV: ESI, MALDI, Nanospray, APCI,"
+                    ("Bruker Daltonics' apex IV: ESI, MALDI, Nanospray, APCI, "
                      'APPI, Qh-FT_ICR.'),
                     'instrument model',
                     ['Bruker Daltonics apex series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('apex Q', 'MS:1000142',
-                    ("Bruker Daltonics' apex Q: ESI, MALDI, Nanospray, APCI, APPI,"
+                    ("Bruker Daltonics' apex Q: ESI, MALDI, Nanospray, APCI, APPI, "
                      'Qh-FT_ICR.'),
                     'instrument model',
                     ['Bruker Daltonics apex series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('apex ultra', 'MS:1000695',
-                    ("Bruker Daltonics' apex ultra: ESI, MALDI, Nanospray, APCI,"
+                    ("Bruker Daltonics' apex ultra: ESI, MALDI, Nanospray, APCI, "
                      'APPI, Qh-FT_ICR.'),
                     'instrument model',
                     ['Bruker Daltonics apex series', 'Bruker Daltonics instrument model', 'instrument model']),
@@ -1853,7 +1853,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
     InstrumentModel('AXIMA Confidence MALDI-TOF', 'MS:1000611',
-                    ('Shimadzu Biotech AXIMA Confidence MALDI-TOF (curved field'
+                    ('Shimadzu Biotech AXIMA Confidence MALDI-TOF (curved field '
                      'reflectron) MS.'),
                     'instrument model',
                     ['Shimadzu MALDI-TOF instrument model', 'Shimadzu instrument model', 'instrument model']),
@@ -2126,7 +2126,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('ISQ', 'MS:1001908',
-                    ('Thermo Scientific ISQ single quadrupole MS with the'
+                    ('Thermo Scientific ISQ single quadrupole MS with the '
                      'ExtractraBrite source.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
@@ -2135,7 +2135,7 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('LTQ Orbitrap Elite', 'MS:1001910',
-                    ('Thermo Scientific LTQ Orbitrap Elite, often just referred to'
+                    ('Thermo Scientific LTQ Orbitrap Elite, often just referred to '
                      'as the Orbitrap Elite.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
@@ -2176,8 +2176,8 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('Orbitrap Fusion Lumos', 'MS:1002732',
-                    ('Thermo Scientific Orbitrap Fusion Lumos mass spectrometer'
-                     'with Tribrid architecture consisting of quadrupole mass'
+                    ('Thermo Scientific Orbitrap Fusion Lumos mass spectrometer '
+                     'with Tribrid architecture consisting of quadrupole mass '
                      'filter, linear ion trap and Orbitrap mass analyzers.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
@@ -2198,39 +2198,39 @@ instrument_models = TermSet([
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('Q Exactive HF-X', 'MS:1002877',
-                    ('Thermo Scientific Q Exactive HF-X Hybrid Quadrupole Orbitrap'
+                    ('Thermo Scientific Q Exactive HF-X Hybrid Quadrupole Orbitrap '
                      'MS.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('Orbitrap Exploris 480', 'MS:1003028',
-                    ('Thermo Scientific Orbitrap Exploris 480 Quadrupole Orbitrap'
+                    ('Thermo Scientific Orbitrap Exploris 480 Quadrupole Orbitrap '
                      'MS.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('Orbitrap Eclipse', 'MS:1003029',
-                    ('Thermo Scientific Orbitrap Eclipse mass spectrometer with'
-                     'Tribrid architecture consisting of quadrupole mass filter,'
+                    ('Thermo Scientific Orbitrap Eclipse mass spectrometer with '
+                     'Tribrid architecture consisting of quadrupole mass filter, '
                      'linear ion trap and Orbitrap mass analyzers.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('Orbitrap Exploris 240', 'MS:1003094',
-                    ('Thermo Scientific Orbitrap Exploris 240 Quadrupole Orbitrap'
+                    ('Thermo Scientific Orbitrap Exploris 240 Quadrupole Orbitrap '
                      'MS.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('Orbitrap Exploris 120', 'MS:1003095',
-                    ('Thermo Scientific Orbitrap Exploris 120 Quadrupole Orbitrap'
+                    ('Thermo Scientific Orbitrap Exploris 120 Quadrupole Orbitrap '
                      'MS.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('LTQ Orbitrap Velos Pro', 'MS:1003096',
-                    ('Thermo Scientific LTQ Orbitrap Velos Pro, often just'
+                    ('Thermo Scientific LTQ Orbitrap Velos Pro, often just '
                      'referred to as the Orbitrap Velos Pro.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('Orbitrap ID-X', 'MS:1003112',
-                    ('Thermo Scientific Orbitrap ID-X mass spectrometer with'
-                     'Tribrid architecture consisting of quadrupole mass filter,'
+                    ('Thermo Scientific Orbitrap ID-X mass spectrometer with '
+                     'Tribrid architecture consisting of quadrupole mass filter, '
                      'linear ion trap and Orbitrap mass analyzers.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),

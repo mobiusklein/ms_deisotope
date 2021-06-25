@@ -15,13 +15,16 @@ from .common import (
     ScanEventInformation, ScanWindow,
     ComponentGroup, component, InstrumentInformation,
     FileInformation, ScanFileMetadataBase)
-from .metadata import data_transformation
+from .metadata import data_transformation, file_information
 from .xml_reader import (
     XMLReaderBase, iterparse_until)
 
 
 class _MzXMLParser(mzxml.MzXML):
     pass
+
+
+scan_number_only_id_format = file_information.id_format("MS:1000776")
 
 
 class _MzXMLMetadataLoader(ScanFileMetadataBase):
@@ -109,6 +112,10 @@ class _MzXMLMetadataLoader(ScanFileMetadataBase):
             operation_groups.append(
                 data_transformation.DataProcessingInformation([method_group], id=i))
         return operation_groups
+
+    @property
+    def id_format(self):
+        return scan_number_only_id_format
 
 
 class MzXMLDataInterface(ScanDataSource):

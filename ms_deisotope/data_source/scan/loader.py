@@ -734,6 +734,11 @@ class ScanFileMetadataBase(object):
         '''
         return FileInformation()
 
+    @property
+    def id_format(self):
+        file_desc = self.file_description()
+        return file_desc.id_format
+
     @abc.abstractmethod
     def instrument_configuration(self):
         '''Describe the different instrument components and configurations used

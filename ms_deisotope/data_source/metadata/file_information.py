@@ -4,13 +4,16 @@ terms for them.
 """
 
 import os
+import re
 import hashlib
 import warnings
 
+from collections import OrderedDict
+
 try:
-    from collections.abc import MutableMapping
+    from collections.abc import MutableMapping, Mapping
 except ImportError:
-    from collections import MutableMapping
+    from collections import MutableMapping, Mapping
 
 from six import string_types as basestring
 
@@ -22,15 +25,115 @@ except NameError:
     FileNotFoundError = OSError
 
 
-class IDFormat(Term):
+class IDParserBase(object):
+    """A base class for ID parsing and formatting.
+    """
+    def parse(self, text):
+        """Parse a string looking for fields defined by this ID format.
+
+        Parameters
+        ----------
+        text : str
+            The string to parse
+
+        Returns
+        -------
+        dict:
+            The parsed fields of the ID string.
+        """
+        raise NotImplementedError()
+
+    def format(self, fields):
+        """Format a set of fields as a nativeID string.
+
+        Parameters
+        ----------
+        fields : dict
+            The fields to populate the nativeID from.
+
+        Returns
+        -------
+        str
+        """
+        raise NotImplementedError()
+
+    def __call__(self, text):
+        """Parse a string looking for fields defined by this ID format.
+
+        Parameters
+        ----------
+        text : str
+            The string to parse
+
+        Returns
+        -------
+        dict:
+            The parsed fields of the ID string.
+
+        See Also
+        --------
+        :meth:`parse`
+        """
+        return self.parse(text)
+
+
+class IDFormat(Term, IDParserBase):
     """Describes a named spectrum identifier format, either
     using a controlled-vocabulary term or user-defined name.
 
     A :class:`IDFormat` is equal to its name and its controlled
     vocabulary identifier.
-    """
-    pass
 
+    An instance may also be used to parse a string in its format
+    using its :meth:`parse` method, creating a :class:`dict` of
+    its fields.
+
+    Attributes
+    ----------
+    parser: NativeIDParser
+        A parser for the specified nativeID format type.
+    """
+
+    def __init__(self, name, id, description, category, specialization):
+        super(IDFormat, self).__init__(
+            name, id, description, category, specialization)
+        self.parser = NativeIDParser.from_term(self)
+
+    def parse(self, text):
+        """Parse a string looking for fields defined by this term's nativeID
+        format
+
+        Parameters
+        ----------
+        text : str
+            The string to parse
+
+        Returns
+        -------
+        dict:
+            The parsed fields of the ID string.
+        """
+        if self.parser is None:
+            raise ValueError(
+                "This IDFormat doesn't have a pattern!")
+        return self.parser.parse(text)
+
+    def format(self, fields):
+        """Format a set of fields as a nativeID string.
+
+        Parameters
+        ----------
+        fields : dict
+            The fields to populate the nativeID from.
+
+        Returns
+        -------
+        str
+        """
+        return self.parser.format(fields)
+
+    def __call__(self, text):
+        return self.parse(text)
 
 class FileFormat(Term):
     """Describes a named mass spectrometry data file format, either
@@ -52,6 +155,162 @@ class FileContent(Term):
     pass
 
 
+type_pat = re.compile("([A-Za-z]+)=xsd:(%s+)" % '|'.join(
+    {'IDREF', "long", 'nonNegativeInteger', 'positiveInteger', 'string'}))
+
+xsd_to_regex = {
+    "IDREF": r"(\S+)",
+    "long": r"(-?\d+)",
+    "nonNegativeInteger": r"(\d+)",
+    "positiveInteger": r"(\d+)",
+    "string": r"(\S+)",
+}
+
+xsd_to_type = {
+    "IDREF": str,
+    "long": int,
+    "nonNegativeInteger": int,
+    "positiveInteger": int,
+    "string": str,
+}
+
+
+class NativeIDParser(IDParserBase):
+    """A parser for a single nativeID format.
+
+    These may be automatically derived from the CV-param defining them by parsing the
+    XSD string included, but no guarantee is available.
+    """
+
+    def __init__(self, parser, tokens, name):
+        self.parser = parser
+        self.tokens = OrderedDict(tokens)
+        self.name = name
+
+    @classmethod
+    def from_term(cls, term):
+        """Construct a :class:`NativeIDParser` from :class:`IDFormat` term.
+
+        Parameters
+        ----------
+        term : IDFormat
+            The nativeID format specification to build a parser for
+
+        Returns
+        -------
+        :class:`NativeIDParser`:
+            The constructed parser, or :const:`None` if no regular expression could be
+            constructed.
+        """
+        if "Native format defined by" in term.description:
+            tokens = []
+            desc = term.description.split(
+                "Native format defined by", 1)[1].rstrip()
+            for mat in type_pat.finditer(desc):
+                tokens.append(mat.groups())
+            parser = re.compile(
+                ''.join([r"(%s)=%s\s?" % (k, xsd_to_regex[v]) for k, v in tokens]))
+            return cls(parser, tokens, term.name)
+        return None
+
+    def parse(self, string):
+        """Parse a string according to this parser's pattern,
+        returning the type-cast fields as a :class:`dict`.
+
+        Parameters
+        ----------
+        string : str
+            The string to parse
+
+        Returns
+        -------
+        dict
+            The fields of the scan ID
+
+        Raises
+        ------
+        ValueError:
+            If the string does not conform to the expected pattern
+        """
+        match = self.parser.match(string)
+        if match is None:
+            return OrderedDict()
+        groups = match.groups()
+        n = len(groups)
+        i = 0
+        fields = OrderedDict()
+        while i < n:
+            k = groups[i]
+            v = groups[i + 1]
+            i += 2
+            try:
+                v = int(v)
+            except ValueError:
+                pass
+            fields[k] = v
+        return fields
+
+    def format(self, fields):
+        """Format a set of fields as a nativeID string.
+
+        Parameters
+        ----------
+        fields : dict
+            The fields to populate the nativeID from.
+
+        Returns
+        -------
+        str
+        """
+        parts = []
+        for key in self.tokens:
+            parts.append("%s=%s" % (key, fields[key]))
+        return ' '.join(parts)
+
+
+class MultipleIDFormats(Mapping, IDParserBase):
+    '''Represent an ambiguous group of multiple nativeID formats.
+
+    Implements the :class:`~collections.abc.Mapping` interface.
+
+    Attributes
+    ----------
+    id_formats : OrderedDict
+        A mapping of format name to :class:`IDFormat` instances
+    '''
+    def __init__(self, id_formats):
+        self.id_formats = id_formats
+
+    def parse(self, text):
+        fields = OrderedDict()
+        for name, parser in self.id_formats.items():
+            fields = parser.parse(text)
+            if not fields:
+                continue
+            else:
+                fields['id_format'] = name
+                break
+        return fields
+
+    def format(self, fields):
+        format_name = fields.get('id_format')
+        id_format = self.id_formats[format_name]
+        return id_format.format(fields)
+
+    def __iter__(self):
+        return iter(self.id_formats)
+
+    def __getitem__(self, key):
+        return self.id_formats[key]
+
+    def __len__(self):
+        return len(self.id_formats)
+
+    def __repr__(self):
+        template = "{self.__class__.__name__}({self.id_formats})"
+        return template.format(self=self)
+
+
 id_formats = []
 
 # [[[cog
@@ -63,20 +322,20 @@ id_formats = []
 # CV Version: 4.1.55
 id_formats = TermSet([
     IDFormat('Thermo nativeID format', 'MS:1000768',
-             ('Native format defined by'
-              'controllerType=xsd:nonNegativeInteger'
-              'controllerNumber=xsd:positiveInteger'
+             ('Native format defined by '
+              'controllerType=xsd:nonNegativeInteger '
+              'controllerNumber=xsd:positiveInteger '
               'scan=xsd:positiveInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('Waters nativeID format', 'MS:1000769',
-             ('Native format defined by function=xsd:positiveInteger'
+             ('Native format defined by function=xsd:positiveInteger '
               'process=xsd:nonNegativeInteger scan=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('WIFF nativeID format', 'MS:1000770',
-             ('Native format defined by sample=xsd:nonNegativeInteger'
-              'period=xsd:nonNegativeInteger cycle=xsd:nonNegativeInteger'
+             ('Native format defined by sample=xsd:nonNegativeInteger '
+              'period=xsd:nonNegativeInteger cycle=xsd:nonNegativeInteger '
               'experiment=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
@@ -109,24 +368,24 @@ id_formats = TermSet([
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('Bruker U2 nativeID format', 'MS:1000823',
-             ('Native format defined by declaration=xsd:nonNegativeInteger'
-              'collection=xsd:nonNegativeInteger'
+             ('Native format defined by declaration=xsd:nonNegativeInteger '
+              'collection=xsd:nonNegativeInteger '
               'scan=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('no nativeID format', 'MS:1000824',
-             ('No nativeID format indicates that the file tagged with this'
-              'term does not contain spectra that can have a nativeID'
+             ('No nativeID format indicates that the file tagged with this '
+              'term does not contain spectra that can have a nativeID '
               'format.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('Shimadzu Biotech nativeID format', 'MS:1000929',
-             ('Native format defined by source=xsd:string'
+             ('Native format defined by source=xsd:string '
               'start=xsd:nonNegativeInteger end=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('SCIEX TOF/TOF nativeID format', 'MS:1001480',
-             ('Native format defined by jobRun=xsd:nonNegativeInteger'
+             ('Native format defined by jobRun=xsd:nonNegativeInteger '
               'spotLabel=xsd:string spectrum=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
@@ -163,13 +422,13 @@ id_formats = TermSet([
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('UIMF nativeID format', 'MS:1002532',
-             ('Native format defined by frame=xsd:nonNegativeInteger'
-              'scan=xsd:nonNegativeInteger'
+             ('Native format defined by frame=xsd:nonNegativeInteger '
+              'scan=xsd:nonNegativeInteger '
               'frameType=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
     IDFormat('Bruker TDF nativeID format', 'MS:1002818',
-             ('Native format defined by frame=xsd:nonNegativeInteger'
+             ('Native format defined by frame=xsd:nonNegativeInteger '
               'scan=xsd:nonNegativeInteger.'),
              'native spectrum identifier format',
              ['native spectrum identifier format']),
@@ -192,7 +451,7 @@ file_formats = []
 # CV Version: 4.1.55
 file_formats = TermSet([
     FileFormat('Waters raw format', 'MS:1000526',
-               ('Waters data file format found in a Waters RAW directory,'
+               ('Waters data file format found in a Waters RAW directory, '
                 'generated from an MS acquisition.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
@@ -233,7 +492,7 @@ file_formats = TermSet([
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
     FileFormat('parameter file', 'MS:1000740',
-               ('Parameter file used to configure the acquisition of raw data'
+               ('Parameter file used to configure the acquisition of raw data '
                 'on the instrument.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
@@ -274,7 +533,7 @@ file_formats = TermSet([
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
     FileFormat('text format', 'MS:1001369',
-               ('Simple text file format of \\"m/z [intensity]\\" values for a'
+               ('Simple text file format of \\"m/z [intensity]\\" values for a '
                 'PMF (or single MS2) search.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
@@ -283,18 +542,18 @@ file_formats = TermSet([
                'mass spectrometer file format',
                ['mass spectrometer file format', 'intermediate analysis format', 'file format']),
     FileFormat('MS2 format', 'MS:1001466',
-               ('MS2 file format for MS2 spectral data." [PMID:15317041,'
+               ('MS2 file format for MS2 spectral data." [PMID:15317041, '
                 'DOI:10.1002/rcm.1603'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
     FileFormat('SCIEX TOF/TOF database', 'MS:1001481',
-               ('Applied Biosystems/MDS Analytical Technologies TOF/TOF'
+               ('Applied Biosystems/MDS Analytical Technologies TOF/TOF '
                 'instrument database.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
     FileFormat('Agilent MassHunter format', 'MS:1001509',
-               ('A data file format found in an Agilent MassHunter directory'
-                'which contains raw data acquired by an Agilent mass'
+               ('A data file format found in an Agilent MassHunter directory '
+                'which contains raw data acquired by an Agilent mass '
                 'spectrometer.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
@@ -303,7 +562,7 @@ file_formats = TermSet([
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
     FileFormat('SCIEX TOF/TOF T2D format', 'MS:1001560',
-               ('Applied Biosystems/MDS Analytical Technologies TOF/TOF'
+               ('Applied Biosystems/MDS Analytical Technologies TOF/TOF '
                 'instrument export format.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
@@ -320,13 +579,13 @@ file_formats = TermSet([
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
     FileFormat('Andi-MS format', 'MS:1002441',
-               ('AIA Analytical Data Interchange file format for mass'
+               ('AIA Analytical Data Interchange file format for mass '
                 'spectrometry data.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
     FileFormat('UIMF format', 'MS:1002531',
-               ('SQLite-based file format created at Pacific Northwest'
-                'National Lab. It stores an intermediate analysis of ion-'
+               ('SQLite-based file format created at Pacific Northwest '
+                'National Lab. It stores an intermediate analysis of ion- '
                 'mobility mass spectrometry data.'),
                'mass spectrometer file format',
                ['mass spectrometer file format', 'file format']),
@@ -377,28 +636,28 @@ content_keys = []
 # CV Version: 4.1.55
 content_keys = TermSet([
     FileContent('mass spectrum', 'MS:1000294',
-                ('A plot of the relative abundance of a beam or other'
-                 'collection of ions as a function of the mass-to-charge ratio'
+                ('A plot of the relative abundance of a beam or other '
+                 'collection of ions as a function of the mass-to-charge ratio '
                  '(m/z).'),
                 'data file content',
                 ['data file content', 'spectrum type']),
     FileContent('PDA spectrum', 'MS:1000620',
-                ('OBSOLETE Spectrum generated from a photodiode array detector'
+                ('OBSOLETE Spectrum generated from a photodiode array detector '
                  '(ultraviolet/visible spectrum).'),
                 'data file content',
                 ['data file content', 'spectrum type']),
     FileContent('electromagnetic radiation spectrum', 'MS:1000804',
-                ('A plot of the relative intensity of electromagnetic'
+                ('A plot of the relative intensity of electromagnetic '
                  'radiation as a function of the wavelength.'),
                 'data file content',
                 ['data file content', 'spectrum type']),
     FileContent('emission spectrum', 'MS:1000805',
-                ('A plot of the relative intensity of electromagnetic'
+                ('A plot of the relative intensity of electromagnetic '
                  'radiation emitted by atoms or molecules when excited.'),
                 'data file content',
                 ['data file content', 'spectrum type']),
     FileContent('absorption spectrum', 'MS:1000806',
-                ('A plot of the relative intensity of electromagnetic'
+                ('A plot of the relative intensity of electromagnetic '
                  'radiation absorbed by atoms or molecules when excited.'),
                 'data file content',
                 ['data file content', 'spectrum type']),
@@ -411,112 +670,112 @@ content_keys = TermSet([
                 'data file content',
                 ['data file content', 'chromatogram type']),
     FileContent('charge inversion mass spectrum', 'MS:1000322',
-                ('The measurement of the relative abundance of ions that'
-                 'result from a charge inversion reaction as a function of'
+                ('The measurement of the relative abundance of ions that '
+                 'result from a charge inversion reaction as a function of '
                  'm/z.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('constant neutral gain spectrum', 'MS:1000325',
-                ('A spectrum formed of all product ions that have been'
-                 'produced by gain of a pre-selected neutral mass following'
-                 'the reaction with and addition of the gas in a collision'
+                ('A spectrum formed of all product ions that have been '
+                 'produced by gain of a pre-selected neutral mass following '
+                 'the reaction with and addition of the gas in a collision '
                  'cell.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('constant neutral loss spectrum', 'MS:1000326',
-                ('A spectrum formed of all product ions that have been'
-                 'produced with a selected m/z decrement from any precursor'
-                 'ions. The spectrum shown correlates to the precursor ion'
+                ('A spectrum formed of all product ions that have been '
+                 'produced with a selected m/z decrement from any precursor '
+                 'ions. The spectrum shown correlates to the precursor ion '
                  'spectrum. See also neutral loss spectrum.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('e/2 mass spectrum', 'MS:1000328',
-                ('A mass spectrum obtained using a sector mass spectrometer in'
-                 'which the electric sector field E is set to half the value'
-                 'required to transmit the main ion-beam. This spectrum'
-                 'records the signal from doubly charged product ions of'
+                ('A mass spectrum obtained using a sector mass spectrometer in '
+                 'which the electric sector field E is set to half the value '
+                 'required to transmit the main ion-beam. This spectrum '
+                 'records the signal from doubly charged product ions of '
                  'charge-stripping reactions.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('precursor ion spectrum', 'MS:1000341',
-                ('Spectrum generated by scanning precursor m/z while'
+                ('Spectrum generated by scanning precursor m/z while '
                  'monitoring a fixed product m/z.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('product ion spectrum', 'MS:1000343',
-                ('OBSOLETE A mass spectrum recorded from any spectrometer in'
-                 'which the appropriate m/z separation scan function is set to'
+                ('OBSOLETE A mass spectrum recorded from any spectrometer in '
+                 'which the appropriate m/z separation scan function is set to '
                  'record the product ion or ions of selected precursor ions.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('MS1 spectrum', 'MS:1000579',
-                ('Mass spectrum created by a single-stage MS experiment or the'
+                ('Mass spectrum created by a single-stage MS experiment or the '
                  'first stage of a multi-stage experiment.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('MSn spectrum', 'MS:1000580',
-                ('MSn refers to multi-stage MS2 experiments designed to record'
-                 'product ion spectra where n is the number of product ion'
-                 'stages (progeny ions). For ion traps, sequential MS/MS'
-                 'experiments can be undertaken where n > 2 whereas for a'
-                 'simple triple quadrupole system n=2. Use the term ms level'
+                ('MSn refers to multi-stage MS2 experiments designed to record '
+                 'product ion spectra where n is the number of product ion '
+                 'stages (progeny ions). For ion traps, sequential MS/MS '
+                 'experiments can be undertaken where n > 2 whereas for a '
+                 'simple triple quadrupole system n=2. Use the term ms level '
                  '(MS:1000511) for specifying n.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('CRM spectrum', 'MS:1000581',
-                ('Spectrum generated from MSn experiment with three or more'
-                 'stages of m/z separation and in which a particular multi-'
+                ('Spectrum generated from MSn experiment with three or more '
+                 'stages of m/z separation and in which a particular multi- '
                  'step reaction path is monitored.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('SIM spectrum', 'MS:1000582',
-                ('Spectrum obtained with the operation of a mass spectrometer'
-                 'in which the abundances of one ion or several ions of'
-                 'specific m/z values are recorded rather than the entire mass'
+                ('Spectrum obtained with the operation of a mass spectrometer '
+                 'in which the abundances of one ion or several ions of '
+                 'specific m/z values are recorded rather than the entire mass '
                  'spectrum (Selected Ion Monitoring).'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('SRM spectrum', 'MS:1000583',
-                ('Spectrum obtained when data are acquired from specific'
-                 'product ions corresponding to m/z values of selected'
-                 'precursor ions a recorded via two or more stages of mass'
-                 'spectrometry. The precursor/product ion pair is called a'
-                 'transition pair. Data can be obtained for a single'
-                 'transition pair or multiple transition pairs. Multiple time'
-                 'segments of different transition pairs can exist in a single'
-                 'file. Single precursor ions can have multiple product ions'
-                 'consitituting multiple transition pairs. Selected reaction'
-                 'monitoring can be performed as tandem mass spectrometry in'
+                ('Spectrum obtained when data are acquired from specific '
+                 'product ions corresponding to m/z values of selected '
+                 'precursor ions a recorded via two or more stages of mass '
+                 'spectrometry. The precursor/product ion pair is called a '
+                 'transition pair. Data can be obtained for a single '
+                 'transition pair or multiple transition pairs. Multiple time '
+                 'segments of different transition pairs can exist in a single '
+                 'file. Single precursor ions can have multiple product ions '
+                 'consitituting multiple transition pairs. Selected reaction '
+                 'monitoring can be performed as tandem mass spectrometry in '
                  'time or tandem mass spectrometry in space.'),
                 'data file content',
                 ['mass spectrum', 'data file content', 'spectrum type']),
     FileContent('total ion current chromatogram', 'MS:1000235',
-                ('Representation of the total ion current detected in each of'
+                ('Representation of the total ion current detected in each of '
                  'a series of mass spectra versus time.'),
                 'data file content',
                 ['ion current chromatogram', 'data file content', 'chromatogram type']),
     FileContent('selected ion current chromatogram', 'MS:1000627',
-                ('Representation of an array of the measurements of a specific'
+                ('Representation of an array of the measurements of a specific '
                  'single ion current versus time.'),
                 'data file content',
                 ['ion current chromatogram', 'data file content', 'chromatogram type']),
     FileContent('basepeak chromatogram', 'MS:1000628',
-                ('Representation of an array of the most intense peaks versus'
+                ('Representation of an array of the most intense peaks versus '
                  'time.'),
                 'data file content',
                 ['ion current chromatogram', 'data file content', 'chromatogram type']),
     FileContent('selected ion monitoring chromatogram', 'MS:1001472',
-                ('Representation of an array of the measurements of a'
+                ('Representation of an array of the measurements of a '
                  'selectively monitored ion versus time.'),
                 'data file content',
                 ['ion current chromatogram', 'data file content', 'chromatogram type']),
     FileContent('selected reaction monitoring chromatogram', 'MS:1001473',
-                ('Representation of an array of the measurements of a'
+                ('Representation of an array of the measurements of a '
                  'selectively monitored reaction versus time.'),
                 'data file content',
                 ['ion current chromatogram', 'data file content', 'chromatogram type']),
     FileContent('consecutive reaction monitoring chromatogram', 'MS:1001474',
-                ('OBSOLETE Representation of an array of the measurements of a'
+                ('OBSOLETE Representation of an array of the measurements of a '
                  'series of monitored reactions versus time.'),
                 'data file content',
                 ['ion current chromatogram', 'data file content', 'chromatogram type']),
@@ -529,13 +788,13 @@ content_keys = TermSet([
                 'data file content',
                 ['electromagnetic radiation chromatogram', 'data file content', 'chromatogram type']),
     FileContent('enhanced multiply charged spectrum', 'MS:1000789',
-                ('MS1 spectrum that is enriched in multiply-charged ions'
+                ('MS1 spectrum that is enriched in multiply-charged ions '
                  'compared to singly-charged ions.'),
                 'data file content',
                 ['MS1 spectrum', 'mass spectrum', 'data file content', 'spectrum type']),
     FileContent('time-delayed fragmentation spectrum', 'MS:1000790',
-                ('MSn spectrum in which the product ions are collected after a'
-                 'time delay, which allows the observation of lower energy'
+                ('MSn spectrum in which the product ions are collected after a '
+                 'time delay, which allows the observation of lower energy '
                  'fragmentation processes after precursor ion activation.'),
                 'data file content',
                 ['MSn spectrum', 'mass spectrum', 'data file content', 'spectrum type']),
@@ -553,14 +812,14 @@ spectrum_representation = []
 # CV Version: 4.1.55
 spectrum_representation = TermSet([
     FileContent('centroid spectrum', 'MS:1000127',
-                ('Processing of profile data to produce spectra that contains'
-                 'discrete peaks of zero width. Often used to reduce the size'
+                ('Processing of profile data to produce spectra that contains '
+                 'discrete peaks of zero width. Often used to reduce the size '
                  'of dataset.'),
                 'spectrum representation',
                 ['spectrum representation']),
     FileContent('profile spectrum', 'MS:1000128',
-                ('A profile mass spectrum is created when data is recorded'
-                 'with ion current (counts per second) on one axis and'
+                ('A profile mass spectrum is created when data is recorded '
+                 'with ion current (counts per second) on one axis and '
                  'mass/charge ratio on another axis.'),
                 'spectrum representation',
                 ['spectrum representation']),
@@ -663,6 +922,7 @@ class FileInformation(MutableMapping):
             source_files = []
         self.contents = dict(contents)
         self.source_files = list(source_files)
+        self._id_format = None
 
     def add_file(self, source, check=True):
         """Add a new file to :attr:`source_files`
@@ -780,7 +1040,39 @@ class FileInformation(MutableMapping):
         FileInformation
         '''
         return self.__class__(
-            self.contents.copy(), [f.copy() for f in self.source_filesr])
+            self.contents.copy(), [f.copy() for f in self.source_files])
+
+    def _find_native_id_format(self):
+        options = list()
+        unique = set()
+        sf = None  # type: SourceFile
+        for sf in self.source_files:
+            i = sf.id_format
+            if i is None:
+                continue
+            elif i not in unique:
+                unique.add(i)
+                options.append(i)
+        n = len(options)
+        if n == 0:
+            return id_format("MS:1000824")
+        elif n == 1:
+            return options[0]
+        else:
+            no_format = id_format("MS:1000824")
+            if no_format in options:
+                options.remove(no_format)
+                n = len(options)
+            if n == 1:
+                return options[0]
+            else:
+                return MultipleIDFormats(OrderedDict([(fmt.name, fmt) for fmt in options]))
+
+    @property
+    def id_format(self):
+        if self._id_format is None:
+            self._id_format = self._find_native_id_format()
+        return self._id_format
 
 
 format_parameter_map = {
@@ -789,7 +1081,6 @@ format_parameter_map = {
     "agilent d": (id_formats_by_name.get("Agilent MassHunter nativeID format"),
                   file_formats_by_name.get("Agilent MassHunter format")),
     'mgf': (id_formats_by_name.get("no nativeID format"),
-            # id_formats_by_name.get("multiple peak list nativeID format"),
             file_formats_by_name.get('Mascot MGF format')),
 }
 
@@ -925,7 +1216,7 @@ class SourceFile(object):
         if os.path.isdir(path):
             if os.path.exists(os.path.join(path, 'AcqData')):
                 return format_parameter_map['agilent d']
-
+        id_fmt = "no nativeID format"
         parts = os.path.splitext(path)
         if len(parts) > 1:
             is_compressed = False
@@ -956,7 +1247,7 @@ class SourceFile(object):
                 return id_fmt, fmt
             elif ext.lower() == '.mzxml':
                 fmt = "ISB mzXML format"
-                id_fmt = "no nativeID format"
+                id_fmt = "scan number only nativeID format"
                 return id_fmt, fmt
             elif ext.lower() == '.mgf':
                 fmt = file_formats['MS:1001062']
@@ -964,6 +1255,10 @@ class SourceFile(object):
                 return id_fmt, fmt
             elif ext.lower() == '.mzmlb':
                 fmt = file_formats['MS:1002838']
+                # TODO: Try to open the file and get the nativeID format information from
+                # the XML buffer, either just opening the file fully or by openinhg it at
+                # the HDF5 level and grab the first 4k characters from the XML buffer and
+                #  doing the same as the mzML case.
                 id_fmt = "no nativeID format"
                 return id_fmt, fmt
         with open(path, 'rb') as fh:
@@ -972,7 +1267,7 @@ class SourceFile(object):
             decoded = lead_bytes.decode("utf-16")[1:9]
             if decoded == "Finnigan":
                 return format_parameter_map['thermo raw']
-        return None, None
+        return id_format, None
 
     def __repr__(self):
         template = "SourceFile(%r, %r, %r, %s, %s%s)"

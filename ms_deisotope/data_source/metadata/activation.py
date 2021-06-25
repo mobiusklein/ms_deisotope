@@ -220,136 +220,136 @@ dissociation_methods = []
 # CV Version: 4.1.55
 dissociation_methods = TermSet([
     DissociationMethod('collision-induced dissociation', 'MS:1000133',
-                       ('The dissociation of an ion after collisional excitation. The'
+                       ('The dissociation of an ion after collisional excitation. The '
                         'term collisional-activated dissociation is not recommended.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('plasma desorption', 'MS:1000134',
-                       ('The ionization of material in a solid sample by bombarding'
-                        'it with ionic or neutral atoms formed as a result of the'
-                        'fission of a suitable nuclide, typically 252Cf. Synonymous'
+                       ('The ionization of material in a solid sample by bombarding '
+                        'it with ionic or neutral atoms formed as a result of the '
+                        'fission of a suitable nuclide, typically 252Cf. Synonymous '
                         'with fission fragment ionization.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('post-source decay', 'MS:1000135',
-                       ('A technique specific to reflectron time-of-flight mass'
-                        'spectrometers where product ions of metastable transitions'
-                        'or collision-induced dissociations generated in the drift'
-                        'tube prior to entering the reflectron are m/z separated to'
+                       ('A technique specific to reflectron time-of-flight mass '
+                        'spectrometers where product ions of metastable transitions '
+                        'or collision-induced dissociations generated in the drift '
+                        'tube prior to entering the reflectron are m/z separated to '
                         'yield product ion spectra.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('surface-induced dissociation', 'MS:1000136',
-                       ('Fragmentation that results from the collision of an ion with'
+                       ('Fragmentation that results from the collision of an ion with '
                         'a surface.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('blackbody infrared radiative dissociation', 'MS:1000242',
-                       ('A special case of infrared multiphoton dissociation wherein'
-                        'excitation of the reactant ion is caused by absorption of'
-                        'infrared photons radiating from heated blackbody'
-                        'surroundings, which are usually the walls of a vacuum'
+                       ('A special case of infrared multiphoton dissociation wherein '
+                        'excitation of the reactant ion is caused by absorption of '
+                        'infrared photons radiating from heated blackbody '
+                        'surroundings, which are usually the walls of a vacuum '
                         'chamber. See also infrared multiphoton dissociation.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('electron capture dissociation', 'MS:1000250',
-                       ('A process in which a multiply protonated molecules interacts'
-                        'with a low energy electrons. Capture of the electron leads'
-                        'the liberation of energy and a reduction in charge state of'
-                        'the ion with the production of the (M + nH) (n-1)+ odd'
+                       ('A process in which a multiply protonated molecules interacts '
+                        'with a low energy electrons. Capture of the electron leads '
+                        'the liberation of energy and a reduction in charge state of '
+                        'the ion with the production of the (M + nH) (n-1)+ odd '
                         'electron ion, which readily fragments.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('infrared multiphoton dissociation', 'MS:1000262',
-                       ('Multiphoton ionization where the reactant ion dissociates as'
+                       ('Multiphoton ionization where the reactant ion dissociates as '
                         'a result of the absorption of multiple infrared photons.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('sustained off-resonance irradiation', 'MS:1000282',
-                       ('A technique associated with Fourier transform ion cyclotron'
-                        'resonance (FT-ICR) mass spectrometry to carry out'
-                        'ion/neutral reactions such as low-energy collision-induced'
-                        'dissociation. A radio-frequency electric field of slightly'
-                        'off-resonance to the cyclotron frequency of the reactant ion'
-                        'cyclically accelerates and decelerates the reactant ion that'
-                        "is confined in the Penning ion trap. The ion's orbit does"
-                        'not exceed the dimensions of ion trap while the ion'
-                        'undergoes an ion/neutral species process that produces a'
+                       ('A technique associated with Fourier transform ion cyclotron '
+                        'resonance (FT-ICR) mass spectrometry to carry out '
+                        'ion/neutral reactions such as low-energy collision-induced '
+                        'dissociation. A radio-frequency electric field of slightly '
+                        'off-resonance to the cyclotron frequency of the reactant ion '
+                        'cyclically accelerates and decelerates the reactant ion that '
+                        "is confined in the Penning ion trap. The ion's orbit does "
+                        'not exceed the dimensions of ion trap while the ion '
+                        'undergoes an ion/neutral species process that produces a '
                         'high average translational energy for an extended time.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('low-energy collision-induced dissociation', 'MS:1000433',
-                       ('A collision-induced dissociation process wherein the'
-                        'precursor ion has the translational energy lower than'
-                        'approximately 1000 eV. This process typically requires'
-                        'multiple collisions and the collisional excitation is'
+                       ('A collision-induced dissociation process wherein the '
+                        'precursor ion has the translational energy lower than '
+                        'approximately 1000 eV. This process typically requires '
+                        'multiple collisions and the collisional excitation is '
                         'cumulative.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('photodissociation', 'MS:1000435',
-                       ('A process wherein the reactant ion is dissociated as a'
+                       ('A process wherein the reactant ion is dissociated as a '
                         'result of absorption of one or more photons.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('electron transfer dissociation', 'MS:1000598',
-                       ('A process to fragment ions in a mass spectrometer by'
-                        'inducing fragmentation of cations (e.g. peptides or'
+                       ('A process to fragment ions in a mass spectrometer by '
+                        'inducing fragmentation of cations (e.g. peptides or '
                         'proteins) by transferring electrons to them.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('pulsed q dissociation', 'MS:1000599',
-                       ('A process that involves precursor ion activation at high Q,'
-                        'a time delay to allow the precursor to fragment, then a'
-                        'rapid pulse to low Q where all fragment ions are trapped.'
-                        'The product ions can then be scanned out of the ion trap and'
+                       ('A process that involves precursor ion activation at high Q, '
+                        'a time delay to allow the precursor to fragment, then a '
+                        'rapid pulse to low Q where all fragment ions are trapped. '
+                        'The product ions can then be scanned out of the ion trap and '
                         'detected.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('in-source collision-induced dissociation', 'MS:1001880',
-                       ('The dissociation of an ion as a result of collisional'
-                        'excitation during ion transfer from an atmospheric pressure'
+                       ('The dissociation of an ion as a result of collisional '
+                        'excitation during ion transfer from an atmospheric pressure '
                         'ion source and the mass spectrometer vacuum.'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('LIFT', 'MS:1002000',
-                       ("A Bruker's proprietary technique where molecular ions are"
-                        'initially accelerated at lower energy, then collide with'
-                        "inert gas in a collision cell that is then 'lifted' to high"
-                        'potential. The use of inert gas is optional, as it could'
-                        'lift also fragments provided by LID."'
+                       ("A Bruker's proprietary technique where molecular ions are "
+                        'initially accelerated at lower energy, then collide with '
+                        "inert gas in a collision cell that is then 'lifted' to high "
+                        'potential. The use of inert gas is optional, as it could '
+                        'lift also fragments provided by LID." '
                         '[DOI:10.1007/s00216-003-2057-0'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)', 'MS:1002631',
-                       ('A dissociation process combining electron-transfer and'
-                        'higher-energy collision dissociation (EThcD). It combines'
+                       ('A dissociation process combining electron-transfer and '
+                        'higher-energy collision dissociation (EThcD). It combines '
                         'ETD (reaction time) followed by HCD (activation energy).'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('beam-type collision-induced dissociation', 'MS:1000422',
-                       ('A collision-induced dissociation process that occurs in a'
+                       ('A collision-induced dissociation process that occurs in a '
                         'beam-type collision cell.'),
                        'dissociation method',
                        ['collision-induced dissociation', 'dissociation method']),
     DissociationMethod('trap-type collision-induced dissociation', 'MS:1002472',
-                       ('A collision-induced dissociation process that occurs in a'
+                       ('A collision-induced dissociation process that occurs in a '
                         'trap-type collision cell.'),
                        'dissociation method',
                        ['collision-induced dissociation', 'dissociation method']),
     DissociationMethod('supplemental collision-induced dissociation', 'MS:1002679',
-                       ('The dissociation of an ion after supplemental collisional'
+                       ('The dissociation of an ion after supplemental collisional '
                         'excitation.'),
                        'dissociation method',
                        ['collision-induced dissociation', 'dissociation method']),
     DissociationMethod('higher energy beam-type collision-induced dissociation', 'MS:1002481',
-                       ('A collision-induced dissociation process wherein the'
-                        'projectile ion has the translational energy higher than'
+                       ('A collision-induced dissociation process wherein the '
+                        'projectile ion has the translational energy higher than '
                         'approximately 1000 eV.'),
                        'dissociation method',
                        ['beam-type collision-induced dissociation', 'collision-induced dissociation', 'dissociation method']),
     DissociationMethod('supplemental beam-type collision-induced dissociation', 'MS:1002678',
-                       ('A supplemental collision-induced dissociation process that'
-                        'occurs in a beam-type collision cell in addition to another'
+                       ('A supplemental collision-induced dissociation process that '
+                        'occurs in a beam-type collision cell in addition to another '
                         'primary type of dissociation.'),
                        'dissociation method',
                        ['beam-type collision-induced dissociation', 'collision-induced dissociation', 'dissociation method']),

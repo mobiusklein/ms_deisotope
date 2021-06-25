@@ -427,8 +427,8 @@ scan_attributes = []
 # CV Version: 4.1.55
 scan_attributes = TermSet([
     ScanAttribute('mass resolution', 'MS:1000011',
-                  ('Smallest mass difference between two equal magnitude peaks'
-                   'so that the valley between them is a specified fraction of'
+                  ('Smallest mass difference between two equal magnitude peaks '
+                   'so that the valley between them is a specified fraction of '
                    'the peak height.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
@@ -437,13 +437,13 @@ scan_attributes = TermSet([
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('scan start time', 'MS:1000016',
-                  ('The time that an analyzer started a scan, relative to the'
+                  ('The time that an analyzer started a scan, relative to the '
                    'start of the MS run.'),
                   'scan attribute',
                   ['scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
     ScanAttribute('zoom scan', 'MS:1000497',
-                  ('Special scan mode where data with improved resolution is'
-                   'acquired. This is typically achieved by scanning a more'
+                  ('Special scan mode where data with improved resolution is '
+                   'acquired. This is typically achieved by scanning a more '
                    'narrow m/z window or scanning with a lower scan rate.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
@@ -452,43 +452,43 @@ scan_attributes = TermSet([
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('filter string', 'MS:1000512',
-                  ('A string unique to Thermo instrument describing instrument'
+                  ('A string unique to Thermo instrument describing instrument '
                    'settings for the scan.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('preset scan configuration', 'MS:1000616',
-                  ('A user-defined scan configuration that specifies the'
-                   'instrumental settings in which a spectrum is acquired. An'
-                   'instrument may cycle through a list of preset scan'
-                   'configurations to acquire data. This is a more generic term'
-                   'for the Thermo \\"scan event\\", which is defined in the'
-                   'Thermo Xcalibur glossary as: a mass spectrometer scan that'
-                   'is defined by choosing the necessary scan parameter'
-                   'settings. Multiple scan events can be defined for each'
+                  ('A user-defined scan configuration that specifies the '
+                   'instrumental settings in which a spectrum is acquired. An '
+                   'instrument may cycle through a list of preset scan '
+                   'configurations to acquire data. This is a more generic term '
+                   'for the Thermo \\"scan event\\", which is defined in the '
+                   'Thermo Xcalibur glossary as: a mass spectrometer scan that '
+                   'is defined by choosing the necessary scan parameter '
+                   'settings. Multiple scan events can be defined for each '
                    'segment of time.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('mass resolving power', 'MS:1000800',
-                  ('The observed mass divided by the difference between two'
-                   'masses that can be separated: m/dm. The procedure by which'
-                   'dm was obtained and the mass at which the measurement was'
+                  ('The observed mass divided by the difference between two '
+                   'masses that can be separated: m/dm. The procedure by which '
+                   'dm was obtained and the mass at which the measurement was '
                    'made should be reported.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('analyzer scan offset', 'MS:1000803',
-                  ('Offset between two analyzers in a constant neutral loss or'
-                   'neutral gain scan. The value corresponds to the neutral loss'
+                  ('Offset between two analyzers in a constant neutral loss or '
+                   'neutral gain scan. The value corresponds to the neutral loss '
                    'or neutral gain value.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('elution time', 'MS:1000826',
-                  ('The time of elution from all used chromatographic columns'
-                   '(one or more) in the chromatographic separation step,'
+                  ('The time of elution from all used chromatographic columns '
+                   '(one or more) in the chromatographic separation step, '
                    'relative to the start of the chromatography.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('interchannel delay', 'MS:1000880',
-                  ('The duration of intervals between scanning, during which the'
+                  ('The duration of intervals between scanning, during which the '
                    'instrument configuration is switched.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
@@ -497,19 +497,19 @@ scan_attributes = TermSet([
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('first column elution time', 'MS:1002082',
-                  ('The time of elution from the first chromatographic column in'
-                   'the chromatographic separation step, relative to the start'
+                  ('The time of elution from the first chromatographic column in '
+                   'the chromatographic separation step, relative to the start '
                    'of chromatography on the first column.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('second column elution time', 'MS:1002083',
-                  ('The time of elution from the second chromatographic column'
-                   'in the chromatographic separation step, relative to the'
+                  ('The time of elution from the second chromatographic column '
+                   'in the chromatographic separation step, relative to the '
                    'start of the chromatography on the second column.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
     ScanAttribute('instrument specific scan attribute', 'MS:1002527',
-                  ('Instrument specific scan properties that are associated with'
+                  ('Instrument specific scan properties that are associated with '
                    'a value.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
@@ -518,7 +518,7 @@ scan_attributes = TermSet([
                   'scan attribute',
                   ['scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
     ScanAttribute('scan number', 'MS:1003057',
-                  ('Ordinal number of the scan indicating its order of'
+                  ('Ordinal number of the scan indicating its order of '
                    'acquisition within a mass spectrometry acquisition run.'),
                   'scan attribute',
                   ['scan attribute', 'object attribute']),
@@ -527,22 +527,22 @@ scan_attributes = TermSet([
                   'scan attribute',
                   ['instrument specific scan attribute', 'scan attribute', 'object attribute']),
     ScanAttribute('FAIMS compensation voltage', 'MS:1001581',
-                  ('The DC potential applied to the asymmetric waveform in FAIMS'
-                   'that compensates for the difference between high and low'
+                  ('The DC potential applied to the asymmetric waveform in FAIMS '
+                   'that compensates for the difference between high and low '
                    'field mobility of an ion.'),
                   'scan attribute',
                   ['ion mobility attribute', 'scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
     ScanAttribute('ion mobility drift time', 'MS:1002476',
-                  ('Drift time of an ion or spectrum of ions as measured in an'
-                   'ion mobility mass spectrometer. This time might refer to the'
-                   'central value of a bin into which all ions within a narrow'
+                  ('Drift time of an ion or spectrum of ions as measured in an '
+                   'ion mobility mass spectrometer. This time might refer to the '
+                   'central value of a bin into which all ions within a narrow '
                    'range of drift time have been aggregated.'),
                   'scan attribute',
                   ['ion selection attribute', 'ion mobility attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
     ScanAttribute('inverse reduced ion mobility', 'MS:1002815',
-                  ('Ion mobility measurement for an ion or spectrum of ions as'
-                   'measured in an ion mobility mass spectrometer. This might'
-                   'refer to the central value of a bin into which all ions'
+                  ('Ion mobility measurement for an ion or spectrum of ions as '
+                   'measured in an ion mobility mass spectrometer. This might '
+                   'refer to the central value of a bin into which all ions '
                    'within a narrow range of mobilities have been aggregated.'),
                   'scan attribute',
                   ['ion selection attribute', 'ion mobility attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
@@ -684,7 +684,7 @@ binary_data_arrays = TermSet([
          'binary data array',
          ['binary data array']),
     Term('time array', 'MS:1000595',
-         ('A data array of relative time offset values from a reference'
+         ('A data array of relative time offset values from a reference '
           'time.'),
          'binary data array',
          ['binary data array']),
@@ -693,9 +693,9 @@ binary_data_arrays = TermSet([
          'binary data array',
          ['binary data array']),
     Term('non-standard data array', 'MS:1000786',
-         ('A data array that contains data not covered by any other'
-          'term in this group. Please do not use this term, if the'
-          'binary data array type might be commonly used - contact the'
+         ('A data array that contains data not covered by any other '
+          'term in this group. Please do not use this term, if the '
+          'binary data array type might be commonly used - contact the '
           'PSI-MS working group in order to have another CV term added.'),
          'binary data array',
          ['binary data array']),
@@ -712,8 +712,8 @@ binary_data_arrays = TermSet([
          'binary data array',
          ['binary data array']),
     Term('mean charge array', 'MS:1002478',
-         ('Array of mean charge values where the mean charge is'
-          'calculated as a weighted mean of the charges of individual'
+         ('Array of mean charge values where the mean charge is '
+          'calculated as a weighted mean of the charges of individual '
           'peaks that are aggregated into a processed spectrum.'),
          'binary data array',
          ['binary data array']),
@@ -722,7 +722,7 @@ binary_data_arrays = TermSet([
          'binary data array',
          ['binary data array']),
     Term('baseline array', 'MS:1002530',
-         ('A data array of signal baseline values (the signal in the'
+         ('A data array of signal baseline values (the signal in the '
           'absence of analytes).'),
          'binary data array',
          ['binary data array']),
@@ -731,26 +731,26 @@ binary_data_arrays = TermSet([
          'binary data array',
          ['binary data array']),
     Term('sampled noise m/z array', 'MS:1002743',
-         ('A data array of parallel, independent m/z values for a'
-          'sampling of noise across a spectrum (typically much smaller'
+         ('A data array of parallel, independent m/z values for a '
+          'sampling of noise across a spectrum (typically much smaller '
           'than MS:1000514, the m/z array).'),
          'binary data array',
          ['binary data array']),
     Term('sampled noise intensity array', 'MS:1002744',
-         ('A data array of intensity values for the amplitude of noise'
-          'variation superposed on the baseline (MS:1002745) across a'
+         ('A data array of intensity values for the amplitude of noise '
+          'variation superposed on the baseline (MS:1002745) across a '
           'spectrum (for use with MS:1002743, sampled noise m/z array).'),
          'binary data array',
          ['binary data array']),
     Term('sampled noise baseline array', 'MS:1002745',
-         ('A data array of baseline intensity values (the intensity in'
-          'the absence of analytes) for a sampling of noise across a'
+         ('A data array of baseline intensity values (the intensity in '
+          'the absence of analytes) for a sampling of noise across a '
           'spectrum (for use with MS:1002743, sampled noise m/z array).'),
          'binary data array',
          ['binary data array']),
     Term('ion mobility array', 'MS:1002893',
-         ('Abstract array of ion mobility data values. A more specific'
-          'child term concept should be specified in data files to make'
+         ('Abstract array of ion mobility data values. A more specific '
+          'child term concept should be specified in data files to make '
           'precise the nature of the data being provided.'),
          'binary data array',
          ['binary data array']),
@@ -759,88 +759,88 @@ binary_data_arrays = TermSet([
          'binary data array',
          ['binary data array']),
     Term('scanning quadrupole position lower bound m/z array', 'MS:1003157',
-         ('Array of m/z values representing the lower bound m/z of the'
+         ('Array of m/z values representing the lower bound m/z of the '
           'quadrupole position at each point in the spectrum.'),
          'binary data array',
          ['binary data array']),
     Term('scanning quadrupole position upper bound m/z array', 'MS:1003158',
-         ('Array of m/z values representing the upper bound m/z of the'
+         ('Array of m/z values representing the upper bound m/z of the '
           'quadrupole position at each point in the spectrum.'),
          'binary data array',
          ['binary data array']),
     Term('mean ion mobility drift time array', 'MS:1002477',
-         ('Array of population mean ion mobility values from a drift'
-          'time device, reported in seconds (or milliseconds),'
-          'corresponding to a spectrum of individual peaks encoded with'
+         ('Array of population mean ion mobility values from a drift '
+          'time device, reported in seconds (or milliseconds), '
+          'corresponding to a spectrum of individual peaks encoded with '
           'an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('mean ion mobility array', 'MS:1002816',
-         ('Array of population mean ion mobility values (K or K0) based'
-          'on ion separation in gaseous phase due to different ion'
-          'mobilities under an electric field based on ion size, m/z'
-          'and shape, corresponding to a spectrum of individual peaks'
+         ('Array of population mean ion mobility values (K or K0) based '
+          'on ion separation in gaseous phase due to different ion '
+          'mobilities under an electric field based on ion size, m/z '
+          'and shape, corresponding to a spectrum of individual peaks '
           'encoded with an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('mean inverse reduced ion mobility array', 'MS:1003006',
-         ('Array of population mean ion mobility values based on ion'
-          'separation in gaseous phase due to different ion mobilities'
-          'under an electric field based on ion size, m/z and shape,'
-          'normalized for the local conditions and reported in volt-'
-          'second per square centimeter, corresponding to a spectrum of'
+         ('Array of population mean ion mobility values based on ion '
+          'separation in gaseous phase due to different ion mobilities '
+          'under an electric field based on ion size, m/z and shape, '
+          'normalized for the local conditions and reported in volt- '
+          'second per square centimeter, corresponding to a spectrum of '
           'individual peaks encoded with an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('raw ion mobility array', 'MS:1003007',
-         ('Array of raw ion mobility values (K or K0) based on ion'
-          'separation in gaseous phase due to different ion mobilities'
-          'under an electric field based on ion size, m/z and shape,'
-          'corresponding to a spectrum of individual peaks encoded with'
+         ('Array of raw ion mobility values (K or K0) based on ion '
+          'separation in gaseous phase due to different ion mobilities '
+          'under an electric field based on ion size, m/z and shape, '
+          'corresponding to a spectrum of individual peaks encoded with '
           'an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('raw inverse reduced ion mobility array', 'MS:1003008',
-         ('Array of raw ion mobility values based on ion separation in'
-          'gaseous phase due to different ion mobilities under an'
-          'electric field based on ion size, m/z and shape, normalized'
-          'for the local conditions and reported in volt-second per'
-          'square centimeter, corresponding to a spectrum of individual'
+         ('Array of raw ion mobility values based on ion separation in '
+          'gaseous phase due to different ion mobilities under an '
+          'electric field based on ion size, m/z and shape, normalized '
+          'for the local conditions and reported in volt-second per '
+          'square centimeter, corresponding to a spectrum of individual '
           'peaks encoded with an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('raw ion mobility drift time array', 'MS:1003153',
-         ('Array of raw ion mobility values from a drift time device,'
-          'reported in seconds (or milliseconds), corresponding to a'
+         ('Array of raw ion mobility values from a drift time device, '
+          'reported in seconds (or milliseconds), corresponding to a '
           'spectrum of individual peaks encoded with an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('deconvoluted ion mobility array', 'MS:1003154',
-         ('Array of ion mobility values (K or K0) based on ion'
-          'separation in gaseous phase due to different ion mobilities'
-          'under an electric field based on ion size, m/z and shape, as'
-          'an average property of an analyte post peak-detection,'
-          'weighted charge state reduction, and/or adduct aggregation,'
-          'corresponding to a spectrum of individual peaks encoded with'
+         ('Array of ion mobility values (K or K0) based on ion '
+          'separation in gaseous phase due to different ion mobilities '
+          'under an electric field based on ion size, m/z and shape, as '
+          'an average property of an analyte post peak-detection, '
+          'weighted charge state reduction, and/or adduct aggregation, '
+          'corresponding to a spectrum of individual peaks encoded with '
           'an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('deconvoluted inverse reduced ion mobility array', 'MS:1003155',
-         ('Array of ion mobility values based on ion separation in'
-          'gaseous phase due to different ion mobilities under an'
-          'electric field based on ion size, m/z and shape, normalized'
-          'for the local conditions and reported in volt-second per'
-          'square centimeter, as an average property of an analyte post'
-          'peak-detection, weighted charge state reduction, and/or'
-          'adduct aggregation, corresponding to a spectrum of'
+         ('Array of ion mobility values based on ion separation in '
+          'gaseous phase due to different ion mobilities under an '
+          'electric field based on ion size, m/z and shape, normalized '
+          'for the local conditions and reported in volt-second per '
+          'square centimeter, as an average property of an analyte post '
+          'peak-detection, weighted charge state reduction, and/or '
+          'adduct aggregation, corresponding to a spectrum of '
           'individual peaks encoded with an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
     Term('deconvoluted ion mobility drift time array', 'MS:1003156',
-         ('Array of mean ion mobility values from a drift time device,'
-          'reported in seconds (or milliseconds), as an average'
-          'property of an analyte post peak-detection, weighted charge'
-          'state reduction, and/or adduct aggregation, corresponding to'
+         ('Array of mean ion mobility values from a drift time device, '
+          'reported in seconds (or milliseconds), as an average '
+          'property of an analyte post peak-detection, weighted charge '
+          'state reduction, and/or adduct aggregation, corresponding to '
           'a spectrum of individual peaks encoded with an m/z array.'),
          'binary data array',
          ['ion mobility array', 'binary data array']),
