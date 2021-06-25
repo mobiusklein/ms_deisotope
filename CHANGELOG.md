@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
-
+1. Added string parsing and formatting to `IDFormat` for those terms which define a nativeID format.
+2. Added an `id_format` property to `FileInformation` and `ScanFileMetadataBase` which retrieves the
+   nativeID format or formats for a given file.
 
 ### Changed
 
