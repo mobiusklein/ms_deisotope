@@ -144,6 +144,7 @@ class ExtendedScanIndex(object):
         package = {
             "product_scan_id": product.id,
             "scan_time": product.scan_time,
+            "ms_level": product.ms_level,
         }
         if precursor_information is None:
             pass
