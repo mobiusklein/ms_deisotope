@@ -329,8 +329,15 @@ def charge_states(path):
     charges = Counter()
     for _, msn_info in index.msn_ids.items():
         charges[msn_info.charge] += 1
-    for charge in sorted(charges, key=abs):
-        click.echo("%d: %d" % (charge, charges[charge]))
+
+    def sort_key(k):
+        if isinstance(k, int):
+            return abs(k)
+        else:
+            return 0
+
+    for charge in sorted(charges, key=sort_key):
+        click.echo("%s: %d" % (charge, charges[charge]))
 
 
 def _binsearch(array, x):
