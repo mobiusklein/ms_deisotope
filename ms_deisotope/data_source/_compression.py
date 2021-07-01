@@ -34,19 +34,9 @@ except (ImportError, AttributeError):
     has_idzip = False
 
 if PY2:
-    file_like_object_bases = (file, io.IOBase)
+    file_like_object_bases = (file, io.IOBase) # pylint: disable=undefined-variable
 else:
     file_like_object_bases = (io.IOBase, )
-
-# Do not register idzip with psims
-# try:
-#     from psims import compression as psims_compression
-
-#     if has_idzip:
-#         psims_compression.register(GzipFile, 'gz', b'\037\213')
-#         psims_compression.register(GzipFile, 'dz', b'\037\213')
-# except ImportError:
-#     pass
 
 
 def test_if_file_has_fast_random_access(file_obj):

@@ -1,15 +1,16 @@
 # pragma: no cover
 import os
-
+import io
 import numpy as np
+
+from six import string_types as basestring
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.common import (
     _SingleScanIteratorImpl, _InterleavedGroupedScanIteratorImpl)
+from ms_deisotope.data_source._compression import get_opener
 from ms_deisotope.data_source.common import ScanBunch, ScanIterator, ChargeNotProvided, PrecursorInformation
 from ms_deisotope.feature_map.scan_index import ExtendedScanIndex
-
-from six import string_types as basestring
 
 
 class ScanSerializerBase(object):
@@ -90,7 +91,6 @@ class ScanSerializerBase(object):
         May be called from :meth:`close`, but before the writing stream
         has actually been closed.
         """
-        pass
 
 
 class ScanDeserializerBase(object):
@@ -98,7 +98,7 @@ class ScanDeserializerBase(object):
         super(ScanDeserializerBase, self).__init__(*args, **kwargs)
 
     def __next__(self):
-        return self.next()
+        return self.next() # pylint: disable=not-callable
 
     def next(self):
         raise NotImplementedError()
@@ -151,7 +151,9 @@ class LCMSMSQueryInterfaceMixin(object):
     def read_index_file(self, index_path=None):
         if index_path is None:
             index_path = self._index_file_name
-        with open(index_path) as handle:
+        with get_opener(index_path) as handle:
+            if 'b' in handle.mode:
+                handle = io.TextIOWrapper(handle, 'utf8')
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
     def has_index_file(self):
