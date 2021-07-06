@@ -1,3 +1,6 @@
+'''Helpers for dealing with generic compressed files.
+'''
+
 import io
 import gzip
 
@@ -18,8 +21,9 @@ except ImportError:
 try:
     import idzip
 
-    # Fixes io.BufferedWriter compatibility until merged upstream
     class IdzipFile(idzip.IdzipFile):
+        '''Fixes io.BufferedWriter compatibility until merged upstream
+        '''
         def write(self, b):
             self._check_can_write()
             value = self._impl.write(b)
@@ -75,7 +79,7 @@ def test_if_file_has_fast_random_access(file_obj):
 
 
 DEFAULT_BUFFER_SIZE = int(2e6)
-
+GZIP_MAGIC = b'\037\213'
 
 DefinitelyNotFastRandomAccess = Constant("DefinitelyNotFastRandomAccess", False)
 MaybeFastRandomAccess = Constant("MaybeFastRandomAccess", True)
@@ -100,14 +104,30 @@ def test_gzipped(f):
     f.seek(0)
     magic = f.read(2)
     f.seek(current)
-    return magic == b'\037\213'
+    return magic == GZIP_MAGIC
 
 
 def starts_with_gz_magic(bytestring):
-    return bytestring.startswith(b'\037\213')
+    '''Tests whether or not a byte string starts with
+    the GZIP magic bytes.
+
+    Parameters
+    ----------
+    bytestring : bytes
+        The bytes to test.
+
+    Returns
+    -------
+    bool
+    '''
+    return bytestring.startswith(GZIP_MAGIC)
 
 
 def get_opener(f, buffer_size=None):
+    '''Select the file reading type for the given path or stream.
+
+    Detects whether the file is gzip encoded.
+    '''
     if buffer_size is None:
         buffer_size = DEFAULT_BUFFER_SIZE
     if not hasattr(f, 'read'):
@@ -131,4 +151,6 @@ if PY2:
 
     @dill.register(io.BufferedReader)
     def save_file(pickler, obj):
+        '''Monkeypatch Py2 Dill
+        '''
         dill._dill._save_file(pickler, obj, io.open)

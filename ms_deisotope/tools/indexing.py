@@ -543,7 +543,7 @@ def ms1_spectrum_diagnostics(path, output_path=None):
         'injection_time', 'n_ms2_scans'
     ]
     ms1_metrics = []
-
+    products = None
     last_ms1 = None
     prog = progress(length=len(reader), label='Processing Scans',
                     file=sys.stderr, item_show_func=lambda x: x.id if x else '')

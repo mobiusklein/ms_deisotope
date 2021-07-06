@@ -50,12 +50,14 @@ class _ScanIteratorImplBase(object):
         return self
 
     def next(self):
+        '''Py2 compatible iterator
+        '''
         if self._producer is None:
             self._producer = self._make_producer()
         return next(self._producer)
 
     def __next__(self):
-        return self.next()
+        return self.next() # pylint: disable=not-callable
 
     def _make_producer(self):
         raise NotImplementedError()
@@ -191,6 +193,19 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         self.highest_ms_level = 0
 
     def deque_group(self, flush_products=False):
+        '''Remove the next scan from the MS1 queue, grouped with
+        any associated MSn scans.
+
+        Parameters
+        ----------
+        flush_products : bool
+            Whether to flush all the remaining product scans with this
+            group.
+
+        Returns
+        -------
+        ScanBunch
+        '''
         precursor = self.ms1_buffer.popleft()
         products = self.product_mapping.pop(precursor.id, [])
         if None in self.product_mapping:
@@ -228,6 +243,14 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         return ScanBunch(precursor, products)
 
     def add_product(self, scan):
+        '''Add MSn scan to :attr:`product_mapping` for the associated
+        precursor scan ID.
+
+        Parameters
+        ----------
+        scan : :class:`~.ScanBase`
+            The scan to track.
+        '''
         pinfo = scan.precursor_information
         if pinfo is None:
             precursor_id = None
@@ -241,6 +264,18 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         self.product_mapping[precursor_id].append(scan)
 
     def add_precursor(self, scan):
+        '''Add MS1 scan to :attr:`ms1_buffer`
+
+        Parameters
+        ----------
+        scan : :class:`~.ScanBase`
+            The scan to track.
+
+        Returns
+        -------
+        buffer_full : bool
+            Whether or not :attr:`ms1_buffer` is full.
+        '''
         self.ms1_buffer.append(scan)
         return len(self.ms1_buffer) >= self.buffering
 
@@ -283,6 +318,18 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
 
 
 class MSEIterator(_GroupedScanIteratorImpl):
+    '''A scan iterator implementation for grouping MS^E spectra according
+    to the specified functions.
+
+    Attributes
+    ----------
+    low_energy_config : int
+        The function corresponding to lower energy. These correspond
+        to the MS1 equivalent.
+    lock_mass_config : int
+        The function corresponding to the lockmass. Lockmass scans
+        will be skipped.
+    '''
     def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None,
                  scan_cacher=None):
         super(MSEIterator, self).__init__(

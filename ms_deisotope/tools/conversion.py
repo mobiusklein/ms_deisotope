@@ -27,7 +27,6 @@ except ImportError:
 def ms_conversion():
     """A command line tool for converting between mass spectrometry data formats
     """
-    pass
 
 
 def to_mgf(reader, outstream, msn_filters=None):
@@ -272,7 +271,6 @@ try:
         transformations along the way.
         """
         reader = ms_deisotope.MSFileLoader(source)
-        is_a_tty = False
         if output == '-':
             raise ValueError("Cannot write HDF5 to STDOUT")
         elif output is None:
@@ -281,7 +279,7 @@ try:
             else:
                 out = reader.source_file_name
             out = os.path.basename(out)
-            base, ext = out.rsplit(".", 1)
+            base, _ext = out.rsplit(".", 1)
             base += '.mzMLb'
             output = base
 
