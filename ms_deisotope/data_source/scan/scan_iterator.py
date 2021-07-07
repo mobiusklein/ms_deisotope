@@ -1,6 +1,7 @@
 '''A collection of different strategies for iterating over streams
 of :class:`~.Scan`-like objects.
 '''
+import bisect
 import warnings
 from collections import deque, defaultdict
 
@@ -174,6 +175,55 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
             yield ScanBunch(precursor_scan, product_scans)
 
 
+class GenerationTracker(object):
+    def __init__(self):
+        self.generation_to_id = defaultdict(set)
+        self.id_to_generation = dict()
+        self.generations = deque()
+
+    def _add_generation(self, generation):
+        bisect.insort_left(self.generations, generation)
+
+    def clear(self):
+        self.generation_to_id.clear()
+        self.id_to_generation.clear()
+        self.generations = deque()
+
+    def add(self, identifier, generation):
+        if generation not in self.generation_to_id:
+            self._add_generation(generation)
+        self.generation_to_id[generation].add(identifier)
+        self.id_to_generation[identifier] = generation
+
+    def remove(self, identifier):
+        if identifier not in self.id_to_generation:
+            return False
+        generation = self.id_to_generation[identifier]
+        self.generation_to_id[generation].remove(identifier)
+        del self.id_to_generation[identifier]
+        if len(self.generation_to_id[generation]) == 0:
+            self.generations.remove(generation)
+        return True
+
+    def older_than(self, generation):
+        result = []
+        purged = []
+        for gen in self.generations:
+            if gen < generation:
+                members = self.generation_to_id[gen]
+                result.extend(members)
+                purged.append(gen)
+            else:
+                break
+        for r in result:
+            del self.id_to_generation[r]
+        for gen in purged:
+            del self.generation_to_id[gen]
+            self.generations.remove(gen)
+        return result
+
+
+
 class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
     """Iterate over related scan bunches.
 
@@ -189,8 +239,17 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         self.buffering = buffering
         self.ms1_buffer = deque()
         self.product_mapping = defaultdict(list)
+        self.generation_tracker = GenerationTracker()
+        self.orphans = []
         self.passed_first_ms1 = False
         self.highest_ms_level = 0
+        self.generation = 0
+        self.deque_record = {}
+        self.counter = 0
+
+    def pop_precursor(self, precursor_id):
+        self.generation_tracker.remove(precursor_id)
+        return self.product_mapping.pop(precursor_id, [])
 
     def deque_group(self, flush_products=False):
         '''Remove the next scan from the MS1 queue, grouped with
@@ -207,16 +266,17 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         ScanBunch
         '''
         precursor = self.ms1_buffer.popleft()
-        products = self.product_mapping.pop(precursor.id, [])
+        _empty = []
+        products = self.pop_precursor(precursor.id)
         if None in self.product_mapping:
-            products += self.product_mapping.pop(None, [])
+            products += self.product_mapping.pop(None, _empty)
         # Look for MSn for n > 2
         if self.highest_ms_level > 2:
             extra_blocks = [products]
             for _ in range(self.highest_ms_level - 2):
                 new_block = []
                 for prod in extra_blocks[-1]:
-                    new_block.extend(self.product_mapping.pop(prod.id, []))
+                    new_block.extend(self.pop_precursor(prod.id))
                 if not new_block:
                     break
                 extra_blocks.append(new_block)
@@ -224,22 +284,52 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
                 products = extra_blocks[0]
                 for block in extra_blocks[1:]:
                     products.extend(block)
+
+        for prec_id in self.generation_tracker.older_than(self.generation - self.buffering):
+            products.extend(self.product_mapping.pop(prec_id, _empty))
+
         if flush_products:
             if self.product_mapping:
+                lingering = {s.id for ss in self.product_mapping.values() for s in ss}
+                missing = set(self.product_mapping)
+                unclaimed_precursors = missing - lingering
                 warnings.warn("Lingering Product Sets For %r!" %
-                              (list(self.product_mapping), ))
+                              (sorted(unclaimed_precursors), ))
             for _, value in self.product_mapping.items():
                 products += value
             self.product_mapping.clear()
+            self.generation_tracker.clear()
         precursor.product_scans = products
+
+        # Collect any MSn spectra which pre-date the first precursor if they are encountered before
+        # the first precursor is found.
         if not self.passed_first_ms1 and self.ms1_buffer:
             current_ms1_time = precursor.scan_time
-            next_ms1_time = self.ms1_buffer[0].scan_time
-            for _prec_id, prods in list(self.product_mapping.items()):
-                for prod in prods:
-                    if current_ms1_time <= prod.scan_time <= next_ms1_time:
+            for prec_id, prods in list(self.product_mapping.items()):
+                masked = set()
+                for i, prod in enumerate(prods):
+                    if prod.scan_time <= current_ms1_time:
                         products.append(prod)
+                        masked.add(i)
+                # We've only removed some of the products under this precursor, so just
+                # remove those products from mapping.
+                if len(masked) < len(prods):
+                    prods = [v for i, v in enumerate(prods) if i not in masked]
+                    self.product_mapping[prec_id] = prods
+                else:
+                    # Otherwise we must have completely consumed the products of this
+                    # precursor, so we need to remove it from the tracking.
+                    self.pop_precursor(prec_id)
             self.passed_first_ms1 = True
+
+
+        self.generation += 1
+
+        self.deque_record[precursor.id] = self.counter
+        self.counter += 1
+        for prod in products:
+            self.deque_record[prod.id] = self.counter
+            self.counter += 1
         return ScanBunch(precursor, products)
 
     def add_product(self, scan):
@@ -261,6 +351,8 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
                 precursor_id = self.ms1_buffer[-1].id
             except IndexError:
                 precursor_id = None
+        if precursor_id not in self.product_mapping:
+            self.generation_tracker.add(precursor_id, self.generation)
         self.product_mapping[precursor_id].append(scan)
 
     def add_precursor(self, scan):
