@@ -132,8 +132,9 @@ def get_opener(f, buffer_size=None):
         buffer_size = DEFAULT_BUFFER_SIZE
     if not hasattr(f, 'read'):
         f = io.open(f, 'rb')
-    # On Py2, dill doesn't behave correctly with io-derived objects, so we have to patch it below.
-    if not isinstance(f, io.BufferedReader):
+    # On Py2, dill doesn't behave correctly with io-derived objects, so we have to
+    # patch it below. Don't try to wrap an io.TextIOWrapper on Py3.
+    if not isinstance(f, io.BufferedReader) and not isinstance(f, io.TextIOWrapper):
         buffered_reader = io.BufferedReader(f, buffer_size)
     else:
         buffered_reader = f

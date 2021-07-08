@@ -244,8 +244,6 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         self.passed_first_ms1 = False
         self.highest_ms_level = 0
         self.generation = 0
-        self.deque_record = {}
-        self.counter = 0
 
     def pop_precursor(self, precursor_id):
         self.generation_tracker.remove(precursor_id)
@@ -270,6 +268,12 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
         products = self.pop_precursor(precursor.id)
         if None in self.product_mapping:
             products += self.product_mapping.pop(None, _empty)
+
+        # Flush out older precursors' products that haven't turned up yet, they
+        # probably aren't coming soon.
+        for prec_id in self.generation_tracker.older_than(self.generation - self.buffering):
+            products.extend(self.product_mapping.pop(prec_id, _empty))
+
         # Look for MSn for n > 2
         if self.highest_ms_level > 2:
             extra_blocks = [products]
@@ -284,9 +288,6 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
                 products = extra_blocks[0]
                 for block in extra_blocks[1:]:
                     products.extend(block)
-
-        for prec_id in self.generation_tracker.older_than(self.generation - self.buffering):
-            products.extend(self.product_mapping.pop(prec_id, _empty))
 
         if flush_products:
             if self.product_mapping:
@@ -324,12 +325,6 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
 
 
         self.generation += 1
-
-        self.deque_record[precursor.id] = self.counter
-        self.counter += 1
-        for prod in products:
-            self.deque_record[prod.id] = self.counter
-            self.counter += 1
         return ScanBunch(precursor, products)
 
     def add_product(self, scan):

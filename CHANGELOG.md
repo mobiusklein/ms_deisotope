@@ -11,6 +11,12 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
    nativeID format or formats for a given file.
 
 ### Changed
+1. The default behavior of `_InterleavedGroupedScanIteratorImpl`, the implementation of grouped iterators,
+   when producing a new `ScanBunch` that any product scans whose precursor ID that has been in the product map
+   for more than `self.ms1_buffering` productions will be added to the produced `ScanBunch` to prevent loss
+   of information if iteration is interrupted.
+2. `quick_index.index` now tries much harder to start from an MS1 scan if it can.
+
 
 ### Deprecated
 
