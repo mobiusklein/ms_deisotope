@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Security
 
+
+## [v0.0.29] - 2021-7-8
+
+### Fixed
+1. Fix specifying the precursor m/z, charge and polarity of a spectrum from CSV or via `data_source.memory.make_scan`.
+
+
 ## [v0.0.28] - 2021-7-7
 
 ### Added
