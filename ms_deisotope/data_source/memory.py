@@ -84,6 +84,7 @@ class MemoryScanInterface(ScanDataSource):
         scan.instrument_configuration = instrument_configuration
         scan.peak_set = peak_set
         scan.deconvoluted_peak_set = deconvoluted_peak_set
+        scan.precursor_information = precursor_information
         return scan
 
 

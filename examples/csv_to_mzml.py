@@ -6,14 +6,27 @@ text export into something that a search engine can read.
 import sys
 import os
 
-from ms_deisotope.data_source import text
+from ms_deisotope.data_source import text, PrecursorInformation
 from ms_deisotope.data_source.metadata import file_information
 
 from ms_deisotope.output.mzml import MzMLSerializer
 
 csv_path = sys.argv[1]
 
-scan = text.scan_from_csv(open(csv_path, 'rt'), is_profile=False)
+try:
+    precursor_mz = float(sys.argv[2])
+except IndexError:
+    precursor_mz = None
+
+try:
+    precursor_charge = int(sys.argv[3])
+except IndexError:
+    precursor_charge = None
+
+polarity = -1 if '-' in sys.argv else 1
+
+scan = text.scan_from_csv(open(csv_path, 'rt'), is_profile=False, precursor_mz=precursor_mz, precursor_charge=precursor_charge, polarity=polarity)
+scan.pick_peaks()
 
 dest = os.path.splitext(csv_path)[0] + '.mzML'
 

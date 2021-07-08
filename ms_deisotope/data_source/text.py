@@ -66,8 +66,8 @@ def scan_from_csv(file_handle, delimiter=',', ms_level=2, is_profile=True, polar
             0,
             ChargeNotProvided if precursor_charge is None else precursor_charge)
     scan = make_scan(
-        signal, ms_level, "index=1", 0, 0, is_profile,
-        polarity,
+        signal, ms_level, "index=1", 0, 0, is_profile=is_profile,
+        polarity=polarity,
         precursor_information=pinfo)
     return scan
 
