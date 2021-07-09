@@ -832,7 +832,7 @@ class MzMLSerializer(ScanSerializerBase):
             centroided = True
             peak_data = scan.peak_set
         else:
-            centroided = scan.is_profile
+            centroided = not scan.is_profile
             peak_data = scan.arrays
         if deconvoluted:
             charge_array = [p.charge for p in peak_data]

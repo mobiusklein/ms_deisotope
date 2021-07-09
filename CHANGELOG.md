@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Removed
 
 ### Fixed
+1. `MzMLSerializer` correctly interprets centroid-only but not peak-picked `Scan` objects.
 
 ### Security
 
