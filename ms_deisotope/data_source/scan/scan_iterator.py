@@ -4,6 +4,7 @@ of :class:`~.Scan`-like objects.
 import bisect
 import warnings
 from collections import deque, defaultdict
+from six import PY2
 
 from . import ScanBunch
 
@@ -176,10 +177,12 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
 
 
 class GenerationTracker(object):
+    _generations_type = list if PY2 else deque
+
     def __init__(self):
         self.generation_to_id = defaultdict(set)
         self.id_to_generation = dict()
-        self.generations = deque()
+        self.generations = self._generations_type()
 
     def _add_generation(self, generation):
         bisect.insort_left(self.generations, generation)
@@ -187,7 +190,7 @@ class GenerationTracker(object):
     def clear(self):
         self.generation_to_id.clear()
         self.id_to_generation.clear()
-        self.generations = deque()
+        self.generations = self._generations_type()
 
     def add(self, identifier, generation):
         if generation not in self.generation_to_id:

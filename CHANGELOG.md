@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Fixed
 1. `MzMLSerializer` correctly interprets centroid-only but not peak-picked `Scan` objects.
+2. Using `_InterleavedGroupedScanIteratorImpl` on Py2 no longer uses a `deque` as it is missing `insert`.
 
 ### Security
 
