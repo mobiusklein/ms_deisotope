@@ -489,7 +489,7 @@ cdef list convolve_peak_sets(PeakSet peak_set_a, PeakSet peak_set_b, double erro
         pairs_for_peak = []
         peak = peak_set_a.getitem(i)
         pt = peak.mz + shift
-        peaks_slice = peak_set_b.all_peaks_for(pt - pt * error_tolerance, pt + pt * error_tolerance)
+        peaks_slice = peak_set_b.all_peaks_for(pt, error_tolerance)
         m = PyTuple_Size(peaks_slice)
         for j in range(m):
             other = <FittedPeak>PyTuple_GET_ITEM(peaks_slice, j)
@@ -513,7 +513,7 @@ cdef list convolve_deconvoluted_peak_sets(DeconvolutedPeakSet peak_set_a, Deconv
     for i in range(n):
         peak = peak_set_a.getitem(i)
         pt = peak.neutral_mass + shift
-        peaks_slice = peak_set_b.all_peaks_for(pt - pt * error_tolerance, pt + pt * error_tolerance)
+        peaks_slice = peak_set_b.all_peaks_for(pt, error_tolerance)
         m = PyTuple_Size(peaks_slice)
         for j in range(m):
             other = <DeconvolutedPeak>PyTuple_GET_ITEM(peaks_slice, j)
