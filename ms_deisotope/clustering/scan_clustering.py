@@ -18,6 +18,10 @@ from ms_deisotope.data_source.dispatch import (
 
 from .similarity_methods import peak_set_similarity
 
+try:
+    basestring
+except NameError:
+    from six import string_types as basestring
 
 peak_set_getter = operator.attrgetter("peak_set")
 deconvoluted_peak_set_getter = operator.attrgetter("deconvoluted_peak_set")
