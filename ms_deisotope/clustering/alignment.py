@@ -20,13 +20,16 @@ class SpectrumAlignmentGraph(object):
     min_delta : float
         The minimum precursor mass delta recognized. Below this number and the
         precursor mass delta is assumed to be the same and is skipped.
+    match_charge : bool
+        Whether or not to require charge states to match to construct an edge.
     '''
 
-    def __init__(self, scans, threshold=0.5, error_tolerance=2e-5, min_delta=0.01):
+    def __init__(self, scans, threshold=0.5, error_tolerance=2e-5, min_delta=0.01, match_charge=True):
         self.scans = list(scans)
         self.threshold = threshold
         self.error_tolerance = error_tolerance
         self.min_delta = min_delta
+        self.match_charge = match_charge
 
         self.edges = defaultdict(dict)
         self.supporters = dict()
@@ -41,7 +44,7 @@ class SpectrumAlignmentGraph(object):
             for scan2 in self.scans:
                 if scan1 is scan2:
                     continue
-                if scan1.precursor_information.charge != scan2.precursor_information.charge:
+                if self.match_charge and scan1.precursor_information.charge != scan2.precursor_information.charge:
                     continue
                 if scan1.id in edges and scan2.id in edges[scan1.id]:
                     continue
