@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
-
+1. Added `ms_deisotope.clustering.alignment` to provide a home for `SpectrumAlignment` and `SpectrumAlignmentGraph`.
 
 ### Changed
 
@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Fixed
 1. `MzMLSerializer` correctly interprets centroid-only but not peak-picked `Scan` objects.
 2. Using `_InterleavedGroupedScanIteratorImpl` on Py2 no longer uses a `deque` as it is missing `insert`.
+3. `LCMSFeatureSetFit` now has `n_points` in the pure Python version.
+4. `SpectrumAlignment` now works properly.
 
 ### Security
 
