@@ -23,7 +23,7 @@ class map_coord(namedtuple("map_coord", ("mz", 'time'))):
 class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
                  missing_features=0, supporters=None, data=None,
-                 neutral_mass=None, scores=None, times=None):
+                 neutral_mass=None, n_points=0, scores=None, times=None):
         if supporters is None:
             supporters = []
         if scores is None:
@@ -35,6 +35,7 @@ class LCMSFeatureSetFit(object):
         self.score = score
         self.charge = charge
         self.data = data
+        self.n_points = n_points
         self.missing_features = missing_features
         self.monoisotopic_feature = features[0]
         self.supporters = supporters
