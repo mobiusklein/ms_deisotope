@@ -369,11 +369,14 @@ cdef class SpectrumAlignment(object):
         self.peak_set_b = peak_set_b
         self.peak_pairs = []
         self.shift = shift
+
         self.score = 0
         self.norm_aa_cosine = 1.0
         self.norm_bb_cosine = 1.0
+
         self.normalize = normalize
         self.sqrt_transform = sqrt_transform
+
         self._determine_peak_type()
         self.calculate_normalization()
         self.align(error_tolerance, shift)
@@ -467,7 +470,8 @@ cdef class SpectrumAlignment(object):
         self._calculate_score()
 
     cpdef _calculate_score(self):
-        self.score = convolved_dot_product(self.peak_pairs, self.peak_type)
+        self.score = convolved_dot_product(
+            self.peak_pairs, self.peak_type, sqrt_transform=self.sqrt_transform)
         if self.normalize:
             self.score /= (self.norm_aa_cosine * self.norm_bb_cosine)
 

@@ -216,6 +216,17 @@ class SpectrumCluster(object):
         d['scans'] = scans
         return d
 
+    def split_on_charge(self):
+        scans = sorted(self, key=lambda x: x.tic(), reverse=True)
+        index = {}
+        for scan in scans:
+            key = scan.precursor_information.charge
+            try:
+                index[key].append(scan)
+            except KeyError:
+                index[key] = SpectrumCluster([scan], scan.precursor_information.neutral_mass)
+        return index
+
 
 class SpectrumClusterCollection(object):
     '''A sorted :class:`~.Sequence` of :class:`SpectrumCluster` instances
