@@ -53,7 +53,7 @@ class SpectrumAlignmentGraph(object):
                 if abs(delta) < self.min_delta:
                     continue
                 aln = SpectrumAlignment(
-                    scan1.deconvoluted_peak_set, scan2.deconvoluted_peak_set, error_tolerance=self.error_tolerance,
+                    scan1.peaks(), scan2.peaks(), error_tolerance=self.error_tolerance,
                     shift=scan2.precursor_information.neutral_mass - scan1.precursor_information.neutral_mass)
                 edges[scan1.id][scan2.id] = (aln.score, aln.shift)
                 edges[scan2.id][scan1.id] = (aln.score, -aln.shift)
@@ -73,3 +73,17 @@ class SpectrumAlignmentGraph(object):
                     buckets[key] = Neighbor(score, shift, scan2_id)
             supporters[scan1_id] = list(buckets.values())
         self.supporters = supporters
+
+    def to_json(self):
+        container = {
+            "edges": dict(self.edges),
+            "supporters": self.supporters,
+            "scan_ids": [s.id for s in self.scans],
+            "parameters": {
+                "threshold": self.threshold,
+                "error_tolerance": self.error_tolerance,
+                "min_delta": self.min_delta,
+                "match_charge": self.match_charge
+            }
+        }
+        return container
