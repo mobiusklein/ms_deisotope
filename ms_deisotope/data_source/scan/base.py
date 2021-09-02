@@ -1500,6 +1500,14 @@ class PeakSetMethods(_SequenceABC):
         else:
             raise NotImplementedError()
 
+    def __call__(self):
+        if self.is_deconvoluted():
+            return self.deconvoluted()
+        elif self.is_centroided():
+            return self.centroided()
+        else:
+            return self.raw()
+
 
 class PlottingMethods(object):
     """A plotting method facade that knows how to draw different facets of a spectrum.
