@@ -828,7 +828,7 @@ class MzMLSerializer(ScanSerializerBase):
         if deconvoluted:
             centroided = True
             peak_data = scan.deconvoluted_peak_set
-        elif scan.peak_set:
+        elif scan.peak_set is not None:
             centroided = True
             peak_data = scan.peak_set
         else:

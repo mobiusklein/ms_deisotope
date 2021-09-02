@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 2. Using `_InterleavedGroupedScanIteratorImpl` on Py2 no longer uses a `deque` as it is missing `insert`.
 3. `LCMSFeatureSetFit` now has `n_points` in the pure Python version.
 4. `SpectrumAlignment` now works properly.
+5. Fix error in `MzMLSerializer` when trying to serialize a spectrum that has been peak-picked but where
+   the peak set was empty.
 
 ### Security
 
