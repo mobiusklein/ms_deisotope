@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [Unreleased]
+## [v0.0.30] - 2021-9-2
 
 ### Added
 1. Added `ms_deisotope.clustering.alignment` to provide a home for `SpectrumAlignment` and `SpectrumAlignmentGraph`.
