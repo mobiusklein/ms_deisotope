@@ -69,7 +69,7 @@ class SpectrumAlignmentGraph(object):
                     continue
                 key = int(shift * 100.0)
                 if key in buckets and buckets[key][0] < score:
-                    buckets[key] = Neighbor(score, shift, scan2_id)
+                    buckets[key] = Neighbor(score, shift, scan2_id, weight)
                 else:
                     buckets[key] = Neighbor(score, shift, scan2_id, weight)
             supporters[scan1_id] = list(buckets.values())
