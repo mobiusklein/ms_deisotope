@@ -2,7 +2,7 @@ from collections import defaultdict, namedtuple
 
 from .similarity_methods import SpectrumAlignment
 
-Neighbor = namedtuple("Neighbor", ('score', 'shift', 'scan_id'))
+Neighbor = namedtuple("Neighbor", ('score', 'shift', 'scan_id', 'weight'))
 
 
 class SpectrumAlignmentGraph(object):
@@ -55,22 +55,23 @@ class SpectrumAlignmentGraph(object):
                 aln = SpectrumAlignment(
                     scan1.peaks(), scan2.peaks(), error_tolerance=self.error_tolerance,
                     shift=scan2.precursor_information.neutral_mass - scan1.precursor_information.neutral_mass)
-                edges[scan1.id][scan2.id] = (aln.score, aln.shift)
-                edges[scan2.id][scan1.id] = (aln.score, -aln.shift)
+                weight = sum([pp.score for pp in aln.peak_pairs])
+                edges[scan1.id][scan2.id] = (aln.score, aln.shift, weight)
+                edges[scan2.id][scan1.id] = (aln.score, -aln.shift, weight)
         self.edges = edges
 
     def trim(self):
         supporters = {}
         for scan1_id, neighbors in self.edges.items():
             buckets = {}
-            for scan2_id, (score, shift) in neighbors.items():
+            for scan2_id, (score, shift, weight) in neighbors.items():
                 if score < self.threshold:
                     continue
                 key = int(shift * 100.0)
                 if key in buckets and buckets[key][0] < score:
                     buckets[key] = Neighbor(score, shift, scan2_id)
                 else:
-                    buckets[key] = Neighbor(score, shift, scan2_id)
+                    buckets[key] = Neighbor(score, shift, scan2_id, weight)
             supporters[scan1_id] = list(buckets.values())
         self.supporters = supporters
 
