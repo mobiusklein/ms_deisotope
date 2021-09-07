@@ -3,6 +3,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. `PeakSetMethods` facet `__call__` properly detects peak modes.
+
+### Security
+
+
 ## [v0.0.30] - 2021-9-2
 
 ### Added

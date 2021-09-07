@@ -1501,9 +1501,9 @@ class PeakSetMethods(_SequenceABC):
             raise NotImplementedError()
 
     def __call__(self):
-        if self.is_deconvoluted():
+        if self.is_deconvoluted:
             return self.deconvoluted()
-        elif self.is_centroided():
+        elif self.is_centroided:
             return self.centroided()
         else:
             return self.raw()
