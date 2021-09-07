@@ -75,6 +75,37 @@ class SpectrumAlignmentGraph(object):
             supporters[scan1_id] = list(buckets.values())
         self.supporters = supporters
 
+    def average_shifts(self):
+        seen = set()
+
+        shifts = []
+
+        for a, dst in self.edges.items():
+            for b, ed in dst.items():
+                key = frozenset((a, b))
+                if key in seen:
+                    continue
+                seen.add(key)
+                (score, shift, weight) = ed
+                if score < self.threshold:
+                    continue
+                shift = abs(shift)
+                shifts.append((shift, weight, score))
+
+        shifts.sort(key=lambda x: x[1], reverse=True)
+
+        bins = []
+        for shift in shifts:
+            for sbin in bins:
+                if sbin.test(shift[0], 0.1):
+                    sbin.add(shift)
+                    break
+            else:
+                bins.append(ShiftBin(shift[0], [shift]))
+
+        bins.sort(key=lambda x: x.average())
+        return bins
+
     def to_json(self):
         container = {
             "edges": dict(self.edges),
@@ -88,3 +119,30 @@ class SpectrumAlignmentGraph(object):
             }
         }
         return container
+
+
+class ShiftBin(object):
+    def __init__(self, mass, observations=None):
+        if observations is None:
+            observations = []
+        self.mass = mass
+        self.observations = observations
+
+    def add(self, observation):
+        self.observations.append(observation)
+
+    def average(self):
+        total = 0.0
+        norm = 0.0
+        for mass, weight in self.observations:
+            total += mass * weight
+            norm += weight
+        if norm == 0:
+            return 0.0
+        return total / norm
+
+    def test(self, mass, max_delta=0.01):
+        return abs(self.mass - mass) < max_delta
+
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.mass}, {self.observations})"
