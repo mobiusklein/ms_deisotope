@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Added
 
 ### Changed
+1. Added an extra `ms_level` index to Thermo readers.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.31]
+
+### Added
+
+### Changed
 
 ### Deprecated
 
@@ -296,8 +312,11 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.28...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.31...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.31]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.31
+[v0.0.30]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.30
+[v0.0.29]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.29
 [v0.0.28]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.28
 [v0.0.27]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.27
 [v0.0.26]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.26
