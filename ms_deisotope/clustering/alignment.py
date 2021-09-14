@@ -40,20 +40,19 @@ class SpectrumAlignmentGraph(object):
     def build_edges(self):
         edges = defaultdict(dict)
         self.scans.sort(key=lambda x: x.precursor_information.neutral_mass)
-        for scan1 in self.scans:
-            for scan2 in self.scans:
+        for i, scan1 in enumerate(self.scans):
+            for scan2 in self.scans[i + 1:]:
                 if scan1 is scan2:
                     continue
                 if self.match_charge and scan1.precursor_information.charge != scan2.precursor_information.charge:
-                    continue
-                if scan1.id in edges and scan2.id in edges[scan1.id]:
                     continue
                 delta = scan2.precursor_information.neutral_mass - \
                     scan1.precursor_information.neutral_mass
                 if abs(delta) < self.min_delta:
                     continue
                 aln = SpectrumAlignment(
-                    scan1.peaks(), scan2.peaks(), error_tolerance=self.error_tolerance,
+                    scan1.peaks(), scan2.peaks(),
+                    error_tolerance=self.error_tolerance,
                     shift=scan2.precursor_information.neutral_mass - scan1.precursor_information.neutral_mass)
                 weight = sum([pp.score for pp in aln.peak_pairs])
                 edges[scan1.id][scan2.id] = (aln.score, aln.shift, weight)

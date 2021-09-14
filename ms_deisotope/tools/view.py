@@ -8,6 +8,8 @@ import array
 
 import matplotlib as mpl
 
+import click
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,)
 from matplotlib.widgets import SpanSelector
@@ -87,12 +89,14 @@ else:
 
 
 class SpectrumViewer(_BaseFrame):
-    def __init__(self, master):
+    def __init__(self, master, denoise=4, ms1_score_threshold=20.0):
         ttk.Frame.__init__(self, master)
         self.root = master
         self._ms_file_name = None
         self.reader = None
         self.scan = None
+        self.denoise = denoise
+        self.ms1_score_threshold = ms1_score_threshold
         self.draw_isotopic_patterns = True
         self.configure_toolbar()
         self.configure_canvas()
@@ -234,7 +238,7 @@ class SpectrumViewer(_BaseFrame):
             averagine_value = self.ms1_averagine_combobox.get()
             averagine_value = averagine_label_map[averagine_value]
             truncate_to = 0.95
-            scorer = ms_deisotope.PenalizedMSDeconVFitter(20., 2.)
+            scorer = ms_deisotope.PenalizedMSDeconVFitter(self.ms1_score_threshold, 2.)
         else:
             averagine_value = self.msn_averagine_combobox.get()
             averagine_value = averagine_label_map[averagine_value]
@@ -270,7 +274,7 @@ class SpectrumViewer(_BaseFrame):
                 if scan.arrays.mz.shape[0] > 1 :
                     self.scan = scan = scan.average(averaging_level)
             print("Denoising")
-            self.scan = scan.denoise(4)
+            self.scan = scan.denoise(self.denoise) if self.denoise else scan
         print("Processing Peaks")
         self._process_scan()
         print("Begin Drawing")
@@ -455,24 +459,20 @@ class SpectrumViewer(_BaseFrame):
             self.after(10, self._populate_range, 0, 500)
 
 
-def main():
+@click.command("ms-view")
+@click.argument("filename", type=click.Path(exists=True, readable=True), required=False)
+@click.option("-d", "--denoise", type=float, default=5.0)
+def main(filename=None, denoise=5, ms1_score=20.0, msn_score=10.0, ms1_truncation=0.95, msn_truncation=0.8):
     base = Tk()
     base.title("ms_deisotope Spectrum Viewer")
     tk.Grid.rowconfigure(base, 0, weight=1)
     tk.Grid.columnconfigure(base, 0, weight=1)
-    app = SpectrumViewer(base)
+    app = SpectrumViewer(base, denoise=denoise)
     app.do_layout()
-
-    try:
-        fname = sys.argv[1]
-    except IndexError:
-        fname = None
-        # fname = tkfiledialog.askopenfilename()
-    print("initial value", fname)
-    app.ms_file_name = fname
+    app.ms_file_name = filename
 
     app.mainloop()
 
 
 if __name__ == '__main__':
-    main()
+    main.main()
