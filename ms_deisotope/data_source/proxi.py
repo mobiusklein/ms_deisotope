@@ -204,23 +204,23 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
     def _opener(self, uri, block_size=None, **kwargs):
         raise NotImplementedError()
 
-    def open_ms_file(self, mzml_uri, index_uri=None):
-        if mzml_uri in self.cache:
-            logger.info("Found %r in the cache", mzml_uri)
-            return self.cache[mzml_uri]
-        logger.info("Opening %r", mzml_uri)
-        mzml_fh = self._opener(mzml_uri)
-        if mzml_uri.endswith("gz"):
+    def open_ms_file(self, ms_file_uri, index_uri=None):
+        if ms_file_uri in self.cache:
+            logger.info("Found %r in the cache", ms_file_uri)
+            return self.cache[ms_file_uri]
+        logger.info("Opening %r", ms_file_uri)
+        mzml_fh = self._opener(ms_file_uri)
+        if ms_file_uri.endswith("gz"):
             mzml_fh = idzip.IdzipFile(fileobj=mzml_fh)
         index_fh = None
         if index_uri is not None:
             index_fh = self._opener(index_uri, block_size=BLOCK_SIZE)
         else:
-            logger.warning("Byte offset index is missing for %r", mzml_uri)
+            logger.warning("Byte offset index is missing for %r", ms_file_uri)
         reader = ms_deisotope.MSFileLoader(mzml_fh, index_file=index_fh)
-        logger.info("Finished opening %r", mzml_uri)
+        logger.info("Finished opening %r", ms_file_uri)
         lock = RLock()
-        self.cache[mzml_uri] = (reader, lock)
+        self.cache[ms_file_uri] = (reader, lock)
         return reader, lock
 
     def list_collections(self):
@@ -321,9 +321,24 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
         return payload
 
     def enumerate_spectra_for(self, dataset, ms_run=None):
-        pass
+        raise NotImplementedError()
 
     def handle_usi(self, usi, convert_json=True):
+        '''Receive a USI, parse it into its constituent pieces, locate
+        the relevant spectrum, and return it formatted message.
+
+        Parameters
+        ----------
+        usi : str
+            The identifier of the spectrum to be retrieved
+        convert_json : bool, optional
+            Whether to format the spectrum as JSON or not. Defaults to :const:`True`.
+
+        Returns
+        -------
+        spectrum : dict or Scan
+            The spectrum, rendered according to the `convert_json` or not.
+        '''
         usi = USI.parse(str(usi))
         mzml_uri, index_uri = self.find_ms_files_for(usi.dataset, usi.datafile)
         reader, lock = self.open_ms_file(mzml_uri, index_uri)

@@ -244,7 +244,7 @@ install_requires = [
     "dill",
     "ms_peak_picker",
     "brain-isotopic-distribution",
-    "pyteomics >= 4.0",
+    "pyteomics >= 4.5",
     "lxml",
     "psims >= 0.1.35",
     "python-idzip >=0.3.2"
