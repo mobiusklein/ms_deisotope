@@ -293,9 +293,9 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
             "status": "READABLE",
             "attributes": [
                 {"accession": "MS:1000511", "name": "ms level",
-                    "value": str(scan.ms_level)},
+                    "value": scan.ms_level},
                 {"accession": "MS:1008025", "name": "scan number",
-                    "value": str(scan.index + 1)},
+                    "value": scan.index + 1},
                 {"accession": "MS:1003061", "name": "spectrum name", "value": scan.id},
             ]
         }
@@ -311,12 +311,12 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
             if mz:
                 payload['attributes'].append({
                     "accession": "MS:1000827", "name": "isolation window target m/z",
-                    "value": str(mz),
+                    "value": mz,
                 })
             if charge:
                 payload['attributes'].append({
                     "accession": "MS:1000041", "name": "charge state",
-                    "value": str(charge),
+                    "value": charge,
                 })
         return payload
 
