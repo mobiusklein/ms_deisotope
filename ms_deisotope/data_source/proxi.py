@@ -272,10 +272,10 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
             nb_peaks = len(mzs)
             base_peak = scan.base_peak.raw().intensity
 
-        payload['mzs'] = mzs
-        payload['intensities'] = intensities
+        payload['m/z array'] = mzs
+        payload['intensity array'] = intensities
         if charges is not None:
-            payload['charges'] = charges
+            payload['charge array'] = charges
         payload['attributes'].append(
             {"accession": "MS:1000128", "name": "profile spectrum"} if is_profile else
             {"accession": "MS:1000127", "name": "centroid spectrum"})
@@ -418,9 +418,10 @@ class S3MassSpectraDataArchive(MassSpectraDataArchiveBase):
                 ext = query.rsplit(".", 1)[-1]
                 for t in file_types:
                     if t == ext:
-                        index[prefix.replace(self.base_uri, '')].append(
+                        index[prefix.replace(self.base_uri[5:], '')].append(
                             prefix + '/' + f)
                         break
+        breakpoint()
         for group, members in list(index.items()):
             if "/" in group:
                 base, _rest = group.split("/", 1)
