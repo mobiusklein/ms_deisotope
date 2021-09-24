@@ -421,7 +421,6 @@ class S3MassSpectraDataArchive(MassSpectraDataArchiveBase):
                         index[prefix.replace(self.base_uri[5:], '')].append(
                             prefix + '/' + f)
                         break
-        breakpoint()
         for group, members in list(index.items()):
             if "/" in group:
                 base, _rest = group.split("/", 1)
@@ -440,6 +439,7 @@ class ScanProcessingMixin(object):
         super(ScanProcessingMixin, self).__init__(*args, **kwargs)
 
     def process_scan(self, scan, reader):
+        scan = super(ScanProcessingMixin, self).process_scan(scan, reader)
         scan.pick_peaks(**self.peak_picking_args)
         scan.deconvolute(**self.deconvolution_args)
         return scan
