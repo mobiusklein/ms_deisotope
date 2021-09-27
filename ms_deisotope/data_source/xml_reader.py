@@ -148,7 +148,10 @@ class XMLReaderBase(RandomAccessScanSource):
 
     def _dispose(self):
         super(XMLReaderBase, self)._dispose()
-        self.index.clear()
+        try:
+            self.index.clear()
+        except Exception:
+            pass
 
     def next(self):
         try:
