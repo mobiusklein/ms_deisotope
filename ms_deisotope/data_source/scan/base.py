@@ -351,6 +351,12 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
     @classmethod
     def empty(cls):
+        '''Create a new, empty instance.
+
+        Returns
+        -------
+        :class:`RawDataArrays`
+        '''
         return cls(np.array([]), np.array([]))
 
     def __getitem__(self, i):
