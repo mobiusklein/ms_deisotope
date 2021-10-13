@@ -83,6 +83,10 @@ class IonMobilitySource(object):
         scans = self._frame_scans(data)
         return RawDataArrays3D.stack(scans)
 
+    def _frame_ion_mobilities(self, data):
+        scans = self._frame_scans(data)
+        return np.array([s.drift_time for s in scans])
+
     def _frame_acquisition_information(self, data):
         scan = self.get_scan_by_index(self._frame_start_scan_index(data))
         acq = scan.acquisition_information
@@ -730,7 +734,7 @@ class IonMobilityFrame(FrameBase):
         self._annotations = dict(value)
 
     def get_scan_by_drift_time(self, drift_time):
-        dt_axis = self.drift_times
+        dt_axis = self.ion_mobilities
         lo = 0
         hi = n = len(dt_axis)
         best_match = None
