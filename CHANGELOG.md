@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Changed
 1. Added an extra `ms_level` index to Thermo readers.
 2. PROXI server now uses appropriate JSON types in its USI response.
+3. `ProcessedMGFLoader`'s iterator behavior will bind generated `ProcessedScan` objects, keeping parity with `ProcessedMzMLLoader`.
 
 ### Deprecated
 

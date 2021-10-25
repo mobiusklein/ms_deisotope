@@ -154,7 +154,7 @@ class ProcessedMGFLoader(MGFLoader):
         scan = super(ProcessedMGFDeserializer, self)._make_scan(data)
         scan.peak_set = None
         scan.deconvoluted_peak_set = self._build_peaks(scan._data)
-        return scan.pack()
+        return scan.pack(bind=True)
 
     def _precursor_information(self, scan):
         pinfo = super(ProcessedMGFDeserializer, self)._precursor_information(scan)

@@ -1253,8 +1253,7 @@ class PeakSetDeserializingMixin(object):
         else:
             scan.peak_set = self.deserialize_peak_set(data)
             scan.deconvoluted_peak_set = None
-        packed = scan.pack()
-        packed.bind(self)
+        packed = scan.pack(bind=True)
         return packed
 
     # These methods have to be replicated over from LCMSQueryInterface because of the extra
