@@ -11,6 +11,7 @@ from threading import RLock, Thread, local
 import idzip
 
 import ms_deisotope
+
 from ms_deisotope.utils import LRUDict
 from ms_deisotope.data_source._compression import get_opener
 from ms_deisotope.data_source.usi import USI
@@ -21,6 +22,7 @@ logger = logging.getLogger("proxi_backend")
 
 
 class PROXIDatasetAPIMixinBase(object):
+
     def _datafile_uri(self, dataset_id, data_file):
         raise NotImplementedError()
 
@@ -30,9 +32,18 @@ class PROXIDatasetAPIMixinBase(object):
             base = base[:-3]
         base = base.lower()
         _, ext = base.rsplit(".", 1)
-        if ext in ["mzml", 'mgf', 'mzxml', 'mzmlb', 'ms2']:
+        if ext in tuple(map(str.lower, self.peaklist_file_types)):
             return True
         return False
+
+    @property
+    def peaklist_file_types(self):
+        '''Alias to allow :attr:`valid_file_types` to vary.
+
+        Returns
+        -------
+        list[str]'''
+        return self.valid_file_types
 
     def describe_dataset(self, dataset_id):
         record = {
@@ -69,14 +80,9 @@ class PROXIDatasetAPIMixinBase(object):
             self.describe_dataset(d) for d in self.index.keys()]
 
 
-class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
-    valid_file_types = ['mzML', 'mzXML', 'mgf', 'mzMLb']
+class IndexManagingMixin(object):
 
-    def __init__(self, base_uri, cache_size=None, **kwargs):
-        if cache_size is None:
-            cache_size = 1
-        self.base_uri = base_uri
-        self.cache = LRUDict(cache_size=cache_size)
+    def __init__(self, **kwargs):
         self.index = self.build_index()
         self.monitor_thread = self.monitor_index(
             kwargs.get("update_frequency"))
@@ -115,6 +121,18 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
             except IOError:
                 logger.error("Failed to read index from disk", exc_info=True)
         return cache_name, None
+
+
+class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase, IndexManagingMixin):
+    valid_file_types = ['mzML', 'mzXML', 'mgf', 'mzMLb']
+    special_openers = set()
+
+    def __init__(self, base_uri, cache_size=None, **kwargs):
+        if cache_size is None:
+            cache_size = 1
+        self.base_uri = base_uri
+        self.cache = LRUDict(cache_size=cache_size)
+        IndexManagingMixin.__init__(self, **kwargs)
 
     def build_index(self, use_cache=True):
         file_types = self.valid_file_types + ['json']
@@ -209,15 +227,19 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
             logger.info("Found %r in the cache", ms_file_uri)
             return self.cache[ms_file_uri]
         logger.info("Opening %r", ms_file_uri)
-        mzml_fh = self._opener(ms_file_uri)
-        if ms_file_uri.endswith("gz"):
-            mzml_fh = idzip.IdzipFile(fileobj=mzml_fh)
-        index_fh = None
-        if index_uri is not None:
-            index_fh = self._opener(index_uri, block_size=BLOCK_SIZE)
+        base_name =  ms_file_uri.split("/")[-1]
+        if base_name.split('.')[-1] in self.special_openers:
+            reader = reader = ms_deisotope.MSFileLoader(ms_file_uri)
         else:
-            logger.warning("Byte offset index is missing for %r", ms_file_uri)
-        reader = ms_deisotope.MSFileLoader(mzml_fh, index_file=index_fh)
+            mzml_fh = self._opener(ms_file_uri)
+            if ms_file_uri.endswith("gz"):
+                mzml_fh = idzip.IdzipFile(fileobj=mzml_fh)
+            index_fh = None
+            if index_uri is not None:
+                index_fh = self._opener(index_uri, block_size=BLOCK_SIZE)
+            else:
+                logger.warning("Byte offset index is missing for %r", ms_file_uri)
+            reader = ms_deisotope.MSFileLoader(mzml_fh, index_file=index_fh)
         logger.info("Finished opening %r", ms_file_uri)
         lock = RLock()
         self.cache[ms_file_uri] = (reader, lock)
@@ -356,13 +378,20 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase):
 
 
 class FSMassSpectraDataArchive(MassSpectraDataArchiveBase):
+    def __init__(self, base_uri, cache_size=None, **kwargs):
+        self.valid_file_types = self.valid_file_types[:]
+        from ms_deisotope.data_source.thermo_raw_net import determine_if_available
+        if determine_if_available():
+            self.valid_file_types.append("raw")
+            self.special_openers = set(self.special_openers) | {"raw"}
+        super(FSMassSpectraDataArchive, self).__init__(
+            base_uri, cache_size=cache_size, **kwargs)
+
     def _opener(self, uri, block_size=None, **kwargs):
         return get_opener(uri)
 
     def _datafile_uri(self, dataset_id, data_file):
-        if os.sep in self.base_uri or os.sep in data_file:
-            return os.path.join(self.base_uri, data_file)
-        return '/'.join([self.base_uri, data_file])
+        return os.path.normpath('/'.join([self.base_uri, data_file])).replace(os.sep, '/')
 
     def _traverse_files(self, file_types, index):
         for prefix, dirs, files in os.walk(self.base_uri):
@@ -376,11 +405,17 @@ class FSMassSpectraDataArchive(MassSpectraDataArchiveBase):
                 base = tokens[-1]
 
             for f in files:
-                ext = f.rsplit(".", 1)[1]
+                try:
+                    ext = f.rsplit(".", 1)[1]
+                except IndexError:
+                    continue
                 if ext == 'gz':
                     ext = f.rsplit(".", 2)[1]
                 if ext in file_types:
-                    index[base].append(os.path.join(prefix, f))
+                    index[base].append(
+                        os.path.normpath(
+                            os.path.join(prefix, f)).replace(
+                                os.sep, "/"))
 
 
 class S3MassSpectraDataArchive(MassSpectraDataArchiveBase):
@@ -428,18 +463,27 @@ class S3MassSpectraDataArchive(MassSpectraDataArchiveBase):
                 index.pop(group)
 
 
-class ScanProcessingMixin(object):
+class PeakPickingScanProcessingMixin(object):
     def __init__(self, *args, **kwargs):
-        self.peak_picking_args = kwargs.get('peak_picking_args', {})
+        super(PeakPickingScanProcessingMixin, self).__init__(*args, **kwargs)
+
+    def process_scan(self, scan, reader):
+        scan = super(PeakPickingScanProcessingMixin,
+                     self).process_scan(scan, reader)
+        scan.pick_peaks()
+        return scan
+
+
+class DeconvolutingScanProcessingMixin(PeakPickingScanProcessingMixin):
+    def __init__(self, *args, **kwargs):
         self.deconvolution_args = kwargs.get('deconvolution_args', {})
         self.deconvolution_args.setdefault("averagine", ms_deisotope.peptide)
         self.deconvolution_args.setdefault(
             "scorer", ms_deisotope.MSDeconVFitter(0))
         self.deconvolution_args.setdefault("truncate_after", 0.8)
-        super(ScanProcessingMixin, self).__init__(*args, **kwargs)
+        super(DeconvolutingScanProcessingMixin, self).__init__(*args, **kwargs)
 
     def process_scan(self, scan, reader):
-        scan = super(ScanProcessingMixin, self).process_scan(scan, reader)
-        scan.pick_peaks(**self.peak_picking_args)
+        scan = super(DeconvolutingScanProcessingMixin, self).process_scan(scan, reader)
         scan.deconvolute(**self.deconvolution_args)
         return scan
