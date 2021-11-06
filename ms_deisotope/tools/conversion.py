@@ -11,6 +11,7 @@ from pyteomics.xml import unitfloat
 
 import ms_deisotope
 from ms_deisotope.data_source._compression import GzipFile
+from ms_deisotope.data_source._buffer import PreBufferedStreamReader
 from ms_deisotope.data_source.metadata import activation as activation_module, data_transformation
 from ms_deisotope.output import MzMLSerializer, MGFSerializer
 
@@ -87,7 +88,14 @@ def mgf(source, output, compress=False, msn_filters=None):
         stream = GzipFile(fileobj=stream, mode='wb')
     else:
         stream = click.open_file(output, 'wb')
-    reader = ms_deisotope.MSFileLoader(source)
+    use_index = True
+    if source == "-":
+        click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+        source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
+        # Cannot use the offset index of a file we cannot seek through
+        use_index = False
+
+    reader = ms_deisotope.MSFileLoader(source, use_index=use_index)
     to_mgf(reader, stream, msn_filters=msn_filters)
 
 
@@ -222,7 +230,14 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
     """Convert `source` into mzML format written to `output`, applying a collection of optional data
     transformations along the way.
     """
-    reader = ms_deisotope.MSFileLoader(source)
+    use_index = True
+    if source == "-":
+        click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+        source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
+        # Cannot use the offset index of a file we cannot seek through
+        use_index = False
+
+    reader = ms_deisotope.MSFileLoader(source, use_index=use_index)
     is_a_tty = False
     if compress:
         if not output.endswith(".gz") and output != '-':
@@ -270,7 +285,14 @@ try:
         """Convert `source` into mzML format written to `output`, applying a collection of optional data
         transformations along the way.
         """
-        reader = ms_deisotope.MSFileLoader(source)
+        use_index = True
+        if source == "-":
+            click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+            source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
+            # Cannot use the offset index of a file we cannot seek through
+            use_index = False
+
+        reader = ms_deisotope.MSFileLoader(source, use_index=use_index)
         if output == '-':
             raise ValueError("Cannot write HDF5 to STDOUT")
         elif output is None:

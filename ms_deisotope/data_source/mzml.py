@@ -620,6 +620,9 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
     def _get_run_attributes(self):
         return get_tag_attributes(self.source, "run")
 
+    def _get_spectrum_list_attributes(self):
+        return get_tag_attributes(self.source, "spectrumList")
+
 
 def checksum_mzml_stream(stream):
     """Calculate the SHA1 checksum of an indexed mzML file for the purposes
@@ -701,6 +704,7 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         self._use_index = use_index
         self._decode_binary = decode_binary
         self._run_information = self._get_run_attributes()
+        self._spectrum_list_information = self._get_spectrum_list_attributes()
         self._instrument_config = {
             k.id: k for k in self.instrument_configuration()
         }
@@ -769,3 +773,9 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
 
     def __reduce__(self):
         return self.__class__, (self.source_file, self._use_index, self._decode_binary)
+
+    def __len__(self):
+        try:
+            return super(MzMLLoader, self).__len__()
+        except TypeError:
+            return int(self._spectrum_list_information['count'])
