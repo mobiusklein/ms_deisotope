@@ -9,7 +9,7 @@ from cpython.list cimport (
     PyList_GET_SIZE, PyList_Append, PyList_SetItem)
 from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 
-from libc.math cimport floor, isinf
+from libc.math cimport floor, fabs
 from libc.stdlib cimport malloc, free
 
 from brainpy import PROTON as _PROTON, calculate_mass as _py_calculate_mass
@@ -21,6 +21,19 @@ from ms_peak_picker._c.peak_set cimport FittedPeak
 
 
 from ms_deisotope.constants import (TRUNCATE_AFTER, IGNORE_BELOW)
+
+
+IF int == long:
+    DEF PY_VERSION = 3
+ELSE:
+    DEF PY_VERSION = 2
+IF UNAME_SYSNAME == "Windows" and PY_VERSION == 2:
+    cdef double INFINITY = float('inf')
+
+    cdef int isinf(double x) nogil:
+        return fabs(x) == INFINITY
+ELSE:
+    from libc.math cimport isinf as isinf
 
 
 @cython.boundscheck(False)
