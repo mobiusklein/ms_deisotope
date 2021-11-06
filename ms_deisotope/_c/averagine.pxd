@@ -90,3 +90,5 @@ cdef class AveragineCache(object):
 
 
 cpdef double isotopic_shift(int charge=*)
+
+cpdef TheoreticalIsotopicPattern poisson_approximate(double mass, size_t n_peaks, double lambda_factor=*, int charge=*)

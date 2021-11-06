@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+import math
 
 from collections import defaultdict
 from array import array as pyarray
 
 from brainpy import (
     calculate_mass, neutral_mass, PROTON,
-    isotopic_variants, mass_charge_ratio)
+    isotopic_variants, mass_charge_ratio, Peak)
 
 from brainpy.composition import (
     parse_formula,
@@ -672,3 +673,22 @@ class BasePeakToMonoisotopicOffsetEstimator(object):
         """
         return self.get_peak_offset(mass, binned=binned)
 
+
+def _poisson_approximate(mass, n_peaks, charge=1):
+    lmbda = mass / 1800.0
+    p_i = 1.0
+    factorial_acc = 1
+    total = 1.0
+    intensities = [1.0]
+    for i in range(1, n_peaks):
+        p_i *= lmbda
+        factorial_acc *= i
+        cur_intensity = p_i / factorial_acc
+        intensities.append(cur_intensity if not math.isinf(cur_intensity) else 0.0)
+        total += intensities[i]
+    result = []
+    iso_shift = isotopic_shift(charge)
+    mz = mass_charge_ratio(mass, charge)
+    for i, intens in enumerate(intensities):
+        result.append(Peak(mz + i * iso_shift, intens / total, charge))
+    return TheoreticalIsotopicPattern(result, origin=mz)

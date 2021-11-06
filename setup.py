@@ -243,7 +243,7 @@ install_requires = [
     "six",
     "dill",
     "ms_peak_picker",
-    "brain-isotopic-distribution",
+    "brain-isotopic-distribution >= 1.5.8",
     "pyteomics >= 4.5",
     "lxml",
     "psims >= 0.1.35",
