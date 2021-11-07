@@ -123,7 +123,93 @@ class IndexManagingMixin(object):
         return cache_name, None
 
 
-class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase, IndexManagingMixin):
+class SpectrumSerializerServiceMixin(object):
+
+    def build_response(self, usi, scan):
+        payload = {
+            "usi": str(usi),
+            "status": "READABLE",
+            "attributes": [
+                {"accession": "MS:1000511", "name": "ms level",
+                    "value": scan.ms_level},
+                {"accession": "MS:1008025", "name": "scan number",
+                    "value": scan.index + 1},
+                {"accession": "MS:1003061", "name": "spectrum name", "value": scan.id},
+            ]
+        }
+        payload = self._write_peak_arrays(usi, scan, payload)
+        if scan.ms_level > 1:
+            mz = None
+            charge = None
+            if scan.precursor_information:
+                mz = scan.precursor_information.mz
+                charge = scan.precursor_information.charge
+            elif scan.isolation_window:
+                mz = scan.isolation_window.target
+            if mz:
+                payload['attributes'].append({
+                    "accession": "MS:1000827", "name": "isolation window target m/z",
+                    "value": mz,
+                })
+            if charge:
+                payload['attributes'].append({
+                    "accession": "MS:1000041", "name": "charge state",
+                    "value": charge,
+                })
+        return payload
+
+    def _write_peak_arrays(self, usi, scan, payload):
+        mzs = []
+        intensities = []
+        charges = None
+        base_peak = None
+        nb_peaks = None
+        if scan.deconvoluted_peak_set is not None:
+            mzs = [p.mz for p in scan.deconvoluted_peak_set]
+            intensities = [p.intensity for p in scan.deconvoluted_peak_set]
+            charges = [p.charge for p in scan.deconvoluted_peak_set]
+            is_profile = False
+            nb_peaks = len(scan.deconvoluted_peak_set)
+            base_peak = scan.base_peak.deconvoluted().intensity
+        elif scan.peak_set is not None:
+            mzs = [p.mz for p in scan.peak_set]
+            intensities = [p.intensity for p in scan.peak_set]
+            charges = None
+            is_profile = False
+            nb_peaks = len(scan.peak_set)
+            base_peak = scan.base_peak.centroided().intensity
+        else:
+            mzs = scan.arrays.mz.tolist()
+            intensities = scan.arrays.intensity.tolist()
+            is_profile = scan.is_profile
+            nb_peaks = len(mzs)
+            base_peak = scan.base_peak.raw().intensity
+
+        payload['m/z array'] = mzs
+        payload['intensity array'] = intensities
+        if charges is not None:
+            payload['charge array'] = charges
+        payload['attributes'].append(
+            {"accession": "MS:1000128", "name": "profile spectrum"} if is_profile else
+            {"accession": "MS:1000127", "name": "centroid spectrum"})
+        payload['attributes'].append({
+            "accession": 'MS:1000505', 'name': 'base peak intensity', 'value': base_peak
+        })
+        payload['attributes'].append({
+            "accession": 'MS:1003059', 'name': 'number of peaks', 'value': nb_peaks
+        })
+        return payload
+
+
+class DatasetNotAvailable(ValueError):
+    pass
+
+
+class UnrecognizedIndexFlag(ValueError):
+    pass
+
+
+class MassSpectraDataArchiveBase(SpectrumSerializerServiceMixin, PROXIDatasetAPIMixinBase, IndexManagingMixin):
     valid_file_types = ['mzML', 'mzXML', 'mgf', 'mzMLb']
     special_openers = set()
 
@@ -174,7 +260,7 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase, IndexManagingMixin):
             return members
 
         if members is None:
-            raise ValueError("DatasetNotAvailable")
+            raise DatasetNotAvailable((dataset, run_name))
 
         for member in members:
             base = member.split("/")[-1]
@@ -229,7 +315,7 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase, IndexManagingMixin):
         logger.info("Opening %r", ms_file_uri)
         base_name =  ms_file_uri.split("/")[-1]
         if base_name.split('.')[-1] in self.special_openers:
-            reader = reader = ms_deisotope.MSFileLoader(ms_file_uri)
+            reader = ms_deisotope.MSFileLoader(ms_file_uri)
         else:
             mzml_fh = self._opener(ms_file_uri)
             if ms_file_uri.endswith("gz"):
@@ -259,88 +345,13 @@ class MassSpectraDataArchiveBase(PROXIDatasetAPIMixinBase, IndexManagingMixin):
         elif usi.scan_identifier_type == "index":
             index = int(usi.scan_identifier)
         else:
-            raise ValueError("UnrecognizedIndexFlag", usi.scan_identifier_type)
+            raise UnrecognizedIndexFlag(usi.scan_identifier_type)
         scan = reader.get_scan_by_index(index)
         return scan
 
     def process_scan(self, scan, reader):
         # No processing
         return scan
-
-    def _write_peak_arrays(self, usi, scan, payload):
-        mzs = []
-        intensities = []
-        charges = None
-        base_peak = None
-        nb_peaks = None
-        if scan.deconvoluted_peak_set is not None:
-            mzs = [p.mz for p in scan.deconvoluted_peak_set]
-            intensities = [p.intensity for p in scan.deconvoluted_peak_set]
-            charges = [p.charge for p in scan.deconvoluted_peak_set]
-            is_profile = False
-            nb_peaks = len(scan.deconvoluted_peak_set)
-            base_peak = scan.base_peak.deconvoluted().intensity
-        elif scan.peak_set is not None:
-            mzs = [p.mz for p in scan.peak_set]
-            intensities = [p.intensity for p in scan.peak_set]
-            charges = None
-            is_profile = False
-            nb_peaks = len(scan.peak_set)
-            base_peak = scan.base_peak.centroided().intensity
-        else:
-            mzs = scan.arrays.mz.tolist()
-            intensities = scan.arrays.intensity.tolist()
-            is_profile = scan.is_profile
-            nb_peaks = len(mzs)
-            base_peak = scan.base_peak.raw().intensity
-
-        payload['m/z array'] = mzs
-        payload['intensity array'] = intensities
-        if charges is not None:
-            payload['charge array'] = charges
-        payload['attributes'].append(
-            {"accession": "MS:1000128", "name": "profile spectrum"} if is_profile else
-            {"accession": "MS:1000127", "name": "centroid spectrum"})
-        payload['attributes'].append({
-            "accession": 'MS:1000505', 'name': 'base peak intensity', 'value': base_peak
-        })
-        payload['attributes'].append({
-            "accession": 'MS:1003059', 'name': 'number of peaks', 'value': nb_peaks
-        })
-        return payload
-
-    def build_response(self, usi, scan):
-        payload = {
-            "usi": str(usi),
-            "status": "READABLE",
-            "attributes": [
-                {"accession": "MS:1000511", "name": "ms level",
-                    "value": scan.ms_level},
-                {"accession": "MS:1008025", "name": "scan number",
-                    "value": scan.index + 1},
-                {"accession": "MS:1003061", "name": "spectrum name", "value": scan.id},
-            ]
-        }
-        payload = self._write_peak_arrays(usi, scan, payload)
-        if scan.ms_level > 1:
-            mz = None
-            charge = None
-            if scan.precursor_information:
-                mz = scan.precursor_information.mz
-                charge = scan.precursor_information.charge
-            elif scan.isolation_window:
-                mz = scan.isolation_window.target
-            if mz:
-                payload['attributes'].append({
-                    "accession": "MS:1000827", "name": "isolation window target m/z",
-                    "value": mz,
-                })
-            if charge:
-                payload['attributes'].append({
-                    "accession": "MS:1000041", "name": "charge state",
-                    "value": charge,
-                })
-        return payload
 
     def enumerate_spectra_for(self, dataset, ms_run=None):
         raise NotImplementedError()
@@ -388,7 +399,7 @@ class FSMassSpectraDataArchive(MassSpectraDataArchiveBase):
             base_uri, cache_size=cache_size, **kwargs)
 
     def _opener(self, uri, block_size=None, **kwargs):
-        return get_opener(uri)
+        return open(uri, 'rb')
 
     def _datafile_uri(self, dataset_id, data_file):
         return os.path.normpath('/'.join([self.base_uri, data_file])).replace(os.sep, '/')
