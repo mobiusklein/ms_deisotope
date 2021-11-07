@@ -3,14 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [Unreleased]
+## [v0.0.32]
 
 ### Added
 
 ### Changed
 1. Added an extra `ms_level` index to Thermo readers.
 2. PROXI server now uses appropriate JSON types in its USI response.
-3. `ProcessedMGFLoader`'s iterator behavior will bind generated `ProcessedScan` objects, keeping parity with `ProcessedMzMLLoader`.
+3. `ProcessedMGFLoader`'s iterator behavior will bind generated `ProcessedScan` objects, keeping
+   parity with `ProcessedMzMLLoader`.
+4. The `mzml`, `mzmlb` and `mgf` commands for `ms-index` can now handle reading mzML files from
+   `STDIN`.
 
 ### Deprecated
 
@@ -314,8 +317,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.31...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.32...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.32]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.32
 [v0.0.31]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.31
 [v0.0.30]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.30
 [v0.0.29]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.29

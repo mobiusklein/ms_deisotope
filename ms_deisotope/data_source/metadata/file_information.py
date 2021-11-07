@@ -1082,6 +1082,8 @@ format_parameter_map = {
                   file_formats_by_name.get("Agilent MassHunter format")),
     'mgf': (id_formats_by_name.get("no nativeID format"),
             file_formats_by_name.get('Mascot MGF format')),
+    'waters': (id_formats_by_name.get('Waters nativeID format'),
+               file_formats_by_name.get("Waters raw format")),
 }
 
 
@@ -1213,10 +1215,17 @@ class SourceFile(object):
     def guess_format(path):
         if not os.path.exists(path):
             return None, None
+
+        id_fmt = "no nativeID format"
         if os.path.isdir(path):
             if os.path.exists(os.path.join(path, 'AcqData')):
                 return format_parameter_map['agilent d']
-        id_fmt = "no nativeID format"
+            elif os.path.basename(path).replace(os.sep, '').endswith("raw"):
+                return format_parameter_map['waters']
+            else:
+                warnings.warn("Could not determine source file type from directory path %r" % (path, ))
+                return id_fmt, None
+
         parts = os.path.splitext(path)
         if len(parts) > 1:
             is_compressed = False
@@ -1255,11 +1264,16 @@ class SourceFile(object):
                 return id_fmt, fmt
             elif ext.lower() == '.mzmlb':
                 fmt = file_formats['MS:1002838']
+                id_fmt = "no nativeID format"
+                from ms_deisotope.data_source.mzmlb import determine_if_available, MzMLbLoader
                 # TODO: Try to open the file and get the nativeID format information from
                 # the XML buffer, either just opening the file fully or by openinhg it at
                 # the HDF5 level and grab the first 4k characters from the XML buffer and
                 #  doing the same as the mzML case.
-                id_fmt = "no nativeID format"
+                if determine_if_available():
+                    handle = MzMLbLoader(path, use_index=False)
+                    fid = handle.file_description()
+                    id_fmt = fid.id_format
                 return id_fmt, fmt
         with open(path, 'rb') as fh:
             lead_bytes = fh.read(30)
