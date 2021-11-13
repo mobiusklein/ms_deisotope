@@ -1,3 +1,11 @@
+'''mzMLb is a standard rich HDF5-based format for raw mass spectrometry data storage.
+This module provides :class:`MzMLbLoader`, a :class:`~.RandomAccessScanSource`
+implementation. It is based upon the mzML XML file format, re-using a subset of the
+features.
+
+The parser is based on :mod:`pyteomics.mzmlb`.
+'''
+
 import logging
 logging.getLogger("hdf5plugin").addHandler(logging.NullHandler())
 

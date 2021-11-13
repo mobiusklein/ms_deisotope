@@ -1090,6 +1090,7 @@ class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def __init__(self, loader, **kwargs):
         self.loader = loader
         self.initialize_frame_cache()
+        self.scan_index_range_to_frame = dict()
 
     def _find_cycle_start(self, scan):
         dt = scan.drift_time
@@ -1111,7 +1112,6 @@ class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
 
     def _collect_cycle(self, scan):
         acc = []
-        orig_scan = scan
         start_scan = self._find_cycle_start(scan)
         dt = start_scan.drift_time
         if dt is None:
@@ -1174,11 +1174,18 @@ class FramedIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
             return data['scans']
         except KeyError:
             pass
-        source_id = data['_source_scan_id']
+        source_id = data['source_scan_id']
         scan = self.loader.get_scan_by_id(source_id)
         scans = self._collect_cycle(scan)
         data['scans'] = scans
+        data['scan_index_range'] = (scans[0].index, scans[-1].index + 1)
         return data['scans']
+
+    def _make_frame_from_scan(self, scan):
+        return {
+            "source_scan_id": scan.id,
+            "source_scan_index": scan.index,
+        }
 
     def get_scan_by_index(self, index):
         return self.loader.get_scan_by_index(index)

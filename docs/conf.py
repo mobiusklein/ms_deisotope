@@ -46,6 +46,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'exec_directive',
     'matplotlib.sphinxext.plot_directive',
+    'sphinx_clickx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
