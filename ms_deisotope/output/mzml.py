@@ -35,7 +35,6 @@ metadata that :class:`~.MzMLSerializer` writes to an external file.
         writer.close()
 
 '''
-import os
 import hashlib
 import array
 import warnings
@@ -74,7 +73,7 @@ from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.data_source.scan.mobility_frame import Generic3DIonMobilityFrameSource
 
 from ms_deisotope.feature_map import ExtendedScanIndex
-from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature
+from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature, DeconvolutedLCMSFeatureTreeNode
 from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureMap, LCMSFeature, LCMSFeatureMap
 
 
