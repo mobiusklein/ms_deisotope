@@ -18,6 +18,8 @@ MGF Conversion
 
 mzMLb Conversion
 ~~~~~~~~~~~~~~~~
+This feature requires :mod:`h5py` to be installed, and :mod:`hdf5plugin` for
+the faster non-``zlib`` based compressors to be available.
 
 .. click:: ms_deisotope.tools.conversion:mzmlb
     :prog: ms-index mzmlb

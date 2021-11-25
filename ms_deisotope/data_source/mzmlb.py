@@ -3,7 +3,8 @@ This module provides :class:`MzMLbLoader`, a :class:`~.RandomAccessScanSource`
 implementation. It is based upon the mzML XML file format, re-using a subset of the
 features.
 
-The parser is based on :mod:`pyteomics.mzmlb`.
+The parser is based on :mod:`pyteomics.mzmlb`. It requires :mod:`h5py` to be installed
+for reading, and :mod:`hdf5plugin` to use the faster, non-zlib-based compressors.
 '''
 
 import logging
