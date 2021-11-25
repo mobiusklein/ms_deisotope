@@ -55,6 +55,7 @@ class MzMLbSerializer(_MzMLSerializer):
         "mzmlb",
     }
 
+    _format_conversion_term = "Conversion to mzMLb"
 
     def _make_writer(self, handle):
         compression = self.compression

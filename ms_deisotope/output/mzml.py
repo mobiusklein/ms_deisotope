@@ -283,6 +283,8 @@ class MzMLSerializer(ScanSerializerBase):
         writer.CHARGE_ARRAY: np.int32,
     }
 
+    _format_conversion_term = "Conversion to mzML"
+
     def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
                  data_encoding=None, include_software_entry=True):
@@ -632,7 +634,7 @@ class MzMLSerializer(ScanSerializerBase):
         if baseline_reduction:
             method.add("baseline reduction")
 
-        method.add("Conversion to mzML")
+        method.add(self._format_conversion_term)
         method.update(additional_parameters)
         method.update(self.processing_parameters)
         method.order = order
