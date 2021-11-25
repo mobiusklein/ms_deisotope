@@ -11,3 +11,4 @@ preserving as much metadata as these formats allow.
 
     mzml
     mgf
+    mzmlb
