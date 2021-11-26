@@ -1,10 +1,18 @@
+# -*- coding: utf-8 -*-
 '''mzMLb is a standard rich HDF5-based format for raw mass spectrometry data storage.
 This module provides :class:`MzMLbLoader`, a :class:`~.RandomAccessScanSource`
 implementation. It is based upon the mzML XML file format, re-using a subset of the
-features.
+features. The original design for mzMLb is described in [Bhamber]_.
 
 The parser is based on :mod:`pyteomics.mzmlb`. It requires :mod:`h5py` to be installed
 for reading, and :mod:`hdf5plugin` to use the faster, non-zlib-based compressors.
+
+References
+==========
+.. [Bhamber] Bhamber, R. S., Jankevics, A., Deutsch, E. W., Jones, A. R., & Dowsey, A. W. (2021).
+    MzMLb: A Future-Proof Raw Mass Spectrometry Data Format Based on Standards-Compliant
+    mzML and Optimized for Speed and Storage Requirements. Journal of Proteome Research,
+    20(1), 172–183. https://doi.org/10.1021/acs.jproteome.0c00192
 '''
 
 import logging
@@ -32,6 +40,16 @@ class _MzMLbParser(_BaseParser):
 
 
 class MzMLbLoader(_MzMLLoader):
+    """Reads scans from PSI-HUPO mzMLb HDF5 files. Provides both iterative and
+    random access.
+
+    Attributes
+    ----------
+    source_file: str
+        Path to file to read from.
+    source: pyteomics.mzmlb.MzMLb
+        Underlying scan data source
+    """
     _parser_cls = _MzMLbParser
 
     @property

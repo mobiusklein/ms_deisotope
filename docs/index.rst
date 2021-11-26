@@ -27,6 +27,7 @@ common formats, including instrument information and and file metadata.
    Data Storage <output/index>
    Visualization <visualization>
    Command Line Tools <cli/index>
+   Glossary <glossary>
 
 
 

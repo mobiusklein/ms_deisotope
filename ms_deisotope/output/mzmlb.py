@@ -1,6 +1,6 @@
 '''
-Writing mzML
-------------
+Writing mzMLb
+-------------
 
 Using the :mod:`psims` library, :mod:`ms_deisotope.output.mzmlb` can write an mzMLb
 file with all associated metadata. This uses the same machinery as :mod:`ms_deisotope.output.mzml`
