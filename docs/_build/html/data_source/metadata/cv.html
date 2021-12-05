@@ -6,19 +6,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Controlled Vocabulary Interface &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="mzML" href="../mzml.html" />
+    <link rel="next" title="Formats" href="../formats.html" />
     <link rel="prev" title="Activation" href="activation.html" /> 
   </head><body>
       <div class="header" role="banner"><img class="rightlogo" src="../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../index.html">
@@ -32,7 +30,7 @@
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="../mzml.html">mzML</a>&#160;&#160;»
+        <a href="../formats.html">Formats</a>&#160;&#160;»
         </p>
 
       </div>
@@ -48,13 +46,13 @@ static data lists.</p>
 for building compile-time collections of CV terms from the PSI-MS controlled
 vocabulary.</p>
 <dl class="py class">
-<dt id="ms_deisotope.data_source.metadata.cv.Term">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.data_source.metadata.cv.</code><code class="sig-name descname">Term</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">id</span></em>, <em class="sig-param"><span class="n">description</span></em>, <em class="sig-param"><span class="n">category</span></em>, <em class="sig-param"><span class="n">specialization</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/cv.html#Term"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.Term">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.data_source.metadata.cv.</span></span><span class="sig-name descname"><span class="pre">Term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">category</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specialization</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/cv.html#Term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a single controlled vocabulary term.</p>
 <p><a class="reference internal" href="#ms_deisotope.data_source.metadata.cv.Term" title="ms_deisotope.data_source.metadata.cv.Term"><code class="xref py py-class docutils literal notranslate"><span class="pre">Term</span></code></a> objects are comparable and hashable.</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.metadata.cv.Term.name">
-<code class="sig-name descname">name</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.Term.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The human-readable name for the term</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -64,8 +62,8 @@ vocabulary.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.metadata.cv.Term.id">
-<code class="sig-name descname">id</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.Term.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.id" title="Permalink to this definition">¶</a></dt>
 <dd><p>A namespace-qualified unique alphanumeric identifier for the term</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -75,8 +73,8 @@ vocabulary.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.metadata.cv.Term.description">
-<code class="sig-name descname">description</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.description" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.Term.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.description" title="Permalink to this definition">¶</a></dt>
 <dd><p>A longer description of the concept the term represents.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -86,8 +84,8 @@ vocabulary.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.metadata.cv.Term.category">
-<code class="sig-name descname">category</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.category" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.Term.category">
+<span class="sig-name descname"><span class="pre">category</span></span><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.category" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of the broad class of terms this term belongs to</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -97,8 +95,8 @@ vocabulary.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.metadata.cv.Term.specialization">
-<code class="sig-name descname">specialization</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.specialization" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.Term.specialization">
+<span class="sig-name descname"><span class="pre">specialization</span></span><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.specialization" title="Permalink to this definition">¶</a></dt>
 <dd><p>A sequence of increasingly specific categories that this term
 belongs to</p>
 <dl class="field-list simple">
@@ -109,8 +107,8 @@ belongs to</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.metadata.cv.Term.is_a">
-<code class="sig-name descname">is_a</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">term</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/cv.html#Term.is_a"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.is_a" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.Term.is_a">
+<span class="sig-name descname"><span class="pre">is_a</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">term</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/ms_deisotope/data_source/metadata/cv.html#Term.is_a"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.Term.is_a" title="Permalink to this definition">¶</a></dt>
 <dd><p>Test whether this entity is exactly <strong>term</strong> or a specialization
 of <strong>term</strong></p>
 <dl class="field-list simple">
@@ -129,8 +127,8 @@ of <strong>term</strong></p>
 </dd></dl>
 
 <dl class="py data">
-<dt id="ms_deisotope.data_source.metadata.cv.cv_psims">
-<code class="sig-prename descclassname">ms_deisotope.data_source.metadata.cv.</code><code class="sig-name descname">cv_psims</code><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.cv_psims" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.metadata.cv.cv_psims">
+<span class="sig-prename descclassname"><span class="pre">ms_deisotope.data_source.metadata.cv.</span></span><span class="sig-name descname"><span class="pre">cv_psims</span></span><a class="headerlink" href="#ms_deisotope.data_source.metadata.cv.cv_psims" title="Permalink to this definition">¶</a></dt>
 <dd><p>A lazily loaded mapping over the PSI-MS controlled vocabulary. It may be queried
 using names, aliases, or accession numbers, and the term graph may be traversed.</p>
 </dd></dl>
@@ -146,14 +144,14 @@ using names, aliases, or accession numbers, and the term graph may be traversed.
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="../mzml.html">mzML</a>&#160;&#160;»
+        <a href="../formats.html">Formats</a>&#160;&#160;»
         </p>
 
       </div>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

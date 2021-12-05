@@ -6,16 +6,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Writing mzML &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Writing MGF" href="mgf.html" />
@@ -46,7 +44,7 @@ file with all associated metadata, including deconvoluted peak arrays, chromatog
 and data transformations. The <a class="reference internal" href="#ms_deisotope.output.mzml.MzMLSerializer" title="ms_deisotope.output.mzml.MzMLSerializer"><code class="xref py py-class docutils literal notranslate"><span class="pre">MzMLSerializer</span></code></a> class handles all facets of
 this process.</p>
 <p>This module also contains a specialized version of <a class="reference internal" href="../data_source/mzml.html#ms_deisotope.data_source.mzml.MzMLLoader" title="ms_deisotope.data_source.mzml.MzMLLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MzMLLoader</span></code></a>,
-<a class="reference internal" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer" title="ms_deisotope.output.mzml.ProcessedMzMLDeserializer"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedMzMLDeserializer</span></code></a>, which can directly reconstruct each
+<a class="reference internal" href="#ms_deisotope.output.mzml.ProcessedMzMLLoader" title="ms_deisotope.output.mzml.ProcessedMzMLLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessedMzMLLoader</span></code></a>, which can directly reconstruct each
 deconvoluted peak list and provides fast access to an extended index of
 metadata that <a class="reference internal" href="#ms_deisotope.output.mzml.MzMLSerializer" title="ms_deisotope.output.mzml.MzMLSerializer"><code class="xref py py-class docutils literal notranslate"><span class="pre">MzMLSerializer</span></code></a> writes to an external file.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ms_deisotope</span>
@@ -70,12 +68,12 @@ metadata that <a class="reference internal" href="#ms_deisotope.output.mzml.MzML
 </pre></div>
 </div>
 <dl class="py class">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.output.mzml.</code><code class="sig-name descname">MzMLSerializer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">handle</span></em>, <em class="sig-param"><span class="n">n_spectra</span><span class="o">=</span><span class="default_value">200000</span></em>, <em class="sig-param"><span class="n">compression</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">deconvoluted</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">sample_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">build_extra_index</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">data_encoding</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">include_software_entry</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.output.mzml.</span></span><span class="sig-name descname"><span class="pre">MzMLSerializer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_spectra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deconvoluted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">build_extra_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_software_entry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write <code class="xref py py-mod docutils literal notranslate"><span class="pre">ms_deisotope</span></code> data structures to a file in mzML format.</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.base_peak_chromatogram_tracker">
-<code class="sig-name descname">base_peak_chromatogram_tracker</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.base_peak_chromatogram_tracker" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.base_peak_chromatogram_tracker">
+<span class="sig-name descname"><span class="pre">base_peak_chromatogram_tracker</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.base_peak_chromatogram_tracker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accumulated mapping of scan time to base peak intensity. This is
 used to write the <em>base peak chromatogram</em>.</p>
 <dl class="field-list simple">
@@ -86,8 +84,8 @@ used to write the <em>base peak chromatogram</em>.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.chromatogram_queue">
-<code class="sig-name descname">chromatogram_queue</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.chromatogram_queue" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.chromatogram_queue">
+<span class="sig-name descname"><span class="pre">chromatogram_queue</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.chromatogram_queue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accumulate chromatogram data structures which will be written out
 after all spectra have been written to file.</p>
 <dl class="field-list simple">
@@ -98,8 +96,8 @@ after all spectra have been written to file.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.compression">
-<code class="sig-name descname">compression</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.compression" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.compression">
+<span class="sig-name descname"><span class="pre">compression</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>The compression type to use for binary data arrays. Should be one of
 <code class="xref py py-obj docutils literal notranslate"><span class="pre">&quot;zlib&quot;</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code>, or <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
 <dl class="field-list simple">
@@ -110,8 +108,8 @@ after all spectra have been written to file.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.data_encoding">
-<code class="sig-name descname">data_encoding</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.data_encoding" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.data_encoding">
+<span class="sig-name descname"><span class="pre">data_encoding</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.data_encoding" title="Permalink to this definition">¶</a></dt>
 <dd><p>The encoding specification to specify the binary encoding of numeric data arrays
 that is passed to <code class="xref py py-meth docutils literal notranslate"><span class="pre">write_spectrum()</span></code> and related methods.</p>
 <dl class="field-list simple">
@@ -122,8 +120,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.data_processing_list">
-<code class="sig-name descname">data_processing_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.data_processing_list" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.data_processing_list">
+<span class="sig-name descname"><span class="pre">data_processing_list</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.data_processing_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of packaged <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code> to write out</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -133,8 +131,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.deconvoluted">
-<code class="sig-name descname">deconvoluted</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.deconvoluted" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.deconvoluted">
+<span class="sig-name descname"><span class="pre">deconvoluted</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.deconvoluted" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates whether the translation should include extra deconvolution information</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -144,8 +142,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.file_contents_list">
-<code class="sig-name descname">file_contents_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.file_contents_list" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.file_contents_list">
+<span class="sig-name descname"><span class="pre">file_contents_list</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.file_contents_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of terms to include in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;fileContents&gt;</span></code> tag</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -155,8 +153,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.handle">
-<code class="sig-name descname">handle</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.handle" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.handle">
+<span class="sig-name descname"><span class="pre">handle</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.handle" title="Permalink to this definition">¶</a></dt>
 <dd><p>The file-like object being written to</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -166,8 +164,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.indexer">
-<code class="sig-name descname">indexer</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.indexer" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.indexer">
+<span class="sig-name descname"><span class="pre">indexer</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.indexer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The external index builder</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -177,8 +175,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.instrument_configuration_list">
-<code class="sig-name descname">instrument_configuration_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.instrument_configuration_list" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.instrument_configuration_list">
+<span class="sig-name descname"><span class="pre">instrument_configuration_list</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.instrument_configuration_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of packaged <a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a> to write out</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -188,8 +186,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.n_spectra">
-<code class="sig-name descname">n_spectra</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.n_spectra" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.n_spectra">
+<span class="sig-name descname"><span class="pre">n_spectra</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.n_spectra" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of spectra to provide a size for in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrumList&gt;</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -199,8 +197,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.processing_parameters">
-<code class="sig-name descname">processing_parameters</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.processing_parameters" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.processing_parameters">
+<span class="sig-name descname"><span class="pre">processing_parameters</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.processing_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of additional terms to include in a newly created <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -210,8 +208,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.sample_list">
-<code class="sig-name descname">sample_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_list" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.sample_list">
+<span class="sig-name descname"><span class="pre">sample_list</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of <code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code> objects to write out</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -221,8 +219,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.sample_name">
-<code class="sig-name descname">sample_name</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.sample_name">
+<span class="sig-name descname"><span class="pre">sample_name</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default sample name</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -232,8 +230,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.sample_run">
-<code class="sig-name descname">sample_run</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_run" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.sample_run">
+<span class="sig-name descname"><span class="pre">sample_run</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.sample_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Description</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -243,8 +241,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.software_list">
-<code class="sig-name descname">software_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.software_list" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.software_list">
+<span class="sig-name descname"><span class="pre">software_list</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.software_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of packaged <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code> objects to write out</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -254,8 +252,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.source_file_list">
-<code class="sig-name descname">source_file_list</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.source_file_list" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.source_file_list">
+<span class="sig-name descname"><span class="pre">source_file_list</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.source_file_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of packaged <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> objects to write out</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -265,8 +263,8 @@ that is passed to <code class="xref py py-meth docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.total_ion_chromatogram_tracker">
-<code class="sig-name descname">total_ion_chromatogram_tracker</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.total_ion_chromatogram_tracker" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.total_ion_chromatogram_tracker">
+<span class="sig-name descname"><span class="pre">total_ion_chromatogram_tracker</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.total_ion_chromatogram_tracker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accumulated mapping of scan time to total intensity. This is
 used to write the <em>total ion chromatogram</em>.</p>
 <dl class="field-list simple">
@@ -277,8 +275,8 @@ used to write the <em>total ion chromatogram</em>.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.writer">
-<code class="sig-name descname">writer</code><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.writer" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.writer">
+<span class="sig-name descname"><span class="pre">writer</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.writer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The lower level writer implementation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -288,8 +286,8 @@ used to write the <em>total ion chromatogram</em>.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_data_processing">
-<code class="sig-name descname">add_data_processing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_processing_description</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_data_processing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_data_processing" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.add_data_processing">
+<span class="sig-name descname"><span class="pre">add_data_processing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_processing_description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_data_processing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_data_processing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a new <code class="xref py py-class docutils literal notranslate"><span class="pre">DataProcessingInformation</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ProcessingMethod</span></code>
 to the output document as a new <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;dataProcessing&gt;</span></code> entry describing one or
 more <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;processingMethod&gt;`s</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">single</span> <span class="pre">referenced</span> <span class="pre">:class:`~.Software</span></code>
@@ -302,8 +300,8 @@ instance.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_file_contents">
-<code class="sig-name descname">add_file_contents</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_contents</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_file_contents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_file_contents" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.add_file_contents">
+<span class="sig-name descname"><span class="pre">add_file_contents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_contents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_file_contents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_file_contents" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a key to the resulting <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;fileDescription&gt;</span></code>
 of the output document.</p>
 <dl class="field-list simple">
@@ -314,8 +312,8 @@ of the output document.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_file_information">
-<code class="sig-name descname">add_file_information</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_information</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_file_information"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_file_information" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.add_file_information">
+<span class="sig-name descname"><span class="pre">add_file_information</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_information</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_file_information"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_file_information" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add the information of a <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation" title="ms_deisotope.data_source.metadata.file_information.FileInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileInformation</span></code></a> to the
 output document.</p>
 <dl class="field-list simple">
@@ -326,8 +324,8 @@ output document.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_instrument_configuration">
-<code class="sig-name descname">add_instrument_configuration</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">configuration</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_instrument_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_instrument_configuration" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.add_instrument_configuration">
+<span class="sig-name descname"><span class="pre">add_instrument_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_instrument_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_instrument_configuration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add an <a class="reference internal" href="../data_source/metadata/instrument_configuration.html#ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation" title="ms_deisotope.data_source.metadata.instrument_components.InstrumentInformation"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentInformation</span></code></a> object to
 the output document.</p>
 <dl class="field-list simple">
@@ -338,8 +336,8 @@ the output document.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_processing_parameter">
-<code class="sig-name descname">add_processing_parameter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">value</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_processing_parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_processing_parameter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.add_processing_parameter">
+<span class="sig-name descname"><span class="pre">add_processing_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_processing_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_processing_parameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a new processing method to the writer’s own
 <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;dataProcessing&gt;</span></code> element.</p>
 <dl class="field-list simple">
@@ -353,8 +351,8 @@ the output document.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_software">
-<code class="sig-name descname">add_software</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">software_description</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_software"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_software" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.add_software">
+<span class="sig-name descname"><span class="pre">add_software</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">software_description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_software"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_software" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code> object to the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -364,8 +362,8 @@ the output document.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="id0">
-<code class="sig-name descname">add_software</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">software_description</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_software"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">add_software</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">software_description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_software"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a <code class="xref py py-class docutils literal notranslate"><span class="pre">Software</span></code> object to the output document.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -375,8 +373,8 @@ the output document.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.add_source_file">
-<code class="sig-name descname">add_source_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">source_file</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_source_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_source_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.add_source_file">
+<span class="sig-name descname"><span class="pre">add_source_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.add_source_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.add_source_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add the <a class="reference internal" href="../data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile" title="ms_deisotope.data_source.metadata.file_information.SourceFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourceFile</span></code></a> to the output document</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -386,16 +384,16 @@ the output document.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.close">
-<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.close" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finish writing scan data, write any pending metadata
 and close the file stream.</p>
 <p>May call <code class="xref py py-meth docutils literal notranslate"><span class="pre">complete()</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.save">
-<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bunch</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save any scan information in <cite>bunch</cite>.</p>
 <p>This method can handle <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>
 instances, dispatching to the appropriate logic.</p>
@@ -411,8 +409,8 @@ instances, dispatching to the appropriate logic.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.save_scan">
-<code class="sig-name descname">save_scan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scan</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.save_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save_scan" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.save_scan">
+<span class="sig-name descname"><span class="pre">save_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.save_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a> to the output document
 as a collection of related <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrum&gt;</span></code> tags.</p>
 <div class="admonition note">
@@ -433,8 +431,8 @@ no new document-level metadata can be added.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch">
-<code class="sig-name descname">save_scan_bunch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bunch</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.save_scan_bunch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch">
+<span class="sig-name descname"><span class="pre">save_scan_bunch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#MzMLSerializer.save_scan_bunch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.MzMLSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> to the output document
 as a collection of related <code class="xref py py-obj docutils literal notranslate"><span class="pre">&lt;spectrum&gt;</span></code> tags.</p>
 <div class="admonition note">
@@ -454,13 +452,13 @@ no new document-level metadata can be added.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="ms_deisotope.output.mzml.ProcessedMzMLDeserializer">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.output.mzml.</code><code class="sig-name descname">ProcessedMzMLDeserializer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">source_file</span></em>, <em class="sig-param"><span class="n">use_index</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">use_extended_index</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#ProcessedMzMLDeserializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.ProcessedMzMLLoader">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.output.mzml.</span></span><span class="sig-name descname"><span class="pre">ProcessedMzMLLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_extended_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mzml.html#ProcessedMzMLLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLLoader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extends <a class="reference internal" href="../data_source/mzml.html#ms_deisotope.data_source.mzml.MzMLLoader" title="ms_deisotope.data_source.mzml.MzMLLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MzMLLoader</span></code></a> to support deserializing preprocessed data
 and to take advantage of additional indexing information.</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.ProcessedMzMLDeserializer.extended_index">
-<code class="sig-name descname">extended_index</code><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer.extended_index" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.ProcessedMzMLLoader.extended_index">
+<span class="sig-name descname"><span class="pre">extended_index</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLLoader.extended_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Holds the additional indexing information
 that may have been generated with the data
 file being accessed.</p>
@@ -472,8 +470,8 @@ file being accessed.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mzml.ProcessedMzMLDeserializer.sample_run">
-<code class="sig-name descname">sample_run</code><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLDeserializer.sample_run" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mzml.ProcessedMzMLLoader.sample_run">
+<span class="sig-name descname"><span class="pre">sample_run</span></span><a class="headerlink" href="#ms_deisotope.output.mzml.ProcessedMzMLLoader.sample_run" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SampleRun</span></code></p>
@@ -501,7 +499,7 @@ file being accessed.</p>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

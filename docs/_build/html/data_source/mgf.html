@@ -6,19 +6,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MGF &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Formats" href="formats.html" />
+    <link rel="next" title="mzMLb" href="mzmlb.html" />
     <link rel="prev" title="mzXML" href="mzxml.html" /> 
   </head><body>
       <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
@@ -32,7 +30,7 @@
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="formats.html">Formats</a>&#160;&#160;»
+        <a href="mzmlb.html">mzMLb</a>&#160;&#160;»
         </p>
 
       </div>
@@ -47,8 +45,8 @@ allows storing MS/MS peak lists and exprimental parameters.</p>
 implementation.</p>
 <p>The parser is based on <code class="xref py py-mod docutils literal notranslate"><span class="pre">pyteomics.mgf</span></code>.</p>
 <dl class="py class">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.data_source.mgf.</code><code class="sig-name descname">MGFLoader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">source_file</span></em>, <em class="sig-param"><span class="n">encoding</span><span class="o">=</span><span class="default_value">'utf-8'</span></em>, <em class="sig-param"><span class="n">use_index</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.data_source.mgf.</span></span><span class="sig-name descname"><span class="pre">MGFLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'utf-8'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads scans from MASCOT Generic File (MGF) Format files. Provides both iterative
 and random access.</p>
 <div class="admonition note">
@@ -57,8 +55,8 @@ and random access.</p>
 other time-based accessors will fail.</p>
 </div>
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.source_file">
-<code class="sig-name descname">source_file</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source_file" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.source_file">
+<span class="sig-name descname"><span class="pre">source_file</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to file to read from.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -68,8 +66,8 @@ other time-based accessors will fail.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.source">
-<code class="sig-name descname">source</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.source">
+<span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source" title="Permalink to this definition">¶</a></dt>
 <dd><p>Underlying scan data source</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -79,8 +77,8 @@ other time-based accessors will fail.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.header">
-<code class="sig-name descname">header</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.header" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.header">
+<span class="sig-name descname"><span class="pre">header</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.header" title="Permalink to this definition">¶</a></dt>
 <dd><p>Any top-of-the-file parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -90,14 +88,14 @@ other time-based accessors will fail.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.close">
-<code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.close" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close the underlying reader.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.data_processing">
-<code class="sig-name descname">data_processing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.data_processing" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.data_processing">
+<span class="sig-name descname"><span class="pre">data_processing</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.data_processing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describe any preprocessing steps applied to the data described by this
 instance.</p>
 <dl class="field-list simple">
@@ -111,8 +109,8 @@ instance.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.file_description">
-<code class="sig-name descname">file_description</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.file_description" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.file_description">
+<span class="sig-name descname"><span class="pre">file_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.file_description" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describe the file and its components, as well
 as any content types it has.</p>
 <dl class="field-list simple">
@@ -126,8 +124,8 @@ as any content types it has.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.find_next_ms1">
-<code class="sig-name descname">find_next_ms1</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_index</span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.find_next_ms1" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.find_next_ms1">
+<span class="sig-name descname"><span class="pre">find_next_ms1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.find_next_ms1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Locate the MS1 scan following <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating forwards through
 scans until either the last scan is reached or an MS1 scan is found.</p>
 <dl class="field-list simple">
@@ -141,8 +139,8 @@ scans until either the last scan is reached or an MS1 scan is found.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.find_previous_ms1">
-<code class="sig-name descname">find_previous_ms1</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_index</span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.find_previous_ms1" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.find_previous_ms1">
+<span class="sig-name descname"><span class="pre">find_previous_ms1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.find_previous_ms1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Locate the MS1 scan preceding <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating backwards through
 scans until either the first scan is reached or an MS1 scan is found.</p>
 <dl class="field-list simple">
@@ -156,8 +154,8 @@ scans until either the first scan is reached or an MS1 scan is found.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id">
-<code class="sig-name descname">get_scan_by_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scan_id</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id">
+<span class="sig-name descname"><span class="pre">get_scan_by_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the scan object for the specified scan id.</p>
 <p>If the scan object is still bound and in memory somewhere,
 a reference to that same object will be returned. Otherwise,
@@ -176,8 +174,8 @@ a new object will be created.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_index">
-<code class="sig-name descname">get_scan_by_index</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_index" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_index">
+<span class="sig-name descname"><span class="pre">get_scan_by_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the scan object for the specified scan index.</p>
 <p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id" title="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
 use its cache.</p>
@@ -195,8 +193,8 @@ use its cache.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time">
-<code class="sig-name descname">get_scan_by_time</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">time</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time">
+<span class="sig-name descname"><span class="pre">get_scan_by_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.get_scan_by_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the scan object for the specified scan time.</p>
 <p>This internally calls <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id" title="ms_deisotope.data_source.mgf.MGFLoader.get_scan_by_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_scan_by_id()</span></code></a> which will
 use its cache.</p>
@@ -213,9 +211,9 @@ use its cache.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.has_fast_random_access">
-<em class="property">property </em><code class="sig-name descname">has_fast_random_access</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_fast_random_access" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.has_fast_random_access">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">has_fast_random_access</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_fast_random_access" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check whether the underlying data stream supports fast random access
 or not.</p>
 <p>Even if the file format supports random access, it may be impractical due
@@ -236,8 +234,8 @@ will evaluate to <code class="xref py py-const docutils literal notranslate"><sp
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.has_ms1_scans">
-<code class="sig-name descname">has_ms1_scans</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.has_ms1_scans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_ms1_scans" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.has_ms1_scans">
+<span class="sig-name descname"><span class="pre">has_ms1_scans</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.has_ms1_scans"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_ms1_scans" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if this <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code> contains MS1 spectra.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -251,8 +249,8 @@ if it cannot be determined in the case of missing metadata.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.has_msn_scans">
-<code class="sig-name descname">has_msn_scans</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.has_msn_scans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_msn_scans" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.has_msn_scans">
+<span class="sig-name descname"><span class="pre">has_msn_scans</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.has_msn_scans"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.has_msn_scans" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if this <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code> contains MSn spectra.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -265,9 +263,9 @@ if it cannot be determined in the case of missing metadata.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt id="id0">
-<em class="property">property </em><code class="sig-name descname">header</code><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">header</span></span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
 <dd><p>Any top-of-the-file parameters</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -279,9 +277,9 @@ if it cannot be determined in the case of missing metadata.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.index">
-<em class="property">property </em><code class="sig-name descname">index</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.index" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.index">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">index</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.index" title="Permalink to this definition">¶</a></dt>
 <dd><p>The byte offset index used to achieve fast random access.</p>
 <p>Maps <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code> IDs to the byte offsets, implying
 the order the scans reside in the file.</p>
@@ -296,8 +294,8 @@ the order the scans reside in the file.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.initialize_scan_cache">
-<code class="sig-name descname">initialize_scan_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.initialize_scan_cache" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.initialize_scan_cache">
+<span class="sig-name descname"><span class="pre">initialize_scan_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.initialize_scan_cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cache which keeps track of which <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.Scan" title="ms_deisotope.data_source.common.Scan"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code></a>
 objects are still in memory using a <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code>.</p>
 <p>When a scan is requested, if the scan object is found in the cache, the
@@ -305,8 +303,8 @@ existing object is returned rather than re-read from disk.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.instrument_configuration">
-<code class="sig-name descname">instrument_configuration</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.instrument_configuration" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.instrument_configuration">
+<span class="sig-name descname"><span class="pre">instrument_configuration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.instrument_configuration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describe the different instrument components and configurations used
 to acquire scans in this run.</p>
 <dl class="field-list simple">
@@ -320,8 +318,8 @@ to acquire scans in this run.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.make_iterator">
-<code class="sig-name descname">make_iterator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iterator</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">grouped</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.make_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.make_iterator" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.make_iterator">
+<span class="sig-name descname"><span class="pre">make_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.make_iterator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.make_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configure the iterator’s behavior.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -336,8 +334,8 @@ or single <a class="reference internal" href="common_scan.html#ms_deisotope.data
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.next">
-<code class="sig-name descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.next" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.next">
+<span class="sig-name descname"><span class="pre">next</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.next"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.next" title="Permalink to this definition">¶</a></dt>
 <dd><p>Advance the iterator, fetching the next <a class="reference internal" href="common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> or <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBase</span></code>
 depending upon iteration strategy.</p>
 <dl class="field-list simple">
@@ -351,8 +349,8 @@ depending upon iteration strategy.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.reset">
-<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.reset" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the object, clearing out any existing
 state.</p>
 <p>This resets the underlying file iterator, then
@@ -360,16 +358,16 @@ calls <a class="reference internal" href="#ms_deisotope.data_source.mgf.MGFLoade
 cache.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.scan_cache">
-<em class="property">property </em><code class="sig-name descname">scan_cache</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.scan_cache" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.scan_cache">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">scan_cache</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.scan_cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">weakref.WeakValueDictionary</span></code> mapping used to retrieve
 scans from memory if available before re-reading them from disk.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.software_list">
-<code class="sig-name descname">software_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.software_list" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.software_list">
+<span class="sig-name descname"><span class="pre">software_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.software_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describe any software used on the data described by this instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -381,15 +379,15 @@ scans from memory if available before re-reading them from disk.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt id="id1">
-<em class="property">property </em><code class="sig-name descname">source</code><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="id1">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
 <dd><p>The file parser that this reader consumes.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.source_file_name">
-<em class="property">property </em><code class="sig-name descname">source_file_name</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source_file_name" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.source_file_name">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">source_file_name</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.source_file_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the name of the file that backs this data source, if available.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -402,8 +400,8 @@ scans from memory if available before re-reading them from disk.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.start_from_scan">
-<code class="sig-name descname">start_from_scan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scan_id</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">rt</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">require_ms1</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">grouped</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.start_from_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.start_from_scan" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.start_from_scan">
+<span class="sig-name descname"><span class="pre">start_from_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">require_ms1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/data_source/mgf.html#MGFLoader.start_from_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.start_from_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reconstruct an iterator which will start from the scan matching one of <code class="docutils literal notranslate"><span class="pre">scan_id</span></code>,
 <code class="docutils literal notranslate"><span class="pre">rt</span></code>, or <code class="docutils literal notranslate"><span class="pre">index</span></code>. Only one may be provided.</p>
 <p>After invoking this method, the iterator this object wraps will be changed to begin
@@ -424,9 +422,9 @@ exact match is found, the nearest scan time will be found, rounded up.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt id="ms_deisotope.data_source.mgf.MGFLoader.time">
-<em class="property">property </em><code class="sig-name descname">time</code><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.time" title="Permalink to this definition">¶</a></dt>
+<dl class="py property">
+<dt class="sig sig-object py" id="ms_deisotope.data_source.mgf.MGFLoader.time">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#ms_deisotope.data_source.mgf.MGFLoader.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>A indexer facade that lets you index and slice by scan time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -451,14 +449,14 @@ exact match is found, the nearest scan time will be found, rounded up.</p></li>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="formats.html">Formats</a>&#160;&#160;»
+        <a href="mzmlb.html">mzMLb</a>&#160;&#160;»
         </p>
 
       </div>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

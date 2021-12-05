@@ -6,16 +6,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ms_deisotope.output.mzml &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -44,7 +42,7 @@
 <span class="sd">this process.</span>
 
 <span class="sd">This module also contains a specialized version of :class:`~.MzMLLoader`,</span>
-<span class="sd">:class:`~.ProcessedMzMLDeserializer`, which can directly reconstruct each</span>
+<span class="sd">:class:`~.ProcessedMzMLLoader`, which can directly reconstruct each</span>
 <span class="sd">deconvoluted peak list and provides fast access to an extended index of</span>
 <span class="sd">metadata that :class:`~.MzMLSerializer` writes to an external file.</span>
 
@@ -71,14 +69,16 @@
 <span class="sd">        writer.close()</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">array</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
-<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span><span class="p">,</span> <span class="n">UUID</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -91,19 +91,27 @@
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="kc">None</span>
 
+
 <span class="kn">from</span> <span class="nn">ms_deisotope</span> <span class="kn">import</span> <span class="n">version</span> <span class="k">as</span> <span class="n">lib_version</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="kn">import</span> <span class="p">(</span><span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span><span class="p">,</span> <span class="n">Envelope</span><span class="p">,</span> <span class="n">IonMobilityDeconvolutedPeak</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="n">neutral_mass</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.qc.isolation</span> <span class="kn">import</span> <span class="n">CoIsolation</span>
+
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.common</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">ChargeNotProvided</span><span class="p">,</span>
-    <span class="n">_SingleScanIteratorImpl</span><span class="p">,</span> <span class="n">_GroupedScanIteratorImpl</span><span class="p">)</span>
+    <span class="n">ChargeNotProvided</span><span class="p">,</span>
+    <span class="n">_SingleScanIteratorImpl</span><span class="p">,</span>
+    <span class="n">_InterleavedGroupedScanIteratorImpl</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata</span> <span class="kn">import</span> <span class="n">data_transformation</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.software</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Software</span><span class="p">,</span> <span class="n">software_name</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mzml</span> <span class="kn">import</span> <span class="n">MzMLLoader</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.feature_map</span> <span class="kn">import</span> <span class="n">ExtendedScanIndex</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.mobility_frame</span> <span class="kn">import</span> <span class="n">Generic3DIonMobilityFrameSource</span>
 
-<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">ScanSerializerBase</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">,</span> <span class="n">SampleRun</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.feature_map</span> <span class="kn">import</span> <span class="n">ExtendedScanIndex</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.feature_map.feature_fit</span> <span class="kn">import</span> <span class="n">DeconvolutedLCMSFeature</span><span class="p">,</span> <span class="n">DeconvolutedLCMSFeatureTreeNode</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.feature_map.feature_map</span> <span class="kn">import</span> <span class="n">DeconvolutedLCMSFeatureMap</span><span class="p">,</span> <span class="n">LCMSFeature</span><span class="p">,</span> <span class="n">LCMSFeatureMap</span>
+
+
+<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">ScanSerializerBase</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">,</span> <span class="n">SampleRun</span><span class="p">,</span> <span class="n">LCMSMSQueryInterfaceMixin</span>
 <span class="kn">from</span> <span class="nn">.text_utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">envelopes_to_array</span><span class="p">,</span> <span class="n">decode_envelopes</span><span class="p">)</span>
 
 
@@ -293,29 +301,43 @@
 <span class="sd">        The lower level writer implementation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">default_compression</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">COMPRESSION_ZLIB</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">default_compression</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mzml&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mzml.gz&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">default_data_encoding</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">MZ_ARRAY</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">INTENSITY_ARRAY</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">CHARGE_ARRAY</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">_format_conversion_term</span> <span class="o">=</span> <span class="s2">&quot;Conversion to mzML&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">n_spectra</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">2e5</span><span class="p">),</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">deconvoluted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">build_extra_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">data_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_software_entry</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">data_encoding</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">data_encoding</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">writer</span><span class="o">.</span><span class="n">MZ_ARRAY</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-                <span class="n">writer</span><span class="o">.</span><span class="n">INTENSITY_ARRAY</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                <span class="n">writer</span><span class="o">.</span><span class="n">CHARGE_ARRAY</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
-            <span class="p">}</span>
+            <span class="n">data_encoding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_data_encoding</span>
         <span class="k">if</span> <span class="n">writer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
                 <span class="s2">&quot;Cannot write mzML without psims. Please install psims to use this feature.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">compression</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">compression</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">COMPRESSION_ZLIB</span>
+            <span class="n">compression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_compression</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MzMLSerializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">handle</span> <span class="o">=</span> <span class="n">handle</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">MzMLWriter</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_spectra</span> <span class="o">=</span> <span class="n">n_spectra</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">compression</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_encoding</span> <span class="o">=</span> <span class="n">data_encoding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_has_started_writing_spectra</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_writer</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_tag</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum_list_tag</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_chromatogram_list_tag</span> <span class="o">=</span> <span class="kc">None</span>
@@ -335,6 +357,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">indexer</span> <span class="o">=</span> <span class="n">ExtendedScanIndex</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_include_software_entry</span> <span class="o">=</span> <span class="n">include_software_entry</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_this_software</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_make_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">writer</span><span class="o">.</span><span class="n">MzMLWriter</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_init_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_name</span> <span class="o">=</span> <span class="n">sample_name</span>
@@ -643,7 +668,7 @@
         <span class="k">if</span> <span class="n">baseline_reduction</span><span class="p">:</span>
             <span class="n">method</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;baseline reduction&quot;</span><span class="p">)</span>
 
-        <span class="n">method</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;Conversion to mzML&quot;</span><span class="p">)</span>
+        <span class="n">method</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_format_conversion_term</span><span class="p">)</span>
         <span class="n">method</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">additional_parameters</span><span class="p">)</span>
         <span class="n">method</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processing_parameters</span><span class="p">)</span>
         <span class="n">method</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">order</span>
@@ -816,10 +841,9 @@
             <span class="n">envelope_array</span> <span class="o">=</span> <span class="n">envelopes_to_array</span><span class="p">(</span>
                 <span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">envelope</span> <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">])</span>
             <span class="n">extra_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;isotopic envelopes array&quot;</span><span class="p">,</span> <span class="n">envelope_array</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">score_array</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">,</span> <span class="n">IonMobilityDeconvolutedPeak</span><span class="p">):</span>
-                <span class="n">extra_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;mean drift time array&#39;</span><span class="p">,</span> <span class="p">[</span>
-                    <span class="n">peak</span><span class="o">.</span><span class="n">drift_time</span> <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
-                <span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">data_arrays</span><span class="p">:</span>
+                <span class="n">extra_arrays</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">data_arrays</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
         <span class="k">return</span> <span class="n">extra_arrays</span>
 
     <span class="k">def</span> <span class="nf">_get_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
@@ -833,6 +857,36 @@
                 <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
             <span class="p">})</span>
         <span class="k">return</span> <span class="n">annotations</span>
+
+    <span class="k">def</span> <span class="nf">_get_peak_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">deconvoluted</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;deconvoluted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
+            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">peak_data</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
+        <span class="k">elif</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">peak_data</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">centroided</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">scan</span><span class="o">.</span><span class="n">is_profile</span>
+            <span class="n">peak_data</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">arrays</span>
+        <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
+            <span class="n">charge_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">charge</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak_data</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">charge_array</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">centroided</span><span class="p">:</span>
+            <span class="n">descriptors</span> <span class="o">=</span> <span class="n">SpectrumDescription</span><span class="o">.</span><span class="n">from_peak_set</span><span class="p">(</span><span class="n">peak_data</span><span class="p">)</span>
+            <span class="n">mz_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak_data</span><span class="p">]</span>
+            <span class="n">intensity_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peak_data</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">descriptors</span> <span class="o">=</span> <span class="n">SpectrumDescription</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="n">peak_data</span><span class="p">)</span>
+            <span class="n">mz_array</span> <span class="o">=</span> <span class="n">peak_data</span><span class="o">.</span><span class="n">mz</span>
+            <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">peak_data</span><span class="o">.</span><span class="n">intensity</span>
+
+        <span class="n">other_arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_extra_arrays</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="n">deconvoluted</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">centroided</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span>
+                <span class="n">charge_array</span><span class="p">,</span> <span class="n">other_arrays</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MzMLSerializer.save_scan"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.save_scan">[docs]</a>    <span class="k">def</span> <span class="nf">save_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Write a :class:`~.Scan` to the output document</span>
@@ -856,39 +910,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_add_spectrum_list</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_has_started_writing_spectra</span> <span class="o">=</span> <span class="kc">True</span>
 
-        <span class="n">deconvoluted</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;deconvoluted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
-            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">precursor_peaks</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span>
-        <span class="k">elif</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="p">:</span>
-            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">precursor_peaks</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">precursor_peaks</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">arrays</span>
+        <span class="p">(</span><span class="n">centroided</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span>
+         <span class="n">charge_array</span><span class="p">,</span> <span class="n">other_arrays</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peak_data</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
         <span class="n">polarity</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">polarity</span>
-        <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
-            <span class="n">charge_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">charge</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">precursor_peaks</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">charge_array</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="k">if</span> <span class="n">centroided</span><span class="p">:</span>
-            <span class="n">descriptors</span> <span class="o">=</span> <span class="n">SpectrumDescription</span><span class="o">.</span><span class="n">from_peak_set</span><span class="p">(</span><span class="n">precursor_peaks</span><span class="p">)</span>
-            <span class="n">mz_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">mz</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">precursor_peaks</span><span class="p">]</span>
-            <span class="n">intensity_array</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">intensity</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">precursor_peaks</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">descriptors</span> <span class="o">=</span> <span class="n">SpectrumDescription</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="n">precursor_peaks</span><span class="p">)</span>
-            <span class="n">mz_array</span> <span class="o">=</span> <span class="n">precursor_peaks</span><span class="o">.</span><span class="n">mz</span>
-            <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">precursor_peaks</span><span class="o">.</span><span class="n">intensity</span>
-
-        <span class="n">instrument_config</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">instrument_configuration</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">instrument_config</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">instrument_configuration</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">instrument_config</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">instrument_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">instrument_config_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">instrument_config_id</span> <span class="o">=</span> <span class="n">instrument_config</span><span class="o">.</span><span class="n">id</span>
 
-        <span class="n">scan_parameters</span><span class="p">,</span> <span class="n">scan_window_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_scan_event_parameters</span><span class="p">(</span>
-            <span class="n">scan</span><span class="p">)</span>
+        <span class="n">scan_parameters</span><span class="p">,</span> <span class="n">scan_window_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_scan_event_parameters</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span> <span class="ow">or</span> <span class="n">scan</span><span class="o">.</span><span class="n">isolation_window</span> <span class="ow">or</span> <span class="n">scan</span><span class="o">.</span><span class="n">activation</span><span class="p">):</span>
             <span class="n">precursor_information</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pack_precursor_information</span><span class="p">(</span>
@@ -903,7 +937,10 @@
             <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;MS1 spectrum&quot;</span><span class="p">}</span> <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;MSn spectrum&quot;</span><span class="p">},</span>
         <span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
 
-        <span class="n">spectrum_params</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_annotations</span><span class="p">(</span><span class="n">scan</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">spectrum_params</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_annotations</span><span class="p">(</span><span class="n">scan</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write_spectrum</span><span class="p">(</span>
             <span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span>
@@ -913,7 +950,7 @@
             <span class="n">polarity</span><span class="o">=</span><span class="n">polarity</span><span class="p">,</span>
             <span class="n">scan_start_time</span><span class="o">=</span><span class="n">scan</span><span class="o">.</span><span class="n">scan_time</span><span class="p">,</span>
             <span class="n">compression</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">,</span>
-            <span class="n">other_arrays</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_prepare_extra_arrays</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="n">deconvoluted</span><span class="p">),</span>
+            <span class="n">other_arrays</span><span class="o">=</span><span class="n">other_arrays</span><span class="p">,</span>
             <span class="n">instrument_configuration_id</span><span class="o">=</span><span class="n">instrument_config_id</span><span class="p">,</span>
             <span class="n">precursor_information</span><span class="o">=</span><span class="n">precursor_information</span><span class="p">,</span>
             <span class="n">scan_params</span><span class="o">=</span><span class="n">scan_parameters</span><span class="p">,</span>
@@ -983,7 +1020,7 @@
                 <span class="p">})</span>
             <span class="n">traits</span> <span class="o">=</span> <span class="n">scan_event</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">traits</span><span class="p">:</span>
-                <span class="n">param</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s1">&#39;unit_name&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;unit_info&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)}</span>
+                <span class="n">param</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s1">&#39;unit_name&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;unit_info&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)}</span>
                 <span class="n">scan_parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
             <span class="n">scan_window_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">scan_event</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scan_parameters</span><span class="p">,</span> <span class="n">scan_window_list</span>
@@ -1146,6 +1183,7 @@
     <span class="n">peaks</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">peaks</span>
 
+
 <span class="k">def</span> <span class="nf">deserialize_peak_set</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">):</span>
     <span class="n">mz_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">]</span>
     <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;intensity array&#39;</span><span class="p">]</span>
@@ -1161,69 +1199,7 @@
     <span class="k">return</span> <span class="n">PeakIndex</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">peak_set</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ProcessedMzMLDeserializer"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.ProcessedMzMLDeserializer">[docs]</a><span class="k">class</span> <span class="nc">ProcessedMzMLDeserializer</span><span class="p">(</span><span class="n">MzMLLoader</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Extends :class:`.MzMLLoader` to support deserializing preprocessed data</span>
-<span class="sd">    and to take advantage of additional indexing information.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    extended_index: :class:`~.ExtendedIndex`</span>
-<span class="sd">        Holds the additional indexing information</span>
-<span class="sd">        that may have been generated with the data</span>
-<span class="sd">        file being accessed.</span>
-<span class="sd">    sample_run: :class:`SampleRun`</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_extended_index</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">,</span> <span class="n">decode_binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span> <span class="o">=</span> <span class="n">use_extended_index</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_index_file</span><span class="p">():</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">read_index_file</span><span class="p">()</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">build_extended_index</span><span class="p">()</span>
-                <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
-                    <span class="k">pass</span>
-                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                    <span class="k">pass</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_build_scan_id_to_rt_cache</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">_dispose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_dispose</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">require_extended_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_extended_index</span><span class="p">():</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_index_file</span><span class="p">():</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">read_index_file</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">build_extended_index</span><span class="p">()</span>
-            <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
-                <span class="k">pass</span>
-            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="k">pass</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_build_scan_id_to_rt_cache</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span>
-
-    <span class="k">def</span> <span class="nf">has_extended_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">read_index_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">index_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">index_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index_file_name</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">index_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span> <span class="o">=</span> <span class="n">ExtendedScanIndex</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PeakSetDeserializingMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">deserialize_deconvoluted_peak_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_dict</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1242,16 +1218,8 @@
     <span class="k">def</span> <span class="nf">deserialize_peak_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_dict</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">deserialize_peak_set</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">has_index_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_index_file_name</span><span class="p">)</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
-            <span class="k">return</span> <span class="kc">False</span>
-
-    <span class="k">def</span> <span class="nf">_make_sample_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">()</span>
-        <span class="n">sample</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">SampleRun</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">uuid</span><span class="o">=</span><span class="n">sample</span><span class="p">[</span><span class="s1">&#39;SampleRun-UUID&#39;</span><span class="p">],</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns information about the precursor ion,</span>
@@ -1269,14 +1237,16 @@
 <span class="sd">        -------</span>
 <span class="sd">        PrecursorInformation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">precursor</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_precursor_information</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">precursor</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_precursor_information</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">precursor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="n">precursor</span><span class="o">.</span><span class="n">orphan</span> <span class="o">=</span> <span class="n">precursor</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span>
             <span class="s2">&quot;ms_deisotope:orphan&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span>
         <span class="n">precursor</span><span class="o">.</span><span class="n">defaulted</span> <span class="o">=</span> <span class="n">precursor</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span>
             <span class="s2">&quot;ms_deisotope:defaulted&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span>
-        <span class="n">coisolation_params</span> <span class="o">=</span> <span class="n">precursor</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;ms_deisotope:coisolation&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">coisolation_params</span> <span class="o">=</span> <span class="n">precursor</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span>
+            <span class="s2">&quot;ms_deisotope:coisolation&quot;</span><span class="p">,</span> <span class="p">[])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coisolation_params</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="n">coisolation_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">coisolation_params</span><span class="p">]</span>
         <span class="n">coisolation</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1287,103 +1257,8 @@
         <span class="n">precursor</span><span class="o">.</span><span class="n">coisolation</span> <span class="o">=</span> <span class="n">coisolation</span>
         <span class="k">return</span> <span class="n">precursor</span>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">sample_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_sample_run</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span>
-
-    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">get_index_information_by_scan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">msn_ids</span><span class="p">[</span><span class="n">scan_id</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">[</span><span class="n">scan_id</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{}</span>
-
-    <span class="k">def</span> <span class="nf">iter_scan_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ms1_scans</span><span class="p">():</span>
-                <span class="n">grouped</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">iterator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">)</span>
-
-        <span class="n">_make_scan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span>
-        <span class="n">_validate</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_validate</span>
-
-        <span class="k">if</span> <span class="n">grouped</span><span class="p">:</span>
-            <span class="n">impl</span> <span class="o">=</span> <span class="n">_GroupedScanIteratorImpl</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">_make_scan</span><span class="p">,</span> <span class="n">_validate</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">impl</span> <span class="o">=</span> <span class="n">_SingleScanIteratorImpl</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">_make_scan</span><span class="p">,</span> <span class="n">_validate</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">impl</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="n">x</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">get_scan_header_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan id. If the</span>
-<span class="sd">        scan object is still bound and in memory somewhere, a reference</span>
-<span class="sd">        to that same object will be returned. Otherwise, a new object will</span>
-<span class="sd">        be created.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        scan_id : str</span>
-<span class="sd">            The unique scan id value to be retrieved</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Scan</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">packed</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">))</span>
-            <span class="k">return</span> <span class="n">packed</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">ae</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Could not read attribute (</span><span class="si">%s</span><span class="s2">) while looking up scan </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">ae</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">))</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_index_file_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">ExtendedScanIndex</span><span class="o">.</span><span class="n">index_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">ExtendedScanIndex</span><span class="o">.</span><span class="n">index_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="k">def</span> <span class="nf">build_extended_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header_only</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-        <span class="n">indexer</span> <span class="o">=</span> <span class="n">ExtendedScanIndex</span><span class="p">()</span>
-        <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="k">if</span> <span class="n">header_only</span><span class="p">:</span>
-            <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter_scan_headers</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ms1_scans</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">bunch</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
-                <span class="n">indexer</span><span class="o">.</span><span class="n">add_scan_bunch</span><span class="p">(</span><span class="n">bunch</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
-                <span class="n">indexer</span><span class="o">.</span><span class="n">add_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span> <span class="o">=</span> <span class="n">indexer</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_index_file_name</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
-                <span class="n">indexer</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="nf">_make_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">scan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">scan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">precursor_information</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span>
             <span class="k">if</span> <span class="n">precursor_information</span><span class="p">:</span>
@@ -1413,94 +1288,119 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deserialize_peak_set</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">packed</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span>
-        <span class="n">packed</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">packed</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">packed</span>
 
-    <span class="k">def</span> <span class="nf">convert_scan_id_to_retention_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
+    <span class="c1"># These methods have to be replicated over from LCMSQueryInterface because of the extra</span>
+    <span class="c1"># round of overloading `_make_scan`</span>
+
+    <span class="k">def</span> <span class="nf">iter_scan_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span><span class="p">[</span><span class="n">scan_id</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">time</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ms1_scans</span><span class="p">():</span>
+                <span class="n">grouped</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">iterator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">)</span>
+
+        <span class="n">_make_scan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span>
+        <span class="n">_validate</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_validate</span>
+
+        <span class="k">if</span> <span class="n">grouped</span><span class="p">:</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="n">_InterleavedGroupedScanIteratorImpl</span><span class="p">(</span>
+                <span class="n">iterator</span><span class="p">,</span> <span class="n">_make_scan</span><span class="p">,</span> <span class="n">_validate</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="n">_SingleScanIteratorImpl</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">_make_scan</span><span class="p">,</span> <span class="n">_validate</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">impl</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">x</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_scan_header_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan id. If the</span>
+<span class="sd">        scan object is still bound and in memory somewhere, a reference</span>
+<span class="sd">        to that same object will be returned. Otherwise, a new object will</span>
+<span class="sd">        be created.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan_id : str</span>
+<span class="sd">            The unique scan id value to be retrieved</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">packed</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">packed</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">ae</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Could not read attribute (</span><span class="si">%s</span><span class="s2">) while looking up scan </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">ae</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="ProcessedMzMLLoader"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.ProcessedMzMLLoader">[docs]</a><span class="k">class</span> <span class="nc">ProcessedMzMLLoader</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span> <span class="n">MzMLLoader</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">,</span> <span class="n">LCMSMSQueryInterfaceMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extends :class:`.MzMLLoader` to support deserializing preprocessed data</span>
+<span class="sd">    and to take advantage of additional indexing information.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    extended_index: :class:`~.ExtendedIndex`</span>
+<span class="sd">        Holds the additional indexing information</span>
+<span class="sd">        that may have been generated with the data</span>
+<span class="sd">        file being accessed.</span>
+<span class="sd">    sample_run: :class:`SampleRun`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mzml&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mzml.gz&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_extended_index</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">,</span> <span class="n">decode_binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span> <span class="o">=</span> <span class="n">use_extended_index</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">require_extended_index</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_dispose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_dispose</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_sample_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">()</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">uuid_from_sample</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">uuid_from_sample</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="s1">&#39;SampleRun-UUID&#39;</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_header_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">header</span><span class="o">.</span><span class="n">scan_time</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">source_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_file_name</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">source_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">uuid_from_sample</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">UUID</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;md5&#39;</span><span class="p">,</span> <span class="n">source_name</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">SampleRun</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">uuid</span><span class="o">=</span><span class="n">uuid_from_sample</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
 
-    <span class="k">def</span> <span class="nf">_build_scan_id_to_rt_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_extended_index</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">[</span>
-                    <span class="n">key</span><span class="p">][</span><span class="s1">&#39;scan_time&#39;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">msn_ids</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">msn_ids</span><span class="p">[</span>
-                    <span class="n">key</span><span class="p">][</span><span class="s1">&#39;scan_time&#39;</span><span class="p">]</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sample_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_sample_run</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span></div>
 
-    <span class="c1"># LC-MS/MS Database API</span>
 
-    <span class="k">def</span> <span class="nf">precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">msn_ids</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">mz</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;mz&#39;</span><span class="p">]</span>
-            <span class="n">prec_neutral_mass</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;neutral_mass&#39;</span><span class="p">]</span>
-            <span class="n">charge</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;charge&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">charge</span> <span class="o">==</span> <span class="s1">&#39;ChargeNotProvided&#39;</span><span class="p">:</span>
-                <span class="n">charge</span> <span class="o">=</span> <span class="n">ChargeNotProvided</span>
-            <span class="n">intensity</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;intensity&#39;</span><span class="p">]</span>
-            <span class="n">precursor_scan_id</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;precursor_scan_id&#39;</span><span class="p">]</span>
-            <span class="n">product_scan_id</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;product_scan_id&#39;</span><span class="p">]</span>
-            <span class="n">orphan</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;orphan&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="n">coisolation</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;coisolation&#39;</span><span class="p">,</span> <span class="p">[])[:]</span>
-            <span class="n">defaulted</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;defaulted&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="n">pinfo</span> <span class="o">=</span> <span class="n">PrecursorInformation</span><span class="p">(</span>
-                <span class="n">mz</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">precursor_scan_id</span><span class="p">,</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">prec_neutral_mass</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">intensity</span><span class="p">,</span>
-                <span class="n">product_scan_id</span><span class="o">=</span><span class="n">product_scan_id</span><span class="p">,</span> <span class="n">orphan</span><span class="o">=</span><span class="n">orphan</span><span class="p">,</span>
-                <span class="n">coisolation</span><span class="o">=</span><span class="n">coisolation</span><span class="p">,</span>
-                <span class="n">defaulted</span><span class="o">=</span><span class="n">defaulted</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">prec_neutral_mass</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">charge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pinfo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">out</span>
-
-    <span class="k">def</span> <span class="nf">ms1_peaks_above</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass_threshold</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">intensity_threshold</span><span class="o">=</span><span class="mf">1000.</span><span class="p">):</span>
-        <span class="n">accumulate</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">ms1_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">:</span>
-            <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_id</span><span class="p">(</span><span class="n">ms1_id</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&lt;</span> <span class="n">intensity_threshold</span> <span class="ow">or</span> <span class="n">peak</span><span class="o">.</span><span class="n">neutral_mass</span> <span class="o">&lt;</span> <span class="n">mass_threshold</span><span class="p">:</span>
-                    <span class="k">continue</span>
-                <span class="n">accumulate</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ms1_id</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">peak</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">accumulate</span>
-
-    <span class="k">def</span> <span class="nf">ms1_scan_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">times</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">bundle</span><span class="p">[</span><span class="s1">&#39;scan_time&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">bundle</span> <span class="ow">in</span>
-             <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">extract_total_ion_current_chromatogram</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">current</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">scan_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">:</span>
-            <span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_header_by_id</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span>
-            <span class="n">current</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">arrays</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">msms_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_mass</span><span class="p">,</span> <span class="n">mass_error_tolerance</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">pinfos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">find_msms_by_precursor_mass</span><span class="p">(</span>
-            <span class="n">query_mass</span><span class="p">,</span> <span class="n">mass_error_tolerance</span><span class="p">,</span> <span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">pinfo</span> <span class="ow">in</span> <span class="n">pinfos</span><span class="p">:</span>
-            <span class="n">valid</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">product</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">end_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_header_by_id</span><span class="p">(</span><span class="n">pinfo</span><span class="o">.</span><span class="n">product_scan_id</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">product</span><span class="o">.</span><span class="n">scan_time</span> <span class="o">&lt;</span> <span class="n">start_time</span><span class="p">:</span>
-                <span class="n">valid</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">elif</span> <span class="n">end_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">product</span><span class="o">.</span><span class="n">scan_time</span> <span class="o">&gt;</span> <span class="n">end_time</span><span class="p">:</span>
-                <span class="n">valid</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">if</span> <span class="n">valid</span><span class="p">:</span>
-                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pinfo</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">out</span></div>
-
+<span class="n">ProcessedMzMLDeserializer</span> <span class="o">=</span> <span class="n">ProcessedMzMLLoader</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">has_c</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1509,6 +1409,182 @@
     <span class="kn">from</span> <span class="nn">ms_deisotope._c.utils</span> <span class="kn">import</span> <span class="n">deserialize_deconvoluted_peak_set</span><span class="p">,</span> <span class="n">deserialize_peak_set</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">has_c</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">extracted_features_to_3d_arrays</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+    <span class="n">mz_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">ion_mobility_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">feature_id_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">feature</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">feature</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">time</span>
+            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
+                <span class="n">ion_mobility_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+                <span class="n">mz_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+                <span class="n">intensity_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+                <span class="n">feature_id_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">mz_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mz_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">intensity_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ion_mobility_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ion_mobility_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">feature_id_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature_id_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">ion_mobility_array</span><span class="p">,</span> <span class="n">mz_array</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">mz_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">intensity_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">ion_mobility_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">feature_id_array</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">deserialize_features</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">,</span> <span class="n">ion_mobility_array_name</span><span class="o">=</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">):</span>
+    <span class="n">mz_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">]</span>
+    <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;intensity array&#39;</span><span class="p">]</span>
+    <span class="n">drift_time_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="n">ion_mobility_array_name</span><span class="p">]</span>
+    <span class="n">feature_id_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;feature id array&#39;</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mz_array</span><span class="p">)</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">mz</span> <span class="o">=</span> <span class="n">mz_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">im</span> <span class="o">=</span> <span class="n">drift_time_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">inten</span> <span class="o">=</span> <span class="n">intensity_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">peak</span> <span class="o">=</span> <span class="n">FittedPeak</span><span class="p">(</span>
+            <span class="n">mz</span><span class="p">,</span> <span class="n">inten</span><span class="p">,</span> <span class="n">signal_to_noise</span><span class="o">=</span><span class="n">inten</span><span class="p">,</span>
+            <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">full_width_at_half_max</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">feature_id_array</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">feature_id_array</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">LCMSFeature</span><span class="p">([])</span>
+        <span class="n">feature</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">im</span><span class="p">)</span>
+    <span class="n">feature_map</span> <span class="o">=</span> <span class="n">LCMSFeatureMap</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">feature_map</span>
+
+
+<span class="k">def</span> <span class="nf">deconvoluted_features_to_3d_arrays</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+    <span class="n">mz_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">charge_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">)</span>
+    <span class="n">score_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">ion_mobility_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
+    <span class="n">envelopes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">feature_id_array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">)</span>
+    <span class="n">point_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">feature</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">feature</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">time</span>
+            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
+                <span class="n">ion_mobility_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+                <span class="n">mz_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
+                <span class="n">intensity_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span>
+                <span class="n">score_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+                <span class="n">charge_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span>
+                <span class="n">envelopes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">)</span>
+                <span class="n">point_count</span> <span class="o">+=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">envelope</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+                <span class="n">feature_id_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">mz_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mz_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">intensity_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">charge_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">charge_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">score_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">score_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ion_mobility_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ion_mobility_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">feature_id_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">feature_id_array</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">ion_mobility_array</span><span class="p">,</span> <span class="n">mz_array</span><span class="p">)))</span>
+    <span class="n">envelope_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">point_count</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">mask</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">envelopes</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+            <span class="n">envelope_array</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">mz</span>
+            <span class="n">envelope_array</span><span class="p">[</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">intensity</span>
+            <span class="n">k</span> <span class="o">+=</span> <span class="mi">2</span>
+        <span class="n">k</span> <span class="o">+=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">mz_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">intensity_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">charge_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span>
+            <span class="n">score_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">ion_mobility_array</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">envelope_array</span><span class="p">,</span>
+            <span class="n">feature_id_array</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">deserialize_deconvoluted_features</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">,</span> <span class="n">ion_mobility_array_name</span><span class="o">=</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">):</span>
+    <span class="n">envelopes</span> <span class="o">=</span> <span class="n">decode_envelopes</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">[</span><span class="s2">&quot;isotopic envelopes array&quot;</span><span class="p">])</span>
+    <span class="n">mz_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">]</span>
+    <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;intensity array&#39;</span><span class="p">]</span>
+    <span class="n">drift_time_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="n">ion_mobility_array_name</span><span class="p">]</span>
+    <span class="n">feature_id_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;feature id array&#39;</span><span class="p">]</span>
+    <span class="n">charge_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;charge array&#39;</span><span class="p">]</span>
+    <span class="n">score_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;deconvolution score array&#39;</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mz_array</span><span class="p">)</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">mz</span> <span class="o">=</span> <span class="n">mz_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">charge</span> <span class="o">=</span> <span class="n">charge_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">im</span> <span class="o">=</span> <span class="n">drift_time_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">peak</span> <span class="o">=</span> <span class="n">DeconvolutedPeak</span><span class="p">(</span>
+            <span class="n">neutral_mass</span><span class="p">(</span><span class="n">mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">),</span> <span class="n">intensity_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">charge</span><span class="o">=</span><span class="n">charge</span><span class="p">,</span> <span class="n">signal_to_noise</span><span class="o">=</span><span class="n">score_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">full_width_at_half_max</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_to_a2_ratio</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">most_abundant_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">average_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">score_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">envelope</span><span class="o">=</span><span class="n">envelopes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">mz</span><span class="o">=</span><span class="n">mz</span>
+        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">feature_id_array</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">feature_id_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                               <span class="p">]</span> <span class="o">=</span> <span class="n">DeconvolutedLCMSFeature</span><span class="p">([],</span> <span class="n">charge</span><span class="p">)</span>
+        <span class="n">feature</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">im</span><span class="p">)</span>
+    <span class="n">feature_map</span> <span class="o">=</span> <span class="n">DeconvolutedLCMSFeatureMap</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">feature_map</span>
+
+
+<span class="k">class</span> <span class="nc">IonMobilityAware3DMzMLSerializer</span><span class="p">(</span><span class="n">MzMLSerializer</span><span class="p">):</span>
+    <span class="n">default_data_encoding</span> <span class="o">=</span> <span class="n">MzMLSerializer</span><span class="o">.</span><span class="n">default_data_encoding</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">default_data_encoding</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+        <span class="s2">&quot;feature id array&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+    <span class="p">})</span>
+    <span class="k">def</span> <span class="nf">_get_peak_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">deconvoluted</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;deconvoluted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
+            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">peak_data</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_features</span>
+        <span class="k">elif</span> <span class="n">scan</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">peak_data</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">features</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">centroided</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">peak_data</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">arrays</span>
+
+        <span class="k">if</span> <span class="n">centroided</span><span class="p">:</span>
+            <span class="n">descriptors</span> <span class="o">=</span> <span class="n">SpectrumDescription</span><span class="o">.</span><span class="n">from_peak_set</span><span class="p">(</span><span class="n">peak_data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">descriptors</span> <span class="o">=</span> <span class="n">SpectrumDescription</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="n">peak_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span> <span class="n">charge_array</span><span class="p">,</span> <span class="n">score_array</span><span class="p">,</span>
+             <span class="n">ion_mobility_array</span><span class="p">,</span> <span class="n">envelope_array</span><span class="p">,</span> <span class="n">feature_id_array</span><span class="p">)</span> <span class="o">=</span> <span class="n">deconvoluted_features_to_3d_arrays</span><span class="p">(</span><span class="n">peak_data</span><span class="p">)</span>
+            <span class="n">other_arrays</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">,</span> <span class="n">ion_mobility_array</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;isotopic envelopes array&#39;</span><span class="p">,</span> <span class="n">envelope_array</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;deconvolution score array&#39;</span><span class="p">,</span> <span class="n">score_array</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;feature id array&#39;</span><span class="p">,</span> <span class="n">feature_id_array</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">elif</span> <span class="n">centroided</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span> <span class="n">ion_mobility_array</span><span class="p">,</span>
+             <span class="n">feature_id_array</span><span class="p">)</span> <span class="o">=</span> <span class="n">extracted_features_to_3d_arrays</span><span class="p">(</span><span class="n">peak_data</span><span class="p">)</span>
+            <span class="n">charge_array</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">other_arrays</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">,</span> <span class="n">ion_mobility_array</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;feature id array&#39;</span><span class="p">,</span> <span class="n">feature_id_array</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mz_array</span> <span class="o">=</span> <span class="n">peak_data</span><span class="o">.</span><span class="n">mz</span>
+            <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">peak_data</span><span class="o">.</span><span class="n">intensity</span>
+            <span class="n">charge_array</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">ion_mobility_array</span> <span class="o">=</span> <span class="n">peak_data</span><span class="o">.</span><span class="n">ion_mobility</span>
+            <span class="n">other_arrays</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">,</span> <span class="n">ion_mobility_array</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">centroided</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span>
+                <span class="n">charge_array</span><span class="p">,</span> <span class="n">other_arrays</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ProcessedGeneric3DIonMobilityFrameSource</span><span class="p">(</span><span class="n">Generic3DIonMobilityFrameSource</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_make_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">frame</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedGeneric3DIonMobilityFrameSource</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_frame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;feature id array&#39;</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;charge array&#39;</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+                <span class="n">frame</span><span class="o">.</span><span class="n">deconvoluted_features</span> <span class="o">=</span> <span class="n">deserialize_deconvoluted_features</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">frame</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">deserialize_features</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">frame</span>
 </pre></div>
 
       </div>
@@ -1522,7 +1598,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

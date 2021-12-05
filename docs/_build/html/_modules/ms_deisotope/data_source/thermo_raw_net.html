@@ -1,0 +1,860 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ms_deisotope.data_source.thermo_raw_net &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.data_source.thermo_raw_net</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.data_source.thermo_raw_net</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;Thermo RAW file reading implementation using the pure .NET</span>
+<span class="sd">RawFileReader library released in 2017.</span>
+
+<span class="sd">This module provides :class:`ThermoRawLoader`, a :class:`~.RandomAccessScanSource`</span>
+<span class="sd">implementation.</span>
+
+<span class="sd">Depends upon the ``pythonnet`` project which provides the :mod:`clr`</span>
+<span class="sd">module, enabling nearly seamless interoperation with the Common Language</span>
+<span class="sd">Runtime.</span>
+
+<span class="sd">The public interface of this module should be identical to</span>
+<span class="sd">:mod:`ms_deisotope.data_source.thermo_raw`.</span>
+
+<span class="sd">.. note::</span>
+<span class="sd">    This interface was largely based upon the APIs that ProteoWizard used, both</span>
+<span class="sd">    in order to understand how the Thermo libraries really worked, and to maintain</span>
+<span class="sd">    parity with it.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pyteomics.auxiliary</span> <span class="kn">import</span> <span class="n">unitfloat</span>
+
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
+
+
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">PeakSet</span><span class="p">,</span> <span class="n">PeakIndex</span><span class="p">,</span> <span class="n">simple_peak</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.common</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">ChargeNotProvided</span><span class="p">,</span> <span class="n">Scan</span><span class="p">,</span>
+    <span class="n">ActivationInformation</span><span class="p">,</span> <span class="n">MultipleActivationInformation</span><span class="p">,</span>
+    <span class="n">IsolationWindow</span><span class="p">,</span> <span class="n">ScanDataSource</span><span class="p">,</span> <span class="n">ScanEventInformation</span><span class="p">,</span>
+    <span class="n">ScanAcquisitionInformation</span><span class="p">,</span> <span class="n">ScanWindow</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source._thermo_helper</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_InstrumentMethod</span><span class="p">,</span> <span class="n">ThermoRawScanPtr</span><span class="p">,</span> <span class="n">FilterString</span><span class="p">,</span>
+    <span class="n">_make_id</span><span class="p">,</span> <span class="n">_id_template</span><span class="p">,</span> <span class="n">_RawFileMetadataLoader</span><span class="p">,</span> <span class="n">analyzer_map</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.activation</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">supplemental_term_map</span><span class="p">,</span> <span class="n">dissociation_methods_map</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.sample</span> <span class="kn">import</span> <span class="n">Sample</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.scan_traits</span> <span class="kn">import</span> <span class="n">FAIMS_compensation_voltage</span>
+
+<span class="k">def</span> <span class="nf">_try_number</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">string</span>
+
+
+<span class="n">_DEFAULT_DLL_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span>
+    <span class="s2">&quot;_vendor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ThermoRawFileReader_3_0_41&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Libraries&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># late binding imports</span>
+
+<span class="n">Business</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_RawFileReader</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">clr</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">NullReferenceException</span> <span class="o">=</span> <span class="ne">Exception</span>
+<span class="n">Marshal</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">IntPtr</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">Int64</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">is_thermo_raw_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Detect whether or not the file referenced by ``path``</span>
+<span class="sd">    is a Thermo RAW file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path: :class:`str`</span>
+<span class="sd">        The path to test</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`bool`:</span>
+<span class="sd">        Whether or not the file is a Thermo RAW file.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_test_dll_loaded</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">register_dll</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">lead_bytes</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+        <span class="n">decoded</span> <span class="o">=</span> <span class="n">lead_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-16&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">decoded</span> <span class="o">==</span> <span class="s2">&quot;Finnigan&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">source</span> <span class="o">=</span> <span class="n">_RawFileReader</span><span class="o">.</span><span class="n">RawFileReaderAdapter</span><span class="o">.</span><span class="n">FileFactory</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="n">source</span><span class="o">.</span><span class="n">SelectInstrument</span><span class="p">(</span><span class="n">Business</span><span class="o">.</span><span class="n">Device</span><span class="o">.</span><span class="n">MS</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="n">NullReferenceException</span><span class="p">:</span>   <span class="c1"># pylint: disable=broad-except</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">infer_reader</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;If the file referenced by ``path`` is a Thermo RAW</span>
+<span class="sd">    file, return the callable (:class:`ThermoRawLoader`) to</span>
+<span class="sd">    open it, otherwise raise an exception.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path: :class:`str`</span>
+<span class="sd">        The path to test</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`type`:</span>
+<span class="sd">        The type to use to open the file</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    :class:`ValueError`:</span>
+<span class="sd">        If the file is not a Thermo RAW file</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">is_thermo_raw_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ThermoRawLoader</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not Thermo Raw File&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">determine_if_available</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Checks whether or not the .NET-based Thermo</span>
+<span class="sd">    RAW file reading feature is available.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`bool`:</span>
+<span class="sd">        Whether or not the feature is enabled.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_register_dll</span><span class="p">([</span><span class="n">_DEFAULT_DLL_PATH</span><span class="p">])</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">_register_dll</span><span class="p">(</span><span class="n">search_paths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Start the Common Language Runtime interop service by importing</span>
+<span class="sd">    the :mod:`clr` module from Pythonnet, and then populate the global</span>
+<span class="sd">    names referring to .NET entities, and finally attempt to locate the</span>
+<span class="sd">    ThermoRawFileReader DLLs by searching alogn ``search_paths``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    search_paths: list</span>
+<span class="sd">        The paths to check along for the ThermoRawFileReader DLL bundle.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`bool`:</span>
+<span class="sd">        Whether or not the .NET library successfully loaded</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">from</span> <span class="nn">ms_deisotope.config</span> <span class="kn">import</span> <span class="n">get_config</span>
+    <span class="k">if</span> <span class="n">search_paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">search_paths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">search_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">search_paths</span><span class="p">)</span>
+    <span class="n">search_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_DEFAULT_DLL_PATH</span><span class="p">)</span>
+    <span class="c1"># Take user-specified search paths first.</span>
+    <span class="n">search_paths</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vendor_readers&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;thermo-net&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="n">search_paths</span>
+    <span class="k">global</span> <span class="n">_RawFileReader</span><span class="p">,</span> <span class="n">Business</span><span class="p">,</span> <span class="n">clr</span><span class="p">,</span> <span class="n">NullReferenceException</span>   <span class="c1"># pylint: disable=global-statement</span>
+    <span class="k">global</span> <span class="n">Marshal</span><span class="p">,</span> <span class="n">IntPtr</span><span class="p">,</span> <span class="n">Int64</span>   <span class="c1"># pylint: disable=global-statement</span>
+    <span class="k">if</span> <span class="n">_test_dll_loaded</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">clr</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+        <span class="kn">from</span> <span class="nn">System</span> <span class="kn">import</span> <span class="n">NullReferenceException</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+        <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System.Runtime&quot;</span><span class="p">)</span>
+        <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s2">&quot;System.Runtime.InteropServices&quot;</span><span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">System</span> <span class="kn">import</span> <span class="n">IntPtr</span><span class="p">,</span> <span class="n">Int64</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+        <span class="kn">from</span> <span class="nn">System.Runtime.InteropServices</span> <span class="kn">import</span> <span class="n">Marshal</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">search_paths</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s1">&#39;ThermoFisher.CommonCore.RawFileReader&#39;</span><span class="p">)</span>
+            <span class="n">clr</span><span class="o">.</span><span class="n">AddReference</span><span class="p">(</span><span class="s1">&#39;ThermoFisher.CommonCore.Data&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">ThermoFisher.CommonCore.Data.Business</span> <span class="k">as</span> <span class="nn">Business</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+            <span class="kn">import</span> <span class="nn">ThermoFisher.CommonCore.RawFileReader</span> <span class="k">as</span> <span class="nn">_RawFileReader</span>  <span class="c1"># pylint: disable=redefined-outer-name</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">continue</span>
+    <span class="k">return</span> <span class="n">_test_dll_loaded</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">register_dll</span><span class="p">(</span><span class="n">search_paths</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Register the location of the Thermo RawFileReader DLL bundle with</span>
+<span class="sd">    the Common Language Runtime interop system and load the .NET symbols</span>
+<span class="sd">    used by this feature.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    search_paths: list</span>
+<span class="sd">        The paths to check along for the ThermoRawFileReader DLL bundle.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">search_paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">search_paths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">loaded</span> <span class="o">=</span> <span class="n">_register_dll</span><span class="p">(</span><span class="n">search_paths</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">loaded</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;The ThermoFisher.CommonCore libraries could not be located and loaded.&#39;&#39;&#39;</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_test_dll_loaded</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">_RawFileReader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_copy_double_array</span><span class="p">(</span><span class="n">src</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A quick and dirty implementation of the fourth technique shown in</span>
+<span class="sd">    https://mail.python.org/pipermail/pythondotnet/2014-May/001525.html for</span>
+<span class="sd">    copying a .NET Array[Double] to a NumPy ndarray[np.float64] via a raw</span>
+<span class="sd">    memory copy.</span>
+
+<span class="sd">    ``int_ptr_tp`` must be an integer type that can hold a pointer. On Python 2</span>
+<span class="sd">    this is :class:`long`, and on Python 3 it is :class:`int`.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># When the input .NET array pointer is None, return an empty array. On Py2</span>
+    <span class="c1"># this would happen automatically, but not on Py3, and perhaps not safely on</span>
+    <span class="c1"># all Py2 because it relies on pythonnet and the .NET runtime properly checking</span>
+    <span class="c1"># for nulls.</span>
+    <span class="k">if</span> <span class="n">src</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">Marshal</span><span class="o">.</span><span class="n">Copy</span><span class="p">(</span>
+        <span class="n">src</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">IntPtr</span><span class="o">.</span><span class="n">__overloads__</span><span class="p">[</span><span class="n">Int64</span><span class="p">](</span><span class="n">dest</span><span class="o">.</span><span class="n">__array_interface__</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dest</span>
+
+
+<span class="k">class</span> <span class="nc">RawReaderInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;:class:`~.ScanDataSource` implementation for Thermo&#39;s RawFileReader API.</span>
+<span class="sd">    Not intended for direct instantiation.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">_scan_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetScanStatsForScanNumber</span><span class="p">(</span><span class="n">scan_number</span><span class="p">)</span>
+        <span class="n">segscan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetSegmentedScanFromScanNumber</span><span class="p">(</span><span class="n">scan_number</span><span class="p">,</span> <span class="n">stats</span><span class="p">)</span>
+        <span class="n">mzs</span> <span class="o">=</span> <span class="n">_copy_double_array</span><span class="p">(</span><span class="n">segscan</span><span class="o">.</span><span class="n">Positions</span><span class="p">)</span>
+        <span class="n">inten</span> <span class="o">=</span> <span class="n">_copy_double_array</span><span class="p">(</span><span class="n">segscan</span><span class="o">.</span><span class="n">Intensities</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mzs</span><span class="p">,</span> <span class="n">inten</span>
+
+    <span class="k">def</span> <span class="nf">_pick_peaks_vendor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">scan_info</span> <span class="o">=</span> <span class="n">Business</span><span class="o">.</span><span class="n">Scan</span><span class="o">.</span><span class="n">FromFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">scan_info</span><span class="o">.</span><span class="n">HasCentroidStream</span><span class="p">:</span>
+            <span class="n">stream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetCentroidStream</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">mzs</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">Masses</span>
+            <span class="n">intens</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">Intensities</span>
+            <span class="n">peaks</span> <span class="o">=</span> <span class="n">PeakSet</span><span class="p">([</span><span class="n">simple_peak</span><span class="p">(</span><span class="n">mzs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">intens</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mf">0.001</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mzs</span><span class="p">))])</span>
+            <span class="n">peaks</span><span class="o">.</span><span class="n">reindex</span><span class="p">()</span>
+            <span class="n">arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_arrays</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">PeakIndex</span><span class="p">(</span><span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">arrays</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">peaks</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_scan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+        <span class="k">return</span> <span class="n">_make_id</span><span class="p">(</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_is_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">IsCentroidScanFromScanNumber</span><span class="p">(</span>
+            <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">filter_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_string</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filter_string</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;polarity&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_scan_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">scan</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_string</span><span class="p">(</span><span class="n">scan</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_filter_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">filter_string</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+            <span class="n">scan</span><span class="o">.</span><span class="n">filter_string</span> <span class="o">=</span> <span class="n">FilterString</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetFilterForScanNumber</span><span class="p">(</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">Filter</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">filter_string</span>
+
+    <span class="k">def</span> <span class="nf">_scan_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+        <span class="k">return</span> <span class="n">scan_number</span>
+
+    <span class="k">def</span> <span class="nf">_scan_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">RetentionTimeFromScanNumber</span><span class="p">(</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_ms_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetFilterForScanNumber</span><span class="p">(</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">MSOrder</span>
+
+    <span class="k">def</span> <span class="nf">_isolation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+        <span class="n">ms_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">trailer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trailer_values</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">filt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetFilterForScanNumber</span><span class="p">(</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">seq_index</span> <span class="o">=</span> <span class="n">filt</span><span class="o">.</span><span class="n">MSOrder</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Fetch the isolation window width from the old location first, which</span>
+            <span class="c1"># will be correct on old files, where the new API won&#39;t be right.</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">trailer</span><span class="p">[</span><span class="s1">&#39;MS</span><span class="si">%d</span><span class="s1"> Isolation Width&#39;</span> <span class="o">%</span> <span class="n">ms_level</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># Fall back to the new API, which is akin to our only hope here?</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">filt</span><span class="o">.</span><span class="n">GetIsolationWidth</span><span class="p">(</span><span class="n">seq_index</span><span class="p">)</span>
+        <span class="n">width</span> <span class="o">/=</span> <span class="mf">2.0</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">filt</span><span class="o">.</span><span class="n">GetIsolationWidthOffset</span><span class="p">(</span><span class="n">seq_index</span><span class="p">)</span>
+        <span class="n">precursor_mz</span> <span class="o">=</span> <span class="n">filt</span><span class="o">.</span><span class="n">GetMass</span><span class="p">(</span><span class="n">seq_index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">IsolationWindow</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">precursor_mz</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_trailer_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">trailer_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">trailer_values</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+        <span class="n">trailers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetTrailerExtraInformation</span><span class="p">(</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">scan</span><span class="o">.</span><span class="n">trailer_values</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">([</span><span class="n">label</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">trailers</span><span class="o">.</span><span class="n">Labels</span><span class="p">],</span> <span class="nb">map</span><span class="p">(</span><span class="n">_try_number</span><span class="p">,</span> <span class="n">trailers</span><span class="o">.</span><span class="n">Values</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">trailer_values</span>
+
+    <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">scan_number</span>
+        <span class="n">filt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetFilterForScanNumber</span><span class="p">(</span><span class="n">scan_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">precursor_mz</span> <span class="o">=</span> <span class="n">filt</span><span class="o">.</span><span class="n">GetMass</span><span class="p">(</span><span class="n">filt</span><span class="o">.</span><span class="n">MSOrder</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">trailers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trailer_values</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">_precursor_mz</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">trailers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Monoisotopic M/Z&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">_precursor_mz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">precursor_mz</span> <span class="o">=</span> <span class="n">_precursor_mz</span>
+
+        <span class="c1"># imitate proteowizard&#39;s firmware bug correction</span>
+        <span class="n">isolation_window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isolation_window</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">upper</span> <span class="o">+</span> <span class="n">isolation_window</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">&lt;=</span> <span class="mf">2.0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">target</span> <span class="o">-</span> <span class="mf">3.0</span> <span class="o">&gt;</span> <span class="n">precursor_mz</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">isolation_window</span><span class="o">.</span><span class="n">target</span> <span class="o">+</span> <span class="mf">2.5</span> <span class="o">&lt;</span> <span class="n">precursor_mz</span><span class="p">):</span>
+                <span class="n">precursor_mz</span> <span class="o">=</span> <span class="n">isolation_window</span><span class="o">.</span><span class="n">target</span>
+        <span class="k">elif</span> <span class="n">precursor_mz</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">isolation_window</span><span class="p">:</span>
+            <span class="n">precursor_mz</span> <span class="o">=</span> <span class="n">isolation_window</span><span class="o">.</span><span class="n">target</span>
+        <span class="n">charge</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">trailers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Charge State&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">charge</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">charge</span> <span class="o">=</span> <span class="n">ChargeNotProvided</span>
+        <span class="n">inten</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">precursor_scan_number</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">precursor_scan_number</span> <span class="o">=</span> <span class="n">trailers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Master Scan Number&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">precursor_scan_number</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">precursor_scan_number</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">precursor_scan_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">precursor_scan_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">precursor_scan_number</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">precursor_scan_number</span><span class="p">)</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span><span class="p">(</span><span class="n">scan</span><span class="p">):</span>
+                <span class="n">precursor_scan_number</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">precursor_scan_number</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">current_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ms_level</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+            <span class="c1"># We want to start looking for the most recent spectrum with the next lowest MS</span>
+            <span class="c1"># level. The expecteation is that we couldn&#39;t determine the precursor scan accurately,</span>
+            <span class="c1"># so we&#39;ll probe backwards until the next best candidate.</span>
+            <span class="n">current_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_index</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+            <span class="c1"># Use the index of the current scan to check the index of the previous scans at a lower</span>
+            <span class="c1"># MS level. This may be None, in which case there is no earlier scan recorded.</span>
+            <span class="n">lookup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_previous_scan_index_for_ms_level</span><span class="p">(</span><span class="n">current_index</span><span class="p">,</span> <span class="n">current_level</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lookup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">last_index</span> <span class="o">=</span> <span class="n">lookup</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">last_index</span> <span class="o">=</span> <span class="n">current_index</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">last_index</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">prev_scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">last_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">prev_scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;=</span> <span class="n">current_level</span><span class="p">:</span>
+                    <span class="n">last_index</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">precursor_scan_number</span> <span class="o">=</span> <span class="n">prev_scan</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">scan_number</span>
+                    <span class="k">break</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">precursor_scan_number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">precursor_scan_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">precursor_scan_number</span><span class="p">)</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">warnings</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Could not resolve precursor scan for </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">scan</span><span class="p">),</span> <span class="p">))</span>
+            <span class="n">precursor_scan_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">PrecursorInformation</span><span class="p">(</span>
+            <span class="n">precursor_mz</span><span class="p">,</span> <span class="n">inten</span><span class="p">,</span> <span class="n">charge</span><span class="p">,</span> <span class="n">precursor_scan_id</span><span class="p">,</span>
+            <span class="n">source</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_scan_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">scan</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_scan_segment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">trailer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trailer_values</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">trailer</span><span class="p">[</span><span class="s1">&#39;Scan Segment&#39;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_get_scan_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">trailer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trailer_values</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">trailer</span><span class="p">[</span><span class="s1">&#39;Scan Event&#39;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">filter_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_string</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">tandem_sequence</span> <span class="o">=</span> <span class="n">filter_string</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tandem_sequence&quot;</span><span class="p">)</span>
+        <span class="c1"># If the tandem sequence exists, the last entry is the most recent tandem acquisition.</span>
+        <span class="c1"># It will list contain one or more activation types. Alternatively, multiple activations</span>
+        <span class="c1"># of the same precursor may exist in the list as separate events in the tandem sequence.</span>
+        <span class="k">if</span> <span class="n">tandem_sequence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">activation_event</span> <span class="o">=</span> <span class="n">tandem_sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">activation_type</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">activation_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;activation_type&quot;</span><span class="p">))</span>
+            <span class="n">has_supplemental_activation</span> <span class="o">=</span> <span class="n">filter_string</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;supplemental_activation&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">activation_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">energy</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">activation_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;activation_energy&quot;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tandem_sequence</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">prev_event</span> <span class="o">=</span> <span class="n">tandem_sequence</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+                    <span class="c1"># Merge previous tandem sequences of the same precursor</span>
+                    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">prev_event</span><span class="p">[</span><span class="s1">&#39;isolation_mz&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">activation_event</span><span class="p">[</span><span class="s1">&#39;isolation_mz&#39;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">:</span>
+                        <span class="n">activation_type</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">prev_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;activation_type&quot;</span><span class="p">))</span> <span class="o">+</span> <span class="n">activation_type</span>
+                        <span class="n">energy</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">prev_event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;activation_energy&quot;</span><span class="p">))</span> <span class="o">+</span> <span class="n">energy</span>
+                        <span class="n">has_supplemental_activation</span> <span class="o">=</span> <span class="kc">True</span>
+
+                <span class="k">if</span> <span class="n">has_supplemental_activation</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">activation_type</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">activation_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">supplemental_term_map</span><span class="p">[</span>
+                        <span class="n">dissociation_methods_map</span><span class="p">[</span><span class="n">activation_type</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]])</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">activation_type</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ActivationInformation</span><span class="p">(</span><span class="n">activation_type</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">energy</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">MultipleActivationInformation</span><span class="p">(</span><span class="n">activation_type</span><span class="p">,</span> <span class="n">energy</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_acquisition_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">fline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_string</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_scan_event</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">trailer_extras</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trailer_values</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">traits</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;preset scan configuration&#39;</span><span class="p">:</span> <span class="n">event</span><span class="p">,</span>
+            <span class="s1">&#39;filter string&#39;</span><span class="p">:</span> <span class="n">fline</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">cv</span> <span class="o">=</span> <span class="n">fline</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compensation_voltage&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">traits</span><span class="p">[</span><span class="n">FAIMS_compensation_voltage</span><span class="p">]</span> <span class="o">=</span> <span class="n">cv</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">ScanEventInformation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time</span><span class="p">(</span><span class="n">scan</span><span class="p">),</span>
+            <span class="n">injection_time</span><span class="o">=</span><span class="n">unitfloat</span><span class="p">(</span><span class="n">trailer_extras</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Ion Injection Time (ms)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="s1">&#39;millisecond&#39;</span><span class="p">),</span>
+            <span class="n">window_list</span><span class="o">=</span><span class="p">[</span><span class="n">ScanWindow</span><span class="p">(</span>
+                <span class="n">fline</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scan_window&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fline</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scan_window&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])],</span> <span class="n">traits</span><span class="o">=</span><span class="n">traits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ScanAcquisitionInformation</span><span class="p">(</span><span class="s2">&quot;no combination&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">event</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">fline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_string</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">confid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analyzer_to_configuration_index</span><span class="p">[</span><span class="n">analyzer_map</span><span class="p">[</span><span class="n">fline</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;analyzer&quot;</span><span class="p">)]]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_config</span><span class="p">[</span><span class="n">confid</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="n">fline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_string</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">trailer_extras</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trailer_values</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
+        <span class="n">annots</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;filter string&quot;</span><span class="p">:</span> <span class="n">fline</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">microscans</span> <span class="o">=</span> <span class="n">trailer_extras</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Micro Scan Count&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">microscans</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">annots</span><span class="p">[</span><span class="s1">&#39;[Thermo Trailer Extra]Micro Scan Count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">microscans</span><span class="p">)</span>
+        <span class="n">scan_segment</span> <span class="o">=</span> <span class="n">trailer_extras</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Scan Segment&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">scan_segment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">annots</span><span class="p">[</span><span class="s1">&#39;[Thermo Trailer Extra]Scan Segment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">scan_segment</span><span class="p">)</span>
+        <span class="n">scan_event</span> <span class="o">=</span> <span class="n">trailer_extras</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Scan Event&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">scan_event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">annots</span><span class="p">[</span><span class="s1">&#39;[Thermo Trailer Extra]Scan Event&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">scan_event</span><span class="p">)</span>
+        <span class="n">mono_mz</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">trailer_extras</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Monoisotopic M/Z&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">mono_mz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mono_mz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">annots</span><span class="p">[</span><span class="s1">&#39;[Thermo Trailer Extra]Monoisotopic M/Z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mono_mz</span>
+        <span class="n">hcd_ev</span> <span class="o">=</span> <span class="n">_trailer_float</span><span class="p">(</span><span class="n">trailer_extras</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HCD Energy eV&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">hcd_ev</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">hcd_ev</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">annots</span><span class="p">[</span><span class="s1">&#39;[Thermo Trailer Extra]HCD Energy eV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">hcd_ev</span><span class="p">)</span>
+        <span class="n">hcd_energies</span> <span class="o">=</span> <span class="n">trailer_extras</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HCD Energy&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hcd_energies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hcd_energies</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hcd_energies</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">annots</span><span class="p">[</span><span class="s1">&#39;[Thermo Trailer Extra]HCD Energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hcd_energies</span>
+        <span class="k">return</span> <span class="n">annots</span>
+
+
+<span class="k">def</span> <span class="nf">_trailer_float</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="ThermoRawLoader"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader">[docs]</a><span class="k">class</span> <span class="nc">ThermoRawLoader</span><span class="p">(</span><span class="n">RawReaderInterface</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">,</span> <span class="n">_RawFileMetadataLoader</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Reads scans from Thermo Fisher RAW files directly. Provides both iterative and</span>
+<span class="sd">    random access.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">_load_metadata</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_test_dll_loaded</span><span class="p">():</span>
+            <span class="n">register_dll</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">_RawFileReader</span><span class="o">.</span><span class="n">RawFileReaderAdapter</span><span class="o">.</span><span class="n">FileFactory</span><span class="p">(</span><span class="n">source_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">SelectInstrument</span><span class="p">(</span><span class="n">Business</span><span class="o">.</span><span class="n">Device</span><span class="o">.</span><span class="n">MS</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_type_index</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_analyzer_to_configuration_index</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_config</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_scan_cache</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_first_scan_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">scan_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_scan_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">RunHeaderEx</span><span class="o">.</span><span class="n">LastSpectrum</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">scan_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pack_index</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">_load_metadata</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_method</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_scan_type_index</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_instrument_info</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_type_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_type_index</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># metadata has not been loaded so best to assume there is</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_has_msn_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_type_index</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_type_index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># metadata has not been loaded so best to assume there is</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="ThermoRawLoader.has_msn_scans"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.has_msn_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_msn_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_msn_scans</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ThermoRawLoader.has_ms1_scans"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.has_ms1_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ms1_scans</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">__getstate__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+            <span class="s2">&quot;scan_type_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_type_index</span><span class="p">,</span>
+            <span class="s2">&quot;analyzer_to_configuration_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analyzer_to_configuration_index</span><span class="p">,</span>
+            <span class="s2">&quot;instrument_config&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_config</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">state</span>
+
+    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_type_index</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;scan_type_index&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_analyzer_to_configuration_index</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;analyzer_to_configuration_index&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_config</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;instrument_config&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Accesses the scan index</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`collections.OrderedDict`</span>
+<span class="sd">            Maps scan ID to index</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;ThermoRawLoader(</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ThermoRawLoader.close"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Close the underlying file reader.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">Close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dispose</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ThermoRawLoader.reset"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initialize_scan_cache</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_pack_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">sn</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">RunHeaderEx</span><span class="o">.</span><span class="n">FirstSpectrum</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">RunHeaderEx</span><span class="o">.</span><span class="n">LastSpectrum</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">index</span><span class="p">[</span><span class="n">_make_id</span><span class="p">(</span><span class="n">sn</span><span class="p">)]</span> <span class="o">=</span> <span class="n">sn</span>
+        <span class="k">return</span> <span class="n">index</span>
+
+    <span class="k">def</span> <span class="nf">_get_instrument_model_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetInstrumentData</span><span class="p">()</span><span class="o">.</span><span class="n">Model</span>
+
+    <span class="k">def</span> <span class="nf">_get_instrument_serial_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetInstrumentData</span><span class="p">()</span><span class="o">.</span><span class="n">SerialNumber</span>
+
+    <span class="k">def</span> <span class="nf">_parse_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">method_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">InstrumentMethodsCount</span>
+            <span class="k">if</span> <span class="n">method_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_InstrumentMethod</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="c1"># the data acquisition method should be the last method</span>
+            <span class="k">return</span> <span class="n">_InstrumentMethod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">GetInstrumentMethod</span><span class="p">(</span><span class="n">method_count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">NullReferenceException</span><span class="p">:</span>   <span class="c1"># pylint: disable=broad-except</span>
+            <span class="k">return</span> <span class="n">_InstrumentMethod</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_scan_time_to_scan_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_time</span><span class="p">):</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">ScanNumberFromRetentionTime</span><span class="p">(</span><span class="n">scan_time</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">scan_number</span>
+
+<div class="viewcode-block" id="ThermoRawLoader.samples"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.samples">[docs]</a>    <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Describe the sample(s) used to generate the mass spectrometry</span>
+<span class="sd">        data contained in this file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :class:`list` of :class:`~.Sample`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">SampleInformation</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">Sample</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">SampleId</span> <span class="ow">or</span> <span class="s1">&#39;sample_1&#39;</span><span class="p">)</span>
+        <span class="n">sample</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">SampleName</span> <span class="ow">or</span> <span class="n">si</span><span class="o">.</span><span class="n">SampleId</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">SampleVolume</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sample volume&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">SampleVolume</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">SampleWeight</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sample mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">SampleWeight</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">Vial</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sample vial&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">Vial</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">Barcode</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sample barcode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">Barcode</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="ThermoRawLoader.get_scan_by_index"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.get_scan_by_index">[docs]</a>    <span class="k">def</span> <span class="nf">get_scan_by_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan index.</span>
+
+<span class="sd">        This internally calls :meth:`get_scan_by_id` which will</span>
+<span class="sd">        use its cache.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index: int</span>
+<span class="sd">            The index to get the scan for</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span><span class="p">[</span><span class="n">scan_number</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">package</span> <span class="o">=</span> <span class="n">ThermoRawScanPtr</span><span class="p">(</span><span class="n">scan_number</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">package</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="n">Scan</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span><span class="p">[</span><span class="n">scan_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span>
+            <span class="k">return</span> <span class="n">scan</span></div>
+
+<div class="viewcode-block" id="ThermoRawLoader.get_scan_by_id"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.get_scan_by_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_scan_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan id.</span>
+
+<span class="sd">        If the scan object is still bound and in memory somewhere,</span>
+<span class="sd">        a reference to that same object will be returned. Otherwise,</span>
+<span class="sd">        a new object will be created.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scan_id : str</span>
+<span class="sd">            The unique scan id value to be retrieved</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">_id_template</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span><span class="p">[</span><span class="n">scan_number</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">package</span> <span class="o">=</span> <span class="n">ThermoRawScanPtr</span><span class="p">(</span><span class="n">scan_number</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">package</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">scan_id</span><span class="p">))</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="n">Scan</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span><span class="p">[</span><span class="n">scan_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span>
+            <span class="k">return</span> <span class="n">scan</span></div>
+
+<div class="viewcode-block" id="ThermoRawLoader.get_scan_by_time"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.get_scan_by_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_scan_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan time.</span>
+
+<span class="sd">        This internally calls :meth:`get_scan_by_id` which will</span>
+<span class="sd">        use its cache.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            The time to get the nearest scan from</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Scan</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">time</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_scan_time</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_scan_time</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_scan_time</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_scan_time</span>
+        <span class="n">scan_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time_to_scan_number</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span><span class="p">[</span><span class="n">scan_number</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">package</span> <span class="o">=</span> <span class="n">ThermoRawScanPtr</span><span class="p">(</span><span class="n">scan_number</span><span class="p">)</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="n">Scan</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span><span class="p">[</span><span class="n">scan_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span>
+            <span class="k">return</span> <span class="n">scan</span></div>
+
+<div class="viewcode-block" id="ThermoRawLoader.start_from_scan"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.start_from_scan">[docs]</a>    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">require_ms1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Reconstruct an iterator which will start from the scan matching one of ``scan_id``,</span>
+<span class="sd">        ``rt``, or ``index``. Only one may be provided.</span>
+
+<span class="sd">        After invoking this method, the iterator this object wraps will be changed to begin</span>
+<span class="sd">        yielding scan bunchs (or single scans if ``grouped`` is ``False``).</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">        scan_id: str, optional</span>
+<span class="sd">            Start from the scan with the specified id.</span>
+<span class="sd">        rt: float, optional</span>
+<span class="sd">            Start from the scan nearest to specified time (in minutes) in the run. If no</span>
+<span class="sd">            exact match is found, the nearest scan time will be found, rounded up.</span>
+<span class="sd">        index: int, optional</span>
+<span class="sd">            Start from the scan with the specified index.</span>
+<span class="sd">        require_ms1: bool, optional</span>
+<span class="sd">            Whether the iterator must start from an MS1 scan. True by default.</span>
+<span class="sd">        grouped: bool, optional</span>
+<span class="sd">            whether the iterator should yield scan bunches or single scans. True by default.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">scan_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scan_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">scan_id</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">_id_template</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scan_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">rt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scan_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time_to_scan_number</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">require_ms1</span><span class="p">:</span>
+            <span class="n">start_index</span> <span class="o">=</span> <span class="n">scan_number</span>
+            <span class="k">while</span> <span class="n">start_index</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">start_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">start_index</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="n">scan_number</span> <span class="o">=</span> <span class="n">start_index</span>
+        <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_pointer_iterator</span><span class="p">(</span><span class="n">start_index</span><span class="o">=</span><span class="n">scan_number</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">grouped</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_group_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_scan_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="nf">_make_scan_index_producer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">start_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">RunHeaderEx</span><span class="o">.</span><span class="n">LastSpectrum</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_time_to_scan_number</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">start_index</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">scan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scan_by_index</span><span class="p">(</span><span class="n">start_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">start_index</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">return</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">RunHeaderEx</span><span class="o">.</span><span class="n">LastSpectrum</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">RunHeaderEx</span><span class="o">.</span><span class="n">LastSpectrum</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_pointer_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_scan_index_producer</span><span class="p">(</span><span class="n">start_index</span><span class="p">,</span> <span class="n">start_time</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">ThermoRawScanPtr</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_default_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_pointer_iterator</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_make_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">scan_number</span>
+
+<div class="viewcode-block" id="ThermoRawLoader.next"><a class="viewcode-back" href="../../../data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_producer</span><span class="p">)</span></div></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>

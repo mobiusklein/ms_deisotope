@@ -6,16 +6,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Deconvolution Pipeline &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Data Access" href="../data_source/index.html" />
@@ -73,8 +71,8 @@ with fewer configurable parameters.</p>
 </pre></div>
 </div>
 <dl class="py class">
-<dt id="ms_deisotope.processor.ScanProcessor">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.processor.</code><code class="sig-name descname">ScanProcessor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_source</span></em>, <em class="sig-param"><span class="n">ms1_peak_picking_args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">msn_peak_picking_args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ms1_deconvolution_args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">msn_deconvolution_args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pick_only_tandem_envelopes</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">default_precursor_ion_selection_window</span><span class="o">=</span><span class="default_value">1.5</span></em>, <em class="sig-param"><span class="n">trust_charge_hint</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">loader_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">envelope_selector</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">terminate_on_error</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">ms1_averaging</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">respect_isolation_window</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">too_many_peaks_threshold</span><span class="o">=</span><span class="default_value">7000</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.processor.</span></span><span class="sig-name descname"><span class="pre">ScanProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ms1_peak_picking_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msn_peak_picking_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ms1_deconvolution_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msn_deconvolution_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pick_only_tandem_envelopes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_precursor_ion_selection_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trust_charge_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loader_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envelope_selector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminate_on_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ms1_averaging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">respect_isolation_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">too_many_peaks_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Orchestrates the deconvolution of a <a class="reference internal" href="../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a> scan by scan. This process will
 apply different rules for MS1 scans and MSn scans. This type itself mimics a <a class="reference internal" href="../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a>,
 consuming (raw) mass spectral data and producing deisotoped and charge deconvolved spectra.</p>
@@ -87,8 +85,8 @@ MSn scan. These are described by <a class="reference internal" href="#ms_deisoto
 <p>At the moment, MSn assumes only MS2. Until MS3 data become available for testing, this limit
 will remain.</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.data_source">
-<code class="sig-name descname">data_source</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.data_source" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.data_source" title="Permalink to this definition">¶</a></dt>
 <dd><p>Any valid object to be passed to the <cite>loader_type</cite> callable to produce
 a <a class="reference internal" href="../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a> instance. A path to a mass spectrometry data file,
 a file-like object, or an instance of <a class="reference internal" href="../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a>. Used to populate <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.reader" title="ms_deisotope.processor.ScanProcessor.reader"><code class="xref py py-attr docutils literal notranslate"><span class="pre">reader</span></code></a></p>
@@ -100,8 +98,8 @@ a file-like object, or an instance of <a class="reference internal" href="../dat
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.loader_type">
-<code class="sig-name descname">loader_type</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.loader_type" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.loader_type">
+<span class="sig-name descname"><span class="pre">loader_type</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.loader_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>A callable, which when passed <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.data_source" title="ms_deisotope.processor.ScanProcessor.data_source"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_source</span></code></a> returns an instance of <a class="reference internal" href="../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a>.
 By default, this is <code class="xref py py-func docutils literal notranslate"><span class="pre">MSFileLoader()</span></code>. Used to populate <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.reader" title="ms_deisotope.processor.ScanProcessor.reader"><code class="xref py py-attr docutils literal notranslate"><span class="pre">reader</span></code></a></p>
 <dl class="field-list simple">
@@ -112,8 +110,8 @@ By default, this is <code class="xref py py-func docutils literal notranslate"><
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.reader">
-<code class="sig-name descname">reader</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.reader" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.reader">
+<span class="sig-name descname"><span class="pre">reader</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.reader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Any object implementing the <a class="reference internal" href="../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.common.ScanIterator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code></a> interface, produced by calling
 <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.loader_type" title="ms_deisotope.processor.ScanProcessor.loader_type"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loader_type</span></code></a> on <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.data_source" title="ms_deisotope.processor.ScanProcessor.data_source"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_source</span></code></a>.</p>
 <dl class="field-list simple">
@@ -124,8 +122,8 @@ By default, this is <code class="xref py py-func docutils literal notranslate"><
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.ms1_deconvolution_args">
-<code class="sig-name descname">ms1_deconvolution_args</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.ms1_deconvolution_args" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.ms1_deconvolution_args">
+<span class="sig-name descname"><span class="pre">ms1_deconvolution_args</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.ms1_deconvolution_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>The arguments passed to <a class="reference internal" href="deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks" title="ms_deisotope.deconvolution.deconvolute_peaks"><code class="xref py py-func docutils literal notranslate"><span class="pre">deconvolute_peaks()</span></code></a> for MS1
 scans.</p>
 <dl class="field-list simple">
@@ -136,8 +134,8 @@ scans.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.ms1_peak_picking_args">
-<code class="sig-name descname">ms1_peak_picking_args</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.ms1_peak_picking_args" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.ms1_peak_picking_args">
+<span class="sig-name descname"><span class="pre">ms1_peak_picking_args</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.ms1_peak_picking_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>The arguments passed to <code class="xref py py-func docutils literal notranslate"><span class="pre">ms_peak_picker.pick_peaks()</span></code> for MS1 scans.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -147,8 +145,8 @@ scans.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.msn_deconvolution_args">
-<code class="sig-name descname">msn_deconvolution_args</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.msn_deconvolution_args" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.msn_deconvolution_args">
+<span class="sig-name descname"><span class="pre">msn_deconvolution_args</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.msn_deconvolution_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>The arguments passed to <a class="reference internal" href="deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks" title="ms_deisotope.deconvolution.deconvolute_peaks"><code class="xref py py-func docutils literal notranslate"><span class="pre">deconvolute_peaks()</span></code></a> for MSn
 scans.</p>
 <dl class="field-list simple">
@@ -159,8 +157,8 @@ scans.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.msn_peak_picking_args">
-<code class="sig-name descname">msn_peak_picking_args</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.msn_peak_picking_args" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.msn_peak_picking_args">
+<span class="sig-name descname"><span class="pre">msn_peak_picking_args</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.msn_peak_picking_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>The arguments passed to <code class="xref py py-func docutils literal notranslate"><span class="pre">ms_peak_picker.pick_peaks()</span></code> for MSn scans.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -170,8 +168,8 @@ scans.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.pick_only_tandem_envelopes">
-<code class="sig-name descname">pick_only_tandem_envelopes</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.pick_only_tandem_envelopes" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.pick_only_tandem_envelopes">
+<span class="sig-name descname"><span class="pre">pick_only_tandem_envelopes</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.pick_only_tandem_envelopes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether or not to process whole MS1 scans or just the regions around those peaks
 chosen for MSn</p>
 <dl class="field-list simple">
@@ -182,8 +180,8 @@ chosen for MSn</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.default_precursor_ion_selection_window">
-<code class="sig-name descname">default_precursor_ion_selection_window</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.default_precursor_ion_selection_window" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.default_precursor_ion_selection_window">
+<span class="sig-name descname"><span class="pre">default_precursor_ion_selection_window</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.default_precursor_ion_selection_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>Size of the selection window to use when <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.pick_only_tandem_envelopes" title="ms_deisotope.processor.ScanProcessor.pick_only_tandem_envelopes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pick_only_tandem_envelopes</span></code></a> is <cite>True</cite>
 and the information is not available in the scan.</p>
 <dl class="field-list simple">
@@ -194,8 +192,8 @@ and the information is not available in the scan.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.trust_charge_hint">
-<code class="sig-name descname">trust_charge_hint</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.trust_charge_hint" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.trust_charge_hint">
+<span class="sig-name descname"><span class="pre">trust_charge_hint</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.trust_charge_hint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether or not to trust the charge provided by the data source when determining
 the charge state of precursor isotopic patterns. Defaults to <cite>True</cite></p>
 <dl class="field-list simple">
@@ -206,8 +204,8 @@ the charge state of precursor isotopic patterns. Defaults to <cite>True</cite></
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.respect_isolation_window">
-<code class="sig-name descname">respect_isolation_window</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.respect_isolation_window" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.respect_isolation_window">
+<span class="sig-name descname"><span class="pre">respect_isolation_window</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.respect_isolation_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether to use the bounds of the isolation window to reject a monoisotopic peak
 solution</p>
 <dl class="field-list simple">
@@ -218,8 +216,8 @@ solution</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.terminate_on_error">
-<code class="sig-name descname">terminate_on_error</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.terminate_on_error" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.terminate_on_error">
+<span class="sig-name descname"><span class="pre">terminate_on_error</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.terminate_on_error" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether or not  to stop processing on an error. Defaults to <cite>True</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -229,8 +227,8 @@ solution</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.ScanProcessor.ms1_averaging">
-<code class="sig-name descname">ms1_averaging</code><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.ms1_averaging" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.ms1_averaging">
+<span class="sig-name descname"><span class="pre">ms1_averaging</span></span><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.ms1_averaging" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of adjacent MS1 scans to average prior to picking peaks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -240,8 +238,8 @@ solution</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan">
-<code class="sig-name descname">deconvolute_precursor_scan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">precursor_scan</span></em>, <em class="sig-param"><span class="n">priorities</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">product_scans</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.deconvolute_precursor_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan">
+<span class="sig-name descname"><span class="pre">deconvolute_precursor_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precursor_scan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priorities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_scans</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.deconvolute_precursor_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deconvolute the given precursor scan, giving priority to its product ions,
 correcting the <code class="xref py py-attr docutils literal notranslate"><span class="pre">precursor_information</span></code> attributes of priority targets,
 as well as calculating the degree of precursor purity and coisolating ions.</p>
@@ -268,8 +266,8 @@ as well as calculating the degree of precursor purity and coisolating ions.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.deconvolute_product_scan">
-<code class="sig-name descname">deconvolute_product_scan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">product_scan</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.deconvolute_product_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.deconvolute_product_scan" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.deconvolute_product_scan">
+<span class="sig-name descname"><span class="pre">deconvolute_product_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_scan</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.deconvolute_product_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.deconvolute_product_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deconvolute the peaks of <cite>product_scan</cite>.</p>
 <p>This method will override the upper limit “charge_range” of
 <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.msn_deconvolution_args" title="ms_deisotope.processor.ScanProcessor.msn_deconvolution_args"><code class="xref py py-attr docutils literal notranslate"><span class="pre">msn_deconvolution_args</span></code></a> to the charge information of
@@ -294,8 +292,8 @@ the precursor ion.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.next">
-<code class="sig-name descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.next" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.next">
+<span class="sig-name descname"><span class="pre">next</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.next"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.next" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fetches the next bunch of scans from <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.reader" title="ms_deisotope.processor.ScanProcessor.reader"><code class="xref py py-attr docutils literal notranslate"><span class="pre">reader</span></code></a> and
 invokes <a class="reference internal" href="#ms_deisotope.processor.process" title="ms_deisotope.processor.process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">process()</span></code></a> on them, picking peaks and deconvoluting them.</p>
 <dl class="field-list simple">
@@ -309,8 +307,8 @@ invokes <a class="reference internal" href="#ms_deisotope.processor.process" tit
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.pick_precursor_scan_peaks">
-<code class="sig-name descname">pick_precursor_scan_peaks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">precursor_scan</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.pick_precursor_scan_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.pick_precursor_scan_peaks" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.pick_precursor_scan_peaks">
+<span class="sig-name descname"><span class="pre">pick_precursor_scan_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precursor_scan</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.pick_precursor_scan_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.pick_precursor_scan_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Picks peaks for the given <code class="docutils literal notranslate"><span class="pre">precursor_scan</span></code> using the
 appropriate strategy.</p>
 <p>If <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.ms1_averaging" title="ms_deisotope.processor.ScanProcessor.ms1_averaging"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ms1_averaging</span></code></a> &gt; 0, then the signal averaging strategy
@@ -329,8 +327,8 @@ is used, otherwise peaks are picked directly.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.pick_product_scan_peaks">
-<code class="sig-name descname">pick_product_scan_peaks</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">product_scan</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.pick_product_scan_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.pick_product_scan_peaks" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.pick_product_scan_peaks">
+<span class="sig-name descname"><span class="pre">pick_product_scan_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_scan</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.pick_product_scan_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.pick_product_scan_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pick the peaks of product scan</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -346,8 +344,8 @@ is used, otherwise peaks are picked directly.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.process">
-<code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">precursor</span></em>, <em class="sig-param"><span class="n">products</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.process" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precursor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">products</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.process" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fully preprocesses the <cite>precursor</cite> and <cite>products</cite> scans, performing
 any necessary information sharing.</p>
 <p>This method may be used to process scans from other sources not from the
@@ -369,8 +367,8 @@ wrapped <a class="reference internal" href="../data_source/common_reader.html#ms
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.process_scan_group">
-<code class="sig-name descname">process_scan_group</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">precursor_scan</span></em>, <em class="sig-param"><span class="n">product_scans</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.process_scan_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.process_scan_group" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.process_scan_group">
+<span class="sig-name descname"><span class="pre">process_scan_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precursor_scan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_scans</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.process_scan_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.process_scan_group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs the initial extraction of information relating
 <cite>precursor_scan</cite> to <cite>product_scans</cite> and picks peaks for <code class="docutils literal notranslate"><span class="pre">precursor_scan</span></code>.
 Called by <a class="reference internal" href="#ms_deisotope.processor.process" title="ms_deisotope.processor.process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">process()</span></code></a>. May be used separately if doing the process step
@@ -395,8 +393,8 @@ are related to <cite>product_scans</cite></p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.ScanProcessor.start_from_scan">
-<code class="sig-name descname">start_from_scan</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.start_from_scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.start_from_scan" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.ScanProcessor.start_from_scan">
+<span class="sig-name descname"><span class="pre">start_from_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#ScanProcessor.start_from_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.ScanProcessor.start_from_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>A wrapper around <a class="reference internal" href="../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan" title="ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan"><code class="xref py py-meth docutils literal notranslate"><span class="pre">start_from_scan()</span></code></a> provided by
 <a class="reference internal" href="#ms_deisotope.processor.ScanProcessor.reader" title="ms_deisotope.processor.ScanProcessor.reader"><code class="xref py py-attr docutils literal notranslate"><span class="pre">reader</span></code></a>, if available.</p>
 <dl class="field-list simple">
@@ -416,8 +414,8 @@ are related to <cite>product_scans</cite></p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="ms_deisotope.processor.process">
-<code class="sig-prename descclassname">ms_deisotope.processor.</code><code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_source</span></em>, <em class="sig-param"><span class="n">ms1_averagine</span><span class="o">=</span><span class="default_value">Averagine({'C': 4.9384, 'H': 7.7583, 'N': 1.3577, 'O': 1.4773, 'S': 0.0417})</span></em>, <em class="sig-param"><span class="n">msn_averagine</span><span class="o">=</span><span class="default_value">Averagine({'C': 4.9384, 'H': 7.7583, 'N': 1.3577, 'O': 1.4773, 'S': 0.0417})</span></em>, <em class="sig-param"><span class="n">ms1_score_threshold</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">msn_score_threshold</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">denoise</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ms1_max_missed_peaks</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">pick_only_tandem_envelopes</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">trust_charge_hint</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">envelope_selector</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">terminate_on_error</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">ms1_averaging</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">respect_isolation_window</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">use_quick_charge</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.process" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.process">
+<span class="sig-prename descclassname"><span class="pre">ms_deisotope.processor.</span></span><span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ms1_averagine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Averagine({'C':</span> <span class="pre">4.9384,</span> <span class="pre">'H':</span> <span class="pre">7.7583,</span> <span class="pre">'N':</span> <span class="pre">1.3577,</span> <span class="pre">'O':</span> <span class="pre">1.4773,</span> <span class="pre">'S':</span> <span class="pre">0.0417})</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msn_averagine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Averagine({'C':</span> <span class="pre">4.9384,</span> <span class="pre">'H':</span> <span class="pre">7.7583,</span> <span class="pre">'N':</span> <span class="pre">1.3577,</span> <span class="pre">'O':</span> <span class="pre">1.4773,</span> <span class="pre">'S':</span> <span class="pre">0.0417})</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ms1_score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msn_score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denoise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ms1_max_missed_peaks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pick_only_tandem_envelopes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trust_charge_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envelope_selector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminate_on_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ms1_averaging</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">respect_isolation_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_quick_charge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.process" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct a deconvolution pipeline for common applications.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -464,14 +462,14 @@ solution</p></li>
 instance of <a class="reference internal" href="#ms_deisotope.processor.PriorityTarget" title="ms_deisotope.processor.PriorityTarget"><code class="xref py py-class docutils literal notranslate"><span class="pre">PriorityTarget</span></code></a>.</p>
 <blockquote>
 <div><dl class="py class">
-<dt id="ms_deisotope.processor.PriorityTarget">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.processor.</code><code class="sig-name descname">PriorityTarget</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peak</span></em>, <em class="sig-param"><span class="n">info</span></em>, <em class="sig-param"><span class="n">trust_charge_hint</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">precursor_scan_id</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">product_scan_id</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">isolation_window</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#PriorityTarget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.processor.</span></span><span class="sig-name descname"><span class="pre">PriorityTarget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peak</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trust_charge_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precursor_scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isolation_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#PriorityTarget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represent a targeted envelope deconvolution’s parameters and constraints.</p>
 <p>This class is used to tell <a class="reference internal" href="deconvolution.html#ms_deisotope.deconvolution.deconvolute_peaks" title="ms_deisotope.deconvolution.deconvolute_peaks"><code class="xref py py-func docutils literal notranslate"><span class="pre">ms_deisotope.deconvolution.deconvolute_peaks()</span></code></a>
 that the solution produced by this peak should be preferentially extracted.</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.PriorityTarget.info">
-<code class="sig-name descname">info</code><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.info" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget.info">
+<span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.info" title="Permalink to this definition">¶</a></dt>
 <dd><p>The associated precursor information block which contains
 the charge state hint.</p>
 <dl class="field-list simple">
@@ -482,8 +480,8 @@ the charge state hint.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.PriorityTarget.peak">
-<code class="sig-name descname">peak</code><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.peak" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget.peak">
+<span class="sig-name descname"><span class="pre">peak</span></span><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>The peak from which to start the deconvolution</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -493,8 +491,8 @@ the charge state hint.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.PriorityTarget.trust_charge_hint">
-<code class="sig-name descname">trust_charge_hint</code><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.trust_charge_hint" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget.trust_charge_hint">
+<span class="sig-name descname"><span class="pre">trust_charge_hint</span></span><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.trust_charge_hint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether or not to force the deconvoluter to only consider
 the charge specified in the hint.</p>
 <dl class="field-list simple">
@@ -505,8 +503,8 @@ the charge specified in the hint.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.PriorityTarget.mz">
-<code class="sig-name descname">mz</code><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.mz" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget.mz">
+<span class="sig-name descname"><span class="pre">mz</span></span><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.mz" title="Permalink to this definition">¶</a></dt>
 <dd><p>The m/z of <a class="reference internal" href="#ms_deisotope.processor.PriorityTarget.peak" title="ms_deisotope.processor.PriorityTarget.peak"><code class="xref py py-attr docutils literal notranslate"><span class="pre">peak</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -516,8 +514,8 @@ the charge specified in the hint.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.PriorityTarget.charge">
-<code class="sig-name descname">charge</code><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.charge" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget.charge">
+<span class="sig-name descname"><span class="pre">charge</span></span><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.charge" title="Permalink to this definition">¶</a></dt>
 <dd><p>The charge state hint from <a class="reference internal" href="#ms_deisotope.processor.PriorityTarget.info" title="ms_deisotope.processor.PriorityTarget.info"><code class="xref py py-attr docutils literal notranslate"><span class="pre">info</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -527,8 +525,8 @@ the charge specified in the hint.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.processor.PriorityTarget.isolation_window">
-<code class="sig-name descname">isolation_window</code><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.isolation_window" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget.isolation_window">
+<span class="sig-name descname"><span class="pre">isolation_window</span></span><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.isolation_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>The isolation window for this precursor ion. May be <cite>None</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -538,8 +536,8 @@ the charge specified in the hint.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.processor.PriorityTarget.charge_range_hint">
-<code class="sig-name descname">charge_range_hint</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">charge_range</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#PriorityTarget.charge_range_hint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.charge_range_hint" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.processor.PriorityTarget.charge_range_hint">
+<span class="sig-name descname"><span class="pre">charge_range_hint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">charge_range</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/processor.html#PriorityTarget.charge_range_hint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.processor.PriorityTarget.charge_range_hint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create an updated charge range for a Deconvoluter to search.</p>
 <p>At the moment, this only amounts to either returning the charge
 range unchanged or returning a charge range that only contains
@@ -579,7 +577,7 @@ is <cite>False</cite> or not.</p>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

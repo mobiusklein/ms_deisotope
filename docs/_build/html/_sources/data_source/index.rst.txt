@@ -30,7 +30,9 @@ To read from a supported file format, do one of the following:
     common_scan
     common_reader
     metadata/index
+    formats
     mzml
     mzxml
     mgf
-    formats
+    mzmlb
+    thermo_raw_net

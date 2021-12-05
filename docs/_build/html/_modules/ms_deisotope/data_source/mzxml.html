@@ -6,16 +6,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ms_deisotope.data_source.mzxml &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -51,13 +49,16 @@
     <span class="n">ScanEventInformation</span><span class="p">,</span> <span class="n">ScanWindow</span><span class="p">,</span>
     <span class="n">ComponentGroup</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">InstrumentInformation</span><span class="p">,</span>
     <span class="n">FileInformation</span><span class="p">,</span> <span class="n">ScanFileMetadataBase</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.metadata</span> <span class="kn">import</span> <span class="n">data_transformation</span>
+<span class="kn">from</span> <span class="nn">.metadata</span> <span class="kn">import</span> <span class="n">data_transformation</span><span class="p">,</span> <span class="n">file_information</span>
 <span class="kn">from</span> <span class="nn">.xml_reader</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">XMLReaderBase</span><span class="p">,</span> <span class="n">iterparse_until</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">_MzXMLParser</span><span class="p">(</span><span class="n">mzxml</span><span class="o">.</span><span class="n">MzXML</span><span class="p">):</span>
     <span class="k">pass</span>
+
+
+<span class="n">scan_number_only_id_format</span> <span class="o">=</span> <span class="n">file_information</span><span class="o">.</span><span class="n">id_format</span><span class="p">(</span><span class="s2">&quot;MS:1000776&quot;</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">_MzXMLMetadataLoader</span><span class="p">(</span><span class="n">ScanFileMetadataBase</span><span class="p">):</span>
@@ -145,6 +146,10 @@
             <span class="n">operation_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">data_transformation</span><span class="o">.</span><span class="n">DataProcessingInformation</span><span class="p">([</span><span class="n">method_group</span><span class="p">],</span> <span class="nb">id</span><span class="o">=</span><span class="n">i</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">operation_groups</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">scan_number_only_id_format</span>
 
 
 <span class="k">class</span> <span class="nc">MzXMLDataInterface</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
@@ -478,7 +483,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

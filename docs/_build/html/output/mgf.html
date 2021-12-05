@@ -6,19 +6,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Writing MGF &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Visualizing Mass Spectra" href="../visualization.html" />
+    <link rel="next" title="Writing mzMLb" href="mzmlb.html" />
     <link rel="prev" title="Writing mzML" href="mzml.html" /> 
   </head><body>
       <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
@@ -32,7 +30,7 @@
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="../visualization.html">Visualizing Mass Spectra</a>&#160;&#160;»
+        <a href="mzmlb.html">Writing mzMLb</a>&#160;&#160;»
         </p>
 
       </div>
@@ -63,14 +61,14 @@
 <span class="target" id="module-ms_deisotope.output.mgf"></span><p>Code for writing Mascot Generic Format files and for reading deconvoluted
 generic format files.</p>
 <dl class="py class">
-<dt id="ms_deisotope.output.mgf.MGFSerializer">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.output.mgf.</code><code class="sig-name descname">MGFSerializer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stream</span></em>, <em class="sig-param"><span class="n">sample_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">deconvoluted</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mgf.MGFSerializer">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.output.mgf.</span></span><span class="sig-name descname"><span class="pre">MGFSerializer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stream</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deconvoluted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>A MASCOT Generic Format writer which is deconvolution aware.</p>
 <p>Implements :class:<a href="#id1"><span class="problematic" id="id2">`</span></a>~.HeaderedDelimitedWriter, as well as allowing
 global parameters to be included at the beginning of the file.</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mgf.MGFSerializer.sample_name">
-<code class="sig-name descname">sample_name</code><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.sample_name" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mgf.MGFSerializer.sample_name">
+<span class="sig-name descname"><span class="pre">sample_name</span></span><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.sample_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of the sample. This value is currently ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -80,8 +78,8 @@ global parameters to be included at the beginning of the file.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mgf.MGFSerializer.started">
-<code class="sig-name descname">started</code><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.started" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mgf.MGFSerializer.started">
+<span class="sig-name descname"><span class="pre">started</span></span><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.started" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether scans have been written out yet or not. Once <a class="reference internal" href="#ms_deisotope.output.mgf.MGFSerializer.started" title="ms_deisotope.output.mgf.MGFSerializer.started"><code class="xref py py-attr docutils literal notranslate"><span class="pre">started</span></code></a> is
 true, it is no longer possible to add global parameters using <a class="reference internal" href="#ms_deisotope.output.mgf.MGFSerializer.add_global_parameter" title="ms_deisotope.output.mgf.MGFSerializer.add_global_parameter"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_global_parameter()</span></code></a>.</p>
 <dl class="field-list simple">
@@ -92,8 +90,8 @@ true, it is no longer possible to add global parameters using <a class="referenc
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mgf.MGFSerializer.add_global_parameter">
-<code class="sig-name descname">add_global_parameter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.add_global_parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.add_global_parameter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mgf.MGFSerializer.add_global_parameter">
+<span class="sig-name descname"><span class="pre">add_global_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.add_global_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.add_global_parameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a global parameter at the beginning of the file, before scans
 are written.</p>
 <p>Global parameters follow the same <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> format as scan-level
@@ -113,8 +111,8 @@ written.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mgf.MGFSerializer.add_parameter">
-<code class="sig-name descname">add_parameter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.add_parameter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.add_parameter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mgf.MGFSerializer.add_parameter">
+<span class="sig-name descname"><span class="pre">add_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.add_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.add_parameter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a parameter to the current block.</p>
 <p>Parameters are written <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> format.</p>
 <dl class="field-list simple">
@@ -128,8 +126,8 @@ written.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch">
-<code class="sig-name descname">save_scan_bunch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bunch</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.save_scan_bunch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch">
+<span class="sig-name descname"><span class="pre">save_scan_bunch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bunch</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/output/mgf.html#MGFSerializer.save_scan_bunch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.output.mgf.MGFSerializer.save_scan_bunch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a single <a class="reference internal" href="../data_source/common_scan.html#ms_deisotope.data_source.common.ScanBunch" title="ms_deisotope.data_source.common.ScanBunch"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code></a> to the
 writing stream, recording any information relating
 the precursors and products to each other.</p>
@@ -144,8 +142,8 @@ the precursors and products to each other.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.output.mgf.ProcessedMGFDeserializer">
-<code class="sig-prename descclassname">ms_deisotope.output.mgf.</code><code class="sig-name descname">ProcessedMGFDeserializer</code><a class="headerlink" href="#ms_deisotope.output.mgf.ProcessedMGFDeserializer" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.output.mgf.ProcessedMGFDeserializer">
+<span class="sig-prename descclassname"><span class="pre">ms_deisotope.output.mgf.</span></span><span class="sig-name descname"><span class="pre">ProcessedMGFDeserializer</span></span><a class="headerlink" href="#ms_deisotope.output.mgf.ProcessedMGFDeserializer" title="Permalink to this definition">¶</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">ms_deisotope.output.mgf.ProcessedMGFLoader</span></code></p>
 </dd></dl>
 
@@ -160,14 +158,14 @@ the precursors and products to each other.</p>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="../visualization.html">Visualizing Mass Spectra</a>&#160;&#160;»
+        <a href="mzmlb.html">Writing mzMLb</a>&#160;&#160;»
         </p>
 
       </div>
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

@@ -6,16 +6,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ms_deisotope.output.mgf &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -65,6 +63,12 @@
 <span class="sd">        true, it is no longer possible to add global parameters using :meth:`add_global_parameter`.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mgf&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mgf.gz&quot;</span>
+    <span class="p">}</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">MGFSerializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">deconvoluted</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_name</span> <span class="o">=</span> <span class="n">sample_name</span>
@@ -157,8 +161,14 @@
 <span class="sd">    precursor ion.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;ascii&#39;</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="p">)</span>
+
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mgf&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mgf.gz&quot;</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">source_file</span><span class="p">,</span> <span class="n">encoding</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_create_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
@@ -178,7 +188,7 @@
         <span class="n">scan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_make_scan</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_peaks</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="n">pinfo</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMGFDeserializer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_precursor_information</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
@@ -223,7 +233,7 @@
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

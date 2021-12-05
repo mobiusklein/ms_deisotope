@@ -1,0 +1,228 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ms-deisotope &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Glossary" href="../glossary.html" />
+    <link rel="prev" title="ms-index" href="ms-index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms-deisotope</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="ms-index.html">ms-index</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../glossary.html">Glossary</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="ms-deisotope">
+<h1>ms-deisotope<a class="headerlink" href="#ms-deisotope" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ms-deisotope">
+<h2>ms-deisotope<a class="headerlink" href="#ms-deisotope" title="Permalink to this headline">¶</a></h2>
+<p>Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-deisotope <span class="o">[</span>OPTIONS<span class="o">]</span> MS_FILE OUTFILE_PATH
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-a">
+<span class="sig-name descname"><span class="pre">-a</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--averagine</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;averagine&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Averagine model to use for MS1 scans. Either a name or formula. May specify multiple times. (May specify more than once)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-an">
+<span class="sig-name descname"><span class="pre">-an</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-averagine</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;averagine&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-an" title="Permalink to this definition">¶</a></dt>
+<dd><p>Averagine model to use for MS^n scans. Either a name or formula. May specify multiple times. (May specify more than once)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-s">
+<span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--start-time</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan time to begin processing at in minutes</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-e">
+<span class="sig-name descname"><span class="pre">-e</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--end-time</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-e" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan time to stop processing at in minutes</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-c">
+<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--maximum-charge</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-c" title="Permalink to this definition">¶</a></dt>
+<dd><p>Highest absolute charge state to consider</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-n">
+<span class="sig-name descname"><span class="pre">-n</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--name</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;string&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-n" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name for the sample run to be stored. Defaults to the base name of the input data file</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-t">
+<span class="sig-name descname"><span class="pre">-t</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--score-threshold</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-t" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum score to accept an isotopic pattern fit in an MS1 scan</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-tn">
+<span class="sig-name descname"><span class="pre">-tn</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-score-threshold</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-tn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimum score to accept an isotopic pattern fit in an MS^n scan</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-m">
+<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--missed-peaks</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-m" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of missing peaks to permit before an isotopic fit is discarded</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-mn">
+<span class="sig-name descname"><span class="pre">-mn</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-missed-peaks</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-mn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of missing peaks to permit before an isotopic fit is discarded in an MSn scan</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-p">
+<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--processes</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of worker processes to use. Defaults to 4 or the number of CPUs, whichever is lower</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-b">
+<span class="sig-name descname"><span class="pre">-b</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--background-reduction</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-b" title="Permalink to this definition">¶</a></dt>
+<dd><p>Background reduction factor. Larger values more aggresively remove low abundance signal in MS1 scans.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-bn">
+<span class="sig-name descname"><span class="pre">-bn</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-background-reduction</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-bn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Background reduction factor. Larger values more aggresively remove low abundance signal in MS^n scans.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-r">
+<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--transform</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;func&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-r" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan transformations to apply to MS1 scans. May specify more than once. (May specify more than once)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-rn">
+<span class="sig-name descname"><span class="pre">-rn</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-transform</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;func&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-rn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan transformations to apply to MS^n scans. May specify more than once. (May specify more than once)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-v">
+<span class="sig-name descname"><span class="pre">-v</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--extract-only-tandem-envelopes</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-deisotope-v" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only work on regions that will be chosen for MS/MS</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-verbose">
+<span class="sig-name descname"><span class="pre">--verbose</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-deisotope-verbose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log additional diagnostic information for each scan.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-g">
+<span class="sig-name descname"><span class="pre">-g</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--ms1-averaging</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-g" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of MS1 scans before and after the current MS1 scan to average when picking peaks.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-ignore-msn">
+<span class="sig-name descname"><span class="pre">--ignore-msn</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-deisotope-ignore-msn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ignore MS^n scans</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-i">
+<span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--isotopic-strictness</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-i" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-in">
+<span class="sig-name descname"><span class="pre">-in</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-isotopic-strictness</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-in" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-snr">
+<span class="sig-name descname"><span class="pre">-snr</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--signal-to-noise-threshold</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-snr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signal-to-noise ratio threshold to apply when filtering peaks</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-mo">
+<span class="sig-name descname"><span class="pre">-mo</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--mass-offset</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-mo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shift peak masses by the given amount</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-D">
+<span class="sig-name descname"><span class="pre">-D</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--default-precursor-ion-selection-window</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-deisotope-D" title="Permalink to this definition">¶</a></dt>
+<dd><p>The isolation window width to assume when it is not specified.</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-arg-MS_FILE">
+<span class="sig-name descname"><span class="pre">MS_FILE</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-deisotope-arg-MS_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;path&gt;</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-deisotope-arg-OUTFILE_PATH">
+<span class="sig-name descname"><span class="pre">OUTFILE_PATH</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-deisotope-arg-OUTFILE_PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="ms-index.html">ms-index</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../glossary.html">Glossary</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glossary &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="ms-deisotope" href="cli/ms-deisotope.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>Glossary</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="cli/ms-deisotope.html">ms-deisotope</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="glossary">
+<h1>Glossary<a class="headerlink" href="#glossary" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="library-concept-glossary">
+<h2>Library Concept Glossary<a class="headerlink" href="#library-concept-glossary" title="Permalink to this headline">¶</a></h2>
+<dl class="glossary simple">
+<dt id="term-single">single<a class="headerlink" href="#term-single" title="Permalink to this term">¶</a></dt><dd><p>Single iteration mode iterators will produce a single <code class="xref py py-class docutils literal notranslate"><span class="pre">Scan</span></code>-like object
+per iteration, regardless of <code class="xref py py-attr docutils literal notranslate"><span class="pre">ms_deisotope.data_source.Scan.ms_level</span></code>. This is the default mode for
+formats like <a class="reference internal" href="data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader" title="ms_deisotope.data_source.mgf.MGFLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MGFLoader</span></code></a>.</p>
+</dd>
+<dt id="term-grouped">grouped<a class="headerlink" href="#term-grouped" title="Permalink to this term">¶</a></dt><dd><p>Grouped iteration mode iterators will produce a <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code> object per
+iteration. A <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanBunch</span></code> usually contains a precursor MS1 spectrum (but not
+always) plus a list of zero or more MSn spectra which are derived from it or which have no locate-able
+precursor.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="file-format-glossary">
+<h2>File Format Glossary<a class="headerlink" href="#file-format-glossary" title="Permalink to this headline">¶</a></h2>
+<dl class="glossary simple">
+<dt id="term-mzML">mzML<a class="headerlink" href="#term-mzML" title="Permalink to this term">¶</a></dt><dt id="term-mzml">mzml<a class="headerlink" href="#term-mzml" title="Permalink to this term">¶</a></dt><dd><p>A standard rich XML-format for raw mass spectrometry data storage, working as both
+a centroid <a class="reference internal" href="#term-peak-list-format"><span class="xref std std-term">peak list format</span></a> or continuous profiles. See <a class="reference external" href="http://www.psidev.info/index.php?q=node/257">http://www.psidev.info/</a>
+for additional information. This is the preferred open format for data exchange.</p>
+</dd>
+<dt id="term-MGF">MGF<a class="headerlink" href="#term-MGF" title="Permalink to this term">¶</a></dt><dt id="term-mgf">mgf<a class="headerlink" href="#term-mgf" title="Permalink to this term">¶</a></dt><dd><p>The “Mascot Generic File” format, a plain text multiple <a class="reference internal" href="#term-peak-list-format"><span class="xref std std-term">peak list format</span></a>.</p>
+</dd>
+<dt id="term-peak-list-format">peak list format<a class="headerlink" href="#term-peak-list-format" title="Permalink to this term">¶</a></dt><dd><p>A file or data serialization format the encodes a list of mass spectrum peaks with
+or without additional metadata. A format may either encode multiple spectra or a single
+spectrum, depending upon design.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="cli/ms-deisotope.html">ms-deisotope</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>

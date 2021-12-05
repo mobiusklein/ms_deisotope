@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ms_deisotope.output.mzmlb &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.output.mzmlb</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.output.mzmlb</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Writing mzMLb</span>
+<span class="sd">-------------</span>
+
+<span class="sd">Using the :mod:`psims` library, :mod:`ms_deisotope.output.mzmlb` can write an mzMLb</span>
+<span class="sd">file with all associated metadata. This uses the same machinery as :mod:`ms_deisotope.output.mzml`</span>
+<span class="sd">to accomplish this.</span>
+
+<span class="sd">This module also contains a specialized version of :class:`~.MzMLbLoader`,</span>
+<span class="sd">:class:`~.ProcessedMzMLbLoader`, which can directly reconstruct each</span>
+<span class="sd">deconvoluted peak list and provides fast access to an extended index of</span>
+<span class="sd">metadata that :class:`~.MzMLbSerializer` writes to an external file.</span>
+
+<span class="sd">All behavior available for the :class:`~.ProcessedMzMLLoader` are available for</span>
+<span class="sd">:class:`~.ProcessedMzMLbLoader`.</span>
+
+
+<span class="sd">.. code:: python</span>
+
+<span class="sd">    import ms_deisotope</span>
+<span class="sd">    from ms_deisotope.test.common import datafile</span>
+<span class="sd">    from ms_deisotope.output.mzmlb import MzMLbSerializer</span>
+
+<span class="sd">    reader = ms_deisotope.MSFileLoader(datafile(&quot;small.mzML&quot;))</span>
+<span class="sd">    with MzMLbSerializer(&#39;small.deconvoluted.mzMLb&#39;, n_spectra=len(reader)) as writer:</span>
+<span class="sd">        writer.copy_metadata_from(reader)</span>
+<span class="sd">        for bunch in reader:</span>
+<span class="sd">            bunch.precursor.pick_peaks()</span>
+<span class="sd">            bunch.precursor.deconvolute()</span>
+<span class="sd">            for product in bunch.products:</span>
+<span class="sd">                product.pick_peaks()</span>
+<span class="sd">                product.deconvolute()</span>
+<span class="sd">            writer.save(bunch)</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">psims.mzml.writer</span> <span class="kn">import</span> <span class="n">COMPRESSION_ZLIB</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">psims.mzmlb.writer</span> <span class="kn">import</span> <span class="n">MzMLbWriter</span> <span class="k">as</span> <span class="n">_MzMLbWriter</span>
+    <span class="n">is_available</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">_MzMLbWriter</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">is_available</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mzmlb</span> <span class="kn">import</span> <span class="n">MzMLbLoader</span>
+
+<span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">LCMSMSQueryInterfaceMixin</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">,</span> <span class="n">SampleRun</span>
+<span class="kn">from</span> <span class="nn">.mzml</span> <span class="kn">import</span> <span class="n">MzMLSerializer</span> <span class="k">as</span> <span class="n">_MzMLSerializer</span><span class="p">,</span> <span class="n">PeakSetDeserializingMixin</span>
+
+
+<div class="viewcode-block" id="MzMLbSerializer"><a class="viewcode-back" href="../../../output/mzmlb.html#ms_deisotope.output.mzmlb.MzMLbSerializer">[docs]</a><span class="k">class</span> <span class="nc">MzMLbSerializer</span><span class="p">(</span><span class="n">_MzMLSerializer</span><span class="p">):</span>
+
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mzmlb&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">_format_conversion_term</span> <span class="o">=</span> <span class="s2">&quot;Conversion to mzMLb&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_make_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
+        <span class="n">compression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span>
+        <span class="n">compression_opts</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">==</span> <span class="n">COMPRESSION_ZLIB</span><span class="p">:</span>
+            <span class="n">compression</span> <span class="o">=</span> <span class="s1">&#39;gzip&#39;</span>
+            <span class="n">compression_opts</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+        <span class="k">return</span> <span class="n">_MzMLbWriter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span> <span class="n">h5_compression</span><span class="o">=</span><span class="n">compression</span><span class="p">,</span> <span class="n">h5_compression_options</span><span class="o">=</span><span class="n">compression_opts</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ProcessedMzMLbLoader"><a class="viewcode-back" href="../../../output/mzmlb.html#ms_deisotope.output.mzmlb.ProcessedMzMLbLoader">[docs]</a><span class="k">class</span> <span class="nc">ProcessedMzMLbLoader</span><span class="p">(</span><span class="n">PeakSetDeserializingMixin</span><span class="p">,</span> <span class="n">MzMLbLoader</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">,</span> <span class="n">LCMSMSQueryInterfaceMixin</span><span class="p">):</span>
+
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mzmlb&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_extended_index</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLbLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="n">use_index</span><span class="p">,</span> <span class="n">decode_binary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span> <span class="o">=</span> <span class="n">use_extended_index</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">require_extended_index</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_dispose</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id_to_rt</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProcessedMzMLbLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_dispose</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_extended_index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_sample_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">()</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">SampleRun</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">uuid</span><span class="o">=</span><span class="n">sample</span><span class="p">[</span><span class="s1">&#39;SampleRun-UUID&#39;</span><span class="p">],</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sample_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_sample_run</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_run</span></div>
+
+
+<span class="n">ProcessedMzMLbDeserializer</span> <span class="o">=</span> <span class="n">ProcessedMzMLbLoader</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>

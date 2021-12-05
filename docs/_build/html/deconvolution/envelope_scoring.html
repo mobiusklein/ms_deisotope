@@ -6,15 +6,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Envelope Scoring &#8212; ms_deisotope  documentation</title>
-    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -55,8 +55,8 @@ the isotopic patterns are not high quality, but intensity can be used to discrim
 <h2>Scoring Functions<a class="headerlink" href="#scoring-functions" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="py class">
-<dt id="ms_deisotope.scoring.IsotopicFitterBase">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">IsotopicFitterBase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">score_threshold</span><span class="o">=</span><span class="default_value">0.5</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitterBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">IsotopicFitterBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>A base class for Isotopic Pattern Fitters, objects
 which given a set of experimental peaks and a set of matching
 theoretical peaks, returns a fit score describing how good the
@@ -66,8 +66,8 @@ or when the score is large (maximizing), and the appropriate
 <a class="reference internal" href="#ms_deisotope.scoring.FitSelectorBase" title="ms_deisotope.scoring.FitSelectorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FitSelectorBase</span></code></a> type will be used for <code class="xref py py-attr docutils literal notranslate"><span class="pre">select</span></code>. This
 will also be reflected by <a class="reference internal" href="#ms_deisotope.scoring.IsotopicFitterBase.is_maximizing" title="ms_deisotope.scoring.IsotopicFitterBase.is_maximizing"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_maximizing()</span></code></a>.</p>
 <dl class="py method">
-<dt id="ms_deisotope.scoring.IsotopicFitterBase.__call__">
-<code class="sig-name descname">__call__</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.__call__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitterBase.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes <a class="reference internal" href="#ms_deisotope.scoring.IsotopicFitterBase.evaluate" title="ms_deisotope.scoring.IsotopicFitterBase.evaluate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evaluate()</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -86,8 +86,8 @@ will also be reflected by <a class="reference internal" href="#ms_deisotope.scor
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.scoring.IsotopicFitterBase.evaluate">
-<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">peaklist</span></em>, <em class="sig-param"><span class="n">observed</span></em>, <em class="sig-param"><span class="n">expected</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.evaluate" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitterBase.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">peaklist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.evaluate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate a pair of peak lists for goodness-of-fit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -108,8 +108,8 @@ will also be reflected by <a class="reference internal" href="#ms_deisotope.scor
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.scoring.IsotopicFitterBase.is_maximizing">
-<code class="sig-name descname">is_maximizing</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.is_maximizing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.is_maximizing" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitterBase.is_maximizing">
+<span class="sig-name descname"><span class="pre">is_maximizing</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.is_maximizing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.is_maximizing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Whether or not this fitter’s score gets better as it grows</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -122,8 +122,8 @@ will also be reflected by <a class="reference internal" href="#ms_deisotope.scor
 </dd></dl>
 
 <dl class="py method">
-<dt id="ms_deisotope.scoring.IsotopicFitterBase.reject">
-<code class="sig-name descname">reject</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fit</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.reject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.reject" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitterBase.reject">
+<span class="sig-name descname"><span class="pre">reject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#IsotopicFitterBase.reject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitterBase.reject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Test whether this fit is too poor to be used</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -145,8 +145,8 @@ will also be reflected by <a class="reference internal" href="#ms_deisotope.scor
 <h3>Minimizing Fitters<a class="headerlink" href="#minimizing-fitters" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><dl class="py class">
-<dt id="ms_deisotope.scoring.GTestFitter">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">GTestFitter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">score_threshold</span><span class="o">=</span><span class="default_value">0.5</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#GTestFitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.GTestFitter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.GTestFitter">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">GTestFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#GTestFitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.GTestFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate an isotopic fit using a G-test</p>
 <div class="math notranslate nohighlight">
 \[G = 2\sum_i^n{o_i * ({log}o_i - {log}e_i)}\]</div>
@@ -155,8 +155,8 @@ and <span class="math notranslate nohighlight">\(e_i\)</span> is the intensity o
 </dd></dl>
 
 <dl class="py class">
-<dt id="ms_deisotope.scoring.ScaledGTestFitter">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">ScaledGTestFitter</code><a class="headerlink" href="#ms_deisotope.scoring.ScaledGTestFitter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.ScaledGTestFitter">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">ScaledGTestFitter</span></span><a class="headerlink" href="#ms_deisotope.scoring.ScaledGTestFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate an isotopic fit using a G-test after normalizing the
 list of experimental and theoretical peaks to both sum to 1.</p>
 <div class="math notranslate nohighlight">
@@ -166,8 +166,8 @@ and <span class="math notranslate nohighlight">\(e_i\)</span> is the intensity o
 </dd></dl>
 
 <dl class="py class">
-<dt id="ms_deisotope.scoring.LeastSquaresFitter">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">LeastSquaresFitter</code><a class="headerlink" href="#ms_deisotope.scoring.LeastSquaresFitter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.LeastSquaresFitter">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">LeastSquaresFitter</span></span><a class="headerlink" href="#ms_deisotope.scoring.LeastSquaresFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate an isotopic fit using least squares coefficient of
 determination <span class="math notranslate nohighlight">\(R^2\)</span>.</p>
 <div class="math notranslate nohighlight">
@@ -182,8 +182,8 @@ is the ith theoretical peak intensity</p>
 <h3>Maximizing Fitters<a class="headerlink" href="#maximizing-fitters" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><dl class="py class">
-<dt id="ms_deisotope.scoring.MSDeconVFitter">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">MSDeconVFitter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">minimum_score</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">mass_error_tolerance</span><span class="o">=</span><span class="default_value">0.02</span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.MSDeconVFitter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.MSDeconVFitter">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">MSDeconVFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mass_error_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.MSDeconVFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of the scoring function used in <cite>MSDeconV</cite></p>
 <p class="rubric">References</p>
 <p>Liu, X., Inbar, Y., Dorrestein, P. C., Wynne, C., Edwards, N., Souda, P., …
@@ -193,8 +193,8 @@ Proteomics : MCP, 9(12), 2772–2782. <a class="reference external" href="https:
 </dd></dl>
 
 <dl class="py class">
-<dt id="ms_deisotope.scoring.PenalizedMSDeconVFitter">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">PenalizedMSDeconVFitter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">minimum_score</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">penalty_factor</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">mass_error_tolerance</span><span class="o">=</span><span class="default_value">0.02</span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.PenalizedMSDeconVFitter" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.PenalizedMSDeconVFitter">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">PenalizedMSDeconVFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">penalty_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mass_error_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.PenalizedMSDeconVFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>An Isotopic Fitter which uses the <a class="reference internal" href="#ms_deisotope.scoring.MSDeconVFitter" title="ms_deisotope.scoring.MSDeconVFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">MSDeconVFitter</span></code></a> score
 weighted by 1 - <code class="xref py py-attr docutils literal notranslate"><span class="pre">penalty_factor</span></code> * <a class="reference internal" href="#ms_deisotope.scoring.ScaledGTestFitter" title="ms_deisotope.scoring.ScaledGTestFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScaledGTestFitter</span></code></a> score</p>
 <div class="math notranslate nohighlight">
@@ -210,15 +210,15 @@ peak list</p>
 <h2>Support Structures<a class="headerlink" href="#support-structures" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="py class">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">IsotopicFitRecord</code><span class="sig-paren">(</span><em class="sig-param">FittedPeak seed_peak</em>, <em class="sig-param">double score</em>, <em class="sig-param">int charge</em>, <em class="sig-param">TheoreticalIsotopicPattern theoretical</em>, <em class="sig-param">list experimental</em>, <em class="sig-param">data=None</em>, <em class="sig-param">int missed_peaks=0</em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">IsotopicFitRecord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">FittedPeak</span> <span class="pre">seed_peak</span></em>, <em class="sig-param"><span class="pre">double</span> <span class="pre">score</span></em>, <em class="sig-param"><span class="pre">int</span> <span class="pre">charge</span></em>, <em class="sig-param"><span class="pre">TheoreticalIsotopicPattern</span> <span class="pre">theoretical</span></em>, <em class="sig-param"><span class="pre">list</span> <span class="pre">experimental</span></em>, <em class="sig-param"><span class="pre">data=None</span></em>, <em class="sig-param"><span class="pre">int</span> <span class="pre">missed_peaks=0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes a single isotopic pattern fit, comparing how well an
 experimentally observed sequence of peaks matches a theoretical isotopic
 pattern.</p>
 <p>IsotopicFitRecord instances are hashable and orderable (by score).</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.charge">
-<code class="sig-name descname">charge</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.charge" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.charge">
+<span class="sig-name descname"><span class="pre">charge</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.charge" title="Permalink to this definition">¶</a></dt>
 <dd><p>The charge state used to generate the theoretical pattern</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -228,8 +228,8 @@ pattern.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.data">
-<code class="sig-name descname">data</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.data" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.data" title="Permalink to this definition">¶</a></dt>
 <dd><p>An arbitrary Python object containing extra information</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -239,8 +239,8 @@ pattern.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.experimental">
-<code class="sig-name descname">experimental</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.experimental" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.experimental">
+<span class="sig-name descname"><span class="pre">experimental</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.experimental" title="Permalink to this definition">¶</a></dt>
 <dd><p>The observed experimental peaks to be fitted</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -250,8 +250,8 @@ pattern.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.missed_peaks">
-<code class="sig-name descname">missed_peaks</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.missed_peaks" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.missed_peaks">
+<span class="sig-name descname"><span class="pre">missed_peaks</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.missed_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of peaks in the theoretical pattern that do not
 have a matching experimental peak</p>
 <dl class="field-list simple">
@@ -262,8 +262,8 @@ have a matching experimental peak</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak">
-<code class="sig-name descname">monoisotopic_peak</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak">
+<span class="sig-name descname"><span class="pre">monoisotopic_peak</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.monoisotopic_peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>The fitted peak which corresponds to the monoisotopic peak</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -273,8 +273,8 @@ have a matching experimental peak</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.score">
-<code class="sig-name descname">score</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.score" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.score">
+<span class="sig-name descname"><span class="pre">score</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.score" title="Permalink to this definition">¶</a></dt>
 <dd><p>The score assigned to the fit by an IsotopicFitter object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -284,8 +284,8 @@ have a matching experimental peak</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.seed_peak">
-<code class="sig-name descname">seed_peak</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.seed_peak" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.seed_peak">
+<span class="sig-name descname"><span class="pre">seed_peak</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.seed_peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>The peak that was used to initiate the fit. This may be unused
 if not using an Averagine method</p>
 <dl class="field-list simple">
@@ -296,8 +296,8 @@ if not using an Averagine method</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.IsotopicFitRecord.theoretical">
-<code class="sig-name descname">theoretical</code><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.theoretical" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.IsotopicFitRecord.theoretical">
+<span class="sig-name descname"><span class="pre">theoretical</span></span><a class="headerlink" href="#ms_deisotope.scoring.IsotopicFitRecord.theoretical" title="Permalink to this definition">¶</a></dt>
 <dd><p>The theoretical isotopic pattern being fitted on the experimental data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -309,13 +309,13 @@ if not using an Averagine method</p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="ms_deisotope.scoring.FitSelectorBase">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">FitSelectorBase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">minimum_score</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#FitSelectorBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.FitSelectorBase" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.FitSelectorBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">FitSelectorBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#FitSelectorBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.FitSelectorBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>An object that controls the filtering and
 selection of IsotopicFitRecord</p>
 <dl class="py attribute">
-<dt id="ms_deisotope.scoring.FitSelectorBase.minimum_score">
-<code class="sig-name descname">minimum_score</code><a class="headerlink" href="#ms_deisotope.scoring.FitSelectorBase.minimum_score" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.FitSelectorBase.minimum_score">
+<span class="sig-name descname"><span class="pre">minimum_score</span></span><a class="headerlink" href="#ms_deisotope.scoring.FitSelectorBase.minimum_score" title="Permalink to this definition">¶</a></dt>
 <dd><p>The minimum score needed to be a candidate for selection. If the
 FitSelector is <cite>minimizing</cite> it is the maximal score to be a candidate.</p>
 <dl class="field-list simple">
@@ -328,14 +328,14 @@ FitSelector is <cite>minimizing</cite> it is the maximal score to be a candidate
 </dd></dl>
 
 <dl class="py class">
-<dt id="ms_deisotope.scoring.MaximizeFitSelector">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">MaximizeFitSelector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">minimum_score</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#MaximizeFitSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.MaximizeFitSelector" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.MaximizeFitSelector">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">MaximizeFitSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#MaximizeFitSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.MaximizeFitSelector" title="Permalink to this definition">¶</a></dt>
 <dd><p>A FitSelector which tries to maximize the score of the best fit.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="ms_deisotope.scoring.MinimizeFitSelector">
-<em class="property">class </em><code class="sig-prename descclassname">ms_deisotope.scoring.</code><code class="sig-name descname">MinimizeFitSelector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">minimum_score</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#MinimizeFitSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ms_deisotope.scoring.MinimizeFitSelector" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="ms_deisotope.scoring.MinimizeFitSelector">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ms_deisotope.scoring.</span></span><span class="sig-name descname"><span class="pre">MinimizeFitSelector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_score</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ms_deisotope/scoring.html#MinimizeFitSelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ms_deisotope.scoring.MinimizeFitSelector" title="Permalink to this definition">¶</a></dt>
 <dd><p>A FitSelector which tries to minimize the score of the best fit.</p>
 </dd></dl>
 
@@ -359,7 +359,7 @@ FitSelector is <cite>minimizing</cite> it is the maximal score to be a candidate
 
     <div class="footer" role="contentinfo">
         &#169; Copyright 2018, Joshua Klein.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
     </div>
   </body>
 </html>

@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ms_deisotope.data_source.mzmlb &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../../../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../../../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms_deisotope.data_source.mzmlb</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for ms_deisotope.data_source.mzmlb</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;mzMLb is a standard rich HDF5-based format for raw mass spectrometry data storage.</span>
+<span class="sd">This module provides :class:`MzMLbLoader`, a :class:`~.RandomAccessScanSource`</span>
+<span class="sd">implementation. It is based upon the mzML XML file format, re-using a subset of the</span>
+<span class="sd">features. The original design for mzMLb is described in [Bhamber]_.</span>
+
+<span class="sd">The parser is based on :mod:`pyteomics.mzmlb`. It requires :mod:`h5py` to be installed</span>
+<span class="sd">for reading, and :mod:`hdf5plugin` to use the faster, non-zlib-based compressors.</span>
+
+<span class="sd">References</span>
+<span class="sd">==========</span>
+<span class="sd">.. [Bhamber] Bhamber, R. S., Jankevics, A., Deutsch, E. W., Jones, A. R., &amp; Dowsey, A. W. (2021).</span>
+<span class="sd">    MzMLb: A Future-Proof Raw Mass Spectrometry Data Format Based on Standards-Compliant</span>
+<span class="sd">    mzML and Optimized for Speed and Storage Requirements. Journal of Proteome Research,</span>
+<span class="sd">    20(1), 172–183. https://doi.org/10.1021/acs.jproteome.0c00192</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;hdf5plugin&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pyteomics</span> <span class="kn">import</span> <span class="n">mzmlb</span>
+    <span class="n">_BaseParser</span> <span class="o">=</span> <span class="n">mzmlb</span><span class="o">.</span><span class="n">MzMLb</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">mzmlb</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_BaseParser</span> <span class="o">=</span> <span class="nb">object</span>
+
+<span class="kn">from</span> <span class="nn">.mzml</span> <span class="kn">import</span> <span class="n">MzMLLoader</span> <span class="k">as</span> <span class="n">_MzMLLoader</span>
+<span class="kn">from</span> <span class="nn">._compression</span> <span class="kn">import</span> <span class="n">DefinitelyFastRandomAccess</span>
+
+
+<span class="k">class</span> <span class="nc">_MzMLbParser</span><span class="p">(</span><span class="n">_BaseParser</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_handle_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MzMLbParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_handle_param</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MzMLbLoader"><a class="viewcode-back" href="../../../data_source/mzmlb.html#ms_deisotope.data_source.mzmlb.MzMLbLoader">[docs]</a><span class="k">class</span> <span class="nc">MzMLbLoader</span><span class="p">(</span><span class="n">_MzMLLoader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads scans from PSI-HUPO mzMLb HDF5 files. Provides both iterative and</span>
+<span class="sd">    random access.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source_file: str</span>
+<span class="sd">        Path to file to read from.</span>
+<span class="sd">    source: pyteomics.mzmlb.MzMLb</span>
+<span class="sd">        Underlying scan data source</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_parser_cls</span> <span class="o">=</span> <span class="n">_MzMLbParser</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">has_fast_random_access</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DefinitelyFastRandomAccess</span>
+
+<div class="viewcode-block" id="MzMLbLoader.prebuild_byte_offset_file"><a class="viewcode-back" href="../../../data_source/mzmlb.html#ms_deisotope.data_source.mzmlb.MzMLbLoader.prebuild_byte_offset_file">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">prebuild_byte_offset_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A stub method. MzMLb does not require an external index.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : :class:`str` or file-like</span>
+<span class="sd">            The path to the file to index, or a file-like object with a name attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">is_mzmlb_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Detect whether or not the file referenced by ``path``</span>
+<span class="sd">    is a mzMLb file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path: :class:`str`</span>
+<span class="sd">        The path to test</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`bool`:</span>
+<span class="sd">        Whether or not the file is a mzMLb file.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">h5py</span>
+        <span class="k">if</span> <span class="n">_BaseParser</span> <span class="o">==</span> <span class="nb">object</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;pyteomics.mzmlb&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">source</span><span class="p">[</span><span class="s1">&#39;mzML&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">infer_reader</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;If the file referenced by ``path`` is a mzMLb</span>
+<span class="sd">    file, return the callable (:class:`MzMLbLoader`) to</span>
+<span class="sd">    open it, otherwise raise an exception.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path: :class:`str`</span>
+<span class="sd">        The path to test</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`type`:</span>
+<span class="sd">        The type to use to open the file</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    :class:`ValueError`:</span>
+<span class="sd">        If the file is not a mzMLb file</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">is_mzmlb_file</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">MzMLbLoader</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not mzMLb File&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">determine_if_available</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Checks whether or not the mzMLb HDF5-based</span>
+<span class="sd">    file reading feature is available.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :class:`bool`:</span>
+<span class="sd">        Whether or not the feature is enabled.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">h5py</span>
+        <span class="k">if</span> <span class="n">_BaseParser</span> <span class="o">==</span> <span class="nb">object</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;pyteomics.mzmlb&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>

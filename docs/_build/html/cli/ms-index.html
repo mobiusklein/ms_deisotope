@@ -1,0 +1,437 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ms-index &#8212; ms_deisotope  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ms-deisotope" href="ms-deisotope.html" />
+    <link rel="prev" title="Command Line Tools" href="index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><img class="rightlogo" src="../_static/logo.svg" alt="Logo"/><h1 class="heading"><a href="../index.html">
+          <span>ms_deisotope  documentation</span></a></h1>
+        <h2 class="heading"><span>ms-index</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Command Line Tools</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="ms-deisotope.html">ms-deisotope</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="ms-index">
+<h1>ms-index<a class="headerlink" href="#ms-index" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="data-conversion">
+<h2>Data Conversion<a class="headerlink" href="#data-conversion" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="mzml-conversion">
+<h3>mzML Conversion<a class="headerlink" href="#mzml-conversion" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="ms-index-mzml">
+<h4>ms-index mzml<a class="headerlink" href="#ms-index-mzml" title="Permalink to this headline">¶</a></h4>
+<p>Convert <cite>source</cite> into mzML format written to <cite>output</cite>, applying a collection of optional data
+transformations along the way.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index mzml <span class="o">[</span>OPTIONS<span class="o">]</span> SOURCE OUTPUT
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-r">
+<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--ms1-filter</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;func&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mzml-r" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-rn">
+<span class="sig-name descname"><span class="pre">-rn</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-filter</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;func&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mzml-rn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-p">
+<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--pick-peaks</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzml-p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable peak picking, centroiding profile data</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-f">
+<span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--reprofile</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzml-f" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable reprofiling, converting all MS1 spectra into smoothed profile data</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-z">
+<span class="sig-name descname"><span class="pre">-z</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--compress</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzml-z" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compress the output file using gzip</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-c">
+<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--correct-precursor-mz</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzml-c" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjust the precursor m/z of each MSn scan to the nearest peak m/z in the precursor</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-update-metadata">
+<span class="sig-name descname"><span class="pre">--update-metadata</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--no-update-metadata</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzml-update-metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to add the conversion program’s metadata to the mzML file.</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-arg-SOURCE">
+<span class="sig-name descname"><span class="pre">SOURCE</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzml-arg-SOURCE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;string&gt;</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzml-arg-OUTPUT">
+<span class="sig-name descname"><span class="pre">OUTPUT</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzml-arg-OUTPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="mgf-conversion">
+<h3>MGF Conversion<a class="headerlink" href="#mgf-conversion" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="ms-index-mgf">
+<h4>ms-index mgf<a class="headerlink" href="#ms-index-mgf" title="Permalink to this headline">¶</a></h4>
+<p>Convert a mass spectrometry data file to MGF. MGF can only represent centroid spectra
+and generally does not contain any MS1 information.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index mgf <span class="o">[</span>OPTIONS<span class="o">]</span> SOURCE OUTPUT
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mgf-z">
+<span class="sig-name descname"><span class="pre">-z</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--compress</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mgf-z" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compress the output file using gzip</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mgf-rn">
+<span class="sig-name descname"><span class="pre">-rn</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-filter</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;func&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mgf-rn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mgf-arg-SOURCE">
+<span class="sig-name descname"><span class="pre">SOURCE</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mgf-arg-SOURCE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;string&gt;</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mgf-arg-OUTPUT">
+<span class="sig-name descname"><span class="pre">OUTPUT</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mgf-arg-OUTPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="mzmlb-conversion">
+<h3>mzMLb Conversion<a class="headerlink" href="#mzmlb-conversion" title="Permalink to this headline">¶</a></h3>
+<p>This feature requires <code class="xref py py-mod docutils literal notranslate"><span class="pre">h5py</span></code> to be installed, and <code class="xref py py-mod docutils literal notranslate"><span class="pre">hdf5plugin</span></code> for
+the faster non-<code class="docutils literal notranslate"><span class="pre">zlib</span></code> based compressors to be available.</p>
+<div class="section" id="ms-index-mzmlb">
+<h4>ms-index mzmlb<a class="headerlink" href="#ms-index-mzmlb" title="Permalink to this headline">¶</a></h4>
+<p>Convert <cite>source</cite> into mzML format written to <cite>output</cite>, applying a collection of optional data
+transformations along the way.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index mzmlb <span class="o">[</span>OPTIONS<span class="o">]</span> SOURCE <span class="o">[</span>OUTPUT<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-r">
+<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--ms1-filter</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;func&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-r" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-rn">
+<span class="sig-name descname"><span class="pre">-rn</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--msn-filter</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;func&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-rn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-p">
+<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--pick-peaks</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable peak picking, centroiding profile data</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-f">
+<span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--reprofile</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-f" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable reprofiling, converting all MS1 spectra into smoothed profile data</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-c">
+<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--correct-precursor-mz</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-c" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adjust the precursor m/z of each MSn scan to the nearest peak m/z in the precursor</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-update-metadata">
+<span class="sig-name descname"><span class="pre">--update-metadata</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--no-update-metadata</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-update-metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to add the conversion program’s metadata to the mzML file.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-z">
+<span class="sig-name descname"><span class="pre">-z</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--compression</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;choice&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-z" title="Permalink to this definition">¶</a></dt>
+<dd><p>The compressor to use</p>
+<div class="line-block">
+<div class="line">Choices: [</div>
+<div class="line-block">
+<div class="line">gzip; blosc; blosc:lz4;</div>
+<div class="line">blosc:lz4hc; blosc:zlib; blosc:zstd;</div>
+<div class="line">zlib]</div>
+</div>
+</div>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-arg-SOURCE">
+<span class="sig-name descname"><span class="pre">SOURCE</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-arg-SOURCE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;string&gt;</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-mzmlb-arg-OUTPUT">
+<span class="sig-name descname"><span class="pre">OUTPUT</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-mzmlb-arg-OUTPUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional argument
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+<div class="section" id="indexing">
+<h2>Indexing<a class="headerlink" href="#indexing" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="ms-index-byte-index">
+<h3>ms-index byte-index<a class="headerlink" href="#ms-index-byte-index" title="Permalink to this headline">¶</a></h3>
+<p>Build an external byte offset index for a mass spectrometry data file, saving time when
+opening the file with indexing enabled.</p>
+<p>Supported Formats: mzML, mzXML</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index byte-index <span class="o">[</span>OPTIONS<span class="o">]</span> <span class="o">[</span>PATHS<span class="o">]</span>...
+</pre></div>
+</div>
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-byte-index-arg-PATHS">
+<span class="sig-name descname"><span class="pre">PATHS</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-byte-index-arg-PATHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional argument(s)
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="ms-index-metadata-index">
+<h3>ms-index metadata-index<a class="headerlink" href="#ms-index-metadata-index" title="Permalink to this headline">¶</a></h3>
+<p>Build an external scan metadata index for a mass spectrometry data file</p>
+<p>This extended index is saved in a separate JSON file that can be loaded with
+<code class="xref py py-class docutils literal notranslate"><span class="pre">ExtendedScanIndex</span></code>. It includes the scan time of all scans, the precursor
+mass of MSn scans, as well as the relationships between precursor and product ion
+scans, as well as other details. See <code class="xref py py-class docutils literal notranslate"><span class="pre">ExtendedScanIndex</span></code> for more information</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index metadata-index <span class="o">[</span>OPTIONS<span class="o">]</span> <span class="o">[</span>PATHS<span class="o">]</span>...
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-metadata-index-D">
+<span class="sig-name descname"><span class="pre">-D</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--deconvoluted</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-metadata-index-D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether or not to assume this file has been processed specifically by ms_deisotope’s deconvolution algorithm</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-metadata-index-p">
+<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--processes</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-metadata-index-p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of worker processes to use. Defaults to 4 or the number of CPUs, whichever is lower</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-metadata-index-arg-PATHS">
+<span class="sig-name descname"><span class="pre">PATHS</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-metadata-index-arg-PATHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional argument(s)
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="ms-index-msms-intervals">
+<h3>ms-index msms-intervals<a class="headerlink" href="#ms-index-msms-intervals" title="Permalink to this headline">¶</a></h3>
+<p>Construct an interval tree spanning time and m/z domains where MSn spectra were acquired
+in the LC-MS map. The interval tree is serialized to JSON.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index msms-intervals <span class="o">[</span>OPTIONS<span class="o">]</span> <span class="o">[</span>PATHS<span class="o">]</span>...
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-msms-intervals-o">
+<span class="sig-name descname"><span class="pre">-o</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--output</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;path&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-msms-intervals-o" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-msms-intervals-p">
+<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--processes</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-msms-intervals-p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of worker processes to use. Defaults to 4 or the number of CPUs, whichever is lower</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-msms-intervals-arg-PATHS">
+<span class="sig-name descname"><span class="pre">PATHS</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-msms-intervals-arg-PATHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional argument(s)
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="analytical-utilities">
+<h2>Analytical Utilities<a class="headerlink" href="#analytical-utilities" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="ms-index-describe">
+<h3>ms-index describe<a class="headerlink" href="#ms-index-describe" title="Permalink to this headline">¶</a></h3>
+<p>Produces a minimal textual description of a mass spectrometry data file.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index describe <span class="o">[</span>OPTIONS<span class="o">]</span> PATH
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-describe-d">
+<span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--diagnostics</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-describe-d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run more diagnostics, greatly increasing runtime but producing additional informatoin</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-describe-arg-PATH">
+<span class="sig-name descname"><span class="pre">PATH</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-describe-arg-PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="ms-index-charge-states">
+<h3>ms-index charge-states<a class="headerlink" href="#ms-index-charge-states" title="Permalink to this headline">¶</a></h3>
+<p>Count the different precursor charge states in a mass spectrometry data file.</p>
+<p>This command will construct a metadata index if it is not found.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index charge-states <span class="o">[</span>OPTIONS<span class="o">]</span> PATH
+</pre></div>
+</div>
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-charge-states-arg-PATH">
+<span class="sig-name descname"><span class="pre">PATH</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-charge-states-arg-PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="ms-index-precursor-clustering">
+<h3>ms-index precursor-clustering<a class="headerlink" href="#ms-index-precursor-clustering" title="Permalink to this headline">¶</a></h3>
+<p>Cluster precursor masses in a mass spectrometry data file.</p>
+<p>This command will construct a metadata index if it is not found.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index precursor-clustering <span class="o">[</span>OPTIONS<span class="o">]</span> PATH
+</pre></div>
+</div>
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-precursor-clustering-arg-PATH">
+<span class="sig-name descname"><span class="pre">PATH</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-precursor-clustering-arg-PATH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Required argument
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="ms-index-spectrum-clustering">
+<h3>ms-index spectrum-clustering<a class="headerlink" href="#ms-index-spectrum-clustering" title="Permalink to this headline">¶</a></h3>
+<p>Cluster spectra by precursor mass and cosine similarity.</p>
+<p>Spectrum clusters are written out to a text file recording
+cluster precursor mass, within-cluster similarity, and the
+source file and scan ID for each cluster member.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ms-index spectrum-clustering <span class="o">[</span>OPTIONS<span class="o">]</span> <span class="o">[</span>PATHS<span class="o">]</span>...
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-spectrum-clustering-m">
+<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--precursor-error-tolerance</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-spectrum-clustering-m" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-spectrum-clustering-t">
+<span class="sig-name descname"><span class="pre">-t</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--similarity-threshold</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;float&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-spectrum-clustering-t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-spectrum-clustering-o">
+<span class="sig-name descname"><span class="pre">-o</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--output</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;path&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-spectrum-clustering-o" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-spectrum-clustering-c">
+<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--cache-size</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;int&gt;</span></span><a class="headerlink" href="#cmdoption-ms-index-spectrum-clustering-c" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of scans to cache in memory when not using –in-memory. If you are clustering multiple files, this number will be apply to each file separately.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-spectrum-clustering-M">
+<span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--in-memory</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-spectrum-clustering-M" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to load the entire dataset into memory for better performance</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-spectrum-clustering-D">
+<span class="sig-name descname"><span class="pre">-D</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--deconvoluted</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-spectrum-clustering-D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to assume the spectra are deconvoluted or not</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-ms-index-spectrum-clustering-arg-PATHS">
+<span class="sig-name descname"><span class="pre">PATHS</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-ms-index-spectrum-clustering-arg-PATHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional argument(s)
+&lt;path&gt;</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">Command Line Tools</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="ms-deisotope.html">ms-deisotope</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Joshua Klein.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.2.0.
+    </div>
+  </body>
+</html>
