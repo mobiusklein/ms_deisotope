@@ -1,17 +1,19 @@
+#!/usr/bin/env python
 import click
 import ms_deisotope
-from ms_deisotope import output
 
 from ms_deisotope.output import MzMLSerializer
 from ms_deisotope.data_source import query
-
-from ms_deisotope.tools.utils import register_debug_hook
 
 
 @click.command('faims-split')
 @click.argument("source_file", type=click.Path(exists=True, readable=True))
 @click.argument("output_prefix")
 def main(source_file, output_prefix):
+    '''Read in `source_file` and split it based upon FAIMS compensation voltage into separate
+    mzML files whose path prefix matches `output_prefix` and ends with the compensation voltage
+    dedicated to that stream.
+    '''
     reader = ms_deisotope.MSFileLoader(source_file)
 
     sinks = {}
@@ -34,6 +36,8 @@ def main(source_file, output_prefix):
                     method = writer.build_processing_method(1, False, False, False, ["ion mobility seperation"])
                     writer.add_data_processing(method)
                     sinks[channel] = writer
+                else:
+                    writer = sinks[channel]
                 writer.save_scan(value)
                 i += 1
             else:
@@ -47,7 +51,7 @@ def main(source_file, output_prefix):
 
     click.echo("Closing buffers.")
     for sink in sinks.values():
-        click.echo("Closing %r" % (sink, ))
+        click.echo("Closing %r" % (sink.handle.name, ))
         sink.close()
 
 if __name__ == "__main__":

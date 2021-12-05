@@ -18,6 +18,28 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Security
 
 
+## [v0.0.33] - 2021-12-05
+
+### Added
+1. Added an example script for splitting a FAIMS file into separate mzML files.
+2. Added an example script for ion mobility and charge state deconvolving Waters HDMSe data.
+3. Added Waters MassLynx SDK bindings for reading Waters .RAW folders directly on Windows
+   when the SDK C library is present.
+4. Added a new command `ms-index maintenance register-waters-masslynx` to register the location
+   of the Waters MassLynx SDK if it is not installed in the expected location.
+5. Improved documentation of `mzMLb` reading and writing.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
 ## [v0.0.32]
 
 ### Added
@@ -332,8 +354,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.32...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.33...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.33]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.33
 [v0.0.32]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.32
 [v0.0.31]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.31
 [v0.0.30]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.30
