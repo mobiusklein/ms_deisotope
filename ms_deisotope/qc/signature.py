@@ -1,4 +1,4 @@
-'''
+'''A module for signature ion extraction.
 '''
 
 from collections import namedtuple
@@ -52,6 +52,8 @@ class Target(Base):
 class SignatureIonDetector(object):
     """Detect when a scan contains intense signal for signature ions.
 
+    Implements the :class:`~.Callable` interface.
+
     Attributes
     ----------
     signature_ions: :class:`list` of :class:`Target`
@@ -72,6 +74,20 @@ class SignatureIonDetector(object):
         self.method = method
 
     def scan(self, peak_list, error_tolerance=2e-5):
+        '''Scan the peak list for signature ion masses or m/zs.
+
+        Parameters
+        ----------
+        peak_list : peak set-like
+            The peak set to search. May be any object compatible with
+            :class:`~.PeakSetMethods`.
+        error_tolerance : float
+            The PPM error tolerance for peak mass coordinate matching.
+
+        Returns
+        -------
+        list
+        '''
         result = []
         peak_list = PeakSetMethods(peak_list)
         if peak_list.is_deconvoluted:
@@ -90,6 +106,21 @@ class SignatureIonDetector(object):
         return matches
 
     def ratio(self, peak_list, error_tolerance=2e-5):
+        '''Compute an intensity ratio of the signature ions against the
+        base peak.
+
+        Parameters
+        ----------
+        peak_list : peak set-like
+            The peak set to search. May be any object compatible with
+            :class:`~.PeakSetMethods`.
+        error_tolerance : float
+            The PPM error tolerance for peak mass coordinate matching.
+
+        Returns
+        -------
+        float
+        '''
         try:
             base_peak = BasePeakMethods(peak_list)()
             maximum = base_peak.intensity
@@ -107,6 +138,20 @@ class SignatureIonDetector(object):
         return oxonium / n
 
     def detect(self, peak_list, error_tolerance=2e-5):
+        '''Test the peak list for the signature ions.
+
+        Parameters
+        ----------
+        peak_list : peak set-like
+            The peak set to search. May be any object compatible with
+            :class:`~.PeakSetMethods`.
+        error_tolerance : float
+            The PPM error tolerance for peak mass coordinate matching.
+
+        Returns
+        -------
+        float
+        '''
         if self.method == 'ratio':
             return self.ratio(peak_list, error_tolerance)
         else:
@@ -150,7 +195,31 @@ TMT10_INFO = [
     TMTInfo('TMT10-130N', 229.162932, 129.12754853323, 116.12419153323),
     TMTInfo('TMT10-130C', 229.162932, 129.13386853323, 117.13386453323001),
     TMTInfo('TMT10-131', 229.162932, 130.13090353323, 118.13089953323001),
-    TMTInfo('TMT11-131C', 229.162932, 130.13722253323, 117.13386453323001),
+]
+
+
+TMT11_INFO = TMT10_INFO[:]
+TMT11_INFO.append(
+    TMTInfo('TMT11-131C', 229.162932, 130.13722253323, 117.13386453323001))
+
+
+TMT16_INFO = [
+    TMTInfo('TMTpro-126', 304.207100, 126.127726, 0.0),
+    TMTInfo('TMTpro-127N', 304.207100, 127.124761, 0.0),
+    TMTInfo('TMTpro-127C', 304.207100, 127.131081, 0.0),
+    TMTInfo('TMTpro-128N', 304.207100, 128.128116, 0.0),
+    TMTInfo('TMTpro-128C', 304.207100, 128.134436, 0.0),
+    TMTInfo('TMTpro-129N', 304.207100, 129.131471, 0.0),
+    TMTInfo('TMTpro-129C', 304.207100, 129.137790, 0.0),
+    TMTInfo('TMTpro-130N', 304.207100, 130.134825, 0.0),
+    TMTInfo('TMTpro-130C', 304.207100, 130.141145, 0.0),
+    TMTInfo('TMTpro-131N', 304.207100, 131.138180, 0.0),
+    TMTInfo('TMTpro-131C', 304.207100, 131.144500, 0.0),
+    TMTInfo('TMTpro-132N', 304.207100, 132.141535, 0.0),
+    TMTInfo('TMTpro-132C', 304.207100, 132.147855, 0.0),
+    TMTInfo('TMTpro-133N', 304.207100, 133.144890, 0.0),
+    TMTInfo('TMTpro-133C', 304.207100, 133.151210, 0.0),
+    TMTInfo('TMTpro-134N', 304.207100, 134.148245, 0.0)
 ]
 
 
@@ -158,6 +227,21 @@ class SignatureIonExtractor(SignatureIonDetector):
     '''Extracts signal for a set of target ions from each scan.
     '''
     def extract(self, peak_list, error_tolerance=2e-5):
+        '''Extract the intensity for each signature ion.
+
+        Parameters
+        ----------
+        peak_list : peak set-like
+            The peak set to search. May be any object compatible with
+            :class:`~.PeakSetMethods`.
+        error_tolerance : float
+            The PPM error tolerance for peak mass coordinate matching.
+
+        Returns
+        -------
+        channels: dict[str, float]
+            A mapping from signature ion name to its intensity.
+        '''
         result = {}
         peak_list = PeakSetMethods(peak_list)
         if peak_list.is_deconvoluted:
@@ -171,8 +255,8 @@ class SignatureIonExtractor(SignatureIonDetector):
             for sig in self.signature_ions:
                 result[sig.name] = 0
                 for mz in sig.iter_mz():
-                    matches = peak_list.all_peaks_for(mz, error_tolerance)
-                    for match in matches:
+                    match, error = peak_list.get_nearest_peak(mz)
+                    if abs(error) / mz < error_tolerance:
                         result[sig.name] += match.intensity
         return result
 
@@ -182,7 +266,11 @@ class SignatureIonExtractor(SignatureIonDetector):
 
 
 class TMTReporterExtractor(SignatureIonExtractor):
+    '''A :class:`~.SignatureIonExtractor` for TMT reporter ions.
+    '''
     TMT_REAGENTS = {
+        "tmt16": TMT16_INFO,
+        "tmt11": TMT11_INFO,
         "tmt10": TMT10_INFO,
         "tmt2": TMT2_INFO,
         "tmt6": TMT6_INFO,
@@ -197,7 +285,7 @@ class TMTReporterExtractor(SignatureIonExtractor):
             raise KeyError("Did not recognize reagent %s" % (reagent, ))
         return reagents
 
-    def __init__(self, reagent="TMT10plex"):
+    def __init__(self, reagent="TMT11plex"):
         reagents = self._find_reagent(reagent)
         super(TMTReporterExtractor, self).__init__(
             [Target(

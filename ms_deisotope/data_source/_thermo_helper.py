@@ -199,8 +199,17 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
         index = defaultdict(int)
         analyzer_counter = 1
         analyzer_confs = dict()
+        previous_ms_levels = dict()
+        last_ms_levels = dict()
         for scan in self: # pylint: disable=not-an-iterable
-            index[scan.ms_level] += 1
+            ms_level = scan.ms_level
+            index[ms_level] += 1
+            idx = scan.index
+            previous_ms_levels[idx] = tuple(
+                last_ms_levels.get(j) for j in range(1, ms_level + 1))
+
+            last_ms_levels[ms_level] = idx
+
             fline = self._filter_string(scan._data)
             analyzer = analyzer_map[fline.data['analyzer']]
             try:
@@ -211,6 +220,16 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
         self.reset()
         self._scan_type_index = index
         self._analyzer_to_configuration_index = analyzer_confs
+        self._previous_ms_levels = previous_ms_levels
+
+    def _get_previous_scan_index_for_ms_level(self, scan_index, ms_level):
+        if ms_level < 1:
+            raise ValueError("Cannot handle ms_level less than 1")
+        levels = self._previous_ms_levels[scan_index]
+        level_i = ms_level - 1
+        prev_index = levels[level_i]
+        return prev_index
+
 
     def _get_instrument_info(self):
         scan = self.get_scan_by_index(0)

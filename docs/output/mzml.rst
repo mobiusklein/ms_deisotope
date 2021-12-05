@@ -6,6 +6,6 @@
                   add_data_processing, add_software, save_chromatogram, close
 
 
-    .. autoclass:: ms_deisotope.output.mzml.ProcessedMzMLDeserializer
+    .. autoclass:: ms_deisotope.output.mzml.ProcessedMzMLLoader
         :members: get_index_information_by_scan_id, has_index_file,
                   msms_for, precursor_information

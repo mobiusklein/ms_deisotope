@@ -1,8 +1,10 @@
 '''A collection of different strategies for iterating over streams
 of :class:`~.Scan`-like objects.
 '''
+import bisect
 import warnings
 from collections import deque, defaultdict
+from six import PY2
 
 from . import ScanBunch
 
@@ -50,12 +52,14 @@ class _ScanIteratorImplBase(object):
         return self
 
     def next(self):
+        '''Py2 compatible iterator
+        '''
         if self._producer is None:
             self._producer = self._make_producer()
         return next(self._producer)
 
     def __next__(self):
-        return self.next()
+        return self.next() # pylint: disable=not-callable
 
     def _make_producer(self):
         raise NotImplementedError()
@@ -166,9 +170,61 @@ class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
                 precursor_scan = packed
                 product_scans = []
             else:
-                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
+                raise ValueError("Could not interpret MS Level %r" %
+                                 (packed.ms_level,))
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)
+
+
+class GenerationTracker(object):
+    _generations_type = list if PY2 else deque
+
+    def __init__(self):
+        self.generation_to_id = defaultdict(set)
+        self.id_to_generation = dict()
+        self.generations = self._generations_type()
+
+    def _add_generation(self, generation):
+        bisect.insort_left(self.generations, generation)
+
+    def clear(self):
+        self.generation_to_id.clear()
+        self.id_to_generation.clear()
+        self.generations = self._generations_type()
+
+    def add(self, identifier, generation):
+        if generation not in self.generation_to_id:
+            self._add_generation(generation)
+        self.generation_to_id[generation].add(identifier)
+        self.id_to_generation[identifier] = generation
+
+    def remove(self, identifier):
+        if identifier not in self.id_to_generation:
+            return False
+        generation = self.id_to_generation[identifier]
+        self.generation_to_id[generation].remove(identifier)
+        del self.id_to_generation[identifier]
+        if len(self.generation_to_id[generation]) == 0:
+            self.generations.remove(generation)
+        return True
+
+    def older_than(self, generation):
+        result = []
+        purged = []
+        for gen in self.generations:
+            if gen < generation:
+                members = self.generation_to_id[gen]
+                result.extend(members)
+                purged.append(gen)
+            else:
+                break
+        for r in result:
+            del self.id_to_generation[r]
+        for gen in purged:
+            del self.generation_to_id[gen]
+            self.generations.remove(gen)
+        return result
+
 
 
 class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
@@ -179,39 +235,137 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
     """
 
     def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, buffering=5):
-        super(_InterleavedGroupedScanIteratorImpl, self).__init__(iterator, scan_packer, scan_validator, scan_cacher)
+        super(_InterleavedGroupedScanIteratorImpl, self).__init__(
+            iterator, scan_packer, scan_validator, scan_cacher)
         if buffering < 2:
             raise ValueError("Interleaved buffering must be greater than 1")
         self.buffering = buffering
         self.ms1_buffer = deque()
         self.product_mapping = defaultdict(list)
+        self.generation_tracker = GenerationTracker()
+        self.orphans = []
         self.passed_first_ms1 = False
+        self.highest_ms_level = 0
+        self.generation = 0
 
-    def deque_group(self):
+    def pop_precursor(self, precursor_id):
+        self.generation_tracker.remove(precursor_id)
+        return self.product_mapping.pop(precursor_id, [])
+
+    def deque_group(self, flush_products=False):
+        '''Remove the next scan from the MS1 queue, grouped with
+        any associated MSn scans.
+
+        Parameters
+        ----------
+        flush_products : bool
+            Whether to flush all the remaining product scans with this
+            group.
+
+        Returns
+        -------
+        ScanBunch
+        '''
         precursor = self.ms1_buffer.popleft()
-        products = self.product_mapping.pop(precursor.id, [])
+        _empty = []
+        products = self.pop_precursor(precursor.id)
+        if None in self.product_mapping:
+            products += self.product_mapping.pop(None, _empty)
+
+        # Flush out older precursors' products that haven't turned up yet, they
+        # probably aren't coming soon.
+        for prec_id in self.generation_tracker.older_than(self.generation - self.buffering):
+            products.extend(self.product_mapping.pop(prec_id, _empty))
+
+        # Look for MSn for n > 2
+        if self.highest_ms_level > 2:
+            extra_blocks = [products]
+            for _ in range(self.highest_ms_level - 2):
+                new_block = []
+                for prod in extra_blocks[-1]:
+                    new_block.extend(self.pop_precursor(prod.id))
+                if not new_block:
+                    break
+                extra_blocks.append(new_block)
+            if len(extra_blocks) > 1:
+                products = extra_blocks[0]
+                for block in extra_blocks[1:]:
+                    products.extend(block)
+
+        if flush_products:
+            if self.product_mapping:
+                lingering = {s.id for ss in self.product_mapping.values() for s in ss}
+                missing = set(self.product_mapping)
+                unclaimed_precursors = missing - lingering
+                warnings.warn("Lingering Product Sets For %r!" %
+                              (sorted(unclaimed_precursors), ))
+            for _, value in self.product_mapping.items():
+                products += value
+            self.product_mapping.clear()
+            self.generation_tracker.clear()
         precursor.product_scans = products
+
+        # Collect any MSn spectra which pre-date the first precursor if they are encountered before
+        # the first precursor is found.
         if not self.passed_first_ms1 and self.ms1_buffer:
             current_ms1_time = precursor.scan_time
-            next_ms1_time = self.ms1_buffer[0].scan_time
             for prec_id, prods in list(self.product_mapping.items()):
-                for prod in prods:
-                    if current_ms1_time <= prod.scan_time <= next_ms1_time:
+                masked = set()
+                for i, prod in enumerate(prods):
+                    if prod.scan_time <= current_ms1_time:
                         products.append(prod)
+                        masked.add(i)
+                # We've only removed some of the products under this precursor, so just
+                # remove those products from mapping.
+                if len(masked) < len(prods):
+                    prods = [v for i, v in enumerate(prods) if i not in masked]
+                    self.product_mapping[prec_id] = prods
+                else:
+                    # Otherwise we must have completely consumed the products of this
+                    # precursor, so we need to remove it from the tracking.
+                    self.pop_precursor(prec_id)
             self.passed_first_ms1 = True
+
+
+        self.generation += 1
         return ScanBunch(precursor, products)
 
     def add_product(self, scan):
+        '''Add MSn scan to :attr:`product_mapping` for the associated
+        precursor scan ID.
+
+        Parameters
+        ----------
+        scan : :class:`~.ScanBase`
+            The scan to track.
+        '''
         pinfo = scan.precursor_information
         if pinfo is None:
             precursor_id = None
         else:
             precursor_id = pinfo.precursor_scan_id
         if precursor_id is None:
-            precursor_id = self.ms1_buffer[-1].id
+            try:
+                precursor_id = self.ms1_buffer[-1].id
+            except IndexError:
+                precursor_id = None
+        if precursor_id not in self.product_mapping:
+            self.generation_tracker.add(precursor_id, self.generation)
         self.product_mapping[precursor_id].append(scan)
 
     def add_precursor(self, scan):
+        '''Add MS1 scan to :attr:`ms1_buffer`
+
+        Parameters
+        ----------
+        scan : :class:`~.ScanBase`
+            The scan to track.
+
+        Returns
+        -------
+        buffer_full : bool
+            Whether or not :attr:`ms1_buffer` is full.
+        '''
         self.ms1_buffer.append(scan)
         return len(self.ms1_buffer) >= self.buffering
 
@@ -231,6 +385,9 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
                 # inceasing ms level
                 if current_level < packed.ms_level:
                     current_level = packed.ms_level
+                    if current_level > self.highest_ms_level:
+                        self.highest_ms_level = current_level
+
                 # decreasing ms level
                 elif current_level > packed.ms_level:
                     current_level = packed.ms_level
@@ -242,15 +399,31 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
             else:
                 raise ValueError("Could not interpret MS Level %r" %
                                  (packed.ms_level,))
-        while self.ms1_buffer:
+
+        while len(self.ms1_buffer) > 1:
             yield self.deque_group()
-        if self.product_mapping:
-            warnings.warn("Lingering Product Sets For %r!" % (list(self.product_mapping), ))
+
+        if self.ms1_buffer:
+            yield self.deque_group(flush_products=True)
 
 
 class MSEIterator(_GroupedScanIteratorImpl):
-    def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None, scan_cacher=None):
-        super(MSEIterator, self).__init__(iterator, scan_packer, scan_validator, scan_cacher)
+    '''A scan iterator implementation for grouping MS^E spectra according
+    to the specified functions.
+
+    Attributes
+    ----------
+    low_energy_config : int
+        The function corresponding to lower energy. These correspond
+        to the MS1 equivalent.
+    lock_mass_config : int
+        The function corresponding to the lockmass. Lockmass scans
+        will be skipped.
+    '''
+    def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None,
+                 scan_cacher=None):
+        super(MSEIterator, self).__init__(
+            iterator, scan_packer, scan_validator, scan_cacher)
         self.low_energy_config = low_energy_config
         self.lock_mass_config = lock_mass_config
 
@@ -287,6 +460,7 @@ class MSEIterator(_GroupedScanIteratorImpl):
                 precursor_scan = packed
                 product_scans = []
             else:
-                raise ValueError("Could not interpret MS Level %r" % (packed.ms_level,))
+                raise ValueError("Could not interpret MS Level %r" %
+                                 (packed.ms_level,))
         if precursor_scan is not None:
             yield ScanBunch(precursor_scan, product_scans)

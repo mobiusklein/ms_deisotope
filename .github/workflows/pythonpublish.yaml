@@ -26,15 +26,15 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel twine
         pip install coverage pytest pytest-cov -U
         pip install Cython --install-option="--no-cython-compile"
-        pip install --only-binary=numpy,scipy numpy scipy -U
-        python setup.py build sdist
+        pip install --only-binary=numpy,scipy,matplotlib numpy scipy matplotlib -U
         pip install -r test-requirements.txt
         pip install -e .
+        python setup.py build sdist
     - name: Test with pytest
       run: |
         make test
     - name: Build manylinux Python wheels
-      uses: RalfG/python-wheels-manylinux-build@v0.3.3-manylinux2010_x86_64
+      uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
       with:
         build-requirements: 'cython'
     - name: "Publish ManyLinux"
@@ -71,6 +71,6 @@ jobs:
         TWINE_USERNAME: __token__
       run: |
         mkdir -p dist/
-        pip wheel -w dist/ .
-        twine upload dist/*.whl
+        pip wheel --no-deps -w dist/ .
+        twine upload dist/ms_deisotope*.whl
       shell: bash

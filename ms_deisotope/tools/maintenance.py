@@ -21,6 +21,7 @@ def has_vendor_readers():
     from ms_deisotope.data_source.agilent_d import determine_if_available as agilent_d_available
     from ms_deisotope.data_source.thermo_raw import determine_if_available as thermo_com_available
     from ms_deisotope.data_source.thermo_raw_net import determine_if_available as thermo_net_available
+    from ms_deisotope.data_source.masslynx import determine_if_available as waters_masslynx_available
 
     try:
         import comtypes
@@ -36,6 +37,7 @@ def has_vendor_readers():
     click.echo("Thermo COM Reader Available: %s" % (thermo_com_available(), ))
     click.echo("Thermo RawFileReader Available: %s" % (thermo_net_available(), ))
     click.echo("Agilent COM Reader Available: %s" % (agilent_d_available(), ))
+    click.echo("Waters MassLynx Available: %s" % (bool(waters_masslynx_available()), ))
 
 
 @maintenance.command('register-thermo-com', short_help="Register Thermo COM Reader Library")
@@ -134,7 +136,7 @@ def register_waters_masslynx(path):
                 config.setdefault('vendor_readers', {})
                 config['vendor_readers'].setdefault("waters-masslynx", [])
                 rest = sorted(
-                    set(path) - set(config.get('vendor_readers', {}).get('waters-masslynx', [])))
+                    filter(bool, set(path) - set(config.get('vendor_readers', {}).get('waters-masslynx', []))))
                 config['vendor_readers']['waters-masslynx'].extend(rest)
                 save_config(config)
         else:

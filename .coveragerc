@@ -16,6 +16,9 @@ omit =
     ms_deisotope/scoring.py
     ms_deisotope/peak_dependency_network/intervals.py
     ms_deisotope/test/*
+    */pyteomics/*
+    */ms_peak_picker/*
+    */brainpy/*
 
 [report]
 # Regexes for lines to exclude from consideration

@@ -72,7 +72,7 @@ def random_unit_vectors(n_planes, n_dims, random_state=None):
     list
     """
     if random_state is None:
-        random_state = random_state
+        random_state = np.random
     unit_vectors = []
     for _i in range(n_planes):
         plane = random_state.uniform(-1, 1, n_dims)

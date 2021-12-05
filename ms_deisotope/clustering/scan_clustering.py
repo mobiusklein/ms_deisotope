@@ -18,6 +18,10 @@ from ms_deisotope.data_source.dispatch import (
 
 from .similarity_methods import peak_set_similarity
 
+try:
+    basestring
+except NameError:
+    from six import string_types as basestring
 
 peak_set_getter = operator.attrgetter("peak_set")
 deconvoluted_peak_set_getter = operator.attrgetter("deconvoluted_peak_set")
@@ -211,6 +215,17 @@ class SpectrumCluster(object):
             })
         d['scans'] = scans
         return d
+
+    def split_on_charge(self):
+        scans = sorted(self, key=lambda x: x.tic(), reverse=True)
+        index = {}
+        for scan in scans:
+            key = scan.precursor_information.charge
+            try:
+                index[key].append(scan)
+            except KeyError:
+                index[key] = SpectrumCluster([scan], scan.precursor_information.neutral_mass)
+        return index
 
 
 class SpectrumClusterCollection(object):

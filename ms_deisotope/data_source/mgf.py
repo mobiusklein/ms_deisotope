@@ -416,6 +416,7 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
         '''Close the underlying reader.
         '''
         self._source.close()
+        self._dispose()
 
     def reset(self):
         """Reset the object, clearing out any existing

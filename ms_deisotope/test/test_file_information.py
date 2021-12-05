@@ -16,6 +16,7 @@ class TestFileMetadata(unittest.TestCase):
         reader = self.reader
         finfo = reader.file_description()
         assert "MS1 spectrum" in finfo
+        assert reader.id_format == "no nativeID format"
 
     def test_source_file(self):
         id_fmt, fmt = file_information.SourceFile.guess_format(self.path)

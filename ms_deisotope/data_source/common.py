@@ -23,6 +23,7 @@ from .scan import (
     DEFAULT_CHARGE_WHEN_NOT_RESOLVED,
     _ScanIteratorImplBase, _SingleScanIteratorImpl,
     _FakeGroupedScanIteratorImpl, _GroupedScanIteratorImpl,
+    _InterleavedGroupedScanIteratorImpl,
     ScanDataSource, ScanIterator, RandomAccessScanSource,
     ScanFileMetadataBase)
 
@@ -39,6 +40,7 @@ __all__ = [
 
     "_ScanIteratorImplBase", "_SingleScanIteratorImpl",
     "_FakeGroupedScanIteratorImpl", "_GroupedScanIteratorImpl",
+    "_InterleavedGroupedScanIteratorImpl",
 
     "ChargeNotProvided", "DEFAULT_CHARGE_WHEN_NOT_RESOLVED",
 

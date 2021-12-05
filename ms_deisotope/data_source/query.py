@@ -1,5 +1,11 @@
+from collections import defaultdict, deque
+from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame
+from ms_deisotope.data_source.scan import ScanBunch, ScanBase
+
 from .scan.scan_iterator import ITERATION_MODE_GROUPED, ITERATION_MODE_SINGLE
 from .scan.loader import ScanIterator
+from .scan.base import ScanBunch
+from .metadata.scan_traits import FAIMS_compensation_voltage
 
 
 class ScanIteratorProxyBase(object):
@@ -359,6 +365,10 @@ class _PredicateFilterIterator(ScanIteratorFilterBase):
         if self._check(scan):
             yield scan
 
+    @property
+    def key(self):
+        raise NotImplementedError()
+
 
 class PolarityFilter(_PredicateFilterIterator):
     """A Scan Iterator that filters out scans with a polarity
@@ -378,6 +388,10 @@ class PolarityFilter(_PredicateFilterIterator):
     def _check(self, scan):
         return scan.polarity == self.polarity
 
+    @property
+    def key(self):
+        return self.polarity
+
 
 class MSLevelFilter(_PredicateFilterIterator):
     """A Scan Iterator that filters out scans with MS levels
@@ -395,6 +409,10 @@ class MSLevelFilter(_PredicateFilterIterator):
 
     def _check(self, scan):
         return scan.ms_level == self.ms_level
+
+    @property
+    def key(self):
+        return self.ms_level
 
 
 class MassAnalyzerFilter(_PredicateFilterIterator):
@@ -422,6 +440,10 @@ class MassAnalyzerFilter(_PredicateFilterIterator):
                 return True
         return False
 
+    @property
+    def key(self):
+        return self.mass_analyzer
+
 
 class CallableFilter(_PredicateFilterIterator):
     """A Scan Iterator that filters out scans which do not pass
@@ -440,5 +462,234 @@ class CallableFilter(_PredicateFilterIterator):
     def _check(self, scan):
         return self.filter_fn(scan)
 
+    @property
+    def key(self):
+        return self.filter_fn
+
 
 filter_scans = CallableFilter
+
+
+class MS1MergingTransformer(ScanIteratorProxyBase):
+
+    def __init__(self, scan_source, ms1_bin_width=10, mz_resolution=None, *args, **kwargs):
+        super(MS1MergingTransformer, self).__init__(scan_source, *args, **kwargs)
+        self._generator = None
+        self.ms1_bin_width = ms1_bin_width
+        self.mz_resolution = mz_resolution
+        self.ms1_buffer = []
+        self.msn_buffer = []
+
+    def _redirect_precursor_ids(self, products, precursor):
+        level_to_redirect = precursor.ms_level + 1
+        # Don't re-direct MS3+ scans
+        for product in products:
+            if product.ms_level == level_to_redirect:
+                product.precursor_information.precursor_scan_id = precursor.id
+        return products
+
+    def _generate(self):
+        half_width = self.ms1_bin_width // 2
+        for batch in self.scan_source:
+            if len(self.ms1_buffer) == self.ms1_bin_width:
+                ref_scan = self.ms1_buffer[0]
+                merged_scan = ref_scan.average_with(self.ms1_buffer[1:], self.mz_resolution)
+                # Scale up to be the sum not the mean
+                merged_scan.arrays *= self.ms1_bin_width
+                bunch = ScanBunch(merged_scan, self._redirect_precursor_ids(self.msn_buffer, merged_scan))
+                yield bunch
+                self.msn_buffer = []
+                self.ms1_buffer = self.ms1_buffer[half_width:]
+
+            self.ms1_buffer.append(batch.precursor)
+            self.msn_buffer.extend(batch.products)
+
+        if self.ms1_buffer:
+            ref_scan = self.ms1_buffer[0]
+            merged_scan = ref_scan.average_with(self.ms1_buffer[1:], self.mz_resolution)
+            # Scale up to be the sum not the mean
+            merged_scan.arrays *= self.ms1_bin_width
+            bunch = ScanBunch(merged_scan, self._redirect_precursor_ids(self.msn_buffer, merged_scan))
+            yield bunch
+
+
+    def next(self):
+        if self._generator is None:
+            self._generator = self._generate()
+        return next(self._generator)
+
+
+class TimeOrderMergingIterator(object):
+    def __init__(self, sources):
+        self.sources = list(sources)
+        self._init_heads()
+
+    def _init_heads(self):
+        n = len(self.sources)
+        self.heads = [None] * n
+        for i in range(n):
+            self._advance(i)
+
+    def __next__(self):
+        result = self.get_next_head()
+        if result is None:
+            raise StopIteration()
+        return result
+
+    next = __next__
+
+    def __iter__(self):
+        return self
+
+    def count_exhausted(self):
+        n = 0
+        for h in self.heads:
+            n += h is None
+        return n
+
+    def _advance(self, i):
+        try:
+            self.heads[i] = next(self.sources[i])
+        except StopIteration:
+            self.heads[i] = None
+
+    def get_next_head(self):
+        best = None
+        best_i = None
+        best_time = float('inf')
+        for i, head in enumerate(self.heads):
+            if head is None:
+                continue
+            time = self.get_time(head)
+            assert time is not None
+            if time < best_time:
+                best = head
+                best_i = i
+                best_time = time
+        if best is None:
+            return best
+        i = best_i
+        self._advance(i)
+        return best
+
+    def get_time(self, obj):
+        if isinstance(obj, ScanBunch):
+            if obj.precursor is not None:
+                return self.get_time(obj.precursor)
+            elif obj.products:
+                return self.get_time(obj.products[0])
+        elif isinstance(obj, ScanBase):
+            return obj.scan_time
+        elif isinstance(obj, IonMobilityFrame):
+            return obj.time
+        else:
+            # Just guessing at this point
+            return obj.scan_time
+
+
+class FAIMSFilter(_PredicateFilterIterator):
+    def __init__(self, scan_source, compensation_voltage, *args, **kwargs):
+        super(FAIMSFilter, self).__init__(scan_source, *args, **kwargs)
+        self.compensation_voltage = compensation_voltage
+
+    def _check(self, scan):
+        if scan.has_ion_mobility():
+            if scan.ion_mobility_type == FAIMS_compensation_voltage:
+                if scan.drift_time == self.compensation_voltage:
+                    return scan
+
+    @property
+    def key(self):
+        return self.compensation_voltage
+
+
+class QueueIterator(ScanIteratorProxyBase):
+    def __init__(self, scan_source, data=None):
+        self.scan_source = scan_source
+        self.data = deque(data or [])
+
+    def __next__(self):
+        return self.data.popleft()
+
+    def has_value(self):
+        return bool(self.data)
+
+    def _feed(self, value):
+        self.data.append(value)
+
+    def __len__(self):
+        return len(self.data)
+
+
+class DemultiplexingIteratorBase(ScanIteratorProxyBase):
+    def __init__(self, scan_source, buffer_size=10, *args, **kwargs):
+        super(DemultiplexingIteratorBase, self).__init__(
+            scan_source, *args, **kwargs)
+        self.channels = dict()
+        self.buffer_size = buffer_size
+        self.has_more = self.feed()
+
+    @property
+    def iteration_mode(self):
+        return ITERATION_MODE_SINGLE
+
+    def _new_channel(self, scan):
+        raise NotImplementedError()
+
+    def __getitem__(self, key):
+        return self.channels[key]
+
+    def __iter__(self):
+        return self
+
+    def _get_channel_name(self, scan_filter):
+        return scan_filter.key
+
+    def feed(self):
+        loading = sum([len(v[1]) for v in self.channels.values()])
+        while loading < self.buffer_size:
+            try:
+                batch = next(self.scan_source)
+            except StopIteration:
+                return False
+            if self.scan_source.iteration_mode == ITERATION_MODE_SINGLE:
+                for channel_name, (scan_filter, queue) in self.channels.items():
+                    if scan_filter._check(batch):
+                        queue._feed(batch)
+                        break
+                else:
+                    self._new_channel(batch)
+            else:
+                for scan in [batch.precursor] + batch.products:
+                    for channel_name, (scan_filter, queue) in self.channels.items():
+                        if scan_filter._check(scan):
+                            queue._feed(scan)
+                            break
+                    else:
+                        self._new_channel(scan)
+            loading = sum([len(v[1]) for v in self.channels.values()])
+        return True
+
+    def __next__(self):
+        if not self.has_more:
+            raise StopIteration()
+        meta = {}
+        for channel_name, (scan_filter, queue) in self.channels.items():
+            if queue.has_value():
+                meta[channel_name] = next(scan_filter)
+            else:
+                meta[channel_name] = None
+        self.has_more = self.feed()
+        return meta
+
+
+class FAIMSDemultiplexingIterator(DemultiplexingIteratorBase):
+    def __init__(self, scan_source, buffer_size=10, *args, **kwargs):
+        super(FAIMSDemultiplexingIterator, self).__init__(scan_source, buffer_size, *args, **kwargs)
+
+    def _new_channel(self, scan):
+        queue = QueueIterator(self)
+        scan_filter = FAIMSFilter(queue, scan.drift_time)
+        queue._feed(scan)
+        self.channels[self._get_channel_name(scan_filter)] = (scan_filter, queue)
+

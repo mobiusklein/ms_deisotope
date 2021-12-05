@@ -29,7 +29,7 @@ from ms_deisotope.envelope_statistics import (
 from ms_deisotope.deconvolution import (
     charge_range_, drop_placeholders, first_peak,
     mean)
-from ms_deisotope.utils import printer
+from ms_deisotope.task import LogUtilsMixin
 
 
 def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abundance=0.05):
@@ -276,7 +276,7 @@ class PrecursorMap(object):
         return pinfo
 
 
-class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
+class LCMSFeatureProcessor(LCMSFeatureProcessorBase, LogUtilsMixin):
     def __init__(self, feature_map, averagine, scorer, precursor_map=None, minimum_size=3,
                  maximum_time_gap=0.25, prefer_multiply_charged=True):
         if precursor_map is None:
@@ -299,7 +299,9 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
     def select_best_disjoint_subgraphs(self, disjoint_envelopes):
         solutions = []
         for cluster in disjoint_envelopes:
-            disjoint_best_fits = cluster.disjoint_best_fits()
+            if len(cluster) > 500:
+                self.log("... Sub-graph with %d members: %r" % (len(cluster), cluster))
+            disjoint_best_fits = cluster.disjoint_best_fits(max_size=5000)
             for fit in disjoint_best_fits:
                 solutions.append(fit)
         return solutions
@@ -526,12 +528,15 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
             for node in feature:
                 if node.total_intensity() > minimum_intensity:
                     keep.append(node)
-                else:
-                    self.orphaned_nodes.append(node)
+                # else:
+                #     self.orphaned_nodes.append(node)
 
             if keep:
                 filtered_feature = LCMSFeature(keep, feature_id=feature.feature_id)
-                out.extend(filtered_feature.split_sparse())
+                out.extend(filter(
+                    lambda f: len(f) >= self.minimum_size,
+                    filtered_feature.split_sparse(
+                        delta_rt=self.maximum_time_gap)))
         self.feature_map = LCMSFeatureMap(out)
 
     def store_solutions(self, fits, charge_carrier=PROTON, subtract=True, detection_threshold=0.1,
@@ -554,7 +559,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         self.dependence_network = FeatureDependenceGraph(self.feature_map)
 
     def _map_precursors(self, error_tolerance):
-        printer("\tConstructing Precursor Seeds")
+        self.log("... Constructing Precursor Seeds")
         rt_map = RTMap(self.feature_map)
         cache = dict()
         seeds = set()
@@ -592,7 +597,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase):
         return state.run()
 
 
-class FeatureDeconvolutionIterationState(object):
+class FeatureDeconvolutionIterationState(LogUtilsMixin):
     def __init__(self, processor, error_tolerance=2e-5, charge_range=(1, 8), left_search=1, right_search=0,
                  charge_carrier=PROTON, truncate_after=0.95, maxiter=10, minimum_intensity=100,
                  convergence=0.01, max_missed_peaks=1, threshold_scale=0.3, relfitter=None,
@@ -627,14 +632,14 @@ class FeatureDeconvolutionIterationState(object):
     def update_signal_ratio(self):
         self.next_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
         self.total_signal_ratio = (self.last_signal_magnitude - self.next_signal_magnitude) / self.next_signal_magnitude
-        printer("Signal Ratio: %0.3e (%0.3e, %0.3e)" % (
+        self.log("Signal Ratio: %0.3e (%0.3e, %0.3e)" % (
             self.total_signal_ratio, self.last_signal_magnitude, self.next_signal_magnitude))
         self.last_signal_magnitude = self.next_signal_magnitude
         return self.total_signal_ratio
 
     def setup(self):
-        printer("Begin Iteration %d" % (self.iteration_count,))
-        printer("Total Signal: %0.3e" % (sum(f.total_signal for f in self.processor.feature_map),))
+        self.log("Begin Iteration %d" % (self.iteration_count,))
+        self.log("Total Signal: %0.3e" % (sum(f.total_signal for f in self.processor.feature_map),))
         self.processor.remove_peaks_below_threshold(self.minimum_intensity)
         self.processor.build_dependence_network()
 
@@ -653,13 +658,13 @@ class FeatureDeconvolutionIterationState(object):
                 truncate_after=self.truncate_after,
                 max_missed_peaks=self.max_missed_peaks,
                 threshold_scale=self.threshold_scale)
-            if self.debug:
-                print(feature, fits)
             i += 1
             if i % interval == 0:
-                printer("\t%0.1f%%" % ((100. * i) / n,))
+                self.log("... %0.1f%%" % ((100. * i) / n,))
         self.all_fits = list(self.processor.dependence_network.dependencies)
+        self.log("... Fit %d Theoretical Patterns" % len(self.all_fits))
         self.disjoint_feature_clusters = self.processor.dependence_network.find_non_overlapping_intervals()
+        self.log("... Found %d Disjoint Feature Subgraphs" % len(self.disjoint_feature_clusters))
 
         if self.relfitter is not None:
             self.relations = self.relfitter.fit(
@@ -667,7 +672,7 @@ class FeatureDeconvolutionIterationState(object):
                  for d in cluster), self.solutions)
             self.relfitter.predict((d for cluster in self.disjoint_feature_clusters
                                     for d in cluster))
-        printer("\tExtracting Fits")
+        self.log("... Extracting Best Fits")
         self.fits = self.processor.select_best_disjoint_subgraphs(self.disjoint_feature_clusters)
 
     def postprocess(self, subtract=True, detection_threshold=0.1):

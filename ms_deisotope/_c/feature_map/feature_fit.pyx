@@ -13,6 +13,10 @@ import numpy as np
 
 np.import_array()
 
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cdef bint isclose(double x, double y, double rtol=1.e-5, double atol=1.e-8):
+    return abs(x-y) <= (atol + rtol * abs(y))
 
 
 @cython.freelist(1000000)
@@ -38,6 +42,68 @@ cdef class map_coord(object):
 
     def __repr__(self):
         return "map_coord(mz=%0.4f, time=%0.4f)" % (self.mz, self.time)
+
+    def __eq__(self, map_coord other):
+        if other is None:
+            return False
+        if isclose( self.mz, other.mz):
+            if isclose(self.time, other.time):
+                return True
+        return False
+
+    def __ne__(self, map_coord other):
+        return not self == other
+
+    def __lt__(self, map_coord other):
+        if other is None:
+            return NotImplemented
+        if self.mz < other.mz:
+            return self.time < other.time
+        return False
+
+    def __gt__(self, map_coord other):
+        if other is None:
+            return NotImplemented
+        if self.mz > other.mz:
+            return self.time > other.time
+        return False
+
+    def __le__(self, map_coord other):
+        if other is None:
+            return NotImplemented
+        if self.mz <= other.mz:
+            return self.time <= other.time
+        return False
+
+    def __ge__(self, map_coord other):
+        if other is None:
+            return NotImplemented
+        if self.mz >= other.mz:
+            return self.time >= other.time
+        return False
+
+    cdef bint ge(self, map_coord other):
+        if self.mz >= other.mz:
+            return self.time >= other.time
+        return False
+
+    cdef bint le(self, map_coord other):
+        if self.mz <= other.mz:
+            return self.time <= other.time
+        return False
+
+    @staticmethod
+    cdef map_coord _create(double mz, double time):
+        cdef:
+            map_coord self
+        self = map_coord.__new__(map_coord)
+        self.mz = mz
+        self.time = time
+        return self
+
+    cpdef map_coord copy(self):
+        return map_coord._create(self.mz, self.time)
+
 
 
 @cython.freelist(10000000)
@@ -185,13 +251,22 @@ cdef class LCMSFeatureSetFit(object):
 
     @property
     def start(self):
-        first = self.features[0]
-        if first is None:
+        start = self.get_start()
+        if start is None:
             raise Exception()
-        return map_coord(first.mz, first.start_time)
+        return start
 
     @property
     def end(self):
+        return self.get_end()
+
+    cdef map_coord get_start(self):
+        first = self.features[0]
+        if first is None:
+            return None
+        return map_coord(first.mz, first.start_time)
+
+    cdef map_coord get_end(self):
         for last in reversed(self.features):
             if last is None:
                 continue

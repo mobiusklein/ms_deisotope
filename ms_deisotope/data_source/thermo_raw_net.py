@@ -92,11 +92,16 @@ def is_thermo_raw_file(path):
             register_dll()
         except ImportError:
             return False
-    try:
-        source = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
-        source.SelectInstrument(Business.Device.MS, 1)
-        return True
-    except NullReferenceException:   # pylint: disable=broad-except
+    with open(path, 'rb') as fh:
+        lead_bytes = fh.read(32)
+        decoded = lead_bytes.decode("utf-16")[1:9]
+        if decoded == "Finnigan":
+            try:
+                source = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
+                source.SelectInstrument(Business.Device.MS, 1)
+                return True
+            except NullReferenceException:   # pylint: disable=broad-except
+                return False
         return False
 
 
@@ -325,21 +330,6 @@ class RawReaderInterface(ScanDataSource):
             zip([label.strip(":") for label in trailers.Labels], map(_try_number, trailers.Values)))
         return scan.trailer_values
 
-    def _infer_precursor_scan_number(self, scan):
-        precursor_scan_number = None
-        last_index = self._scan_index(scan) - 1
-        current_level = self._ms_level(scan)
-        i = 0
-        while last_index >= 0 and i < 100:
-            prev_scan = self.get_scan_by_index(last_index)
-            if prev_scan.ms_level >= current_level:
-                last_index -= 1
-            else:
-                precursor_scan_number = prev_scan._data.scan_number
-                break
-            i += 1
-        return precursor_scan_number
-
     def _precursor_information(self, scan):
         scan_number = scan.scan_number
         filt = self._source.GetFilterForScanNumber(scan_number + 1)
@@ -369,8 +359,18 @@ class RawReaderInterface(ScanDataSource):
             if self.get_scan_by_index(precursor_scan_number).ms_level >= self._ms_level(scan):
                 precursor_scan_number = None
         if precursor_scan_number is None:
-            last_index = self._scan_index(scan) - 1
             current_level = self._ms_level(scan)
+            # We want to start looking for the most recent spectrum with the next lowest MS
+            # level. The expecteation is that we couldn't determine the precursor scan accurately,
+            # so we'll probe backwards until the next best candidate.
+            current_index = self._scan_index(scan)
+            # Use the index of the current scan to check the index of the previous scans at a lower
+            # MS level. This may be None, in which case there is no earlier scan recorded.
+            lookup = self._get_previous_scan_index_for_ms_level(current_index, current_level - 1)
+            if lookup is not None:
+                last_index = lookup
+            else:
+                last_index = current_index - 1
             i = 0
             while last_index >= 0 and i < 100:
                 prev_scan = self.get_scan_by_index(last_index)
@@ -596,6 +596,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         if self._source is not None:
             self._source.Close()
             self._source = None
+        self._dispose()
 
     def __del__(self):
         self.close()
@@ -606,8 +607,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     def _pack_index(self):
         index = OrderedDict()
-        for sn in range(self._source.RunHeaderEx.FirstSpectrum - 1,
-                        self._source.RunHeaderEx.LastSpectrum):
+        for sn in range(self._source.RunHeaderEx.FirstSpectrum,
+                        self._source.RunHeaderEx.LastSpectrum + 1):
             index[_make_id(sn)] = sn
         return index
 

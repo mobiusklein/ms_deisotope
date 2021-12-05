@@ -2,7 +2,11 @@ from .common import (
     ScanSerializerBase, ScanDeserializerBase)
 
 from .mzml import (
-    ProcessedMzMLDeserializer, MzMLSerializer)
+    ProcessedMzMLDeserializer, ProcessedMzMLLoader, MzMLSerializer)
+
+from .mzmlb import (
+    MzMLbSerializer, ProcessedMzMLbDeserializer, ProcessedMzMLbLoader
+)
 
 from .text import (
     TextScanSerializerBase, HeaderedDelimitedWriter)
@@ -16,8 +20,18 @@ __all__ = [
     "ScanDeserializerBase",
     "MzMLSerializer",
     "ProcessedMzMLDeserializer",
+    "ProcessedMzMLLoader",
     "MGFSerializer",
     "ProcessedMGFDeserializer",
     "TextScanSerializerBase",
     "HeaderedDelimitedWriter"
 ]
+
+if MzMLbSerializer is None:
+    del MzMLbSerializer
+else:
+    __all__.extend([
+        'MzMLbSerializer',
+        'ProcessedMzMLbLoader',
+        'ProcessedMzMLbDeserializer'
+    ])

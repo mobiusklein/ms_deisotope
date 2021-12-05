@@ -4,10 +4,14 @@ spectrum data.
 import io
 import os
 import math
-
+import csv
+import sys
 from collections import Counter
 
 import click
+import six
+
+import numpy as np
 
 import ms_deisotope
 
@@ -27,7 +31,7 @@ from ms_deisotope.data_source.metadata.file_information import SourceFile
 from ms_deisotope.output import ProcessedMzMLDeserializer
 
 from ms_deisotope.tools import conversion, draw, maintenance
-from ms_deisotope.tools.utils import processes_option, is_debug_mode, register_debug_hook, spinner
+from ms_deisotope.tools.utils import processes_option, is_debug_mode, progress, register_debug_hook, spinner
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -38,7 +42,6 @@ def cli():
     '''A collection of utilities for inspecting and manipulating
     mass spectrometry data.
     '''
-    pass
 
 
 @cli.command("describe", short_help=("Produce a minimal textual description"
@@ -52,11 +55,11 @@ def describe(path, diagnostics=False):
     click.echo("Describing \"%s\"" % (path,))
     try:
         sf = SourceFile.from_path(path)
-    except IOError:
-        raise click.Abort("Could not open file \"%s\"" % (path, ), err=True)
+    except IOError as err:
+        raise click.ClickException("Could not open file \"%s\":\n%s" % (path, err))
 
     if sf.file_format is None:
-        raise click.Abort("\"%s\" doesn't appear to be a mass spectrometry data file" % (path, ))
+        raise click.ClickException("\"%s\" doesn't appear to be a mass spectrometry data file" % (path, ))
     click.echo("File Format: %s" % (sf.file_format, ))
     click.echo("ID Format: %s" % (sf.id_format, ))
     reader = MSFileLoader(path)
@@ -167,8 +170,10 @@ def byte_index(paths):
 
 @cli.command("metadata-index", short_help='Build an external scan metadata index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
+@click.option("-D", '--deconvoluted', is_flag=True, help='Whether or not to assume this file has been '
+              'processed specifically by ms_deisotope\'s deconvolution algorithm')
 @processes_option
-def metadata_index(paths, processes=4):
+def metadata_index(paths, processes=4, deconvoluted=False):
     '''Build an external scan metadata index for a mass spectrometry data file
 
     This extended index is saved in a separate JSON file that can be loaded with
@@ -178,7 +183,10 @@ def metadata_index(paths, processes=4):
     '''
     for path in paths:
         click.echo("Indexing %s" % (path, ))
-        reader = MSFileLoader(path)
+        if deconvoluted:
+            reader = ProcessedMzMLDeserializer(path, use_extended_index=False)
+        else:
+            reader = MSFileLoader(path)
         try:
             fn = reader.prebuild_byte_offset_file
             if not reader.source._check_has_byte_offset_file():
@@ -321,8 +329,15 @@ def charge_states(path):
     charges = Counter()
     for _, msn_info in index.msn_ids.items():
         charges[msn_info.charge] += 1
-    for charge in sorted(charges, key=abs):
-        click.echo("%d: %d" % (charge, charges[charge]))
+
+    def sort_key(k):
+        if isinstance(k, int):
+            return abs(k)
+        else:
+            return 0
+
+    for charge in sorted(charges, key=sort_key):
+        click.echo("%s: %d" % (charge, charges[charge]))
 
 
 def _binsearch(array, x):
@@ -401,7 +416,7 @@ def precursor_clustering(path, grouping_error=2e-5):
 @click.option("-M", "--in-memory", is_flag=True, default=False, help=(
     "Whether to load the entire dataset into memory for better performance"))
 @click.option("-D", "--deconvoluted", is_flag=True, default=False, help=(
-    "Whether to assume the spectrum is deconvoluted or not"))
+    "Whether to assume the spectra are deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
                         in_memory=False, deconvoluted=False, cache_size=2**10):
     '''Cluster spectra by precursor mass and cosine similarity.
@@ -510,6 +525,77 @@ def cluster_evaluation(path):
         for key, value in sorted(by_size.items()):
             click.echo("Size {:d}: {:d}".format(key, value))
 
+
+
+@cli.command('ms1-spectrum-diagnostics')
+@click.argument('path', type=click.Path(exists=True, readable=True))
+@click.option("-o", "--output-path", type=click.Path(writable=True))
+def ms1_spectrum_diagnostics(path, output_path=None):
+    '''Collect diagnostic information from MS1 spectra.
+    '''
+    reader = ms_deisotope.MSFileLoader(path)
+
+    reader.make_iterator(grouped=True)
+
+    ms1_metric_names = [
+        'scan_id', 'scan_index', 'scan_time', 'duty_cycle', 'tic',
+        'base_peak_mz', 'base_peak_intensity', 'data_point_count',
+        'injection_time', 'n_ms2_scans'
+    ]
+    ms1_metrics = []
+    products = None
+    last_ms1 = None
+    prog = progress(length=len(reader), label='Processing Scans',
+                    file=sys.stderr, item_show_func=lambda x: x.id if x else '')
+    with prog:
+        for precursor, products in reader:
+            ms1_time = precursor.scan_time
+            if last_ms1 is not None:
+                duty_cycle = ms1_time - last_ms1
+                ms1_metrics[-1]['duty_cycle'] = duty_cycle
+            last_ms1 = ms1_time
+            bp = precursor.base_peak()
+            acquisition_info = precursor.acquisition_information
+            if acquisition_info:
+                scan_event = acquisition_info[0]
+                inj = scan_event.injection_time
+            else:
+                inj = np.nan
+            ms1_record = {
+                "scan_id": precursor.id,
+                "scan_index": precursor.index,
+                "scan_time": precursor.scan_time,
+                "duty_cycle": np.nan,
+                "tic": precursor.tic(),
+                "base_peak_mz": bp.mz,
+                "base_peak_intensity": bp.intensity,
+                "data_point_count": precursor.arrays.mz.size,
+                "injection_time": inj,
+                "n_ms2_scans": len([p for p in products if p.ms_level == 2])
+            }
+            ms1_metrics.append(ms1_record)
+            prog.current_item = precursor
+            prog.update(1 + len(products))
+
+    if last_ms1 is not None:
+        if products:
+            last_time = max([p.scan_time for p in products])
+            duty_cycle = last_time - last_ms1
+            ms1_metrics[-1]['duty_cycle'] = duty_cycle
+
+
+    if output_path is None:
+        outfh = click.open_file("-", mode='wb')
+    else:
+        outfh = io.open(output_path, mode='wb')
+    if six.PY3:
+        stream = io.TextIOWrapper(outfh, encoding='utf8', newline='')
+    else:
+        stream = outfh
+    writer = csv.DictWriter(stream, fieldnames=ms1_metric_names)
+    writer.writeheader()
+    writer.writerows(ms1_metrics)
+    stream.flush()
 
 if _compression.has_idzip:
     @cli.command("idzip", short_help='Compress a file with idzip, a gzip-compatible format with random access support')

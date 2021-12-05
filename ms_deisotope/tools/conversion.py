@@ -1,6 +1,7 @@
 '''A collection of utilities for using :mod:`ms_deisotope` to convert between mass spectrometry
 data file formats.
 '''
+import os
 
 import click
 from six import string_types as basestring
@@ -10,17 +11,23 @@ from pyteomics.xml import unitfloat
 
 import ms_deisotope
 from ms_deisotope.data_source._compression import GzipFile
+from ms_deisotope.data_source._buffer import PreBufferedStreamReader
 from ms_deisotope.data_source.metadata import activation as activation_module, data_transformation
 from ms_deisotope.output import MzMLSerializer, MGFSerializer
 
 from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook, progress
 
 
+try:
+    from ms_deisotope.output import MzMLbSerializer
+except ImportError:
+    MzMLbSerializer = None
+
+
 @click.group()
 def ms_conversion():
     """A command line tool for converting between mass spectrometry data formats
     """
-    pass
 
 
 def to_mgf(reader, outstream, msn_filters=None):
@@ -81,12 +88,20 @@ def mgf(source, output, compress=False, msn_filters=None):
         stream = GzipFile(fileobj=stream, mode='wb')
     else:
         stream = click.open_file(output, 'wb')
-    reader = ms_deisotope.MSFileLoader(source)
+    use_index = True
+    if source == "-":
+        click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+        source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
+        # Cannot use the offset index of a file we cannot seek through
+        use_index = False
+
+    reader = ms_deisotope.MSFileLoader(source, use_index=use_index)
     to_mgf(reader, stream, msn_filters=msn_filters)
 
 
 def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
-            default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True):
+            default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True,
+            writer_type=None, compression='zlib'):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -118,14 +133,16 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
         m/z in the precursor's peak list. (the default is False, which results in no correction)
 
     """
+    if writer_type is None:
+        writer_type = MzMLSerializer
     if ms1_filters is None:
         ms1_filters = []
     if msn_filters is None:
         msn_filters = []
     reader.make_iterator(grouped=True)
-    writer = MzMLSerializer(outstream, len(
+    writer = writer_type(outstream, len(
         reader), deconvoluted=False, build_extra_index=write_index,
-        include_software_entry=update_metadata)
+        include_software_entry=update_metadata, compression=compression)
     writer.copy_metadata_from(reader)
     if update_metadata:
         method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
@@ -213,7 +230,14 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
     """Convert `source` into mzML format written to `output`, applying a collection of optional data
     transformations along the way.
     """
-    reader = ms_deisotope.MSFileLoader(source)
+    use_index = True
+    if source == "-":
+        click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+        source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
+        # Cannot use the offset index of a file we cannot seek through
+        use_index = False
+
+    reader = ms_deisotope.MSFileLoader(source, use_index=use_index)
     is_a_tty = False
     if compress:
         if not output.endswith(".gz") and output != '-':
@@ -236,6 +260,58 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
         to_mzml(reader, stream, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
                 write_index=write_index, update_metadata=update_metadata)
+
+
+try:
+    from psims.mzmlb.writer import DEFAULT_COMPRESSOR
+    @ms_conversion.command("mzmlb", short_help="Convert a mass spectrometry data file to mzMLb")
+    @click.argument("source")
+    @click.argument("output", type=click.Path(writable=True), required=False)
+    @click.option("-r", "--ms1-filter", "ms1_filters", multiple=True, type=parse_filter)
+    @click.option("-rn", "--msn-filter", "msn_filters", multiple=True, type=parse_filter)
+    @click.option("-p", "--pick-peaks", is_flag=True, help=("Enable peak picking, centroiding profile data"))
+    @click.option("-f", "--reprofile", is_flag=True, help=(
+        "Enable reprofiling, converting all MS1 spectra into smoothed profile data"))
+    @click.option("-c", "--correct-precursor-mz", is_flag=True, help=(
+        "Adjust the precursor m/z of each MSn scan to the nearest peak m/z in the precursor"))
+    @click.option("--update-metadata/--no-update-metadata", default=True, help=(
+        "Whether or not to add the conversion"
+        " program's metadata to the mzML file."))
+    @click.option("-z", "--compression", type=click.Choice(
+        ['gzip', 'blosc', 'blosc:lz4', 'blosc:lz4hc', 'blosc:zlib', 'blosc:zstd', 'zlib']), default=DEFAULT_COMPRESSOR,
+        help="The compressor to use")
+    def mzmlb(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False,
+              correct_precursor_mz=False, update_metadata=True, compression=DEFAULT_COMPRESSOR):
+        """Convert `source` into mzML format written to `output`, applying a collection of optional data
+        transformations along the way.
+        """
+        use_index = True
+        if source == "-":
+            click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+            source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
+            # Cannot use the offset index of a file we cannot seek through
+            use_index = False
+
+        reader = ms_deisotope.MSFileLoader(source, use_index=use_index)
+        if output == '-':
+            raise ValueError("Cannot write HDF5 to STDOUT")
+        elif output is None:
+            if reader.source_file_name.endswith('.gz'):
+                out = reader.source_file_name[:-3]
+            else:
+                out = reader.source_file_name
+            out = os.path.basename(out)
+            base, _ext = out.rsplit(".", 1)
+            base += '.mzMLb'
+            output = base
+
+        write_index = False
+        to_mzml(reader, output, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
+                msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
+                write_index=write_index, update_metadata=update_metadata,
+                writer_type=MzMLbSerializer, compression=compression)
+except ImportError:
+    pass
 
 
 if is_debug_mode():

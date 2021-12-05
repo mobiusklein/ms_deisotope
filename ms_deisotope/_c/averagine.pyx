@@ -9,10 +9,10 @@ from cpython.list cimport (
     PyList_GET_SIZE, PyList_Append, PyList_SetItem)
 from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 
-from libc.math cimport floor
+from libc.math cimport floor, fabs
 from libc.stdlib cimport malloc, free
 
-from brainpy import PROTON as _PROTON, isotopic_variants, calculate_mass as _py_calculate_mass
+from brainpy import PROTON as _PROTON, calculate_mass as _py_calculate_mass
 from brainpy._c.isotopic_distribution cimport _isotopic_variants
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from brainpy._speedup cimport calculate_mass
@@ -21,6 +21,19 @@ from ms_peak_picker._c.peak_set cimport FittedPeak
 
 
 from ms_deisotope.constants import (TRUNCATE_AFTER, IGNORE_BELOW)
+
+
+IF int == long:
+    DEF PY_VERSION = 3
+ELSE:
+    DEF PY_VERSION = 2
+IF UNAME_SYSNAME == "Windows" and PY_VERSION == 2:
+    cdef double INFINITY = float('inf')
+
+    cdef int isinf(double x) nogil:
+        return fabs(x) == INFINITY
+ELSE:
+    from libc.math cimport isinf as isinf
 
 
 @cython.boundscheck(False)
@@ -813,7 +826,7 @@ cdef class TheoreticalIsotopicPattern(object):
 
         i = n - 1
         while i > 0:
-            if cumulative_intensities[i] < threshold:
+            if cumulative_intensities[i - 1] < threshold:
                 break
             template = template.clone_drop_last()
             accumulator.append(template)
@@ -985,3 +998,33 @@ _neutron_shift = _py_calculate_mass({"C[13]": 1}) - _py_calculate_mass({"C[12]":
 cpdef double isotopic_shift(int charge=1):
     return _neutron_shift / <double>(charge)
 
+
+@cython.cdivision
+cpdef TheoreticalIsotopicPattern poisson_approximate(double mass, size_t n_peaks, double lambda_factor=1800.0, int charge=1):
+    cdef:
+        double lmbda = mass / lambda_factor
+        double p_i = 1.0
+        double factorial_acc = 1
+        double total = 1.0
+        double cur_intensity
+        double* intensities
+        list result
+
+    intensities = <double*>malloc(sizeof(double) * n_peaks)
+    intensities[0] = 1.0
+    for i in range(1, n_peaks):
+        p_i *= lmbda
+        factorial_acc *= i
+        cur_intensity = p_i / factorial_acc
+        intensities[i] = (cur_intensity if not isinf(cur_intensity) else 0.0)
+        total += intensities[i]
+
+    result = []
+    iso_shift = isotopic_shift(charge)
+    mz = mass_charge_ratio(mass, charge)
+
+    for i in range(n_peaks):
+        result.append(TheoreticalPeak._create(mz + i * iso_shift, intensities[i] / total, charge))
+
+    free(intensities)
+    return TheoreticalIsotopicPattern(result, origin=mz)

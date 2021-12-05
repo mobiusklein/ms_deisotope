@@ -29,6 +29,12 @@ class MGFSerializer(HeaderedDelimitedWriter):
         true, it is no longer possible to add global parameters using :meth:`add_global_parameter`.
 
     """
+
+    file_extensions = {
+        "mgf",
+        "mgf.gz"
+    }
+
     def __init__(self, stream, sample_name=None, deconvoluted=True):
         super(MGFSerializer, self).__init__(stream, deconvoluted)
         self.sample_name = sample_name
@@ -121,8 +127,14 @@ class ProcessedMGFLoader(MGFLoader):
     precursor ion.
 
     """
-    def __init__(self, source_file, encoding='ascii'):
-        super(ProcessedMGFDeserializer, self).__init__(source_file, encoding)
+
+    file_extensions = {
+        "mgf",
+        "mgf.gz"
+    }
+
+    def __init__(self, source_file, encoding='ascii', **kwargs):
+        super(ProcessedMGFDeserializer, self).__init__(source_file, encoding, **kwargs)
 
     def _create_parser(self):
         if self._use_index:
@@ -142,7 +154,7 @@ class ProcessedMGFLoader(MGFLoader):
         scan = super(ProcessedMGFDeserializer, self)._make_scan(data)
         scan.peak_set = None
         scan.deconvoluted_peak_set = self._build_peaks(scan._data)
-        return scan.pack()
+        return scan.pack(bind=True)
 
     def _precursor_information(self, scan):
         pinfo = super(ProcessedMGFDeserializer, self)._precursor_information(scan)

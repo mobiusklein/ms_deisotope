@@ -2,8 +2,18 @@
 
 cimport cython
 
-from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
+from ms_peak_picker._c.peak_set cimport PeakBase
+from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature, LCMSFeatureTreeNode
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyList_GetItem
+
+cimport numpy as np
+import numpy as np
+
+np.import_array()
+
+from cpython cimport array
+import array
+
 
 
 cdef class LCMSFeatureMap(object):
@@ -21,6 +31,14 @@ cdef class LCMSFeatureMap(object):
             return self.features[i]
         else:
             return [self.features[j] for j in i]
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.features == other.features
+
+    def __ne__(self, other):
+        return not self == other
 
     cdef Py_ssize_t get_size(self):
         return PyList_GET_SIZE(self.features)
@@ -163,6 +181,40 @@ cdef class LCMSFeatureMap(object):
             result.append(feature)
         return self.__class__(result)
 
+    def as_arrays(self):
+        cdef:
+            size_t i, n, j, m, k, q
+            double time
+            LCMSFeature feature
+            LCMSFeatureTreeNode node
+            PeakBase peak
+
+        mz_array = array.array('d')
+        intensity_array = array.array('d')
+        ion_mobility_array = array.array('d')
+        feature_id_array = array.array('L')
+        n = self.get_size()
+        for i in range(n):
+            feature = <LCMSFeature>self.get(i)
+            m = feature.get_size()
+            for j in range(m):
+                node = <LCMSFeatureTreeNode>feature.getitem(j)
+                time = node.time
+                q = node.get_members_size()
+                for k in range(k):
+                    peak = <PeakBase>node.getitem(k)
+                    ion_mobility_array.append(time)
+                    mz_array.append(peak.mz)
+                    intensity_array.append(peak.intensity)
+                    feature_id_array.append(i)
+
+        mz_array = np.array(mz_array, copy=False)
+        intensity_array = np.array(intensity_array, copy=False)
+        ion_mobility_array = np.array(ion_mobility_array, copy=False)
+        feature_id_array = np.array(feature_id_array, copy=False)
+        mask = np.lexsort(np.stack((ion_mobility_array, mz_array)))
+        return (mz_array[mask], intensity_array[mask], ion_mobility_array[mask], feature_id_array[mask])
+
 
 @cython.binding(True)
 cpdef list split_sparse(LCMSFeatureMap self, double delta_rt=1.0, size_t min_size=2):
@@ -225,7 +277,7 @@ cpdef tuple binary_search_with_flag(list array, double mz, double error_toleranc
             hi = mid
         elif err < 0:
             lo = mid
-    return 0, False
+    return [0], False
 
 
 @cython.cdivision(True)

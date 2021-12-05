@@ -23,7 +23,7 @@ class map_coord(namedtuple("map_coord", ("mz", 'time'))):
 class LCMSFeatureSetFit(object):
     def __init__(self, features, theoretical, score, charge,
                  missing_features=0, supporters=None, data=None,
-                 neutral_mass=None, scores=None, times=None):
+                 neutral_mass=None, n_points=0, scores=None, times=None):
         if supporters is None:
             supporters = []
         if scores is None:
@@ -35,6 +35,7 @@ class LCMSFeatureSetFit(object):
         self.score = score
         self.charge = charge
         self.data = data
+        self.n_points = n_points
         self.missing_features = missing_features
         self.monoisotopic_feature = features[0]
         self.supporters = supporters
@@ -131,9 +132,10 @@ class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
 
     def _recalculate(self):
         self._calculate_most_abundant_member()
-        self._mz = self._most_abundant_member.mz
-        self._neutral_mass = self._most_abundant_member.neutral_mass
-        self.charge = self._most_abundant_member.charge
+        if self._most_abundant_member is not None:
+            self._mz = self._most_abundant_member.mz
+            self._neutral_mass = self._most_abundant_member.neutral_mass
+            self.charge = self._most_abundant_member.charge
 
     @property
     def neutral_mass(self):
@@ -156,6 +158,10 @@ class DeconvolutedLCMSFeature(LCMSFeature):
         self.n_features = n_features
         self.supporters = supporters
         super(DeconvolutedLCMSFeature, self).__init__(nodes, adducts, used_as_adduct, feature_id=feature_id)
+
+    def __reduce__(self):
+        return self.__class__, (self.nodes, self.charge, self.adducts,
+                                self.used_as_adduct, self.score, self.feature_id, self.supporters)
 
     @property
     def precursor_information(self):
@@ -227,21 +233,12 @@ class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
                 self.total_weight = 1
             else:
                 return
-        self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             (peak.neutral_mass * peak.intensity)
         self.total_weight += peak.intensity
         self.current_mean = agg / self.total_weight
         self.current_count += 1
         return self
-
-    def recompute(self):
-        weight = 0
-        total = 0
-        for peak in self.accumulator:
-            weight += peak.intensity
-            total += peak.intensity * peak.neutral_mass
-        return total / weight
 
 
 class DriftTimeRunningWeightedAverage(RunningWeightedAverage):
@@ -252,21 +249,12 @@ class DriftTimeRunningWeightedAverage(RunningWeightedAverage):
                 self.total_weight = 1
             else:
                 return
-        self.accumulator.append(peak)
         agg = (self.total_weight * self.current_mean) + \
             (peak.drift_time * peak.intensity)
         self.total_weight += peak.intensity
         self.current_mean = agg / self.total_weight
         self.current_count += 1
         return self
-
-    def recompute(self):
-        weight = 0
-        total = 0
-        for peak in self.accumulator:
-            weight += peak.intensity
-            total += peak.intensity * peak.drift_time
-        return total / weight
 
 
 class IonMobilityDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):

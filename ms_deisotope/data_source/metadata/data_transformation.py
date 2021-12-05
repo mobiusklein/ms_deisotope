@@ -37,200 +37,201 @@ data_transformations = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('data transformation', term_cls_name="DataTransformation", writer=cog.out)
 # ]]]
+# CV Version: 4.1.55
 data_transformations = TermSet([
-    DataTransformation(u'file format conversion', u'MS:1000530',
-                       (u'Conversion of one file format to another.'),
+    DataTransformation('file format conversion', 'MS:1000530',
+                       ('Conversion of one file format to another.'),
                        'data transformation',
-                       [u'data transformation']),
-    DataTransformation(u'data processing action', u'MS:1000543',
-                       (u'Data processing attribute used to describe the type of data'
-                        u'processing performed on the data file.'),
+                       ['data transformation']),
+    DataTransformation('data processing action', 'MS:1000543',
+                       ('Data processing attribute used to describe the type of data '
+                        'processing performed on the data file.'),
                        'data transformation',
-                       [u'data transformation']),
-    DataTransformation(u'Conversion to mzML', u'MS:1000544',
-                       (u'Conversion of a file format to Proteomics Standards'
-                        u'Initiative mzML file format.'),
+                       ['data transformation']),
+    DataTransformation('Conversion to mzML', 'MS:1000544',
+                       ('Conversion of a file format to Proteomics Standards '
+                        'Initiative mzML file format.'),
                        'data transformation',
-                       [u'file format conversion', u'data transformation']),
-    DataTransformation(u'Conversion to mzMLb', u'MS:1002839',
-                       (u'Conversion of a file format to Proteomics Standards'
-                        u'Initiative mzMLb file format.'),
+                       ['file format conversion', 'data transformation']),
+    DataTransformation('Conversion to mzXML', 'MS:1000545',
+                       ('Conversion of a file format to Institute of Systems Biology '
+                        'mzXML file format.'),
                        'data transformation',
-                       [u'file format conversion', u'data transformation']),
-    DataTransformation(u'Conversion to dta', u'MS:1000741',
-                       (u'Conversion to dta format.'),
+                       ['file format conversion', 'data transformation']),
+    DataTransformation('Conversion to mzData', 'MS:1000546',
+                       ('Conversion of a file format to Proteomics Standards '
+                        'Initiative mzData file format.'),
                        'data transformation',
-                       [u'file format conversion', u'data transformation']),
-    DataTransformation(u'Conversion to mzXML', u'MS:1000545',
-                       (u'Conversion of a file format to Institute of Systems Biology'
-                        u'mzXML file format.'),
+                       ['file format conversion', 'data transformation']),
+    DataTransformation('Conversion to dta', 'MS:1000741',
+                       ('Conversion to dta format.'),
                        'data transformation',
-                       [u'file format conversion', u'data transformation']),
-    DataTransformation(u'Conversion to mzData', u'MS:1000546',
-                       (u'Conversion of a file format to Proteomics Standards'
-                        u'Initiative mzData file format.'),
+                       ['file format conversion', 'data transformation']),
+    DataTransformation('Conversion to mzMLb', 'MS:1002839',
+                       ('Conversion of a file format to Proteomics Standards '
+                        'Initiative mzMLb file format.'),
                        'data transformation',
-                       [u'file format conversion', u'data transformation']),
-    DataTransformation(u'charge deconvolution', u'MS:1000034',
-                       (u'The determination of the mass of an ion based on the mass'
-                        u'spectral peaks that represent multiple-charge ions.'),
+                       ['file format conversion', 'data transformation']),
+    DataTransformation('deisotoping', 'MS:1000033',
+                       ('The removal of isotope peaks to represent the fragment ion '
+                        'as one data point and is commonly done to reduce complexity. '
+                        'It is done in conjunction with the charge state '
+                        'deconvolution.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'peak picking', u'MS:1000035',
-                       (u'Spectral peak processing conducted on the acquired data to'
-                        u'convert profile data to centroided data.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('charge deconvolution', 'MS:1000034',
+                       ('The determination of the mass of an ion based on the mass '
+                        'spectral peaks that represent multiple-charge ions.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'deisotoping', u'MS:1000033',
-                       (u'The removal of isotope peaks to represent the fragment ion'
-                        u'as one data point and is commonly done to reduce complexity.'
-                        u'It is done in conjunction with the charge state'
-                        u'deconvolution.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('peak picking', 'MS:1000035',
+                       ('Spectral peak processing conducted on the acquired data to '
+                        'convert profile data to centroided data.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'baseline reduction', u'MS:1000593',
-                       (u'A process of removal of varying intensities generated due to'
-                        u'variable energy absorption before further processing can'
-                        u'take place. Baseline reduction facilitates meaningful'
-                        u'comparision between intensities of m/z values.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('smoothing', 'MS:1000592',
+                       ('A process of reducing spikes of intensity in order to reduce '
+                        'noise while preserving real peak signal. Many algorithms can '
+                        'be applied for this process.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'smoothing', u'MS:1000592',
-                       (u'A process of reducing spikes of intensity in order to reduce'
-                        u'noise while preserving real peak signal. Many algorithms can'
-                        u'be applied for this process.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('baseline reduction', 'MS:1000593',
+                       ('A process of removal of varying intensities generated due to '
+                        'variable energy absorption before further processing can '
+                        'take place. Baseline reduction facilitates meaningful '
+                        'comparision between intensities of m/z values.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'precursor recalculation', u'MS:1000780',
-                       (u'A process that recalculates existing precursor selected ions'
-                        u'with one or more algorithmically determined precursor'
-                        u'selected ions.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('retention time alignment', 'MS:1000745',
+                       ('The correction of the spectrum scan times, as used e.g. in '
+                        'label-free proteomics.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'data filtering', u'MS:1001486',
-                       (u'Filtering out part of the data.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('charge state calculation', 'MS:1000778',
+                       ("A process that infers the charge state of an MSn spectrum's "
+                        'precursor(s) by the application of some algorithm.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'retention time alignment', u'MS:1000745',
-                       (u'The correction of the spectrum scan times, as used e.g. in'
-                        u'label-free proteomics.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('precursor recalculation', 'MS:1000780',
+                       ('A process that recalculates existing precursor selected ions '
+                        'with one or more algorithmically determined precursor '
+                        'selected ions.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'intensity normalization', u'MS:1001484',
-                       (u'Normalization of data point intensities.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('intensity normalization', 'MS:1001484',
+                       ('Normalization of data point intensities.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'm/z calibration', u'MS:1001485',
-                       (u'Calibration of data point m/z positions.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('m/z calibration', 'MS:1001485',
+                       ('Calibration of data point m/z positions.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'charge state calculation', u'MS:1000778',
-                       (u"A process that infers the charge state of an MSn spectrum's"
-                        u'precursor(s) by the application of some algorithm.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('data filtering', 'MS:1001486',
+                       ('Filtering out part of the data.'),
                        'data transformation',
-                       [u'data processing action', u'data transformation']),
-    DataTransformation(u'area peak picking', u'MS:1000801',
-                       (u'Spectral peak processing conducted on the acquired data to'
-                        u'convert profile data to centroided data. The area defined by'
-                        u'all raw data points that belong to the peak is reported.'),
+                       ['data processing action', 'data transformation']),
+    DataTransformation('area peak picking', 'MS:1000801',
+                       ('Spectral peak processing conducted on the acquired data to '
+                        'convert profile data to centroided data. The area defined by '
+                        'all raw data points that belong to the peak is reported.'),
                        'data transformation',
-                       [u'peak picking', u'data processing action', u'data transformation']),
-    DataTransformation(u'height peak picking', u'MS:1000802',
-                       (u'Spectral peak processing conducted on the acquired data to'
-                        u'convert profile data to centroided data. The maximum'
-                        u'intensity of all raw data points that belong to the peak is'
-                        u'reported.'),
+                       ['peak picking', 'data processing action', 'data transformation']),
+    DataTransformation('height peak picking', 'MS:1000802',
+                       ('Spectral peak processing conducted on the acquired data to '
+                        'convert profile data to centroided data. The maximum '
+                        'intensity of all raw data points that belong to the peak is '
+                        'reported.'),
                        'data transformation',
-                       [u'peak picking', u'data processing action', u'data transformation']),
-    DataTransformation(u'top hat baseline reduction', u'MS:1001994',
-                       (u'Top-hat morphological filter based on the basic'
-                        u"morphological operations 'erosion' and 'dilatation'."),
+                       ['peak picking', 'data processing action', 'data transformation']),
+    DataTransformation('Savitzky-Golay smoothing', 'MS:1000782',
+                       ('Reduces intensity spikes by applying local polynomial '
+                        'regression (of degree k) on a distribution (of at least k+1 '
+                        'equally spaced points) to determine the smoothed value for '
+                        'each point. It tends to preserve features of the '
+                        'distribution such as relative maxima, minima and width, '
+                        "which are usually 'flattened' by other adjacent averaging "
+                        'techniques.'),
                        'data transformation',
-                       [u'baseline reduction', u'data processing action', u'data transformation']),
-    DataTransformation(u'convex hull baseline reduction', u'MS:1001995',
-                       (u'Constructs the baseline by fitting multiple parabolas to the'
-                        u'spectrum starting with the large scale structures.'),
+                       ['smoothing', 'data processing action', 'data transformation']),
+    DataTransformation('LOWESS smoothing', 'MS:1000783',
+                       ('Reduces intensity spikes by applying a modelling method '
+                        'known as locally weighted polynomial regression. At each '
+                        'point in the data set a low-degree polynomial is fit to a '
+                        'subset of the data, with explanatory variable values near '
+                        'the point whose response is being estimated. The polynomial '
+                        'is fit using weighted least squares, giving more weight to '
+                        'points near the point whose response is being estimated and '
+                        'less weight to points further away. The value of the '
+                        'regression function for the point is then obtained by '
+                        'evaluating the local polynomial using the explanatory '
+                        'variable values for that data point. The LOESS fit is '
+                        'complete after regression function values have been computed '
+                        'for each of the n data points. Many of the details of this '
+                        'method, such as the degree of the polynomial model and the '
+                        'weights, are flexible.'),
                        'data transformation',
-                       [u'baseline reduction', u'data processing action', u'data transformation']),
-    DataTransformation(u'median baseline reduction', u'MS:1001996',
-                       (u'The spectrum that will be baseline subtracted is divided'
-                        u'into a number of segments.'),
+                       ['smoothing', 'data processing action', 'data transformation']),
+    DataTransformation('Gaussian smoothing', 'MS:1000784',
+                       ('Reduces intensity spikes by convolving the data with a one- '
+                        'dimensional Gaussian function.'),
                        'data transformation',
-                       [u'baseline reduction', u'data processing action', u'data transformation']),
-    DataTransformation(u'wavelet transformation smoothing', u'MS:1001997',
-                       (u'The random noise is removed by using the undecimated wavelet'
-                        u'transform." [DOI:10.1093/bioinformatics/btl355'),
+                       ['smoothing', 'data processing action', 'data transformation']),
+    DataTransformation('moving average smoothing', 'MS:1000785',
+                       ('Reduces intensity spikes by averaging each point with two or '
+                        'more adjacent points. The more adjacent points that used, '
+                        'the stronger the smoothing effect.'),
                        'data transformation',
-                       [u'smoothing', u'data processing action', u'data transformation']),
-    DataTransformation(u'Gaussian smoothing', u'MS:1000784',
-                       (u'Reduces intensity spikes by convolving the data with a one-'
-                        u'dimensional Gaussian function.'),
+                       ['smoothing', 'data processing action', 'data transformation']),
+    DataTransformation('wavelet transformation smoothing', 'MS:1001997',
+                       ('The random noise is removed by using the undecimated wavelet '
+                        'transform." [DOI:10.1093/bioinformatics/btl355'),
                        'data transformation',
-                       [u'smoothing', u'data processing action', u'data transformation']),
-    DataTransformation(u'moving average smoothing', u'MS:1000785',
-                       (u'Reduces intensity spikes by averaging each point with two or'
-                        u'more adjacent points. The more adjacent points that used,'
-                        u'the stronger the smoothing effect.'),
+                       ['smoothing', 'data processing action', 'data transformation']),
+    DataTransformation('top hat baseline reduction', 'MS:1001994',
+                       ('Top-hat morphological filter based on the basic '
+                        "morphological operations 'erosion' and 'dilatation'."),
                        'data transformation',
-                       [u'smoothing', u'data processing action', u'data transformation']),
-    DataTransformation(u'Savitzky-Golay smoothing', u'MS:1000782',
-                       (u'Reduces intensity spikes by applying local polynomial'
-                        u'regression (of degree k) on a distribution (of at least k+1'
-                        u'equally spaced points) to determine the smoothed value for'
-                        u'each point. It tends to preserve features of the'
-                        u'distribution such as relative maxima, minima and width,'
-                        u"which are usually 'flattened' by other adjacent averaging"
-                        u'techniques.'),
+                       ['baseline reduction', 'data processing action', 'data transformation']),
+    DataTransformation('convex hull baseline reduction', 'MS:1001995',
+                       ('Constructs the baseline by fitting multiple parabolas to the '
+                        'spectrum starting with the large scale structures.'),
                        'data transformation',
-                       [u'smoothing', u'data processing action', u'data transformation']),
-    DataTransformation(u'LOWESS smoothing', u'MS:1000783',
-                       (u'Reduces intensity spikes by applying a modelling method'
-                        u'known as locally weighted polynomial regression. At each'
-                        u'point in the data set a low-degree polynomial is fit to a'
-                        u'subset of the data, with explanatory variable values near'
-                        u'the point whose response is being estimated. The polynomial'
-                        u'is fit using weighted least squares, giving more weight to'
-                        u'points near the point whose response is being estimated and'
-                        u'less weight to points further away. The value of the'
-                        u'regression function for the point is then obtained by'
-                        u'evaluating the local polynomial using the explanatory'
-                        u'variable values for that data point. The LOESS fit is'
-                        u'complete after regression function values have been computed'
-                        u'for each of the n data points. Many of the details of this'
-                        u'method, such as the degree of the polynomial model and the'
-                        u'weights, are flexible.'),
+                       ['baseline reduction', 'data processing action', 'data transformation']),
+    DataTransformation('median baseline reduction', 'MS:1001996',
+                       ('The spectrum that will be baseline subtracted is divided '
+                        'into a number of segments.'),
                        'data transformation',
-                       [u'smoothing', u'data processing action', u'data transformation']),
-    DataTransformation(u'msPrefix precursor recalculation', u'MS:1000781',
-                       (u'Recalculates one or more precursor selected ions by peak'
-                        u'detection in the isolation windows of high accuracy MS'
-                        u'precursor scans.'),
+                       ['baseline reduction', 'data processing action', 'data transformation']),
+    DataTransformation('below precursor intensity dominance charge state calculation', 'MS:1000779',
+                       ('Infers charge state as single or ambiguously multiple by '
+                        'determining the fraction of intensity below the precursor '
+                        'm/z.'),
                        'data transformation',
-                       [u'precursor recalculation', u'data processing action', u'data transformation']),
-    DataTransformation(u'low intensity data point removal', u'MS:1000594',
-                       (u'The removal of very low intensity data points that are'
-                        u'likely to be spurious noise rather than real signal.'),
+                       ['charge state calculation', 'data processing action', 'data transformation']),
+    DataTransformation('msPrefix precursor recalculation', 'MS:1000781',
+                       ('Recalculates one or more precursor selected ions by peak '
+                        'detection in the isolation windows of high accuracy MS '
+                        'precursor scans.'),
                        'data transformation',
-                       [u'data filtering', u'data processing action', u'data transformation']),
-    DataTransformation(u'high intensity data point removal', u'MS:1000746',
-                       (u'The removal of very high intensity data points.'),
+                       ['precursor recalculation', 'data processing action', 'data transformation']),
+    DataTransformation('area normalization', 'MS:1001999',
+                       ('Normalization of areas below the curves.'),
                        'data transformation',
-                       [u'data filtering', u'data processing action', u'data transformation']),
-    DataTransformation(u'area normalization', u'MS:1001999',
-                       (u'Normalization of areas below the curves.'),
+                       ['intensity normalization', 'data processing action', 'data transformation']),
+    DataTransformation('low intensity data point removal', 'MS:1000594',
+                       ('The removal of very low intensity data points that are '
+                        'likely to be spurious noise rather than real signal.'),
                        'data transformation',
-                       [u'intensity normalization', u'data processing action', u'data transformation']),
-    DataTransformation(u'below precursor intensity dominance charge state calculation', u'MS:1000779',
-                       (u'Infers charge state as single or ambiguously multiple by'
-                        u'determining the fraction of intensity below the precursor'
-                        u'm/z.'),
+                       ['data filtering', 'data processing action', 'data transformation']),
+    DataTransformation('high intensity data point removal', 'MS:1000746',
+                       ('The removal of very high intensity data points.'),
                        'data transformation',
-                       [u'charge state calculation', u'data processing action', u'data transformation']),
-    DataTransformation(u'sophisticated numerical annotation procedure', u'MS:1001998',
-                       (u'It searches for known patterns in the measured spectrum."'
-                        u'[DOI:10.1021/ac951158i'),
+                       ['data filtering', 'data processing action', 'data transformation']),
+    DataTransformation('sophisticated numerical annotation procedure', 'MS:1001998',
+                       ('It searches for known patterns in the measured spectrum." '
+                        '[DOI:10.1021/ac951158i'),
                        'data transformation',
-                       [u'area peak picking', u'peak picking', u'data processing action', u'data transformation']),
+                       ['area peak picking', 'peak picking', 'data processing action', 'data transformation']),
 ])
 # [[[end]]]
 

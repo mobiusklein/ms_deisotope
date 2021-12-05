@@ -55,7 +55,6 @@ def indexing_iterator(reader, start, end, index):
         index.add_scan_bunch(scan_bunch)
         yield scan_bunch
 
-
 def index_chunk(reader, start, end):
     """The task function for :func:`quick_index`, which will build an
     :class:`~.ExtendedIndex` and :class:`ScanIntervalTree` from an index
@@ -87,7 +86,7 @@ def index_chunk(reader, start, end):
     return (start, end, index, intervals)
 
 
-def partition_work(n_items, n_workers, start_index=0):
+def partition_work(n_items, n_workers, start_index=0, reader=None):
     """Given an index range and a number of workers to work on them,
     break the index range into approximately evenly sized sub-intervals.
 
@@ -115,14 +114,40 @@ def partition_work(n_items, n_workers, start_index=0):
     n_items += start_index
     intervals = []
     start = start_index
-    intervals.append([start, start + chunk_size])
+    end = start + chunk_size
+    if reader is not None:
+        if reader.has_fast_random_access:
+            scan = reader.get_scan_by_index(start)
+            if scan.ms_level > 1:
+                start_scan = reader.find_previous_ms1(start)
+                if start_scan is not None:
+                    start = start_scan.index
+            end = min(end, len(reader) - 1)
+            scan = scan = reader.get_scan_by_index(end)
+            if scan.ms_level > 1:
+                end_scan = reader.find_next_ms1(end)
+                if end_scan is not None:
+                    end = end_scan.index
+    intervals.append([start, end])
     start += chunk_size
 
-    while start + chunk_size < (n_items):
+    while start  < n_items:
         end = start + chunk_size
+        if reader is not None:
+            scan = reader.get_scan_by_index(start)
+            if scan.ms_level > 1:
+                start_scan = reader.find_previous_ms1(start)
+                if start_scan is not None:
+                    start = start_scan.index
+            end = min(end, len(reader))
+            if end != len(reader):
+                scan = scan = reader.get_scan_by_index(end)
+                if scan.ms_level > 1:
+                    end_scan = reader.find_next_ms1(end)
+                    if end_scan is not None:
+                        end = end_scan.index
         intervals.append([start, end])
         start = end
-
     # Make sure that the last chunk actually covers the end of
     # the interval.
     last = intervals[-1]
@@ -130,7 +155,6 @@ def partition_work(n_items, n_workers, start_index=0):
         last[1] = n_items
     else:
         last[1] += (n_items - last[1])
-
     return intervals
 
 
@@ -283,7 +307,8 @@ def run_task_in_chunks(reader, n_processes=None, n_chunks=None, scan_interval=No
         n_chunks = n_processes
     n_items = end_scan - start_scan
     pool = multiprocessing.Pool(n_processes)
-    scan_ranges = partition_work(n_items, n_chunks, start_scan)
+    scan_ranges = partition_work(
+        n_items, n_chunks, start_scan, reader=reader)
     feeder = (
         _TaskPayload(reader, scan_range[0], scan_range[1])
         for scan_range in scan_ranges)

@@ -92,7 +92,8 @@ _DEFAULT_CONFIG = {
         "thermo-net": [],
         "agilent-com": [],
         "waters-masslynx": [],
-    }
+    },
+    'schema_version': '1.0.0'
 }
 
 
@@ -122,6 +123,8 @@ def get_config():
         warnings.warn(
             "Encountered the error %r when trying to read configuration" % (err, ))
         config = copy.deepcopy(_DEFAULT_CONFIG)
+    if "schema_version" not in config:
+        config['schema_version'] = '1.0.0'
     return config
 
 

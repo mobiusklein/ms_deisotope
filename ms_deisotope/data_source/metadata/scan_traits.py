@@ -20,7 +20,11 @@ def _isclose(x, y, atol=1e-3):
     return abs(x - y) < atol
 
 
-class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper'])):
+_IsolationWindowBase = namedtuple(
+    "IsolationWindow", ['lower', 'target', 'upper'])
+
+
+class IsolationWindow(_IsolationWindowBase):
     r"""Describes the m/z interval a precursor ion was isolated from in the precursor scan
 
     An :class:`IsolationWindow` instance is comparable, hashable, and orderable. It is based
@@ -44,6 +48,7 @@ class IsolationWindow(namedtuple("IsolationWindow", ['lower', 'target', 'upper']
     """
 
     __slots__ = ()
+    __hash__ = _IsolationWindowBase.__hash__
 
     @classmethod
     def make_empty(cls, point):
@@ -202,7 +207,8 @@ class ScanAcquisitionInformation(MutableSequence):
         return self.__class__, (self.combination, self.scan_list)
 
     def copy(self):
-        return self.__class__(self.combination, [se.copy() for se in self.scan_list])
+        return self.__class__(
+            self.combination, [se.copy() for se in self.scan_list])
 
 
 class _IonMobilityMixin(object):
@@ -277,7 +283,8 @@ class ScanEventInformation(_IonMobilityMixin):
     def __dict__(self):
         return _MappingOverAttributeProxy(self)
 
-    def __init__(self, start_time, window_list, drift_time=None, injection_time=None, traits=None, **options):
+    def __init__(self, start_time, window_list, drift_time=None,
+                 injection_time=None, traits=None, **options):
         self.traits = traits or {}
         self.traits.update(options)
         self.start_time = start_time
@@ -290,7 +297,9 @@ class ScanEventInformation(_IonMobilityMixin):
         return self.traits.get('preset scan configuration')
 
     def copy(self):
-        return self.__class__(self.start_time, self.window_list[:], None, self.injection_time, self.traits.copy())
+        return self.__class__(
+            self.start_time, self.window_list[:],
+            None, self.injection_time, self.traits.copy())
 
     def __getitem__(self, i):
         return self.window_list[i]
@@ -394,6 +403,9 @@ class ScanWindow(namedtuple("ScanWindow", ['lower', 'upper'])):
         return _isclose(self.lower, other.lower) and _isclose(
             self.upper, other.upper)
 
+    def __hash__(self):
+        return super(ScanWindow, self).__hash__()
+
     def __ne__(self, other):
         return not (self == other)
 
@@ -412,127 +424,128 @@ scan_attributes = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('scan attribute', term_cls_name="ScanAttribute", writer=cog.out)
 # ]]]
+# CV Version: 4.1.55
 scan_attributes = TermSet([
-    ScanAttribute(u'ion mobility attribute', u'MS:1002892',
-                  (u'An attribute describing ion mobility searches.'),
+    ScanAttribute('mass resolution', 'MS:1000011',
+                  ('Smallest mass difference between two equal magnitude peaks '
+                   'so that the valley between them is a specified fraction of '
+                   'the peak height.'),
                   'scan attribute',
-                  [u'scan attribute', u'PSM-level attribute', u'object attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
-    ScanAttribute(u'mass resolution', u'MS:1000011',
-                  (u'Smallest mass difference between two equal magnitude peaks'
-                   u'so that the valley between them is a specified fraction of'
-                   u'the peak height.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('scan rate', 'MS:1000015',
+                  ('Rate in Th/sec for scanning analyzers.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'scan start time', u'MS:1000016',
-                  (u'The time that an analyzer started a scan, relative to the'
-                   u'start of the MS run.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('scan start time', 'MS:1000016',
+                  ('The time that an analyzer started a scan, relative to the '
+                   'start of the MS run.'),
                   'scan attribute',
-                  [u'scan attribute', u'PSM-level attribute', u'object attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
-    ScanAttribute(u'scan rate', u'MS:1000015',
-                  (u'Rate in Th/sec for scanning analyzers.'),
+                  ['scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
+    ScanAttribute('zoom scan', 'MS:1000497',
+                  ('Special scan mode where data with improved resolution is '
+                   'acquired. This is typically achieved by scanning a more '
+                   'narrow m/z window or scanning with a lower scan rate.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'zoom scan', u'MS:1000497',
-                  (u'Special scan mode where data with improved resolution is'
-                   u'acquired. This is typically achieved by scanning a more'
-                   u'narrow m/z window or scanning with a lower scan rate.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('dwell time', 'MS:1000502',
+                  ('The time spent gathering data across a peak.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'elution time', u'MS:1000826',
-                  (u'The time of elution from all used chromatographic columns'
-                   u'(one or more) in the chromatographic separation step,'
-                   u'relative to the start of the chromatography.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('filter string', 'MS:1000512',
+                  ('A string unique to Thermo instrument describing instrument '
+                   'settings for the scan.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'mass resolving power', u'MS:1000800',
-                  (u'The observed mass divided by the difference between two'
-                   u'masses that can be separated: m/dm. The procedure by which'
-                   u'dm was obtained and the mass at which the measurement was'
-                   u'made should be reported.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('preset scan configuration', 'MS:1000616',
+                  ('A user-defined scan configuration that specifies the '
+                   'instrumental settings in which a spectrum is acquired. An '
+                   'instrument may cycle through a list of preset scan '
+                   'configurations to acquire data. This is a more generic term '
+                   'for the Thermo \\"scan event\\", which is defined in the '
+                   'Thermo Xcalibur glossary as: a mass spectrometer scan that '
+                   'is defined by choosing the necessary scan parameter '
+                   'settings. Multiple scan events can be defined for each '
+                   'segment of time.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'analyzer scan offset', u'MS:1000803',
-                  (u'Offset between two analyzers in a constant neutral loss or'
-                   u'neutral gain scan. The value corresponds to the neutral loss'
-                   u'or neutral gain value.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('mass resolving power', 'MS:1000800',
+                  ('The observed mass divided by the difference between two '
+                   'masses that can be separated: m/dm. The procedure by which '
+                   'dm was obtained and the mass at which the measurement was '
+                   'made should be reported.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'ion injection time', u'MS:1000927',
-                  (u'The length of time spent filling an ion trapping device.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('analyzer scan offset', 'MS:1000803',
+                  ('Offset between two analyzers in a constant neutral loss or '
+                   'neutral gain scan. The value corresponds to the neutral loss '
+                   'or neutral gain value.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'instrument specific scan attribute', u'MS:1002527',
-                  (u'Instrument specific scan properties that are associated with'
-                   u'a value.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('elution time', 'MS:1000826',
+                  ('The time of elution from all used chromatographic columns '
+                   '(one or more) in the chromatographic separation step, '
+                   'relative to the start of the chromatography.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'interchannel delay', u'MS:1000880',
-                  (u'The duration of intervals between scanning, during which the'
-                   u'instrument configuration is switched.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('interchannel delay', 'MS:1000880',
+                  ('The duration of intervals between scanning, during which the '
+                   'instrument configuration is switched.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'scan number', u'MS:1003057',
-                  (u'Ordinal number of the scan indicating its order of'
-                   u'acquisition within a mass spectrometry acquisition run.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('ion injection time', 'MS:1000927',
+                  ('The length of time spent filling an ion trapping device.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'dwell time', u'MS:1000502',
-                  (u'The time spent gathering data across a peak.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('first column elution time', 'MS:1002082',
+                  ('The time of elution from the first chromatographic column in '
+                   'the chromatographic separation step, relative to the start '
+                   'of chromatography on the first column.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'filter string', u'MS:1000512',
-                  (u'A string unique to Thermo instrument describing instrument'
-                   u'settings for the scan.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('second column elution time', 'MS:1002083',
+                  ('The time of elution from the second chromatographic column '
+                   'in the chromatographic separation step, relative to the '
+                   'start of the chromatography on the second column.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'preset scan configuration', u'MS:1000616',
-                  (u'A user-defined scan configuration that specifies the'
-                   u'instrumental settings in which a spectrum is acquired. An'
-                   u'instrument may cycle through a list of preset scan'
-                   u'configurations to acquire data. This is a more generic term'
-                   u'for the Thermo \\"scan event\\", which is defined in the'
-                   u'Thermo Xcalibur glossary as: a mass spectrometer scan that'
-                   u'is defined by choosing the necessary scan parameter'
-                   u'settings. Multiple scan events can be defined for each'
-                   u'segment of time.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('instrument specific scan attribute', 'MS:1002527',
+                  ('Instrument specific scan properties that are associated with '
+                   'a value.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'second column elution time', u'MS:1002083',
-                  (u'The time of elution from the second chromatographic column'
-                   u'in the chromatographic separation step, relative to the'
-                   u'start of the chromatography on the second column.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('ion mobility attribute', 'MS:1002892',
+                  ('An attribute describing ion mobility searches.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'first column elution time', u'MS:1002082',
-                  (u'The time of elution from the first chromatographic column in'
-                   u'the chromatographic separation step, relative to the start'
-                   u'of chromatography on the first column.'),
+                  ['scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
+    ScanAttribute('scan number', 'MS:1003057',
+                  ('Ordinal number of the scan indicating its order of '
+                   'acquisition within a mass spectrometry acquisition run.'),
                   'scan attribute',
-                  [u'scan attribute', u'object attribute']),
-    ScanAttribute(u'inverse reduced ion mobility', u'MS:1002815',
-                  (u'Ion mobility measurement for an ion or spectrum of ions as'
-                   u'measured in an ion mobility mass spectrometer. This might'
-                   u'refer to the central value of a bin into which all ions'
-                   u'within a narrow range of mobilities have been aggregated.'),
+                  ['scan attribute', 'object attribute']),
+    ScanAttribute('synchronous prefilter selection', 'MS:1002528',
+                  ('Synchronous prefilter selection.'),
                   'scan attribute',
-                  [u'ion selection attribute', u'ion mobility attribute', u'object attribute', u'scan attribute', u'PSM-level attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
-    ScanAttribute(u'ion mobility drift time', u'MS:1002476',
-                  (u'Drift time of an ion or spectrum of ions as measured in an'
-                   u'ion mobility mass spectrometer. This time might refer to the'
-                   u'central value of a bin into which all ions within a narrow'
-                   u'range of drift time have been aggregated.'),
+                  ['instrument specific scan attribute', 'scan attribute', 'object attribute']),
+    ScanAttribute('FAIMS compensation voltage', 'MS:1001581',
+                  ('The DC potential applied to the asymmetric waveform in FAIMS '
+                   'that compensates for the difference between high and low '
+                   'field mobility of an ion.'),
                   'scan attribute',
-                  [u'ion selection attribute', u'ion mobility attribute', u'object attribute', u'scan attribute', u'PSM-level attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
-    ScanAttribute(u'FAIMS compensation voltage', u'MS:1001581',
-                  (u'The DC potential applied to the asymmetric waveform in FAIMS'
-                   u'that compensates for the difference between high and low'
-                   u'field mobility of an ion.'),
+                  ['ion mobility attribute', 'scan attribute', 'PSM-level attribute', 'object attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
+    ScanAttribute('ion mobility drift time', 'MS:1002476',
+                  ('Drift time of an ion or spectrum of ions as measured in an '
+                   'ion mobility mass spectrometer. This time might refer to the '
+                   'central value of a bin into which all ions within a narrow '
+                   'range of drift time have been aggregated.'),
                   'scan attribute',
-                  [u'ion mobility attribute', u'scan attribute', u'PSM-level attribute', u'object attribute', u'single identification result attribute', u'identification attribute', u'analysis attribute', u'spectrum identification result details']),
-    ScanAttribute(u'synchronous prefilter selection', u'MS:1002528',
-                  (u'Synchronous prefilter selection.'),
+                  ['ion selection attribute', 'ion mobility attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
+    ScanAttribute('inverse reduced ion mobility', 'MS:1002815',
+                  ('Ion mobility measurement for an ion or spectrum of ions as '
+                   'measured in an ion mobility mass spectrometer. This might '
+                   'refer to the central value of a bin into which all ions '
+                   'within a narrow range of mobilities have been aggregated.'),
                   'scan attribute',
-                  [u'instrument specific scan attribute', u'scan attribute', u'object attribute']),
+                  ['ion selection attribute', 'ion mobility attribute', 'object attribute', 'scan attribute', 'PSM-level attribute', 'single identification result attribute', 'identification attribute', 'analysis attribute', 'spectrum identification result details']),
 ])
 # [[[end]]]
 
@@ -540,11 +553,13 @@ scan_attributes = TermSet([
 FAIMS_compensation_voltage = scan_attributes['MS:1001581']
 ion_mobility_drift_time = scan_attributes['MS:1002476']
 inverse_reduced_ion_mobility = scan_attributes['MS:1002815']
+ion_mobility_attribute = scan_attributes['MS:1002892']
 
 ION_MOBILITY_TYPES = {
     FAIMS_compensation_voltage,
     ion_mobility_drift_time,
     inverse_reduced_ion_mobility,
+    ion_mobility_attribute,
 }
 
 
@@ -643,7 +658,197 @@ class IonMobilityMethods(object):
         return ims_type
 
 
+binary_data_arrays = []
+
+# [[[cog
+# import cog
+# from ms_deisotope.data_source.metadata.cv import render_list
+# render_list('binary data array', writer=cog.out)
+# ]]]
+# CV Version: 4.1.55
+binary_data_arrays = TermSet([
+    Term('m/z array', 'MS:1000514',
+         ('A data array of m/z values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('intensity array', 'MS:1000515',
+         ('A data array of intensity values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('charge array', 'MS:1000516',
+         ('A data array of charge values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('signal to noise array', 'MS:1000517',
+         ('A data array of signal-to-noise values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('time array', 'MS:1000595',
+         ('A data array of relative time offset values from a reference '
+          'time.'),
+         'binary data array',
+         ['binary data array']),
+    Term('wavelength array', 'MS:1000617',
+         ('A data array of electromagnetic radiation wavelength values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('non-standard data array', 'MS:1000786',
+         ('A data array that contains data not covered by any other '
+          'term in this group. Please do not use this term, if the '
+          'binary data array type might be commonly used - contact the '
+          'PSI-MS working group in order to have another CV term added.'),
+         'binary data array',
+         ['binary data array']),
+    Term('flow rate array', 'MS:1000820',
+         ('A data array of flow rate measurements.'),
+         'binary data array',
+         ['binary data array']),
+    Term('pressure array', 'MS:1000821',
+         ('A data array of pressure measurements.'),
+         'binary data array',
+         ['binary data array']),
+    Term('temperature array', 'MS:1000822',
+         ('A data array of temperature measurements.'),
+         'binary data array',
+         ['binary data array']),
+    Term('mean charge array', 'MS:1002478',
+         ('Array of mean charge values where the mean charge is '
+          'calculated as a weighted mean of the charges of individual '
+          'peaks that are aggregated into a processed spectrum.'),
+         'binary data array',
+         ['binary data array']),
+    Term('resolution array', 'MS:1002529',
+         ('A data array of resolution values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('baseline array', 'MS:1002530',
+         ('A data array of signal baseline values (the signal in the '
+          'absence of analytes).'),
+         'binary data array',
+         ['binary data array']),
+    Term('noise array', 'MS:1002742',
+         ('A data array of noise values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('sampled noise m/z array', 'MS:1002743',
+         ('A data array of parallel, independent m/z values for a '
+          'sampling of noise across a spectrum (typically much smaller '
+          'than MS:1000514, the m/z array).'),
+         'binary data array',
+         ['binary data array']),
+    Term('sampled noise intensity array', 'MS:1002744',
+         ('A data array of intensity values for the amplitude of noise '
+          'variation superposed on the baseline (MS:1002745) across a '
+          'spectrum (for use with MS:1002743, sampled noise m/z array).'),
+         'binary data array',
+         ['binary data array']),
+    Term('sampled noise baseline array', 'MS:1002745',
+         ('A data array of baseline intensity values (the intensity in '
+          'the absence of analytes) for a sampling of noise across a '
+          'spectrum (for use with MS:1002743, sampled noise m/z array).'),
+         'binary data array',
+         ['binary data array']),
+    Term('ion mobility array', 'MS:1002893',
+         ('Abstract array of ion mobility data values. A more specific '
+          'child term concept should be specified in data files to make '
+          'precise the nature of the data being provided.'),
+         'binary data array',
+         ['binary data array']),
+    Term('mass array', 'MS:1003143',
+         ('A data array of mass values.'),
+         'binary data array',
+         ['binary data array']),
+    Term('scanning quadrupole position lower bound m/z array', 'MS:1003157',
+         ('Array of m/z values representing the lower bound m/z of the '
+          'quadrupole position at each point in the spectrum.'),
+         'binary data array',
+         ['binary data array']),
+    Term('scanning quadrupole position upper bound m/z array', 'MS:1003158',
+         ('Array of m/z values representing the upper bound m/z of the '
+          'quadrupole position at each point in the spectrum.'),
+         'binary data array',
+         ['binary data array']),
+    Term('mean ion mobility drift time array', 'MS:1002477',
+         ('Array of population mean ion mobility values from a drift '
+          'time device, reported in seconds (or milliseconds), '
+          'corresponding to a spectrum of individual peaks encoded with '
+          'an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('mean ion mobility array', 'MS:1002816',
+         ('Array of population mean ion mobility values (K or K0) based '
+          'on ion separation in gaseous phase due to different ion '
+          'mobilities under an electric field based on ion size, m/z '
+          'and shape, corresponding to a spectrum of individual peaks '
+          'encoded with an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('mean inverse reduced ion mobility array', 'MS:1003006',
+         ('Array of population mean ion mobility values based on ion '
+          'separation in gaseous phase due to different ion mobilities '
+          'under an electric field based on ion size, m/z and shape, '
+          'normalized for the local conditions and reported in volt- '
+          'second per square centimeter, corresponding to a spectrum of '
+          'individual peaks encoded with an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('raw ion mobility array', 'MS:1003007',
+         ('Array of raw ion mobility values (K or K0) based on ion '
+          'separation in gaseous phase due to different ion mobilities '
+          'under an electric field based on ion size, m/z and shape, '
+          'corresponding to a spectrum of individual peaks encoded with '
+          'an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('raw inverse reduced ion mobility array', 'MS:1003008',
+         ('Array of raw ion mobility values based on ion separation in '
+          'gaseous phase due to different ion mobilities under an '
+          'electric field based on ion size, m/z and shape, normalized '
+          'for the local conditions and reported in volt-second per '
+          'square centimeter, corresponding to a spectrum of individual '
+          'peaks encoded with an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('raw ion mobility drift time array', 'MS:1003153',
+         ('Array of raw ion mobility values from a drift time device, '
+          'reported in seconds (or milliseconds), corresponding to a '
+          'spectrum of individual peaks encoded with an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('deconvoluted ion mobility array', 'MS:1003154',
+         ('Array of ion mobility values (K or K0) based on ion '
+          'separation in gaseous phase due to different ion mobilities '
+          'under an electric field based on ion size, m/z and shape, as '
+          'an average property of an analyte post peak-detection, '
+          'weighted charge state reduction, and/or adduct aggregation, '
+          'corresponding to a spectrum of individual peaks encoded with '
+          'an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('deconvoluted inverse reduced ion mobility array', 'MS:1003155',
+         ('Array of ion mobility values based on ion separation in '
+          'gaseous phase due to different ion mobilities under an '
+          'electric field based on ion size, m/z and shape, normalized '
+          'for the local conditions and reported in volt-second per '
+          'square centimeter, as an average property of an analyte post '
+          'peak-detection, weighted charge state reduction, and/or '
+          'adduct aggregation, corresponding to a spectrum of '
+          'individual peaks encoded with an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+    Term('deconvoluted ion mobility drift time array', 'MS:1003156',
+         ('Array of mean ion mobility values from a drift time device, '
+          'reported in seconds (or milliseconds), as an average '
+          'property of an analyte post peak-detection, weighted charge '
+          'state reduction, and/or adduct aggregation, corresponding to '
+          'a spectrum of individual peaks encoded with an m/z array.'),
+         'binary data array',
+         ['ion mobility array', 'binary data array']),
+])
+# [[[end]]]
+
+
 __all__ = [
     "IsolationWindow", "ScanAcquisitionInformation", "ScanEventInformation",
-    "ScanWindow", "ScanAttribute", "scan_attributes"
+    "ScanWindow", "ScanAttribute", "scan_attributes", "array_types"
 ]

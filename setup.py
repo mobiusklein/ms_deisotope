@@ -108,6 +108,10 @@ def make_extensions():
                       "ms_deisotope/_c/feature_map/profile_transform.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.dependence_network', sources=[
+                      "ms_deisotope/_c/feature_map/dependence_network.pyx"],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()],
+                      define_macros=macros),
             Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
             Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
@@ -155,6 +159,11 @@ def make_extensions():
             Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
                       "ms_deisotope/_c/feature_map/profile_transform.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
+            Extension(name='ms_deisotope._c.feature_map.dependence_network', sources=[
+                      "ms_deisotope/_c/feature_map/dependence_network.c"],
+                      include_dirs=[
+                          numpy.get_include(), ms_peak_picker.get_include()],
+                      define_macros=macros),
             Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.c"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
             Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
@@ -234,10 +243,10 @@ install_requires = [
     "six",
     "dill",
     "ms_peak_picker",
-    "brain-isotopic-distribution",
-    "pyteomics >= 4.0",
+    "brain-isotopic-distribution >= 1.5.8",
+    "pyteomics >= 4.5",
     "lxml",
-    "psims >= 0.1.28",
+    "psims >= 0.1.35",
     "python-idzip >=0.3.2"
 ]
 
@@ -254,6 +263,10 @@ extra_requires = {
     ],
     "cli": [
         'click'
+    ],
+    'mzmlb': [
+        'h5py',
+        'hdf5plugin'
     ]
 }
 
@@ -309,6 +322,7 @@ def run_setup(include_cext=True):
             'Documentation': 'https://mobiusklein.github.io/ms_deisotope',
             'Source Code': 'https://github.com/mobiusklein/ms_deisotope',
             'Issue Tracker': 'https://github.com/mobiusklein/ms_deisotope/issues',
+            'Change Log': 'https://github.com/mobiusklein/ms_deisotope/blob/master/CHANGELOG.md'
         })
 
 

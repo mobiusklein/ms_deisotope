@@ -111,7 +111,9 @@ class XMLReaderBase(RandomAccessScanSource):
         '''
         if self.source is not None:
             self.source.close()
+            self._dispose()
             self.source = None
+        super(XMLReaderBase, self).close()
 
     def __del__(self):
         try:
@@ -146,7 +148,10 @@ class XMLReaderBase(RandomAccessScanSource):
 
     def _dispose(self):
         super(XMLReaderBase, self)._dispose()
-        self.index.clear()
+        try:
+            self.index.clear()
+        except Exception:
+            pass
 
     def next(self):
         try:
@@ -346,7 +351,7 @@ def _find_section(source, section):
 
 
 @xml._keepstate
-def get_tag_attributes(source, tag_name):
+def get_tag_attributes(source, tag_name, stop_at=None):
     '''Iteratively parse XML stream in ``source`` until encountering ``tag_name``
     at which point parsing terminates and return the attributes of the matched
     tag.
@@ -367,6 +372,8 @@ def get_tag_attributes(source, tag_name):
         if event == 'start':
             if xml._local_name(tag) == tag_name:
                 return tag.attrib
+            elif stop_at and xml._local_name(tag) == stop_at:
+                break
             else:
                 continue
         else:

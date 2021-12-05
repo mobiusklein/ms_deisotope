@@ -6,9 +6,9 @@ import warnings
 from collections import namedtuple
 
 try:
-    from collections import Sequence as _SequenceABC
-except ImportError:
     from collections.abc import Sequence as _SequenceABC
+except ImportError:
+    from collections import Sequence as _SequenceABC
 
 from numbers import Number
 
@@ -155,17 +155,17 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
     Attributes
     ----------
-    mz: np.ndarray
+    mz: :class:`np.ndarray`
         The m/z axis of a mass spectrum
-    intensity: np.ndarray
+    intensity: :class:`np.ndarray`
         The intensity measured at the corresponding m/z of a mass spectrum
     """
 
-    def __new__(cls, mz, intensity, arrays=None):
+    def __new__(cls, mz, intensity, data_arrays=None):
         inst = super(RawDataArrays, cls).__new__(cls, mz, intensity)
         inst.data_arrays = dict()
-        if arrays:
-            inst.data_arrays.update(arrays)
+        if data_arrays:
+            inst.data_arrays.update(data_arrays)
         return inst
 
     def __copy__(self):
@@ -173,6 +173,47 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             k: v.copy() for k, v in self.data_arrays.items()
         })
         return inst
+
+    def has_array(self, array_type):
+        '''Check if this array set contains an array of the
+        requested type.
+
+        This method uses the semantic lookup mechanism to test
+        "is-a" relationships so if a more abstract term is used,
+        a wider range of terms may be matched.
+
+        Parameters
+        ----------
+        array_type : str or :class:`~.Term`
+            The array type name to test.
+
+        Returns
+        -------
+        bool
+        '''
+        from ms_deisotope.data_source.metadata.scan_traits import binary_data_arrays
+        try:
+            term = binary_data_arrays[array_type]
+        except KeyError:
+            warnings.warn("Array type %r could not be resolved, treating as a plain string" % (array_type, ))
+            return array_type in self.binary_data_arrays
+        if self.mz is not None and len(self.mz):
+            k = binary_data_arrays['m/z array']
+            if term.is_a(k):
+                return k
+        if self.intensity is not None and len(self.intensity):
+            k = binary_data_arrays['intensity array']
+            if term.is_a(k):
+                return k
+        for k in self.data_arrays:
+            try:
+                k = binary_data_arrays[k]
+                if term.is_a(k):
+                    return k
+            except KeyError:
+                if term == k:
+                    return k
+        return False
 
     def copy(self):
         """Make a deep copy of this object.
@@ -182,6 +223,12 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         :class:`RawDataArray`
         """
         return self.__copy__()
+
+    def _slice(self, i):
+        inst = self.__class__(self.mz[i], self.intensity[i], {
+            k: v[i] for k, v in self.data_arrays.items()
+        })
+        return inst
 
     def plot(self, *args, **kwargs):
         """Draw the profile spectrum described by the
@@ -302,11 +349,23 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             i += 1
         return self.__class__(self.mz[i:j], self.intensity[i:j])
 
+    @classmethod
+    def empty(cls):
+        '''Create a new, empty instance.
+
+        Returns
+        -------
+        :class:`RawDataArrays`
+        '''
+        return cls(np.array([]), np.array([]))
+
     def __getitem__(self, i):
         if isinstance(i, int):
             return super(RawDataArrays, self).__getitem__(i)
+        elif isinstance(i, (slice, list, tuple, np.ndarray)):
+            return self._slice(i)
         else:
-            return self.arrays[i]
+            return self.data_arrays[i]
 
     @property
     def size(self):
@@ -329,6 +388,21 @@ class ScanBase(object):
             return False
         scan_event = acq[0]
         return scan_event.has_ion_mobility()
+
+    @property
+    def ion_mobility_type(self):
+        """Fetch the ion mobility type of the scan.
+
+        Returns
+        -------
+        ims_type: :class:`ScanAttribute` or :const:`None`
+            The ion mobility type, or :const:`None`
+        """
+        acq = self.acquisition_information
+        if acq is None:
+            return None
+        scan_event = acq[0]
+        return scan_event.ion_mobility_type
 
     @property
     def drift_time(self):
@@ -522,6 +596,9 @@ class ScanBase(object):
 
     def __ne__(self, other):
         return not (self == other)
+
+    __hash__ = None
+    # Scan objects shouldn't be hashed.
 
     def bind(self, source):
         '''Attach this object and its other referent members
@@ -1239,6 +1316,22 @@ class PeakSetMethods(_SequenceABC):
                 return False
             return isinstance(self.scan, _SequenceABC)
 
+    def get_nearest_peak(self, m):
+        if self.is_deconvoluted:
+            return self._get_deconvoluted().get_nearest_peak(m)
+        elif self.is_centroided:
+            return self._get_centroided().get_nearest_peak(m)
+        elif self.is_scan:
+            self.scan.pick_peaks()
+            self.is_centroided = self._is_centroided()
+            return self._get_centroided().get_nearest_peak(m)
+        elif self.is_raw_sequence:
+            if not hasattr(self.scan, 'get_nearest_peak'):
+                raise NotImplementedError()
+            return self.scan.get_nearest_peak(m)
+        else:
+            raise NotImplementedError()
+
     def has_peak(self, m, error_tolerance=2e-5):
         """Search the most refined representation available for a peak at the
         given mass dimension coordinates with the specified parts-per-million
@@ -1413,6 +1506,14 @@ class PeakSetMethods(_SequenceABC):
         else:
             raise NotImplementedError()
 
+    def __call__(self):
+        if self.is_deconvoluted:
+            return self.deconvoluted()
+        elif self.is_centroided:
+            return self.centroided()
+        else:
+            return self.raw()
+
 
 class PlottingMethods(object):
     """A plotting method facade that knows how to draw different facets of a spectrum.
@@ -1524,10 +1625,12 @@ class PlottingMethods(object):
         --------
         :func:`ms_deisotope.plot.annotate_scan_single`
         '''
-        pinfo = self.scan.precursor_information
-        if pinfo is None:
-            return
-        precursor = pinfo.precursor
+        precursor = kwargs.get("precursor")
+        if precursor is None:
+            pinfo = self.scan.precursor_information
+            if pinfo is None:
+                return
+            precursor = pinfo.precursor
         return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
 
     def label_peaks(self, *args, **kwargs):
@@ -1597,10 +1700,17 @@ class PlottingMethods(object):
                 ax = self.deconvoluted(ax=ax)
         except (AttributeError, TypeError):
             pass
+        if ax is None:
+            try:
+                if not self.scan.is_profile:
+                    self.scan.pick_peaks()
+                    ax = self.centroided(ax=ax)
+            except (AttributeError, TypeError):
+                pass
         return ax
 
     def __call__(self, ax=None, **kwargs):
-        return self._guess()
+        return self._guess(ax=ax, **kwargs)
 
 
 try:

@@ -50,6 +50,12 @@ class FeatureNode(object):
     def __repr__(self):
         return "FeatureNode(%s, %s)" % (self.feature, self.links)
 
+try:
+    _FeatureNode = FeatureNode
+    has_c = True
+    from ms_deisotope._c.feature_map.dependence_network import FeatureNode
+except ImportError:
+    has_c = False
 
 class DependenceCluster(SpanningMixin):
     """
@@ -95,11 +101,15 @@ class DependenceCluster(SpanningMixin):
 
         """
         self.dependencies.append(fit)
-        self.dependencies.sort(key=lambda x: x.score)
+        self.dependencies.sort(key=lambda x: x.score, reverse=self.maximize)
         self._reset()
 
-    def disjoint_subset(self):
-        graph = ConnectedSubgraph(self.dependencies, maximize=self.maximize)
+    def disjoint_subset(self, max_size=1000):
+        if len(self.dependencies) > max_size:
+            dependencies = self.dependencies[:max_size]
+        else:
+            dependencies = self.dependencies
+        graph = ConnectedSubgraph(dependencies, maximize=self.maximize)
         return graph.find_heaviest_path()
 
     def _best_fit(self):
@@ -113,7 +123,7 @@ class DependenceCluster(SpanningMixin):
         """
         return self.dependencies[0]
 
-    def disjoint_best_fits(self):
+    def disjoint_best_fits(self, max_size=1000):
         """
         Compute the best set of disjoint isotopic fits spanning this cluster
 
@@ -121,7 +131,7 @@ class DependenceCluster(SpanningMixin):
         -------
         list of LCMSFeatureSetFit
         """
-        fit_sets = tuple(self.disjoint_subset())
+        fit_sets = tuple(self.disjoint_subset(max_size=max_size))
         best_fits = fit_sets
         return [node.fit for node in best_fits]
 
@@ -166,6 +176,14 @@ class DependenceCluster(SpanningMixin):
 
     def __getitem__(self, i):
         return self.dependencies[i]
+
+
+try:
+    _DependenceCluster = DependenceCluster
+    has_c = True
+    from ms_deisotope._c.feature_map.dependence_network import DependenceCluster
+except ImportError:
+    has_c = False
 
 
 class FeatureSetFitNode(SpanningMixin):
@@ -218,6 +236,14 @@ class FeatureSetFitNode(SpanningMixin):
         return len(a.feature_indices & b.feature_indices) > 0
 
 
+try:
+    _FeatureSetFitNode = FeatureSetFitNode
+    has_c = True
+    from ms_deisotope._c.feature_map.dependence_network import FeatureSetFitNode
+except ImportError:
+    has_c = False
+
+
 class ConnectedSubgraph(object):
     def __init__(self, fits, maximize=True):
         self.nodes = tuple(map(FeatureSetFitNode, fits))
@@ -240,9 +266,7 @@ class ConnectedSubgraph(object):
     def populate_edges(self):
         for i in range(len(self.nodes)):
             node = self.nodes[i]
-            for j in range(len(self.nodes)):
-                if i == j:
-                    continue
+            for j in range(i + 1, len(self.nodes)):
                 other = self.nodes[j]
                 node.visit(other)
 
@@ -257,7 +281,132 @@ class ConnectedSubgraph(object):
             raise NotImplementedError(method)
 
 
-class FeatureDependenceGraph(object):
+try:
+    _ConnectedSubgraph = ConnectedSubgraph
+    has_c = True
+    from ms_deisotope._c.feature_map.dependence_network import ConnectedSubgraph
+except ImportError:
+    has_c = False
+
+
+class FeatureDependenceGraphBase(object):
+
+    def nodes_for(self, fit_record, cache=None):
+        if cache is None:
+            return [self.nodes[p] for p in fit_record.features if is_valid(p)]
+        else:
+            try:
+                return cache[fit_record]
+            except KeyError:
+                cache[fit_record] = value = [
+                    self.nodes[p] for p in fit_record.features if is_valid(p)]
+                return value
+
+    def add_fit_dependence(self, fit_record):
+        for feature in fit_record.features:
+            if not is_valid(feature):
+                continue
+            self.nodes[feature].links[fit_record] = fit_record.score
+        self.dependencies.add(fit_record)
+
+    def drop_superceded_fits(self):
+        suppressed = []
+        keep = []
+
+        if self.maximize:
+            comparator = operator.lt
+        else:
+            comparator = operator.gt
+
+        for dep in self.dependencies:
+            monoisotopic_feature = dep.monoisotopic_feature
+            if not is_valid(monoisotopic_feature):
+                continue
+            monoisotopic_feature_node = self.nodes[monoisotopic_feature]
+            suppress = False
+            for candidate in monoisotopic_feature_node.links:
+                if dep.charge == candidate.charge:
+                    if monoisotopic_feature in candidate.features:
+                        if comparator(dep.score, candidate.score):
+                            suppress = True
+                            break
+            if suppress:
+                suppressed.append(dep)
+            else:
+                keep.append(dep)
+        for dropped in suppressed:
+            self.drop_fit_dependence(dropped)
+        self.dependencies = set(keep)
+
+    def drop_fit_dependence(self, fit_record, cache=None):
+        for node in self.nodes_for(fit_record, cache=cache):
+            try:
+                del node.links[fit_record]
+            except KeyError:
+                pass
+
+    def drop_gapped_fits(self, n=None):
+        if n is None:
+            n = self.max_missing_features
+        keep = []
+        for dep in self.dependencies:
+            if dep.missing_features > n:
+                self.drop_fit_dependence(dep)
+            else:
+                keep.append(dep)
+        self.dependencies = set(keep)
+
+    def best_exact_fits(self):
+        by_feature_set = defaultdict(list)
+        best_fits = []
+        for fit in self.dependencies:
+            by_feature_set[tuple(fit.features)].append(fit)
+        for peak_tuple, fits in by_feature_set.items():
+            fits = sorted(fits, key=lambda x: x.score,
+                          reverse=not self.maximize)
+            for fit in fits[:-1]:
+                self.drop_fit_dependence(fit)
+            best_fits.append(fits[-1])
+        self.dependencies = set(best_fits)
+
+    def _gather_independent_clusters(self, nodes_for_cache=None):
+        clusters = defaultdict(set)
+        if nodes_for_cache is None:
+            nodes_for_cache = {}
+
+        for node in self.nodes.values():
+            # This feature is depended upon by each fit in `dependencies`
+            dependencies = set(node.links.keys())
+
+            if len(dependencies) == 0:
+                continue
+
+            # These fits also depend upon these other features, and those features are depended upon
+            # for other fits in turn, which depend upon the assignment of this feature.
+            for dep in list(dependencies):
+                for node in self.nodes_for(dep, nodes_for_cache):
+                    dependencies |= clusters[node]
+
+            # Create a fresh copy to share out again to avoid eliminate possible errors of shared storage.
+            # This is likely unecessary under the current implementation.
+            dependencies = set(dependencies)
+
+            # Update all co-depended nodes with the full set of all fits which depend upon them
+            for dep in dependencies:
+                for node in self.nodes_for(dep, nodes_for_cache):
+                    clusters[node] = dependencies
+        return clusters
+
+
+try:
+    _FeatureDependenceGraphBase = FeatureDependenceGraphBase
+    has_c = True
+    from ms_deisotope._c.feature_map.dependence_network import FeatureDependenceGraphBase
+except ImportError:
+    has_c = False
+
+
+class FeatureDependenceGraph(FeatureDependenceGraphBase):
     def __init__(self, feature_map, nodes=None, dependencies=None, max_missing_features=1,
                  use_monoisotopic_superceded_filtering=True, maximize=True):
         if nodes is None:
@@ -365,94 +514,7 @@ class FeatureDependenceGraph(object):
         for feature in self.feature_map:
             self.nodes[feature] = FeatureNode(feature)
 
-    def add_fit_dependence(self, fit_record):
-        for feature in fit_record.features:
-            if not is_valid(feature):
-                continue
-            self.nodes[feature].links[fit_record] = fit_record.score
-        self.dependencies.add(fit_record)
-
-    def nodes_for(self, fit_record, cache=None):
-        if cache is None:
-            return [self.nodes[p] for p in fit_record.features if is_valid(p)]
-        else:
-            try:
-                return cache[fit_record]
-            except KeyError:
-                cache[fit_record] = value = [
-                    self.nodes[p] for p in fit_record.features if is_valid(p)]
-                return value
-
-    def drop_fit_dependence(self, fit_record):
-        for node in self.nodes_for(fit_record):
-            try:
-                del node.links[fit_record]
-            except KeyError:
-                pass
-
-    def claimed_nodes(self):
-        features = set()
-        for fit in self.dependencies:
-            for feature in fit.features:
-                if feature == 0:
-                    continue
-                features.add(self.nodes[feature])
-        return features
-
-    def drop_superceded_fits(self):
-        suppressed = []
-        keep = []
-
-        if self.maximize:
-            comparator = operator.lt
-        else:
-            comparator = operator.gt
-
-        for dep in self.dependencies:
-            monoisotopic_feature = dep.monoisotopic_feature
-            if not is_valid(monoisotopic_feature):
-                continue
-            monoisotopic_feature_node = self.nodes[monoisotopic_feature]
-            suppress = False
-            for candidate in monoisotopic_feature_node.links:
-                if dep.charge == candidate.charge:
-                    if monoisotopic_feature in candidate.features:
-                        if comparator(dep.score, candidate.score):
-                            suppress = True
-                            break
-            if suppress:
-                suppressed.append(dep)
-            else:
-                keep.append(dep)
-        for dropped in suppressed:
-            self.drop_fit_dependence(dropped)
-        self.dependencies = set(keep)
-
-    def best_exact_fits(self):
-        by_feature_set = defaultdict(list)
-        best_fits = []
-        for fit in self.dependencies:
-            by_feature_set[tuple(fit.features)].append(fit)
-        for peak_tuple, fits in by_feature_set.items():
-            fits = sorted(fits, key=lambda x: x.score, reverse=not self.maximize)
-            for fit in fits[:-1]:
-                self.drop_fit_dependence(fit)
-            best_fits.append(fits[-1])
-        self.dependencies = set(best_fits)
-
-    def drop_gapped_fits(self, n=None):
-        if n is None:
-            n = self.max_missing_features
-        keep = []
-        for dep in self.dependencies:
-            if dep.missing_features > n:
-                self.drop_fit_dependence(dep)
-            else:
-                keep.append(dep)
-        self.dependencies = set(keep)
-
     def find_non_overlapping_intervals(self):
-        clusters = defaultdict(set)
         self.drop_gapped_fits()
         self.best_exact_fits()
         if self.use_monoisotopic_superceded_filtering:
@@ -460,27 +522,7 @@ class FeatureDependenceGraph(object):
 
         nodes_for_cache = {}
 
-        for node in self.nodes.values():
-            # This feature is depended upon by each fit in `dependencies`
-            dependencies = set(node.links.keys())
-
-            if len(dependencies) == 0:
-                continue
-
-            # These fits also depend upon these other features, and those features are depended upon
-            # for other fits in turn, which depend upon the assignment of this feature.
-            for dep in list(dependencies):
-                for node in self.nodes_for(dep, nodes_for_cache):
-                    dependencies |= clusters[node]
-
-            # Create a fresh copy to share out again to avoid eliminate possible errors of shared storage.
-            # This is likely unecessary under the current implementation.
-            dependencies = set(dependencies)
-
-            # Update all co-depended nodes with the full set of all fits which depend upon them
-            for dep in dependencies:
-                for node in self.nodes_for(dep, nodes_for_cache):
-                    clusters[node] = dependencies
+        clusters = self._gather_independent_clusters(nodes_for_cache)
 
         # Use an `id` keyed dictionary over these copied sets to ensure we have exactly one reference
         # to each set of inter-dependent fits, and then convert each set into an instance of `DependenceCluster`

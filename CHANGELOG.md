@@ -8,6 +8,271 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Added
 
 ### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.33] - 2021-12-05
+
+### Added
+1. Added an example script for splitting a FAIMS file into separate mzML files.
+2. Added an example script for ion mobility and charge state deconvolving Waters HDMSe data.
+3. Added Waters MassLynx SDK bindings for reading Waters .RAW folders directly on Windows
+   when the SDK C library is present.
+4. Added a new command `ms-index maintenance register-waters-masslynx` to register the location
+   of the Waters MassLynx SDK if it is not installed in the expected location.
+5. Improved documentation of `mzMLb` reading and writing.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.32]
+
+### Added
+
+### Changed
+1. Added an extra `ms_level` index to Thermo readers.
+2. PROXI server now uses appropriate JSON types in its USI response.
+3. `ProcessedMGFLoader`'s iterator behavior will bind generated `ProcessedScan` objects, keeping
+   parity with `ProcessedMzMLLoader`.
+4. The `mzml`, `mzmlb` and `mgf` commands for `ms-index` can now handle reading mzML files from
+   `STDIN`.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.31]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. `PeakSetMethods` facet `__call__` properly detects peak modes.
+
+### Security
+
+
+## [v0.0.30] - 2021-9-2
+
+### Added
+1. Added `ms_deisotope.clustering.alignment` to provide a home for `SpectrumAlignment` and `SpectrumAlignmentGraph`.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. `MzMLSerializer` correctly interprets centroid-only but not peak-picked `Scan` objects.
+2. Using `_InterleavedGroupedScanIteratorImpl` on Py2 no longer uses a `deque` as it is missing `insert`.
+3. `LCMSFeatureSetFit` now has `n_points` in the pure Python version.
+4. `SpectrumAlignment` now works properly.
+5. Fix error in `MzMLSerializer` when trying to serialize a spectrum that has been peak-picked but where
+   the peak set was empty.
+
+### Security
+
+
+## [v0.0.29] - 2021-7-8
+
+### Fixed
+1. Fix specifying the precursor m/z, charge and polarity of a spectrum from CSV or via `data_source.memory.make_scan`.
+
+
+## [v0.0.28] - 2021-7-7
+
+### Added
+1. Added string parsing and formatting to `IDFormat` for those terms which define a nativeID format.
+2. Added an `id_format` property to `FileInformation` and `ScanFileMetadataBase` which retrieves the
+   nativeID format or formats for a given file.
+
+### Changed
+1. The default behavior of `_InterleavedGroupedScanIteratorImpl`, the implementation of grouped iterators,
+   when producing a new `ScanBunch` that any product scans whose precursor ID that has been in the product map
+   for more than `self.ms1_buffering` productions will be added to the produced `ScanBunch` to prevent loss
+   of information if iteration is interrupted.
+2. `quick_index.index` now tries much harder to start from an MS1 scan if it can.
+
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [v0.0.27] - 2021-6-21
+
+### Added
+1. Added TMT11 to `ms_deisotope.qc.signature`.
+2. Added `ms_deisotope.output.mzml.IonMobilityAware3DMzMLSerializer` to write processed 3D IMS-MS spectra
+    from mobility frames with feature maps.
+3. Added `ms_deisotope.output.mzml.ProcessedGeneric3DIonMobilityFrameSource` to read processed feature maps
+   out from 3D IMS-MS spectra.
+4. Made `Generic3DIonMobilityFrameSource` wrapper iterable and more sequence-like.
+5. Added `ms-index ms1-spectrum-diagnostics` to the CLI to collect relatively low level MS1 spectrum metadata.
+
+### Changed
+1. Made `LCMSFeatureProcessor` consider fewer combinations of feature sets, lowering the upper bound on the
+   combinations. Such cases that required this should be quite rare.
+2. `IonMobilityFrame` is closer to being a first-class object instead of an immutable data wrapper.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Iterating over MS3-containing datasets in grouped mode will now properly group MS3 spectra with their MS2
+   spectra. Applies for higher exponentiated MSn as well.
+2. `TheoreticalIsotopicPattern.incremental_truncation` consistently respects its truncation threshold.
+
+### Security
+
+
+## [v0.0.26] - 2021-5-30
+
+### Added
+1. Add `ion_mobility_type` property to `ScanBase` to allow checking ion mobility type on the scan object itself.
+2. Add a prototype `FAIMSFilter` and `FAIMSDemultiplexingIterator` to `data_source.query`.
+3. Add a new examples set to the repository showing other ways to use the library's features.
+
+### Changed
+1. Ensure that any lingering MSn scans are flushed with the final MS1 scan when an interleaved scan iteration
+   strategy is wrapping up.
+2. Made `LCMSFeatureProcessor` substantially faster and more memory efficient during dependence graph solving
+   by introducing a Cython implementation. The solver is still vulnerable to high density noise clusters slowing
+   it down, but will no longer completely OOM when these are wide enough.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.25] - 2021-5-02
+
+### Added
+1. Added `has_array` method to `RawDataArrays` and `RawDataArrays3D` to semantically query whether an
+    array collection has an array of a particular type (like a flavor of ion mobility) without iteratively
+    probing.
+2. Added `ms_deisotope.data_source.scan.mobility_frame.Generic3DIonMobilityFrameSource` which can serve a
+   ion mobility-aware data structure when there is a profile-mode m/z, intensity and ion mobility array
+   in a single spectrum like the one produced by MSConvert's combine-ion-mobility-spectra option.
+
+### Changed
+1. `Scan.plot` will automatically call `pick_peaks` if `not self.is_profile and self.peak_set is None` to avoid
+   unexpectedly ending up without a plot in this common scenario.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Fixed Docker container build process to use latest released versions of libraries.
+
+### Security
+
+
+
+## [v0.0.24] - 2021-4-10
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Made `feature_fit.map_coord` helper structure properly comparable.
+
+### Security
+
+
+## [v0.0.23rc] - 2021-4-9
+
+### Added
+
+
+### Changed
+1. Re-aliased `Processed*Deserializer` to `Processed*Loader` where `*` is MzML, MGF, or MzMLb.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. The Waters SDK no longer uses absolute local imports.
+2. The Waters driver registration code no longer introduces `None` into the list of paths and breaks on Py3.
+
+### Security
+
+
+## [v0.0.22] - 2021-4-4
+
+### Added
+1. `ms_deisotope.data_source` now exports `scan_from_csv` and `make_scan` helper methods.
+2. `ms_deisotope.data_source.mzmlb.MzMLbLoader` is now available for reading mzMLb HDF5 files when `pyteomics.mzmlb` is available.
+3. `ms_deisotope.output.MzMLbSerializer` is now available for writing mzMLb HDF5 files when `psims.mzmlb` is available. This is further
+   exposed through `ms-index mzmlb` for CLI conversion. Expect this feature to undergo further evolution as the extended indices used
+   for other features may also be stored in mzMLb as extra datasets.
+
+### Changed
+1. `Scan` objects explicitly are not hashable.
+2. Changed the `delimiter` argument of `ms_deisotope.data_source.text.scan_from_csv` to be a regular expression to handle
+   arbitrary whitespace delimiters, and added an optional `skiprow` argument to allow you to skip headers in the all-too-common
+   text spectrum exports that spectrum viewers provide.
+3. Removed the resampling API from `RunningWeightedAverage`, improving memory efficiency.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Made random-access gzip compressor interface `idzip` compatible with Py3 buffered IO streams.
+2. Added an additional flag `-D` to indicate to `ms-index metadata-index` that the input file is an
+   a deisotoped and charge state deconvolved mzML to extract additional fields.
+3. Fixed an interface error in `ms_deisotope._c.feature_map.processor`.
+
+### Security
+
+
+## [v0.0.21]
+
+### Added
+
+### Changed
 1. All grouped scan iterators now use an interleaved iteration strategy to handle interleaving of MS1 scans that are
    not the precursor of a subsequent series of MSn scans. When using `start_from_scan`, product scans which follow the
    first MS1 but not actually produced from that first MS1 scan will be included in the product scan list for that
@@ -27,8 +292,6 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Security
 
-
-## [Released]
 
 ## [v0.0.19]  - 2020-11-24
 
@@ -91,8 +354,21 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.19...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.33...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16
-[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
-[0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
+[v0.0.33]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.33
+[v0.0.32]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.32
+[v0.0.31]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.31
+[v0.0.30]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.30
+[v0.0.29]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.29
+[v0.0.28]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.28
+[v0.0.27]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.27
+[v0.0.26]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.26
+[v0.0.25]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.25
+[v0.0.24]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.24
+[v0.0.23]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.23rc
+[v0.0.22]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.22
+[v0.0.21]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.21
+[v0.0.19]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.19
+[v0.0.18]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.18
+[v0.0.16]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.16

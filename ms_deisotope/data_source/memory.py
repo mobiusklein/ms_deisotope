@@ -11,6 +11,10 @@ except NameError:
 
 
 class MemoryScanInterface(ScanDataSource):
+    '''A dummy :class:`~.ScanDataSource` that stores as much data as
+    possible on the :class:`~.Scan` instance, with the exception of
+    :attr:`~.Scan.index`.
+    '''
 
     @classmethod
     def make_scan(cls, arrays=None, ms_level=None, id=None, index=None, scan_time=None,
@@ -80,6 +84,7 @@ class MemoryScanInterface(ScanDataSource):
         scan.instrument_configuration = instrument_configuration
         scan.peak_set = peak_set
         scan.deconvoluted_peak_set = deconvoluted_peak_set
+        scan.precursor_information = precursor_information
         return scan
 
 
@@ -271,7 +276,10 @@ class MemoryScanInterface(ScanDataSource):
 make_scan = MemoryScanInterface.make_scan
 
 
-class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
+class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
+    '''A :class:`~.RandomAccessScanSource` implementation which contains scan objects
+    materialized from other sources or which have already been fully specified in memory.
+    '''
 
     def __init__(self, scans, binds=True, **kwargs):
         self._scans = sorted(scans, key=lambda x: x.scan_time)
@@ -289,6 +297,8 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
 
     @classmethod
     def build(cls, scans, binds=True, **kwargs):
+        '''Construct an :class:`ScanCollection`
+        '''
         scans = tuple(scans)
         try:
             scan = scans[0]
@@ -400,3 +410,6 @@ class MemoryScanLoader(MemoryScanInterface, RandomAccessScanSource):
 
         self.make_iterator(self._make_scan_index_producer(index), grouped=grouped)
         return self
+
+
+make_scan_collection = ScanCollection.build

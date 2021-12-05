@@ -3,7 +3,8 @@ from collections import defaultdict
 
 try:
     from matplotlib import pyplot as plt
-    from matplotlib import patches as mpatches, colors as mcolors
+    from matplotlib import patches as mpatches, colors as mcolors, collections as mcollections
+    from matplotlib.colors import Normalize
 except (RuntimeError, ImportError):
     pass
 import numpy as np
@@ -15,41 +16,57 @@ from .profile_transform import interpolate, smooth_leveled
 Ellipse = mpatches.Ellipse
 FancyBboxPatch = mpatches.FancyBboxPatch
 Rectangle = mpatches.Rectangle
+LineCollection = mcollections.LineCollection
 
 
-def draw_features(features, ax=None, alpha=0.65, width=2e-5, **kwargs):
+def compute_intensity_range(features):
+    min_int = float('inf')
+    max_int = 0
+    for feature in features:
+        for node in feature:
+            t = node.total_intensity()
+            min_int = min(min_int, t)
+            max_int = max(max_int, t)
+    return min_int, max_int
+
+
+def feature_to_segments(feature):
+    mzs = []
+    times = []
+    intensities = []
+    for node in feature:
+        mzs.append(node.mz)
+        times.append(node.time)
+        intensities.append(node.total_intensity())
+    points = np.array([mzs, times]).T.reshape(-1, 1, 2)
+    return np.concatenate([points[:-1], points[1:]], axis=1), np.array(intensities)
+
+
+def draw_features(features, ax=None, alpha=0.65, norm=None, cmap=None, **kwargs):
+    if norm is None:
+        norm = Normalize(*compute_intensity_range(features))
     if ax is None:
         fig, ax = plt.subplots(1)
     if not features:
         return ax
-    ellipses = []
+    lines = []
     kwargs.setdefault("lw", 0.05)
     lw = kwargs.get("linewidth", kwargs.get("lw"))
     for feat in features:
-        if feat is None:
-            continue
-        center = (feat.end_time + feat.start_time) / 2.
-        height = feat.end_time - feat.start_time
+        segments, intensities = feature_to_segments(feat)
+        art = LineCollection(segments, linewidths=lw, cmap=cmap, alpha=alpha)
+        art.set_array(intensities)
+        lines.append(art)
 
-        center_mz = feat.mz
-        mz_width = center_mz * width
-
-        ellipses.append(
-            FancyBboxPatch((feat.mz - mz_width / 4., center - height / 2.), width=mz_width / 2., height=height,
-                           boxstyle=mpatches.BoxStyle.Round(pad=mz_width / 2.)))
-
-    for ell in ellipses:
-        ell.set_alpha(alpha)
-        ell.set_facecolor("blue")
-        ell.set_edgecolor("blue")
-        ell.set_linewidth(lw)
-        ax.add_artist(ell)
+    for line in lines:
+        ax.add_collection(line)
 
     ax.set_xlim(
         min(features, key=lambda x: x.mz if x is not None else float('inf')).mz - 1,
         max(features, key=lambda x: x.mz if x is not None else -float('inf')).mz + 1)
     ax.set_ylim(
-        min(features, key=lambda x: x.start_time if x is not None else float('inf')).start_time - 1,
+        min(features, key=lambda x: x.start_time if x is not None else float(
+            'inf')).start_time - 1,
         max(features, key=lambda x: x.end_time if x is not None else -float('inf')).end_time + 1)
     return ax
 

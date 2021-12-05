@@ -549,7 +549,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
     def close(self):
         # seems to make attempting to re-open the same datafile cause a segfault
         # self.source.CloseDataFile()
-        pass
+        self._dispose()
 
     def _pack_index(self):
         index = OrderedDict()

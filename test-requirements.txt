@@ -1,11 +1,13 @@
-pyteomics >= 4.0
+pyteomics >= 4.5
 lxml
-psims
+psims[all]
 six
 numpy
 scipy
 ms_peak_picker
-brain-isotopic-distribution
+brain-isotopic-distribution >= 1.5.8
 dill
 python-idzip >=0.3.2
 click
+h5py
+hdf5plugin

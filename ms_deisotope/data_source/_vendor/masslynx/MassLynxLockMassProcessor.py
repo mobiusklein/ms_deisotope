@@ -7,8 +7,8 @@ import copy
 import ctypes
 from ctypes import*
 from array import *
-from MassLynxRawReader import *
-from MassLynxRawDefs import MassLynxBaseType
+from .MassLynxRawReader import *
+from .MassLynxRawDefs import MassLynxBaseType
 
 class MassLynxLockMassProcessor(object):
     """Class to enable post acquisition lock mass correction"""
