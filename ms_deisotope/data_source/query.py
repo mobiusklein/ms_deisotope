@@ -598,6 +598,10 @@ class FAIMSFilter(_PredicateFilterIterator):
                 if scan.drift_time == self.compensation_voltage:
                     return scan
 
+    @property
+    def key(self):
+        return self.compensation_voltage
+
 
 class QueueIterator(ScanIteratorProxyBase):
     def __init__(self, scan_source, data=None):
@@ -623,7 +627,7 @@ class DemultiplexingIteratorBase(ScanIteratorProxyBase):
             scan_source, *args, **kwargs)
         self.channels = dict()
         self.buffer_size = buffer_size
-        self.feed()
+        self.has_more = self.feed()
 
     @property
     def iteration_mode(self):
@@ -667,13 +671,15 @@ class DemultiplexingIteratorBase(ScanIteratorProxyBase):
         return True
 
     def __next__(self):
+        if not self.has_more:
+            raise StopIteration()
         meta = {}
         for channel_name, (scan_filter, queue) in self.channels.items():
             if queue.has_value():
                 meta[channel_name] = next(scan_filter)
             else:
                 meta[channel_name] = None
-        self.feed()
+        self.has_more = self.feed()
         return meta
 
 

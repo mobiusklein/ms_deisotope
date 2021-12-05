@@ -1625,10 +1625,12 @@ class PlottingMethods(object):
         --------
         :func:`ms_deisotope.plot.annotate_scan_single`
         '''
-        pinfo = self.scan.precursor_information
-        if pinfo is None:
-            return
-        precursor = pinfo.precursor
+        precursor = kwargs.get("precursor")
+        if precursor is None:
+            pinfo = self.scan.precursor_information
+            if pinfo is None:
+                return
+            precursor = pinfo.precursor
         return self._plot_api.annotate_scan_single(precursor, self.scan, *args, **kwargs)
 
     def label_peaks(self, *args, **kwargs):

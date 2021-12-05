@@ -986,7 +986,7 @@ class MzMLSerializer(ScanSerializerBase):
                 })
             traits = scan_event.traits.items()
             for name, value in traits:
-                param = {"name": name, "value": value, 'unit_name': getattr(value, 'unit_info', None)}
+                param = {"name": str(name), "value": value, 'unit_name': getattr(value, 'unit_info', None)}
                 scan_parameters.append(param)
             scan_window_list = list(scan_event)
         return scan_parameters, scan_window_list
