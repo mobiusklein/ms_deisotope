@@ -133,8 +133,9 @@ class ProcessedMGFLoader(MGFLoader):
         "mgf.gz"
     }
 
-    def __init__(self, source_file, encoding='ascii', **kwargs):
-        super(ProcessedMGFDeserializer, self).__init__(source_file, encoding, **kwargs)
+    def __init__(self, source_file, encoding='ascii', use_index=True, ** kwargs):
+        super(ProcessedMGFDeserializer, self).__init__(
+            source_file, encoding, use_index, **kwargs)
 
     def _create_parser(self):
         if self._use_index:

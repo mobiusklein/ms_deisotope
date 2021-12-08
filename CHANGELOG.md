@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Removed
 
 ### Fixed
+1. Added a missing parameter `use_index` to `ProcessedMGFLoader` that made positional
+   argument passing fail when unpickling instances of this subclass.
 
 ### Security
 
