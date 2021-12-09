@@ -20,6 +20,57 @@ cdef class Averagine(object):
 
 
 @cython.final
+cdef class TheoreticalIsotopicPatternFlyweight(object):
+    cdef:
+        public list peaklist
+        public double origin
+        public double offset
+        public double scale
+
+    @staticmethod
+    cdef TheoreticalIsotopicPatternFlyweight _create(list peaklist, double origin, double offset)
+
+    cpdef TheoreticalIsotopicPatternFlyweight shift(self, double mz)
+    cpdef TheoreticalIsotopicPatternFlyweight scale(self, list experimental_distribution, str method=*)
+
+    @cython.final
+    cdef inline TheoreticalIsotopicPatternFlyweight _scale(self, list experimental_distribution, str method=*)
+
+    @cython.final
+    cdef inline TheoreticalIsotopicPatternFlyweight clone_shift(self, double mz)
+
+    @cython.final
+    cdef inline TheoreticalPeak get(self, ssize_t i)
+
+    @cython.final
+    cdef inline double get_mz(self, ssize_t i)
+
+    @cython.final
+    cdef inline double get_intensity(self, ssize_t i)
+
+    @cython.final
+    cdef inline size_t get_size(self)
+
+    @cython.final
+    cdef inline double get_monoisotopic_mz(self)
+
+    @cython.final
+    cpdef double total(self)
+
+    @cython.final
+    cpdef TheoreticalIsotopicPatternFlyweight normalize(self)
+
+    cpdef TheoreticalIsotopicPatternFlyweight clone(self)
+
+    @cython.final
+    cdef bint _eq_inst(self, TheoreticalIsotopicPatternFlyweight other)
+
+    @cython.final
+    cpdef bint _eq(self, object other)
+
+
+
+@cython.final
 cdef class TheoreticalIsotopicPattern(object):
     cdef:
         public list peaklist

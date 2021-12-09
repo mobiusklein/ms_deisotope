@@ -835,6 +835,134 @@ cdef class TheoreticalIsotopicPattern(object):
         return accumulator
 
 
+@cython.freelist(1000000)
+@cython.final
+cdef class TheoreticalIsotopicPatternFlyweight(object):
+
+    def __init__(self, peaklist, origin, offset=None, scale=1.0):
+        self.peaklist = peaklist
+        self.origin = origin
+        if offset is None:
+            offset = self.peaklist[0].mz - origin
+        self.offset = offset
+        self.scale = scale
+
+    @property
+    def monoisotopic_mz(self):
+        return self.get_monoisotopic_mz()
+
+    def __reduce__(self):
+        return self.__class__, (self.peaklist, self.origin, self.offset, self.scale)
+
+
+    cpdef TheoreticalIsotopicPatternFlyweight shift(self, double mz):
+        self.offset += mz
+        return self
+
+    @cython.final
+    cdef inline TheoreticalIsotopicPatternFlyweight _scale(self, list experimental_distribution, str method='sum'):
+        cdef:
+            size_t n
+
+        n = self.get_size()
+        if n == 0:
+            raise ValueError("Isotopic Pattern has length 0 (%f, %r)" % (self.origin, self.peaklist))
+        if method == "sum":
+            total_abundance = sum_intensity(experimental_distribution, n)
+            self.scale = total_abundance
+        return self
+
+    cpdef TheoreticalIsotopicPatternFlyweight scale(self, list experimental_distribution, str method='sum'):
+        return self._scale(experimental_distribution, method)
+
+    @staticmethod
+    cdef TheoreticalIsotopicPatternFlyweight _create(list peaklist, double origin, double offset):
+        cdef:
+            TheoreticalIsotopicPatternFlyweight self
+
+        self = TheoreticalIsotopicPatternFlyweight.__new__(TheoreticalIsotopicPatternFlyweight)
+        self.peaklist = peaklist
+        self.origin = origin
+        self.offset = offset
+        self.scale = 1.0
+        return self
+
+    cdef inline TheoreticalIsotopicPatternFlyweight clone_shift(self, double mz):
+        return TheoreticalIsotopicPatternFlyweight._create(self.peaklist, self.origin, self.offset + mz)
+
+    cdef inline double get_mz(self, ssize_t i):
+        return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).mz + self.offset
+
+    cdef inline double get_intensity(self, ssize_t i):
+        return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).intensity * self.scale
+
+    @cython.final
+    cdef inline TheoreticalPeak get(self, ssize_t i):
+        cdef:
+            TheoreticalPeak peak
+        peak = (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i))
+        peak = peak.clone()
+        peak.intensity *= self.scale
+        return peak
+
+    def __getitem__(self, i):
+        return self.get(i)
+
+    def __iter__(self):
+        cdef:
+            size_t n, i
+        n = self.get_size()
+        for i in range(n):
+            yield self.get(i)
+
+    cdef inline size_t get_size(self):
+        return PyList_GET_SIZE(self.peaklist)
+
+    cdef inline double get_monoisotopic_mz(self):
+        return self.origin + self.offset
+
+    @cython.final
+    cpdef double total(self):
+        return self.scale
+
+    @cython.final
+    cpdef TheoreticalIsotopicPatternFlyweight normalize(self):
+        self.scale = 1.0
+        return self
+
+    cpdef TheoreticalIsotopicPatternFlyweight clone(self):
+        return TheoreticalIsotopicPatternFlyweight._create(self.peaklist, self.origin, self.offset)
+
+    def __repr__(self):
+        return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
+            self.monoisotopic_mz,
+            self.peaklist[0].charge,
+            ', '.join("%0.3f" % p.intensity * self.scale for p in self.peaklist))
+
+    @cython.final
+    cpdef bint _eq(self, object other):
+        cdef:
+            list peaklist
+        if isinstance(other, TheoreticalIsotopicPatternFlyweight):
+            return self._eq_inst(<TheoreticalIsotopicPatternFlyweight>other)
+        raise TypeError(type(other))
+
+    @cython.final
+    cdef bint _eq_inst(self, TheoreticalIsotopicPatternFlyweight other):
+        cdef:
+            size_t i, n
+
+        n = self.get_size()
+        if n != other.get_size():
+            return False
+        for i in range(n):
+            if abs(self.get_mz(i) - other.get_mz(i)) > 1e-3:
+                return False
+            if abs(self.get_intensity(i) - other.get_intensity(i)) > 1e-3:
+                return False
+        return True
+
+
 cdef class AveragineCache(object):
     """A wrapper around a :class:`Averagine` instance which will cache isotopic patterns
     produced for new (m/z, charge) pairs and reuses it for nearby m/z values
