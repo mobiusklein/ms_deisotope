@@ -834,18 +834,34 @@ cdef class TheoreticalIsotopicPattern(object):
         free(cumulative_intensities)
         return accumulator
 
+    @cython.final
+    cdef inline double get_mz(self, ssize_t i):
+        return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).mz
+
+    @cython.final
+    cdef inline double get_intensity(self, ssize_t i):
+        return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).intensity
+
+    @cython.final
+    cdef inline void get_peak_at(self, ssize_t i, theoretical_peak_t* peak):
+        cdef:
+            TheoreticalPeak peak_obj
+        peak_obj = self.get(i)
+        peak.mz = peak_obj.mz
+        peak.intensity = peak_obj.intensity
+
 
 @cython.freelist(1000000)
 @cython.final
 cdef class TheoreticalIsotopicPatternFlyweight(object):
 
-    def __init__(self, peaklist, origin, offset=None, scale=1.0):
+    def __init__(self, peaklist, origin, offset=None, scale_factor=1.0):
         self.peaklist = peaklist
         self.origin = origin
         if offset is None:
             offset = self.peaklist[0].mz - origin
         self.offset = offset
-        self.scale = scale
+        self.scale_factor = scale_factor
 
     @property
     def monoisotopic_mz(self):
@@ -869,7 +885,7 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
             raise ValueError("Isotopic Pattern has length 0 (%f, %r)" % (self.origin, self.peaklist))
         if method == "sum":
             total_abundance = sum_intensity(experimental_distribution, n)
-            self.scale = total_abundance
+            self.scale_factor = total_abundance
         return self
 
     cpdef TheoreticalIsotopicPatternFlyweight scale(self, list experimental_distribution, str method='sum'):
@@ -884,17 +900,19 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
         self.peaklist = peaklist
         self.origin = origin
         self.offset = offset
-        self.scale = 1.0
+        self.scale_factor = 1.0
         return self
 
     cdef inline TheoreticalIsotopicPatternFlyweight clone_shift(self, double mz):
-        return TheoreticalIsotopicPatternFlyweight._create(self.peaklist, self.origin, self.offset + mz)
+        cdef TheoreticalIsotopicPatternFlyweight inst = TheoreticalIsotopicPatternFlyweight._create(self.peaklist, self.origin, self.offset + mz)
+        inst.scale_factor = self.scale_factor
+        return inst
 
     cdef inline double get_mz(self, ssize_t i):
         return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).mz + self.offset
 
     cdef inline double get_intensity(self, ssize_t i):
-        return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).intensity * self.scale
+        return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).intensity * self.scale_factor
 
     @cython.final
     cdef inline TheoreticalPeak get(self, ssize_t i):
@@ -902,8 +920,23 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
             TheoreticalPeak peak
         peak = (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i))
         peak = peak.clone()
-        peak.intensity *= self.scale
+        peak.intensity *= self.scale_factor
+        peak.mz += self.offset
         return peak
+
+    @cython.final
+    cdef inline TheoreticalPeak get_raw(self, ssize_t i):
+        return (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i))
+
+    @cython.final
+    cdef inline void get_peak_at(self, ssize_t i, theoretical_peak_t* peak):
+        cdef:
+            TheoreticalPeak peak_obj
+        peak_obj = self.get_raw(i)
+        peak.mz = peak_obj.mz
+        peak.intensity = peak_obj.intensity
+        peak.intensity *= self.scale_factor
+        peak.mz += self.offset
 
     def __getitem__(self, i):
         return self.get(i)
@@ -923,21 +956,23 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
 
     @cython.final
     cpdef double total(self):
-        return self.scale
+        return self.scale_factor
 
     @cython.final
     cpdef TheoreticalIsotopicPatternFlyweight normalize(self):
-        self.scale = 1.0
+        self.scale_factor = 1.0
         return self
 
     cpdef TheoreticalIsotopicPatternFlyweight clone(self):
-        return TheoreticalIsotopicPatternFlyweight._create(self.peaklist, self.origin, self.offset)
+        cdef TheoreticalIsotopicPatternFlyweight inst = TheoreticalIsotopicPatternFlyweight._create(self.peaklist, self.origin, self.offset)
+        inst.scale_factor = self.scale_factor
+        return inst
 
     def __repr__(self):
         return "TheoreticalIsotopicPattern(%0.4f, charge=%d, (%s))" % (
             self.monoisotopic_mz,
             self.peaklist[0].charge,
-            ', '.join("%0.3f" % p.intensity * self.scale for p in self.peaklist))
+            ', '.join("%0.3f" % (p.intensity * self.scale_factor) for p in self.peaklist))
 
     @cython.final
     cpdef bint _eq(self, object other):
@@ -961,6 +996,59 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
             if abs(self.get_intensity(i) - other.get_intensity(i)) > 1e-3:
                 return False
         return True
+
+    @cython.final
+    cdef double _sum(self):
+        cdef:
+            size_t i, n
+            double total
+        total = 0.0
+        n = self.get_size()
+        for i in range(n):
+            total += (<TheoreticalPeak>PyList_GET_ITEM(self.peaklist, i)).intensity
+        return total
+
+    @cython.cdivision
+    cpdef TheoreticalIsotopicPatternFlyweight ignore_below(self, double ignore_below=0.0):
+        """Discards peaks whose intensity is below ``ignore_below``.
+
+        After discarding peaks, the pattern will be renormalized to
+        sum to ``1.0``
+
+        Parameters
+        ----------
+        ignore_below : float, optional
+            The threshold below which peaks will be discarded
+
+        Returns
+        -------
+        TheoreticalIsotopicPattern
+            self
+        """
+        cdef:
+            double total
+            list kept_tid
+            size_t i, n
+            TheoreticalPeak p
+
+        total = 0
+        kept_tid = []
+        n = self.get_size()
+        for i in range(n):
+            p = self.get_raw(i)
+            if (p.intensity < ignore_below) and (i > 1):
+                continue
+            else:
+                total += p.intensity
+                kept_tid.append(p)
+        self.peaklist = kept_tid
+        self.offset = self.offset + self.origin - self.get(0).mz
+        # Determine how to renormalize the current sum of theoretical intensities to
+        # sum to the same value as before.
+        self.scale_factor = self.scale_factor / total
+        return self
+
+
 
 
 cdef class AveragineCache(object):

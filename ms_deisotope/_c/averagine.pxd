@@ -19,55 +19,14 @@ cdef class Averagine(object):
     cdef TheoreticalIsotopicPattern _isotopic_cluster(self, double mz, int charge=*, double charge_carrier=*, double truncate_after=*, double ignore_below=*)
 
 
-@cython.final
-cdef class TheoreticalIsotopicPatternFlyweight(object):
-    cdef:
-        public list peaklist
-        public double origin
-        public double offset
-        public double scale
+cdef struct theoretical_peak_t:
+    double mz
+    double intensity
 
-    @staticmethod
-    cdef TheoreticalIsotopicPatternFlyweight _create(list peaklist, double origin, double offset)
 
-    cpdef TheoreticalIsotopicPatternFlyweight shift(self, double mz)
-    cpdef TheoreticalIsotopicPatternFlyweight scale(self, list experimental_distribution, str method=*)
-
-    @cython.final
-    cdef inline TheoreticalIsotopicPatternFlyweight _scale(self, list experimental_distribution, str method=*)
-
-    @cython.final
-    cdef inline TheoreticalIsotopicPatternFlyweight clone_shift(self, double mz)
-
-    @cython.final
-    cdef inline TheoreticalPeak get(self, ssize_t i)
-
-    @cython.final
-    cdef inline double get_mz(self, ssize_t i)
-
-    @cython.final
-    cdef inline double get_intensity(self, ssize_t i)
-
-    @cython.final
-    cdef inline size_t get_size(self)
-
-    @cython.final
-    cdef inline double get_monoisotopic_mz(self)
-
-    @cython.final
-    cpdef double total(self)
-
-    @cython.final
-    cpdef TheoreticalIsotopicPatternFlyweight normalize(self)
-
-    cpdef TheoreticalIsotopicPatternFlyweight clone(self)
-
-    @cython.final
-    cdef bint _eq_inst(self, TheoreticalIsotopicPatternFlyweight other)
-
-    @cython.final
-    cpdef bint _eq(self, object other)
-
+ctypedef fused TheoreticalPeakType:
+    theoretical_peak_t
+    TheoreticalPeak
 
 
 @cython.final
@@ -125,6 +84,76 @@ cdef class TheoreticalIsotopicPattern(object):
 
     cdef TheoreticalIsotopicPattern clone_drop_last(self)
 
+    @cython.final
+    cdef inline double get_mz(self, ssize_t i)
+
+    @cython.final
+    cdef inline double get_intensity(self, ssize_t i)
+
+    @cython.final
+    cdef inline void get_peak_at(self, ssize_t i, theoretical_peak_t* peak)
+
+
+@cython.final
+cdef class TheoreticalIsotopicPatternFlyweight(object):
+    cdef:
+        public list peaklist
+        public double origin
+        public double offset
+        public double scale_factor
+
+    @staticmethod
+    cdef TheoreticalIsotopicPatternFlyweight _create(list peaklist, double origin, double offset)
+
+    cpdef TheoreticalIsotopicPatternFlyweight shift(self, double mz)
+    cpdef TheoreticalIsotopicPatternFlyweight scale(self, list experimental_distribution, str method=*)
+
+    @cython.final
+    cdef inline TheoreticalIsotopicPatternFlyweight _scale(self, list experimental_distribution, str method=*)
+
+    @cython.final
+    cdef inline TheoreticalIsotopicPatternFlyweight clone_shift(self, double mz)
+
+    @cython.final
+    cdef inline TheoreticalPeak get(self, ssize_t i)
+
+    @cython.final
+    cdef inline TheoreticalPeak get_raw(self, ssize_t i)
+
+    @cython.final
+    cdef inline double get_mz(self, ssize_t i)
+
+    @cython.final
+    cdef inline double get_intensity(self, ssize_t i)
+
+    @cython.final
+    cdef inline size_t get_size(self)
+
+    @cython.final
+    cdef inline double get_monoisotopic_mz(self)
+
+    @cython.final
+    cpdef double total(self)
+
+    @cython.final
+    cpdef TheoreticalIsotopicPatternFlyweight normalize(self)
+
+    cpdef TheoreticalIsotopicPatternFlyweight clone(self)
+
+    @cython.final
+    cdef bint _eq_inst(self, TheoreticalIsotopicPatternFlyweight other)
+
+    @cython.final
+    cpdef bint _eq(self, object other)
+
+    @cython.final
+    cdef double _sum(self)
+
+    cpdef TheoreticalIsotopicPatternFlyweight ignore_below(self, double ignore_below=*)
+
+    @cython.final
+    cdef inline void get_peak_at(self, ssize_t i, theoretical_peak_t* peak)
+
 
 @cython.final
 cdef class AveragineCache(object):
@@ -143,3 +172,7 @@ cdef class AveragineCache(object):
 cpdef double isotopic_shift(int charge=*)
 
 cpdef TheoreticalIsotopicPattern poisson_approximate(double mass, size_t n_peaks, double lambda_factor=*, int charge=*)
+
+ctypedef fused TheoreticalIsotopicPatternType:
+        TheoreticalIsotopicPattern
+        TheoreticalIsotopicPatternFlyweight

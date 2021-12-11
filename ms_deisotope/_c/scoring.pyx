@@ -11,6 +11,7 @@ from cpython.sequence cimport PySequence_List
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 
+from ms_deisotope._c.averagine cimport (theoretical_peak_t, TheoreticalIsotopicPattern)
 
 @cython.nonecheck(False)
 @cython.cdivision(True)
@@ -344,7 +345,7 @@ cdef class IsotopicFitterBase(object):
     def __setstate__(self, state):
         self.select, = state
 
-    def evaluate(self, PeakSet peaklist, list observed, list expected, **kwargs):
+    def evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected, **kwargs):
         """Evaluate a pair of peak lists for goodness-of-fit.
 
         Parameters
@@ -364,7 +365,7 @@ cdef class IsotopicFitterBase(object):
         """
         return self._evaluate(peaklist, observed, expected)
 
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         raise NotImplementedError()
 
     def __call__(self, *args, **kwargs):
@@ -477,7 +478,7 @@ cdef class GTestFitter(IsotopicFitterBase):
     and :math:`e_i` is the intensity of the ith theoretical peak.
     """
     @cython.cdivision
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         cdef:
             double g_score, obs, theo, log_ratio
             size_t n
@@ -487,7 +488,7 @@ cdef class GTestFitter(IsotopicFitterBase):
         g_score = 0.
         for i in range(n):
             obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity
-            theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity
+            theo = expected.get_intensity(i)
 
             log_ratio = log(obs) - log(theo)
             g_score += obs * log_ratio
@@ -507,20 +508,20 @@ cdef class ScaledGTestFitter(IsotopicFitterBase):
     """
 
     @cython.cdivision
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         cdef:
             double total_observed
             double total_expected
             double g_score, obs, theo, log_ratio
             size_t n
         total_observed = sum_intensity_fitted(observed)
-        total_expected = sum_intensity_theoretical(expected)
+        total_expected = expected.total()
         n = PyList_GET_SIZE(observed)
 
         g_score = 0.
         for i in range(n):
             obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_observed
-            theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_expected
+            theo = expected.get_intensity(i) / total_expected
 
             log_ratio = log(obs) - log(theo)
             g_score += obs * log_ratio
@@ -533,16 +534,16 @@ cdef ScaledGTestFitter g_test_scaled
 g_test_scaled = ScaledGTestFitter()
 
 
-cdef double max_intensity_theoretical(list peaklist):
+cdef double max_intensity_theoretical(TheoreticalIsotopicPattern peaklist):
     cdef:
         double maximum
         size_t i
-        TheoreticalPeak peak
+        double peak_intensity
     maximum = 0
-    for i in range(PyList_GET_SIZE(peaklist)):
-        peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, i)
-        if peak.intensity > maximum:
-            maximum = peak.intensity
+    for i in range(peaklist.get_size()):
+        peak_intensity = peaklist.get_intensity(i)
+        if peak_intensity > maximum:
+            maximum = peak_intensity
     return maximum
 
 
@@ -576,12 +577,12 @@ cdef class LeastSquaresFitter(IsotopicFitterBase):
     is the ith theoretical peak intensity
     """
     @cython.cdivision
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         cdef:
             double exp_max, theo_max, sum_of_squared_errors, sum_of_squared_theoreticals
             double normed_theo, normed_expr
             size_t i
-            TheoreticalPeak t
+            double t_intensity
             FittedPeak e
 
         exp_max = max_intensity_fitted(observed)
@@ -595,9 +596,9 @@ cdef class LeastSquaresFitter(IsotopicFitterBase):
         # for e, t in zip(observed, expected):
         for i in range(PyList_GET_SIZE(observed)):
             e = <FittedPeak>PyList_GetItem(observed, i)
-            t = <TheoreticalPeak>PyList_GetItem(expected, i)
+            t_intensity = expected.get_intensity(i)
             normed_expr = e.intensity / exp_max
-            normed_theo = t.intensity / theo_max
+            normed_theo = t_intensity / theo_max
             sum_of_squared_errors += (normed_theo - normed_expr) ** 2
             sum_of_squared_theoreticals += normed_theo ** 2
         return sum_of_squared_errors / sum_of_squared_theoreticals
@@ -611,22 +612,22 @@ least_squares = LeastSquaresFitter()
 cdef class ChiSquareFitter(IsotopicFitterBase):
 
     @cython.cdivision
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         cdef:
             double running_total
             size_t i
-            TheoreticalPeak t
-            FittedPeak e
+            double t
+            double e
         running_total = 0
         for i in range(PyList_GET_SIZE(observed)):
-            e = <FittedPeak>PyList_GetItem(observed, i)
-            t = <TheoreticalPeak>PyList_GetItem(expected, i)
+            e = (<FittedPeak>PyList_GetItem(observed, i)).intensity
+            t = expected.get_intensity(i)
             running_total += ((e - t) ** 2) / t
         return running_total
 
 
 @cython.cdivision
-cdef double ms_deconv_score_peak(FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
+cdef double ms_deconv_score_peak(FittedPeak obs, TheoreticalPeakType theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
     cdef:
         double mass_error, abundance_diff
     if obs.signal_to_noise < minimum_signal_to_noise:
@@ -665,10 +666,10 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
         self.select.minimum_score = minimum_score
 
     @cython.cdivision
-    cdef double score_peak(self, FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
+    cdef double score_peak(self, FittedPeak obs, TheoreticalPeakType theo, double mass_error_tolerance=0.02, double minimum_signal_to_noise=1) nogil:
         return ms_deconv_score_peak(obs, theo, mass_error_tolerance, minimum_signal_to_noise)
 
-    def evaluate(self, PeakSet peaklist, list observed, list expected):
+    def evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         return self._evaluate(peaklist, observed, expected)
 
     def __reduce__(self):
@@ -680,18 +681,19 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
     def __setstate__(self, state):
         self.select, self.mass_error_tolerance = state
 
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         cdef:
             size_t i, n
             FittedPeak obs
-            TheoreticalPeak theo
+            # TheoreticalPeak theo
+            theoretical_peak_t theo
             double score
 
         n = PyList_GET_SIZE(observed)
         score = 0
         for i in range(n):
             obs = <FittedPeak>PyList_GET_ITEM(observed, i)
-            theo = <TheoreticalPeak>PyList_GET_ITEM(expected, i)
+            expected.get_peak_at(i, &theo)
             score += self.score_peak(obs, theo, self.mass_error_tolerance, 1)
 
         return score
@@ -721,11 +723,11 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
     def __setstate__(self, state):
         self.select, self.penalty_factor, self.mass_error_tolerance = state
 
-    def evaluate(self, PeakSet peaklist, list observed, list expected):
+    def evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         return self._evaluate(peaklist, observed, expected)
 
     @cython.cdivision
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         cdef:
             size_t i, n
             FittedPeak obs
@@ -740,14 +742,15 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
         score = 0
         for i in range(n):
             obs = <FittedPeak>PyList_GET_ITEM(observed, i)
-            theo = <TheoreticalPeak>PyList_GET_ITEM(expected, i)
+            theo = expected.get(i)
             score += ms_deconv_score_peak(obs, theo, self.mass_error_tolerance, 1)
             total_intensity_observed += obs.intensity
             total_intensity_expected += theo.intensity
+
         penalty = 0
         for i in range(n):
             _obs = (<FittedPeak>PyList_GET_ITEM(observed, i)).intensity / total_intensity_observed
-            _theo = (<TheoreticalPeak>PyList_GET_ITEM(expected, i)).intensity / total_intensity_expected
+            _theo = expected.get_intensity(i) / total_intensity_expected
 
             log_ratio = log(_obs) - log(_theo)
             penalty += _obs * log_ratio
@@ -771,7 +774,7 @@ cdef class FunctionScorer(IsotopicFitterBase):
     def __reduce__(self):
         return self.__class__, (None,), self.__getstate__()
 
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         return self.function(observed, expected)
 
 
@@ -845,7 +848,7 @@ cdef class DistinctPatternFitter(IsotopicFitterBase):
         self.interference_detector = InterferenceDetection(deconvoluter.peaklist)
         return self
 
-    cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
+    cdef double _evaluate(self, PeakSet peaklist, list experimental, TheoreticalIsotopicPattern theoretical):
         cdef:
             double score
             double npeaks
@@ -920,7 +923,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
             peak = <FittedPeak>PyList_GET_ITEM(experimental, i)
             peak.intensity *= factor
 
-    cdef void scale_theoretical_peaks(self, list theoretical, double factor):
+    cdef void scale_theoretical_peaks(self, TheoreticalIsotopicPattern theoretical, double factor):
         cdef:
             size_t i
             TheoreticalPeak peak
@@ -928,10 +931,10 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
             peak = <TheoreticalPeak>PyList_GET_ITEM(theoretical, i)
             peak.intensity *= factor
 
-    def evaluate(self, PeakSet peaklist, list observed, list expected):
+    def evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected):
         return self._evaluate(peaklist, observed, expected)
 
-    cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
+    cdef double _evaluate(self, PeakSet peaklist, list experimental, TheoreticalIsotopicPattern theoretical):
         cdef:
             double score
         if self.scale_factor < 1:
@@ -949,16 +952,16 @@ cdef class DotProductFitter(IsotopicFitterBase):
     def __init__(self,  minimum_score=100):
         self.select = MaximizeFitSelector(minimum_score)
 
-    cpdef double _evaluate(self, PeakSet peaklist, list experimental, list theoretical):
+    cdef double _evaluate(self, PeakSet peaklist, list experimental, TheoreticalIsotopicPattern theoretical):
         cdef:
             size_t i, n
             FittedPeak obs
-            TheoreticalPeak theo
+            double theo_intensity
             double score
         n = PyList_GET_SIZE(experimental)
         score = 0
         for i in range(n):
             obs = <FittedPeak>PyList_GET_ITEM(experimental, i)
-            theo = <TheoreticalPeak>PyList_GET_ITEM(theoretical, i)
-            score += obs.intensity * theo.intensity
+            theo_intensity = theoretical.get_intensity(i)
+            score += obs.intensity * theo_intensity
         return score

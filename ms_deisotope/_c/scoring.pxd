@@ -4,6 +4,8 @@ from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak
 from ms_deisotope._c.deconvoluter_base cimport DeconvoluterBase
 from ms_deisotope._c.averagine cimport TheoreticalIsotopicPattern
 
+from ms_deisotope._c.averagine cimport (TheoreticalPeakType, TheoreticalIsotopicPattern)
+
 ctypedef fused fit_collection:
     list
     set
@@ -51,7 +53,7 @@ cdef class IsotopicFitterBase(object):
     cdef:
         public FitSelectorBase select
 
-    cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected)
+    cdef double _evaluate(self, PeakSet peaklist, list observed, TheoreticalIsotopicPattern expected)
     cpdef bint reject(self, IsotopicFitRecord fit)
     cpdef bint reject_score(self, double score)
     cpdef bint is_maximizing(self)
@@ -72,7 +74,7 @@ cdef class ScaledGTestFitter(IsotopicFitterBase):
 cdef class MSDeconVFitter(IsotopicFitterBase):
     cdef public double mass_error_tolerance
 
-    cdef double score_peak(self, FittedPeak obs, TheoreticalPeak theo, double mass_error_tolerance=*, double minimum_signal_to_noise=*) nogil
+    cdef double score_peak(self, FittedPeak obs, TheoreticalPeakType theo, double mass_error_tolerance=*, double minimum_signal_to_noise=*) nogil
 
 
 cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
@@ -106,7 +108,7 @@ cdef class ScaledPenalizedMSDeconvFitter(IsotopicFitterBase):
 
     cpdef double _calculate_scale_factor(self, PeakSet peaklist)
     cdef void scale_fitted_peaks(self, list experimental, double factor)
-    cdef void scale_theoretical_peaks(self, list theoretical, double factor)
+    cdef void scale_theoretical_peaks(self, TheoreticalIsotopicPattern theoretical, double factor)
 
 
 cdef class DotProductFitter(IsotopicFitterBase):

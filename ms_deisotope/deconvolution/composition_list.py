@@ -136,8 +136,7 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
         monoisotopic_peak = self.peaklist.has_peak(tid[0].mz, error_tolerance)
         if monoisotopic_peak is not None:
             tid = self.recalibrate_theoretical_mz(tid, monoisotopic_peak.mz)
-        eid = self.match_theoretical_isotopic_distribution(
-            tid.peaklist, error_tolerance)
+        eid = self.match_theoretical_isotopic_distribution(tid, error_tolerance)
 
         missed_peaks = count_placeholders(eid)
 
@@ -145,7 +144,7 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
             return None
 
         self.scale_theoretical_distribution(tid, eid)
-        score = self.scorer.evaluate(self.peaklist, eid, tid.peaklist)
+        score = self.scorer.evaluate(self.peaklist, eid, tid)
         fit = IsotopicFitRecord(None, score, charge, tid, eid)
         fit.missed_peaks = missed_peaks
         return fit

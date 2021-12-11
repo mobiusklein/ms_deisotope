@@ -4,6 +4,7 @@ import numpy as np
 
 from ms_peak_picker import FittedPeak
 from brainpy._c.isotopic_distribution import TheoreticalPeak as Peak
+from ms_deisotope.averagine import TheoreticalIsotopicPattern
 
 from ms_deisotope.scoring import (
         PenalizedMSDeconVFitter, MSDeconVFitter, DotProductFitter, ScaledGTestFitter,
@@ -20,12 +21,12 @@ experimental = [
                peak_count=33, index=30688, full_width_at_half_max=0.051, area=118.020)
 ]
 
-theoretical = [
+theoretical = TheoreticalIsotopicPattern([
     Peak(mz=739.920306, intensity=8310.933747, charge=-3),
     Peak(mz=740.254733, intensity=8061.025466, charge=-3),
     Peak(mz=740.588994, intensity=4926.998052, charge=-3),
     Peak(mz=740.923235, intensity=2250.893651, charge=-3)
-]
+], 739.920306)
 
 
 class IsotopicFitScoringTests(unittest.TestCase):

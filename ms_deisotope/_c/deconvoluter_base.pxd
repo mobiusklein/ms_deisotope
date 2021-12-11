@@ -39,7 +39,7 @@ cdef class DeconvoluterBase(object):
     cpdef FittedPeak has_peak(self, double mz, double error_tolerance)
     cdef FittedPeak _has_peak(self, double mz, double error_tolerance)
 
-    cpdef list match_theoretical_isotopic_distribution(self, list theoretical_distribution, double error_tolerance=*)
+    cpdef list match_theoretical_isotopic_distribution(self, TheoreticalIsotopicPattern theoretical_distribution, double error_tolerance=*)
     cpdef scale_theoretical_distribution(self, TheoreticalIsotopicPattern theoretical_distribution, list experimental_distribution)
     cpdef IsotopicFitRecord _evaluate_theoretical_distribution(self, list experimental, TheoreticalIsotopicPattern theoretical, FittedPeak peak, int charge)
     cpdef subtraction(self, TheoreticalIsotopicPattern isotopic_cluster, double error_tolerance=*)

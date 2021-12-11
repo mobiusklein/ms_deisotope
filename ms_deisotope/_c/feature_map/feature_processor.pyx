@@ -386,6 +386,7 @@ cdef class LCMSFeatureProcessorBase(object):
             conformer.acquire(eid, base_tid)
             conformer.conform()
             cleaned_eid = conformer.experimental
+            # TODO: convert this to a real TheoreticalIsotopicPattern
             tid = conformer.theoretical
             n_missing = conformer.n_missing
             if n_missing > max_missed_peaks:
