@@ -74,7 +74,7 @@ register_type_guesser = MSFileLoader.register_type_guesser
 guessers = MSFileLoader.guessers
 reader_types = MSFileLoader.reader_types
 
-MSFileLoader.add_file_extension_guesser({
+guess_type_from_path = MSFileLoader.add_file_extension_guesser({
     ".mzml": MzMLLoader,
     ".mzxml": MzXMLLoader,
     ".mgf": MGFLoader
