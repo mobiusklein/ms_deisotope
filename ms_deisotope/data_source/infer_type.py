@@ -4,28 +4,81 @@ from .mzxml import MzXMLLoader
 from .mgf import MGFLoader
 from . import _compression
 
-guessers = []
-reader_types = [MzMLLoader, MzXMLLoader, MGFLoader]
+
+class FormatGuesser(object):
+    def __init__(self, guessers, reader_types):
+        self.guessers = list(guessers or [])
+        self.reader_types = list(reader_types or [])
+
+    def register_type_guesser(self, reader_guesser):
+        self.guessers.append(reader_guesser)
+        return reader_guesser
+
+    def guess_type(self, file_path):
+        for guesser in self.guessers:
+            try:
+                reader_type = guesser(file_path)
+                return reader_type
+            except (ValueError, IOError, ImportError, TypeError, AttributeError):
+                continue
+        raise ValueError("Cannot determine ScanLoader type from %r" % (file_path, ))
+
+    def add_reader_type(self, reader):
+        self.reader_types.append(reader)
+
+    def guess_from_file_extension(self, file_path, ext_map):
+        if hasattr(file_path, 'name'):
+            file_path = file_path.name
+        if file_path.endswith(".gz"):
+            file_path = file_path[:-3]
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext in ext_map:
+            return ext_map[ext]
+        else:
+            raise ValueError("Cannot determine opener type from file path")
+
+    def add_file_extension_guesser(self, ext_map):
+        def guesser(file_path):
+            return self.guess_from_file_extension(file_path, ext_map)
+
+        self.register_type_guesser(guesser)
+        return guesser
+
+    def open_file(self, file_path, *args, **kwargs):
+        """Factory function to create an object that reads scans from
+        any supported data file format. Provides both iterative and
+        random access.
+        """
+        reader_type = self.guess_type(file_path)
+        try:
+            is_file = os.path.isfile(file_path)
+        except TypeError:
+            is_file = False
+        if is_file:
+            is_gz_compressed = _compression.test_gzipped(file_path)
+            if is_gz_compressed:
+                fobj = _compression.get_opener(file_path)
+            else:
+                fobj = file_path
+        else:
+            fobj = file_path
+        return reader_type(fobj, *args, **kwargs)
+
+    def __call__(self, file_path, *args, **kwargs):
+        return self.open_file(file_path, *args, **kwargs)
 
 
-def register_type_guesser(reader_guesser):
-    guessers.append(reader_guesser)
-    return reader_guesser
+MSFileLoader = FormatGuesser([], [MzMLLoader, MzXMLLoader, MGFLoader])
 
+register_type_guesser = MSFileLoader.register_type_guesser
+guessers = MSFileLoader.guessers
+reader_types = MSFileLoader.reader_types
 
-@register_type_guesser
-def guess_type_from_path(file_path):
-    if hasattr(file_path, 'name'):
-        file_path = file_path.name
-    ext = os.path.splitext(file_path)[1].lower()
-    if ext == '.mzml':
-        return MzMLLoader
-    elif ext == '.mzxml':
-        return MzXMLLoader
-    elif ext == '.mgf':
-        return MGFLoader
-    else:
-        raise ValueError("Cannot determine ScanLoader type from file path")
+MSFileLoader.add_file_extension_guesser({
+    ".mzml": MzMLLoader,
+    ".mzxml": MzXMLLoader,
+    ".mgf": MGFLoader
+})
 
 
 @register_type_guesser
@@ -58,35 +111,7 @@ def guess_type_from_file_sniffing(file_path):
         raise ValueError("Cannot determine ScanLoader type from header")
 
 
-def guess_type(file_path):
-    for guesser in guessers:
-        try:
-            reader_type = guesser(file_path)
-            return reader_type
-        except (ValueError, IOError, ImportError, TypeError, AttributeError):
-            continue
-    raise ValueError("Cannot determine ScanLoader type from %r" % (file_path, ))
-
-
-def MSFileLoader(file_path, *args, **kwargs):
-    """Factory function to create an object that reads scans from
-    any supported data file format. Provides both iterative and
-    random access.
-    """
-    reader_type = guess_type(file_path)
-    try:
-        is_file = os.path.isfile(file_path)
-    except TypeError:
-        is_file = False
-    if is_file:
-        is_gz_compressed = _compression.test_gzipped(file_path)
-        if is_gz_compressed:
-            fobj = _compression.get_opener(file_path)
-        else:
-            fobj = file_path
-    else:
-        fobj = file_path
-    return reader_type(fobj, *args, **kwargs)
+guess_type = MSFileLoader.guess_type
 
 
 def is_random_access(fp):
