@@ -742,7 +742,7 @@ cdef class TheoreticalIsotopicPattern(object):
             double total
             size_t i, n
             TheoreticalPeak p
-
+        total = 0.0
         n = self.get_size()
         for i in range(n):
             p = self.get(i)
