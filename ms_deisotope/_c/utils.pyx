@@ -205,7 +205,7 @@ cpdef double _peak_sequence_tic(self, peak_collection peaks) except -1:
         list py_peaks
 
     tic = 0.0
-    if peak_collection is PeakSet or peak_collection is PeakIndex or peak_collection is DeconvolutedPeakSet:
+    if peak_collection is PeakSet or peak_collection is PeakIndex or peak_collection is DeconvolutedPeakSet or peak_collection is DeconvolutedPeakSetIndexed:
         n = peaks.get_size()
     else:
         py_peaks = list(peaks)
@@ -214,7 +214,7 @@ cpdef double _peak_sequence_tic(self, peak_collection peaks) except -1:
             if not isinstance(<object>PyList_GET_ITEM(py_peaks, 0), PeakBase):
                 raise TypeError("Cannot interpret %r as a PeakBase object" % (type(py_peaks[0])))
     for i in range(n):
-        if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet:
+        if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet or peak_collection is DeconvolutedPeakSetIndexed:
             peak = peaks.getitem(i)
         elif peak_collection is PeakIndex:
             peak = peaks.peaks.getitem(i)
@@ -234,7 +234,7 @@ cpdef PeakBase _peak_sequence_bp(self, peak_collection peaks):
 
     max_intensity = 0.0
     base_peak = None
-    if peak_collection is PeakSet or peak_collection is PeakIndex or peak_collection is DeconvolutedPeakSet:
+    if peak_collection is PeakSet or peak_collection is PeakIndex or peak_collection is DeconvolutedPeakSet or peak_collection is DeconvolutedPeakSetIndexed:
         n = peaks.get_size()
     else:
         py_peaks = list(peaks)
@@ -243,7 +243,7 @@ cpdef PeakBase _peak_sequence_bp(self, peak_collection peaks):
             if not isinstance(<object>PyList_GET_ITEM(py_peaks, 0), PeakBase):
                 raise TypeError("Cannot interpret %r as a PeakBase object" % (type(py_peaks[0])))
     for i in range(n):
-        if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet:
+        if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet or peak_collection is DeconvolutedPeakSetIndexed:
             peak = peaks.getitem(i)
         elif peak_collection is PeakIndex:
             peak = peaks.peaks.getitem(i)

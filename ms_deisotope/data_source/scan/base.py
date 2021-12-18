@@ -1625,7 +1625,7 @@ class PlottingMethods(object):
         --------
         :func:`ms_deisotope.plot.annotate_scan_single`
         '''
-        precursor = kwargs.get("precursor")
+        precursor = kwargs.pop("precursor", None)
         if precursor is None:
             pinfo = self.scan.precursor_information
             if pinfo is None:

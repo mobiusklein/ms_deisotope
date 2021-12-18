@@ -29,6 +29,7 @@ ctypedef fused peak_collection:
     PeakSet
     PeakIndex
     DeconvolutedPeakSet
+    DeconvolutedPeakSetIndexed
     object
 
 
