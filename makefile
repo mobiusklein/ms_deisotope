@@ -1,5 +1,5 @@
 dev:
-	python setup.py develop
+	pip install -e . --no-build-isolation -v
 
 test:
 	py.test -v  ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term

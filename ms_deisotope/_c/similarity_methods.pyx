@@ -14,7 +14,7 @@ from cpython.tuple cimport PyTuple_GET_ITEM, PyTuple_Size
 from ms_peak_picker._c.peak_index cimport PeakIndex
 
 from ms_peak_picker._c.peak_set cimport PeakBase, FittedPeak, PeakSet
-from ms_deisotope._c.peak_set cimport DeconvolutedPeak, DeconvolutedPeakSet
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSetIndexed
 
 cimport numpy as cnp
 import numpy as np
@@ -185,7 +185,7 @@ cpdef double peak_set_similarity(peak_collection peak_set_a, peak_collection pea
         hi = peak.mz
         peak = peak_set_b.getitem(peak_set_b.get_size() - 1)
         hi = max(peak.mz, hi)
-    elif peak_collection is DeconvolutedPeakSet:
+    elif peak_collection is DeconvolutedPeakSet or peak_collection is DeconvolutedPeakSetIndexed:
         peak = peak_set_a._mz_ordered[-1]
         hi = peak.mz
         peak = peak_set_b._mz_ordered[-1]
@@ -278,7 +278,7 @@ cpdef tuple bin_peaks(peak_collection peak_set_a, peak_collection peak_set_b, in
             peak = <PeakBase>obj
             if peak.mz > hi:
                 hi = peak.mz
-    elif peak_collection is DeconvolutedPeakSet:
+    elif peak_collection is DeconvolutedPeakSet or peak_collection is DeconvolutedPeakSetIndexed:
         peak = peak_set_a._mz_ordered[-1]
         hi = peak.mz
         peak = peak_set_b._mz_ordered[-1]
@@ -634,7 +634,7 @@ cpdef double ppm_peak_set_similarity(peak_collection peak_set_a, peak_collection
 
 cpdef SpectrumAlignment align_peaks(peak_collection peak_set_a, peak_collection peak_set_b, double error_tolerance=2e-5,
                                     double shift=0.0, bint normalize=True):
-    if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet:
+    if peak_collection is PeakSet or peak_collection is DeconvolutedPeakSet or peak_collection is DeconvolutedPeakSetIndexed:
         return SpectrumAlignment(peak_set_a, peak_set_b, error_tolerance, shift, normalize, sqrt_transform=False)
     elif peak_collection is PeakIndex:
         return SpectrumAlignment(peak_set_a.peaks, peak_set_b.peaks, error_tolerance, shift, normalize, sqrt_transform=False)
