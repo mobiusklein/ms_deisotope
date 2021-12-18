@@ -49,6 +49,9 @@ def make_averagine_suite(averagine_class):
                 self.assertAlmostEqual(tid[i].mz, p.mz, 3)
                 self.assertAlmostEqual(tid[i].intensity, p.intensity)
 
+            self.assertAlmostEqual(tid.total(), 1.0, 3)
+            self.assertAlmostEqual(inst.total(), 1.0, 3)
+
         def __repr__(self):
             r = super(TestAveragine, self).__repr__()
             return "%s(%s)" % (r, averagine_class)
