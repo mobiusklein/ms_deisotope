@@ -6,7 +6,7 @@ from cpython cimport PyObject
 from cpython.float cimport PyFloat_AsDouble
 from cpython.list cimport (
     PyList_New, PyList_GET_ITEM, PyList_SET_ITEM,
-    PyList_GET_SIZE, PyList_Append, PyList_SetItem)
+    PyList_GET_SIZE, PyList_Append, PyList_SetItem, PyList_GetSlice)
 from cpython.dict cimport PyDict_Next, PyDict_SetItem, PyDict_GetItem
 
 from libc.math cimport floor, fabs
@@ -48,6 +48,23 @@ cdef double* _cumulative(TheoreticalIsotopicPattern self):
     total = 0.0
     for i in range(n):
         total += self.get(i).intensity
+        cumulative_intensities[i] = total
+    return cumulative_intensities
+
+
+
+@cython.boundscheck(False)
+cdef double* _cumulative_flyweight(TheoreticalIsotopicPatternFlyweight self):
+    cdef:
+        size_t i, n
+        double total
+        double* cumulative_intensities
+
+    n = self.get_size()
+    cumulative_intensities = <double*>malloc(sizeof(double) * n)
+    total = 0.0
+    for i in range(n):
+        total += self.get_intensity(i)
         cumulative_intensities[i] = total
     return cumulative_intensities
 
@@ -855,7 +872,9 @@ cdef class TheoreticalIsotopicPattern(object):
 @cython.final
 cdef class TheoreticalIsotopicPatternFlyweight(object):
 
-    def __init__(self, peaklist, origin, offset=None, scale_factor=1.0):
+    def __init__(self, peaklist, origin=None, offset=None, scale_factor=1.0):
+        if origin is None:
+            origin = peaklist[0].mz
         self.peaklist = peaklist
         self.origin = origin
         if offset is None:
@@ -956,11 +975,18 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
 
     @cython.final
     cpdef double total(self):
-        return self.scale_factor
+        cdef:
+            size_t i, n
+            double total
+        total = 0.0
+        n = self.get_size()
+        for i in range(n):
+            total += self.get_intensity(i)
+        return total
 
     @cython.final
     cpdef TheoreticalIsotopicPatternFlyweight normalize(self):
-        self.scale_factor = 1.0
+        self.scale_factor /= self.total()
         return self
 
     cpdef TheoreticalIsotopicPatternFlyweight clone(self):
@@ -1022,7 +1048,7 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
 
         Returns
         -------
-        TheoreticalIsotopicPattern
+        TheoreticalIsotopicPatternFlyweight
             self
         """
         cdef:
@@ -1048,8 +1074,121 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
         self.scale_factor = self.scale_factor / total
         return self
 
+    @cython.cdivision
+    cpdef TheoreticalIsotopicPatternFlyweight truncate_after(self, double truncate_after=0.95):
+        """Drops peaks from the end of the isotopic pattern
+        which make up the last ``1 - truncate_after`` percent
+        of the isotopic pattern.
 
+        After truncation, the pattern is renormalized to sum to ``1``
 
+        Parameters
+        ----------
+        truncate_after : float, optional
+            The percentage of the isotopic pattern signal to retain. Defaults
+            to 0.95.
+
+        Returns
+        -------
+        TheoreticalIsotopicPatternFlyweight
+            self
+        """
+        cdef:
+            double acc, normalizer
+            size_t i, n, stop
+        acc = 0
+        stop = 0
+        n = self.get_size()
+        for i in range(n):
+            acc += self.get_raw(i).intensity
+            stop = i
+            if acc >= truncate_after:
+                break
+
+        self.peaklist = PyList_GetSlice(self.peaklist, 0, stop + 1)
+        self.scale_factor = 1. / acc
+        return self
+
+    cpdef double drop_last_peak(self):
+        """Drop the last peak in the isotopic pattern and re-normalize.
+
+        Returns
+        -------
+        float:
+            The percentage of the total signal in the isotopic pattern remaining
+            following the removal of the last peak.
+        """
+        cdef:
+            size_t i, n
+            double scaler, tail
+            list peaks
+
+        n = self.get_size()
+        if n == 0:
+            return 0
+        tail = self.get_intensity(n - 1)
+        scaler = self.total() - tail
+        self.scale_factor /= scaler
+        self.peaklist = PyList_GetSlice(self.peaklist, 0, n - 1)
+        return scaler
+
+    cdef TheoreticalIsotopicPatternFlyweight clone_drop_last(self):
+        """Combines the copying traversal with the re-normalization
+        of :meth:`drop_last_peak` for efffiency.
+
+        Returns
+        -------
+        TheoreticalIsotopicPatternFlyweight:
+            A copy of `self` with the last peak removed and renormalized
+        """
+        cdef:
+            size_t i, n
+            double scaler, tail
+            list peaks
+            TheoreticalIsotopicPatternFlyweight result
+
+        n = self.get_size()
+        i = 0
+        tail = self.get_intensity(n - 1)
+        scaler = 1 - tail
+        peaks = PyList_GetSlice(self.peaklist, 0, n - 1)
+        result = TheoreticalIsotopicPatternFlyweight._create(peaks, self.origin, self.offset)
+        result.scale_factor = self.scale_factor / scaler
+        return result
+
+    cpdef list incremental_truncation(self, double threshold):
+        """Create incremental truncations of `self`, dropping the last peak until
+        the the total signal in reaches `threshold`
+
+        Parameters
+        ----------
+        threshold: float
+            The minimum percentage of the isotopic pattern to retain.
+
+        Returns
+        -------
+        :class:`list` of :class:`TheoreticalIsotopicPatternFlyweight`
+        """
+        cdef:
+            list accumulator
+            double* cumulative_intensities
+            size_t i, n
+            TheoreticalIsotopicPatternFlyweight template, current
+
+        template = self.clone().normalize()
+        n = self.get_size()
+        cumulative_intensities = _cumulative_flyweight(template)
+        accumulator = [template]
+
+        i = n - 1
+        while i > 0:
+            if cumulative_intensities[i - 1] < threshold:
+                break
+            template = template.clone_drop_last()
+            accumulator.append(template)
+            i -= 1
+        free(cumulative_intensities)
+        return accumulator
 
 cdef class AveragineCache(object):
     """A wrapper around a :class:`Averagine` instance which will cache isotopic patterns

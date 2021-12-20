@@ -422,18 +422,6 @@ cdef class IsotopicFitterBase(object):
         return "{self.__class__.__name__}({fields})".format(self=self, fields=self.__getstate__())
 
 
-cdef double sum_intensity_theoretical(list peaklist):
-    cdef:
-        double summed
-        size_t i
-        TheoreticalPeak peak
-    summed = 0
-    for i in range(PyList_GET_SIZE(peaklist)):
-        peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, i)
-        summed += peak.intensity
-    return summed
-
-
 cdef double sum_intensity_fitted(list peaklist):
     cdef:
         double summed
@@ -444,17 +432,6 @@ cdef double sum_intensity_fitted(list peaklist):
         peak = <FittedPeak>PyList_GET_ITEM(peaklist, i)
         summed += peak.intensity
     return summed
-
-
-@cython.cdivision
-cdef double* normalize_intensity_theoretical(list peaklist, double* out, double total):
-    cdef:
-        size_t i
-        TheoreticalPeak peak
-
-    for i in range(PyList_GET_SIZE(peaklist)):
-        peak = <TheoreticalPeak>PyList_GET_ITEM(peaklist, i)
-        out[i] = peak.intensity / total
 
 
 @cython.cdivision
@@ -731,7 +708,8 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
         cdef:
             size_t i, n
             FittedPeak obs
-            TheoreticalPeak theo
+            # TheoreticalPeak theo
+            theoretical_peak_t theo
             double score, total_intensity_observed, total_intensity_expected
             double penalty, _obs, _theo, log_ratio
 
@@ -742,7 +720,7 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
         score = 0
         for i in range(n):
             obs = <FittedPeak>PyList_GET_ITEM(observed, i)
-            theo = expected.get(i)
+            expected.get_peak_at(i, &theo)
             score += ms_deconv_score_peak(obs, theo, self.mass_error_tolerance, 1)
             total_intensity_observed += obs.intensity
             total_intensity_expected += theo.intensity

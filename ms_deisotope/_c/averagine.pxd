@@ -150,6 +150,13 @@ cdef class TheoreticalIsotopicPatternFlyweight(object):
     cdef double _sum(self)
 
     cpdef TheoreticalIsotopicPatternFlyweight ignore_below(self, double ignore_below=*)
+    cpdef TheoreticalIsotopicPatternFlyweight truncate_after(self, double truncate_after=*)
+
+    cpdef double drop_last_peak(self)
+    cdef TheoreticalIsotopicPatternFlyweight clone_drop_last(self)
+    @cython.final
+    cpdef list incremental_truncation(self, double threshold)
+
 
     @cython.final
     cdef inline void get_peak_at(self, ssize_t i, theoretical_peak_t* peak)
