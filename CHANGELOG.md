@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+1. Added `toggle_peak_loading` to `PeakSetDeserializingMixin` to toggle loading and parsing of deconvoluted peak sets.
 
 ### Changed
 

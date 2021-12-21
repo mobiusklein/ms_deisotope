@@ -39,6 +39,8 @@ import hashlib
 import array
 import warnings
 
+
+from contextlib import contextmanager
 from collections import OrderedDict
 try:
     from collections import Sequence, Mapping
@@ -1166,6 +1168,7 @@ def deserialize_peak_set(scan_dict):
 
 
 class PeakSetDeserializingMixin(object):
+    parse_peaks = True
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
         try:
@@ -1185,7 +1188,19 @@ class PeakSetDeserializingMixin(object):
         return deserialize_peak_set(scan_dict)
 
     def _validate(self, scan):
-        return bool(scan.deconvoluted_peak_set) or bool(scan.peak_set)
+        if self.parse_peaks:
+            return bool(scan.deconvoluted_peak_set) or bool(scan.peak_set)
+        else:
+            return True
+
+    @contextmanager
+    def toggle_peak_loading(self):
+        self.parse_peaks = False
+        self.decode_binary = False
+        yield self
+        self.reset()
+        self.parse_peaks = True
+        self.decode_binary = True
 
     def _precursor_information(self, scan):
         """Returns information about the precursor ion,
@@ -1238,21 +1253,25 @@ class PeakSetDeserializingMixin(object):
                     'precursor purity', 0)
         except KeyError:
             pass
-        if "m/z array" not in data:
-            warnings.warn("No m/z array found for scan %r" % (scan.id, ))
-            scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-            scan.deconvoluted_peak_set = DeconvolutedPeakSet([])
-        elif "charge array" in data:
-            scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-            scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
-                data)
-            if self.has_extended_index() and scan.id in self.extended_index.ms1_ids:
-                chosen_indices = self.extended_index.ms1_ids[
-                    scan.id]['msms_peaks']
-                for ix in chosen_indices:
-                    scan.deconvoluted_peak_set[ix].chosen_for_msms = True
+        if self.parse_peaks:
+            if "m/z array" not in data:
+                warnings.warn("No m/z array found for scan %r" % (scan.id, ))
+                scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
+                scan.deconvoluted_peak_set = DeconvolutedPeakSet([])
+            elif "charge array" in data:
+                scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
+                scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
+                    data)
+                if self.has_extended_index() and scan.id in self.extended_index.ms1_ids:
+                    chosen_indices = self.extended_index.ms1_ids[
+                        scan.id]['msms_peaks']
+                    for ix in chosen_indices:
+                        scan.deconvoluted_peak_set[ix].chosen_for_msms = True
+            else:
+                scan.peak_set = self.deserialize_peak_set(data)
+                scan.deconvoluted_peak_set = None
         else:
-            scan.peak_set = self.deserialize_peak_set(data)
+            scan.peak_set = None
             scan.deconvoluted_peak_set = None
         packed = scan.pack(bind=True)
         return packed

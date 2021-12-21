@@ -711,6 +711,15 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         self._file_description = self.file_description()
         self.make_iterator()
 
+    @property
+    def decode_binary(self):
+        return self._decode_binary
+
+    @decode_binary.setter
+    def decode_binary(self, value):
+        self._decode_binary = value
+        self._source.decode_binary = value
+
     def _has_msn_scans(self):
         has_msn_key = file_information.MS_MSn_Spectrum in self._file_description
         has_ms1_key = file_information.MS_MS1_Spectrum in self._file_description
