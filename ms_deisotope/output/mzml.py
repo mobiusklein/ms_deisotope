@@ -43,14 +43,12 @@ import warnings
 from contextlib import contextmanager
 from collections import OrderedDict
 try:
-    from collections import Sequence, Mapping
-except ImportError:
     from collections.abc import Sequence, Mapping
+except ImportError:
+    from collections import Sequence, Mapping
 from uuid import uuid4, UUID
 
 import numpy as np
-
-from six import string_types as basestring
 
 from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
