@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Added
 1. Added `toggle_peak_loading` to `PeakSetDeserializingMixin` to toggle loading and parsing of deconvoluted peak sets.
+2. Refactored `MSFileLoader` into a callable class, `ms_deisotope.data_source.infer_type.FormatGuesser`. There is now a
+   `ms_deisotope.output.ProcessedMSFileLoader` callable that can be used to determine the correct opener for processed
+   mzML, MGF, and mzMLb files.
 
 ### Changed
 
@@ -18,6 +21,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 1. Added a missing parameter `use_index` to `ProcessedMGFLoader` that made positional
    argument passing fail when unpickling instances of this subclass.
 2. Repaired `peak_collection` fused functions to optimize `DeconvolutedPeakSetIndexed` too.
+3. Fixed `TheoreticalIsotopicPattern.total` using an uninitialized accumulator.
 
 ### Security
 
