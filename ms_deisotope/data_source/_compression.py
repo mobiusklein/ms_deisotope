@@ -123,6 +123,24 @@ def starts_with_gz_magic(bytestring):
     return bytestring.startswith(GZIP_MAGIC)
 
 
+ZSTD_MAGIC = b'(\xb5/\xfd'
+
+def starts_with_zstd_magic(bytestring):
+    '''Tests whether or not a byte string starts with
+    the ZSTD magic bytes.
+
+    Parameters
+    ----------
+    bytestring : bytes
+        The bytes to test.
+
+    Returns
+    -------
+    bool
+    '''
+    return bytestring.startswith(ZSTD_MAGIC)
+
+
 def get_opener(f, buffer_size=None):
     '''Select the file reading type for the given path or stream.
 
