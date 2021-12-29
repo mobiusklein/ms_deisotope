@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Security
 
 
-## [v0.0.34] - 2021-12-29
+## [v0.0.35] - 2021-12-29
 
 ### Added
 1. Added `toggle_peak_loading` to `PeakSetDeserializingMixin` to toggle loading and parsing of deconvoluted peak sets.
@@ -377,9 +377,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.34...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.35...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[v0.0.34]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.34
+[v0.0.35]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.35
 [v0.0.33]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.33
 [v0.0.32]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.32
 [v0.0.31]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.31
