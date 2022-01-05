@@ -29,6 +29,8 @@ try:
             value = self._impl.write(b)
             return value
 
+    idzip.compressor.IdzipWriter.enforce_extension = False
+
     GzipFile = IdzipFile
     WRITE_BUFFER_SIZE = idzip.MAX_MEMBER_SIZE
     has_idzip = True
