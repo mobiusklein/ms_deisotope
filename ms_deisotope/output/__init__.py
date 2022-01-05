@@ -15,7 +15,7 @@ from .mgf import (
     ProcessedMGFDeserializer, MGFSerializer)
 
 
-from .infer_type import (ProcessedMSFileLoader, )
+from .infer_type import (ProcessedMSFileLoader, get_writer)
 
 __all__ = [
     "ScanSerializerBase",
@@ -27,7 +27,8 @@ __all__ = [
     "ProcessedMGFDeserializer",
     "TextScanSerializerBase",
     "HeaderedDelimitedWriter",
-    "ProcessedMSFileLoader"
+    "ProcessedMSFileLoader",
+    "get_writer",
 ]
 
 if MzMLbSerializer is None:

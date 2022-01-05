@@ -64,6 +64,10 @@ def get_writer(filename, **kwargs):
     '''Open a writer for a provided filename, inferring the format from
     the file extension.
 
+    .. warning::
+        If using a file-like object, do not use a compressed writer or else
+        the stream will be doubly-compressed.
+
     Parameters
     ----------
     filename : :class:`str`, :class:`os.PathLike`, or file-like object
