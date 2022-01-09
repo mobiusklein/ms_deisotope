@@ -313,7 +313,9 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
         ms1_averaging=ms1_averaging,
         default_precursor_ion_selection_window=default_precursor_ion_selection_window,
         deconvolute=deconvolute,
-        verbose=verbose)
+        verbose=verbose,
+        end_scan_time=end_scan_time,
+        start_scan_time=start_scan_time)
     consumer.start()
 
 

@@ -14,6 +14,7 @@ from ms_deisotope.data_source.metadata.file_information import (
 
 from ms_deisotope.output.mzml import MzMLScanSerializer
 from ms_deisotope.output.mgf import MGFSerializer
+from ms_deisotope.output.mzmlb import MzMLbLoader, MzMLbSerializer
 
 from ms_deisotope.task import TaskBase
 
@@ -90,8 +91,8 @@ class ThreadedScanStorageHandlerMixin(object):
     def __init__(self, *args, **kwargs):
         queue_size = int(kwargs.get("queue_size", 200))
         self.queue = Queue(queue_size)
-        self.worker_thread = threading.Thread(target=self._worker_loop)
-        self.worker_thread.start()
+        self.worker_thread = None
+        self._spawn_thread()
         super(ThreadedScanStorageHandlerMixin, self).__init__(*args, **kwargs)
 
     def _save_bunch(self, precursor, products):
@@ -118,7 +119,7 @@ class ThreadedScanStorageHandlerMixin(object):
             except QueueEmptyException:
                 pass
             if len(current_work) > 50:
-                self.log("Drained Write Queue of %d items" % (len(current_work),))
+                self.debug("Drained Write Queue of %d items" % (len(current_work),))
             return current_work
 
         while has_work:
@@ -140,13 +141,19 @@ class ThreadedScanStorageHandlerMixin(object):
                             i += 1
             except QueueEmptyException:
                 continue
+            except KeyboardInterrupt:
+                break
             except Exception as e:
                 self.error("An error occurred while writing scans to disk", e)
 
+    def _spawn_thread(self):
+        self.worker_thread = threading.Thread(target=self._worker_loop)
+        self.worker_thread.daemon = True
+        self.worker_thread.start()
+
     def sync(self):
         self._end_thread()
-        self.worker_thread = threading.Thread(target=self._worker_loop)
-        self.worker_thread.start()
+        self._spawn_thread()
 
     def _end_thread(self):
         self.queue.put(DONE)
@@ -164,6 +171,8 @@ class ThreadedScanStorageHandlerMixin(object):
 
 
 class MzMLScanStorageHandler(ScanStorageHandlerBase):
+    fallback_path = "processed.mzML"
+
     def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
         if n_spectra is None:
             n_spectra = 2e5
@@ -188,7 +197,7 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
             else:
                 sample_name = name
         else:
-            path = "processed.mzML"
+            path = cls.fallback_path
             sample_name = name if name is not None else ""
         if source is not None:
             reader = MSFileLoader(source.scan_source)
@@ -262,9 +271,31 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
         self.serializer.close()
 
 
+class MzMLbScanStorageHandler(MzMLScanStorageHandler):
+    fallback_path = "processed.mzMLb"
+
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+        if n_spectra is None:
+            n_spectra = 2e5
+        super(MzMLScanStorageHandler, self).__init__()
+        self.path = path
+        self.handle = None
+        self.serializer = MzMLbSerializer(
+            self.path, n_spectra, sample_name=sample_name,
+            deconvoluted=deconvoluted)
+
+
 class ThreadedMzMLScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLScanStorageHandler):
     def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
         super(ThreadedMzMLScanStorageHandler, self).__init__(
+            path, sample_name, n_spectra, deconvoluted=deconvoluted)
+
+
+class ThreadedMzMLbScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLbScanStorageHandler):
+    fallback_path = "processed.mzMLb"
+
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+        super(ThreadedMzMLbScanStorageHandler, self).__init__(
             path, sample_name, n_spectra, deconvoluted=deconvoluted)
 
 

@@ -7,6 +7,12 @@ import six
 
 from datetime import datetime
 
+try:
+    from queue import Empty
+except ImportError:
+    from Queue import Empty
+
+
 logger = logging.getLogger("ms_deisotope.task")
 
 
@@ -62,6 +68,8 @@ class CallInterval(object):
         while not self.stopped.wait(self.interval):
             try:
                 self.call_target(*self.args)
+            except (KeyboardInterrupt, SystemExit):
+                self.stop()
             except Exception as e:
                 logger.exception("An error occurred in %r", self, exc_info=e)
 
@@ -96,6 +104,7 @@ class MessageSpooler(object):
         self.message_queue = multiprocessing.Queue()
         self.halting = False
         self.thread = threading.Thread(target=self.run)
+        self.thread.daemon = True
         self.thread.start()
 
     def run(self):
@@ -103,7 +112,7 @@ class MessageSpooler(object):
             try:
                 message = self.message_queue.get(True, 2)
                 self.handler(*message)
-            except Exception:
+            except Empty:
                 continue
 
     def stop(self):

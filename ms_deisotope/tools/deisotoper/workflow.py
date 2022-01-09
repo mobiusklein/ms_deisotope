@@ -78,7 +78,7 @@ class SampleConsumer(TaskBase):
                  sample_name=None, storage_type=None, n_processes=5,
                  extract_only_tandem_envelopes=False, ignore_tandem_scans=False,
                  ms1_averaging=0, default_precursor_ion_selection_window=1.5,
-                 deconvolute=True, verbose=False):
+                 deconvolute=True, verbose=False, start_scan_time=None, end_scan_time=None):
 
         if storage_type is None:
             storage_type = ThreadedMzMLScanStorageHandler
@@ -125,6 +125,8 @@ class SampleConsumer(TaskBase):
 
         self.start_scan_id = start_scan_id
         self.end_scan_id = end_scan_id
+        self.start_scan_time = start_scan_time
+        self.end_scan_time = end_scan_time
 
         self.sample_run = None
 
@@ -178,8 +180,15 @@ class SampleConsumer(TaskBase):
         for scan in sink:
             i += 1
             if (scan.scan_time - last_scan_time > 1.0) or (i % 1000 == 0):
-                self.log("Processed %s (time: %f)" % (
-                    scan.id, scan.scan_time,))
+                percent_complete = None
+                if self.end_scan_time is not None:
+                    percent_complete = (scan.scan_time - self.start_scan_time) / self.end_scan_time
+                if percent_complete is not None:
+                    self.log("Processed %s (time: %0.3f %0.2f%% Done)" % (
+                        scan.id, scan.scan_time, percent_complete))
+                else:
+                    self.log("Processed %s (time: %0.3f)" % (
+                        scan.id, scan.scan_time,))
                 if last_scan_index != 0:
                     self.log("Count Since Last Log: %d" % (scan.index - last_scan_index,))
                 last_scan_time = scan.scan_time
