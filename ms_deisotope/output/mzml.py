@@ -1076,8 +1076,11 @@ class MzMLSerializer(ScanSerializerBase):
 MzMLScanSerializer = MzMLSerializer
 
 
-def deserialize_deconvoluted_peak_set(scan_dict):
-    envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+def deserialize_deconvoluted_peak_set(scan_dict, include_envelopes=True):
+    if include_envelopes:
+        envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    else:
+        envelopes = None
     peaks = []
     mz_array = scan_dict['m/z array']
     intensity_array = scan_dict['intensity array']
@@ -1090,7 +1093,7 @@ def deserialize_deconvoluted_peak_set(scan_dict):
         peak = DeconvolutedPeak(
             neutral_mass(mz, charge), intensity_array[i], charge=charge, signal_to_noise=score_array[i],
             index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
-            average_mass=0, score=score_array[i], envelope=envelopes[i], mz=mz
+            average_mass=0, score=score_array[i], envelope=envelopes[i] if include_envelopes else None, mz=mz
         )
         peaks.append(peak)
     peaks = DeconvolutedPeakSet(peaks)
@@ -1167,6 +1170,7 @@ def deserialize_peak_set(scan_dict):
 
 class PeakSetDeserializingMixin(object):
     parse_peaks = True
+    parse_envelopes = True
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
         try:

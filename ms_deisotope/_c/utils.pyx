@@ -103,7 +103,7 @@ cpdef np.ndarray[np.float32_t] envelopes_to_array(list envelope_list):
 
 
 @cython.boundscheck(False)
-cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dict):
+cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dict, bint include_envelopes=True):
     cdef:
         list envelopes, peaks
         np.ndarray[np.float64_t] mz_array
@@ -117,7 +117,10 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
         DeconvolutedPeakSetIndexed peak_set
 
     peaks = []
-    envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    if include_envelopes:
+        envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    else:
+        envelopes = None
     mz_array = scan_dict['m/z array'].astype(np.float64)
     intensity_array = scan_dict['intensity array'].astype(np.float64)
     charge_array = scan_dict['charge array'].astype(np.int8)
@@ -135,7 +138,8 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
             charge_array[i],
             score_array[i],
             mz,
-            <Envelope>PyList_GET_ITEM(envelopes, i))
+            <Envelope>PyList_GET_ITEM(envelopes, i) if include_envelopes else None
+        )
         peaks.append(peak)
     peak_set = DeconvolutedPeakSetIndexed(peaks)
     peak_set.reindex()

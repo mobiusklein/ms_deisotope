@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Added
 1. Added `get_writer` to `ms_deisotope.output` which will guess which writer (and compression) to use from a file path
    or name of a file-like object.
+2. Added an option to skip envelope decoding during `deserialize_deconvoluted_peak_set` as a theoretical optimization.
 
 ### Changed
 

@@ -12,9 +12,9 @@ from ms_deisotope.data_source import MSFileLoader, ScanBunch
 from ms_deisotope.data_source.metadata.file_information import (
     SourceFile as MetadataSourceFile, FileInformation)
 
-from ms_deisotope.output.mzml import MzMLScanSerializer
+from ms_deisotope.output.mzml import MzMLSerializer
 from ms_deisotope.output.mgf import MGFSerializer
-from ms_deisotope.output.mzmlb import MzMLbLoader, MzMLbSerializer
+from ms_deisotope.output.mzmlb import MzMLbSerializer
 
 from ms_deisotope.task import TaskBase
 
@@ -173,13 +173,15 @@ class ThreadedScanStorageHandlerMixin(object):
 class MzMLScanStorageHandler(ScanStorageHandlerBase):
     fallback_path = "processed.mzML"
 
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True, stream_cls=None):
+        if stream_cls is None:
+            stream_cls = open
         if n_spectra is None:
             n_spectra = 2e5
         super(MzMLScanStorageHandler, self).__init__()
         self.path = path
-        self.handle = open(path, 'wb')
-        self.serializer = MzMLScanSerializer(
+        self.handle = stream_cls(path, 'wb')
+        self.serializer = MzMLSerializer(
             self.handle, n_spectra, sample_name=sample_name,
             deconvoluted=deconvoluted)
 
@@ -279,7 +281,6 @@ class MzMLbScanStorageHandler(MzMLScanStorageHandler):
             n_spectra = 2e5
         super(MzMLScanStorageHandler, self).__init__()
         self.path = path
-        self.handle = None
         self.serializer = MzMLbSerializer(
             self.path, n_spectra, sample_name=sample_name,
             deconvoluted=deconvoluted)
@@ -300,10 +301,12 @@ class ThreadedMzMLbScanStorageHandler(ThreadedScanStorageHandlerMixin, MzMLbScan
 
 
 class MGFScanStorageHandler(ScanStorageHandlerBase):
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
+    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True, stream_cls=None):
+        if stream_cls is None:
+            stream_cls = open
         super(MGFScanStorageHandler, self).__init__()
         self.path = path
-        self.handle = open(path, "wb")
+        self.handle = stream_cls(path, "wb")
         self.serializer = MGFSerializer(
             self.handle, sample_name=sample_name,
             deconvoluted=deconvoluted)
