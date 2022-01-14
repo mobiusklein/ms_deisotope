@@ -1,5 +1,4 @@
 import array
-from ms_deisotope.data_source.metadata import activation
 import warnings
 
 from abc import abstractmethod
@@ -9,6 +8,9 @@ from itertools import chain
 from collections import namedtuple, defaultdict
 
 import numpy as np
+
+from ms_peak_picker import average_signal
+from ms_deisotope.data_source.scan.scan import WrappedScan
 
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
@@ -732,6 +734,13 @@ class IonMobilityFrame(FrameBase):
     @annotations.setter
     def annotations(self, value):
         self._annotations = dict(value)
+
+    def flatten_to_scan(self):
+        scans = self.scans()
+        mz, intensity = average_signal([scan.arrays for scan in scans], dx=0.001)
+        intensity *= len(scans)
+        arrays = RawDataArrays(mz, intensity)
+        return WrappedScan(scans[0]._data, self.source, arrays, id="merged=%d" % self.index)
 
     def get_scan_by_drift_time(self, drift_time):
         dt_axis = self.ion_mobilities
