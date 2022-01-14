@@ -694,7 +694,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
     def _make_pointer_iterator(self, start_index=None, start_time=None):
         iterator = self._make_scan_index_producer(start_index, start_time)
         for i in iterator:
-            yield self.index[i]
+            yield self._make_scan(self.index[i])
 
     def reset(self):
         self.initialize_scan_cache()
