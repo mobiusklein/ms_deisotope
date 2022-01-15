@@ -494,7 +494,24 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         return self._has_ms1_scans()
 
     def __reduce__(self):
-        return self.__class__, (self.source_file, False)
+        return self.__class__, (self.source_file, False), self.__getstate__()
+
+    def __getstate__(self):
+        state = {
+            "method": self._method,
+            "scan_type_index": self._scan_type_index,
+            "analyzer_to_configuration_index": self._analyzer_to_configuration_index,
+            "instrument_config": self._instrument_config,
+            "previous_ms_levels": self._previous_ms_levels,
+        }
+        return state
+
+    def __setstate__(self, state):
+        self._method = state['method']
+        self._scan_type_index = state['scan_type_index']
+        self._analyzer_to_configuration_index = state['analyzer_to_configuration_index']
+        self._instrument_config = state['instrument_config']
+        self._previous_ms_levels = state['previous_ms_levels']
 
     @property
     def index(self):

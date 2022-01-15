@@ -564,6 +564,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             "scan_type_index": self._scan_type_index,
             "analyzer_to_configuration_index": self._analyzer_to_configuration_index,
             "instrument_config": self._instrument_config,
+            "previous_ms_levels": self._previous_ms_levels,
         }
         return state
 
@@ -572,6 +573,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         self._scan_type_index = state['scan_type_index']
         self._analyzer_to_configuration_index = state['analyzer_to_configuration_index']
         self._instrument_config = state['instrument_config']
+        self._previous_ms_levels = state['previous_ms_levels']
 
     @property
     def index(self):
