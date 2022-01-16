@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.36] - 2022-01-15
+
+### Added
 1. Added `get_writer` to `ms_deisotope.output` which will guess which writer (and compression) to use from a file path
    or name of a file-like object.
 2. Added an option to skip envelope decoding during `deserialize_deconvoluted_peak_set` as a theoretical optimization.
@@ -381,8 +397,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.35...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.36...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.35]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.36
 [v0.0.35]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.35
 [v0.0.33]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.33
 [v0.0.32]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.32
