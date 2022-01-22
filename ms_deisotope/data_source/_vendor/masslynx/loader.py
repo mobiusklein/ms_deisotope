@@ -298,7 +298,7 @@ class WatersMassLynxScanSource(ScanDataSource):
                 scan.function, scan.block, scan.scan)
         else:
             mz, inten = self.scan_reader.ReadScan(scan.function, scan.scan)
-        return np.array(mz), np.array(inten)
+        return np.array(mz).astype(float), np.array(inten).astype(float)
 
     def _precursor_information(self, scan):
         if self._ms_level(scan) == 1:
