@@ -185,7 +185,7 @@ class SampleConsumer(TaskBase):
                     percent_complete = (scan.scan_time - self.start_scan_time) / self.end_scan_time
                 if percent_complete is not None:
                     self.log("Processed %s (time: %0.3f %0.2f%% Done)" % (
-                        scan.id, scan.scan_time, percent_complete))
+                        scan.id, scan.scan_time, percent_complete * 100))
                 else:
                     self.log("Processed %s (time: %0.3f)" % (
                         scan.id, scan.scan_time,))

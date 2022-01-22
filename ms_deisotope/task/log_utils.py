@@ -150,6 +150,8 @@ class LogUtilsMixin(object):
     error_print_fn = printer
     warn_print_fn = printer
 
+    _debug_enabled = None
+
     @classmethod
     def log_with_logger(cls, logger):
         cls.logger_state = logger
