@@ -4,9 +4,10 @@ from collections import defaultdict
 
 import numpy as np
 
+from ms_peak_picker import PeakSet
+
 from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope import DeconvolutedPeakSet
-from ms_peak_picker import PeakSet
 from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
 
 from .lcms_feature import LCMSFeature

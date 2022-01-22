@@ -631,7 +631,8 @@ class FeatureDeconvolutionIterationState(LogUtilsMixin):
 
     def update_signal_ratio(self):
         self.next_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
-        self.total_signal_ratio = (self.last_signal_magnitude - self.next_signal_magnitude) / self.next_signal_magnitude
+        self.total_signal_ratio = (self.last_signal_magnitude - self.next_signal_magnitude) / (
+            self.next_signal_magnitude or 1e-6)
         self.log("Signal Ratio: %0.3e (%0.3e, %0.3e)" % (
             self.total_signal_ratio, self.last_signal_magnitude, self.next_signal_magnitude))
         self.last_signal_magnitude = self.next_signal_magnitude
