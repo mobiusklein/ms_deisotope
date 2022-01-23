@@ -70,7 +70,7 @@ from ms_deisotope.data_source.common import (
 from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.metadata.software import (Software, software_name)
 from ms_deisotope.data_source.mzml import MzMLLoader
-from ms_deisotope.data_source.scan.mobility_frame import Generic3DIonMobilityFrameSource
+from ms_deisotope.data_source.scan.mobility_frame import Generic3DIonMobilityFrameSource, RawDataArrays3D
 
 from ms_deisotope.feature_map import ExtendedScanIndex
 from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature, DeconvolutedLCMSFeatureTreeNode
@@ -808,6 +808,9 @@ class MzMLSerializer(ScanSerializerBase):
                 [peak.envelope for peak in scan.deconvoluted_peak_set])
             extra_arrays.append(("isotopic envelopes array", envelope_array))
         else:
+            arrays = scan.arrays
+            if isinstance(arrays, RawDataArrays3D):
+                extra_arrays.append((arrays.ion_mobility_array_type or "raw ion mobility array", arrays.ion_mobility))
             if scan.arrays.data_arrays:
                 extra_arrays.extend(sorted(scan.arrays.data_arrays.items()))
         return extra_arrays
@@ -1556,9 +1559,9 @@ class IonMobilityAware3DMzMLSerializer(MzMLSerializer):
             intensity_array = peak_data.intensity
             charge_array = None
             ion_mobility_array = peak_data.ion_mobility
-            other_arrays = [
-                ('raw ion mobility array', ion_mobility_array),
-            ]
+            other_arrays = []
+            if ion_mobility_array is not None:
+                other_arrays.append(('raw ion mobility array', ion_mobility_array))
         return (centroided, descriptors, mz_array, intensity_array,
                 charge_array, other_arrays)
 

@@ -88,7 +88,7 @@ def register_debug_hook():
             pdb_api.post_mortem(tb)
 
     sys.excepthook = info
-    logging.basicConfig(level="DEBUG")
+    # logging.basicConfig(level="DEBUG")
 
 
 def is_debug_mode():

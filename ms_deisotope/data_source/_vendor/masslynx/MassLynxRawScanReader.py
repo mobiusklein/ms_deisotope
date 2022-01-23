@@ -121,13 +121,13 @@ class MassLynxRawScanReader(MassLynxRawReader):
         readDriftScan.argtypes = [c_void_p, c_int, c_int, c_int, POINTER(c_void_p), POINTER(c_void_p), POINTER(c_int)]
         try:
             super(MassLynxRawScanReader, self).CheckReturnCode( readDriftScan(self._getReader(),whichFunction, whichScan, whichDrift, pMasses,pIntensities,size) )# fill the array
-            # pM = cast(pMasses,POINTER(c_float))
-            # pI = cast(pIntensities,POINTER(c_float))
-            # masses = pM[0:size.value]
-            # intensities = pI[0:size.value]
+            pM = cast(pMasses,POINTER(c_float))
+            pI = cast(pIntensities,POINTER(c_float))
+            masses = pM[0:size.value]
+            intensities = pI[0:size.value]
 
-            masses = make_nd_array(pMasses, (size.value, ), np.float32)
-            intensities = make_nd_array(pIntensities, (size.value, ), np.float32)
+            # masses = make_nd_array(pMasses, (size.value, ), np.float32)
+            # intensities = make_nd_array(pIntensities, (size.value, ), np.float32)
 
             # dealocate memory - causes segfaults?
             # MassLynxRawReader.ReleaseMemory( pMasses)

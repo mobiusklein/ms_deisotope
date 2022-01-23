@@ -1,5 +1,6 @@
 import array
 import warnings
+import logging
 
 from abc import abstractmethod
 from weakref import WeakValueDictionary
@@ -9,13 +10,22 @@ from collections import namedtuple, defaultdict
 
 import numpy as np
 
-from ms_peak_picker import average_signal
-from ms_deisotope.data_source.scan.scan import WrappedScan
+from ms_peak_picker import average_signal, FittedPeak
+
+try:
+    from ms_peak_picker.scan_averaging import GridAverager
+except ImportError:
+    GridAverager = None
+
+from ms_deisotope.data_source.scan.scan import Scan, WrappedScan
 
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
 
 from .base import RawDataArrays, ScanBunch
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 class IonMobilitySource(object):
     @abstractmethod
@@ -163,8 +173,14 @@ class _upto_index(object):
     def values_up_to(self, value):
         i = np.searchsorted(self.values, value)
         intermediate = self.values[self.index:i]
+        if len(intermediate):
+            # The slice will contain the last stored value, which we don't
+            # want to include, but unless we know that we aren't skipping
+            # several values on the first request, we can't exclude it automatically.
+            if np.isclose(intermediate[0], self.last_value):
+                intermediate = intermediate[1:]
         self.index = i
-        self.last_value = self.values[i - 1]
+        self.last_value = value
         return intermediate
 
     def __call__(self, value):
@@ -321,19 +337,25 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             except AttributeError:
                 im = scan[0]
                 arrays = scan[1]
-            distinct_ion_mobility.append(im)
+            if im is not None:
+                distinct_ion_mobility.append(im)
             if arrays.mz.size > 0:
                 mz.extend(arrays.mz)
                 intensity.extend(arrays.intensity)
-                ion_mobility.extend([im] * arrays.mz.size)
+                if im is not None:
+                    ion_mobility.extend([im] * arrays.mz.size)
                 for key, val in arrays.data_arrays.items():
                     data_arrays[key].extend(val)
         mz = np.array(mz)
-        ion_mobility = np.array(ion_mobility)
-        mask = np.lexsort(np.stack((ion_mobility, mz,)))
-        return cls(mz[mask], np.array(intensity)[mask], ion_mobility[mask],
-                   np.sort(distinct_ion_mobility), ion_mobility_array_type,
-                   {k: np.array(v)[mask] for k, v in data_arrays.items()})
+        if len(ion_mobility) > 0:
+            ion_mobility = np.array(ion_mobility)
+            mask = np.lexsort(np.stack((ion_mobility, mz,)))
+            return cls(mz[mask], np.array(intensity)[mask], ion_mobility[mask],
+                    np.sort(distinct_ion_mobility), ion_mobility_array_type,
+                    {k: np.array(v)[mask] for k, v in data_arrays.items()})
+        else:
+            return cls(mz, np.array(intensity), None, np.array([]), None,
+                       {k: np.array(v) for k, v in data_arrays.items()})
 
     @classmethod
     def from_arrays(cls, mz_array, intensity_array, ion_mobility_array, ion_mobility_array_type=None, data_arrays=None):
@@ -785,22 +807,71 @@ class IonMobilityFrame(FrameBase):
             else:
                 lo = mid
 
-    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average=0, dx=0.001, **kwargs):
+    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.001, n_threads=4, **kwargs):
         from ms_deisotope.feature_map import feature_map
         scans = self.scans()
         lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
+        grid_averager = None
+        # array_grid = []
+        # if average_within > 0 and GridAverager is not None:
+        #     min_mz = float('inf')
+        #     max_mz = 0
+        #     for scan in scans:
+        #         arrays = scan.arrays
+        #         array_grid.append(
+        #             (arrays.mz.astype(float), arrays.intensity.astype(float)))
+        #         if arrays.mz.shape[0]:
+        #             min_mz = min(arrays.mz[0], min_mz)
+        #             max_mz = max(arrays.mz[-1], max_mz)
+
+        #     grid_averager = GridAverager(min_mz, max_mz, num_scans=len(scans), dx=dx)
+        #     grid_averager.add_spectra(array_grid, n_threads)
         n = len(scans)
+        # if average_across:
+        #     neighboring_frames = []
+        #     for j in range(max((self.index - average_within, 0)), self.index):
+        #         try:
+        #             frame = self.source.get_frame_by_index(j)
+        #         except IndexError:
+        #             break
+        #         if frame.ms_level != self.ms_level:
+        #             break
+        #         neighboring_frames.append(frame.scans())
+        #     for j in range(self.index + 1, min(self.index + average_within + 1, len(self.source))):
+        #         try:
+        #             frame = self.source.get_frame_by_index(j)
+        #         except IndexError:
+        #             break
+        #         if frame.ms_level != self.ms_level:
+        #             break
+        #         neighboring_frames.append(frame.scans())
+
+        scan: Scan
         for i, scan in enumerate(scans):
-            if average:
-                acc = []
-                if i > 0:
-                    for j in range(max((i - average, 0)), i):
+            if average_within:
+                if grid_averager is None:
+                    acc = []
+                    for j in range(max((i - average_within, 0)), i):
                         acc.append(scans[j])
-                    for j in range(i + 1, min(i + average + 1, n)):
+                    for j in range(i + 1, min(i + average_within + 1, n)):
                         acc.append(scans[j])
-                scan = scan.average_with(acc, dx=dx)
+                    if acc:
+                        acq_info = scan.acquisition_information
+                        scan = scan.average_with(acc, dx=dx)
+                        scan.acquisition_information = acq_info
+                else:
+                    intensity_array = grid_averager.average_indices(
+                        max(i - average_within, 0), min(i + average_within + 1, grid_averager.num_scans),
+                        n_workers=min(average_within * 2 + 1, n_threads))
+                    mz_array = grid_averager.mz_axis
+                    acq_info = scan.acquisition_information
+                    scan = WrappedScan(scan._data, scan.source, array_data=RawDataArrays(mz_array, intensity_array))
+                    scan.acquisition_information = acq_info
+            if average_across:
+                pass
             scan.pick_peaks(**kwargs)
             for peak in scan:
+                peak: FittedPeak
                 lff.handle_peak(peak, scan.drift_time)
         lff.split_sparse(max_gap_size, min_size).smooth_overlaps(
             error_tolerance)
@@ -1015,6 +1086,9 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
                 ion_mobility_attribute, drift_time)
             scans.append(scan)
         return scans
+
+    def _frame_ion_mobilities(self, data):
+        return self._frame_arrays(data).distinct_ion_mobility
 
     def get_frame_by_index(self, index):
         scan = self.loader.get_scan_by_index(index)

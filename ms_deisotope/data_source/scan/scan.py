@@ -6,7 +6,7 @@ try:
     from collections.abc import Sequence
 except ImportError:
     from collections import Sequence
-
+import logging
 import numpy as np
 
 from ms_peak_picker import (
@@ -25,6 +25,10 @@ from ms_deisotope.data_source.metadata.instrument_components import InstrumentIn
 
 
 from .base import (ScanBase, RawDataArrays, PrecursorInformation)
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class Scan(ScanBase):
@@ -881,7 +885,8 @@ class Scan(ScanBase):
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
-            indices, list(self.product_scans), is_profile=True,
+            indices, list(self.product_scans),
+            is_profile=True,
             annotations=self._external_annotations)
 
     def _get_adjacent_scans(self, index_interval=None, rt_interval=None):
@@ -1011,8 +1016,10 @@ class Scan(ScanBase):
                 reference = arrays[0]
             empirical_dx = decimal_shift(2 * np.median(np.diff(reference.mz)))
             dx = min(dx, empirical_dx)
-
-        new_arrays = average_signal(arrays, dx=dx, weights=weights)
+        if arrays:
+            new_arrays = average_signal(arrays, dx=dx, weights=weights)
+        else:
+            new_arrays = self.arrays[:]
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
