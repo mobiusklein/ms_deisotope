@@ -73,7 +73,7 @@ class _MGFMetadata(ScanFileMetadataBase):
         -------
         :class:`list` of :class:`~.InstrumentInformation`
         '''
-        return super(_MGFMetadata, self).data_processing()
+        return super(_MGFMetadata, self).instrument_configuration()
 
     def data_processing(self):
         '''Describe any preprocessing steps applied to the data described by this
@@ -176,7 +176,7 @@ class MGFInterface(ScanDataSource):
         pinfo = self._precursor_information(scan)
         if pinfo is not None:
             if pinfo.charge:
-                if pinfo.charge > 0:
+                if pinfo.charge == ChargeNotProvided or pinfo.charge > 0:
                     return 1
                 return -1
             return 1

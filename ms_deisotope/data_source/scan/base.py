@@ -1,6 +1,7 @@
 '''Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 '''
+from typing import Dict, List, Optional
 import warnings
 
 from collections import namedtuple
@@ -51,6 +52,9 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         from :attr:`precursor` or another element of this list derived
         from it.
     """
+    precursor: 'ScanBase'
+    produces: List['ScanBase']
+    _id_map: Dict[str, 'ScanBase']
 
     def __new__(cls, *args, **kwargs):
         inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
@@ -61,7 +65,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
             inst._id_map[scan.id] = scan
         return inst
 
-    def precursor_for(self, scan):
+    def precursor_for(self, scan: 'ScanBase') -> Optional['ScanBase']:
         """Find the precursor :class:`~.ScanBase` instance
         for the given scan object
 
@@ -79,7 +83,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
             return self.get_scan_by_id(scan_id)
         return None
 
-    def get_scan_by_id(self, scan_id):
+    def get_scan_by_id(self, scan_id: str) -> 'ScanBase':
         """Retrieve the scan object for the specified scan id from this
         group in memory.
 
@@ -161,6 +165,10 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         The intensity measured at the corresponding m/z of a mass spectrum
     """
 
+    mz: np.ndarray
+    intensity: np.ndarray
+    data_arrays: Dict[str, np.ndarray]
+
     def __new__(cls, mz, intensity, data_arrays=None):
         inst = super(RawDataArrays, cls).__new__(cls, mz, intensity)
         inst.data_arrays = dict()
@@ -168,7 +176,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             inst.data_arrays.update(data_arrays)
         return inst
 
-    def __copy__(self):
+    def __copy__(self) -> 'RawDataArrays':
         inst = self.__class__(self.mz.copy(), self.intensity.copy(), {
             k: v.copy() for k, v in self.data_arrays.items()
         })
@@ -273,7 +281,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         else:
             return self.__class__(*average_signal([self, other])) * 2
 
-    def find_mz(self, mz):
+    def find_mz(self, mz: float) -> int:
         """Find the nearest index to the query ``mz``
 
         Parameters
@@ -328,7 +336,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
                 lo = mid
         return 0
 
-    def between_mz(self, low, high):
+    def between_mz(self, low: float, high: float) -> 'RawDataArrays':
         """Returns a slice of the arrays between ``low`` and ``high``
         m/z
 
@@ -350,7 +358,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return self.__class__(self.mz[i:j], self.intensity[i:j])
 
     @classmethod
-    def empty(cls):
+    def empty(cls) -> 'RawDataArrays':
         '''Create a new, empty instance.
 
         Returns
@@ -368,7 +376,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             return self.data_arrays[i]
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.mz.size
 
 
