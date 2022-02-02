@@ -32,8 +32,8 @@ cdef class LCMSFeatureSetFit(object):
         public size_t missing_features
         public size_t n_points
         public FeatureBase monoisotopic_feature
-        public np.ndarray scores
-        public np.ndarray times
+        public object scores
+        public object times
 
     cpdef bint _eq(self, LCMSFeatureSetFit other)
     cpdef bint _ne(self, LCMSFeatureSetFit other)
@@ -50,4 +50,4 @@ cdef class LCMSFeatureSetFit(object):
     cdef LCMSFeatureSetFit _create(list features, TheoreticalIsotopicPattern theoretical,
                                    double score, int charge, size_t missing_features,
                                    list supporters, object data, double neutral_mass,
-                                   size_t n_points, np.ndarray scores, np.ndarray times)
+                                   size_t n_points, object scores, object times)

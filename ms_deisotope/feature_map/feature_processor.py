@@ -734,7 +734,7 @@ def find_bounds(fit, detection_threshold=0.1, find_separation=True):
         last_score = float('inf')
         begin_i = 0
         end_i = len(fit.scores) - 1
-        smoothed_scores = smooth_leveled(fit.times, fit.scores, 3)
+        smoothed_scores = smooth_leveled(np.array(fit.times), np.array(fit.scores), 3)
         for i, score in enumerate(smoothed_scores):
             if score > 0 and last_score < 0:
                 begin_i = i

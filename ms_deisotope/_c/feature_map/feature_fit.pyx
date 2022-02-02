@@ -138,7 +138,7 @@ cdef class LCMSFeatureSetFit(object):
     cdef LCMSFeatureSetFit _create(list features, TheoreticalIsotopicPattern theoretical,
                                    double score, int charge, size_t missing_features,
                                    list supporters, object data, double neutral_mass,
-                                   size_t n_points, np.ndarray scores, np.ndarray times):
+                                   size_t n_points, object scores, object times):
         cdef:
             LCMSFeatureSetFit inst
         inst = LCMSFeatureSetFit.__new__(LCMSFeatureSetFit)
@@ -199,7 +199,8 @@ cdef class LCMSFeatureSetFit(object):
 
     cpdef int count_null_features(self):
         cdef:
-            int i, n, n_null
+            Py_ssize_t n, i
+            int n_null
             FeatureBase feature
         n = PyList_GET_SIZE(self.features)
         n_null = 0
@@ -211,7 +212,7 @@ cdef class LCMSFeatureSetFit(object):
 
     cpdef bint has_multiple_real_features(self):
         cdef:
-            int n
+            Py_ssize_t n
         n = PyList_GET_SIZE(self.features)
         return n - self.count_null_features() > 1
 

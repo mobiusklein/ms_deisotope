@@ -3,7 +3,7 @@ import traceback
 import os
 import platform
 
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension as _Extension, find_packages
 
 from distutils.command.build_ext import build_ext
 from distutils.errors import (CCompilerError, DistutilsExecError,
@@ -26,6 +26,8 @@ def has_option(name):
 include_diagnostics = has_option("include-diagnostics")
 force_cythonize = has_option("force-cythonize")
 no_openmp = has_option('no-openmp')
+debug_symbols = has_option("debug")
+
 
 with_openmp = not no_openmp
 
@@ -40,6 +42,19 @@ def configure_openmp(ext):
         ext.extra_compile_args.append("-fopenmp")
         ext.extra_link_args.append("-fopenmp")
 
+
+def Extension(*args, **kwargs):
+    ext = _Extension(*args, **kwargs)
+    if debug_symbols:
+        if os.name == 'nt':
+            ext.extra_compile_args.append("-Zi")
+            ext.extra_compile_args.append("-Ox")
+            ext.extra_link_args.append("-debug:full")
+        else:
+            ext.extra_compile_args.append("-g3")
+            ext.extra_compile_args.append("-O0")
+    # ext.extra_compile_args.append("/fsanitize=address")
+    return ext
 
 def OpenMPExtension(*args, **kwargs):
     ext = Extension(*args, **kwargs)
@@ -129,7 +144,10 @@ def make_extensions():
             OpenMPExtension(
                 name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.pyx"],
                 include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-        ], compiler_directives=cython_directives, force=force_cythonize)
+        ],
+        compiler_directives=cython_directives,
+        emit_linenums=True,
+        force=force_cythonize)
     except ImportError:
         extensions = ([
             Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],

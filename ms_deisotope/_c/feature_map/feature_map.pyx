@@ -201,7 +201,7 @@ cdef class LCMSFeatureMap(object):
                 node = <LCMSFeatureTreeNode>feature.getitem(j)
                 time = node.time
                 q = node.get_members_size()
-                for k in range(k):
+                for k in range(q):
                     peak = <PeakBase>node.getitem(k)
                     ion_mobility_array.append(time)
                     mz_array.append(peak.mz)

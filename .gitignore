@@ -21,3 +21,4 @@ test.py
 experiment/
 .coverage.*
 __pycache__
+*.pdb
