@@ -1,7 +1,9 @@
+from typing import Dict, Any, Type
+
 import ms_deisotope
 from ms_deisotope.task import TaskBase
 
-from .output import ThreadedMzMLScanStorageHandler, NullScanStorageHandler
+from .output import ThreadedMzMLScanStorageHandler, NullScanStorageHandler, ScanStorageHandlerBase
 from .scan_generator import ScanGenerator
 
 
@@ -71,6 +73,27 @@ class SampleConsumer(TaskBase):
 
     MS1_SCORE_THRESHOLD = 20.0
     MSN_SCORE_THRESHOLD = 10.0
+
+    storage_type: Type[ScanStorageHandlerBase]
+    scan_generator: ScanGenerator
+
+    ms1_processing_args: Dict[str, Dict[str, Any]]
+    msn_processing_args: Dict[str, Dict[str, Any]]
+
+    ms1_averaging: int
+    extract_only_tandem_envelopes: bool
+    ignore_tandem_scans: bool
+    deconvolute: bool
+
+    n_processes: int
+
+    start_scan_id: str
+    end_scan_id: str
+    start_scan_time: float
+    end_scan_time: float
+
+    verbose: bool
+
 
     def __init__(self, ms_file,
                  ms1_peak_picking_args=None, msn_peak_picking_args=None, ms1_deconvolution_args=None,

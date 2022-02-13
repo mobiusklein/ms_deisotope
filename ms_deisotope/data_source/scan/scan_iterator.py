@@ -3,6 +3,9 @@ of :class:`~.Scan`-like objects.
 '''
 import bisect
 import warnings
+
+from typing import Generic, Iterator, TypeVar
+
 from collections import deque, defaultdict
 from six import PY2
 
@@ -21,7 +24,11 @@ ITERATION_MODE_GROUPED = "grouped"
 ITERATION_MODE_SINGLE = "single"
 
 
-class _ScanIteratorImplBase(object):
+G = TypeVar("G")
+T = TypeVar("T")
+
+
+class _ScanIteratorImplBase(Generic[T, G]):
     """Internal base class for scan iteration strategies
 
     Attributes
@@ -84,7 +91,7 @@ class _ScanIteratorImplBase(object):
         return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan, **kwargs)
 
 
-class _SingleScanIteratorImpl(_ScanIteratorImplBase):
+class _SingleScanIteratorImpl(_ScanIteratorImplBase[T, G], Iterator[T]):
     """Iterate over individual scans.
 
     The default strategy when MS1 scans are missing.
@@ -106,7 +113,7 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase):
             yield packed
 
 
-class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl):
+class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[T, G], Iterator[G]):
     '''Mimics the interface of :class:`_GroupedScanIteratorImpl` for
     scan sequences which only support single scans, or which do not
     guarantee sequential access to precursor/product collections.
@@ -124,7 +131,7 @@ class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl):
                 yield ScanBunch(None, [scan])
 
 
-class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
+class _GroupedScanIteratorImpl(_ScanIteratorImplBase[T, G], Iterator[G]):
     """Iterate over related scan bunches.
 
     The default strategy when MS1 scans are known to be
@@ -227,7 +234,7 @@ class GenerationTracker(object):
 
 
 
-class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
+class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
     """Iterate over related scan bunches.
 
     The default strategy when MS1 scans are known to be
@@ -407,7 +414,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
             yield self.deque_group(flush_products=True)
 
 
-class MSEIterator(_GroupedScanIteratorImpl):
+class MSEIterator(_GroupedScanIteratorImpl[T, G]):
     '''A scan iterator implementation for grouping MS^E spectra according
     to the specified functions.
 

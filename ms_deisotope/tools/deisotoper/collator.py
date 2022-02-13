@@ -7,11 +7,14 @@ try:
 except ImportError:
     from queue import Empty as QueueEmpty
 
+import multiprocessing
+from typing import Dict, Iterator, List, Union
 from ms_deisotope.data_source.common import ProcessedScan
+from ms_deisotope.data_source.scan.base import ScanBase
 from ms_deisotope.task import TaskBase, CallInterval
 
 from .process import (
-    SCAN_STATUS_SKIP, DONE)
+    SCAN_STATUS_SKIP, DONE, DeconvolutingScanTransformingProcess)
 
 
 class ScanCollator(TaskBase):
@@ -56,6 +59,21 @@ class ScanCollator(TaskBase):
     """
     _log_received_scans = False
 
+    input_queue: multiprocessing.Queue
+    queue: multiprocessing.Queue
+    done_event: multiprocessing.Event
+
+    include_fitted: bool
+
+    last_index: int
+    count_since_last: int
+    count_jobs_done: int
+    waiting: Dict[int, ScanBase]
+
+    primary_worker: DeconvolutingScanTransformingProcess
+    helper_producers: List[DeconvolutingScanTransformingProcess]
+    started_helpers: bool
+
     def __init__(self, queue, done_event, helper_producers=None, primary_worker=None,
                  include_fitted=False, input_queue=None):
         if helper_producers is None:
@@ -72,7 +90,7 @@ class ScanCollator(TaskBase):
         self.include_fitted = include_fitted
         self.input_queue = input_queue
 
-    def all_workers_done(self):
+    def all_workers_done(self) -> bool:
         '''
         Check if all of the worker processes have set their "work done"
         flag.
@@ -91,7 +109,7 @@ class ScanCollator(TaskBase):
                 return False
         return False
 
-    def store_item(self, item, index):
+    def store_item(self, item: Union[str, ProcessedScan], index: int):
         """Stores an incoming work-item for easy
         access by its `index` value. If configuration
         requires it, this will also reduce the number
@@ -111,7 +129,7 @@ class ScanCollator(TaskBase):
         if not self.include_fitted and isinstance(item, ProcessedScan):
             item.peak_set = []
 
-    def consume(self, timeout=10):
+    def consume(self, timeout: int=10) -> bool:
         """Fetches the next work item from the input
         queue :attr:`queue`, blocking for at most `timeout` seconds.
 
@@ -154,7 +172,7 @@ class ScanCollator(TaskBase):
                 continue
             helper.start()
 
-    def produce(self, scan):
+    def produce(self, scan: ProcessedScan) -> ProcessedScan:
         """Performs any final quality controls on the outgoing
         :class:`ProcessedScan` object and takes care of any internal
         details.
@@ -176,7 +194,7 @@ class ScanCollator(TaskBase):
         self.count_since_last = 0
         return scan
 
-    def count_pending_items(self):
+    def count_pending_items(self) -> int:
         """Count the number of scans that are waiting to be added to the
         write queue.
 
@@ -186,7 +204,7 @@ class ScanCollator(TaskBase):
         """
         return len(self.waiting)
 
-    def drain_queue(self):
+    def drain_queue(self) -> int:
         """Try to read a lot of scans from the incoming result queue.
 
         If there are items pending to be sent to the write queue immediately,
@@ -235,8 +253,8 @@ class ScanCollator(TaskBase):
                 self.log("%r has exit code %r" % (worker, code))
                 worker.join(5)
 
-    def __iter__(self):
-        has_more = True
+    def __iter__(self) -> Iterator[ProcessedScan]:
+        has_more: bool = True
         # Log the state of the collator every 3 minutes
         status_monitor = CallInterval(60 * 3, self.print_state)
         status_monitor.start()

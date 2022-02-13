@@ -28,6 +28,9 @@ class ScanStorageHandlerBase(TaskBase):
         self.current_precursor = None
         self.current_products = []
 
+    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls):
+        raise NotImplementedError()
+
     def reset(self):
         self.current_precursor = None
         self.current_products = []
@@ -180,8 +183,15 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
             n_spectra = 2e5
         super(MzMLScanStorageHandler, self).__init__()
         self.path = path
-        self.handle = stream_cls(path, 'wb')
-        self.serializer = MzMLSerializer(
+        self.serializer = self._make_writer(
+            n_spectra=n_spectra,
+            sample_name=sample_name,
+            deconvoluted=deconvoluted,
+            stream_cls=stream_cls)
+
+    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls):
+        self.handle = stream_cls(self.path, 'wb')
+        return MzMLSerializer(
             self.handle, n_spectra, sample_name=sample_name,
             deconvoluted=deconvoluted)
 
@@ -276,12 +286,8 @@ class MzMLScanStorageHandler(ScanStorageHandlerBase):
 class MzMLbScanStorageHandler(MzMLScanStorageHandler):
     fallback_path = "processed.mzMLb"
 
-    def __init__(self, path, sample_name, n_spectra=None, deconvoluted=True):
-        if n_spectra is None:
-            n_spectra = 2e5
-        super(MzMLScanStorageHandler, self).__init__()
-        self.path = path
-        self.serializer = MzMLbSerializer(
+    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool):
+        return MzMLbSerializer(
             self.path, n_spectra, sample_name=sample_name,
             deconvoluted=deconvoluted)
 
@@ -307,7 +313,13 @@ class MGFScanStorageHandler(ScanStorageHandlerBase):
         super(MGFScanStorageHandler, self).__init__()
         self.path = path
         self.handle = stream_cls(path, "wb")
-        self.serializer = MGFSerializer(
+        self.serializer = self._make_writer(
+            self.handle, n_spectra=n_spectra, sample_name=sample_name,
+            deconvoluted=deconvoluted)
+
+    def _make_writer(self, n_spectra: int, sample_name: str, deconvoluted: bool, stream_cls):
+        self.handle = stream_cls(self.path, 'wb')
+        return MGFSerializer(
             self.handle, sample_name=sample_name,
             deconvoluted=deconvoluted)
 

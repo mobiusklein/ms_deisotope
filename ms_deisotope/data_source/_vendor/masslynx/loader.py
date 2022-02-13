@@ -4,8 +4,10 @@ import re
 import sys
 
 from collections import defaultdict, OrderedDict
+from typing import Iterator
 
 import numpy as np
+from ms_deisotope.data_source.scan.scan_iterator import _ScanIteratorImplBase
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.common import (
@@ -118,47 +120,51 @@ class IndexEntry(Base):
 
 
 class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
-    def _frame_id(self, data):
+    def _frame_id(self, data) -> str:
         return data.id
 
-    def _frame_index(self, data):
+    def _frame_index(self, data) -> int:
         return data.index
 
-    def _frame_time(self, data):
+    def _frame_time(self, data) -> float:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.scan_time
 
-    def _frame_ms_level(self, data):
+    def _frame_ms_level(self, data) -> int:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.ms_level
 
-    def _frame_start_scan_index(self, data):
+    def _frame_start_scan_index(self, data) -> int:
         return data.start_scan
 
-    def _frame_end_scan_index(self, data):
+    def _frame_end_scan_index(self, data) -> int:
         return data.end_scan
 
-    def _frame_precursor_information(self, data):
+    def _frame_precursor_information(self, data) -> PrecursorInformation:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.precursor_information
 
-    def _frame_activation(self, data):
+    def _frame_activation(self, data) -> ActivationInformation:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.activation
 
-    def _frame_isolation_window(self, data):
+    def _frame_isolation_window(self, data) -> IsolationWindow:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.isolation_window
 
-    def _frame_polarity(self, data):
+    def _frame_polarity(self, data) -> int:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.polarity
 
-    def get_frame_by_index(self, index):
+    def get_frame_by_id(self, id: str) -> IonMobilityFrame:
+        index = self._cycle_id_to_index[id]
+        return self.get_frame_by_index(index)
+
+    def get_frame_by_index(self, index: int) -> IonMobilityFrame:
         cycle = self.cycle_index[index]
         return self._make_frame(cycle)
 
-    def get_frame_by_time(self, time):
+    def get_frame_by_time(self, time: float) -> IonMobilityFrame:
         lo = 0
         hi = len(self.cycle_index)
 
@@ -212,22 +218,22 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
             else:
                 lo = mid
 
-    def _validate_frame(self, data):
+    def _validate_frame(self, data) -> bool:
         return True
 
-    def _make_frame(self, data):
+    def _make_frame(self, data) -> IonMobilityFrame:
         return IonMobilityFrame(data, self)
 
-    def _cache_frame(self, frame):
+    def _cache_frame(self, frame: IonMobilityFrame):
         pass
 
-    def _default_frame_iterator(self, start_index=None):
+    def _default_frame_iterator(self, start_index: int=None) -> Iterator['Cycle']:
         if start_index is None:
             start_index = 0
         for i in range(start_index, len(self.cycle_index)):
             yield self.cycle_index[i]
 
-    def make_frame_iterator(self, iterator=None, grouped=False):
+    def make_frame_iterator(self, iterator=None, grouped: bool=False) -> _ScanIteratorImplBase:
         from ms_deisotope.data_source.scan.scan_iterator import (
             _SingleScanIteratorImpl, _GroupedScanIteratorImpl, MSEIterator)
         if iterator is None:
@@ -397,6 +403,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self.configure_lockmass(lockmass_config)
         self.index = []
         self.cycle_index = []
+        self._cycle_id_to_index = {}
         self._producer = None
         self.initialize_scan_cache()
 
@@ -507,6 +514,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         function_and_scan_by_rt.sort(key=lambda x: x[0])
         self.index = []
         self.cycle_index = []
+        self._cycle_id_to_index = {}
         self.function_blocks = defaultdict(list)
         for _rt, (fnum, i) in function_and_scan_by_rt:
             if self.ion_mobility_by_function_index[fnum]:
@@ -533,6 +541,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
                         num_scans_in_block * i + num_scans_in_block,
                     ))
                 self.cycle_index.append(cyc)
+                self._cycle_id_to_index[cyc.id] = len(self.cycle_index) - 1
             else:
                 block_start = len(self.index)
                 self.index.append(IndexEntry())
@@ -555,12 +564,13 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
                         i + 2,
                     ))
                 self.cycle_index.append(cyc)
+                self._cycle_id_to_index[cyc.id] = len(self.cycle_index) - 1
 
     # RandomAccessScanSource methods
     def __len__(self):
         return len(self.index)
 
-    def get_scan_by_index(self, index):
+    def get_scan_by_index(self, index: int) -> Scan:
         ie = self.index[index]
         if ie.id in self._scan_cache:
             return self._scan_cache[ie.id]
@@ -568,7 +578,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self._scan_cache[ie.id] = scan
         return scan
 
-    def get_scan_by_id(self, scan_id):
+    def get_scan_by_id(self, scan_id: str) -> Scan:
         match = waters_id_pattern.search(scan_id)
         if not match:
             raise KeyError(scan_id)
@@ -588,7 +598,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
                             return self.get_scan_by_index(ie.index)
                     raise KeyError(scan_id)
 
-    def get_scan_by_time(self, time):
+    def get_scan_by_time(self, time: float) -> Scan:
         lo = 0
         hi = len(self.index)
 

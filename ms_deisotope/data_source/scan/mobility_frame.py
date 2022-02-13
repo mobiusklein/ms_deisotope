@@ -116,11 +116,15 @@ class IonMobilitySource(object):
 
 class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     @abstractmethod
-    def get_frame_by_index(self, index):
+    def get_frame_by_index(self, index: int) -> 'IonMobilityFrame':
         raise NotImplementedError()
 
     @abstractmethod
-    def get_frame_by_time(self, time):
+    def get_frame_by_time(self, time: float) -> 'IonMobilityFrame':
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_frame_by_id(self, id: str) -> 'IonMobilityFrame':
         raise NotImplementedError()
 
     def _validate_frame(self, data):
@@ -815,10 +819,11 @@ class IonMobilityFrame(FrameBase):
 
     def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, n_threads=4, **kwargs):
         from ms_deisotope.feature_map import feature_map
-        scans: List[ScanBase] = self.scans()
+        scans: List[Scan] = self.scans()
+        n = len(scans)
         lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
         grid_averager = None
-        # This currently misbehaves somewhere, needs further investigation
+        # This uses a lot of memory, probably not desirable when parallelized across many processes
         # array_grid = []
         # if average_within > 0 and GridAverager is not None:
         #     min_mz = float('inf')
@@ -833,7 +838,7 @@ class IonMobilityFrame(FrameBase):
 
         #     grid_averager = GridAverager(min_mz, max_mz, num_scans=len(scans), dx=dx)
         #     grid_averager.add_spectra(array_grid, n_threads)
-        n = len(scans)
+        # This problem hasn't been
         # if average_across:
         #     neighboring_frames = []
         #     for j in range(max((self.index - average_within, 0)), self.index):
@@ -1100,19 +1105,19 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def _frame_ion_mobilities(self, data):
         return self._frame_arrays(data).distinct_ion_mobility
 
-    def get_frame_by_index(self, index):
+    def get_frame_by_index(self, index: int) -> IonMobilityFrame:
         scan = self.loader.get_scan_by_index(index)
         frame = self._make_frame(scan._data)
         self._cache_frame(frame)
         return frame
 
-    def get_frame_by_id(self, id):
+    def get_frame_by_id(self, id: str) -> IonMobilityFrame:
         scan = self.loader.get_scan_by_id(id)
         frame = self._make_frame(scan._data)
         self._cache_frame(frame)
         return frame
 
-    def get_frame_by_time(self, time):
+    def get_frame_by_time(self, time: float) -> IonMobilityFrame:
         scan = self.loader.get_scan_by_time(time)
         frame = self._make_frame(scan._data)
         self._cache_frame(frame)

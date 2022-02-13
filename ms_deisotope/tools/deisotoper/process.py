@@ -6,6 +6,10 @@ import traceback
 
 from collections import deque
 from multiprocessing import Process
+from typing import Any, Callable, Deque, Dict, List, Optional, Tuple, Union
+
+from ms_deisotope.data_source import ScanBunch, Scan, RandomAccessScanSource, ScanIterator
+
 try:
     from Queue import Empty as QueueEmpty
 except ImportError:
@@ -31,9 +35,24 @@ SCAN_STATUS_SKIP = b"skip"
 
 
 class ScanIDYieldingProcess(Process):
+    ms_file_path: os.PathLike
+    queue: multiprocessing.Queue
+    loader: Union[ScanIterator, RandomAccessScanSource]
 
-    def __init__(self, ms_file_path, queue, start_scan=None, max_scans=None, end_scan=None,
-                 no_more_event=None, ignore_tandem_scans=False, batch_size=1, log_handler=None):
+    start_scan: str
+    end_scan: str
+    max_scans: Optional[int]
+    end_scan_index: Optional[int]
+
+    ignore_tandem_scans: bool
+    batch_size: int
+
+    no_more_event: Optional[multiprocessing.Event]
+    log_handler: Callable
+
+    def __init__(self, ms_file_path: os.PathLike, queue: multiprocessing.Queue, start_scan: str=None,
+                 max_scans: Optional[int]=None, end_scan: str=None, no_more_event: Optional[multiprocessing.Event]=None,
+                 ignore_tandem_scans: bool=False, batch_size: int=1, log_handler: Callable=None):
         if log_handler is None:
             log_handler = show_message
         Process.__init__(self)
@@ -54,12 +73,15 @@ class ScanIDYieldingProcess(Process):
 
         self.no_more_event = no_more_event
 
-    def _make_scan_batch(self):
+    def _make_scan_batch(self) -> Tuple[
+            List[Tuple[str, List[str]]],
+            List[str]
+        ]:
         batch = []
         scan_ids = []
         for _ in range(self.batch_size):
             try:
-                bunch = next(self.loader)
+                bunch = next(self._iterator)
                 scan, products = bunch
                 products = [prod for prod in products if prod.index <= self.end_scan_index]
                 if scan is not None:
@@ -79,31 +101,26 @@ class ScanIDYieldingProcess(Process):
             scan_ids.append(scan_id)
         return batch, scan_ids
 
-    def run(self):
-        self.loader = MSFileLoader(self.ms_file_path, decode_binary=False)
-
+    def _initialize_iterator(self):
         if self.start_scan is not None:
             try:
                 self.loader.start_from_scan(
                     self.start_scan, require_ms1=self.loader.has_ms1_scans(), grouped=True)
             except IndexError as e:
-                self.log_handler("An error occurred while locating start scan", e)
+                self.log_handler(
+                    "An error occurred while locating start scan", e)
                 self.loader.reset()
                 self.loader.make_iterator(grouped=True)
-            except AttributeError:
-                self.log_handler("The reader does not support random access, start time will be ignored", e)
+            except AttributeError as e:
+                self.log_handler(
+                    "The reader does not support random access, start time will be ignored", e)
                 self.loader.reset()
                 self.loader.make_iterator(grouped=True)
         else:
             self.loader.make_iterator(grouped=True)
+        self._iterator = self.loader
 
-        count = 0
-        last = 0
-        if self.max_scans is None:
-            max_scans = float('inf')
-        else:
-            max_scans = self.max_scans
-
+    def _prepare_end_scan_marker(self) -> Optional[str]:
         end_scan = self.end_scan
         if end_scan is None:
             try:
@@ -112,6 +129,24 @@ class ScanIDYieldingProcess(Process):
                 self.end_scan_index = sys.maxint
         else:
             self.end_scan_index = self.loader.get_scan_by_id(end_scan).index
+        return end_scan
+
+    def _open_ms_file(self) -> Union[ScanIterator, RandomAccessScanSource]:
+        self.loader = MSFileLoader(self.ms_file_path, decode_binary=False)
+        return self.loader
+
+    def run(self):
+        self._open_ms_file()
+        self._initialize_iterator()
+
+        count: int = 0
+        last: int = 0
+        if self.max_scans is None:
+            max_scans = float('inf')
+        else:
+            max_scans = self.max_scans
+
+        end_scan = self._prepare_end_scan_marker()
         while count < max_scans:
             try:
                 batch, ids = self._make_scan_batch()
@@ -138,7 +173,9 @@ class ScanIDYieldingProcess(Process):
 
 
 class ScanTransformMixin(object):
-    def log_error(self, error, scan_id, scan, product_scan_ids):
+    _batch_store: Deque[Tuple[str, List[str], bool]]
+
+    def log_error(self, error: Exception, scan_id: str, scan: Scan, product_scan_ids: List[str]):
         tb = traceback.format_exc()
         self.log_handler(
             "An %r occurred for %s (index %r) in Process %r\n%s" % (
@@ -148,7 +185,7 @@ class ScanTransformMixin(object):
     def _init_batch_store(self):
         self._batch_store = deque()
 
-    def get_work(self, block=True, timeout=30):
+    def get_work(self, block: bool=True, timeout: float=30) -> Tuple[str, List[str], bool]:
         if self._batch_store:
             return self._batch_store.popleft()
         else:
@@ -161,13 +198,13 @@ class ScanTransformMixin(object):
         self.log_handler(message + ", %r" %
                          (multiprocessing.current_process().name))
 
-    def skip_entry(self, index, ms_level):
+    def skip_entry(self, index: int, ms_level: int):
         self.output_queue.put((SCAN_STATUS_SKIP, index, ms_level))
 
-    def skip_scan(self, scan):
+    def skip_scan(self, scan: Scan):
         self.output_queue.put((SCAN_STATUS_SKIP, scan.index, scan.ms_level))
 
-    def send_scan(self, scan):
+    def send_scan(self, scan: Scan):
         scan = scan.pack()
         # this attribute is not needed, and for MS1 scans is dangerous
         # to pickle.
@@ -177,23 +214,47 @@ class ScanTransformMixin(object):
         scan.product_scans = []
         self.output_queue.put((scan, scan.index, scan.ms_level))
 
-    def all_work_done(self):
+    def all_work_done(self) -> bool:
         return self._work_complete.is_set()
 
     def make_scan_transformer(self, loader=None):
         raise NotImplementedError()
 
+    def _silence_loggers(self):
+        nologs = ["deconvolution_scan_processor"]
+        if not self.deconvolute:
+            nologs.append("deconvolution")
+
+        debug_mode = os.getenv("MS_DEISOTOPE_DEBUG")
+        if debug_mode:
+            handler = logging.FileHandler(
+                "ms-deisotope-deconvolution-debug-%s.log" % (os.getpid()), 'w')
+            fmt = logging.Formatter(
+                "%(asctime)s - %(name)s:%(filename)s:%(lineno)-4d - %(levelname)s - %(message)s",
+                "%H:%M:%S")
+            handler.setFormatter(fmt)
+        for logname in nologs:
+            logger_to_silence = logging.getLogger(logname)
+            if debug_mode:
+                logger_to_silence.setLevel("DEBUG")
+                logger_to_silence.addHandler(handler)
+            else:
+                logger_to_silence.propagate = False
+                logger_to_silence.setLevel("CRITICAL")
+                logger_to_silence.addHandler(logging.NullHandler())
 
 class ScanBunchLoader(object):
+    queue: Deque[Tuple[str, List[str]]]
+    loader: Union[RandomAccessScanSource, ScanIterator]
 
     def __init__(self, mzml_loader):
         self.loader = mzml_loader
         self.queue = deque()
 
-    def put(self, scan_id, product_scan_ids):
+    def put(self, scan_id: str, product_scan_ids: List[str]):
         self.queue.append((scan_id, product_scan_ids))
 
-    def get(self):
+    def get(self) -> Tuple[Scan, List[Scan]]:
         scan_id, product_scan_ids = self.queue.popleft()
         if scan_id is not None:
             precursor = self.loader.get_scan_by_id(scan_id)
@@ -236,6 +297,31 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         A shared output queue which this object will put
         :class:`ms_deisotope.data_source.common.ProcessedScan` bunches onto.
     """
+
+    ms_file_path: os.PathLike
+    input_queue: multiprocessing.Queue
+    output_queue: multiprocessing.Queue
+
+    loader: Union[ScanIterator, RandomAccessScanSource]
+
+    ms1_averaging: int
+    envelope_selector: Callable
+    transformer: Optional[ScanProcessor]
+
+    ms1_peak_picking_args: Dict[str, Any]
+    msn_peak_picking_args: Dict[str, Any]
+
+    ms1_deconvolution_args: Dict[str, Any]
+    msn_deconvolution_args: Dict[str, Any]
+
+    too_many_peaks_threshold: int
+    default_precursor_ion_selection_window: float
+    deconvolute: bool
+
+    _work_complete: multiprocessing.Event
+    no_more_event: Optional[multiprocessing.Event]
+
+    log_handler: Callable
 
     def __init__(self, ms_file_path, input_queue, output_queue,
                  no_more_event=None, ms1_peak_picking_args=None,
@@ -295,8 +381,8 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
         self.too_many_peaks_threshold = too_many_peaks_threshold
         self.default_precursor_ion_selection_window = default_precursor_ion_selection_window
 
-    def make_scan_transformer(self, loader=None):
-        transformer = ScanProcessor(
+    def make_scan_transformer(self, loader: Union[ScanIterator, RandomAccessScanSource] = None) -> ScanProcessor:
+        self.transformer = ScanProcessor(
             loader,
             ms1_peak_picking_args=self.ms1_peak_picking_args,
             msn_peak_picking_args=self.msn_peak_picking_args,
@@ -306,45 +392,90 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
             envelope_selector=self.envelope_selector,
             ms1_averaging=self.ms1_averaging,
             default_precursor_ion_selection_window=self.default_precursor_ion_selection_window)
-        return transformer
+        return self.transformer
 
-    def handle_scan_bunch(self, scan, product_scans, scan_id, product_scan_ids, process_msn=True):
+    def _process_ms1(self, scan, product_scans) -> Tuple[Scan, List, List[Scan]]:
+        scan, priorities, product_scans = self.transformer.process_scan_group(
+            scan, product_scans)
+        return scan, priorities, product_scans
+
+    def _deconvolute_ms1(self, scan: Scan, priorities: List, product_scans: List[Scan]):
+        self.transformer.deconvolute_precursor_scan(scan, priorities, product_scans)
+
+    def _handle_ms1_scan(self, scan: Scan, product_scans: List[Scan], scan_id: str, product_scan_ids: List[str]) -> Tuple[Scan, List[Scan]]:
+        try:
+            # Check if the m/z array is empty, if so skip the scan. This may trigger
+            # arbitrary data loading and decompression behavior, so it can fail.
+            if len(scan.arrays[0]) == 0:
+                self.skip_scan(scan)
+            else:
+                try:
+                    scan, priorities, product_scans = self._process_ms1(
+                        scan, product_scans)
+                    if scan is None:
+                        # no way to report skip
+                        pass
+                    else:
+                        if self.verbose:
+                            self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
+                        if self.deconvolute:
+                            self._deconvolute_ms1(scan, priorities, product_scans)
+                        self.send_scan(scan)
+                except (KeyboardInterrupt, SystemExit) as e:
+                    raise
+                except NoIsotopicClustersError as e:
+                    self.log_message("No isotopic clusters were extracted from scan %s (%r peaks)" % (
+                        e.scan_id, len(scan.peak_set)))
+                    self.skip_scan(scan)
+                except EmptyScanError as e:
+                    self.skip_scan(scan)
+                except Exception as e:
+                    self.skip_scan(scan)
+                    self.log_error(e, scan_id, scan, (product_scan_ids))
+        except (KeyboardInterrupt, SystemExit) as e:
+            raise
+        except Exception as err:
+            self.skip_scan(scan)
+            self.log_error(err, scan_id, scan, product_scan_ids)
+        return scan, product_scans
+
+    def _process_msn(self, product_scan: Scan):
+        self.transformer.pick_product_scan_peaks(product_scan)
+
+    def _deconvolute_msn(self, product_scan: Scan):
+        self.transformer.deconvolute_product_scan(product_scan)
+
+    def _handle_msn(self, product_scan: Scan, precursor_scan: Scan):
+        try:
+            self._process_msn(product_scan)
+            if self.verbose:
+                self.log_message("Handling Product Scan %r with %d peaks (%0.3f/%0.3f, %r)" % (
+                    product_scan.id, len(product_scan.peak_set), product_scan.precursor_information.mz,
+                    product_scan.precursor_information.extracted_mz,
+                    product_scan.precursor_information.defaulted))
+            if self.deconvolute:
+                self._deconvolute_msn(product_scan)
+                if precursor_scan is None:
+                    product_scan.precursor_information.default(orphan=True)
+            self.send_scan(product_scan)
+        except (KeyboardInterrupt, SystemExit) as e:
+            raise
+        except NoIsotopicClustersError as e:
+            self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
+                e.scan_id, len(product_scan.peak_set)))
+            self.skip_scan(product_scan)
+        except EmptyScanError as e:
+            self.skip_scan(product_scan)
+        except Exception as e:
+            self.skip_scan(product_scan)
+            self.log_error(e, product_scan.id, product_scan, ())
+
+    def handle_scan_bunch(self, scan: Scan, product_scans: List[Scan], scan_id: str, product_scan_ids: List[str], process_msn: bool=True):
         transformer = self.transformer
         # handle the MS1 scan if it is present
         if scan is not None:
-            try:
-                if len(scan.arrays[0]) == 0:
-                    self.skip_scan(scan)
-                else:
-                    try:
-                        scan, priorities, product_scans = transformer.process_scan_group(
-                            scan, product_scans)
-                        if scan is None:
-                            # no way to report skip
-                            pass
-                        else:
-                            if self.verbose:
-                                self.log_message("Handling Precursor Scan %r with %d peaks" % (scan.id, len(scan.peak_set)))
-                            if self.deconvolute:
-                                transformer.deconvolute_precursor_scan(
-                                    scan, priorities, product_scans)
-                            self.send_scan(scan)
-                    except (KeyboardInterrupt, SystemExit) as e:
-                        raise
-                    except NoIsotopicClustersError as e:
-                        self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
-                            e.scan_id, len(scan.peak_set)))
-                        self.skip_scan(scan)
-                    except EmptyScanError as e:
-                        self.skip_scan(scan)
-                    except Exception as e:
-                        self.skip_scan(scan)
-                        self.log_error(e, scan_id, scan, (product_scan_ids))
-            except (KeyboardInterrupt, SystemExit) as e:
-                raise
-            except Exception as err:
-                self.skip_scan(scan)
-                self.log_error(err, scan_id, scan, product_scan_ids)
+            scan, product_scans = self._handle_ms1_scan(
+                scan, product_scans, scan_id, product_scan_ids)
         for product_scan in product_scans:
             # no way to report skip
             try:
@@ -353,30 +484,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                 if len(product_scan.arrays[0]) == 0 or (not process_msn):
                     self.skip_scan(product_scan)
                     continue
-                try:
-                    transformer.pick_product_scan_peaks(product_scan)
-                    if self.verbose:
-                        self.log_message("Handling Product Scan %r with %d peaks (%0.3f/%0.3f, %r)" % (
-                            product_scan.id, len(product_scan.peak_set), product_scan.precursor_information.mz,
-                            product_scan.precursor_information.extracted_mz,
-                            product_scan.precursor_information.defaulted))
-                    if self.deconvolute:
-                        transformer.deconvolute_product_scan(product_scan)
-                        if scan is None:
-                            product_scan.precursor_information.default(orphan=True)
-                    self.send_scan(product_scan)
-                except (KeyboardInterrupt, SystemExit) as e:
-                    raise
-                except NoIsotopicClustersError as e:
-                    self.log_message("No isotopic clusters were extracted from scan %s (%r)" % (
-                        e.scan_id, len(product_scan.peak_set)))
-                    self.skip_scan(product_scan)
-                except EmptyScanError as e:
-                    self.skip_scan(product_scan)
-                except Exception as e:
-                    self.skip_scan(product_scan)
-                    self.log_error(e, product_scan.id,
-                                   product_scan, (product_scan_ids))
+                self._handle_msn(product_scan, scan)
             except (KeyboardInterrupt, SystemExit) as e:
                 raise
             except Exception as err:
@@ -384,38 +492,22 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                 self.log_error(err, product_scan.id,
                                product_scan, [])
 
-    def _silence_loggers(self):
-        nologs = ["deconvolution_scan_processor"]
-        if not self.deconvolute:
-            nologs.append("deconvolution")
+    def _open_ms_file(self) -> Union[RandomAccessScanSource, ScanIterator]:
+        self.loader = MSFileLoader(self.ms_file_path, decode_binary=False)
+        return self.loader
 
-        debug_mode = os.getenv("MS_DEISOTOPE_DEBUG")
-        if debug_mode:
-            handler = logging.FileHandler("ms-deisotope-deconvolution-debug-%s.log" % (os.getpid()), 'w')
-            fmt = logging.Formatter(
-                "%(asctime)s - %(name)s:%(filename)s:%(lineno)-4d - %(levelname)s - %(message)s",
-                "%H:%M:%S")
-            handler.setFormatter(fmt)
-        for logname in nologs:
-            logger_to_silence = logging.getLogger(logname)
-            if debug_mode:
-                logger_to_silence.setLevel("DEBUG")
-                logger_to_silence.addHandler(handler)
-            else:
-                logger_to_silence.propagate = False
-                logger_to_silence.setLevel("CRITICAL")
-                logger_to_silence.addHandler(logging.NullHandler())
+    def _make_batch_loader(self, loader: Union[ScanIterator, RandomAccessScanSource]) -> ScanBunchLoader:
+        return ScanBunchLoader(loader)
 
     def run(self):
-        loader = MSFileLoader(self.ms_file_path, decode_binary=False)
-        queued_loader = ScanBunchLoader(loader)
-
-        has_input = True
-        transformer = self.make_scan_transformer(loader)
-        self.transformer = transformer
         self._silence_loggers()
-        i = 0
-        last = 0
+        loader = self._open_ms_file()
+        queued_loader = ScanBunchLoader(loader)
+        transformer = self.make_scan_transformer(loader)
+
+        has_input: bool = True
+        i: int = 0
+        last: int = 0
         while has_input:
             try:
                 scan_id, product_scan_ids, process_msn = self.get_work(True, 10)
@@ -455,7 +547,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
 
         self._work_complete.set()
 
-    def _dump_averagine_caches(self, transformer):
+    def _dump_averagine_caches(self, transformer: ScanProcessor):
         pid = os.getpid()
         fname = "ms_deisotope_averagine_cache_ms$_%s.pkl" % pid
         with open(fname.replace("$", '1'), 'wb') as fh:

@@ -1,3 +1,5 @@
+import logging
+
 from collections import defaultdict
 from itertools import product
 
@@ -30,6 +32,9 @@ from ms_deisotope.deconvolution import (
     charge_range_, drop_placeholders, first_peak,
     mean)
 from ms_deisotope.task import LogUtilsMixin
+
+
+logger = logging.getLogger(__name__)
 
 
 def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abundance=0.05):
@@ -716,6 +721,9 @@ class FeatureDeconvolutionIterationState(LogUtilsMixin):
                 self.solutions,
                 self.error_tolerance))
 
+
+FeatureDeconvolutionIterationState.log_with_logger(logger)
+LCMSFeatureProcessor.log_with_logger(logger)
 
 def find_bounds(fit, detection_threshold=0.1, find_separation=True):
     start_time = 0
