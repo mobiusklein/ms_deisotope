@@ -1,8 +1,7 @@
 '''Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 '''
-from ctypes import Union
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union
 import warnings
 
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
