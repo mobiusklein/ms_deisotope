@@ -387,6 +387,8 @@ class ScanBase(object):
     '''Abstract base class for Scan-like objects
     '''
 
+    source: 'ScanDataSource'
+
     def has_ion_mobility(self) -> bool:
         '''Check whether this scan has drift time information associated with
         it.

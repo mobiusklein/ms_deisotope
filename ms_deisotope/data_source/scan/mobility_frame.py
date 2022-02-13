@@ -824,64 +824,19 @@ class IonMobilityFrame(FrameBase):
         scans: List[Scan] = self.scans()
         n = len(scans)
         lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
-        grid_averager = None
-        # This uses a lot of memory, probably not desirable when parallelized across many processes
-        # array_grid = []
-        # if average_within > 0 and GridAverager is not None:
-        #     min_mz = float('inf')
-        #     max_mz = 0
-        #     for scan in scans:
-        #         arrays = scan.arrays
-        #         array_grid.append(
-        #             (arrays.mz.astype(float), arrays.intensity.astype(float)))
-        #         if arrays.mz.shape[0]:
-        #             min_mz = min(arrays.mz[0], min_mz)
-        #             max_mz = max(arrays.mz[-1], max_mz)
-
-        #     grid_averager = GridAverager(min_mz, max_mz, num_scans=len(scans), dx=dx)
-        #     grid_averager.add_spectra(array_grid, n_threads)
-        # This problem hasn't been
-        # if average_across:
-        #     neighboring_frames = []
-        #     for j in range(max((self.index - average_within, 0)), self.index):
-        #         try:
-        #             frame = self.source.get_frame_by_index(j)
-        #         except IndexError:
-        #             break
-        #         if frame.ms_level != self.ms_level:
-        #             break
-        #         neighboring_frames.append(frame.scans())
-        #     for j in range(self.index + 1, min(self.index + average_within + 1, len(self.source))):
-        #         try:
-        #             frame = self.source.get_frame_by_index(j)
-        #         except IndexError:
-        #             break
-        #         if frame.ms_level != self.ms_level:
-        #             break
-        #         neighboring_frames.append(frame.scans())
-
         scan: Scan
         for i, scan in enumerate(scans):
             if average_within:
-                if grid_averager is None:
-                    acc: List[ScanBase] = []
-                    for j in range(max((i - average_within, 0)), i):
-                        acc.append(scans[j])
-                    for j in range(i + 1, min(i + average_within + 1, n)):
-                        acc.append(scans[j])
-                    if acc:
-                        acq_info = scan.acquisition_information
-                        scan = scan.average_with(acc, dx=dx)
-                        scan.acquisition_information = acq_info
-                else:
-                    # This currently misbehaves somewhere, needs further investigation
-                    intensity_array = grid_averager.average_indices(
-                        max(i - average_within, 0), min(i + average_within + 1, grid_averager.num_scans),
-                        n_workers=min(average_within * 2 + 1, n_threads))
-                    mz_array = grid_averager.mz_axis
+                acc: List[ScanBase] = []
+                for j in range(max((i - average_within, 0)), i):
+                    acc.append(scans[j])
+                for j in range(i + 1, min(i + average_within + 1, n)):
+                    acc.append(scans[j])
+                if acc:
                     acq_info = scan.acquisition_information
-                    scan = WrappedScan(scan._data, scan.source, array_data=RawDataArrays(mz_array, intensity_array))
+                    scan = scan.average_with(acc, dx=dx)
                     scan.acquisition_information = acq_info
+
             if average_across:
                 pass
             scan.pick_peaks(**kwargs)
