@@ -8,6 +8,7 @@ cdef extern from "numpy/npy_math.h":
 
 cimport cython
 
+from cpython cimport PyErr_SetString
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_Append, PyList_GetItem, PyList_SetItem, PyList_New
 from ms_peak_picker._c.peak_set cimport FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak, _isotopic_variants
@@ -70,7 +71,7 @@ cdef class CartesianProductIterator(object):
         public bint done
         public size_t total_combinations
 
-    cdef inline void _initialize(self, list collections):
+    cdef inline int _initialize(self, list collections) except 1:
         cdef:
             size_t i, n
             list sublist
@@ -78,7 +79,11 @@ cdef class CartesianProductIterator(object):
         self.collections = collections
         self.size = PyList_GET_SIZE(self.collections)
         self.lengths = <int*>malloc(sizeof(int) * self.size)
+        if self.lengths == NULL:
+            PyErr_SetString(MemoryError, "Failed to allocate length array in CartesianProductIterator")
         self.indices = <int*>malloc(sizeof(int) * self.size)
+        if self.indices == NULL:
+            PyErr_SetString(MemoryError, "Failed to allocate indices array in CartesianProductIterator")
         self.done = False
         self.total_combinations = 1
 

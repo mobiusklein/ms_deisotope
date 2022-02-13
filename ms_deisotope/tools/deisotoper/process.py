@@ -34,9 +34,29 @@ SCAN_STATUS_GOOD = b"good"
 SCAN_STATUS_SKIP = b"skip"
 
 
-class ScanIDYieldingProcess(Process):
+class ScanTransmissionMixin(object):
+    output_queue: multiprocessing.JoinableQueue
+
+    def skip_entry(self, index: int, ms_level: int):
+        self.output_queue.put((SCAN_STATUS_SKIP, index, ms_level))
+
+    def skip_scan(self, scan: Scan):
+        self.output_queue.put((SCAN_STATUS_SKIP, scan.index, scan.ms_level))
+
+    def send_scan(self, scan: Scan):
+        scan = scan.pack()
+        # this attribute is not needed, and for MS1 scans is dangerous
+        # to pickle.
+        # It can pull other scans which may not yet have been packed
+        # into the message sent back to the main process which in
+        # turn can form a reference cycle and eat a lot of memory
+        scan.product_scans = []
+        self.output_queue.put((scan, scan.index, scan.ms_level))
+
+
+class ScanIDYieldingProcess(Process, ScanTransmissionMixin):
     ms_file_path: os.PathLike
-    queue: multiprocessing.Queue
+    scan_id_queue: multiprocessing.JoinableQueue
     loader: Union[ScanIterator, RandomAccessScanSource]
 
     start_scan: str
@@ -50,15 +70,16 @@ class ScanIDYieldingProcess(Process):
     no_more_event: Optional[multiprocessing.Event]
     log_handler: Callable
 
-    def __init__(self, ms_file_path: os.PathLike, queue: multiprocessing.Queue, start_scan: str=None,
+    def __init__(self, ms_file_path: os.PathLike, scan_id_queue: multiprocessing.JoinableQueue, start_scan: str = None,
                  max_scans: Optional[int]=None, end_scan: str=None, no_more_event: Optional[multiprocessing.Event]=None,
-                 ignore_tandem_scans: bool=False, batch_size: int=1, log_handler: Callable=None):
+                 ignore_tandem_scans: bool=False, batch_size: int=1, log_handler: Callable=None,
+                 output_queue: Optional[multiprocessing.JoinableQueue]=None):
         if log_handler is None:
             log_handler = show_message
         Process.__init__(self)
         self.daemon = True
         self.ms_file_path = ms_file_path
-        self.queue = queue
+        self.scan_id_queue = scan_id_queue
         self.loader = None
 
         self.start_scan = start_scan
@@ -72,6 +93,7 @@ class ScanIDYieldingProcess(Process):
         self.log_handler = log_handler
 
         self.no_more_event = no_more_event
+        self.output_queue = output_queue
 
     def _make_scan_batch(self) -> Tuple[
             List[Tuple[str, List[str]]],
@@ -151,11 +173,11 @@ class ScanIDYieldingProcess(Process):
             try:
                 batch, ids = self._make_scan_batch()
                 if len(batch) > 0:
-                    self.queue.put(batch)
+                    self.scan_id_queue.put(batch)
                 count += len(ids)
                 if (count - last) > 1000:
                     last = count
-                    self.queue.join()
+                    self.scan_id_queue.join()
                 if (end_scan in ids and end_scan is not None) or len(ids) == 0:
                     self.log_handler("End Scan Found")
                     break
@@ -169,11 +191,13 @@ class ScanIDYieldingProcess(Process):
             self.no_more_event.set()
             self.log_handler("All Scan IDs have been dealt. %d scan bunches." % (count,))
         else:
-            self.queue.put(DONE)
+            self.scan_id_queue.put(DONE)
 
 
 class ScanTransformMixin(object):
     _batch_store: Deque[Tuple[str, List[str], bool]]
+
+    input_queue: multiprocessing.JoinableQueue
 
     def log_error(self, error: Exception, scan_id: str, scan: Scan, product_scan_ids: List[str]):
         tb = traceback.format_exc()
@@ -190,6 +214,7 @@ class ScanTransformMixin(object):
             return self._batch_store.popleft()
         else:
             batch = self.input_queue.get(block, timeout)
+            self.input_queue.task_done()
             self._batch_store.extend(batch)
             result = self._batch_store.popleft()
             return result
@@ -197,22 +222,6 @@ class ScanTransformMixin(object):
     def log_message(self, message):
         self.log_handler(message + ", %r" %
                          (multiprocessing.current_process().name))
-
-    def skip_entry(self, index: int, ms_level: int):
-        self.output_queue.put((SCAN_STATUS_SKIP, index, ms_level))
-
-    def skip_scan(self, scan: Scan):
-        self.output_queue.put((SCAN_STATUS_SKIP, scan.index, scan.ms_level))
-
-    def send_scan(self, scan: Scan):
-        scan = scan.pack()
-        # this attribute is not needed, and for MS1 scans is dangerous
-        # to pickle.
-        # It can pull other scans which may not yet have been packed
-        # into the message sent back to the main process which in
-        # turn can form a reference cycle and eat a lot of memory
-        scan.product_scans = []
-        self.output_queue.put((scan, scan.index, scan.ms_level))
 
     def all_work_done(self) -> bool:
         return self._work_complete.is_set()
@@ -243,6 +252,7 @@ class ScanTransformMixin(object):
                 logger_to_silence.setLevel("CRITICAL")
                 logger_to_silence.addHandler(logging.NullHandler())
 
+
 class ScanBunchLoader(object):
     queue: Deque[Tuple[str, List[str]]]
     loader: Union[RandomAccessScanSource, ScanIterator]
@@ -267,7 +277,7 @@ class ScanBunchLoader(object):
         return (precursor, products)
 
 
-class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
+class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTransmissionMixin):
     """DeconvolutingScanTransformingProcess describes a child process that consumes scan id bunches
     from a shared input queue, retrieves the relevant scans, and preprocesses them using an
     instance of :class:`ms_deisotope.processor.ScanProcessor`, sending the reduced result
@@ -502,16 +512,17 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
     def run(self):
         self._silence_loggers()
         loader = self._open_ms_file()
-        queued_loader = ScanBunchLoader(loader)
+        queued_loader = self._make_batch_loader(loader)
         transformer = self.make_scan_transformer(loader)
 
         has_input: bool = True
         i: int = 0
         last: int = 0
+        scan = None
+        product_scans = []
         while has_input:
             try:
                 scan_id, product_scan_ids, process_msn = self.get_work(True, 10)
-                self.input_queue.task_done()
             except QueueEmpty:
                 if self.no_more_event is not None and self.no_more_event.is_set():
                     has_input = False
@@ -532,7 +543,11 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin):
                 self.log_message("Something went wrong when loading bunch (%s): %r.\nRecovery is not possible." % (
                     (scan_id, product_scan_ids), e))
 
-            self.handle_scan_bunch(scan, product_scans, scan_id, product_scan_ids, process_msn)
+            self.handle_scan_bunch(
+                scan, product_scans,
+                scan_id, product_scan_ids,
+                process_msn)
+
             if (i - last) > 1000:
                 last = i
                 self.output_queue.join()

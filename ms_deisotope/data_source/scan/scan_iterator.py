@@ -4,7 +4,7 @@ of :class:`~.Scan`-like objects.
 import bisect
 import warnings
 
-from typing import Generic, Iterator, TypeVar
+from typing import Callable, Generic, Iterator, Optional, TypeVar
 
 from collections import deque, defaultdict
 from six import PY2
@@ -428,11 +428,12 @@ class MSEIterator(_GroupedScanIteratorImpl[T, G]):
         will be skipped.
     '''
     def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None,
-                 scan_cacher=None):
+                 scan_cacher=None, on_lock_mass_scan: Optional[Callable]=None):
         super(MSEIterator, self).__init__(
             iterator, scan_packer, scan_validator, scan_cacher)
         self.low_energy_config = low_energy_config
         self.lock_mass_config = lock_mass_config
+        self.on_lock_mass_scan = on_lock_mass_scan
 
     def _make_producer(self):
         _make_scan = self.scan_packer
@@ -451,6 +452,8 @@ class MSEIterator(_GroupedScanIteratorImpl[T, G]):
             _cache_scan(packed)
             config = packed.acquisition_information[0].scan_configuration
             if config == self.lock_mass_config:
+                if self.on_lock_mass_scan is not None:
+                    self.on_lock_mass_scan(scan)
                 continue
 
             if config != self.low_energy_config:

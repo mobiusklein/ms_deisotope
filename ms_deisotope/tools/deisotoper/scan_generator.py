@@ -278,7 +278,8 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
         return ScanIDYieldingProcess(
             self.ms_file, self._input_queue, start_scan=start_scan, end_scan=end_scan,
             max_scans=max_scans, no_more_event=self.scan_ids_exhausted_event,
-            ignore_tandem_scans=self.ignore_tandem_scans, batch_size=1)
+            ignore_tandem_scans=self.ignore_tandem_scans, batch_size=1,
+            output_queue=self._output_queue)
 
     def _initialize_workers(self, start_scan: Optional[str] = None, end_scan: Optional[str] = None, max_scans: Optional[int] = None):
         try:

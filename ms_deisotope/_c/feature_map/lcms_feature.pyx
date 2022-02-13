@@ -8,6 +8,8 @@ from collections import deque
 from random import sample as _sample
 
 from libc.stdlib cimport malloc, free
+
+from cpython cimport PyErr_SetString
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyList_GetItem
 from ms_peak_picker._c.peak_set cimport FittedPeak, PeakBase
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
@@ -811,6 +813,8 @@ cdef class FeatureSetIterator(object):
         n = PyList_GET_SIZE(self.features)
         self.real_features = []
         self.index_list = <size_t*>malloc(sizeof(size_t) * n)
+        if self.index_list == NULL:
+            raise MemoryError("Failed to allocate index list for LCMS Feature Iterator")
         self.start_time = 0
         self.end_time = INF
 
@@ -835,14 +839,16 @@ cdef class FeatureSetIterator(object):
         self.init_indices()
         self.last_time_seen = -1
 
-    cdef void _initialize(self, list features):
+    cdef int _initialize(self, list features) except 1:
         cdef:
             size_t i, n
         self.features = features
         n = PyList_GET_SIZE(self.features)
         self.real_features = []
         self.index_list = <size_t*>malloc(sizeof(size_t) * n)
-
+        if self.index_list == NULL:
+            PyErr_SetString(MemoryError, "Failed to allocate index list for LCMS Feature Iterator")
+            return 1
         self.start_time = 0
         self.end_time = INF
 
@@ -861,6 +867,7 @@ cdef class FeatureSetIterator(object):
 
         self.init_indices()
         self.last_time_seen = -1
+        return 0
 
     @staticmethod
     cdef FeatureSetIterator _create(list features):

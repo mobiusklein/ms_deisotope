@@ -156,7 +156,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
         return max_gap_size
 
     def extract_precursor_features(self, precursor_frame: IonMobilityFrame):
-        self.log("Extracting MS1 raw features from %r", precursor_frame.id)
+        self.log(f"Extracting MS1 raw features from {precursor_frame.id}")
         options = self.ms1_peak_picking_args.copy()
         options.setdefault("average_within", self.ms1_averaging)
 
@@ -166,7 +166,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
         precursor_frame.extract_features(**options)
 
     def deconvolute_precursor_features(self, precursor_frame: IonMobilityFrame):
-        self.log("Deconvolving MS1 IMS features from %r", precursor_frame.id)
+        self.log(f"Deconvolving MS1 IMS features from {precursor_frame.id}")
         options = self.ms1_deconvolution_args.copy()
 
         if "max_gap_size" not in options:
@@ -176,7 +176,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
         precursor_frame.deconvolute_features(**options)
 
     def extract_product_features(self, product_frame: IonMobilityFrame):
-        self.log("Extracting MSn raw features from %r", product_frame.id)
+        self.log(f"Extracting MSn raw features from {product_frame.id}")
         options = self.msn_peak_picking_args.copy()
         options.setdefault("average_within", self.msn_averaging)
 
@@ -187,7 +187,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
         product_frame.extract_features(**options)
 
     def deconvolute_product_features(self, product_frame: IonMobilityFrame):
-        self.log("Deconvolving MSn IMS features from %r", product_frame.id)
+        self.log(f"Deconvolving MSn IMS features from {product_frame.id}")
         options = self.msn_deconvolution_args.copy()
 
         if "max_gap_size" not in options:

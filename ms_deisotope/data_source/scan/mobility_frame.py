@@ -584,6 +584,8 @@ class FrameBase(object):
     def __eq__(self, other):
         if other is None:
             return False
+        if not isinstance(other, FrameBase):
+            return False
         if self.id != other.id:
             return False
         elif self.ms_level != other.ms_level:

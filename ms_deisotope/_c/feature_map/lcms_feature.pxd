@@ -117,7 +117,7 @@ cdef class FeatureSetIterator(object):
         @staticmethod
         cdef FeatureSetIterator _create_with_threshold(list features, list theoretical_distribution, double detection_threshold)
 
-        cdef void _initialize(self, list features)
+        cdef int _initialize(self, list features) except 1
 
         cpdef init_indices(self)
         cpdef double get_next_time(self)

@@ -386,7 +386,7 @@ class WatersMassLynxScanSource(ScanDataSource):
 
 
 class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, WatersMSECycleSourceMixin):
-    def __init__(self, raw_path, lockmass_config=None):
+    def __init__(self, raw_path, lockmass_config=None, **kwargs):
         if sys.version_info.major == 2:
             if not isinstance(raw_path, str):
                 raw_path = str(raw_path)
