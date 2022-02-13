@@ -148,12 +148,10 @@ class ScanCollator(TaskBase):
         blocking = timeout != 0
         try:
             item, index, _ = self.queue.get(blocking, timeout)
-            print(f"Consuming {item} {index}")
             self.queue.task_done()
             # DONE message may be sent many times.
             while item == DONE:
                 item, index, _ = self.queue.get(blocking, timeout)
-                print(f"Consuming {item} {index}")
                 self.queue.task_done()
             self.store_item(item, index)
             return True
