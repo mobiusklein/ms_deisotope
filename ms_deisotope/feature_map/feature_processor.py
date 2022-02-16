@@ -283,14 +283,15 @@ class PrecursorMap(object):
 
 class LCMSFeatureProcessor(LCMSFeatureProcessorBase, LogUtilsMixin):
     def __init__(self, feature_map, averagine, scorer, precursor_map=None, minimum_size=3,
-                 maximum_time_gap=0.25, prefer_multiply_charged=True):
+                 maximum_time_gap=0.25, prefer_multiply_charged=True, copy=True):
         if precursor_map is None:
             precursor_map = PrecursorMap({})
         if isinstance(feature_map, LCMSFeatureMap):
-            feature_map = feature_map.clone(deep=True)
+            if copy:
+                feature_map = feature_map.clone(deep=True)
         else:
             feature_map = LCMSFeatureMap(
-                [f.clone(deep=True) for f in feature_map])
+                [f.clone(deep=True) if copy else f for f in feature_map])
         self.feature_map = feature_map
         self.averagine = AveragineCache(averagine)
         self.prefer_multiply_charged = prefer_multiply_charged

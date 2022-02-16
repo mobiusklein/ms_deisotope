@@ -322,7 +322,11 @@ class LCMSFeatureForest(LCMSFeatureMap):
         --------
         LCMSFeature.split_sparse
         '''
-        features = [fi for f in self.features for fi in f.split_sparse(delta_rt) if len(fi) >= min_size]
+        features = []
+        for f in self.features:
+            for fi in f.split_sparse(delta_rt):
+                if len(fi) >= min_size:
+                    features.append(fi)
         self.features = features
         return self
 

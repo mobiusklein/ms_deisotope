@@ -105,11 +105,13 @@ class ScanIDYieldingProcess(Process, ScanTransmissionMixin):
             try:
                 bunch = next(self._iterator)
                 scan, products = bunch
-                products = [prod for prod in products if prod.index <= self.end_scan_index]
                 if scan is not None:
                     scan_id = scan.id
+                    if scan.index > self.end_scan_index:
+                        break
                 else:
                     scan_id = None
+                products = [prod for prod in products if prod.index <= self.end_scan_index]
                 product_scan_ids = [p.id for p in products]
             except StopIteration:
                 break
@@ -229,8 +231,10 @@ class ScanTransformMixin(object):
     def make_scan_transformer(self, loader=None):
         raise NotImplementedError()
 
+    _loggers_to_silence = ["deconvolution_scan_processor"]
+
     def _silence_loggers(self):
-        nologs = ["deconvolution_scan_processor"]
+        nologs = self._loggers_to_silence
         if not self.deconvolute:
             nologs.append("deconvolution")
 

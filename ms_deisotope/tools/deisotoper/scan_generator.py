@@ -1,11 +1,12 @@
 '''Defines the base class for organizing the multiprocessing deconvolution algorithm
 encapsulating all behaviors from start to finish.
 '''
+import os
 import multiprocessing
 
 from multiprocessing import JoinableQueue
-import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Generic, TypeVar
+
 from ms_deisotope.data_source.scan.loader import RandomAccessScanSource
 from ms_deisotope.feature_map.scan_interval_tree import ScanIntervalTree
 
@@ -14,11 +15,11 @@ from ms_deisotope.processor import MSFileLoader
 from ms_deisotope.feature_map.quick_index import index as build_scan_index
 from ms_deisotope.task import TaskBase
 
-from .collator import ScanCollator
+from .collator import ScanCollator, T
 from .process import ScanIDYieldingProcess, DeconvolutingScanTransformingProcess
 
 
-class ScanGeneratorBase(object):
+class ScanGeneratorBase(Generic[T]):
     """The partial base class for the type that generates scan processing tasks.
 
     Defines getter and setters for properties expected to be used.
@@ -58,7 +59,7 @@ class ScanGeneratorBase(object):
         """
         raise NotImplementedError()
 
-    def make_iterator(self, start_scan: Optional[int] = None, end_scan: Optional[int] = None, max_scans: Optional[int] = None):
+    def make_iterator(self, start_scan: Optional[int] = None, end_scan: Optional[int] = None, max_scans: Optional[int] = None) -> Iterator[T]:
         """Create an :class:`Iterator` object over the scan product stream
 
         Parameters
@@ -81,12 +82,12 @@ class ScanGeneratorBase(object):
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> T:
         if self._iterator is None:
             self._iterator = self.make_iterator()
         return next(self._iterator)
 
-    def next(self):
+    def next(self) -> T:
         return self.__next__()
 
     def close(self):
@@ -109,7 +110,7 @@ class ScanGeneratorBase(object):
     _ms1_averaging = 0
 
     @property
-    def ms1_averaging(self):
+    def ms1_averaging(self) -> int:
         return self._ms1_averaging
 
     @ms1_averaging.setter
@@ -119,7 +120,7 @@ class ScanGeneratorBase(object):
     _ignore_tandem_scans = False
 
     @property
-    def ignore_tandem_scans(self):
+    def ignore_tandem_scans(self) -> bool:
         return self._ignore_tandem_scans
 
     @ignore_tandem_scans.setter
@@ -129,7 +130,7 @@ class ScanGeneratorBase(object):
     _extract_only_tandem_envelopes = False
 
     @property
-    def extract_only_tandem_envelopes(self):
+    def extract_only_tandem_envelopes(self) -> bool:
         return self._extract_only_tandem_envelopes
 
     @extract_only_tandem_envelopes.setter
@@ -137,7 +138,7 @@ class ScanGeneratorBase(object):
         self._extract_only_tandem_envelopes = value
 
 
-class ScanGenerator(TaskBase, ScanGeneratorBase):
+class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
     ms_file: os.PathLike
     verbose: bool
 
@@ -158,7 +159,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
     _deconv_process: DeconvolutingScanTransformingProcess
     _deconv_helpers: List[DeconvolutingScanTransformingProcess]
 
-    _order_manager: ScanCollator
+    _order_manager: ScanCollator[T]
 
     _input_queue: multiprocessing.Queue
     _output_queue: multiprocessing.Queue
@@ -222,8 +223,11 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             for helper in self._deconv_helpers:
                 helper.terminate()
 
+    def _open_ms_file(self, **kwargs):
+        return MSFileLoader(self.ms_file, **kwargs)
+
     def _preindex_file(self):
-        reader = MSFileLoader(self.ms_file, use_index=False)
+        reader = self._open_ms_file(use_index=False)
         try:
             reader.prebuild_byte_offset_file(self.ms_file)
         except AttributeError:
@@ -237,7 +241,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             self.error("An error occurred while pre-indexing.", e)
 
     def _make_interval_tree(self, start_scan: str, end_scan: str):
-        reader = MSFileLoader(self.ms_file, decode_binary=False)
+        reader = self._open_ms_file(decode_binary=False)
         if start_scan is not None:
             start_ix = reader.get_scan_by_id(start_scan).index
         else:
@@ -310,7 +314,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
 
         self._order_manager = self._make_collator()
 
-    def make_iterator(self, start_scan=None, end_scan=None, max_scans=None):
+    def make_iterator(self, start_scan=None, end_scan=None, max_scans=None) -> Iterator[T]:
         self._initialize_workers(start_scan, end_scan, max_scans)
 
         for scan in self._order_manager:

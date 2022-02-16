@@ -1,9 +1,6 @@
 import os
 
-try:
-    from collections import Sequence
-except ImportError:
-    from collections.abc import Sequence
+from collections.abc import Sequence
 
 
 from .infer_type import MSFileLoader

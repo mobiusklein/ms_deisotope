@@ -28,7 +28,7 @@ def _loader_creator(specification, **kwargs):
             kwargs.update(options)
     if isinstance(specification, basestring):
         return MSFileLoader(specification, **kwargs)
-    elif isinstance(specification, IonMobilitySourceRandomAccessFrameSource):
+    if isinstance(specification, IonMobilitySourceRandomAccessFrameSource):
         return specification
     elif isinstance(specification, ScanIterator):
         return Generic3DIonMobilityFrameSource(specification, **kwargs)
@@ -43,12 +43,14 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
 
     ms1_averaging: int
     msn_averaging: int
+    num_threads: int
 
     ms1_peak_picking_args: Dict[str, Any]
     msn_peak_picking_args: Dict[str, Any]
 
     ms1_deconvolution_args: Dict[str, Any]
     msn_deconvolution_args: Dict[str, Any]
+
 
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
@@ -57,7 +59,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
                  loader_type=None,
                  terminate_on_error=True,
                  ms1_averaging=0,
-                 msn_averaging=0):
+                 msn_averaging=0, num_threads=3):
         if loader_type is None:
             loader_type = _loader_creator
 
@@ -71,7 +73,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
 
         self.ms1_averaging = int(ms1_averaging) if ms1_averaging else 0
         self.msn_averaging = int(msn_averaging) if msn_averaging else 0
-
+        self.num_threads = num_threads
         self.loader_type = loader_type
 
         self._signal_source = self.loader_type(data_source)
@@ -159,6 +161,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
         self.log(f"Extracting MS1 raw features from {precursor_frame.id}")
         options = self.ms1_peak_picking_args.copy()
         options.setdefault("average_within", self.ms1_averaging)
+        options.setdefault("num_threads", self.num_threads)
 
         if "max_gap_size" not in options:
             options["max_gap_size"] = self._default_max_gap_size(precursor_frame)
@@ -179,6 +182,7 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
         self.log(f"Extracting MSn raw features from {product_frame.id}")
         options = self.msn_peak_picking_args.copy()
         options.setdefault("average_within", self.msn_averaging)
+        options.setdefault("num_threads", self.num_threads)
 
         if "max_gap_size" not in options:
             options["max_gap_size"] = self._default_max_gap_size(
@@ -226,3 +230,6 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
         """
         self.reader.start_from_scan(*args, **kwargs)
         return self
+
+
+IonMobilityFrameProcessor.log_with_logger(logger)

@@ -1,5 +1,5 @@
 import array
-from typing import List
+from typing import Any, Dict, List, Optional
 import warnings
 import logging
 
@@ -12,6 +12,8 @@ from collections import namedtuple, defaultdict
 import numpy as np
 
 from ms_peak_picker import average_signal, FittedPeak
+from ms_deisotope.data_source.metadata.activation import ActivationInformation
+from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanAcquisitionInformation
 
 try:
     from ms_peak_picker.scan_averaging import GridAverager
@@ -23,7 +25,7 @@ from ms_deisotope.data_source.scan.scan import Scan, WrappedScan
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
 
-from .base import RawDataArrays, ScanBase, ScanBunch
+from .base import PrecursorInformation, RawDataArrays, ScanBase, ScanBunch
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -561,10 +563,10 @@ class FrameBase(object):
     def ion_mobilities(self) -> np.ndarray:
         return self.source._frame_ion_mobilities(self._data)
 
-    def scans(self):
+    def scans(self) -> List[Scan]:
         return self.source._frame_scans(self._data)
 
-    def bind(self, source):
+    def bind(self, source: IonMobilitySource):
         self.source = source
         if self.precursor_information is not None:
             self.precursor_information.bind(source)
@@ -640,7 +642,7 @@ class IonMobilityFrame(FrameBase):
         self._acquisition_information = None
 
     @property
-    def id(self):
+    def id(self) -> str:
         if self._id is None:
             self._id = self.source._frame_id(self._data)
         return self._id
@@ -710,7 +712,7 @@ class IonMobilityFrame(FrameBase):
         self._end_scan_index = value
 
     @property
-    def precursor_information(self):
+    def precursor_information(self) -> Optional[PrecursorInformation]:
         if self._precursor_information is None:
             self._precursor_information = self.source._frame_precursor_information(self._data)
         return self._precursor_information
@@ -720,7 +722,7 @@ class IonMobilityFrame(FrameBase):
         self._precursor_information = value
 
     @property
-    def activation(self):
+    def activation(self) -> Optional[ActivationInformation]:
         if self._activation is None:
             self._activation = self.source._frame_activation(self._data)
         return self._activation
@@ -730,7 +732,7 @@ class IonMobilityFrame(FrameBase):
         self._activation = value
 
     @property
-    def isolation_window(self):
+    def isolation_window(self) -> Optional[IsolationWindow]:
         if self._isolation_window is None:
             self._isolation_window = self.source._frame_isolation_window(self._data)
         return self._isolation_window
@@ -740,7 +742,7 @@ class IonMobilityFrame(FrameBase):
         self._isolation_window = value
 
     @property
-    def acquisition_information(self):
+    def acquisition_information(self) -> ScanAcquisitionInformation:
         if self._acquisition_information is None:
             self._acquisition_information = self.source._frame_acquisition_information(self._data)
         return self._acquisition_information
@@ -760,7 +762,7 @@ class IonMobilityFrame(FrameBase):
         self._arrays = value
 
     @property
-    def annotations(self) -> dict:
+    def annotations(self) -> Dict[str, Any]:
         if self._annotations is None:
             self._annotations = self.source._frame_annotations(self._data)
         return self._annotations
@@ -819,23 +821,49 @@ class IonMobilityFrame(FrameBase):
             else:
                 lo = mid
 
-    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, n_threads=4, **kwargs):
+    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, num_threads=3, low_memory=False, **kwargs):
         from ms_deisotope.feature_map import feature_map
         scans: List[Scan] = self.scans()
         n = len(scans)
         lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
         scan: Scan
+        averager = None
+        if not low_memory:
+            min_mz = float('inf')
+            max_mz = 0
+            arrays = []
+            for scan in scans:
+                a = scan.arrays
+                arrays.append((a.mz.astype(float), a.intensity.astype(float)))
+                if len(a.mz):
+                    min_mz = min(a.mz[0], min_mz)
+                    max_mz = max(a.mz[-1], max_mz)
+            if min_mz > max_mz:
+                min_mz = 0
+                max_mz = 1
+
+            averager = GridAverager(min_mz, max_mz, len(scans), dx=dx)
+            averager.add_spectra(arrays, num_threads)
+
         for i, scan in enumerate(scans):
             if average_within:
-                acc: List[ScanBase] = []
-                for j in range(max((i - average_within, 0)), i):
-                    acc.append(scans[j])
-                for j in range(i + 1, min(i + average_within + 1, n)):
-                    acc.append(scans[j])
-                if acc:
+                if not low_memory:
+                    lo = max(i - average_within, 0)
+                    hi = min(i + average_within + 1, len(scans))
+                    array_data = RawDataArrays(averager.mz_axis, averager.average_indices(lo, hi, num_threads))
                     acq_info = scan.acquisition_information
-                    scan = scan.average_with(acc, dx=dx)
-                    scan.acquisition_information = acq_info
+                    scan = WrappedScan(scan._data, scan.source, array_data, _acquisition_information=acq_info)
+                else:
+                    acc: List[ScanBase] = []
+                    for j in range(max((i - average_within, 0)), i):
+                        acc.append(scans[j])
+                    for j in range(i + 1, min(i + average_within + 1, n)):
+                        acc.append(scans[j])
+                    if acc:
+                        acq_info = scan.acquisition_information
+                        scan = scan.average_with(
+                            acc, dx=dx, num_threads=num_threads)
+                        scan.acquisition_information = acq_info
 
             if average_across:
                 pass
@@ -845,13 +873,16 @@ class IonMobilityFrame(FrameBase):
             for peak in scan:
                 peak: FittedPeak
                 lff.handle_peak(peak, scan.drift_time)
+
+        del averager
         lff.split_sparse(max_gap_size, min_size).smooth_overlaps(
             error_tolerance)
         self.features = lff
         return self
 
     def deconvolute_features(self, averagine=None, scorer=None, truncate_after=0.95,
-                             minimum_intensity=5, min_size=2, max_gap_size=0.25, **kwargs):
+                             minimum_intensity=5, min_size=2, max_gap_size=0.25, copy=True,
+                             **kwargs):
         from ms_deisotope.feature_map import feature_processor
         if averagine is None:
             from ms_deisotope.averagine import peptide
@@ -864,7 +895,7 @@ class IonMobilityFrame(FrameBase):
                 "IM-MS Features must be extracted before they can be charge state deconvoluted")
         decon = feature_processor.LCMSFeatureProcessor(
             self.features, averagine, scorer, minimum_size=min_size,
-            maximum_time_gap=max_gap_size)
+            maximum_time_gap=max_gap_size, copy=copy)
         self.deconvoluted_features = decon.deconvolute(
             minimum_intensity=minimum_intensity, truncate_after=truncate_after, **kwargs)
         return self
@@ -880,7 +911,7 @@ class IonMobilityFrame(FrameBase):
             features = self.deconvoluted_features
         return features_to_peak_set(features)
 
-    def pack(self, bind=False):
+    def pack(self, bind=False) -> 'ProcessedIonMobilityFrame':
         packed = ProcessedIonMobilityFrame(
             self.id, self.precursor_information, self.ms_level,
             self.time, self.index, self.features, self.deconvoluted_features,
@@ -892,6 +923,11 @@ class IonMobilityFrame(FrameBase):
 
 
 class ProcessedIonMobilityFrame(FrameBase):
+
+    id: str
+    index: int
+
+
     def __init__(self, id, precursor_information, ms_level, time, index,
                  features=None, deconvoluted_features=None,
                  start_scan_index=None, end_scan_index=None,

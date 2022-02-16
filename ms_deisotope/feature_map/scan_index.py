@@ -221,8 +221,11 @@ class ExtendedScanIndex(object):
                     product.id for product in bunch.products
                 ],
             }
-            if bunch.precursor.has_ion_mobility():
-                package['drift_time'] = bunch.precursor.drift_time
+            try:
+                if bunch.precursor.has_ion_mobility():
+                    package['drift_time'] = bunch.precursor.drift_time
+            except AttributeError:
+                pass
             self.ms1_ids[bunch.precursor.id] = MS1Record(**package)
         for product in bunch.products:
             self.msn_ids[product.id] = MSnRecord(**self._package_precursor_information(product))

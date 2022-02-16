@@ -97,6 +97,7 @@ cdef class LCMSFeatureTreeList(object):
         cdef:
             LCMSFeatureTreeNodeBase root
             size_t i
+        i = 0
         try:
             root = self._find_time(node.time, &i)
             if root is None:
@@ -463,10 +464,13 @@ cdef class LCMSFeature(FeatureBase):
         cdef:
             size_t i, n
             LCMSFeatureTreeNode node
+            np.npy_intp knd
             np.ndarray[double, ndim=1, mode='c'] acc
         if self._times is None:
             n = self.get_size()
-            acc = _zeros(n)
+            knd = n
+            acc = np.PyArray_ZEROS(1, &knd, np.NPY_FLOAT64, 0)
+            # acc = _zeros(n)
             for i in range(n):
                 node = self.getitem(i)
                 acc[i] = node.time
@@ -925,10 +929,9 @@ cdef class FeatureSetIterator(object):
             if f is None:
                 self.index_list[i] = 0
                 continue
+            ix = 0
             if f.get_size() > 0:
                 node = f._find_time(self.start_time, &ix)
-            else:
-                ix = 0
             self.index_list[i] = ix
 
     cpdef double get_next_time(self):
@@ -999,6 +1002,7 @@ cdef class FeatureSetIterator(object):
             feature = self.getitem(i)
             if feature is not None:
                 if feature.get_size() > 0:
+                    ix = 0
                     node = feature._find_time(time, &ix)
                     if ix == self.index_list[i] and self.index_list[i] == 0 and node is None:
                         pass

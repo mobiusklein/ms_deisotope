@@ -833,7 +833,7 @@ class Scan(ScanBase):
                            is_profile=self.is_profile,
                            annotations=self._external_annotations)
 
-    def average_with(self, scans, dx=None, weight_sigma=None):
+    def average_with(self, scans, dx=None, weight_sigma=None, num_threads=None):
         r"""Average together multiple scans' raw data arrays to create a composite intensity
         profile for a common m/z axis.
 
@@ -846,6 +846,10 @@ class Scan(ScanBase):
         weight_sigma : float, optional
             When this value is not None, scans are weighted according to a
             gaussian distribution with a $\sigma$ equal to this value
+        num_threads : int, optional
+            The maximum number of threads to use while averaging signal. Defaults
+            to the number of spectra being averaged or the maximum available from
+            the hardware, whichever is smaller.
 
         Returns
         -------
@@ -884,7 +888,8 @@ class Scan(ScanBase):
                 reference = arrays[0]
             empirical_dx = decimal_shift(2 * np.median(np.diff(reference.mz)))
             dx = min(dx, empirical_dx)
-        new_arrays = average_signal(arrays, dx=dx, weights=weights)
+        new_arrays = average_signal(
+            arrays, dx=dx, weights=weights, num_threads=num_threads)
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,

@@ -66,13 +66,13 @@ class ScanSink(object):
 
 
 class SampleConsumer(TaskBase):
-    MS1_ISOTOPIC_PATTERN_WIDTH = 0.95
-    MS1_IGNORE_BELOW = 0.05
-    MSN_ISOTOPIC_PATTERN_WIDTH = 0.80
-    MSN_IGNORE_BELOW = 0.05
+    MS1_ISOTOPIC_PATTERN_WIDTH: float = 0.95
+    MS1_IGNORE_BELOW: float = 0.05
+    MSN_ISOTOPIC_PATTERN_WIDTH: float = 0.80
+    MSN_IGNORE_BELOW: float = 0.05
 
-    MS1_SCORE_THRESHOLD = 20.0
-    MSN_SCORE_THRESHOLD = 10.0
+    MS1_SCORE_THRESHOLD: float = 20.0
+    MSN_SCORE_THRESHOLD: float = 10.0
 
     storage_type: Type[ScanStorageHandlerBase]
     scan_generator: ScanGenerator
@@ -205,7 +205,8 @@ class SampleConsumer(TaskBase):
             if (scan.scan_time - last_scan_time > 1.0) or (i % 1000 == 0):
                 percent_complete = None
                 if self.end_scan_time is not None:
-                    percent_complete = (scan.scan_time - self.start_scan_time) / self.end_scan_time
+                    percent_complete = (
+                        scan.scan_time - self.start_scan_time) / (self.end_scan_time - self.start_scan_time)
                 if percent_complete is not None:
                     self.log("Processed %s (time: %0.3f %0.2f%% Done)" % (
                         scan.id, scan.scan_time, percent_complete * 100))
