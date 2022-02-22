@@ -210,7 +210,7 @@ def count_placeholders(peaks):
 
 def test_finalize(self, feature_fit, charge_carrier=PROTON, detection_threshold=0.1,
                   max_missed_peaks=1):
-    start_time, end_time = find_bounds(feature_fit, detection_threshold)
+    start_time, end_time, _segments = find_bounds(feature_fit, detection_threshold)
     feat_iter = FeatureSetIterator(
         feature_fit.features, start_time, end_time)
     base_tid = feature_fit.theoretical
@@ -424,7 +424,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase, LogUtilsMixin):
     def finalize_fit(self, feature_fit, charge_carrier=PROTON, subtract=True,
                      detection_threshold=0.1, max_missed_peaks=1):
         nodes = []
-        start_time, end_time = find_bounds(feature_fit, detection_threshold)
+        start_time, end_time, _segments = find_bounds(feature_fit, detection_threshold)
         feat_iter = FeatureSetIterator(
             feature_fit.features, start_time, end_time)
         base_tid = feature_fit.theoretical
@@ -726,48 +726,63 @@ class FeatureDeconvolutionIterationState(LogUtilsMixin):
 FeatureDeconvolutionIterationState.log_with_logger(logger)
 LCMSFeatureProcessor.log_with_logger(logger)
 
-def find_bounds(fit, detection_threshold=0.1, find_separation=True):
-    start_time = 0
+def find_bounds(fit, detection_threshold=0.1, find_separation=True, smooth=1):
+    start_time = float('inf')
     end_time = float('inf')
 
     for f, p in zip(fit, fit.theoretical):
         if f is None:
             continue
         passed_threshold = p.intensity >= detection_threshold
-        if f.start_time > start_time and passed_threshold:
+        if f.start_time < start_time and passed_threshold:
             start_time = f.start_time
         if f.end_time < end_time and passed_threshold:
             end_time = f.end_time
 
+    segments = None
+
     if fit.n_points > 0 and find_separation:
+        segments = []
         last_score = float('inf')
         begin_i = 0
         end_i = len(fit.scores) - 1
-        smoothed_scores = smooth_leveled(np.array(fit.times), np.array(fit.scores), 3)
+        smoothed_scores = smooth_leveled(
+            np.array(fit.times), np.array(fit.scores), smooth)
         for i, score in enumerate(smoothed_scores):
             if score > 0 and last_score < 0:
                 begin_i = i
             elif score < 0 and last_score > 0:
                 end_i = i
+                segments.append((
+                    begin_i, end_i, smoothed_scores[begin_i:end_i].sum()
+                ))
+                begin_i = i
+                end_i = len(fit.scores) - 1
             last_score = score
-            pass
+
         if end_i < begin_i:
-            end_i = len(fit.scores) - 1
+            raise ValueError("Somehow intervals are out of order")
+
+        segments.append((
+                    begin_i, end_i, smoothed_scores[begin_i:end_i].sum()
+                ))
+
+        begin_i, end_i, _ = max(segments, key=lambda x: x[2])
 
         if start_time < fit.times[begin_i] and begin_i != 0:
             start_time = fit.times[begin_i]
 
-        # if end_time > fit.times[end_i]:
-        #     end_time = fit.times[end_i]
+        if end_time > fit.times[end_i]:
+            end_time = fit.times[end_i]
 
-    return start_time, end_time
+    return start_time, end_time, segments
 
 
 def extract_fitted_region(feature_fit, detection_threshold=0.1):
     fitted_features = []
     if feature_fit.n_points == 0:
         return None
-    start_time, end_time = find_bounds(feature_fit, detection_threshold)
+    start_time, end_time, _segments = find_bounds(feature_fit, detection_threshold)
     for feature in feature_fit:
         if feature is None or isinstance(feature, EmptyFeature):
             fitted_features.append(feature)
