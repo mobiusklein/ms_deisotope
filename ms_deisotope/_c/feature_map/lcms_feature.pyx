@@ -613,7 +613,7 @@ cdef class LCMSFeature(FeatureBase):
         if node.time < start:
             i += 1
         node = self._find_time(end, &j)
-        return self.__class__(self.nodes[i:j + 1])
+        return self._copy_chunk(self.nodes[i:j + 1])
 
     cpdef list split_sparse(self, double delta_rt=1.):
         '''Split this feature at any point where the distance from the
