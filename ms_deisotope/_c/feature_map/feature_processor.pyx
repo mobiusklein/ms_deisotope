@@ -257,7 +257,7 @@ cdef int has_no_valid_features(list features):
     return cnt == n
 
 
-cdef size_t MAX_COMBINATIONS = 10000 / 2
+cdef size_t MAX_COMBINATIONS = 10000 // 2
 
 
 cdef class LCMSFeatureProcessorBase(object):

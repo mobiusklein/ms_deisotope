@@ -67,7 +67,7 @@ cdef class LCMSFeatureTreeList(object):
             raise ValueError()
         lo = 0
         while lo != hi:
-            i = (lo + hi) / 2
+            i = (lo + hi) // 2
             node = <LCMSFeatureTreeNodeBase>PyList_GET_ITEM(self.roots, i)
             rt = node.time
             if rt == time:
@@ -602,6 +602,18 @@ cdef class LCMSFeature(FeatureBase):
         if self.nodes[i].time < time:
             i += 1
         return LCMSFeature(self.nodes[:i]), LCMSFeature(self.nodes[i:])
+
+    def between_times(self, start, end):
+        cdef:
+            size_t i, j
+            LCMSFeatureTreeNode node
+        i = 0
+        j = 0
+        node = self._find_time(start, &i)
+        if node.time < start:
+            i += 1
+        node = self._find_time(end, &j)
+        return self.__class__(self.nodes[i:j + 1])
 
     cpdef list split_sparse(self, double delta_rt=1.):
         '''Split this feature at any point where the distance from the

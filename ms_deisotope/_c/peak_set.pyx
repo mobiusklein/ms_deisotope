@@ -863,7 +863,7 @@ cdef int _binary_search(double* array, double target, double error_tolerance, si
     hi = n
 
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         found_mass = array[mid]
         if fabs(_ppm_error(found_mass, target)) < error_tolerance:
             best_index = mid
@@ -916,7 +916,7 @@ cdef int _binary_search_interval(double* array, double target, double error_tole
     hi = n
 
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         found_mass = array[mid]
         if fabs(_ppm_error(found_mass, target)) < error_tolerance:
             best_index = mid
@@ -969,7 +969,7 @@ cdef DeconvolutedPeak binary_search_neutral_mass(tuple peak_set, double neutral_
     hi = PyTuple_GET_SIZE(peak_set)
 
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         found_peak = <DeconvolutedPeak>peak_set[mid]
         found_mass = found_peak.neutral_mass
 
@@ -1032,7 +1032,7 @@ cdef DeconvolutedPeak binary_search_mz(tuple peak_set, double mz, double error_t
     hi = len(peak_set)
 
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         found_peak = <DeconvolutedPeak>peak_set[mid]
         found_mass = found_peak.mz
 
@@ -1076,7 +1076,7 @@ cdef DeconvolutedPeak binary_search_nearest_neutral_mass(tuple peak_set, double 
     lo = 0
     hi = len(peak_set)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         found_peak = <DeconvolutedPeak>peak_set[mid]
         found_mass = found_peak.neutral_mass
 
@@ -1360,7 +1360,7 @@ cdef int _binary_search_with_hint(double* array, double target, double error_tol
     hi = n
 
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         found_mass = array[mid]
         if fabs(_ppm_error(found_mass, target)) < error_tolerance:
             best_index = mid
@@ -1413,7 +1413,7 @@ cdef int _binary_search_interval_with_hint(double* array, double target, double 
     hi = n
 
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         found_mass = array[mid]
         if fabs(_ppm_error(found_mass, target)) < error_tolerance:
             best_index = mid

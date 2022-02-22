@@ -96,7 +96,7 @@ cpdef size_t binsearch(np.ndarray[double, ndim=1, mode='c'] array, double value)
     lo = 0
     hi = array.shape[0]
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         point = array[mid]
         if value == point:
             return mid

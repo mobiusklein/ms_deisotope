@@ -297,29 +297,6 @@ cdef class IntervalTreeNode(object):
     def __hash__(self):
         return hash((self.start, self.center, self.right, self.level))
 
-    def __diagnostic_eq__(self, other):
-        if other is None:
-            return False
-        else:
-            result = self.contained == other.contained
-            if result:
-                try:
-                    result = self.left.__diagnostic_eq__(other.left)
-                except AttributeError:
-                    result = self.left == other.left
-                if result:
-                    try:
-                        result = self.right.__diagnostic_eq__(other.right)
-                    except AttributeError:
-                        result = self.right == other.right
-                    if not result:
-                        print self.right, "r!=", other.right
-                else:
-                    print self.left, "l!=", other.left
-            else:
-                print self, "!=", other
-            return result
-
     @classmethod
     def build(cls, intervals):
         cdef:
@@ -474,3 +451,170 @@ cdef class IntervalTreeNode(object):
     def __iter__(self):
         flat = self.flatten()
         return iter(flat)
+
+
+cdef class SpanningMixin2D(object):
+    cdef:
+        public double[2] _start
+        public double[2] _end
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    @property
+    def start(self):
+        cdef double[:] view = self._start
+        return view
+
+    @start.setter
+    def start(self, start):
+        self._start = start
+
+    @property
+    def end(self):
+        cdef double[:] view = self._end
+        return view
+
+    @end.setter
+    def end(self, end):
+        self._end = end
+
+    def __contains__(self, i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : Number
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
+        cdef:
+            double[2] v
+
+        v = i
+        return self._contains(v)
+
+    cdef bint _contains(self, double[2] i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : double
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
+        v = self._start[0] <= i[0] <= self._end[0]
+        if v:
+            v = self._start[1] <= i[1] <= self._end[1]
+        return v
+
+    cpdef bint contains(self, double[:] i):
+        """Tests for point inclusion, `start <= i <= end`
+
+        Parameters
+        ----------
+        i : double
+            The point to be tested
+
+        Returns
+        -------
+        bool
+        """
+        cdef:
+            double[2] view
+
+        view[0] = i[0]
+        view[1] = i[1]
+        return self._contains(view)
+
+    cpdef bint overlaps(self, SpanningMixin2D interval):
+        """Tests whether another spanning entity with
+        a defined start and end point overlaps with
+        this spanning entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin2D
+
+        Returns
+        -------
+        bool
+        """
+        cdef bint cond
+        cdef short i
+        cond = True
+        for i in range(2):
+            cond &= ((self._start[i] <= interval._start[i] and self._end[i] >= interval._start[i]) or (
+                self._start[i] >= interval._start[i] and self._end[i] <= interval._end[i]) or (
+                self._start[i] >= interval._start[i] and self._end[i] >= interval._end[i] and self._start[i] <= interval._end[i]) or (
+                self._start[i] <= interval._start[i] and self._end[i] >= interval._start[i]) or (
+                self._start[i] <= interval._end[i] and self._end[i] >= interval._end[i]))
+        return cond
+
+    cpdef bint contains_interval(self, SpanningMixin2D interval):
+        """Tests whether the other spanning entity is
+        completely contained inside this entity
+
+        Parameters
+        ----------
+        interval : SpanningMixin2D
+
+        Returns
+        -------
+        bool
+        """
+        cdef:
+            short i
+            bint cond
+        cond = True
+        for i in range(2):
+            cond &= self._start[i] <= interval._start[i] and self._end[i] >= interval._end[i]
+        return cond
+
+
+cdef class Interval2D(SpanningMixin2D):
+    cdef:
+        public list members
+        public dict data
+
+    def __init__(self, start, end, members=None, **kwargs):
+        if members is None:
+            members = []
+        self.start = start
+        self.end = end
+        self.members = members
+        self.data = kwargs
+
+    def __repr__(self):
+        return "%s(start=%r, end=%r, data=%r)" % (
+            self.__class__.__name__,
+            list(self.start), list(self.end), self.data)
+
+    def __getitem__(self, k):
+        return self.members[k]
+
+    def __len__(self):
+        return len(self.members)
+
+    def __iter__(self):
+        return iter(self.members)
+
+
+cpdef list intervals_containing_point_2d(list intervals, double x, int level):
+    cdef:
+        size_t i
+        SpanningMixin2D interval
+        list result
+    result = []
+    for i in range(PyList_Size(intervals)):
+        interval = <SpanningMixin2D>PyList_GetItem(intervals, i)
+        if interval._start[level % 2] <= x <= interval._end[level % 2]:
+            result.append(interval)
+    return result
