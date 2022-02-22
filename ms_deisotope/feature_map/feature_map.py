@@ -17,7 +17,18 @@ from .feature_fit import DeconvolutedLCMSFeature, IonMobilityDeconvolutedLCMSFea
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+
+class _QueryMixin(object):
+    __slots__ = ()
+
+    def between_times(self, start: float, end: float) -> list:
+        itree: IntervalTreeNode = build_rt_interval_tree(self)
+        return [f for i in itree.overlaps(start, end) for f in i]
+
+
 class _FeatureCollection(object):
+    __slots__ = ()
+
     def __len__(self):
         return len(self.features)
 
@@ -39,7 +50,7 @@ class _FeatureCollection(object):
         return not self == other
 
 
-class LCMSFeatureMap(_FeatureCollection):
+class LCMSFeatureMap(_FeatureCollection, _QueryMixin):
 
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: (x.mz, x.start_time))
@@ -172,12 +183,16 @@ class LCMSFeatureMap(_FeatureCollection):
 
 
 try:
-    from ms_deisotope._c.feature_map.feature_map import LCMSFeatureMap
+    from ms_deisotope._c.feature_map.feature_map import LCMSFeatureMap as _CLCMSFeatureMap
+
+    class LCMSFeatureMap(_CLCMSFeatureMap, _QueryMixin):
+        __slots__ = ()
+
 except ImportError:
     pass
 
 
-class LCMSFeatureForest(LCMSFeatureMap):
+class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
     """An an algorithm for aggregating features from peaks of similar m/z.
 
     Attributes
@@ -746,7 +761,7 @@ def binary_search_exact_neutral(array, neutral_mass):
     return 0
 
 
-class DeconvolutedLCMSFeatureMap(_FeatureCollection):
+class DeconvolutedLCMSFeatureMap(_FeatureCollection, _QueryMixin):
 
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: (round(x.neutral_mass, 6), x.start_time))
@@ -1030,7 +1045,6 @@ class FeatureRetentionTimeInterval(Interval):
         self.neutral_mass = chromatogram.neutral_mass
         self.start_time = self.start
         self.end_time = self.end
-        self.data['neutral_mass'] = self.neutral_mass
 
 
 def build_rt_interval_tree(chromatogram_list, interval_tree_type=IntervalTreeNode):
