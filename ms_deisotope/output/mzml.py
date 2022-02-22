@@ -1574,4 +1574,4 @@ class ProcessedGeneric3DIonMobilityFrameSource(Generic3DIonMobilityFrameSource):
                 frame.deconvoluted_features = deserialize_deconvoluted_features(frame._data)
             else:
                 frame.features = deserialize_features(frame._data)
-        return frame
+        return frame.pack()
