@@ -1165,6 +1165,9 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
         self._producer = self._wrap_iterator(self.loader)
         return self
 
+    def __iter__(self):
+        return self
+
     def __next__(self):
         return next(self._producer)
 
