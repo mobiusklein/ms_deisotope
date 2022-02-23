@@ -50,9 +50,11 @@ class ScanSink(object):
     def next_scan(self):
         scan = next(self.scan_generator)
         self.store_scan(scan)
-        while scan.ms_level != 1:
+        j = 0
+        while scan.ms_level != 1 and j < 100:
             scan = next(self.scan_generator)
             self.store_scan(scan)
+            j += 1
         return scan
 
     def __iter__(self):
