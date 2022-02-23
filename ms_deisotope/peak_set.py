@@ -1,10 +1,14 @@
 import operator
 import math
 from collections import namedtuple
+from typing import Any, Optional, Sequence
 
 from brainpy import mass_charge_ratio, neutral_mass as calc_neutral_mass, PROTON
 
 from ms_peak_picker import simple_peak, PeakSet as FittedPeakSet
+from ms_deisotope.peak_dependency_network.intervals import SimpleInterval
+
+from ms_deisotope.scoring import IsotopicFitRecord
 
 from .utils import Base, ppm_error
 
@@ -24,6 +28,9 @@ class _Index(object):
 
     __slots__ = ["neutral_mass", "mz"]
 
+    neutral_mass: int
+    mz: int
+
     def __init__(self, neutral_mass=None, mz=None):
         self.neutral_mass = neutral_mass
         self.mz = mz
@@ -41,7 +48,7 @@ class _Index(object):
 EnvelopePair = namedtuple("EnvelopePair", ("mz", "intensity"))
 
 
-class Envelope(object):
+class Envelope(Sequence[EnvelopePair]):
     """
     Represents a sequence of (mz, intensity) pairs which store peak positions
     that were matched. Since these peaks may later be mutated by subtraction,
@@ -116,6 +123,22 @@ class DeconvolutedPeak(Base):
         "score", "envelope", "mz", "fit", "chosen_for_msms", 'area'
     ]
 
+    neutral_mass: float
+    intensity: float
+    signal_to_noise: float
+    index: _Index
+    full_width_at_half_max: float
+    charge: int
+    a_to_a2_ratio: float
+    most_abundant_mass: float
+    average_mass: float
+    score: float
+    envelope: Envelope
+    mz: float
+    fit: Optional[IsotopicFitRecord]
+    chosen_for_msms: bool
+    area: float
+
     def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
                  a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0, score=0,
                  envelope=None, mz=0, fit=None, chosen_for_msms=False, area=0):
@@ -167,6 +190,8 @@ class DeconvolutedPeak(Base):
 
 
 class IonMobilityDeconvolutedPeak(DeconvolutedPeak):
+    drift_time: float
+
     def __init__(self, neutral_mass, intensity, charge, signal_to_noise, index, full_width_at_half_max,
                  a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0, score=0,
                  envelope=(), mz=0, fit=None, chosen_for_msms=False, area=0, drift_time=0):
@@ -221,6 +246,8 @@ class DeconvolutedPeakSolution(DeconvolutedPeak):
         "a_to_a2_ratio", "most_abundant_mass", "average_mass",
         "score", "envelope", "mz", "chosen_for_msms", 'area'
     ]
+
+    solution: Any
 
     def __init__(self, solution, fit, *args, **kwargs):
         self.solution = solution
@@ -619,3 +646,23 @@ class IonMobilityDeconvolutedPeakSet(DeconvolutedPeakSet):
         for i, peak in enumerate(self._mz_ordered):
             peak.index.mz = i
         return self
+
+
+class IonMobilityProfileDeconvolutedPeakSolution(DeconvolutedPeakSolution):
+    ion_mobility_interval: SimpleInterval
+
+    def __init__(self, solution, fit=None, *args, **kwargs):
+        super().__init__(solution, fit=fit, *args, **kwargs)
+        self.ion_mobility_interval = SimpleInterval(
+            solution.start_time, solution.end_time)
+
+    def overlaps(self, other: 'IonMobilityProfileDeconvolutedPeakSolution') -> bool:
+        return self.ion_mobility_interval.overlaps(other.ion_mobility_interval)
+
+    @classmethod
+    def from_feature(cls, feature) -> 'IonMobilityProfileDeconvolutedPeakSolution':
+        return cls(feature, fit=None, neutral_mass=feature.neutral_mass,
+                   intensity=feature.intensity, charge=feature.charge,
+                   signal_to_noise=feature.intensity, index=0, full_width_at_half_max=0,
+                   a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0,
+                   score=feature.score, chosen_for_msms=False, mz=feature.mz)

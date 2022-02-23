@@ -513,14 +513,14 @@ cdef class DeconvolutedPeakSolution(DeconvolutedPeak):
         self.fit = fit
 
     cpdef PeakBase clone(self):
-        return DeconvolutedPeakSolution(
+        return self.__class__(
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
             self.most_abundant_mass, self.average_mass, self.score,
             self.envelope, self.mz, self.chosen_for_msms, self.area)
 
     def __reduce__(self):
-        return DeconvolutedPeakSolution, (
+        return self.__class__, (
             self.solution, self.fit, self.neutral_mass, self.intensity, self.charge, self.signal_to_noise,
             self.index, self.full_width_at_half_max, self.a_to_a2_ratio,
             self.most_abundant_mass, self.average_mass, self.score,
