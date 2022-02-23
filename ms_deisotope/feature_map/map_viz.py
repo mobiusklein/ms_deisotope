@@ -141,6 +141,14 @@ def labeler(profile, *args, **kwargs):
     return label
 
 
+def threshold_labeler(threshold):
+    def label_func(profile, *args, **kwargs):
+        if profile.intensity > threshold:
+            return "%0.4f, %d" % (profile.neutral_mass, profile.charge)
+        return ''
+    return label_func
+
+
 def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size=10,
                   axis_label_font_size=16, axis_font_size=16, label=True,
                   colorizer=random_colorizer, label_function=labeler, legend=True):
