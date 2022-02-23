@@ -516,6 +516,6 @@ try:
     _Interval = Interval
     _IntervalTreeNode = IntervalTreeNode
     from ms_deisotope._c.peak_dependency_network.intervals import (
-        SpanningMixin, Interval, IntervalTreeNode)
+        SpanningMixin, Interval, IntervalTreeNode, SimpleInterval)
 except ImportError:
     has_c = False

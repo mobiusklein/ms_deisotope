@@ -129,6 +129,9 @@ cdef class SimpleInterval(SpanningMixin):
         self.end = end
         return self
 
+    def __repr__(self):
+        return "{self.__class__.__name__}({self.start}, {self.end})".format(self=self)
+
 
 cdef class Interval(SpanningMixin):
     def __init__(self, start, end, members=None, **kwargs):
