@@ -850,7 +850,8 @@ class IonMobilityFrame(FrameBase):
                 if not low_memory:
                     lo = max(i - average_within, 0)
                     hi = min(i + average_within + 1, len(scans))
-                    array_data = RawDataArrays(averager.mz_axis, averager.average_indices(lo, hi, num_threads))
+                    array_data = RawDataArrays(
+                        averager.mz_axis, averager.average_indices(lo, hi, n_workers=1))
                     acq_info = scan.acquisition_information
                     scan = WrappedScan(scan._data, scan.source, array_data, _acquisition_information=acq_info)
                 else:
