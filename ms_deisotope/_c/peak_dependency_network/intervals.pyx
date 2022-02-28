@@ -354,6 +354,17 @@ cdef class IntervalTreeNode(object):
                             contained.append(i)
                 else:
                     contained = list(members)
+
+                # If this node itself contains nothing
+                if not contained:
+                    # If only one child contains something
+                    if not (left and right):
+                        # store that side's elements on this node instead of
+                        # creating an extra layer
+                        contained = left + right
+                        left = []
+                        right = []
+
                 node = cls(center, left=None, contained=contained, right=None, level=parent.level + 1, parent=parent)
                 if side == 'left':
                     parent.left = node
@@ -373,8 +384,10 @@ cdef class IntervalTreeNode(object):
                         up = up.parent
                 else:
                     raise ValueError(side)
-                stack.append((node, left, "left"))
-                stack.append((node, right, "right"))
+                if left:
+                    stack.append((node, left, "left"))
+                if right:
+                    stack.append((node, right, "right"))
         return root.left
 
     def _update_bounds(self):
