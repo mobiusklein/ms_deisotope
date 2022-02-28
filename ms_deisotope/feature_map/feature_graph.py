@@ -4,7 +4,7 @@ from typing import Any, Deque, Iterator, List, Optional, Set, Type, Sequence
 
 import numpy as np
 
-from ms_deisotope.peak_dependency_network.intervals import SpanningMixin, IntervalTreeNode, Interval
+from ms_deisotope.peak_dependency_network.intervals import SpanningMixin, IntervalTreeNode, Interval, SimpleInterval
 from ms_deisotope.feature_map.lcms_feature import LCMSFeature
 
 
@@ -140,6 +140,14 @@ class DeconvolutedFeatureGraphNode(FeatureGraphNode):
         self.charge = feature.charge
 
 
+class IonMobilityProfileFeatureGraphNode(DeconvolutedFeatureGraphNode):
+    ion_mobility_interval: SimpleInterval
+
+    def __init__(self, feature, index, edges=None):
+        super().__init__(feature, index, edges)
+        self.ion_mobility_interval = feature.ion_mobility_interval
+
+
 class FeatureGraphEdge(object):
     __slots__ = ('node_a', 'node_b', 'transition', 'weight', 'mass_error', 'rt_error')
 
@@ -256,6 +264,8 @@ class FeatureGraph(object):
             ppm_error = (node.mz - match.mz) / match.mz
             if abs(ppm_error) > error_tolerance:
                 continue
+            if match.index == node.index:
+                continue
             rt_error = (node.center - match.center)
             self.edges.add(self.edge_cls(
                 node, match, None, mass_error=ppm_error, rt_error=rt_error))
@@ -319,6 +329,35 @@ class DeconvolutedFeatureGraph(FeatureGraph):
             ppm_error = (node.neutral_mass - match.neutral_mass) / match.neutral_mass
             if abs(ppm_error) > error_tolerance:
                 continue
+            if match.index == node.index:
+                continue
+            rt_error = (node.center - match.center)
+            self.edges.add(self.edge_cls(
+                node, match, None, mass_error=ppm_error, rt_error=rt_error))
+
+
+class IonMobilityProfileDeconvolutedFeatureGraph(DeconvolutedFeatureGraph):
+    node_cls = IonMobilityProfileFeatureGraphNode
+
+    def find_edges(self, node: IonMobilityProfileFeatureGraphNode, query_width: float = 2., error_tolerance=1.5e-5, **kwargs):
+        query = TimeQuery(node.feature, query_width)
+        mass_query = PPMQuery(node.neutral_mass, error_tolerance)
+        nodes = self.rt_tree.overlaps(
+            [query.start, mass_query.start], [query.end, mass_query.end])
+        charge = node.charge
+        for match in nodes:
+            if match.charge != charge:
+                continue
+            # If there isn't an overlap in the IM dimension, then they aren't the same molecule even
+            # if charge, mass, and elution time do match
+            if not match.ion_mobility_interval.overlaps(node.ion_mobility_interval):
+                continue
+            ppm_error = (node.neutral_mass - match.neutral_mass) / \
+                match.neutral_mass
+            if abs(ppm_error) > error_tolerance:
+                continue
+            if match.index == node.index:
+                continue
             rt_error = (node.center - match.center)
             self.edges.add(self.edge_cls(
                 node, match, None, mass_error=ppm_error, rt_error=rt_error))
@@ -339,7 +378,7 @@ class GapAwareFeatureSmoother(object):
         features: List[LCMSFeature] = []
         for component in self.graph.connected_components():
             f = component[0].feature
-            for f2 in component:
+            for f2 in component[1:]:
                 f = f.merge(f2.feature)
             features.append(f)
         return self._wrap_result(features)
@@ -359,3 +398,9 @@ class GapAwareDeconvolutedFeatureSmoother(GapAwareFeatureSmoother):
         from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureMap
         return DeconvolutedLCMSFeatureMap(features)
 
+
+class GapAwareIonMobilityProfileDeconvolutedFeatureSmoother(GapAwareDeconvolutedFeatureSmoother):
+    graph: IonMobilityProfileDeconvolutedFeatureGraph
+
+    def __init__(self, features):
+        self.graph = IonMobilityProfileDeconvolutedFeatureGraph(features)

@@ -610,7 +610,7 @@ cdef class LCMSFeature(FeatureBase):
         i = 0
         j = 0
         node = self._find_time(start, &i)
-        if node.time < start:
+        if node is not None and node.time < start:
             i += 1
         node = self._find_time(end, &j)
         return self._copy_chunk(self.nodes[i:j + 1])
@@ -780,6 +780,16 @@ cdef class LCMSFeature(FeatureBase):
 
     cdef LCMSFeatureTreeNode getitem(self, size_t i):
         return self.nodes.getitem(i)
+
+    cpdef double max_intensity(self):
+        cdef:
+            size_t i, n
+            double max_intensity
+        max_intensity = 0.0
+        n = self.get_size()
+        for i in range(n):
+            max_intensity = max(self.getitem(i).max_intensity(), max_intensity)
+        return max_intensity
 
 
 cdef class EmptyFeature(FeatureBase):

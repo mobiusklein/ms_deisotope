@@ -95,6 +95,7 @@ cdef class LCMSFeature(FeatureBase):
     cpdef _invalidate(self, bint reaverage=*)
     cpdef list split_sparse(self, double delta_rt=*)
     cpdef LCMSFeature clone(self, deep=*, cls=*)
+    cpdef double max_intensity(self)
 
 
 cdef class EmptyFeature(FeatureBase):

@@ -9,9 +9,10 @@ from ms_peak_picker import PeakSet
 from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope import DeconvolutedPeakSet
 from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
+from ms_deisotope.peak_set import IonMobilityProfileDeconvolutedPeakSolution
 
 from .lcms_feature import LCMSFeature
-from .feature_fit import DeconvolutedLCMSFeature, IonMobilityDeconvolutedLCMSFeature
+from .feature_fit import DeconvolutedLCMSFeature, IonMobilityDeconvolutedLCMSFeature, IonMobilityProfileDeconvolutedLCMSFeature
 
 
 logger = logging.getLogger(__name__)
@@ -1607,4 +1608,83 @@ class IonMobilityDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
             minimum_mass=minimum_mass,
             minimum_intensity=minimum_intensity,
             maximum_mass=maximum_mass)
+        return self
+
+
+class IonMobilityProfileDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
+    def find_minimizing_index(self, peak: IonMobilityProfileDeconvolutedPeakSolution, indices):
+        '''Amongst the set of `indices`, find the one that
+        minimizes the distance to `peak`
+
+        Parameters
+        ----------
+        peak : PeakBase
+            The peak to match
+        indicies : Iterable of int
+            The feature inidices in `self` to choose between
+
+        Returns
+        -------
+        int:
+            The best index out of `indices`, with the smallest distance
+            to `peak`
+        '''
+        best_index = None
+        best_error = float('inf')
+        for index_case in indices:
+            feature = self[index_case]
+            if feature.charge != peak.charge:
+                continue
+            if not feature.ion_mobility_interval.overlaps(peak.ion_mobility_interval):
+                continue
+            err = abs(feature.neutral_mass - peak.neutral_mass) / \
+                peak.neutral_mass
+            if err < best_error and err < self.error_tolerance:
+                best_index = index_case
+                best_error = err
+        return best_index
+
+    def handle_peak(self, peak, scan_time):
+        '''Add `peak` at `scan_time` to the feature forest.
+
+        If `peak` matches an existing feature, insert it into that feature
+        with `scan_time`. If no feature is matched, create a new feature wit
+        `peak` and add it to the feature forest.
+
+        Parameters
+        ----------
+        peak : DeconvolutedPeak
+            The peak to add.
+        scan_time : float
+            The time the peak was observed.
+
+        '''
+        if len(self) == 0:
+            index = [0]
+            matched = False
+        else:
+            index, matched = self.find_insertion_point(peak)
+        if matched:
+            minimized_feature_index = self.find_minimizing_index(peak, index)
+            if minimized_feature_index is not None:
+                feature = self.features[minimized_feature_index]
+                feature.insert(peak, scan_time)
+            else:
+                feature = IonMobilityProfileDeconvolutedLCMSFeature(charge=peak.charge)
+                feature.created_at = "forest"
+                feature.insert(peak, scan_time)
+                self.insert_feature(feature, index)
+        else:
+            feature = IonMobilityProfileDeconvolutedLCMSFeature(charge=peak.charge)
+            feature.created_at = "forest"
+            feature.insert(peak, scan_time)
+            self.insert_feature(feature, index)
+        self.count += 1
+
+    def smooth_overlaps(self, error_tolerance=None):
+        from .feature_graph import GapAwareIonMobilityProfileDeconvolutedFeatureSmoother
+        if error_tolerance is None:
+            error_tolerance = self.error_tolerance
+        self.features = GapAwareIonMobilityProfileDeconvolutedFeatureSmoother.smooth(
+            self.features, mass_error_tolerance=error_tolerance).features
         return self

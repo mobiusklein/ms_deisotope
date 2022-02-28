@@ -4,8 +4,13 @@ import numpy as np
 
 # from brainpy import neutral_mass as calc_neutral_mass
 from ms_peak_picker import FittedPeak
+
 from ms_deisotope.averagine import glycan
 from ms_deisotope.scoring import g_test_scaled
+from ms_deisotope.peak_set import DeconvolutedPeak, IonMobilityDeconvolutedPeak, IonMobilityProfileDeconvolutedPeakSolution
+
+from ms_deisotope.peak_dependency_network.intervals import SimpleInterval
+
 from .shape_fitter import AdaptiveMultimodalChromatogramShapeFitter
 from .lcms_feature import (
     EmptyFeature,
@@ -138,7 +143,7 @@ class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
             self.charge = self._most_abundant_member.charge
 
     @property
-    def neutral_mass(self):
+    def neutral_mass(self) -> float:
         if self._neutral_mass == 0:
             if self._most_abundant_member is not None:
                 self._neutral_mass = self._most_abundant_member.neutral_mass
@@ -172,21 +177,21 @@ class DeconvolutedLCMSFeature(LCMSFeature):
             self._precursor_information = tuple(pinfo)
         return self._precursor_information
 
-    def clone(self, deep=False, cls=None):
+    def clone(self, deep=False, cls=None) -> 'DeconvolutedLCMSFeature':
         if cls is None:
             cls = self.__class__
         return cls(
             self.nodes.clone(deep=deep), self.charge, self.adducts, self.used_as_adduct, self.score,
             self.n_features, self.feature_id, list(self.supporters))
 
-    def _invalidate(self, reaverage=False):
+    def _invalidate(self, reaverage: bool=False):
         self._last_neutral_mass = self._neutral_mass if self._neutral_mass is not None else 0.
         self._neutral_mass = None
         self._precursor_information = None
         super(DeconvolutedLCMSFeature, self)._invalidate(reaverage)
 
     @property
-    def neutral_mass(self):
+    def neutral_mass(self) -> float:
         if self._neutral_mass is None:
             avger = DeconvolutedRunningWeightedAverage()
             for node in self.nodes:
@@ -194,7 +199,7 @@ class DeconvolutedLCMSFeature(LCMSFeature):
             self._neutral_mass = self._last_neutral_mass = avger.current_mean
         return self._neutral_mass
 
-    def _copy_chunk(self, nodes, *args, **kwargs):
+    def _copy_chunk(self, nodes, *args, **kwargs) -> 'DeconvolutedLCMSFeature':
         x = self.__class__(
             nodes, self.charge, list(self.adducts), list(self.used_as_adduct),
             self.score, self.n_features, None, list(self.supporters))
@@ -226,7 +231,7 @@ class DeconvolutedLCMSFeature(LCMSFeature):
 
 
 class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
-    def add(self, peak):
+    def add(self, peak: DeconvolutedPeak):
         if peak.intensity == 0:
             if self.current_mean == 0 and self.total_weight == 0:
                 self.current_mean = peak.neutral_mass
@@ -242,7 +247,7 @@ class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
 
 
 class DriftTimeRunningWeightedAverage(RunningWeightedAverage):
-    def add(self, peak):
+    def add(self, peak: IonMobilityDeconvolutedPeak):
         if peak.intensity == 0:
             if self.current_mean == 0 and self.total_weight == 0:
                 self.current_mean = peak.drift_time
@@ -266,13 +271,13 @@ class IonMobilityDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
             nodes=nodes, charge=charge, adducts=adducts, used_as_adduct=used_as_adduct, score=score,
             n_features=n_features, feature_id=feature_id, supporters=supporters)
 
-    def _invalidate(self, reaverage=False):
+    def _invalidate(self, reaverage: bool=False):
         self._last_drift_time = self._drift_time if self._drift_time is not None else 0.
         self._drift_time = None
         return super(IonMobilityDeconvolutedLCMSFeature, self)._invalidate(reaverage=reaverage)
 
     @property
-    def drift_time(self):
+    def drift_time(self) -> float:
         if self._drift_time is None:
             avger = DriftTimeRunningWeightedAverage()
             for node in self.nodes:
@@ -345,3 +350,90 @@ try:
 except ImportError as e:
     print(e)
     has_c = False
+
+
+class IonMobilityProfileDeconvolutedRunningWeightedAverage(DeconvolutedRunningWeightedAverage):
+    def __init__(self, *args, **kwargs):
+        self.interval = SimpleInterval(0, 0)
+        super().__init__(*args, **kwargs)
+
+    def _initialize(self):
+        super()._initialize()
+        self.interval = SimpleInterval(0, 0)
+
+    def add(self, peak: IonMobilityProfileDeconvolutedPeakSolution):
+        if peak.intensity == 0:
+            if self.current_mean == 0 and self.total_weight == 0:
+                self.current_mean = peak.neutral_mass
+                self.interval.start = peak.ion_mobility_interval.start
+                self.interval.end = peak.ion_mobility_interval.end
+                self.total_weight = 1
+            else:
+                return
+        agg = (self.total_weight * self.current_mean) + \
+            (peak.neutral_mass * peak.intensity)
+        start_agg = (self.interval.start * self.total_weight) + (peak.ion_mobility_interval.start * peak.intensity)
+        end_agg = (self.interval.end * self.total_weight) + (peak.ion_mobility_interval.end * peak.intensity)
+        self.total_weight += peak.intensity
+        self.current_mean = agg / self.total_weight
+        self.interval.start = start_agg / self.total_weight
+        self.interval.end = end_agg / self.total_weight
+        self.current_count += 1
+        return self
+
+
+class IonMobilityProfileDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
+    _ion_mobility_interval: SimpleInterval
+
+    def __init__(self, nodes=None, charge=None, adducts=None, used_as_adduct=None, score=0.0,
+                 n_features=0, feature_id=None, supporters=None):
+        super().__init__(nodes, charge, adducts, used_as_adduct, score,
+                         n_features, feature_id, supporters)
+        self._ion_mobility_interval = None
+
+    def _invalidate(self, reaverage: bool=False):
+        self._last_ion_mobility_interval = self._ion_mobility_interval if self._ion_mobility_interval is not None \
+            else SimpleInterval(0, 0)
+        self._ion_mobility_interval = None
+        super()._invalidate(reaverage)
+
+    def _reaverage_and_update(self):
+        avger = IonMobilityProfileDeconvolutedRunningWeightedAverage()
+        for node in self.nodes:
+            avger.update(node.members)
+        self._neutral_mass = self._last_neutral_mass = avger.current_mean
+        self._ion_mobility_interval = self._last_ion_mobility_interval = avger.interval
+
+    @property
+    def neutral_mass(self) -> float:
+        if self._neutral_mass is None:
+            self._reaverage_and_update()
+        return self._neutral_mass
+
+    @property
+    def ion_mobility_interval(self) -> SimpleInterval:
+        if self._ion_mobility_interval is None:
+            self._reaverage_and_update()
+        return self._ion_mobility_interval
+
+
+    def between_ion_mobilities(self, ion_mobility_start: float, ion_mobility_end: float,
+                               time_start: float = 0, time_end: float = float('inf')) -> 'IonMobilityProfileDeconvolutedLCMSFeature':
+        nodes = []
+        for node in self:
+            if node.time < time_start:
+                continue
+            if node.time > time_end:
+                break
+            peaks = []
+            for peak in node.members:
+                try:
+                    peaks.append(
+                        peak.from_feature(
+                            peak.solution.between_times(ion_mobility_start, ion_mobility_end)))
+                except IndexError:
+                    continue
+            if peaks:
+                node = node.__class__(node.time, peaks)
+                nodes.append(node)
+        return self._copy_chunk(nodes)
