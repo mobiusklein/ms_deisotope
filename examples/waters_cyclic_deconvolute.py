@@ -91,8 +91,8 @@ class MSEFrameIDYieldingProcess(ScanIDYieldingProcess):
         self._iterator = MSEIterator(
             self.loader,
             lambda x: x,
-            self.low_energy_function,
-            self.lock_mass_function,
+            low_energy_config=self.low_energy_function,
+            lock_mass_config=self.lock_mass_function,
             on_lock_mass_scan=self.skip_scan)
 
     def _prepare_end_scan_marker(self) -> Optional[str]:

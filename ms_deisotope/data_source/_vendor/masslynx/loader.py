@@ -233,7 +233,7 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
         for i in range(start_index, len(self.cycle_index)):
             yield self.cycle_index[i]
 
-    def make_frame_iterator(self, iterator=None, grouped: bool=False) -> _ScanIteratorImplBase:
+    def make_frame_iterator(self, iterator=None, grouped=False, **kwargs) -> _ScanIteratorImplBase:
         from ms_deisotope.data_source.scan.scan_iterator import (
             _SingleScanIteratorImpl, _GroupedScanIteratorImpl, MSEIterator)
         if iterator is None:
@@ -241,17 +241,19 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
 
         if grouped == 'mse':
             strategy = MSEIterator(
-                iterator, self._make_frame, self.low_energy_function, self.lockmass_function,
-                self._validate_frame, self._cache_frame)
+                iterator, self._make_frame,
+                self._validate_frame, self._cache_frame,
+                low_energy_config=self.low_energy_function,
+                lock_mass_config=self.lockmass_function, **kwargs)
         elif grouped:
             strategy = _GroupedScanIteratorImpl(
-                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+                iterator, self._make_frame, self._validate_frame, self._cache_frame, **kwargs)
         else:
             strategy = _SingleScanIteratorImpl(
-                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+                iterator, self._make_frame, self._validate_frame, self._cache_frame, **kwargs)
         return strategy
 
-    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         if scan_id is not None:
             frame = self.get_frame_by_id(scan_id)
             start_index = frame.index
@@ -268,7 +270,7 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
                 else:
                     break
         self._producer = self.make_frame_iterator(
-            self._default_frame_iterator(start_index), grouped=grouped)
+            self._default_frame_iterator(start_index), grouped=grouped, **kwargs)
         return self
 
 
@@ -652,7 +654,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
             else:
                 lo = mid
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         if scan_id is not None:
             scan = self.get_scan_by_id(scan_id)
             start_index = scan.index

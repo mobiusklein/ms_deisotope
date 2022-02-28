@@ -284,7 +284,7 @@ class XMLReaderBase(RandomAccessScanSource):
     def _yield_from_index(self, scan_source, start):
         raise NotImplementedError()
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
@@ -334,7 +334,7 @@ class XMLReaderBase(RandomAccessScanSource):
             scan_id = scan.id
 
         iterator = self._yield_from_index(self._source, scan_id)
-        self.make_iterator(iterator, grouped=grouped)
+        self.make_iterator(iterator, grouped=grouped, **kwargs)
         return self
 
     def __repr__(self):

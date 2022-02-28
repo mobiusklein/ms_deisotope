@@ -3,6 +3,7 @@ load data for :class:`~.Scan` objects.
 '''
 import abc
 import logging
+from typing import Iterator, Union
 
 from weakref import WeakValueDictionary
 
@@ -15,12 +16,14 @@ from ms_deisotope.data_source._compression import MaybeFastRandomAccess
 
 from .scan import Scan
 from .scan_iterator import (
+    _ScanIteratorImplBase,
     _SingleScanIteratorImpl,
     _GroupedScanIteratorImpl,
     _FakeGroupedScanIteratorImpl,
     _InterleavedGroupedScanIteratorImpl,
     ITERATION_MODE_GROUPED,
-    ITERATION_MODE_SINGLE)
+    ITERATION_MODE_SINGLE,
+    MSEIterator)
 
 
 logger = logging.getLogger(__name__)
@@ -386,7 +389,7 @@ class ScanIterator(ScanDataSource):
         '''
         raise NotImplementedError()
 
-    def make_iterator(self, iterator=None, grouped=None):
+    def make_iterator(self, iterator=None, grouped=None, **kwargs):
         """Configure the :class:`ScanIterator`'s behavior, selecting it's iteration strategy over
         either its default iterator or the provided ``iterator`` argument.
 
@@ -404,10 +407,10 @@ class ScanIterator(ScanDataSource):
             grouped = self.has_ms1_scans()
 
         if grouped:
-            self._producer = self._scan_group_iterator(iterator, grouped)
+            self._producer = self._scan_group_iterator(iterator, grouped, **kwargs)
             self.iteration_mode = ITERATION_MODE_GROUPED
         else:
-            self._producer = self._single_scan_iterator(iterator, grouped)
+            self._producer = self._single_scan_iterator(iterator, grouped, **kwargs)
             self.iteration_mode = ITERATION_MODE_SINGLE
         return self
 
@@ -422,20 +425,29 @@ class ScanIterator(ScanDataSource):
     def _validate(self, scan):
         return True
 
-    def _single_scan_iterator(self, iterator=None, mode=None):
+    def _single_scan_iterator(self, iterator: Iterator=None, mode=None, **kwargs) -> _SingleScanIteratorImpl:
         if iterator is None:
             iterator = self._make_default_iterator()
 
-        impl = _SingleScanIteratorImpl.from_scan_source(iterator, self)
+        impl = _SingleScanIteratorImpl.from_scan_source(iterator, self, **kwargs)
         return impl
 
-    def _scan_group_iterator(self, iterator=None, mode=None):
+    def _scan_group_iterator(self, iterator: Iterator=None, mode=None, **kwargs) -> Union[_InterleavedGroupedScanIteratorImpl, _FakeGroupedScanIteratorImpl]:
         if iterator is None:
             iterator = self._make_default_iterator()
-        if self.has_ms1_scans():
-                impl = _InterleavedGroupedScanIteratorImpl.from_scan_source(iterator, self)
+        if isinstance(mode, _ScanIteratorImplBase):
+            impl = mode.from_scan_source(iterator, self, **kwargs)
+            return impl
+        elif callable(mode):
+            impl = mode(iterator, self, **kwargs)
+            return impl
+        elif mode == "mse":
+            impl = MSEIterator.from_scan_source(iterator, self, **kwargs)
+            return impl
+        elif self.has_ms1_scans():
+                impl = _InterleavedGroupedScanIteratorImpl.from_scan_source(iterator, self, **kwargs)
         else:
-            impl = _FakeGroupedScanIteratorImpl.from_scan_source(iterator, self)
+            impl = _FakeGroupedScanIteratorImpl.from_scan_source(iterator, self, **kwargs)
         return impl
 
     def _scan_cleared(self, scan):
@@ -546,7 +558,7 @@ class RandomAccessScanSource(ScanIterator):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 

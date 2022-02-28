@@ -640,7 +640,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             self._scan_cache[scan_number] = scan
             return scan
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
@@ -678,9 +678,9 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             scan_number = start_index
         iterator = self._make_pointer_iterator(start_index=scan_number)
         if grouped:
-            self._producer = self._scan_group_iterator(iterator)
+            self._producer = self._scan_group_iterator(iterator, grouped, **kwargs)
         else:
-            self._producer = self._single_scan_iterator(iterator)
+            self._producer = self._single_scan_iterator(iterator, grouped, **kwargs)
         return self
 
     def _make_scan_index_producer(self, start_index=None, start_time=None):
