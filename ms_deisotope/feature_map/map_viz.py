@@ -50,7 +50,7 @@ def draw_features(features, ax=None, alpha=0.65, norm=None, cmap=None, **kwargs)
     if not features:
         return ax
     lines = []
-    kwargs.setdefault("lw", 0.05)
+    kwargs.setdefault("lw", 1)
     lw = kwargs.get("linewidth", kwargs.get("lw"))
     for feat in features:
         segments, intensities = feature_to_segments(feat)
