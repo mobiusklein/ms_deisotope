@@ -233,7 +233,6 @@ class GenerationTracker(object):
         return result
 
 
-
 class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
     """Iterate over related scan bunches.
 
@@ -427,8 +426,14 @@ class MSEIterator(_GroupedScanIteratorImpl[T, G]):
         The function corresponding to the lockmass. Lockmass scans
         will be skipped.
     '''
-    def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None,
-                 scan_cacher=None, on_lock_mass_scan: Optional[Callable]=None):
+
+    low_energy_config: int = 1
+    lock_mass_config: int = 3
+    low_energy_config: Optional[Callable]
+
+    def __init__(self, iterator, scan_packer, scan_validator=None,
+                 scan_cacher=None, low_energy_config=1, lock_mass_config=3,
+                 on_lock_mass_scan: Optional[Callable] = None, **kwargs):
         super(MSEIterator, self).__init__(
             iterator, scan_packer, scan_validator, scan_cacher)
         self.low_energy_config = low_energy_config
