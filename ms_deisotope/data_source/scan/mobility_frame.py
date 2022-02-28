@@ -1138,8 +1138,11 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def _wrap_iterator(self, iterator):
         for val in iterator:
             if isinstance(val, ScanBunch):
-                precursor = self._make_frame(val.precursor._data)
-                self._cache_frame(precursor)
+                if val.precursor is None:
+                    precursor = None
+                else:
+                    precursor = self._make_frame(val.precursor._data)
+                    self._cache_frame(precursor)
                 products = []
                 for product in val.products:
                     product = self._make_frame(product._data)
@@ -1156,13 +1159,13 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
         self.loader.start_from_scan(index=start_index, grouped=False)
         return self._wrap_iterator(self.loader)
 
-    def make_frame_iterator(self, iterator=None, grouped=False):
-        self.loader.make_iterator(iterator, grouped=grouped)
+    def make_frame_iterator(self, iterator=None, grouped=False, **kwargs):
+        self.loader.make_iterator(iterator, grouped=grouped, **kwargs)
         return self._wrap_iterator(self.loader)
 
-    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         self.loader.start_from_scan(
-            scan_id=scan_id, rt=rt, index=index, require_ms1=require_ms1, grouped=grouped)
+            scan_id=scan_id, rt=rt, index=index, require_ms1=require_ms1, grouped=grouped, **kwargs)
         self._producer = self._wrap_iterator(self.loader)
         return self
 
