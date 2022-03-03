@@ -469,7 +469,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
                     product_scan.precursor_information.defaulted))
             if self.deconvolute:
                 self._deconvolute_msn(product_scan)
-                if precursor_scan is None:
+                if precursor_scan is None and product_scan.precursor_information:
                     product_scan.precursor_information.default(orphan=True)
             self.send_scan(product_scan)
         except (KeyboardInterrupt, SystemExit) as e:

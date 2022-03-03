@@ -149,7 +149,7 @@ class IonMobilityProfileFeatureGraphNode(DeconvolutedFeatureGraphNode):
 
 
 class FeatureGraphEdge(object):
-    __slots__ = ('node_a', 'node_b', 'transition', 'weight', 'mass_error', 'rt_error')
+    __slots__ = ('node_a', 'node_b', 'transition', 'weight', 'mass_error', 'rt_error', '_hash')
 
     node_a: FeatureGraphNode
     node_b: FeatureGraphNode
@@ -157,6 +157,7 @@ class FeatureGraphEdge(object):
     weight: float
     mass_error: float
     rt_error: float
+    _hash: int
 
     def __init__(self, node_a, node_b, transition, weight=1, mass_error=0, rt_error=0):
         self.node_a = node_a
@@ -165,6 +166,7 @@ class FeatureGraphEdge(object):
         self.weight = weight
         self.mass_error = mass_error
         self.rt_error = rt_error
+        self._hash = None
         self.node_a.edges.add(self)
         self.node_b.edges.add(self)
 
@@ -174,7 +176,10 @@ class FeatureGraphEdge(object):
             self.transition)
 
     def __hash__(self):
-        return hash(frozenset((self.node_a.index, self.node_b.index)))
+        if self._hash is None:
+            self._hash = hash(
+                frozenset((self.node_a.index, self.node_b.index)))
+        return self._hash
 
     def __eq__(self, other):
         return (self.node_a.index, self.node_b.index) == (other.node_a.index, other.node_b.index)

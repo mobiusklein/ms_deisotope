@@ -660,9 +660,10 @@ class IonMobilityProfileDeconvolutedPeakSolution(DeconvolutedPeakSolution):
         return self.ion_mobility_interval.overlaps(other.ion_mobility_interval)
 
     @classmethod
-    def from_feature(cls, feature) -> 'IonMobilityProfileDeconvolutedPeakSolution':
+    def from_feature(cls, feature: 'IonMobilityProfileDeconvolutedLCMSFeature') -> 'IonMobilityProfileDeconvolutedPeakSolution':
         return cls(feature, fit=None, neutral_mass=feature.neutral_mass,
                    intensity=feature.intensity, charge=feature.charge,
+                   envelope=feature.sum_envelopes(),
                    signal_to_noise=feature.intensity, index=0, full_width_at_half_max=0,
                    a_to_a2_ratio=0, most_abundant_mass=0, average_mass=0,
                    score=feature.score, chosen_for_msms=False, mz=feature.mz)

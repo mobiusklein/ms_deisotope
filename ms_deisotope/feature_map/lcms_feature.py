@@ -660,6 +660,11 @@ class RunningWeightedAverage(object):
         self.current_count += 1
         return self
 
+    def feed_from_feature(self, feature: LCMSFeature):
+        for node in feature:
+            self.update(node.members)
+        return len(feature)
+
     def update(self, iterable):
         for x in iterable:
             self.add(x)
@@ -715,3 +720,8 @@ def smooth_feature(feature, level=1):
         peak.intensity = smoothed[i]
     feature.invalidate(True)
     return feature
+
+try:
+    from ms_deisotope._c.feature_map.lcms_feature import RunningWeightedAverage
+except ImportError:
+    has_c = False

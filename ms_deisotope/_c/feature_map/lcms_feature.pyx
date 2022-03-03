@@ -1123,6 +1123,21 @@ cdef class RunningWeightedAverage(object):
             print("NaN produced in add()")
         return self
 
+    cpdef int feed_from_feature(self, LCMSFeature feature):
+        cdef:
+            size_t i, j, n, m
+            LCMSFeatureTreeNode node
+            PeakBase peak
+
+        n = feature.get_size()
+        for i in range(n):
+            node = feature.getitem(i)
+            m = node.get_members_size()
+            for j in range(m):
+                peak = node.getitem(j)
+                self.add(peak)
+        return n
+
     cpdef RunningWeightedAverage update(self, iterable):
         for x in iterable:
             self.add(x)

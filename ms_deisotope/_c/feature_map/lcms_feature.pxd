@@ -140,6 +140,7 @@ cdef class RunningWeightedAverage(object):
     cpdef _initialize(self)
     cpdef add(self, PeakBase peak)
     cpdef RunningWeightedAverage update(self, iterable)
+    cpdef int feed_from_feature(self, LCMSFeature feature)
 
     @staticmethod
     cdef RunningWeightedAverage _create(list peaks)

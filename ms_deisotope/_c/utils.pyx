@@ -8,8 +8,10 @@ cimport numpy as np
 
 from ms_peak_picker._c.peak_index cimport PeakIndex
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak, PeakSetIndexed
+
 from ms_deisotope._c.peak_set cimport (
     Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSetIndexed, PeakBase)
+
 from ms_deisotope._c.averagine cimport neutral_mass
 
 
@@ -66,6 +68,11 @@ cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
                 if n_members > 0:
                     current_envelope_tuple = tuple(current_envelope)
                     PyList_Append(envelope_list, Envelope._create(current_envelope_tuple))
+                else:
+                    PyList_Append(envelope_list, Envelope._create(
+                            ()
+                        )
+                    )
                 current_envelope = []
                 n_members = 0
         else:

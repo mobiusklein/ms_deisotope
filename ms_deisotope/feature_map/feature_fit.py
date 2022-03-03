@@ -7,7 +7,7 @@ from ms_peak_picker import FittedPeak
 
 from ms_deisotope.averagine import glycan
 from ms_deisotope.scoring import g_test_scaled
-from ms_deisotope.peak_set import DeconvolutedPeak, IonMobilityDeconvolutedPeak, IonMobilityProfileDeconvolutedPeakSolution
+from ms_deisotope.peak_set import DeconvolutedPeak, IonMobilityDeconvolutedPeak, IonMobilityProfileDeconvolutedPeakSolution, Envelope
 
 from ms_deisotope.peak_dependency_network.intervals import SimpleInterval
 
@@ -194,8 +194,7 @@ class DeconvolutedLCMSFeature(LCMSFeature):
     def neutral_mass(self) -> float:
         if self._neutral_mass is None:
             avger = DeconvolutedRunningWeightedAverage()
-            for node in self.nodes:
-                avger.update(node.members)
+            avger.feed_from_feature(self)
             self._neutral_mass = self._last_neutral_mass = avger.current_mean
         return self._neutral_mass
 
@@ -228,6 +227,28 @@ class DeconvolutedLCMSFeature(LCMSFeature):
             self.__class__.__name__, self.neutral_mass,
             self.charge, self.score,
             self.start_time, self.end_time)
+
+    def sum_envelopes(self) -> Envelope:
+        mzs = None
+        intensities = None
+        for node in self:
+            peak: DeconvolutedPeak
+            for peak in node.members:
+                if mzs is None:
+                    mzs = [0.0 for i in range(len(peak.envelope))]
+                    intensities = [0.0 for i in range(len(peak.envelope))]
+                for i, pt in enumerate(peak.envelope):
+                    try:
+                        mzs[i] += (pt.mz * pt.intensity)
+                        intensities[i] += pt.intensity
+                    except IndexError:
+                        mzs.append(pt.mz * pt.intensity)
+                        intensities.append(pt.intensity)
+        out = [None for i in range(len(mzs))]
+        for i, mz_int in enumerate(mzs):
+            inten = intensities[i]
+            out[i] = (mz_int / inten, inten)
+        return Envelope(out)
 
 
 class DeconvolutedRunningWeightedAverage(RunningWeightedAverage):
@@ -280,8 +301,7 @@ class IonMobilityDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
     def drift_time(self) -> float:
         if self._drift_time is None:
             avger = DriftTimeRunningWeightedAverage()
-            for node in self.nodes:
-                avger.update(node.members)
+            avger.feed_from_feature(self)
             self._drift_time = self._last_drift_time = avger.current_mean
         return self._drift_time
 
@@ -399,8 +419,7 @@ class IonMobilityProfileDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
 
     def _reaverage_and_update(self):
         avger = IonMobilityProfileDeconvolutedRunningWeightedAverage()
-        for node in self.nodes:
-            avger.update(node.members)
+        avger.feed_from_feature(self)
         self._neutral_mass = self._last_neutral_mass = avger.current_mean
         self._ion_mobility_interval = self._last_ion_mobility_interval = avger.interval
 
@@ -437,3 +456,14 @@ class IonMobilityProfileDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
                 node = node.__class__(node.time, peaks)
                 nodes.append(node)
         return self._copy_chunk(nodes)
+
+
+try:
+    has_c = True
+    from ms_deisotope._c.feature_map.feature_fit import (
+        _sum_envelopes as _c_sum_envelopes)
+
+    DeconvolutedLCMSFeature.sum_envelopes = _c_sum_envelopes
+except ImportError as e:
+    print(e)
+    has_c = False

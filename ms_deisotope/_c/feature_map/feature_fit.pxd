@@ -1,5 +1,5 @@
-from ms_deisotope._c.feature_map.lcms_feature cimport FeatureBase, LCMSFeatureTreeNode
-from ms_deisotope._c.peak_set cimport DeconvolutedPeak
+from ms_deisotope._c.feature_map.lcms_feature cimport FeatureBase, LCMSFeatureTreeNode, LCMSFeature
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak, Envelope
 from ms_deisotope._c.averagine cimport TheoreticalIsotopicPattern
 
 cimport numpy as np
@@ -51,3 +51,6 @@ cdef class LCMSFeatureSetFit(object):
                                    double score, int charge, size_t missing_features,
                                    list supporters, object data, double neutral_mass,
                                    size_t n_points, object scores, object times)
+
+
+cpdef Envelope _sum_envelopes(LCMSFeature self)
