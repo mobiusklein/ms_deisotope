@@ -88,7 +88,10 @@ cdef class LCMSFeature(FeatureBase):
     cpdef bint spans_in_time(self, double time)
 
     cdef LCMSFeatureTreeNode getitem(self, size_t i)
-    cdef void _feed_peak_averager(self)
+
+    cpdef _initialize_averager(self)
+    cpdef _update_from_averager(self)
+    cpdef _reaverage_and_update(self)
 
     cpdef insert_node(self, LCMSFeatureTreeNode node)
     cpdef insert(self, PeakBase peak, double time)
@@ -137,6 +140,7 @@ cdef class RunningWeightedAverage(object):
         public size_t current_count
         public double total_weight
 
+    cpdef reset(self)
     cpdef _initialize(self)
     cpdef add(self, PeakBase peak)
     cpdef RunningWeightedAverage update(self, iterable)

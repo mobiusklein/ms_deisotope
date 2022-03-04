@@ -21,6 +21,8 @@ from ms_deisotope.feature_map.feature_graph import (
 
 
 class PseudoXIC(object):
+    __slots__ = ("x", "y", "source")
+
     x: np.ndarray
     y: np.ndarray
     source: IonMobilityProfileDeconvolutedLCMSFeature
@@ -92,17 +94,19 @@ def reduce_feature(feature: IonMobilityProfileDeconvolutedLCMSFeature,
     return submatch
 
 
-class PrecursorProductCorrelationGraph(object):
+class PrecursorProductCorrelationGraph(LogUtilsMixin):
     edge_cls = FeatureGraphEdge
 
     precursor_graph: IonMobilityProfileDeconvolutedFeatureGraph
     product_graph: IonMobilityProfileDeconvolutedFeatureGraph
     edges: set
+    _is_built: bool
 
     def __init__(self, precursor_graph, product_graph):
         self.precursor_graph = precursor_graph
         self.product_graph = product_graph
         self.edges = set()
+        self._is_built = False
 
     def score_edge(self, feature: IonMobilityProfileDeconvolutedLCMSFeature,
                    match: IonMobilityProfileDeconvolutedLCMSFeature) -> float:
@@ -139,12 +143,23 @@ class PrecursorProductCorrelationGraph(object):
                 precursor_node, match, score))
 
     def build(self, min_charge=2, min_size=3):
-        for precursor in self.precursor_graph:
+        n = len(self.precursor_graph)
+        for i, precursor in enumerate(self.precursor_graph):
             if precursor.charge < min_charge:
                 continue
             if len(precursor.feature) < min_size:
                 continue
+            if i % 1000 == 0:
+                self.log(f"... Processed {i}/{n} precursors ({i / n * 100.0:0.2f}%)")
             self.find_edges(precursor)
+        self._is_built = True
+
+    def iterspectra(self, **kwargs):
+        if not self._is_built:
+            self.build(**kwargs)
+        iterator = PrecursorProductCorrelatingIterator(self.precursor_graph, self.product_graph)
+        for batch in iterator:
+            yield batch
 
 
 def edge_to_pseudopeak(edge: FeatureGraphEdge):
@@ -189,6 +204,8 @@ def edge_at_time_to_pseudopeak(edge: FeatureGraphEdge, rt: float):
 
 
 class XICPseudoSpectrumGenerator(SpanningMixin):
+    __slots__ = ('node', 'edge_to_pseudo_xic', 'edge_to_pseudo_xic_children', 'minimum_intensity', 'precursor_information')
+
     def __init__(self, node: IonMobilityProfileFeatureGraphNode, minimum_intensity: float=1):
         self.node = node
         self.edge_to_pseudo_xic = {}
@@ -269,11 +286,6 @@ class XICPseudoSpectrumGenerator(SpanningMixin):
         peaks = DeconvolutedPeakSet(peaks)
         peaks.reindex()
         return peaks
-
-    def iterspectra(self):
-        iterator = PrecursorProductCorrelatingIterator(self)
-        for bunch in iterator:
-            yield bunch
 
 
 class PrecursorProductCorrelatingIterator(LogUtilsMixin):

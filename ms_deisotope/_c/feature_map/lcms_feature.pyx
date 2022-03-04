@@ -392,18 +392,21 @@ cdef class LCMSFeature(FeatureBase):
         self.adducts = adducts
         self.used_as_adduct = used_as_adduct
         self.feature_id = feature_id
-        self._peak_averager = RunningWeightedAverage._create(None)
-        if self.get_size() > 0:
-            self._feed_peak_averager()
+        self._initialize_averager()
 
-    cdef void _feed_peak_averager(self):
-        cdef:
-            size_t i, n
-            LCMSFeatureTreeNode node
-        n = self.get_size()
-        for i in range(n):
-            node = self.getitem(i)
-            self._peak_averager._update(node.members)
+    cpdef _initialize_averager(self):
+        self._peak_averager = RunningWeightedAverage._create(None)
+
+    cpdef _update_from_averager(self):
+        best_mz = self._peak_averager.current_mean
+        if best_mz < 0:
+            raise ValueError("best_mz < 0")
+        self._last_mz = self._mz = best_mz
+
+    cpdef _reaverage_and_update(self):
+        self._peak_averager.reset()
+        self._peak_averager.feed_from_feature(self)
+        self._update_from_averager()
 
     def invalidate(self, reaverage=False):
         self._invalidate(reaverage)
@@ -417,8 +420,7 @@ cdef class LCMSFeature(FeatureBase):
         self._start_time = -1
         self._end_time = -1
         if reaverage:
-            self._peak_averager = RunningWeightedAverage._create(None)
-            self._feed_peak_averager()
+            self._reaverage_and_update()
 
     @property
     def total_signal(self):
@@ -444,15 +446,8 @@ cdef class LCMSFeature(FeatureBase):
         return self.mz
 
     cdef double get_mz(self):
-        cdef:
-            size_t i, n
-            double best_mz, temp
-            LCMSFeatureTreeNode node
         if self._mz == -1:
-            temp = best_mz = self._peak_averager.current_mean
-            if best_mz < 0:
-                raise ValueError("best_mz < 0")
-            self._last_mz = self._mz = best_mz
+            self._reaverage_and_update()
         return self._mz
 
     @property
@@ -1088,6 +1083,9 @@ cdef class RunningWeightedAverage(object):
         self._initialize()
         if iterable is not None:
             self.update(iterable)
+
+    cpdef reset(self):
+        self._initialize()
 
     @staticmethod
     cdef RunningWeightedAverage _create(list peaks):

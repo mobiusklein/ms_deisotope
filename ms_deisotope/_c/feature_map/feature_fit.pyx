@@ -305,7 +305,7 @@ cpdef Envelope _sum_envelopes(LCMSFeature self):
             envelope = peak.envelope
             for k in range(envelope.get_size()):
                 pair = envelope.getitem(k)
-                if mzs.used < k:
+                if mzs.used <= k:
                     double_vector_append(mzs, pair.mz * pair.intensity)
                     double_vector_append(intensities, pair.intensity)
                 else:
@@ -316,6 +316,8 @@ cpdef Envelope _sum_envelopes(LCMSFeature self):
         pairs.append(
             EnvelopePair._create(mzs.v[i] / intensities.v[i], intensities.v[i]))
     envelope = Envelope._create(PyList_AsTuple(pairs))
+    free_double_vector(mzs)
+    free_double_vector(intensities)
     return envelope
 
 #

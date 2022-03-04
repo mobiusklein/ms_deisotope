@@ -38,13 +38,18 @@ class LCMSFeature(FeatureBase):
         self.adducts = adducts
         self.used_as_adduct = used_as_adduct
         self.feature_id = feature_id
-        self._peak_averager = RunningWeightedAverage()
-        if len(self) > 0:
-            self._feed_peak_averager()
+        self._initialize_averager()
 
-    def _feed_peak_averager(self):
-        for node in self:
-            self._peak_averager.update(node.members)
+    def _reaverage_and_update(self):
+        self._peak_averager.reset()
+        self._peak_averager.feed_from_feature(self)
+        self._update_from_averager()
+
+    def _initialize_averager(self):
+        self._peak_averager = RunningWeightedAverage()
+
+    def _update_from_averager(self):
+        self._mz = self._last_mz = self._peak_averager.current_mean
 
     def invalidate(self, reaverage=False):
         self._invalidate(reaverage)
@@ -59,7 +64,7 @@ class LCMSFeature(FeatureBase):
         self._end_time = None
 
         if reaverage:
-            self._peak_averager = RunningWeightedAverage()
+            self._peak_averager.reset()
             if len(self) > 0:
                 self._feed_peak_averager()
 
@@ -83,8 +88,7 @@ class LCMSFeature(FeatureBase):
     @property
     def mz(self):
         if self._mz is None:
-            best_mz = self._peak_averager.current_mean
-            self._last_mz = self._mz = best_mz
+            self._reaverage_and_update()
         return self._mz
 
     @property
