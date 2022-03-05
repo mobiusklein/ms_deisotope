@@ -551,7 +551,7 @@ cdef class LCMSFeature(FeatureBase):
         '''
         return self.get_start_time() <= time <= self.get_end_time()
 
-    def as_arrays(self):
+    def as_arrays(self, dtype=np.float64):
         '''Convert this object into a pair of time and intensity arrays, summing
         all peaks at the same time point.
 
@@ -563,9 +563,9 @@ cdef class LCMSFeature(FeatureBase):
             The intensity array for this feature.
         '''
         rts = np.array(
-            [node.time for node in self.nodes], dtype=np.float64)
+            [node.time for node in self.nodes], dtype=dtype)
         signal = np.array([node.total_intensity()
-                           for node in self.nodes], dtype=np.float64)
+                           for node in self.nodes], dtype=dtype)
         return rts, signal
 
     def __repr__(self):

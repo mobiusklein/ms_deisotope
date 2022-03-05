@@ -5,7 +5,7 @@ import numpy as np
 # from brainpy import neutral_mass as calc_neutral_mass
 from ms_peak_picker import FittedPeak
 
-from ms_deisotope.averagine import glycan
+from ms_deisotope.averagine import glycan, mass_charge_ratio
 from ms_deisotope.scoring import g_test_scaled
 from ms_deisotope.peak_set import DeconvolutedPeak, IonMobilityDeconvolutedPeak, IonMobilityProfileDeconvolutedPeakSolution, Envelope
 
@@ -205,6 +205,10 @@ class DeconvolutedLCMSFeature(LCMSFeature):
         if self._neutral_mass is None:
             self._reaverage_and_update()
         return self._neutral_mass
+
+    @property
+    def mz(self):
+        return mass_charge_ratio(self.neutral_mass, self.charge)
 
     def _copy_chunk(self, nodes, *args, **kwargs) -> 'DeconvolutedLCMSFeature':
         x = self.__class__(

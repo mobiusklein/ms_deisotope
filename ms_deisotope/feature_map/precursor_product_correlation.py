@@ -40,7 +40,7 @@ class PseudoXIC(object):
 
     @classmethod
     def from_feature(cls, source: IonMobilityProfileDeconvolutedLCMSFeature, smooth: bool = True) -> 'PseudoXIC':
-        x, y = source.as_arrays()
+        x, y = source.as_arrays(np.float32)
         if smooth:
             y = sliding_mean(y)
         return cls(x, y, source)
@@ -70,7 +70,7 @@ class PseudoXIC(object):
 
 
 def interpolate_feature(f: DeconvolutedLCMSFeature, Xp: np.ndarray) -> np.ndarray:
-    x, y = f.as_arrays()
+    x, y = f.as_arrays(np.float32)
     return np.interp(Xp, x, y, 0, 0)
 
 
@@ -125,7 +125,7 @@ class PrecursorProductCorrelationGraph(LogUtilsMixin):
             corr = -1.0
         return corr
 
-    def find_edges(self, precursor_node: IonMobilityProfileDeconvolutedFeatureGraph.node_cls, **kwargs):
+    def find_edges(self, precursor_node: IonMobilityProfileDeconvolutedFeatureGraph.node_cls, minimum_score=0.1, **kwargs):
         nodes = self.product_graph.rt_tree.overlaps(
             [precursor_node.start_time, 0.0],
             [precursor_node.end_time, precursor_node.neutral_mass]
@@ -137,7 +137,7 @@ class PrecursorProductCorrelationGraph(LogUtilsMixin):
             if not match.ion_mobility_interval.overlaps(precursor_node.ion_mobility_interval):
                 continue
             score = self.score_edge(precursor_node.feature, match.feature)
-            if score < 0.1:
+            if score < minimum_score:
                 continue
             self.edges.add(self.edge_cls(
                 precursor_node, match, score))

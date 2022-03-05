@@ -253,7 +253,7 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
                 iterator, self._make_frame, self._validate_frame, self._cache_frame, **kwargs)
         return strategy
 
-    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped='mse', **kwargs):
         if scan_id is not None:
             frame = self.get_frame_by_id(scan_id)
             start_index = frame.index
@@ -275,6 +275,8 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
 
 
 class WatersMassLynxScanSource(ScanDataSource):
+    default_isolation_width = 0.0
+
     def _make_scan(self, data):
         return Scan(data, self)
 
@@ -346,7 +348,13 @@ class WatersMassLynxScanSource(ScanDataSource):
             set_mass = (lower_bound + upper_bound) / 2.
             lower_bound_offset = upper_bound_offset = upper_bound - set_mass
         else:
-            lower_bound_offset = upper_bound_offset = 0
+            if self.default_isolation_width:
+                lower_bound_offset = upper_bound_offset = self.default_isolation_width
+            else:
+                lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
+                    scan.function)
+                lower_bound_offset = set_mass - lower_bound
+                upper_bound_offset = upper_bound - set_mass
         return IsolationWindow(
             lower_bound_offset, set_mass, upper_bound_offset)
 
@@ -388,7 +396,7 @@ class WatersMassLynxScanSource(ScanDataSource):
 
 
 class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, WatersMSECycleSourceMixin):
-    def __init__(self, raw_path, lockmass_config=None, **kwargs):
+    def __init__(self, raw_path, lockmass_config=None, default_isolation_width=0.0, **kwargs):
         if sys.version_info.major == 2:
             if not isinstance(raw_path, str):
                 raw_path = str(raw_path)
@@ -413,6 +421,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self._build_scan_index()
         self.lockmass_function = self.function_index_list[-1] + 1
         self.low_energy_function = self.function_index_list[0] + 1
+        self.default_isolation_width = default_isolation_width or 0.0
 
         self._producer = self.make_frame_iterator()
 
@@ -476,8 +485,9 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
             self.ion_mobility_by_function_index[fnum] = False
             if os.path.exists(cdt) and self.info_reader.GetDriftScanCount(fnum) > 0:
                 self.ion_mobility_by_function_index[fnum] = True
-                self.sonar_enabled_by_function_index[fnum] = self.info_reader.GetScanItem(
-                    fnum, 0, MassLynxRawDefs.MassLynxScanItem.SONAR_ENABLED.value)
+                self.sonar_enabled_by_function_index[fnum] = int(
+                    self.info_reader.GetScanItem(
+                        fnum, 0, MassLynxRawDefs.MassLynxScanItem.SONAR_ENABLED.value))
             time, tic = self.chrom_reader.ReadTIC(fnum)
             self.tic_by_function_index[fnum] = np.array(tic)
             self.times_by_function_index[fnum] = np.array(time)

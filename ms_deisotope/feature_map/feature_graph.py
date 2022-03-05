@@ -6,6 +6,7 @@ import numpy as np
 
 from ms_deisotope.peak_dependency_network.intervals import SpanningMixin, IntervalTreeNode, Interval, SimpleInterval
 from ms_deisotope.feature_map.lcms_feature import LCMSFeature
+from ._mz_feature_search import MZIndex, NeutralMassIndex
 
 
 class IntervalTreeNode2D(IntervalTreeNode):
@@ -210,7 +211,7 @@ class PPMQuery(SpanningMixin):
         return "PPMQuery(%f, %f)" % (self.start, self.end)
 
 
-class FeatureGraph(object):
+class FeatureGraph(MZIndex):
     node_cls: Type = FeatureGraphNode
     edge_cls: Type = FeatureGraphEdge
 
@@ -220,10 +221,14 @@ class FeatureGraph(object):
     rt_tree: IntervalTreeNode2D
     edges: Set[FeatureGraphEdge]
 
+    @property
+    def features(self):
+        return self.nodes
+
     def __init__(self, features):
-        self.features = features
+        self._features = features
         self.assigned_seed_queue = deque()
-        self.nodes = self._construct_graph_nodes(self.features)
+        self.nodes = self._construct_graph_nodes(self._features)
         self.edges = set()
         self.rt_tree = None
         self._make_rt_tree()
@@ -315,14 +320,17 @@ class FeatureGraph(object):
         return components
 
 
-class DeconvolutedFeatureGraph(FeatureGraph):
+class DeconvolutedFeatureGraph(FeatureGraph, NeutralMassIndex):
     node_cls = DeconvolutedFeatureGraphNode
 
     def _make_rt_tree(self):
         self.rt_tree = IntervalTreeNode2D.build(
             self.nodes, neutral_mass_point_organizer_callback)
 
-    def find_edges(self, node: DeconvolutedFeatureGraphNode, query_width: float = 2., error_tolerance=1.5e-5, **kwargs):
+    def find_all(self, mass: float, error_tolerance: float=0.00002):
+        return NeutralMassIndex.find_all(self, mass, error_tolerance)
+
+    def find_edges(self, node: DeconvolutedFeatureGraphNode, query_width: float = 2., error_tolerance: float=1.5e-5, **kwargs):
         query = TimeQuery(node.feature, query_width)
         mass_query = PPMQuery(node.neutral_mass, error_tolerance)
         nodes = self.rt_tree.overlaps(
@@ -344,7 +352,7 @@ class DeconvolutedFeatureGraph(FeatureGraph):
 class IonMobilityProfileDeconvolutedFeatureGraph(DeconvolutedFeatureGraph):
     node_cls = IonMobilityProfileFeatureGraphNode
 
-    def find_edges(self, node: IonMobilityProfileFeatureGraphNode, query_width: float = 2., error_tolerance=1.5e-5, **kwargs):
+    def find_edges(self, node: IonMobilityProfileFeatureGraphNode, query_width: float = 2., error_tolerance: float=1.5e-5, **kwargs):
         query = TimeQuery(node.feature, query_width)
         mass_query = PPMQuery(node.neutral_mass, error_tolerance)
         nodes = self.rt_tree.overlaps(
