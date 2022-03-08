@@ -1,24 +1,17 @@
+from email.policy import default
 import os
 import logging
 import sys
 import faulthandler
 import multiprocessing
-import pickle
 
-from typing import List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
-
-from itertools import chain
-
-import psutil
-import numpy as np
+import click
 
 import ms_deisotope
 from ms_deisotope.data_source.infer_type import MSFileLoader
 from ms_deisotope.data_source.scan.loader import RandomAccessScanSource, ScanIterator
-from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
-from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
-from ms_deisotope.data_source.scan import ProcessedScan, PrecursorInformation, ScanBunch
 from ms_deisotope.data_source.scan.scan_iterator import MSEIterator
 from ms_deisotope.output.mzml import MzMLSerializer, IonMobilityAware3DMzMLSerializer
 from ms_deisotope.data_source.scan.mobility_frame import (
@@ -27,13 +20,11 @@ from ms_deisotope.feature_map.mobility_frame_processor import IonMobilityFramePr
 
 from ms_deisotope.tools.deisotoper.process import ScanIDYieldingProcess, ScanBunchLoader, DeconvolutingScanTransformingProcess
 from ms_deisotope.tools.deisotoper.scan_generator import ScanGenerator
-from ms_deisotope.tools.deisotoper.workflow import ScanSink, SampleConsumer
+from ms_deisotope.tools.deisotoper.workflow import SampleConsumer
 from ms_deisotope.tools.deisotoper.output import ThreadedMzMLScanStorageHandler
 
-from ms_deisotope.tools.utils import register_debug_hook
+from ms_deisotope.tools.utils import processes_option
 
-
-import click
 
 
 faulthandler.enable()
@@ -47,7 +38,7 @@ def make_iterator(reader, start_index, stop_index=float('inf'), low_energy_funct
     iterator = MSEIterator(
         reader.start_from_frame(
             index=start_index, require_ms1=False, grouped=False),
-        lambda x: x, low_energy_function, lock_mass_function)
+        lambda x: x, low_energy_config=low_energy_function, lock_mass_config=lock_mass_function)
     for bunch in iterator:
         if bunch.precursor:
             i = bunch.precursor.index
@@ -74,6 +65,18 @@ class MSEFrameIDYieldingProcess(ScanIDYieldingProcess):
 
     low_energy_function: int = 1
     lock_mass_function: int = 3
+
+    def __init__(self, ms_file_path: os.PathLike, scan_id_queue: multiprocessing.JoinableQueue, start_scan: str = None,
+                 max_scans: Optional[int] = None, end_scan: str = None, no_more_event: Optional[multiprocessing.Event] = None,
+                 ignore_tandem_scans: bool = False, batch_size: int = 1, log_handler: Callable = None,
+                 output_queue: Optional[multiprocessing.JoinableQueue] = None, low_energy_function=1, lock_mass_function=3):
+        super().__init__(
+            ms_file_path=ms_file_path, scan_id_queue=scan_id_queue, start_scan=start_scan, max_scans=max_scans,
+            end_scan=end_scan, no_more_event=no_more_event, ignore_tandem_scans=ignore_tandem_scans, batch_size=batch_size,
+            log_handler=log_handler, output_queue=output_queue
+        )
+        self.low_energy_function = low_energy_function
+        self.lock_mass_function = lock_mass_function
 
     def _open_ms_file(self) -> Union[ScanIterator, RandomAccessScanSource]:
         path = self.ms_file_path
@@ -185,7 +188,8 @@ class MSEFrameGenerator(ScanGenerator):
     def __init__(self, ms_file, number_of_helpers=4,
                  ms1_peak_picking_args=None, msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
-                 ms1_averaging=0, deconvolute=True, verbose=False, reader_options=None):
+                 ms1_averaging=0, deconvolute=True, verbose=False,
+                 reader_options=None, low_energy_function=1, lock_mass_function=3):
         if reader_options is None:
             reader_options = dict()
         self.ms_file = ms_file
@@ -212,6 +216,9 @@ class MSEFrameGenerator(ScanGenerator):
         self.ms1_deconvolution_args = ms1_deconvolution_args
         self.msn_deconvolution_args = msn_deconvolution_args
 
+        self.low_energy_function = low_energy_function
+        self.lock_mass_function = lock_mass_function
+
         self.extract_only_tandem_envelopes = False
         self.default_precursor_ion_selection_window = 0
         self.ignore_tandem_scans = False
@@ -228,7 +235,9 @@ class MSEFrameGenerator(ScanGenerator):
             self.ms_file, self._input_queue, start_scan=start_scan, end_scan=end_scan,
             max_scans=max_scans, no_more_event=self.scan_ids_exhausted_event,
             ignore_tandem_scans=self.ignore_tandem_scans, batch_size=1,
-            output_queue=self._output_queue)
+            output_queue=self._output_queue,
+            low_energy_function=self.low_energy_function,
+            lock_mass_function=self.lock_mass_function)
 
     def _make_transforming_process(self) -> MSEDeconvolutingFrameTransformingProcess:
         return MSEDeconvolutingFrameTransformingProcess(
@@ -253,7 +262,13 @@ class MSESampleConsumer(SampleConsumer):
                  msn_deconvolution_args=None, start_scan_id=None, end_scan_id=None, storage_path=None,
                  sample_name=None, storage_type=None, n_processes=5,
                  ms1_averaging=0,
-                 deconvolute=True, verbose=False, start_scan_time=None, end_scan_time=None, reader_options=None):
+                 deconvolute=True,
+                 verbose=False,
+                 start_scan_time=None,
+                 end_scan_time=None,
+                 reader_options=None,
+                 low_energy_function=1,
+                 lock_mass_function=3):
 
         if storage_type is None:
             storage_type = IonMobilityAware3DThreadedMzMLScanStorageHandler
@@ -290,7 +305,9 @@ class MSESampleConsumer(SampleConsumer):
             ms1_averaging=ms1_averaging,
             deconvolute=deconvolute,
             verbose=verbose,
-            reader_options=reader_options)
+            reader_options=reader_options,
+            low_energy_function=low_energy_function,
+            lock_mass_function=lock_mass_function)
 
         self.start_scan_id = start_scan_id
         self.end_scan_id = end_scan_id
@@ -298,116 +315,6 @@ class MSESampleConsumer(SampleConsumer):
         self.end_scan_time = end_scan_time
 
         self.sample_run = None
-
-
-def connect_products_to_precursors(parent, child):
-    cft = IntervalTreeNode.build(
-        [Interval(f.start_time, f.end_time, [f]) for f in child.deconvoluted_features])
-
-    prec_prod_rels = []
-    for f in parent.deconvoluted_features:
-        if len(f) < 3:
-            continue
-        prods = []
-        for prod in (chain.from_iterable(cft.overlaps(f.start_time, f.end_time))):
-            if prod.charge > f.charge:
-                continue
-            if prod.neutral_mass > f.neutral_mass:
-                continue
-            chunk = prod._copy_chunk(
-                prod[prod.find_time(f.start_time)[1]:
-                     prod.find_time(f.end_time)[1] + 1])
-            prods.append(chunk)
-        prods.sort(key=lambda x: x.neutral_mass)
-        prec_prod_rels.append((f, prods))
-    prec_prod_rels.sort(key=lambda x: (
-        x[0].start_time, x[0].neutral_mass, len(x[1])))
-    return prec_prod_rels
-
-
-def weighted_centroid(feature):
-    total = 0
-    normalizer = 0
-    for node in feature:
-        weight = node.total_intensity()
-        total += node.time * weight
-        normalizer += weight
-    return total / normalizer
-
-
-def merge_envelopes(envelopes):
-    base = envelopes[0].clone()
-    for env in envelopes[1:]:
-        for i, p in enumerate(env):
-            base[i].intensity += p.intensity
-
-    return base
-
-
-def feature_to_peak(feature):
-    peak_cluster = feature.peaks
-    peak_cluster = [pi for p in peak_cluster for pi in p]
-    total_intensity = sum(p.intensity for p in peak_cluster)
-    mz = sum(p.mz * p.intensity for p in peak_cluster) / total_intensity
-    neutral_mass = sum(
-        p.neutral_mass * p.intensity for p in peak_cluster) / total_intensity
-    most_abundant_mass = sum(
-        p.most_abundant_mass * p.intensity for p in peak_cluster) / total_intensity
-    a_to_a2_ratio = sum(
-        p.a_to_a2_ratio * p.intensity for p in peak_cluster) / total_intensity
-    average_mass = sum(
-        p.average_mass * p.intensity for p in peak_cluster) / total_intensity
-    signal_to_noise = sum(p.signal_to_noise *
-                          p.intensity for p in peak_cluster) / total_intensity
-    fwhm = sum(p.full_width_at_half_max *
-               p.intensity for p in peak_cluster) / total_intensity
-    area = sum(p.area * p.intensity for p in peak_cluster) / total_intensity
-    score = sum(p.score * p.intensity for p in peak_cluster) / total_intensity
-    charge = peak_cluster[0].charge
-    envelope = merge_envelopes([p.envelope for p in peak_cluster])
-    return IonMobilityDeconvolutedPeak(
-        neutral_mass=neutral_mass, intensity=total_intensity, charge=charge, signal_to_noise=signal_to_noise,
-        full_width_at_half_max=fwhm, index=-1, a_to_a2_ratio=a_to_a2_ratio, most_abundant_mass=most_abundant_mass,
-        average_mass=average_mass, score=score, envelope=envelope, mz=mz, fit=None, chosen_for_msms=False,
-        area=area, drift_time=weighted_centroid(feature))
-
-
-def frame_pair_to_scan_bunch(parent, child, prec_prod_rels, scan_index):
-    precursor = ProcessedScan(
-        parent.id, parent.id, None, 1, parent.time, scan_index, None,
-        DeconvolutedPeakSet([feature_to_peak(f)
-                             for f in parent.deconvoluted_features]).reindex(),
-        # Hard-coded positive mode for the moment while IonMobilityFrame-Source-like does not have a polarity
-        1,
-    )
-
-    scan_index += 1
-
-    pseudo_ms2s = []
-
-    for prec_feat, prod_feats in prec_prod_rels:
-        if abs(prec_feat.charge) == 1:
-            continue
-        pinfo = PrecursorInformation(
-            prec_feat.mz, prec_feat.total_signal, prec_feat.charge, precursor.id, None, annotations={
-                "ion mobility drift time": weighted_centroid(prec_feat),
-                "source frame id": child.id,
-            })
-        assert pinfo.has_ion_mobility()
-        # Eventually, create an artificial ScanAcquisitionInformation instance here to let us set the
-        # drift time of the product scan to match the precursor drift time too?
-        prod = ProcessedScan(
-            'merged=%d' % scan_index, child.id + '.%d' % scan_index, pinfo, 2, child.time,
-            scan_index, None,
-            DeconvolutedPeakSet([feature_to_peak(f)
-                                 for f in prod_feats]).reindex(),
-            # Hard-coded positive mode for the moment while IonMobilityFrame-Source-like does not have a polarity
-            1, activation=child.activation)
-        prod.annotations['spectrum title'] = child.id + '.%d' % scan_index
-        pseudo_ms2s.append(prod)
-        scan_index += 1
-
-    return ScanBunch(precursor, pseudo_ms2s), scan_index
 
 
 class IonMobilityAwareMzMLSerializer(MzMLSerializer):
@@ -453,13 +360,12 @@ averagine_map = {
 @click.option("-a", "--averagine", type=click.Choice(list(averagine_map)), default='glycopeptide',
               help='The isotopic model to use. Defaults to the glycopeptide averagine.')
 @click.option("-i", "--minimum-intensity", type=float, default=10.0, help="The minimum intensity to accept a peak")
-@click.option("-n", "--no-product-splitting", is_flag=True, default=False,
-              help=(
-                  'If true, do not split high energy frames into pseudo-MS2 spectra,'
-                  ' creating continuous ion mobility features'))
-@click.option("-k", "--lockmass-function", type=int, default=3, help="The number of the lock mass function. For normal low-high MSE this is 3.")
+@click.option("-w", "--isolation-window-width", type=float, default=0.0,
+              help="The isolation window size on either side of the set mass.")
+@processes_option
+@click.option("-k", "--lock-mass-function", type=int, default=3, help="The number of the lock mass function. For normal low-high MSE this is 3.")
 def main(input_path, output_path, lockmass_config, start_time=0, end_time=None, averagine='glycopeptide',
-         minimum_intensity=10.0, no_product_splitting=False, lockmass_function=3):
+         minimum_intensity=10.0, lock_mass_function=3, processes: int = 4, isolation_window_width=0.0):
     logging.basicConfig(
         level="INFO", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
         filemode='w',
@@ -467,7 +373,7 @@ def main(input_path, output_path, lockmass_config, start_time=0, end_time=None, 
     logging.getLogger().addHandler(logging.StreamHandler(sys.stderr))
     input_path = str(input_path)
 
-    print(os.getpid())
+    print(f"Running on PID {os.getpid()}")
 
     reader = open_mse_file(
         input_path, lockmass_config=lockmass_config)
@@ -481,24 +387,29 @@ def main(input_path, output_path, lockmass_config, start_time=0, end_time=None, 
     else:
         end_id = None
 
+    averagine = averagine_map[averagine]
+
     task = MSESampleConsumer(
-        input_path, storage_path=output_path, ms1_peak_picking_args={}, msn_peak_picking_args={},
+        input_path, storage_path=output_path,
+        ms1_peak_picking_args={"error_tolerance": 4e-5,
+                               "minimum_intensity": minimum_intensity / 2},
+        msn_peak_picking_args={"average_within": 2, "error_tolerance": 4e-5},
         ms1_deconvolution_args={
-            "averagine": ms_deisotope.glycopeptide,
+            "averagine": averagine,
             "truncate_after": 0.95,
-            "scorer": ms_deisotope.PenalizedMSDeconVFitter(5, 2),
+            "scorer": ms_deisotope.PenalizedMSDeconVFitter(5, 1),
             "minimum_intensity": minimum_intensity,
             "copy": False
         },
         msn_deconvolution_args={
-            "averagine": ms_deisotope.glycopeptide,
-            "truncate_after": 0.95,
+            "averagine": averagine,
+            "truncate_after": 0.8,
             "scorer": ms_deisotope.MSDeconVFitter(1),
-            "minimum_intensity": minimum_intensity,
+            "minimum_intensity": minimum_intensity / 2,
             "copy": False
-        }, ms1_averaging=1, reader_options={"lockmass_config": lockmass_config},
+        }, ms1_averaging=2, reader_options={"lockmass_config": lockmass_config, "default_isolation_width": isolation_window_width},
         deconvolute=True,
-        n_processes=8,
+        n_processes=processes,
         start_scan_id=start_id,
         end_scan_id=end_id,
         start_scan_time=start_time,

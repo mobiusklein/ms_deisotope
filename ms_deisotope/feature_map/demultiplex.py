@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type, TypeVar, Generic
+from typing import Dict, List, Type, TypeVar, Generic
 
 from ms_deisotope.peak_set import IonMobilityProfileDeconvolutedPeakSolution
 from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource

@@ -7,13 +7,16 @@ from collections import defaultdict, OrderedDict
 from typing import Iterator
 
 import numpy as np
+from ms_deisotope.data_source.metadata.data_transformation import DataProcessingInformation, ProcessingMethod
+from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation, instrument_models
+from ms_deisotope.data_source.metadata.software import software_names
 from ms_deisotope.data_source.scan.scan_iterator import _ScanIteratorImplBase
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.common import (
     Scan, ActivationInformation, PrecursorInformation,
     ChargeNotProvided, IsolationWindow)
-from ms_deisotope.data_source.scan.loader import ScanDataSource, RandomAccessScanSource
+from ms_deisotope.data_source.scan.loader import ScanDataSource, RandomAccessScanSource, ScanFileMetadataBase
 from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
 from ms_deisotope.data_source.metadata.scan_traits import (
     ScanAcquisitionInformation, ScanWindow, ScanEventInformation,
@@ -395,7 +398,24 @@ class WatersMassLynxScanSource(ScanDataSource):
             return ActivationInformation(HCD, energy)
 
 
-class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, WatersMSECycleSourceMixin):
+class MassLynxMetadata(ScanFileMetadataBase):
+    def instrument_configuration(self):
+        inst_model = instrument_models['Waters instrument model']
+        return [InstrumentInformation(1, [], inst_model)]
+
+    def file_description(self):
+        finfo = super().file_description()
+        return finfo
+
+    def data_processing(self):
+        return super().data_processing()
+
+    def software_list(self):
+        sw = software_names['MassLynx']
+        return [sw]
+
+
+class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, WatersMSECycleSourceMixin, MassLynxMetadata):
     def __init__(self, raw_path, lockmass_config=None, default_isolation_width=0.0, **kwargs):
         if sys.version_info.major == 2:
             if not isinstance(raw_path, str):

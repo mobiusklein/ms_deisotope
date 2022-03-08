@@ -3,21 +3,14 @@ import logging
 import sys
 import multiprocessing
 import traceback
+import pickle
 
+from typing import Any, Callable, Deque, Dict, List, Optional, Tuple, Union
 from collections import deque
 from multiprocessing import Process
-from typing import Any, Callable, Deque, Dict, List, Optional, Tuple, Union
+from queue import Empty as QueueEmpty
 
-from ms_deisotope.data_source import ScanBunch, Scan, RandomAccessScanSource, ScanIterator
-
-try:
-    from Queue import Empty as QueueEmpty
-except ImportError:
-    from queue import Empty as QueueEmpty
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+from ms_deisotope.data_source import Scan, RandomAccessScanSource, ScanIterator
 
 
 import ms_deisotope
@@ -27,6 +20,28 @@ from ms_deisotope.processor import (
     NoIsotopicClustersError, EmptyScanError)
 
 from ms_deisotope.task import show_message
+
+try:
+    from pyzstd import decompress, compress
+except ImportError:
+    from gzip import decompress, compress
+
+
+class CompressedPickleMessage(object):
+    def __init__(self, obj=None):
+        self.obj = obj
+
+    def __getstate__(self):
+        state = {
+            "payload": compress(pickle.dumps(self.obj, -1))
+        }
+        return state
+
+    def __setstate__(self, state):
+        self.obj = pickle.loads(decompress(state['payload']))
+
+    def __iter__(self):
+        yield self.obj
 
 
 DONE = b"--NO-MORE--"
@@ -51,7 +66,8 @@ class ScanTransmissionMixin(object):
         # into the message sent back to the main process which in
         # turn can form a reference cycle and eat a lot of memory
         scan.product_scans = []
-        self.output_queue.put((scan, scan.index, scan.ms_level))
+        self.output_queue.put(
+            (CompressedPickleMessage(scan), scan.index, scan.ms_level))
 
 
 class ScanIDYieldingProcess(Process, ScanTransmissionMixin):

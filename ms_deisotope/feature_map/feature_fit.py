@@ -153,7 +153,7 @@ class DeconvolutedLCMSFeatureTreeNode(LCMSFeatureTreeNode):
 class DeconvolutedLCMSFeature(LCMSFeature):
     __slots__ = ('score', 'n_features', 'supporters',
                  '_neutral_mass', '_last_neutral_mass',
-                 '_precursor_information', 'charge')
+                 '_precursor_information', 'charge', '_mz')
 
     def __init__(self, nodes=None, charge=None, adducts=None, used_as_adduct=None, score=0.0,
                  n_features=0, feature_id=None, supporters=None):
@@ -164,6 +164,7 @@ class DeconvolutedLCMSFeature(LCMSFeature):
         self._neutral_mass = None
         self._last_neutral_mass = None
         self._precursor_information = None
+        self._mz = None
         self.n_features = n_features
         self.supporters = supporters
         super(DeconvolutedLCMSFeature, self).__init__(nodes, adducts, used_as_adduct, feature_id=feature_id)
@@ -195,6 +196,7 @@ class DeconvolutedLCMSFeature(LCMSFeature):
         self._last_neutral_mass = self._neutral_mass if self._neutral_mass is not None else 0.
         self._neutral_mass = None
         self._precursor_information = None
+        self._mz = None
         super(DeconvolutedLCMSFeature, self)._invalidate(reaverage)
 
     def _update_from_averager(self):
@@ -208,7 +210,9 @@ class DeconvolutedLCMSFeature(LCMSFeature):
 
     @property
     def mz(self):
-        return mass_charge_ratio(self.neutral_mass, self.charge)
+        if self._mz is None:
+            self._mz = mass_charge_ratio(self.neutral_mass, self.charge)
+        return self._mz
 
     def _copy_chunk(self, nodes, *args, **kwargs) -> 'DeconvolutedLCMSFeature':
         x = self.__class__(
@@ -468,8 +472,12 @@ class IonMobilityProfileDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
         return self._ion_mobility_interval
 
     def between_ion_mobilities(self, ion_mobility_start: float, ion_mobility_end: float,
-                               time_start: float = 0, time_end: float = float('inf')) -> 'IonMobilityProfileDeconvolutedLCMSFeature':
+                               time_start: float = 0, time_end: float = float('inf'),
+                               include_mz: bool=True, include_envelope: bool=True) -> 'IonMobilityProfileDeconvolutedLCMSFeature':
         nodes = []
+        node, i = self.find_time(time_start)
+        if i > 0:
+            i -= 1
         for node in self:
             if node.time < time_start:
                 continue
@@ -480,7 +488,8 @@ class IonMobilityProfileDeconvolutedLCMSFeature(DeconvolutedLCMSFeature):
                 try:
                     peaks.append(
                         peak.from_feature(
-                            peak.solution.between_times(ion_mobility_start, ion_mobility_end)))
+                            peak.solution.between_times(ion_mobility_start, ion_mobility_end),
+                            include_mz=include_mz, include_envelope=include_envelope))
                 except IndexError:
                     continue
             if peaks:

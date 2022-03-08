@@ -29,7 +29,7 @@ class IntervalTreeNode2D(IntervalTreeNode):
         else:
             self.organized = None
 
-    def _overlaps_interval(self, start, end):
+    def _overlaps_interval_2d(self, start, end):
         starts = start
         ends = end
         query = Interval(starts[0], ends[0])
@@ -43,9 +43,7 @@ class IntervalTreeNode2D(IntervalTreeNode):
                         result.append(interv)
         return result
 
-    def overlaps(self, start, end):
-        starts = start
-        ends = end
+    def overlaps_2d(self, starts, ends):
         start = starts[0]
         end = ends[0]
         result = []
@@ -81,6 +79,9 @@ class IntervalTreeNode2D(IntervalTreeNode):
         root: IntervalTreeNode2D = super(IntervalTreeNode2D, cls).build(intervals)
         root.set_organizer(organizer_callback)
         return root
+
+
+from ms_deisotope._c.peak_dependency_network.intervals import IntervalTreeNode2D
 
 
 def mz_point_organizer_callback(contained_intervals):
@@ -167,7 +168,10 @@ class FeatureGraphEdge(object):
         self.weight = weight
         self.mass_error = mass_error
         self.rt_error = rt_error
-        self._hash = None
+        if self.node_a.index < self.node_b.index:
+            self._hash = hash(((self.node_a.index, self.node_b.index)))
+        else:
+            self._hash = hash(((self.node_b.index, self.node_a.index)))
         self.node_a.edges.add(self)
         self.node_b.edges.add(self)
 
@@ -177,16 +181,17 @@ class FeatureGraphEdge(object):
             self.transition)
 
     def __hash__(self):
-        if self._hash is None:
-            self._hash = hash(
-                frozenset((self.node_a.index, self.node_b.index)))
         return self._hash
 
     def __eq__(self, other):
-        return (self.node_a.index, self.node_b.index) == (other.node_a.index, other.node_b.index)
+        return self.node_a.index == other.node_a.index and self.node_b.index == other.node_b.index
 
     def __ne__(self, other):
         return not self == other
+
+    def remove(self):
+        self.node_a.edges.remove(self)
+        self.node_b.edges.remove(self)
 
 
 class TimeQuery(SpanningMixin):
@@ -215,7 +220,7 @@ class FeatureGraph(MZIndex):
     node_cls: Type = FeatureGraphNode
     edge_cls: Type = FeatureGraphEdge
 
-    features: Sequence[LCMSFeature]
+    _features: Sequence[LCMSFeature]
     nodes: List[FeatureGraphNode]
     assigned_seed_queue: Deque[FeatureGraphNode]
     rt_tree: IntervalTreeNode2D
@@ -267,8 +272,8 @@ class FeatureGraph(MZIndex):
     def find_edges(self, node: FeatureGraphNode, query_width: float = 2., error_tolerance=1.5e-5, **kwargs):
         query = TimeQuery(node.feature, query_width)
         mass_query = PPMQuery(node.mz, error_tolerance)
-        nodes = self.rt_tree.overlaps(
-            [query.start, mass_query.start], [query.end, mass_query.end])
+        nodes = self.rt_tree.overlaps_2d(
+            np.array([query.start, mass_query.start]), np.array([query.end, mass_query.end]))
 
         for match in nodes:
             ppm_error = (node.mz - match.mz) / match.mz
@@ -333,8 +338,8 @@ class DeconvolutedFeatureGraph(FeatureGraph, NeutralMassIndex):
     def find_edges(self, node: DeconvolutedFeatureGraphNode, query_width: float = 2., error_tolerance: float=1.5e-5, **kwargs):
         query = TimeQuery(node.feature, query_width)
         mass_query = PPMQuery(node.neutral_mass, error_tolerance)
-        nodes = self.rt_tree.overlaps(
-            [query.start, mass_query.start], [query.end, mass_query.end])
+        nodes = self.rt_tree.overlaps_2d(
+            np.array([query.start, mass_query.start]), np.array([query.end, mass_query.end]))
         charge = node.charge
         for match in nodes:
             if match.charge != charge:
@@ -355,8 +360,8 @@ class IonMobilityProfileDeconvolutedFeatureGraph(DeconvolutedFeatureGraph):
     def find_edges(self, node: IonMobilityProfileFeatureGraphNode, query_width: float = 2., error_tolerance: float=1.5e-5, **kwargs):
         query = TimeQuery(node.feature, query_width)
         mass_query = PPMQuery(node.neutral_mass, error_tolerance)
-        nodes = self.rt_tree.overlaps(
-            [query.start, mass_query.start], [query.end, mass_query.end])
+        nodes = self.rt_tree.overlaps_2d(
+            np.array([query.start, mass_query.start]), np.array([query.end, mass_query.end]))
         charge = node.charge
         for match in nodes:
             if match.charge != charge:

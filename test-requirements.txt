@@ -11,3 +11,4 @@ python-idzip >=0.3.2
 click
 h5py
 hdf5plugin
+pyzstd

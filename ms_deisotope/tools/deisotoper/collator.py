@@ -3,10 +3,7 @@ writing to disk.
 """
 from typing import Generic, Set, TypeVar, Iterator, Union
 
-try:
-    from Queue import Empty as QueueEmpty
-except ImportError:
-    from queue import Empty as QueueEmpty
+from queue import Empty as QueueEmpty
 
 import multiprocessing
 from typing import Dict, Iterator, List, Union
@@ -16,7 +13,7 @@ from ms_deisotope.data_source.scan.mobility_frame import FrameBase
 from ms_deisotope.task import TaskBase, CallInterval
 
 from .process import (
-    SCAN_STATUS_SKIP, DONE, DeconvolutingScanTransformingProcess)
+    SCAN_STATUS_SKIP, DONE, DeconvolutingScanTransformingProcess, CompressedPickleMessage)
 
 
 T = TypeVar("T", bound=Union[ScanBase, FrameBase])
@@ -160,6 +157,8 @@ class ScanCollator(TaskBase, Generic[T]):
             while item == DONE:
                 item, index, _ = self.queue.get(blocking, timeout)
                 self.queue.task_done()
+            if isinstance(item, CompressedPickleMessage):
+                item = item.obj
             self.store_item(item, index)
             return True
         except QueueEmpty:

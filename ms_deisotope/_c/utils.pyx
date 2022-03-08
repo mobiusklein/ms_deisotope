@@ -3,8 +3,13 @@
 cimport cython
 from cpython.list cimport PyList_Append, PyList_GET_ITEM, PyList_GET_SIZE
 
+from libc.math cimport sqrt
+
+
 import numpy as np
 cimport numpy as np
+
+from numpy.math cimport isnan, NAN
 
 from ms_peak_picker._c.peak_index cimport PeakIndex
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak, PeakSetIndexed
@@ -264,3 +269,28 @@ cpdef PeakBase _peak_sequence_bp(self, peak_collection peaks):
             base_peak = peak
             max_intensity = peak.intensity
     return base_peak
+
+
+cpdef double correlation(cython.floating[:] x, cython.floating[:] y):
+    cdef:
+        size_t i, n
+        double xsum, ysum, xmean, ymean
+        double cov, varx, vary
+    n = len(x)
+    if n == 0:
+        return NAN
+    xsum = 0.
+    ysum = 0.
+    for i in range(n):
+        xsum += x[i]
+        ysum += y[i]
+    xmean = xsum / n
+    ymean = ysum / n
+    cov = 0.
+    varx = 0.
+    vary = 0.
+    for i in range(n):
+        cov += (x[i] - xmean) * (y[i] - ymean)
+        varx += (x[i] - xmean) ** 2
+        vary += (y[i] - ymean) ** 2
+    return cov / (sqrt(varx) * sqrt(vary))

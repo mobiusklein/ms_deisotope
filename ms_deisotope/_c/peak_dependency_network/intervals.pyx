@@ -470,9 +470,6 @@ cdef class IntervalTreeNode(object):
 
 
 cdef class SpanningMixin2D(object):
-    cdef:
-        public double[2] _start
-        public double[2] _end
 
     def __init__(self, start, end):
         self.start = start
@@ -596,9 +593,6 @@ cdef class SpanningMixin2D(object):
 
 
 cdef class Interval2D(SpanningMixin2D):
-    cdef:
-        public list members
-        public dict data
 
     def __init__(self, start, end, members=None, **kwargs):
         if members is None:
@@ -634,3 +628,87 @@ cpdef list intervals_containing_point_2d(list intervals, double x, int level):
         if interval._start[level % 2] <= x <= interval._end[level % 2]:
             result.append(interval)
     return result
+
+
+cdef class IntervalTreeNode2D(IntervalTreeNode):
+    def __init__(self, center, left, contained, right, level=0, parent=None, inner_organizer=None):
+        super().__init__(center, left, contained, right, level=level, parent=parent)
+        self.inner_organizer = inner_organizer
+        self.organize()
+
+    def set_organizer(self, organizer):
+        self.inner_organizer = organizer
+        if self.left is not None:
+            self.left.set_organizer(organizer)
+        if self.right is not None:
+            self.right.set_organizer(organizer)
+        self.organize()
+
+    def organize(self):
+        if self.inner_organizer is not None:
+            self.organized = self.inner_organizer(self.contained)
+        else:
+            self.organized = None
+
+    cpdef list _overlaps_interval_2d(self, double[:] starts, double[:] ends):
+        cdef:
+            list overlaps_1d
+            Interval interv2
+            SpanningMixin interv
+            size_t i, j, n, m
+        query = SimpleInterval._create(starts[0], ends[0])
+        result = []
+        if self.organized is None:
+            return super()._overlaps_interval(starts[0], ends[0])
+        else:
+            overlaps_1d = self.organized.overlaps(starts[1], ends[1])
+            n = PyList_Size(overlaps_1d)
+            for i in range(n):
+                interv2 = <Interval>PyList_GetItem(overlaps_1d, i)
+                m = PyList_Size(interv2.members)
+                for j in range(m):
+                    interv = <SpanningMixin>PyList_GetItem(interv2.members, j)
+                    if interv.overlaps(query):
+                        result.append(interv)
+        return result
+
+    cpdef list overlaps_2d(self, double[:] starts, double[:] ends):
+        cdef:
+            double start, end
+            list result
+
+        start = starts[0]
+        end = ends[0]
+        result = []
+        if start > self.end:
+            return result
+        if end < self.start:
+            return result
+        elif start <= self.start:
+            if end < self.start:
+                return result
+            else:
+                if self.left is not None:
+                    result.extend((<IntervalTreeNode2D>self.left).overlaps_2d(starts, ends))
+                result.extend(self._overlaps_interval_2d(starts, ends))
+                if self.right is not None and end >= self.right.start:
+                    result.extend((<IntervalTreeNode2D>self.right).overlaps_2d(starts, ends))
+        elif start > self.start:
+            if (<IntervalTreeNode2D>self.left) is not None and (<IntervalTreeNode2D>self.left).end >= start:
+                result.extend((<IntervalTreeNode2D>self.left).overlaps_2d(starts, ends))
+            result.extend(self._overlaps_interval_2d(starts, ends))
+            if (<IntervalTreeNode2D>self.right) is not None and end >= (<IntervalTreeNode2D>self.right).start:
+                result.extend((<IntervalTreeNode2D>self.right).overlaps_2d(starts, ends))
+        elif end > self.start:
+            if (<IntervalTreeNode2D>self.left) is not None:
+                result.extend((<IntervalTreeNode2D>self.left).overlaps_2d(starts, ends))
+            result.extend(self._overlaps_interval_2d(starts, ends))
+            if (<IntervalTreeNode2D>self.right) is not None and end >= (<IntervalTreeNode2D>self.right).start:
+                result.extend((<IntervalTreeNode2D>self.right).overlaps_2d(starts, ends))
+        return result
+
+    @classmethod
+    def build(cls, intervals, organizer_callback=None):
+        root: IntervalTreeNode2D = super(IntervalTreeNode2D, cls).build(intervals)
+        root.set_organizer(organizer_callback)
+        return root

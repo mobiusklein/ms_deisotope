@@ -1,3 +1,6 @@
+from collections import defaultdict
+from typing import DefaultDict, Dict, Union
+
 import numpy as np
 
 from ms_deisotope.task import LogUtilsMixin
@@ -20,8 +23,12 @@ from ms_deisotope.feature_map.feature_graph import (
     IonMobilityProfileFeatureGraphNode)
 
 
+from ms_deisotope._c.utils import correlation
+from ms_deisotope._c.feature_map.profile_transform import interpolate_point
+
+
 class PseudoXIC(object):
-    __slots__ = ("x", "y", "source")
+    __slots__ = ("x", "y", "source", )
 
     x: np.ndarray
     y: np.ndarray
@@ -36,7 +43,7 @@ class PseudoXIC(object):
         return self.__class__(self.x, sliding_mean(self.y), self.source)
 
     def interpolate(self, t: float) -> float:
-        return np.interp([t], self.x, self.y, left=0, right=0)[0]
+        return interpolate_point(self.x, self.y, t)
 
     @classmethod
     def from_feature(cls, source: IonMobilityProfileDeconvolutedLCMSFeature, smooth: bool = True) -> 'PseudoXIC':
@@ -85,12 +92,15 @@ def features_to_aligned_arrays(f1: DeconvolutedLCMSFeature, f2: DeconvolutedLCMS
 
 
 def reduce_feature(feature: IonMobilityProfileDeconvolutedLCMSFeature,
-                   match: IonMobilityProfileDeconvolutedLCMSFeature) -> IonMobilityProfileDeconvolutedLCMSFeature:
+                   match: IonMobilityProfileDeconvolutedLCMSFeature,
+                   include_mz: bool = True, include_envelope: bool = True) -> IonMobilityProfileDeconvolutedLCMSFeature:
     submatch = match.between_ion_mobilities(
         feature.ion_mobility_interval.start,
         feature.ion_mobility_interval.end,
         feature.start_time,
-        feature.end_time)
+        feature.end_time,
+        include_mz=include_mz,
+        include_envelope=include_envelope)
     return submatch
 
 
@@ -99,38 +109,44 @@ class PrecursorProductCorrelationGraph(LogUtilsMixin):
 
     precursor_graph: IonMobilityProfileDeconvolutedFeatureGraph
     product_graph: IonMobilityProfileDeconvolutedFeatureGraph
+    max_edge_count_per_node: int
     edges: set
     _is_built: bool
 
-    def __init__(self, precursor_graph, product_graph):
+    def __init__(self, precursor_graph, product_graph, max_edge_count_per_node=1500):
         self.precursor_graph = precursor_graph
         self.product_graph = product_graph
+        self.max_edge_count_per_node = max_edge_count_per_node
         self.edges = set()
         self._is_built = False
 
     def score_edge(self, feature: IonMobilityProfileDeconvolutedLCMSFeature,
-                   match: IonMobilityProfileDeconvolutedLCMSFeature) -> float:
+                   match: IonMobilityProfileDeconvolutedLCMSFeature,
+                   minimum_overlap_size: int=2) -> float:
         submatch: IonMobilityProfileDeconvolutedLCMSFeature = match.between_ion_mobilities(
             feature.ion_mobility_interval.start,
             feature.ion_mobility_interval.end,
-            feature.start_time, feature.end_time)
-        if len(submatch) < 2:
+            feature.start_time, feature.end_time,
+            include_envelope=False,
+            include_mz=False)
+        if len(submatch) < minimum_overlap_size:
             return -1.0
         _x, y1, y2 = features_to_aligned_arrays(feature, submatch)
-        corr = np.corrcoef(
+        corr = correlation(
             sliding_mean(y1),
             sliding_mean(y2),
-        )[0, 1]
+        )
         if np.isnan(corr):
             corr = -1.0
         return corr
 
     def find_edges(self, precursor_node: IonMobilityProfileDeconvolutedFeatureGraph.node_cls, minimum_score=0.1, **kwargs):
-        nodes = self.product_graph.rt_tree.overlaps(
-            [precursor_node.start_time, 0.0],
-            [precursor_node.end_time, precursor_node.neutral_mass]
+        nodes = self.product_graph.rt_tree.overlaps_2d(
+            np.array([precursor_node.start_time, 0.0]),
+            np.array([precursor_node.end_time, precursor_node.neutral_mass])
         )
         charge = precursor_node.charge
+        edges = set()
         for match in nodes:
             if match.charge > charge:
                 continue
@@ -139,17 +155,29 @@ class PrecursorProductCorrelationGraph(LogUtilsMixin):
             score = self.score_edge(precursor_node.feature, match.feature)
             if score < minimum_score:
                 continue
-            self.edges.add(self.edge_cls(
-                precursor_node, match, score))
+            edge = self.edge_cls(
+                precursor_node, match, score)
+            edges.add(edge)
+        edges = sorted(edges, key=lambda x: x.transition, reverse=True)
+        keepers = edges[:self.max_edge_count_per_node]
+        rest = edges[self.max_edge_count_per_node:]
+        for edge in rest:
+            edge.node_a.edges.remove(edge)
+            edge.node_b.edges.remove(edge)
+        self.edges.update(keepers)
+
 
     def build(self, min_charge=2, min_size=3):
         n = len(self.precursor_graph)
+        last_logged = 0
+        batch_size = 500
         for i, precursor in enumerate(self.precursor_graph):
             if precursor.charge < min_charge:
                 continue
             if len(precursor.feature) < min_size:
                 continue
-            if i % 1000 == 0:
+            if i % 500 == 0 and i or i - last_logged >= batch_size:
+                last_logged = i
                 self.log(f"... Processed {i}/{n} precursors ({i / n * 100.0:0.2f}%)")
             self.find_edges(precursor)
         self._is_built = True
@@ -162,7 +190,7 @@ class PrecursorProductCorrelationGraph(LogUtilsMixin):
             yield batch
 
 
-def edge_to_pseudopeak(edge: FeatureGraphEdge):
+def edge_to_pseudopeak(edge: FeatureGraphEdge) -> IonMobilityProfileDeconvolutedPeakSolution:
     precursor = edge.node_a.feature
     product = edge.node_b.feature
     sub_product = reduce_feature(precursor, product)
@@ -203,13 +231,119 @@ def edge_at_time_to_pseudopeak(edge: FeatureGraphEdge, rt: float):
     return peak
 
 
+class EdgeToXICCache(object):
+    store: Dict[FeatureGraphEdge, PseudoXIC]
+    ref_count: DefaultDict[FeatureGraphEdge, int]
+
+    def __init__(self):
+        self.store = dict()
+        self.ref_count = defaultdict(int)
+
+    def __getitem__(self, key):
+        return self.store[key]
+
+    def __setitem__(self, key, value):
+        self.store[key] = value
+
+    def __contains__(self, key):
+        return key in self.store
+
+    def __len__(self):
+        return len(self.store)
+
+    def checkout(self, key: FeatureGraphEdge):
+        value = self.store[key]
+        self.ref_count[key] += 1
+        return value
+
+    def checkin(self, key: FeatureGraphEdge):
+        # Ref-count may be negative if someone
+        # belatedly checks in an edge that has
+        # already been evicted directly.
+        count = self.ref_count[key]
+        count -= 1
+        if count <= 0:
+            self.store.pop(key, None)
+            self.ref_count.pop(key)
+            return True
+        else:
+            self.ref_count[key] = count
+        return False
+
+    def __delitem__(self, key):
+        self.store.pop(key, None)
+        self.ref_count.pop(key, None)
+
+    def clear(self):
+        self.store.clear()
+        self.ref_count.clear()
+
+    def session(self) -> 'EdgeToXICCacheSession':
+        return EdgeToXICCacheSession(self)
+
+
+class EdgeToXICCacheSession(object):
+    cache: EdgeToXICCache
+    store: Dict[FeatureGraphEdge, PseudoXIC]
+
+    def __init__(self, cache: EdgeToXICCache):
+        self.cache = cache
+        self.store = {}
+
+    def __contains__(self, key):
+        return key in self.cache
+
+    def __getitem__(self, key: FeatureGraphEdge) -> PseudoXIC:
+        try:
+            return self.store[key]
+        except KeyError:
+            value = self.cache.checkout(key)
+            self.store[key] = value
+            return value
+
+    def __setitem__(self, key, value):
+        self.cache[key] = value
+        self.store[key] = self.cache.checkout(key)
+
+    def __delitem__(self, key):
+        del self.store[key]
+        self.cache.checkin(key)
+
+    def remove(self, key: FeatureGraphEdge):
+        if key in self.store:
+            del self[key]
+
+    def clear(self):
+        for key in self.store:
+            self.cache.checkin(key)
+        self.store.clear()
+
+    def __del__(self):
+        self.clear()
+
+    def __len__(self):
+        return len(self.store)
+
+
 class XICPseudoSpectrumGenerator(SpanningMixin):
     __slots__ = ('node', 'edge_to_pseudo_xic', 'edge_to_pseudo_xic_children', 'minimum_intensity', 'precursor_information')
 
-    def __init__(self, node: IonMobilityProfileFeatureGraphNode, minimum_intensity: float=1):
+    node: IonMobilityProfileFeatureGraphNode
+    minimum_intensity: float
+    precursor_information: PrecursorInformation
+    edge_to_pseudo_xic: Union[EdgeToXICCacheSession, Dict[FeatureGraphEdge, PseudoXIC]]
+    edge_to_pseudo_xic_children: Union[EdgeToXICCacheSession, Dict[FeatureGraphEdge, PseudoXIC]]
+
+    def __init__(self, node: IonMobilityProfileFeatureGraphNode, minimum_intensity: float = 1, edge_to_pseudo_xic=None,
+                 edge_to_pseudo_xic_children=None):
+        if edge_to_pseudo_xic is None:
+            edge_to_pseudo_xic = {}
+        if edge_to_pseudo_xic_children is None:
+            edge_to_pseudo_xic_children = {}
+
         self.node = node
-        self.edge_to_pseudo_xic = {}
-        self.edge_to_pseudo_xic_children = {}
+        self.edge_to_pseudo_xic = edge_to_pseudo_xic
+        self.edge_to_pseudo_xic_children = edge_to_pseudo_xic_children
         self.minimum_intensity = minimum_intensity
         self.start = self.node.start
         self.end = self.node.end
@@ -228,42 +362,59 @@ class XICPseudoSpectrumGenerator(SpanningMixin):
             'ion mobility drift time', dt)
 
     def get_xic_for_edge(self, edge: FeatureGraphEdge) -> PseudoXIC:
-        if edge in self.edge_to_pseudo_xic:
+        try:
             return self.edge_to_pseudo_xic[edge]
-        f = reduce_feature(self.node.feature, edge.node_a.feature)
-        if f:
-            xic = PseudoXIC.from_feature(f)
-        else:
-            xic = None
-        self.edge_to_pseudo_xic[edge] = xic
-        return xic
+        except KeyError:
+            f = reduce_feature(self.node.feature, edge.node_a.feature, False, False)
+            if f:
+                xic = PseudoXIC.from_feature(f)
+            else:
+                xic = None
+            self.edge_to_pseudo_xic[edge] = xic
+            return xic
 
     def get_xic_for_edge_child(self, edge: FeatureGraphEdge) -> PseudoXIC:
-        if edge in self.edge_to_pseudo_xic_children:
+        try:
             return self.edge_to_pseudo_xic_children[edge]
-        f = reduce_feature(self.node.feature, edge.node_b.feature)
-        if f:
-            xic = PseudoXIC.from_feature(f)
-        else:
-            breakpoint()
-            xic = None
-        self.edge_to_pseudo_xic_children[edge] = xic
-        return xic
+        except KeyError:
+            # Need to keep envelope and m/z as the product XIC's source will be used
+            # to generate pseudo-peaks
+            f = reduce_feature(self.node.feature, edge.node_b.feature, True, True)
+            if f:
+                xic = PseudoXIC.from_feature(f)
+            else:
+                xic = None
+            self.edge_to_pseudo_xic_children[edge] = xic
+            return xic
+
+    def clear(self):
+        self.edge_to_pseudo_xic.clear()
+        self.edge_to_pseudo_xic_children.clear()
 
     def get_weighted_output(self, edge: FeatureGraphEdge, time: float) -> float:
         weights = []
         index = None
         o: FeatureGraphEdge
+        step_back = 0
         for i, o in enumerate(edge.node_b.edges):
             if o.node_a.index == self.node.index:
                 index = i
+            # If a parent node of a sharer of `edge` here doesn't span `time`,
+            # evict it from the session, and if the index of `self.node` hasn't
+            # been found yet, increment the backtrack counter by one before
+            # skipping the interpolation.
+            if not o.node_a.contains(time):
+                self.edge_to_pseudo_xic.remove(o)
+                if index is None:
+                    step_back += 1
+                continue
             f = self.get_xic_for_edge(o)
-            if not f:
+            if f is None:
                 weights.append(0)
             else:
                 v = f.interpolate(time)
                 weights.append(v * o.transition ** 2)
-
+        index -= step_back
         weights = np.array(weights)
         weights /= weights.max()
         product = self.get_xic_for_edge_child(edge)
@@ -292,18 +443,25 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
     precursor_graph: IonMobilityProfileDeconvolutedFeatureGraph
     product_graph: IonMobilityProfileDeconvolutedFeatureGraph
 
+    edge_to_pseudo_xic: EdgeToXICCache
+    edge_to_pseudo_xic_children: EdgeToXICCache
+
     def __init__(self, precursor_graph, product_graph):
         self.precursor_graph = precursor_graph
         self.product_graph = product_graph
         self.scan_counter = 0
         self.ms1_times = None
         self.delta_ms1_time = None
+        self.edge_to_pseudo_xic = EdgeToXICCache()
+        self.edge_to_pseudo_xic_children = EdgeToXICCache()
         self._prepass_ms1()
 
     def _prepass_ms1(self):
         times = set()
         for node in self.precursor_graph:
-            node.generator = XICPseudoSpectrumGenerator(node)
+            node.generator = XICPseudoSpectrumGenerator(
+                node, 1, self.edge_to_pseudo_xic.session(),
+                self.edge_to_pseudo_xic_children.session())
             times.update(node.feature.times)
         self.ms1_times = np.array(sorted(times))
         self.delta_ms1_time = np.mean(np.diff(self.ms1_times))
@@ -311,6 +469,7 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
     def __iter__(self):
         i = 0
 
+        nodes_to_clear = []
         for i in range(len(self.ms1_times)):
             time = self.ms1_times[i]
             try:
@@ -321,10 +480,17 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
             peaks_for_scan = []
             msn_spectra = []
 
-            self.log(
-                f"... Processing time point {time} with {self.scan_counter} scans produced ({i / len(self.ms1_times) * 100.0:0.2f}%)")
+            for node_k in nodes_to_clear:
+                node_k.generator.clear()
+                node_k.generator = None
+                for edge in list(node_k.edges):
+                    del self.edge_to_pseudo_xic[edge]
+                    edge.remove()
 
             nodes_to_clear = []
+            self.log(
+                f"... Processing time point {time:0.3f} with {self.scan_counter} scans produced, set size: {len(self.edge_to_pseudo_xic) + len(self.edge_to_pseudo_xic_children)} ({i / len(self.ms1_times) * 100.0:0.2f}%)")
+
             for node_k in self.precursor_graph.rt_tree.contains_point(time):
                 cn, _ = node_k.feature.find_time(time)
                 if not cn:
@@ -366,7 +532,5 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
                     precursor_information=pinfo))
                 self.scan_counter += 1
 
-            for node_k in nodes_to_clear:
-                node_k.generator = None
 
             yield ScanBunch(ms1_scan, msn_scans)

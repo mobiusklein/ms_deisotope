@@ -758,7 +758,9 @@ class IonMobilityFrame(FrameBase):
         return self._arrays
 
     @arrays.setter
-    def arrays(self, value):
+    def arrays(self, value: Optional[RawDataArrays3D]):
+        if value is not None and not isinstance(value, RawDataArrays3D):
+            raise TypeError(f"Cannot assign type {type(value)} to arrays!")
         self._arrays = value
 
     @property
@@ -821,7 +823,8 @@ class IonMobilityFrame(FrameBase):
             else:
                 lo = mid
 
-    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, num_threads=3, low_memory=False, **kwargs):
+    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, num_threads=3,
+                         low_memory=False, minimum_intensity=0.0, **kwargs) -> 'IonMobilityFrame':
         from ms_deisotope.feature_map import feature_map
         scans: List[Scan] = self.scans()
         n = len(scans)
@@ -873,6 +876,8 @@ class IonMobilityFrame(FrameBase):
             scan.peak_set.mz_array = None
             for peak in scan:
                 peak: FittedPeak
+                if peak.intensity < minimum_intensity:
+                    continue
                 lff.handle_peak(peak, scan.drift_time)
 
         del averager
@@ -883,7 +888,7 @@ class IonMobilityFrame(FrameBase):
 
     def deconvolute_features(self, averagine=None, scorer=None, truncate_after=0.95,
                              minimum_intensity=5, min_size=2, max_gap_size=0.25, copy=True,
-                             **kwargs):
+                             **kwargs) -> 'IonMobilityFrame':
         from ms_deisotope.feature_map import feature_processor
         if averagine is None:
             from ms_deisotope.averagine import peptide
@@ -901,7 +906,7 @@ class IonMobilityFrame(FrameBase):
             minimum_intensity=minimum_intensity, truncate_after=truncate_after, **kwargs)
         return self
 
-    def to_deconvoluted_peak_set(self, time_bound=None):
+    def to_deconvoluted_peak_set(self, time_bound=None) -> DeconvolutedPeakSet:
         if self.deconvoluted_features is None:
             raise ValueError("Must first deconvolute IMS features before converting to a time-binned peak set!")
         if time_bound is not None:
