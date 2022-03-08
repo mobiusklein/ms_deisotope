@@ -1,4 +1,3 @@
-from email.policy import default
 import os
 import logging
 import sys
@@ -11,12 +10,20 @@ import click
 
 import ms_deisotope
 from ms_deisotope.data_source.infer_type import MSFileLoader
+
 from ms_deisotope.data_source.scan.loader import RandomAccessScanSource, ScanIterator
 from ms_deisotope.data_source.scan.scan_iterator import MSEIterator
-from ms_deisotope.output.mzml import MzMLSerializer, IonMobilityAware3DMzMLSerializer
 from ms_deisotope.data_source.scan.mobility_frame import (
     IonMobilityFrame, Generic3DIonMobilityFrameSource, IonMobilitySource, IonMobilitySourceRandomAccessFrameSource)
+
+from ms_deisotope.peak_set import IonMobilityProfileDeconvolutedPeakSolution
+
+from ms_deisotope.output.mzml import MzMLSerializer, IonMobilityAware3DMzMLSerializer, ProcessedGeneric3DIonMobilityFrameSource
+
 from ms_deisotope.feature_map.mobility_frame_processor import IonMobilityFrameProcessor
+from ms_deisotope.feature_map.feature_map import IonMobilityProfileDeconvolutedLCMSFeatureForest
+from ms_deisotope.feature_map.feature_graph import IonMobilityProfileDeconvolutedFeatureGraph
+from ms_deisotope.feature_map.precursor_product_correlation import PrecursorProductCorrelationGraph
 
 from ms_deisotope.tools.deisotoper.process import ScanIDYieldingProcess, ScanBunchLoader, DeconvolutingScanTransformingProcess
 from ms_deisotope.tools.deisotoper.scan_generator import ScanGenerator
@@ -351,7 +358,12 @@ averagine_map = {
 }
 
 
-@click.command("cyclic_deconvolute")
+@click.group("waters-cyclic-deconvolute")
+def cli():
+    pass
+
+
+@cli.command("feature-deconvolution", short_help="Deisotope and charge state deconvolute LC-IM-MSe run")
 @click.argument("input_path", type=click.Path())
 @click.argument("output_path", type=click.Path(writable=True))
 @click.option("-m", "--lockmass-config", type=float, help="The lock mass used", default=785.8421)
@@ -364,8 +376,10 @@ averagine_map = {
               help="The isolation window size on either side of the set mass.")
 @processes_option
 @click.option("-k", "--lock-mass-function", type=int, default=3, help="The number of the lock mass function. For normal low-high MSE this is 3.")
-def main(input_path, output_path, lockmass_config, start_time=0, end_time=None, averagine='glycopeptide',
-         minimum_intensity=10.0, lock_mass_function=3, processes: int = 4, isolation_window_width=0.0):
+def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0, end_time=None, averagine='glycopeptide',
+                          minimum_intensity=10.0, lock_mass_function=3, processes: int = 4, isolation_window_width=0.0):
+    '''Extract features from each IM-MS cycle followed by deisotoping and charge state deconvolution.
+    '''
     logging.basicConfig(
         level="INFO", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
         filemode='w',
@@ -416,3 +430,70 @@ def main(input_path, output_path, lockmass_config, start_time=0, end_time=None, 
         end_scan_time=end_time)
 
     task.start()
+
+
+@cli.command("deconvolve-products", short_help="Deconvolve correlated precursor-product ion relationships")
+@click.argument("input_path", type=click.Path())
+@click.argument("output_path", type=click.Path(writable=True))
+def precursor_product_deconvolution(input_path, output_path):
+    '''Takes a deconvolved LC-IM-MSe run and generate pseudospectra for
+    precursor ions using correlated product ion features enclosed in the IM
+    and RT dimensions.
+    '''
+    logging.basicConfig(
+        level="INFO", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
+        filemode='w',
+        filename="precursor_product_deconvolution_%s.log" % (
+            os.path.basename(input_path).rsplit(".", 1)[0]))
+
+    print(f"Running on PID {os.getpid()}")
+
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stderr))
+    input_path = str(input_path)
+
+    scan_reader = ms_deisotope.MSFileLoader(input_path)
+    frame_reader = ProcessedGeneric3DIonMobilityFrameSource(scan_reader)
+
+
+    precursor_forest = IonMobilityProfileDeconvolutedLCMSFeatureForest()
+    product_forest = IonMobilityProfileDeconvolutedLCMSFeatureForest()
+
+    frame_reader.make_frame_iterator(grouped='mse')
+    for i, bunch in enumerate(frame_reader):
+        if bunch.precursor is None:
+            continue
+        if i % 100 == 0:
+            logger.info("Processing Frame %s %0.3f", bunch.precursor.id, bunch.precursor.time)
+        if bunch.precursor:
+            for f in bunch.precursor.deconvoluted_features:
+                p = IonMobilityProfileDeconvolutedPeakSolution.from_feature(f)
+                precursor_forest.handle_peak(p, bunch.precursor.time)
+
+        for product in bunch.products:
+            for f in product.deconvoluted_features:
+                p = IonMobilityProfileDeconvolutedPeakSolution.from_feature(f)
+                product_forest.handle_peak(p, product.time)
+
+    logger.info("Smoothing precursors")
+    precursor_forest.smooth_overlaps().split_sparse(0.5)
+    logger.info("Smoothing products")
+    product_forest.smooth_overlaps().split_sparse(0.5)
+
+    logger.info("Building precursor-product graph")
+    precursor_graph = IonMobilityProfileDeconvolutedFeatureGraph(precursor_forest)
+    product_graph = IonMobilityProfileDeconvolutedFeatureGraph(product_forest)
+    corr_graph = PrecursorProductCorrelationGraph(
+        precursor_graph, product_graph, max_edge_count_per_node=1000)
+    corr_graph.build()
+
+    logger.info("Generating pseudo-spectra")
+    fh = open(output_path, 'wb')
+    with MzMLSerializer(fh, len(scan_reader), sample_name=os.path.basename(output_path)) as writer:
+        writer.copy_metadata_from(scan_reader)
+        proc_method = writer.build_processing_method()
+        writer.add_data_processing(proc_method)
+        for bunch in corr_graph.iterspectra():
+            writer.save(bunch)
+
+if __name__ == "__main__":
+    cli.main()
