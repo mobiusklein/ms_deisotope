@@ -650,7 +650,7 @@ cdef class IntervalTreeNode2D(IntervalTreeNode):
         else:
             self.organized = None
 
-    cpdef list _overlaps_interval_2d(self, double[:] starts, double[:] ends):
+    cpdef list _overlaps_interval_2d(self, double[::1] starts, double[::1] ends):
         cdef:
             list overlaps_1d
             Interval interv2
@@ -672,7 +672,7 @@ cdef class IntervalTreeNode2D(IntervalTreeNode):
                         result.append(interv)
         return result
 
-    cpdef list overlaps_2d(self, double[:] starts, double[:] ends):
+    cpdef list overlaps_2d(self, double[::1] starts, double[::1] ends):
         cdef:
             double start, end
             list result

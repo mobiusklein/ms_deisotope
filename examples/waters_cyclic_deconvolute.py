@@ -30,6 +30,7 @@ from ms_deisotope.tools.deisotoper.scan_generator import ScanGenerator
 from ms_deisotope.tools.deisotoper.workflow import SampleConsumer
 from ms_deisotope.tools.deisotoper.output import ThreadedMzMLScanStorageHandler
 
+from ms_deisotope.task import TaskBase
 from ms_deisotope.tools.utils import processes_option
 
 
@@ -189,6 +190,11 @@ class MSEDeconvolutingFrameTransformingProcess(DeconvolutingScanTransformingProc
 
     def _make_batch_loader(self, loader: IonMobilitySourceRandomAccessFrameSource) -> FrameBunchLoader:
         return FrameBunchLoader(loader)
+
+    def send_scan(self, scan: IonMobilityFrame):
+        if scan.deconvoluted_features is not None:
+            scan.features = None
+        return super().send_scan(scan)
 
 
 class MSEFrameGenerator(ScanGenerator):
@@ -358,6 +364,16 @@ averagine_map = {
 }
 
 
+def _default_log_handler():
+    formatter = logging.Formatter(
+        '%(asctime)s %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p')
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(formatter)
+    return handler
+
+
+
 @click.group("waters-cyclic-deconvolute")
 def cli():
     pass
@@ -376,15 +392,18 @@ def cli():
               help="The isolation window size on either side of the set mass.")
 @processes_option
 @click.option("-k", "--lock-mass-function", type=int, default=3, help="The number of the lock mass function. For normal low-high MSE this is 3.")
+@click.option("-d", "--denoise", type=float, default=1.0, help="Aggressiveness of background noise removal. Defaults to 1.0")
+@click.option("-g", "--signal-averaging", type=int, default=2, help="The number of adjacent IM-MS spectra to average within a single cycle.")
 def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0, end_time=None, averagine='glycopeptide',
-                          minimum_intensity=10.0, lock_mass_function=3, processes: int = 4, isolation_window_width=0.0):
+                          minimum_intensity=10.0, lock_mass_function=3, processes: int = 4,
+                          isolation_window_width=0.0, denoise=1.0, signal_averaging=2):
     '''Extract features from each IM-MS cycle followed by deisotoping and charge state deconvolution.
     '''
     logging.basicConfig(
         level="INFO", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
         filemode='w',
         filename="cyclic_deconvolute_%s_%s.log" % (os.path.basename(input_path).rsplit(".", 1)[0], start_time))
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stderr))
+    logging.getLogger().addHandler(_default_log_handler())
     input_path = str(input_path)
 
     print(f"Running on PID {os.getpid()}")
@@ -406,8 +425,9 @@ def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0
     task = MSESampleConsumer(
         input_path, storage_path=output_path,
         ms1_peak_picking_args={"error_tolerance": 4e-5,
-                               "minimum_intensity": minimum_intensity / 2},
-        msn_peak_picking_args={"average_within": 2, "error_tolerance": 4e-5},
+                               "minimum_intensity": minimum_intensity / 2, "denoise": denoise},
+        msn_peak_picking_args={
+            "average_within": signal_averaging, "error_tolerance": 4e-5, "denoise": denoise},
         ms1_deconvolution_args={
             "averagine": averagine,
             "truncate_after": 0.95,
@@ -421,7 +441,9 @@ def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0
             "scorer": ms_deisotope.MSDeconVFitter(1),
             "minimum_intensity": minimum_intensity / 2,
             "copy": False
-        }, ms1_averaging=2, reader_options={"lockmass_config": lockmass_config, "default_isolation_width": isolation_window_width},
+        }, ms1_averaging=signal_averaging,
+        reader_options={"lockmass_config": lockmass_config,
+                        "default_isolation_width": isolation_window_width},
         deconvolute=True,
         n_processes=processes,
         start_scan_id=start_id,
@@ -448,7 +470,7 @@ def precursor_product_deconvolution(input_path, output_path):
 
     print(f"Running on PID {os.getpid()}")
 
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stderr))
+    logging.getLogger().addHandler(_default_log_handler())
     input_path = str(input_path)
 
     scan_reader = ms_deisotope.MSFileLoader(input_path)
@@ -459,11 +481,12 @@ def precursor_product_deconvolution(input_path, output_path):
     product_forest = IonMobilityProfileDeconvolutedLCMSFeatureForest()
 
     frame_reader.make_frame_iterator(grouped='mse')
+    logger.info("Constructing LC-IM-MSe features")
     for i, bunch in enumerate(frame_reader):
         if bunch.precursor is None:
             continue
         if i % 100 == 0:
-            logger.info("Processing Frame %s %0.3f", bunch.precursor.id, bunch.precursor.time)
+            logger.info("... Processing %r %0.3f", bunch.precursor.id, bunch.precursor.time)
         if bunch.precursor:
             for f in bunch.precursor.deconvoluted_features:
                 p = IonMobilityProfileDeconvolutedPeakSolution.from_feature(f)
@@ -496,4 +519,8 @@ def precursor_product_deconvolution(input_path, output_path):
             writer.save(bunch)
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()
+    logging.captureWarnings(True)
+    TaskBase.log_with_logger(logger)
     cli.main()

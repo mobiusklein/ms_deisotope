@@ -1,6 +1,8 @@
-from typing import Dict, Any, Type
+from os import PathLike
+from typing import Dict, Any, Optional, Type
 
 import ms_deisotope
+from ms_deisotope.data_source.scan.loader import ScanDataSource
 from ms_deisotope.task import TaskBase
 
 from .output import ThreadedMzMLScanStorageHandler, NullScanStorageHandler, ScanStorageHandlerBase
@@ -8,13 +10,17 @@ from .scan_generator import ScanGenerator
 
 
 class ScanSink(object):
-    def __init__(self, scan_generator, storage_type=NullScanStorageHandler):
+    scan_generator: ScanGenerator
+    scan_store: ScanStorageHandlerBase
+    _scan_store_type: Type[ScanStorageHandlerBase]
+
+    def __init__(self, scan_generator: ScanGenerator, storage_type: Type[ScanStorageHandlerBase] = NullScanStorageHandler):
         self.scan_generator = scan_generator
         self.scan_store = None
         self._scan_store_type = storage_type
 
     @property
-    def scan_source(self):
+    def scan_source(self) -> Optional[PathLike]:
         try:
             return self.scan_generator.scan_source
         except AttributeError:
@@ -27,7 +33,7 @@ class ScanSink(object):
         except AttributeError:
             return None
 
-    def configure_storage(self, storage_path=None, name=None, source=None):
+    def configure_storage(self, storage_path: PathLike=None, name: Optional[str]=None, source: Optional[ScanDataSource]=None):
         self.scan_store = self._scan_store_type.configure_storage(
             storage_path, name, source)
 
@@ -50,11 +56,6 @@ class ScanSink(object):
     def next_scan(self):
         scan = next(self.scan_generator)
         self.store_scan(scan)
-        j = 0
-        while scan.ms_level != 1 and j < 100:
-            scan = next(self.scan_generator)
-            self.store_scan(scan)
-            j += 1
         return scan
 
     def __iter__(self):

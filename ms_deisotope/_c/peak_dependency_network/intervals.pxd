@@ -21,6 +21,9 @@ cdef class Interval(SpanningMixin):
         public object members
         public dict data
 
+cdef class SimpleInterval(SpanningMixin):
+    @staticmethod
+    cdef SimpleInterval _create(double start, double end)
 
 cdef class IntervalTreeNode(object):
     cdef:
@@ -61,5 +64,5 @@ cdef class IntervalTreeNode2D(IntervalTreeNode):
         public object inner_organizer
         public IntervalTreeNode organized
 
-    cpdef list _overlaps_interval_2d(self, double[:] starts, double[:] ends)
-    cpdef list overlaps_2d(self, double[:] starts, double[:] ends)
+    cpdef list _overlaps_interval_2d(self, double[::1] starts, double[::1] ends)
+    cpdef list overlaps_2d(self, double[::1] starts, double[::1] ends)

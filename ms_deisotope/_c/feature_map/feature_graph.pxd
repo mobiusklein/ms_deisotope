@@ -1,4 +1,4 @@
-from ms_deisotope._c.peak_dependency_network.intervals cimport SpanningMixin
+from ms_deisotope._c.peak_dependency_network.intervals cimport SpanningMixin, SimpleInterval
 
 from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
 
@@ -23,3 +23,25 @@ cdef class FeatureGraphEdge(object):
         public Py_hash_t _hash
 
     cpdef remove(self)
+
+
+cdef class DeconvolutedFeatureGraphNode(FeatureGraphNode):
+    cdef:
+        public double neutral_mass
+        public int charge
+
+
+cdef class IonMobilityProfileFeatureGraphNode(DeconvolutedFeatureGraphNode):
+    cdef:
+        public SimpleInterval ion_mobility_interval
+
+
+cdef class TimeQuery(SpanningMixin):
+    pass
+
+
+cdef class PPMQuery(SpanningMixin):
+    pass
+
+
+cpdef list connected_components(self)

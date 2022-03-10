@@ -216,6 +216,14 @@ class PPMQuery(SpanningMixin):
         return "PPMQuery(%f, %f)" % (self.start, self.end)
 
 
+try:
+    from ms_deisotope._c.feature_map.feature_graph import (
+        FeatureGraphNode, DeconvolutedFeatureGraphNode, IonMobilityProfileFeatureGraphNode,
+        FeatureGraphEdge)
+except ImportError:
+    raise
+
+
 class FeatureGraph(MZIndex):
     node_cls: Type = FeatureGraphNode
     edge_cls: Type = FeatureGraphEdge
@@ -379,6 +387,18 @@ class IonMobilityProfileDeconvolutedFeatureGraph(DeconvolutedFeatureGraph):
             rt_error = (node.center - match.center)
             self.edges.add(self.edge_cls(
                 node, match, None, mass_error=ppm_error, rt_error=rt_error))
+
+
+try:
+    from ms_deisotope._c.feature_map.feature_graph import (
+        find_edges, find_edges_neutral_mass, find_edges_neutral_mass_ion_mobility, connected_components)
+
+    FeatureGraph.find_edges = find_edges
+    FeatureGraph.connected_components = connected_components
+    DeconvolutedFeatureGraph.find_edges = find_edges_neutral_mass
+    IonMobilityProfileDeconvolutedFeatureGraph.find_edges = find_edges_neutral_mass_ion_mobility
+except ImportError:
+    raise
 
 
 class GapAwareFeatureSmoother(object):

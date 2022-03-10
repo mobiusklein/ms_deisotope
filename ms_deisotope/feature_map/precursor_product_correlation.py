@@ -1,3 +1,5 @@
+import logging
+
 from collections import defaultdict
 from typing import DefaultDict, Dict, Union
 
@@ -25,6 +27,8 @@ from ms_deisotope.feature_map.feature_graph import (
 
 from ms_deisotope._c.utils import correlation
 from ms_deisotope._c.feature_map.profile_transform import interpolate_point
+
+logger = logging.getLogger(__name__)
 
 
 class PseudoXIC(object):
@@ -188,6 +192,9 @@ class PrecursorProductCorrelationGraph(LogUtilsMixin):
         iterator = PrecursorProductCorrelatingIterator(self.precursor_graph, self.product_graph)
         for batch in iterator:
             yield batch
+
+
+PrecursorProductCorrelationGraph.log_with_logger(logger)
 
 
 def edge_to_pseudopeak(edge: FeatureGraphEdge) -> IonMobilityProfileDeconvolutedPeakSolution:
@@ -534,3 +541,6 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
 
 
             yield ScanBunch(ms1_scan, msn_scans)
+
+
+PrecursorProductCorrelatingIterator.log_with_logger(logger)

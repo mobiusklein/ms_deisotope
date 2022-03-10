@@ -1,7 +1,8 @@
 """Manages keeping scans delivered out-of-order in-order for
 writing to disk.
 """
-from typing import Generic, Set, TypeVar, Iterator, Union
+import time
+from typing import Any, Generic, Set, Tuple, TypeVar, Iterator, Union
 
 from queue import Empty as QueueEmpty
 
@@ -133,6 +134,16 @@ class ScanCollator(TaskBase, Generic[T]):
         if not self.include_fitted and isinstance(item, ProcessedScan):
             item.peak_set = []
 
+    def _read_from_queue(self, timeout: int = 10) -> Tuple[Union[str, T], int]:
+        blocking = timeout != 0
+        start = time.monotonic()
+        item, index, _ = self.queue.get(blocking, timeout)
+        end = time.monotonic()
+        self.queue.task_done()
+        if end - start > 5:
+            self.log(f"Decoding index {index} took {end - start:0.2f}s")
+        return item, index
+
     def consume(self, timeout: int=10) -> bool:
         """Fetches the next work item from the input
         queue :attr:`queue`, blocking for at most `timeout` seconds.
@@ -149,14 +160,11 @@ class ScanCollator(TaskBase, Generic[T]):
             Whether or not a new work item was found waiting
             on the :attr:`queue`
         """
-        blocking = timeout != 0
         try:
-            item, index, _ = self.queue.get(blocking, timeout)
-            self.queue.task_done()
+            item, index = self._read_from_queue(timeout)
             # DONE message may be sent many times.
             while item == DONE:
-                item, index, _ = self.queue.get(blocking, timeout)
-                self.queue.task_done()
+                item, index = self._read_from_queue(timeout)
             if isinstance(item, CompressedPickleMessage):
                 item = item.obj
             self.store_item(item, index)

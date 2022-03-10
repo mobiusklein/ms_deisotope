@@ -824,7 +824,7 @@ class IonMobilityFrame(FrameBase):
                 lo = mid
 
     def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, num_threads=3,
-                         low_memory=False, minimum_intensity=0.0, **kwargs) -> 'IonMobilityFrame':
+                         low_memory=False, minimum_intensity=0.0, denoise=0, **kwargs) -> 'IonMobilityFrame':
         from ms_deisotope.feature_map import feature_map
         scans: List[Scan] = self.scans()
         n = len(scans)
@@ -860,9 +860,11 @@ class IonMobilityFrame(FrameBase):
                 else:
                     acc: List[ScanBase] = []
                     for j in range(max((i - average_within, 0)), i):
-                        acc.append(scans[j])
+                        other_scan = scans[j]
+                        acc.append(other_scan)
                     for j in range(i + 1, min(i + average_within + 1, n)):
-                        acc.append(scans[j])
+                        other_scan = scans[j]
+                        acc.append(other_scan)
                     if acc:
                         acq_info = scan.acquisition_information
                         scan = scan.average_with(
@@ -871,6 +873,9 @@ class IonMobilityFrame(FrameBase):
 
             if average_across:
                 pass
+
+            if denoise > 0 and scan.arrays.mz.size > 0:
+                scan = scan.denoise(denoise).transform(['savitsky_golay'])
             scan.pick_peaks(**kwargs)
             scan.peak_set.intensity_array = None
             scan.peak_set.mz_array = None

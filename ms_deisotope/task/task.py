@@ -82,6 +82,13 @@ class TaskBase(LogUtilsMixin):
             self.log("End %s" % self.display_name)
             self.log(self.summarize())
 
+    def __enter__(self):
+        self._begin()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self._end(**kwargs)
+
     def on_begin(self):
         pass
 
