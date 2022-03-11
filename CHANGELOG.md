@@ -6,13 +6,13 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
--
 
 ### Changed
 
 ### Deprecated
 
 ### Removed
+- Removed deprecated `ScanProcessor.get_precursor_peak_for_product_scans`
 
 ### Fixed
 

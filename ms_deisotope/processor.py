@@ -524,46 +524,6 @@ class ScanProcessor(Base, LogUtilsMixin):
         product_scan.peak_set = peaks
         return peaks
 
-    def get_precursor_peak_for_product_scans(self, precursor_scan: Scan):  # pragma: no cover
-        """DEPRECATED
-
-        A utility method to obtain :class:`PriorityTarget` objects for
-        each product scan of `precursor_scan`.
-
-        Parameters
-        ----------
-        precursor_scan: :class:`~.Scan`
-            The scan to extract.
-
-        Returns
-        -------
-        :class:`list` of :class:`PriorityTarget`
-        """
-        warnings.warn(
-            "Deprecated method `get_precursor_peak_for_product_scans` was called.",
-            DeprecationWarning)
-        priorities = []
-        peaks = precursor_scan.peak_set
-        for scan in precursor_scan.product_scans:
-            precursor_ion = scan.precursor_information
-            if peaks is None:
-                peaks = self.pick_precursor_scan_peaks(precursor_scan)
-            peak, _ = peaks.get_nearest_peak(precursor_ion.mz)
-            precursor_ion.peak = peak
-            target = PriorityTarget(
-                peak,
-                precursor_ion,
-                self.trust_charge_hint,
-                isolation_window=scan.isolation_window)
-            if self._reject_candidate_precursor_peak(peak, scan):
-                self.log(
-                    "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
-                        precursor_ion, scan.title,
-                        precursor_scan.title))
-            else:
-                priorities.append(target)
-        return priorities
-
     def process_scan_group(self, precursor_scan: Scan, product_scans: List[Scan]) -> Tuple[Scan, List[PriorityTarget], List[Scan]]:
         """Performs the initial extraction of information relating
         `precursor_scan` to `product_scans` and picks peaks for ``precursor_scan``.
