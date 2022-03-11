@@ -7,28 +7,48 @@ cimport numpy as np
 
 from ms_deisotope._c.peak_dependency_network.intervals cimport SpanningMixin, SimpleInterval, IntervalTreeNode2D
 
-from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature
+from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature, LCMSFeatureTreeNode
 
 
 cdef class FeatureGraphNode(SpanningMixin):
 
     def __init__(self, feature, index, edges=None):
-        self.start_time = self.start = feature.start_time
-        self.end_time = self.end = feature.end_time
+        self.start = feature.start_time
+        self.end = feature.end_time
         if edges is None:
             edges = set()
         self.feature = feature
         self.index = index
         self.edges = edges
+        self.center = self._average_center()
+        self.mz = feature.mz
+
+    def as_arrays(self, dtype=float):
+        return self.feature.as_arrays(dtype)
+
+    cpdef double _average_center(self):
+        cdef:
+            double total, abundance, intensity
+            LCMSFeatureTreeNode node
+            size_t i, n
 
         total = 0
         abundance = 0
-        for node in self.feature.nodes:
+        n = self.feature.get_size()
+        for i in range(n):
+            node = self.feature.getitem(i)
             intensity = node.total_intensity()
             total += node.time * intensity
             abundance += intensity
-        self.center = total / abundance
-        self.mz = feature.mz
+        return total / abundance
+
+    @property
+    def start_time(self):
+        return self.start
+
+    @property
+    def end_time(self):
+        return self.end
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self.feature,)

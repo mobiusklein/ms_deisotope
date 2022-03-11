@@ -1361,3 +1361,24 @@ class IonMobilityProfileDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureFor
         self.features = GapAwareIonMobilityProfileDeconvolutedFeatureSmoother.smooth(
             self.features, mass_error_tolerance=error_tolerance).features
         return self
+
+
+def remove_peaks_below_threshold(feature_map: _FeatureCollection, minimum_intensity: float, min_size: int = 2, maximum_time_gap: float = 1.0) -> _FeatureCollection:
+    out = []
+    feature: LCMSFeature
+    for feature in feature_map:
+        keep = []
+        for node in feature:
+            if node.total_intensity() > minimum_intensity:
+                keep.append(node)
+
+        if keep:
+            filtered_feature: LCMSFeature = feature._copy_chunk(
+                keep)
+            filtered_feature.feature_id = feature.feature_id
+            out.extend(filter(
+                lambda f: len(f) >= min_size,
+                filtered_feature.split_sparse(
+                    delta_rt=maximum_time_gap)))
+    feature_map = feature_map.__class__(out)
+    return feature_map

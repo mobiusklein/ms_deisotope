@@ -40,6 +40,9 @@ class CompressedPickleMessage(object):
     def __setstate__(self, state):
         self.obj = pickle.loads(decompress(state['payload']))
 
+    def __reduce__(self):
+        return self.__class__, (None, ), self.__getstate__()
+
     def __iter__(self):
         yield self.obj
 

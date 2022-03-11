@@ -10,6 +10,7 @@ cdef class FeatureGraphNode(SpanningMixin):
         public double center
         public double mz
 
+    cpdef double _average_center(self)
 
 cdef class FeatureGraphEdge(object):
 

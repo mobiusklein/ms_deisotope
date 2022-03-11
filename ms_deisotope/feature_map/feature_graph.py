@@ -102,8 +102,8 @@ class FeatureGraphNode(SpanningMixin):
     mz: float
 
     def __init__(self, feature: LCMSFeature, index: int, edges: Optional[Set]=None):
-        self.start_time = self.start = feature.start_time
-        self.end_time = self.end = feature.end_time
+        self.start = feature.start_time
+        self.end = feature.end_time
         if edges is None:
             edges = set()
         self.feature = feature
@@ -118,6 +118,14 @@ class FeatureGraphNode(SpanningMixin):
             abundance += intensity
         self.center = total / abundance
         self.mz = feature.mz
+
+    @property
+    def start_time(self) -> float:
+        return self.start
+
+    @property
+    def end_time(self) -> float:
+        return self.end
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self.feature,)

@@ -449,7 +449,8 @@ def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0
         start_scan_id=start_id,
         end_scan_id=end_id,
         start_scan_time=start_time,
-        end_scan_time=end_time)
+        end_scan_time=end_time,
+        lock_mass_function=lock_mass_function)
 
     task.start()
 
