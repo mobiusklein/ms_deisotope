@@ -73,7 +73,7 @@ cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
                 if n_members > 0:
                     current_envelope_tuple = tuple(current_envelope)
                     PyList_Append(envelope_list, Envelope._create(current_envelope_tuple))
-                else:
+                elif i > 2:
                     PyList_Append(envelope_list, Envelope._create(
                             ()
                         )
