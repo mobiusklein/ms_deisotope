@@ -194,7 +194,7 @@ def metadata_index(paths, processes=4, deconvoluted=False):
         except AttributeError:
             pass
         if processes > 1:
-            progbar = click.progressbar(label='Building Index', length=100)
+            progbar = progress(label='Building Index', length=100)
             acc = [0]
 
             def update_bar(x):
@@ -214,7 +214,7 @@ def metadata_index(paths, processes=4, deconvoluted=False):
             reader.reset()
             try:
                 n = len(reader)
-                progbar = click.progressbar(label='Building Index', length=n)
+                progbar = progress(label='Building Index', length=n)
             except TypeError:
                 progbar = spinner(title="Building Index")
             with progbar:

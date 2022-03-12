@@ -157,7 +157,8 @@ class ProgressLogger(object):
     This class tries to emulate :func:`click.progressbar` for use when the attached STDERR stream is not
     a terminal.
     """
-    def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None, file=None, **kwargs):
+    def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None,
+                 file=None, writer=None, **kwargs):
         if iterable is not None:
             try:
                 length = len(iterable)
@@ -183,6 +184,7 @@ class ProgressLogger(object):
         self.last_update = 0
         self.label = label
         self.file = file
+        self.writer = writer
 
     def update(self, n):
         self.count += n
@@ -203,7 +205,10 @@ class ProgressLogger(object):
         else:
             prog_label = "%s %d" % (label, i)
         message = fmt_msg("%s: %s" % (prog_label, show))
-        click.echo(message, file=self.file, err=True)
+        if self.writer is None:
+            click.echo(message, file=self.file, err=True)
+        else:
+            self.writer(message)
 
     def __iter__(self):
         for item in self.iterable:
