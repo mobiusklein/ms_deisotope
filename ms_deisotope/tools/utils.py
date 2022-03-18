@@ -224,10 +224,16 @@ class ProgressLogger(object):
 
 
 def progress(*args, **kwargs):
-    """A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a TTY and :class:`ProgressLogger`
-    otherwise.
+    """A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a
+    TTY and :class:`ProgressLogger` otherwise.
     """
     if sys.stdout.isatty():
         return click.progressbar(*args, **kwargs)
     else:
         return ProgressLogger(*args, **kwargs)
+
+
+def progress_iter(*args, **kwargs):
+    prog = progress(*args, **kwargs)
+    with prog:
+        yield from prog

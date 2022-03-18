@@ -9,6 +9,7 @@ cdef class FeatureGraphNode(SpanningMixin):
         public set edges
         public double center
         public double mz
+        public object generator
 
     cpdef double _average_center(self)
 
