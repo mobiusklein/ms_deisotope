@@ -395,7 +395,7 @@ class TestIncrementalGraphExtraction(unittest.TestCase):
 
         diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
         assert len(diff) == 0
-        assert len(deconvoluter.averagine.backend) == 8868
+        assert len(deconvoluter.averagine.backend) == 8865
         assert reference_averagine == deconvoluter.averagine
 
         cluster = deconvoluter.peak_dependency_network.find_cluster_for(peak)
@@ -439,7 +439,7 @@ class TestIncrementalGraphExtraction(unittest.TestCase):
 
         diff = set(deconvoluter.averagine.backend) - set(reference_averagine.backend)
         assert len(diff) == 0
-        assert len(deconvoluter.averagine.backend) == 5136
+        assert len(deconvoluter.averagine.backend) == 5134
         assert reference_averagine == deconvoluter.averagine
 
         cluster3 = deconvoluter.peak_dependency_network.find_cluster_for(peak3)
