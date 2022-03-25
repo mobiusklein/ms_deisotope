@@ -23,7 +23,7 @@ class LCMSFeatureMapTest(unittest.TestCase):
 
     def test_forest(self):
         features = self.features
-        assert len(features) == 4167
+        assert len(features) == 4151
         f = features.search(1161.50875)
         assert f is not None
 

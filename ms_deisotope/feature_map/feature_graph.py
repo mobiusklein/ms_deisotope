@@ -4,84 +4,16 @@ from typing import Any, Deque, Iterator, List, Optional, Set, Type, Sequence
 
 import numpy as np
 
-from ms_deisotope.peak_dependency_network.intervals import SpanningMixin, IntervalTreeNode, Interval, SimpleInterval
+from ms_deisotope.peak_dependency_network.intervals import (
+    SpanningMixin,
+    IntervalTreeNode,
+    Interval,
+    SimpleInterval,
+    IntervalTreeNode2D
+)
+
 from ms_deisotope.feature_map.lcms_feature import LCMSFeature
 from ._mz_feature_search import MZIndex, NeutralMassIndex
-
-
-class IntervalTreeNode2D(IntervalTreeNode):
-    def __init__(self, center, left, contained, right, level=0, parent=None, inner_organizer=None):
-        super().__init__(center, left, contained, right, level=level, parent=parent)
-        self.inner_organizer = inner_organizer
-        self.organize()
-
-    def set_organizer(self, organizer):
-        self.inner_organizer = organizer
-        if self.left is not None:
-            self.left.set_organizer(organizer)
-        if self.right is not None:
-            self.right.set_organizer(organizer)
-        self.organize()
-
-    def organize(self):
-        if self.inner_organizer is not None:
-            self.organized = self.inner_organizer(self.contained)
-        else:
-            self.organized = None
-
-    def _overlaps_interval_2d(self, start, end):
-        starts = start
-        ends = end
-        query = Interval(starts[0], ends[0])
-        result = []
-        if self.organized is None:
-            return super()._overlaps_interval(starts[0], ends[0])
-        else:
-            for interv2 in self.organized.overlaps(starts[1], ends[1]):
-                for interv in interv2.members:
-                    if interv.overlaps(query):
-                        result.append(interv)
-        return result
-
-    def overlaps_2d(self, starts, ends):
-        start = starts[0]
-        end = ends[0]
-        result = []
-        if start > self.end:
-            return result
-        if end < self.start:
-            return result
-        elif start <= self.start:
-            if end < self.start:
-                return result
-            else:
-                if self.left is not None:
-                    result.extend(self.left.overlaps(starts, ends))
-                result.extend(self._overlaps_interval(starts, ends))
-                if self.right is not None and end >= self.right.start:
-                    result.extend(self.right.overlaps(starts, ends))
-        elif start > self.start:
-            if self.left is not None and self.left.end >= start:
-                result.extend(self.left.overlaps(starts, ends))
-            result.extend(self._overlaps_interval(starts, ends))
-            if self.right is not None and end >= self.right.start:
-                result.extend(self.right.overlaps(starts, ends))
-        elif end > self.start:
-            if self.left is not None:
-                result.extend(self.left.overlaps(starts, ends))
-            result.extend(self._overlaps_interval(starts, ends))
-            if self.right is not None and end >= self.right.start:
-                result.extend(self.right.overlaps(starts, ends))
-        return result
-
-    @classmethod
-    def build(cls, intervals, organizer_callback=None):
-        root: IntervalTreeNode2D = super(IntervalTreeNode2D, cls).build(intervals)
-        root.set_organizer(organizer_callback)
-        return root
-
-
-from ms_deisotope._c.peak_dependency_network.intervals import IntervalTreeNode2D
 
 
 def mz_point_organizer_callback(contained_intervals):

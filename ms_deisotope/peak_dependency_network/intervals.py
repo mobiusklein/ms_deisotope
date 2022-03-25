@@ -510,12 +510,88 @@ def recursive_build_interval_tree(cls, intervals, level=0):  # pragma: no cover
 IntervalTreeNode.recursive_build_interval_tree = classmethod(
     recursive_build_interval_tree)
 
+
+class IntervalTreeNode2D(IntervalTreeNode):
+    def __init__(self, center, left, contained, right, level=0, parent=None, inner_organizer=None):
+        super().__init__(center, left, contained, right, level=level, parent=parent)
+        self.inner_organizer = inner_organizer
+        self.organize()
+
+    def set_organizer(self, organizer):
+        self.inner_organizer = organizer
+        if self.left is not None:
+            self.left.set_organizer(organizer)
+        if self.right is not None:
+            self.right.set_organizer(organizer)
+        self.organize()
+
+    def organize(self):
+        if self.inner_organizer is not None:
+            self.organized = self.inner_organizer(self.contained)
+        else:
+            self.organized = None
+
+    def _overlaps_interval_2d(self, start, end):
+        starts = start
+        ends = end
+        query = Interval(starts[0], ends[0])
+        result = []
+        if self.organized is None:
+            return super()._overlaps_interval(starts[0], ends[0])
+        else:
+            for interv2 in self.organized.overlaps(starts[1], ends[1]):
+                for interv in interv2.members:
+                    if interv.overlaps(query):
+                        result.append(interv)
+        return result
+
+    def overlaps_2d(self, starts, ends):
+        start = starts[0]
+        end = ends[0]
+        result = []
+        if start > self.end:
+            return result
+        if end < self.start:
+            return result
+        elif start <= self.start:
+            if end < self.start:
+                return result
+            else:
+                if self.left is not None:
+                    result.extend(self.left.overlaps(starts, ends))
+                result.extend(self._overlaps_interval(starts, ends))
+                if self.right is not None and end >= self.right.start:
+                    result.extend(self.right.overlaps(starts, ends))
+        elif start > self.start:
+            if self.left is not None and self.left.end >= start:
+                result.extend(self.left.overlaps(starts, ends))
+            result.extend(self._overlaps_interval(starts, ends))
+            if self.right is not None and end >= self.right.start:
+                result.extend(self.right.overlaps(starts, ends))
+        elif end > self.start:
+            if self.left is not None:
+                result.extend(self.left.overlaps(starts, ends))
+            result.extend(self._overlaps_interval(starts, ends))
+            if self.right is not None and end >= self.right.start:
+                result.extend(self.right.overlaps(starts, ends))
+        return result
+
+    @classmethod
+    def build(cls, intervals, organizer_callback=None):
+        root: IntervalTreeNode2D = super(
+            IntervalTreeNode2D, cls).build(intervals)
+        root.set_organizer(organizer_callback)
+        return root
+
+
+
 try:
     has_c = True
     _SpanningMixin = SpanningMixin
     _Interval = Interval
     _IntervalTreeNode = IntervalTreeNode
+    _IntervalTreeNode2D = IntervalTreeNode2D
     from ms_deisotope._c.peak_dependency_network.intervals import (
-        SpanningMixin, Interval, IntervalTreeNode, SimpleInterval)
+        SpanningMixin, Interval, IntervalTreeNode, SimpleInterval, IntervalTreeNode2D)
 except ImportError:
     has_c = False

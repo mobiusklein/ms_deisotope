@@ -11,6 +11,7 @@ from .feature_map import (
     LCMSFeatureMap,
     DeconvolutedLCMSFeatureMap,
     smooth_overlaps_neutral)
+from .feature_graph import (GapAwareDeconvolutedFeatureSmoother)
 from .lcms_feature import (
     LCMSFeature,
     EmptyFeature,
@@ -718,9 +719,10 @@ class FeatureDeconvolutionIterationState(LogUtilsMixin):
                 keep_going = False
         self.solutions = self.processor._clean_solutions(self.solutions)
         return DeconvolutedLCMSFeatureMap(
-            smooth_overlaps_neutral(
+            GapAwareDeconvolutedFeatureSmoother.smooth(
                 self.solutions,
-                self.error_tolerance))
+                0.25,
+                self.error_tolerance).features)
 
 
 FeatureDeconvolutionIterationState.log_with_logger(logger)

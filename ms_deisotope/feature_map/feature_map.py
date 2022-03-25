@@ -1,6 +1,7 @@
 import logging
 import array
 from collections import defaultdict
+from time import time
 
 import numpy as np
 
@@ -27,6 +28,8 @@ from ._mz_feature_search import (
     _FeatureIndex,
     MZIndex,
     NeutralMassIndex)
+
+from .feature_graph import GapAwareFeatureSmoother
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -359,7 +362,7 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         self.features = features
         return self
 
-    def smooth_overlaps(self, error_tolerance=None):
+    def smooth_overlaps(self, error_tolerance=None, time_bridge: float=0.25):
         '''Use a single pass of :func:`smooth_overlaps` to merge features which
         are nearby in the m/z dimension and overlap in the time dimension.
 
@@ -383,7 +386,13 @@ class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
         '''
         if error_tolerance is None:
             error_tolerance = self.error_tolerance
-        self.features = smooth_overlaps(self.features, error_tolerance)
+        # self.features = smooth_overlaps(self.features, error_tolerance)
+
+        self.features = GapAwareFeatureSmoother.smooth(
+            self.features,
+            time_bridge=time_bridge,
+            mass_error_tolerance=error_tolerance).features
+
         return self
 
     def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf')):
