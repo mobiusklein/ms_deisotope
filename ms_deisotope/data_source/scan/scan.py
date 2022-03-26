@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+DEFAULT_DX: float = 0.002
+
+
 class Scan(ScanBase):
     """Container for mass spectral data and associated descriptive information.
 
@@ -857,11 +860,12 @@ class Scan(ScanBase):
             A shallow copy of this scan with its :attr:`arrays` attribute replaced
             with the averaged array
         """
+        default_dx = False
         if dx is None:
-            dx = 0.01
-            default_dx = True
-        else:
-            default_dx = False
+            dx = DEFAULT_DX
+            # default_dx = True
+        # else:
+        #     default_dx = False
         scans = [self] + list(scans)
         arrays = []
         for scan in scans:
@@ -995,9 +999,10 @@ class Scan(ScanBase):
             A shallow copy of this scan with its :attr:`arrays` attribute replaced
             with the averaged array
         """
+        default_dx = False
         if dx is None:
-            dx = 0.01
-            default_dx = True
+            dx = DEFAULT_DX
+            # default_dx = True
         else:
             default_dx = False
         before, after = self._get_adjacent_scans(index_interval, rt_interval)
