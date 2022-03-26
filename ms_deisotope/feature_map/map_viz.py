@@ -42,9 +42,9 @@ def feature_to_segments(feature):
     return np.concatenate([points[:-1], points[1:]], axis=1), np.array(intensities)
 
 
-def draw_features(features, ax=None, alpha=0.65, norm=None, cmap=None, **kwargs):
+def draw_features(features, ax=None, alpha=0.65, norm=None, cmap=None, cbar=False, **kwargs):
     if norm is None:
-        norm = Normalize(*compute_intensity_range(features))
+        norm = Normalize(0, compute_intensity_range(features)[1])
     if ax is None:
         fig, ax = plt.subplots(1)
     if not features:
@@ -52,14 +52,18 @@ def draw_features(features, ax=None, alpha=0.65, norm=None, cmap=None, **kwargs)
     lines = []
     kwargs.setdefault("lw", 1)
     lw = kwargs.get("linewidth", kwargs.get("lw"))
-    for feat in features:
+    for feat in sorted(features, key=lambda x: x.intensity):
         segments, intensities = feature_to_segments(feat)
-        art = LineCollection(segments, linewidths=lw, cmap=cmap, alpha=alpha)
+        art = LineCollection(segments, linewidths=lw, cmap=cmap, alpha=alpha, norm=norm)
         art.set_array(intensities)
         lines.append(art)
 
     for line in lines:
         ax.add_collection(line)
+
+    if cbar:
+        cbar = ax.figure.colorbar(lines[0])
+        cbar.set_label("Intensity")
 
     ax.set_xlim(
         min(features, key=lambda x: x.mz if x is not None else float('inf')).mz - 1,
