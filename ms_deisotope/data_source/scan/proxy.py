@@ -15,7 +15,7 @@ from .scan import ScanBase
 UNLOAD_POLICY_FULL = "unload_policy_full"
 UNLOAD_POLICY_KEEP = "unload_policy_keep"
 
-logger = logging.getLogger("ms_deisotope.scan_proxy")
+logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 LOAD_METHOD_ID = 'id'

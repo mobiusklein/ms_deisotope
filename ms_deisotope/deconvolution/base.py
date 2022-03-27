@@ -18,7 +18,7 @@ from .utils import (
     isotopic_shift, drop_placeholders)
 
 
-logger = logging.getLogger("deconvolution")
+logger = logging.getLogger("ms_deisotope.deconvolution")
 info = logger.info
 debug = logger.debug
 error = logger.error

@@ -139,7 +139,7 @@ class MSEDeconvolutingFrameTransformingProcess(DeconvolutingScanTransformingProc
     loader: IonMobilitySourceRandomAccessFrameSource
     transformer: IonMobilityFrameProcessor
 
-    _loggers_to_silence = ["deconvolution_frame_processor"]
+    _loggers_to_silence = ["ms_deisotope.frame_processor"]
 
     def __init__(self, ms_file_path, input_queue, output_queue, no_more_event=None, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None, ms1_deconvolution_args=None, msn_deconvolution_args=None,

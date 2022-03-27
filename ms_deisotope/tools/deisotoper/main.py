@@ -11,6 +11,7 @@ from ms_peak_picker.scan_filter import parse as parse_filter
 import ms_deisotope
 from ms_deisotope import MSFileLoader
 from ms_deisotope.data_source import RandomAccessScanSource
+from ms_deisotope.task.log_utils import init_logging
 
 from ms_deisotope.tools.utils import processes_option, AveragineParamType, is_debug_mode, register_debug_hook
 from ms_deisotope.tools.deisotoper import workflow, output
@@ -184,6 +185,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
     '''Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.
     '''
+    init_logging()
     if transform is None:
         transform = []
     if msn_transform is None:

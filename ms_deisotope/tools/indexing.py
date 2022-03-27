@@ -15,6 +15,8 @@ import numpy as np
 
 import ms_deisotope
 
+from ms_deisotope.task.log_utils import init_logging
+
 from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
 
@@ -42,6 +44,7 @@ def cli():
     '''A collection of utilities for inspecting and manipulating
     mass spectrometry data.
     '''
+    init_logging()
 
 
 @cli.command("describe", short_help=("Produce a minimal textual description"

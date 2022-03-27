@@ -250,7 +250,7 @@ class ScanTransformMixin(object):
     def make_scan_transformer(self, loader=None):
         raise NotImplementedError()
 
-    _loggers_to_silence = ["deconvolution_scan_processor"]
+    _loggers_to_silence = ["ms_deisotope.scan_processor"]
 
     def _silence_loggers(self):
         nologs = self._loggers_to_silence

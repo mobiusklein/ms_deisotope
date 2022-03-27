@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Changed
 - Raised minimum `ms_peak_picker` version to `v0.1.38`
+- Changed the default `dx` of `Scan.average` and `Scan.average_with` from 0.01 to 0.002 to reduce distortion
+  when centroiding averaged spectra.
+- Change logging to be consistent across modules.
 
 ### Deprecated
 

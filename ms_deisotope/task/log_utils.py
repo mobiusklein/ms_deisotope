@@ -1,6 +1,8 @@
 from __future__ import print_function
 import logging
+import logging.handlers
 import multiprocessing
+import sys
 import threading
 import traceback
 import six
@@ -254,3 +256,44 @@ class ProgressUpdater(LogUtilsMixin):
             self.progress_bar.update(i)
         if message:
             self.log(*message)
+
+
+class ProcessAwareFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        d = record.__dict__
+        try:
+            if d['processName'] == "MainProcess":
+                d['maybeproc'] = ''
+            else:
+                d['maybeproc'] = ":%s:" % d['processName']
+        except KeyError:
+            d['maybeproc'] = ''
+        return super(ProcessAwareFormatter, self).format(record)
+
+
+def init_logging(filename=None, queue=None):
+    logging.basicConfig(
+        level="INFO", format='[%(asctime)s] %(levelname)s: %(message)s',
+        datefmt="%H:%M:%S", handlers=[]
+    )
+    logging.captureWarnings(True)
+
+    logger = logging.getLogger('ms_deisotope')
+    formatter = ProcessAwareFormatter('[%(asctime)s] %(levelname)s:%(name)s: %(message)s')
+
+    # If there was a queue, don't add any other handlers, route all logging through
+    # the queue
+    if queue:
+        queue_handler = logging.handlers.QueueHandler(queue)
+        queue_handler.setFormatter(formatter)
+        logger.addHandler(queue_handler)
+    else:
+        # Otherwise, configure handlers for `ms_deisotope`
+        stderr_handler = logging.StreamHandler(sys.stderr)
+        stderr_handler.setFormatter(formatter)
+        logger.addHandler(stderr_handler)
+        if filename:
+            file_handler = logging.FileHandler(filename=filename, mode='w', encoding='utf8')
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+    LogUtilsMixin.log_with_logger(logger)

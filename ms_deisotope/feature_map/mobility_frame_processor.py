@@ -17,7 +17,7 @@ from ms_deisotope.averagine import AveragineCache, PROTON
 
 from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource, Generic3DIonMobilityFrameSource
 
-logger = logging.getLogger("deconvolution_frame_processor")
+logger = logging.getLogger("ms_deisotope.frame_processor")
 logger.addHandler(logging.NullHandler())
 
 
