@@ -66,6 +66,8 @@ class TaskBase(LogUtilsMixin):
             pass
 
     def _begin(self, verbose=True, *args, **kwargs):
+        if self.status == "started":
+            return
         self.on_begin()
         self.start_time = datetime.now()
         self.status = "started"
