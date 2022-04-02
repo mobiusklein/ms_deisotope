@@ -429,6 +429,8 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
     def __init__(self, source_file, _load_metadata=True, **kwargs):
         self.source_file = source_file
         self._source = _ThermoRawFileAPI(self.source_file)
+        warnings.warn(("ThermoRawLoader COM implementation is deprecated."
+                       " Please consider switching to the newer .NET implementation"), DeprecationWarning)
         self._producer = None
         self._scan_type_index = dict()
         self.make_iterator()
