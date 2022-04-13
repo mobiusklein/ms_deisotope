@@ -1,30 +1,25 @@
 from __future__ import print_function
-from dataclasses import field
+
 import logging
 import logging.handlers
 import multiprocessing
 import sys
 import threading
 import traceback
+import re
+
 from typing import Dict
-import six
 
 from datetime import datetime
 
-try:
-    from queue import Empty
-except ImportError:
-    from Queue import Empty
+from queue import Empty
 
 
 logger = logging.getLogger("ms_deisotope.task")
 
 
 def ensure_text(obj):
-    if six.PY2:
-        return unicode(obj)
-    else:
-        return str(obj)
+    return str(obj)
 
 
 def fmt_msg(*message):
@@ -277,7 +272,8 @@ class ProcessAwareFormatter(logging.Formatter):
 class LevelAwareColoredLogFormatter(ProcessAwareFormatter):
     try:
         from colorama import Fore, Style
-        GREY = Fore.WHITE
+        # GREY = Fore.WHITE
+        GREY = ''
         BLUE = Fore.BLUE
         GREEN = Fore.GREEN
         YELLOW = Fore.YELLOW
@@ -298,14 +294,15 @@ class LevelAwareColoredLogFormatter(ProcessAwareFormatter):
         RESET = ''
 
     def _colorize_field(self, fmt: str, field: str, color: str) -> str:
-        return fmt.replace(field, color + field + self.RESET)
+        return re.sub("(" + field + ")", color + r"\1" + self.RESET, fmt)
+
 
     def _patch_fmt(self, fmt: str, level_color: str) -> str:
-        fmt = self._colorize_field(fmt, "%(asctime)s", self.GREEN)
-        fmt = self._colorize_field(fmt, "%(name)s", self.BLUE)
-        fmt = self._colorize_field(fmt, "%(message)s", self.GREY)
+        fmt = self._colorize_field(fmt, r"%\(asctime\)s", self.GREEN)
+        fmt = self._colorize_field(fmt, r"%\(name\).*?s", self.BLUE)
+        fmt = self._colorize_field(fmt, r"%\(message\).*?s", self.GREY)
         if level_color:
-            fmt = self._colorize_field(fmt, "%(levelname)s", level_color)
+            fmt = self._colorize_field(fmt, r"%\(levelname\).*?s", level_color)
         return fmt
 
     def __init__(self, fmt, level_color=None, **kwargs):
@@ -343,7 +340,7 @@ def init_logging(filename=None, queue=None):
     logging.captureWarnings(True)
 
     logger = logging.getLogger('ms_deisotope')
-    format_string = '[%(asctime)s] %(levelname)s | %(name)s | %(message)s'
+    format_string = '[%(asctime)s] %(levelname).1s | %(name)s | %(message)s'
     formatter = ProcessAwareFormatter(format_string)
     colorized_formatter = ColoringFormatter(format_string)
 

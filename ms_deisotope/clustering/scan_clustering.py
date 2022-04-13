@@ -6,12 +6,15 @@ import functools
 import bisect
 import json
 
+from typing import Dict, List, Optional, Tuple, Union
 from collections import deque
 
 import numpy as np
 from scipy.special import comb
 
 from ms_deisotope.task.log_utils import LogUtilsMixin
+
+from ms_deisotope.data_source.scan import ScanBase
 from ms_deisotope.data_source.dispatch import (
     SubsequenceMappingProxy as _SubsequenceMappingProxy,
     DynamicallyLoadingProxyResolver as _DynamicallyLoadingResolver)
@@ -46,6 +49,11 @@ class SpectrumCluster(object):
     neutral_mass: :class:`float`
         The neutral mass of the representative spectrum's precursor.
     '''
+    scans: List[ScanBase]
+    neutral_mass: float
+    _average_similarity: Optional[float]
+    annotations: Dict
+
     def __init__(self, scans=None, neutral_mass=None, average_similarity=None, annotations=None):
         if scans is None:
             scans = []
@@ -64,13 +72,13 @@ class SpectrumCluster(object):
         self._average_similarity = average_similarity
         self.annotations = annotations
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'SpectrumCluster'):
         return self.neutral_mass < other.neutral_mass
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'SpectrumCluster'):
         return self.neutral_mass > other.neutral_mass
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'SpectrumCluster'):
         return (abs(self.neutral_mass - other.neutral_mass) / other.neutral_mass) < 1e-6
 
     def __repr__(self):
@@ -88,7 +96,7 @@ class SpectrumCluster(object):
     def _invalidate(self):
         self._average_similarity = None
 
-    def append(self, item, incremental_similarity=False):
+    def append(self, item: ScanBase, incremental_similarity=False):
         '''Add a new spectrum to the cluster.
 
         Parameters
@@ -103,7 +111,7 @@ class SpectrumCluster(object):
             self._invalidate()
         self.scans.append(item)
 
-    def _calculate_similarity_with(self, scan, from_ix=0, to_ix=None, *args, **kwargs):
+    def _calculate_similarity_with(self, scan: ScanBase, from_ix=0, to_ix=None, *args, **kwargs) -> List[float]:
         if from_ix is None:
             from_ix = 0
         if to_ix is None:
@@ -113,7 +121,7 @@ class SpectrumCluster(object):
             acc.append(peak_set_similarity(scan, member, *args, **kwargs))
         return acc
 
-    def _incremental_similarity(self, scan, *args, **kwargs):
+    def _incremental_similarity(self, scan: ScanBase, *args, **kwargs):
         new_sims = self._calculate_similarity_with(scan, *args, **kwargs)
         aggregate_size = comb(len(self), 2)
         n = (aggregate_size + len(new_sims))
@@ -135,7 +143,7 @@ class SpectrumCluster(object):
                     scan_i, scan_j, *args, **kwargs))
         self._average_similarity = sum(ratings) / len(ratings)
 
-    def average_similarity(self, *args, **kwargs):
+    def average_similarity(self, *args, **kwargs) -> float:
         '''Calculate the within-cluster similarity among all cluster members
         and returns the average.
 
@@ -216,7 +224,7 @@ class SpectrumCluster(object):
         d['scans'] = scans
         return d
 
-    def split_on_charge(self):
+    def split_on_charge(self) -> Dict[int, 'SpectrumCluster']:
         scans = sorted(self, key=lambda x: x.tic(), reverse=True)
         index = {}
         for scan in scans:
@@ -232,12 +240,14 @@ class SpectrumClusterCollection(object):
     '''A sorted :class:`~.Sequence` of :class:`SpectrumCluster` instances
     that supports searching by precursor mass.
     '''
+    clusters: List[SpectrumCluster]
+
     def __init__(self, clusters=None):
         if clusters is None:
             clusters = []
         self.clusters = list(clusters)
 
-    def add(self, cluster):
+    def add(self, cluster: SpectrumCluster):
         '''Add a new :class:`SpectrumCluster` to the collection,
         preserving sorted order.
 
@@ -265,7 +275,7 @@ class SpectrumClusterCollection(object):
         size = len(self)
         return template.format(self=self, size=size)
 
-    def _binary_search(self, mass, error_tolerance=1e-5):
+    def _binary_search(self, mass: float, error_tolerance: float=1e-5) -> Tuple[int, int, int]:
         array = self.clusters
         n = len(array)
         lo = 0
@@ -307,7 +317,7 @@ class SpectrumClusterCollection(object):
                 lo = mid
         return 0, 0, 0
 
-    def find(self, mass, error_tolerance=1e-5):
+    def find(self, mass: float, error_tolerance: float=1e-5) -> Optional[SpectrumCluster]:
         '''Finds the cluster whose precursor mass is closest to
         ``mass`` within ``error_tolerance`` ppm error.
 
@@ -328,7 +338,7 @@ class SpectrumClusterCollection(object):
             return None
         return target
 
-    def find_all(self, mass, error_tolerance=1e-5):
+    def find_all(self, mass: float, error_tolerance: float=1e-5) -> List[SpectrumCluster]:
         '''Finds all clusters whose precursor mass is within ``error_tolerance``
         ppm of ``mass``.
 
@@ -391,6 +401,30 @@ class _DynamicPeakAccessorStrategy(_PeakGetterStrategyBase):
         else:
             self._ensure_peak_set(scan)
             return scan.tic.centroided()
+
+
+def group_by_precursor_mass(scans, window_size=1.5e-5):
+    scans = sorted(
+        scans, key=lambda x: x.precursor_information.extracted_neutral_mass,
+        reverse=True)
+    groups = []
+    if len(scans) == 0:
+        return groups
+    current_group = [scans[0]]
+    last_scan = scans[0]
+    for scan in scans[1:]:
+        delta = abs(
+            (scan.precursor_information.extracted_neutral_mass -
+             last_scan.precursor_information.extracted_neutral_mass
+             ) / last_scan.precursor_information.extracted_neutral_mass)
+        if delta > window_size:
+            groups.append(current_group)
+            current_group = [scan]
+        else:
+            current_group.append(scan)
+        last_scan = scan
+    groups.append(current_group)
+    return groups
 
 
 class ScanClusterBuilder(LogUtilsMixin):

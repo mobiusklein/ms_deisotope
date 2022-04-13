@@ -164,6 +164,8 @@ class proxyproperty(object):
         The name of the attribute to retrieve from the wrapped scan
     '''
 
+    __slots__ = ('name', 'caching', 'is_null_slot', 'cache_slot', '_null_getter', '_cache_getter', '_name_getter')
+
     def __init__(self, name, caching=False):
         self.name = name
         self.caching = caching

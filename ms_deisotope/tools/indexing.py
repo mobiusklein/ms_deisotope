@@ -444,6 +444,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
         for path in progbar:
             if deconvoluted:
                 reader = ProcessedMzMLDeserializer(path)
+                reader.parse_envelopes = False
                 index = reader.extended_index
             else:
                 reader, index = _ensure_metadata_index(path)
