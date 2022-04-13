@@ -1,10 +1,12 @@
 from __future__ import print_function
+from dataclasses import field
 import logging
 import logging.handlers
 import multiprocessing
 import sys
 import threading
 import traceback
+from typing import Dict
 import six
 
 from datetime import datetime
@@ -265,10 +267,72 @@ class ProcessAwareFormatter(logging.Formatter):
             if d['processName'] == "MainProcess":
                 d['maybeproc'] = ''
             else:
-                d['maybeproc'] = ":%s:" % d['processName']
+                d['maybeproc'] = ":%s:" % d['processName'].replace(
+                    "Process", '')
         except KeyError:
             d['maybeproc'] = ''
         return super(ProcessAwareFormatter, self).format(record)
+
+
+class LevelAwareColoredLogFormatter(ProcessAwareFormatter):
+    try:
+        from colorama import Fore, Style
+        GREY = Fore.WHITE
+        BLUE = Fore.BLUE
+        GREEN = Fore.GREEN
+        YELLOW = Fore.YELLOW
+        RED = Fore.RED
+        BRIGHT = Style.BRIGHT
+        DIM = Style.DIM
+        BOLD_RED = Fore.RED + Style.BRIGHT
+        RESET = Style.RESET_ALL
+    except ImportError:
+        GREY = ''
+        BLUE = ''
+        GREEN = ''
+        YELLOW = ''
+        RED = ''
+        BRIGHT = ''
+        DIM = ''
+        BOLD_RED = ''
+        RESET = ''
+
+    def _colorize_field(self, fmt: str, field: str, color: str) -> str:
+        return fmt.replace(field, color + field + self.RESET)
+
+    def _patch_fmt(self, fmt: str, level_color: str) -> str:
+        fmt = self._colorize_field(fmt, "%(asctime)s", self.GREEN)
+        fmt = self._colorize_field(fmt, "%(name)s", self.BLUE)
+        fmt = self._colorize_field(fmt, "%(message)s", self.GREY)
+        if level_color:
+            fmt = self._colorize_field(fmt, "%(levelname)s", level_color)
+        return fmt
+
+    def __init__(self, fmt, level_color=None, **kwargs):
+        fmt = self._patch_fmt(fmt, level_color=level_color)
+        super().__init__(fmt, **kwargs)
+
+
+class ColoringFormatter(logging.Formatter):
+    level_to_color = {
+        logging.INFO: LevelAwareColoredLogFormatter.GREEN,
+        logging.DEBUG: LevelAwareColoredLogFormatter.GREY + LevelAwareColoredLogFormatter.DIM,
+        logging.WARN: LevelAwareColoredLogFormatter.YELLOW + LevelAwareColoredLogFormatter.BRIGHT,
+        logging.CRITICAL: LevelAwareColoredLogFormatter.BOLD_RED,
+        logging.FATAL: LevelAwareColoredLogFormatter.BOLD_RED,
+    }
+
+    _formatters: Dict[int, LevelAwareColoredLogFormatter]
+
+    def __init__(self, fmt: str, **kwargs):
+        self._formatters = {}
+        for level, style in self.level_to_color.items():
+            self._formatters[level] = LevelAwareColoredLogFormatter(fmt, level_color=style, **kwargs)
+
+    def format(self, record: logging.LogRecord) -> str:
+        fmtr = self._formatters[record.levelno]
+        return fmtr.format(record)
+
 
 
 def init_logging(filename=None, queue=None):
@@ -279,7 +343,9 @@ def init_logging(filename=None, queue=None):
     logging.captureWarnings(True)
 
     logger = logging.getLogger('ms_deisotope')
-    formatter = ProcessAwareFormatter('[%(asctime)s] %(levelname)s:%(name)s: %(message)s')
+    format_string = '[%(asctime)s] %(levelname)s | %(name)s | %(message)s'
+    formatter = ProcessAwareFormatter(format_string)
+    colorized_formatter = ColoringFormatter(format_string)
 
     # If there was a queue, don't add any other handlers, route all logging through
     # the queue
@@ -290,7 +356,10 @@ def init_logging(filename=None, queue=None):
     else:
         # Otherwise, configure handlers for `ms_deisotope`
         stderr_handler = logging.StreamHandler(sys.stderr)
-        stderr_handler.setFormatter(formatter)
+        if sys.stderr.isatty():
+            stderr_handler.setFormatter(colorized_formatter)
+        else:
+            stderr_handler.setFormatter(formatter)
         logger.addHandler(stderr_handler)
         if filename:
             file_handler = logging.FileHandler(filename=filename, mode='w', encoding='utf8')

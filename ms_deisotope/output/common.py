@@ -1,9 +1,15 @@
 # pragma: no cover
 import os
 import io
+
+from typing import Iterator, List, Optional, Tuple, Union
+import warnings
+
 import numpy as np
 
 from six import string_types as basestring
+from ms_deisotope.data_source import Scan, ProcessedScan
+from ms_deisotope.peak_set import DeconvolutedPeak
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.common import (
@@ -29,7 +35,7 @@ class ScanSerializerBase(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
-    def save_scan_bunch(self, bunch, **kwargs):
+    def save_scan_bunch(self, bunch: ScanBunch, **kwargs):
         """Save a single :class:`~.ScanBunch` to the
         writing stream, recording any information relating
         the precursors and products to each other.
@@ -45,7 +51,7 @@ class ScanSerializerBase(object):
         for prod in bunch.products:
             self.save_scan(prod, **kwargs)
 
-    def save_scan(self, scan, **kwargs):
+    def save_scan(self, scan: Scan, **kwargs):
         """Save a single scan to the writing stream.
 
         Parameters
@@ -55,7 +61,7 @@ class ScanSerializerBase(object):
         """
         raise NotImplementedError()
 
-    def save(self, bunch, **kwargs):
+    def save(self, bunch: Union[Scan, ScanBunch], **kwargs):
         """Save any scan information in `bunch`.
 
         This method can handle :class:`~.ScanBunch` or :class:`ScanBase`
@@ -131,7 +137,7 @@ class LCMSMSQueryInterfaceMixin(object):
     data file.
     '''
 
-    def require_extended_index(self):
+    def require_extended_index(self) -> Optional[ExtendedScanIndex]:
         if not self.has_extended_index():
             try:
                 if self.has_index_file():
@@ -145,7 +151,7 @@ class LCMSMSQueryInterfaceMixin(object):
             self._build_scan_id_to_rt_cache()
         return self.extended_index
 
-    def has_extended_index(self):
+    def has_extended_index(self) -> bool:
         return self.extended_index is not None
 
     def read_index_file(self, index_path=None):
@@ -156,14 +162,14 @@ class LCMSMSQueryInterfaceMixin(object):
                 handle = io.TextIOWrapper(handle, 'utf8')
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
-    def has_index_file(self):
+    def has_index_file(self) -> bool:
         try:
             return os.path.exists(self._index_file_name)
         except (TypeError, AttributeError):
             return False
 
     @property
-    def _index_file_name(self):
+    def _index_file_name(self) -> Optional[ExtendedScanIndex]:
         if isinstance(self.source_file, basestring):
             return ExtendedScanIndex.index_file_name(self.source_file)
         else:
@@ -191,9 +197,9 @@ class LCMSMSQueryInterfaceMixin(object):
             with open(self._index_file_name, 'w') as handle:
                 indexer.serialize(handle)
         except (IOError, OSError, AttributeError, TypeError) as err:
-            print(err)
+            warnings.warn(str(err))
 
-    def get_index_information_by_scan_id(self, scan_id):
+    def get_index_information_by_scan_id(self, scan_id: str) -> dict:
         try:
             try:
                 return self.extended_index.msn_ids[scan_id]
@@ -202,7 +208,7 @@ class LCMSMSQueryInterfaceMixin(object):
         except Exception:
             return {}
 
-    def convert_scan_id_to_retention_time(self, scan_id):
+    def convert_scan_id_to_retention_time(self, scan_id: str) -> float:
         try:
             time = self._scan_id_to_rt[scan_id]
             return time
@@ -219,7 +225,7 @@ class LCMSMSQueryInterfaceMixin(object):
                 self._scan_id_to_rt[key] = self.extended_index.msn_ids[
                     key]['scan_time']
 
-    def precursor_information(self):
+    def precursor_information(self) -> List[PrecursorInformation]:
         out = []
         for _, info in self.extended_index.msn_ids.items():
             mz = info['mz']
@@ -244,7 +250,7 @@ class LCMSMSQueryInterfaceMixin(object):
             out.append(pinfo)
         return out
 
-    def ms1_peaks_above(self, mass_threshold=500, intensity_threshold=1000.):
+    def ms1_peaks_above(self, mass_threshold: float = 500, intensity_threshold: float = 1000.) -> List[Tuple[str, DeconvolutedPeak, int]]:
         accumulate = []
         for ms1_id in self.extended_index.ms1_ids:
             scan = self.get_scan_by_id(ms1_id)
@@ -254,20 +260,20 @@ class LCMSMSQueryInterfaceMixin(object):
                 accumulate.append((ms1_id, peak, id(peak)))
         return accumulate
 
-    def ms1_scan_times(self):
+    def ms1_scan_times(self) -> np.ndarray:
         times = sorted(
             [bundle['scan_time'] for bundle in
              self.extended_index.ms1_ids.values()])
         return np.array(times)
 
-    def extract_total_ion_current_chromatogram(self):
+    def extract_total_ion_current_chromatogram(self) -> np.ndarray:
         current = []
         for scan_id in self.extended_index.ms1_ids:
             header = self.get_scan_header_by_id(scan_id)
             current.append(header.arrays[1].sum())
         return np.array(current)
 
-    def msms_for(self, query_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None):
+    def msms_for(self, query_mass, mass_error_tolerance=1e-5, start_time=None, end_time=None) -> List[PrecursorInformation]:
         out = []
         pinfos = self.extended_index.find_msms_by_precursor_mass(
             query_mass, mass_error_tolerance, bind=self)
@@ -289,7 +295,7 @@ class LCMSMSQueryInterfaceMixin(object):
         self.extended_index.clear()
         return super(LCMSMSQueryInterfaceMixin, self)._dispose()
 
-    def iter_scan_headers(self, iterator=None, grouped=True):
+    def iter_scan_headers(self, iterator=None, grouped=True) -> Iterator[Scan]:
         try:
             if not self._has_ms1_scans():
                 grouped = False
@@ -313,7 +319,7 @@ class LCMSMSQueryInterfaceMixin(object):
 
         self.reset()
 
-    def get_scan_header_by_id(self, scan_id):
+    def get_scan_header_by_id(self, scan_id: str) -> Scan:
         """Retrieve the scan object for the specified scan id. If the
         scan object is still bound and in memory somewhere, a reference
         to that same object will be returned. Otherwise, a new object will

@@ -2,6 +2,7 @@
 spectrum data.
 '''
 import io
+import logging
 import os
 import math
 import csv
@@ -45,6 +46,7 @@ def cli():
     mass spectrometry data.
     '''
     init_logging()
+    logger = logging.getLogger('ms_deisotope')
 
 
 @cli.command("describe", short_help=("Produce a minimal textual description"
