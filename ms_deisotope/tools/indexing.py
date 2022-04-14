@@ -39,6 +39,8 @@ from ms_deisotope.tools.utils import processes_option, is_debug_mode, progress, 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
+logger = logging.getLogger('ms_deisotope')
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
@@ -46,7 +48,6 @@ def cli():
     mass spectrometry data.
     '''
     init_logging()
-    logger = logging.getLogger('ms_deisotope')
 
 
 @cli.command("describe", short_help=("Produce a minimal textual description"

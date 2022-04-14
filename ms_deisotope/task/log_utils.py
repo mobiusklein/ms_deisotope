@@ -315,8 +315,9 @@ class ColoringFormatter(logging.Formatter):
         logging.INFO: LevelAwareColoredLogFormatter.GREEN,
         logging.DEBUG: LevelAwareColoredLogFormatter.GREY + LevelAwareColoredLogFormatter.DIM,
         logging.WARN: LevelAwareColoredLogFormatter.YELLOW + LevelAwareColoredLogFormatter.BRIGHT,
+        logging.ERROR: LevelAwareColoredLogFormatter.BOLD_RED,
         logging.CRITICAL: LevelAwareColoredLogFormatter.BOLD_RED,
-        logging.FATAL: LevelAwareColoredLogFormatter.BOLD_RED,
+        logging.FATAL: LevelAwareColoredLogFormatter.RED + LevelAwareColoredLogFormatter.DIM,
     }
 
     _formatters: Dict[int, LevelAwareColoredLogFormatter]
@@ -341,8 +342,8 @@ def init_logging(filename=None, queue=None):
 
     logger = logging.getLogger('ms_deisotope')
     format_string = '[%(asctime)s] %(levelname).1s | %(name)s | %(message)s'
-    formatter = ProcessAwareFormatter(format_string)
-    colorized_formatter = ColoringFormatter(format_string)
+    formatter = ProcessAwareFormatter(format_string, datefmt="%H:%M:%S")
+    colorized_formatter = ColoringFormatter(format_string, datefmt="%H:%M:%S")
 
     # If there was a queue, don't add any other handlers, route all logging through
     # the queue
