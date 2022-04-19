@@ -34,6 +34,8 @@ All behavior available for the :class:`~.ProcessedMzMLLoader` are available for
 
 '''
 
+import numpy as np
+
 from psims.mzml.writer import COMPRESSION_ZLIB
 
 try:
@@ -46,7 +48,7 @@ except ImportError:
 from ms_deisotope.data_source.mzmlb import MzMLbLoader
 
 from .common import LCMSMSQueryInterfaceMixin, ScanDeserializerBase, SampleRun
-from .mzml import MzMLSerializer as _MzMLSerializer, PeakSetDeserializingMixin
+from .mzml import MzMLSerializer as _MzMLSerializer, PeakSetDeserializingMixin, _IonMobility3DSerializerBase
 
 
 class MzMLbSerializer(_MzMLSerializer):
@@ -66,6 +68,12 @@ class MzMLbSerializer(_MzMLSerializer):
         self.compression = 'none'
         return _MzMLbWriter(self.handle, h5_compression=compression, h5_compression_options=compression_opts)
 
+
+class IonMobilityAware3DMzMLbSerializer(_IonMobility3DSerializerBase, MzMLbSerializer):
+    default_data_encoding = MzMLbSerializer.default_data_encoding.copy()
+    default_data_encoding.update({
+        "feature id array": np.int32,
+    })
 
 
 class ProcessedMzMLbLoader(PeakSetDeserializingMixin, MzMLbLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):

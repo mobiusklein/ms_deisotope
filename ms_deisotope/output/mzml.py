@@ -1515,11 +1515,7 @@ def deserialize_deconvoluted_features(scan_dict, ion_mobility_array_name='raw io
     return feature_map
 
 
-class IonMobilityAware3DMzMLSerializer(MzMLSerializer):
-    default_data_encoding = MzMLSerializer.default_data_encoding.copy()
-    default_data_encoding.update({
-        "feature id array": np.int32,
-    })
+class _IonMobility3DSerializerBase:
     def _get_peak_data(self, scan, kwargs):
         deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
         if deconvoluted:
@@ -1561,9 +1557,17 @@ class IonMobilityAware3DMzMLSerializer(MzMLSerializer):
             ion_mobility_array = peak_data.ion_mobility
             other_arrays = []
             if ion_mobility_array is not None:
-                other_arrays.append(('raw ion mobility array', ion_mobility_array))
+                other_arrays.append(
+                    ('raw ion mobility array', ion_mobility_array))
         return (centroided, descriptors, mz_array, intensity_array,
                 charge_array, other_arrays)
+
+
+class IonMobilityAware3DMzMLSerializer(_IonMobility3DSerializerBase, MzMLSerializer):
+    default_data_encoding = MzMLSerializer.default_data_encoding.copy()
+    default_data_encoding.update({
+        "feature id array": np.int32,
+    })
 
 
 class ProcessedGeneric3DIonMobilityFrameSource(Generic3DIonMobilityFrameSource):
