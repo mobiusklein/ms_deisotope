@@ -82,6 +82,14 @@ class DeconvolutedFeatureGraphNode(FeatureGraphNode):
         self.charge = feature.charge
 
 
+class IonMobilityDeconvolutedFeatureGraphNode(DeconvolutedFeatureGraphNode):
+    ion_mobility: float
+
+    def __init__(self, feature, index, edges=None):
+        super().__init__(feature, index, edges)
+        self.ion_mobility = feature.drift_time
+
+
 class IonMobilityProfileFeatureGraphNode(DeconvolutedFeatureGraphNode):
     ion_mobility_interval: SimpleInterval
 
@@ -302,6 +310,33 @@ class DeconvolutedFeatureGraph(FeatureGraph, NeutralMassIndex):
                 node, match, None, mass_error=ppm_error, rt_error=rt_error))
 
 
+class IonMobilityDeconvolutedFeatureGraph(DeconvolutedFeatureGraph):
+    node_cls = IonMobilityDeconvolutedFeatureGraphNode
+
+    def find_edges(self, node: IonMobilityDeconvolutedFeatureGraphNode, query_width: float = 2., error_tolerance: float = 1.5e-5, ion_mobility_error_tolerance: float = 0.01, **kwargs):
+        query = TimeQuery(node.feature, query_width)
+        mass_query = PPMQuery(node.neutral_mass, error_tolerance)
+        nodes = self.rt_tree.overlaps_2d(
+            np.array([query.start, mass_query.start]), np.array([query.end, mass_query.end]))
+        charge = node.charge
+        for match in nodes:
+            if match.charge != charge:
+                continue
+            # If there isn't an overlap in the IM dimension, then they aren't the same molecule even
+            # if charge, mass, and elution time do match
+            if abs(match.ion_mobility - node.ion_mobility) > ion_mobility_error_tolerance:
+                continue
+            ppm_error = (node.neutral_mass - match.neutral_mass) / \
+                match.neutral_mass
+            if abs(ppm_error) > error_tolerance:
+                continue
+            if match.index == node.index:
+                continue
+            rt_error = (node.center - match.center)
+            self.edges.add(self.edge_cls(
+                node, match, None, mass_error=ppm_error, rt_error=rt_error))
+
+
 class IonMobilityProfileDeconvolutedFeatureGraph(DeconvolutedFeatureGraph):
     node_cls = IonMobilityProfileFeatureGraphNode
 
@@ -362,8 +397,8 @@ class GapAwareFeatureSmoother(object):
         return self._wrap_result(features)
 
     @classmethod
-    def smooth(cls, features, time_bridge: float=0.5, mass_error_tolerance: float=1.5e-5):
-        return cls(features).connect_components(time_bridge=time_bridge, mass_error_tolerance=mass_error_tolerance)
+    def smooth(cls, features, time_bridge: float=0.5, mass_error_tolerance: float=1.5e-5, **kwargs):
+        return cls(features).connect_components(time_bridge=time_bridge, mass_error_tolerance=mass_error_tolerance, **kwargs)
 
 
 class GapAwareDeconvolutedFeatureSmoother(GapAwareFeatureSmoother):
@@ -375,6 +410,29 @@ class GapAwareDeconvolutedFeatureSmoother(GapAwareFeatureSmoother):
     def _wrap_result(self, features) -> 'DeconvolutedLCMSFeatureMap':
         from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureMap
         return DeconvolutedLCMSFeatureMap(features)
+
+
+class GapAwareIonMobilityDeconvolutedFeatureSmoother(GapAwareDeconvolutedFeatureSmoother):
+    graph: IonMobilityDeconvolutedFeatureGraph
+
+    def __init__(self, features):
+        self.graph = IonMobilityDeconvolutedFeatureGraph(features)
+
+    def connect_components(self, time_bridge: float = 0.5, mass_error_tolerance: float = 1.5e-5, ion_mobility_error_tolerance: float=0.1):
+        self.graph.build(query_width=time_bridge,
+                         error_tolerance=mass_error_tolerance,
+                         ion_mobility_error_tolerance=ion_mobility_error_tolerance)
+        features: List[LCMSFeature] = []
+        for component in self.graph.connected_components():
+            f = component[0].feature
+            for f2 in component[1:]:
+                f = f.merge(f2.feature)
+            features.append(f)
+        return self._wrap_result(features)
+
+    def _wrap_result(self, features) -> 'IonMobilityDeconvolutedLCMSFeatureMap':
+        from ms_deisotope.feature_map.feature_map import IonMobilityDeconvolutedLCMSFeatureForest
+        return IonMobilityDeconvolutedLCMSFeatureForest(features)
 
 
 class GapAwareIonMobilityProfileDeconvolutedFeatureSmoother(GapAwareDeconvolutedFeatureSmoother):
