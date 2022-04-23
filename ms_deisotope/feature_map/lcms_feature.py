@@ -1,12 +1,17 @@
 import random
+from typing import List, Sequence, Set
 import numpy as np
 
 from collections import OrderedDict
+
+from ms_peak_picker import PeakLike as PeakBase
 
 from ms_deisotope.utils import uid
 
 
 class FeatureBase(object):
+    nodes: 'LCMSFeatureTreeList'
+
     def __init__(self, nodes):
         self.nodes = LCMSFeatureTreeList(nodes)
 
@@ -16,6 +21,18 @@ class FeatureBase(object):
 
 class LCMSFeature(FeatureBase):
     created_at = "new"
+
+    _total_intensity: float
+    _mz: float
+    _last_mz: float
+    _times: np.ndarray
+    _peaks: Sequence[List[PeakBase]]
+    _start_time: float
+    _end_time: float
+    adducts: List
+    used_as_adduct: List
+    feature_id: int
+    _peak_averager: 'RunningWeightedAverage'
 
     def __init__(self, nodes=None, adducts=None, used_as_adduct=None, feature_id=None):
         if nodes is None:
@@ -116,7 +133,7 @@ class LCMSFeature(FeatureBase):
             self._end_time = self.nodes[-1].time
         return self._end_time
 
-    def overlaps_in_time(self, interval):
+    def overlaps_in_time(self, interval) -> bool:
         cond = ((self.start_time <= interval.start_time and self.end_time >= interval.end_time) or (
             self.start_time >= interval.start_time and self.end_time <= interval.end_time) or (
             self.start_time >= interval.start_time and self.end_time >= interval.end_time and
@@ -125,7 +142,7 @@ class LCMSFeature(FeatureBase):
             self.start_time <= interval.end_time and self.end_time >= interval.end_time))
         return cond
 
-    def spans_in_time(self, time):
+    def spans_in_time(self, time: float) -> bool:
         return self.start_time <= time <= self.end_time
 
     def as_arrays(self):
@@ -147,13 +164,13 @@ class LCMSFeature(FeatureBase):
         x.used_as_adduct = list(self.used_as_adduct)
         return x
 
-    def split_at(self, time):
+    def split_at(self, time: float):
         _, i = self.nodes.find_time(time)
         if self.nodes[i].time < time:
             i += 1
         return LCMSFeature(self.nodes[:i]), LCMSFeature(self.nodes[i:])
 
-    def split_sparse(self, delta_rt=1.):
+    def split_sparse(self, delta_rt: float=1.) -> List['LCMSFeature']:
         chunks = []
         current_chunk = []
         last_rt = self.nodes[0].time
@@ -182,14 +199,14 @@ class LCMSFeature(FeatureBase):
 
         return chunks
 
-    def truncate_before(self, time):
+    def truncate_before(self, time: float):
         _, i = self.nodes.find_time(time)
         if self.nodes[i].time < time:
             i += 1
         self.nodes = LCMSFeatureTreeList(self.nodes[i:])
         self._invalidate()
 
-    def truncate_after(self, time):
+    def truncate_after(self, time: float):
         _, i = self.nodes.find_time(time)
         if self.nodes[i].time < time:
             i += 1
@@ -258,6 +275,8 @@ class LCMSFeature(FeatureBase):
 
 
 class LCMSFeatureTreeList(object):
+    roots: List['LCMSFeatureTreeNode']
+    _node_id_hash: Set[int]
 
     def __init__(self, roots=None):
         if roots is None:
@@ -296,7 +315,7 @@ class LCMSFeatureTreeList(object):
             self._build_node_id_hash()
         return self._node_id_hash
 
-    def insert_node(self, node):
+    def insert_node(self, node: 'LCMSFeatureTreeNode'):
         self._invalidate()
         try:
             root, i = self.find_time(node.time)
@@ -358,6 +377,12 @@ class LCMSFeatureTreeNode(object):
     __slots__ = ["time", "members",
                  "_most_abundant_member", "_mz", "node_id"]
 
+    time: float
+    members: List[PeakBase]
+    _most_abundant_member: PeakBase
+    _mz: float
+    node_id: int
+
     def __init__(self, time=None, members=None):
         if members is None:
             members = []
@@ -414,7 +439,7 @@ class LCMSFeatureTreeNode(object):
                 self._mz = self._most_abundant_member.mz
         return self._mz
 
-    def add(self, node, recalculate=True):
+    def add(self, node: 'LCMSFeatureTreeNode', recalculate=True):
         if self.node_id == node.node_id:
             raise ValueError("Duplicate Node %s" % node)
         self.members.extend(node.members)

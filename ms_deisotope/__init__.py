@@ -42,14 +42,14 @@ def get_include():
 
 
 __all__ = [
-    "Averagine", 'peptide', 'glycan', 'glycopeptide', 'heparin', "heparan_sulfate",
+    "Averagine", 'AveragineCache', 'peptide', 'glycan', 'glycopeptide', 'heparin', "heparan_sulfate",
     "permethylated_glycan",
     "mass_charge_ratio", "neutral_mass", "isotopic_shift", "calculate_mass",
     "AveragineDeconvoluter", "CompositionListDeconvoluter",
     "AveraginePeakDependenceGraphDeconvoluter", "CompositionListPeakDependenceGraphDeconvoluter",
     "MSDeconVFitter", "PenalizedMSDeconVFitter", "DistinctPatternFitter", "IsotopicFitRecord",
     "DeconvolutedPeak", "DeconvolutedPeakSet", "DeconvolutedPeakSolution",
-    "MzMLLoader", "MzXMLLoader", "MSFileLoader", "ScanProcessor",
+    "MzMLLoader", "MzXMLLoader", "MGFLoader", "MSFileLoader", "ScanProcessor",
     "deconvolute_peaks", 'version', "process", "decharge"
 ]
 

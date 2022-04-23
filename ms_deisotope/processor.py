@@ -63,7 +63,7 @@ from .peak_dependency_network import NoIsotopicClustersError
 from .qc.isolation import PrecursorPurityEstimator
 from .task import LogUtilsMixin
 
-logger = logging.getLogger("deconvolution_scan_processor")
+logger = logging.getLogger("ms_deisotope.scan_processor")
 logger.addHandler(logging.NullHandler())
 
 

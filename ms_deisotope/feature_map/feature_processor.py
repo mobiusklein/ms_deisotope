@@ -9,8 +9,7 @@ from ms_peak_picker import FittedPeak
 
 from .feature_map import (
     LCMSFeatureMap,
-    DeconvolutedLCMSFeatureMap,
-    smooth_overlaps_neutral)
+    DeconvolutedLCMSFeatureMap)
 from .feature_graph import (GapAwareDeconvolutedFeatureSmoother)
 from .lcms_feature import (
     LCMSFeature,
@@ -35,7 +34,7 @@ from ms_deisotope.deconvolution import (
 from ms_deisotope.task import LogUtilsMixin
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ms_deisotope.feature_processor")
 
 
 def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abundance=0.05):
