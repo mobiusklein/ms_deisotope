@@ -298,7 +298,8 @@ class TMTReporterExtractor(SignatureIonExtractor):
         "tmt10": TMT10_INFO,
         "tmt2": TMT2_INFO,
         "tmt6": TMT6_INFO,
-        "tmt0": TMT0_INFO
+        "tmt0": TMT0_INFO,
+        "ibt10": IBT10_INFO,
     }
 
     def _find_reagent(self, reagent):
