@@ -34,9 +34,10 @@ jobs:
       run: |
         make test
     - name: Build manylinux Python wheels
-      uses: RalfG/python-wheels-manylinux-build@v0.3.4-manylinux2010_x86_64
+      uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2010_x86_64
       with:
         build-requirements: 'cython'
+        python-versions: "cp38-cp38 cp39-cp39 cp310-cp310"
     - name: "Publish ManyLinux"
       env:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
