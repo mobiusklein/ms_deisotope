@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+- Added `IonMobilityAware3DMzMLbSerializer` to `ms_deisotope.output.mzmlb`.
+- Added IBT10 reporter ions to `TMTReporterExtractor`
+- Added `extract-reporter-ions` to `ms-index` to extract reporter ions to CSV.
 
 ### Changed
 - Raised minimum `ms_peak_picker` version to `v0.1.38`

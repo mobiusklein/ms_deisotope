@@ -5,6 +5,7 @@ from collections import namedtuple
 from numbers import Number
 
 from dataclasses import dataclass, field
+from typing import List
 
 from ms_deisotope.utils import Base
 from ms_deisotope.averagine import mass_charge_ratio
@@ -66,6 +67,8 @@ class SignatureIonDetector(object):
     """
 
     METHODS = ('ratio', )
+
+    signature_ions: List[Target]
 
     def __init__(self, signature_ions=None, method='ratio'):
         if signature_ions is None:

@@ -1,6 +1,7 @@
 '''A collection of little command line utilities for inspecting mass
 spectrum data.
 '''
+from email.policy import default
 import io
 import logging
 import os
@@ -8,6 +9,7 @@ import math
 import csv
 import sys
 from collections import Counter
+from typing import List
 
 import click
 import six
@@ -15,6 +17,8 @@ import six
 import numpy as np
 
 import ms_deisotope
+from ms_deisotope.data_source.scan.base import ScanBase
+from ms_deisotope.data_source.scan.scan import Scan
 
 from ms_deisotope.task.log_utils import init_logging
 
@@ -25,6 +29,7 @@ from ms_deisotope.clustering.scan_clustering import (
     iterative_clustering, ScanClusterWriter, ScanClusterReader, _DynamicallyLoadingResolver)
 
 from ms_deisotope.qc.isolation import isolation_window_valid, is_isolation_window_empty
+from ms_deisotope.qc.signature import TMTReporterExtractor
 
 from ms_deisotope.data_source import (
     _compression, ScanProxyContext, MSFileLoader)
@@ -533,7 +538,6 @@ def cluster_evaluation(path):
             click.echo("Size {:d}: {:d}".format(key, value))
 
 
-
 @cli.command('ms1-spectrum-diagnostics')
 @click.argument('path', type=click.Path(exists=True, readable=True))
 @click.option("-o", "--output-path", type=click.Path(writable=True))
@@ -603,6 +607,56 @@ def ms1_spectrum_diagnostics(path, output_path=None):
     writer.writeheader()
     writer.writerows(ms1_metrics)
     stream.flush()
+
+
+@cli.command("extract-reporter-ions", short_help="Extract reporter ion channels from an MS file to a CSV")
+@click.argument('path', type=click.Path(exists=True, readable=True))
+@click.option("-o", "--output-path", type=click.Path(writable=True), default='-', help="The path to write output to. Defaults to STDOUT")
+@click.option("-r", "--reagent", default='tmt11', type=click.Choice(
+    sorted(TMTReporterExtractor.TMT_REAGENTS)),
+    required=False, help="The isobaric quantification tag reagent used")
+@click.option("-m", "--error-tolerance", type=float, default=1e-5, help="The mass accuracy error tolerance to use when matching reporter ions")
+def extract_reporter_ions(path, output_path=None, reagent='tmt11', error_tolerance=1e-5):
+    reader = ms_deisotope.MSFileLoader(path)
+
+    if error_tolerance > 1e-3:
+        logger.warn(
+            f"Error tolerance {error_tolerance} looks like it is not in units of PPM, multiplying by 1e-6")
+        error_tolerance *= 1e-6
+
+    reader.make_iterator(grouped=True)
+
+    extractor = TMTReporterExtractor(reagent=reagent)
+    channels = [t.name for t in extractor.signature_ions]
+    columns = ['scan_id', 'scan_time', 'precursor_mz', 'precursor_charge', 'precursor_intensity', 'tic', 'precursor_purity'] + channels
+
+    out_file = click.open_file(output_path, mode='wb')
+    out_file_wrapper = io.TextIOWrapper(out_file, encoding='utf8', newline='')
+    writer = csv.DictWriter(out_file_wrapper, columns)
+    writer.writeheader()
+
+    products: List[Scan]
+    for _precursor, products in reader:
+        for product in products:
+            pinfo = product.precursor_information
+            if product.is_profile:
+                product.pick_peaks()
+            row = {
+                "scan_id": product.id,
+                "scan_time": product.scan_time,
+                "tic": product.tic(),
+                "precursor_purity": product.annotations.get("precursor purity")
+            }
+            if pinfo is not None:
+                row['precursor_mz'] = pinfo.mz
+                row['precursor_charge'] = pinfo.charge if isinstance(pinfo.charge, int) else None
+                row['precursor_intensity'] = pinfo.intensity
+
+            row.update(extractor.extract(
+                product, error_tolerance=error_tolerance))
+            writer.writerow(row)
+
+
 
 if _compression.has_idzip:
     @cli.command("idzip", short_help='Compress a file with idzip, a gzip-compatible format with random access support')
