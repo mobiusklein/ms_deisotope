@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import warnings
-import logging
 
 import click
 
@@ -91,14 +90,22 @@ def register_debug_hook():
     # logging.basicConfig(level="DEBUG")
 
 
-def is_debug_mode():
-    env_val = os.environ.get('MS_DEISOTOPE_DEBUG', '').lower()
+def envar_to_bool(env_val: str) -> bool:
+    env_val = env_val.lower()
     if not env_val:
         return False
     if env_val in ('0', 'no', 'false', 'off'):
         return False
     elif env_val in ('1', 'yes', 'true', 'on'):
         return True
+    return None
+
+
+def is_debug_mode() -> bool:
+    env_val = os.environ.get('MS_DEISOTOPE_DEBUG', '').lower()
+    val = envar_to_bool(env_val)
+    if val is not None:
+        return val
     else:
         warnings.warn("MS_DEISOTOPE_DEBUG value %r was not recognized. Enabling debug mode" % (env_val, ))
         return True

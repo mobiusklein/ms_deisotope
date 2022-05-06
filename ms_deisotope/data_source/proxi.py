@@ -74,14 +74,15 @@ class PROXIDataset:
 
     def to_dict(self):
         d = dataclasses.asdict(self)
-        d['datasetLinks'] = d.pop("dataset_links")
-        d['dataFiles'] = [f.to_dict() for f in d.pop('dataset_files')]
+        d['datasetLinks'] = d.pop("dataset_links", None)
+        # TODO: Make this consistent whether or not it is a dict or an instance
+        d['dataFiles'] = [PROXIDataFile(f['uri'], FileType(**f['file_type'])).to_dict() for f in d.pop('dataset_files', [])]
         return d
 
     @classmethod
     def from_dict(cls, d):
         d = d.copy()
-        d['dataset_links'] = d.pop('datasetLinks')
+        d['dataset_links'] = d.pop('datasetLinks', None)
         d['dataset_files'] = [
             PROXIDataFile.from_dict(f) for f in d.pop('datasetFiles', [])]
         return cls(**d)

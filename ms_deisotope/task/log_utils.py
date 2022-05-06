@@ -198,6 +198,8 @@ class LogUtilsMixin(object):
 class ProgressUpdater(LogUtilsMixin):
     def __init__(self, *args, **kwargs):
         kwargs['item_show_func'] = self._prepare_message
+        kwargs.setdefault("color", True)
+        kwargs.setdefault("fill_char", click.style('-', 'blue'))
         try:
             import click
             self.progress_bar = click.progressbar(*args, **kwargs)

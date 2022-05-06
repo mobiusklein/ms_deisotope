@@ -286,7 +286,7 @@ def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3.,
                 interval_set.extend(chunk)
                 yield 0
     work_iterator = _run()
-    with click.progressbar(work_iterator, length=total_work_items, label='Extracting Intervals') as g:
+    with progress(work_iterator, length=total_work_items, label='Extracting Intervals') as g:
         for _ in g:
             pass
     tree = scan_interval_tree.ScanIntervalTree(scan_interval_tree.make_rt_tree(interval_set))
@@ -309,7 +309,9 @@ def _ensure_metadata_index(path):
         reader.reset()
         try:
             n = len(reader)
-            progbar = click.progressbar(label='Building Index', length=n)
+            progbar = click.progressbar(
+                label='Building Index', length=n, color=True,
+                fill_char=click.style('-', 'green'))
         except TypeError:
             progbar = spinner(title="Building Index")
         with progbar:
@@ -445,7 +447,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
     msn_scans = []
     n_spectra = 0
 
-    with click.progressbar(paths, label="Indexing", item_show_func=lambda x: str(x) if x else '') as progbar:
+    with progress(paths, label="Indexing", item_show_func=lambda x: str(x) if x else '', color=True, fill_char=click.style('-', 'cyan')) as progbar:
         key_seqs = []
         for path in progbar:
             if deconvoluted:
@@ -457,8 +459,8 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
             key_seqs.append((reader, index))
             n_spectra += len(index.msn_ids)
 
-    with click.progressbar(label="Loading Spectra", length=n_spectra,
-                           item_show_func=lambda x: str(x) if x else '') as progbar:
+    with progress(label="Loading Spectra", length=n_spectra,
+                  item_show_func=lambda x: str(x) if x else '', color=True, fill_char=click.style('-', 'green')) as progbar:
         for reader, index in key_seqs:
             if not in_memory:
                 if not reader.has_fast_random_access:

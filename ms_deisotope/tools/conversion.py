@@ -59,7 +59,8 @@ def to_mgf(reader, outstream, msn_filters=None):
     progbar = progress(
         reader,
         label="Processed Spectra", length=n_spectra,
-        item_show_func=lambda x: str(x.id) if x else '')
+        item_show_func=lambda x: str(x.id) if x else '',
+        color=True, fill_char=click.style('-', 'green'))
     with progbar:
         for scan in progbar:
             if scan.ms_level == 1:
@@ -174,7 +175,8 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
     progbar = progress(
         label="Processed Spectra", length=n_spectra,
         item_show_func=lambda x: str(x.precursor.id if x.precursor else
-                                     x.products[0].id) if x else '')
+                                     x.products[0].id) if x else '',
+        color=True, fill_char=click.style('-', 'green'))
     with progbar:
         for bunch in reader:
             progbar.current_item = bunch
