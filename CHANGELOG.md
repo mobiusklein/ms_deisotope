@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+
+### Changed
+- When using `ms_deisotope.test.common.datafile`, if the file isn't found in the
+  package data directory, it will be downloaded from GitHub. Downloaded files will
+  be stored in the `test_data/` directory under the path returned by
+  `ms_deisotope.config.get_config_dir`.
+
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+
+## [v0.0.38] = 22-04-28
+
+### Added
 - Added `IonMobilityAware3DMzMLbSerializer` to `ms_deisotope.output.mzmlb`.
 - Added IBT10 reporter ions to `TMTReporterExtractor`
 - Added `extract-reporter-ions` to `ms-index` to extract reporter ions to CSV.
