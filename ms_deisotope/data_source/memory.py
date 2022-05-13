@@ -1,13 +1,19 @@
-from collections import OrderedDict
-import bisect
+from typing import Any, Iterable, Iterator, List, Tuple, OrderedDict, Optional, Dict, Union
+
+import numpy as np
+
+from ms_peak_picker.peak_set import PeakSet
+
+from ms_deisotope.data_source.metadata.activation import ActivationInformation
+from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation
+from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanAcquisitionInformation
+
+from ms_deisotope.data_source.scan.base import PrecursorInformation, RawDataArrays
+from ms_deisotope.peak_set import DeconvolutedPeakSet
+
 from .common import (
     ScanBunch, ScanDataSource, RandomAccessScanSource,
     Scan, ProcessedScan, WrappedScan)
-
-try:
-    range = xrange
-except NameError:
-    pass
 
 
 class MemoryScanInterface(ScanDataSource):
@@ -17,11 +23,24 @@ class MemoryScanInterface(ScanDataSource):
     '''
 
     @classmethod
-    def make_scan(cls, arrays=None, ms_level=None, id=None, index=None, scan_time=None,
-                  is_profile=False, polarity=1, precursor_information=None, activation=None,
-                  isolation_window=None, annotations=None, acquisition_information=None,
-                  instrument_configuration=None, peak_set=None, deconvoluted_peak_set=None,
-                  **kwargs):
+    def make_scan(cls,
+                  arrays: Optional[Union[RawDataArrays,
+                                         Tuple[np.ndarray, np.ndarray]]] = None,
+                  ms_level: Optional[int]=None,
+                  id: Optional[str]=None,
+                  index: Optional[int]=None,
+                  scan_time: Optional[float]=None,
+                  is_profile: Optional[bool]=False,
+                  polarity: Optional[int]=1,
+                  precursor_information: Optional[PrecursorInformation]=None,
+                  activation: Optional[ActivationInformation]=None,
+                  isolation_window: Optional[IsolationWindow]=None,
+                  annotations: Optional[Dict[str, Any]]=None,
+                  acquisition_information: Optional[ScanAcquisitionInformation]=None,
+                  instrument_configuration: Optional[InstrumentInformation]=None,
+                  peak_set: Optional[PeakSet]=None,
+                  deconvoluted_peak_set: Optional[DeconvolutedPeakSet]=None,
+                  **kwargs) -> WrappedScan:
         '''
         Parameters
         ----------
@@ -280,6 +299,11 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
     '''A :class:`~.RandomAccessScanSource` implementation which contains scan objects
     materialized from other sources or which have already been fully specified in memory.
     '''
+    _scans: List[ProcessedScan]
+    _binds: bool
+    _scan_id_map: Dict[str, ProcessedScan]
+    _scan_index_map: OrderedDict[int, ProcessedScan]
+    _index: OrderedDict[str, ProcessedScan]
 
     def __init__(self, scans, binds=True, **kwargs):
         self._scans = sorted(scans, key=lambda x: x.scan_time)
@@ -296,7 +320,7 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
         return self._scan_id_map
 
     @classmethod
-    def build(cls, scans, binds=True, **kwargs):
+    def build(cls, scans: Iterable[ProcessedScan], binds: bool=True, **kwargs):
         '''Construct an :class:`ScanCollection`
         '''
         scans = tuple(scans)
@@ -352,7 +376,7 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
     def _validate(self, scan):
         return True
 
-    def _make_scan_index_producer(self, start_index=None, start_time=None):
+    def _make_scan_index_producer(self, start_index: Optional[int]=None, start_time: Optional[float]=None) -> Iterator[int]:
         if start_index is not None:
             return range(start_index, len(self._scans))
         elif start_time is not None:
@@ -373,10 +397,10 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
     def next(self):
         return next(self._producer)
 
-    def get_scan_by_id(self, scan_id):
+    def get_scan_by_id(self, scan_id: str):
         return self._scan_id_map[scan_id]
 
-    def get_scan_by_time(self, time):
+    def get_scan_by_time(self, time: float):
         scan_ids = tuple(self.index)
         lo = 0
         hi = len(scan_ids)
@@ -394,10 +418,11 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
             else:
                 lo = mid
 
-    def get_scan_by_index(self, index):
+    def get_scan_by_index(self, index: int):
         return self._scan_index_map[index]
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_scan(self, scan_id: Optional[str]=None, rt: Optional[float]=None, index: Optional[int]=None,
+                        require_ms1: bool=True, grouped=True):
         if scan_id is not None:
             index = self.get_scan_by_id(scan_id).index
         elif rt is not None:
