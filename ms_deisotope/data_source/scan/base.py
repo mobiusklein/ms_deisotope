@@ -1,7 +1,7 @@
 '''Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 '''
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 import warnings
 
 from collections import namedtuple
@@ -36,6 +36,11 @@ except ImportError:
     draw_raw = _missing_matplotlib
 
 from ms_deisotope.utils import Constant
+
+
+if TYPE_CHECKING:
+    from ms_deisotope.data_source.scan.loader import ScanDataSource
+    from ms_deisotope.qc.isolation import CoIsolation
 
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
@@ -148,7 +153,6 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         inst = self.__class__(precursor, products)
         precursor.product_scans = products
         return inst
-
 
 
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
@@ -706,11 +710,13 @@ class PrecursorInformation(_IonMobilityMixin):
 
     annotations: Dict[str, Any]
     coisolation: List[CoIsolation]
+    coisolation_index: Optional[int]
 
     def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
                  peak=None, extracted_peak=None, defaulted=False, orphan=False,
-                 product_scan_id=None, annotations=None, coisolation=None):
+                 product_scan_id=None, annotations=None, coisolation=None,
+                 coisolation_index: Optional[int]=None):
         try:
             charge = int(charge)
         except Exception:
@@ -743,6 +749,7 @@ class PrecursorInformation(_IonMobilityMixin):
 
         self.annotations = annotations
         self.coisolation = coisolation
+        self.coisolation_index = coisolation_index
 
     def __repr__(self):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
@@ -758,7 +765,8 @@ class PrecursorInformation(_IonMobilityMixin):
         # explicitly do not propagate :attr:`source` when serializing.
         return (self.mz, self.intensity, self.charge, self.precursor_scan_id, None, self.extracted_neutral_mass,
                 self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
-                self.defaulted, self.orphan, self.product_scan_id, self.annotations, self.coisolation)
+                self.defaulted, self.orphan, self.product_scan_id, self.annotations,
+                self.coisolation, self.coisolation_index)
 
     def __setstate__(self, state):
         (self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source, self.extracted_neutral_mass,
@@ -768,6 +776,8 @@ class PrecursorInformation(_IonMobilityMixin):
             self.annotations = state[13]
         if len(state) > 14:
             self.coisolation = list(state[14])
+        if len(state) > 15:
+            self.coisolation_index = state[15]
 
     def __eq__(self, other):
         if other is None:
@@ -932,7 +942,8 @@ class PrecursorInformation(_IonMobilityMixin):
             self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source,
             self.extracted_neutral_mass, self.extracted_charge, self.extracted_intensity,
             self.peak, self.extracted_peak, self.defaulted, self.orphan,
-            self.product_scan_id, self.annotations, self.coisolation)
+            self.product_scan_id, self.annotations, self.coisolation,
+            self.coisolation_index)
         return dup
 
     def clone(self) -> 'PrecursorInformation':
@@ -1069,6 +1080,19 @@ class PrecursorInformation(_IonMobilityMixin):
         # extract the updated peak fit
         self.extract(peak)
         return self.extracted_mz, True
+
+    def split_coisolations(self) -> List['PrecursorInformation']:
+        result = [self.clone()]
+        result[0].coisolation_index = 0
+        for i, coiso in enumerate(self.coisolation, 1):
+            dup = self.clone()
+            dup.mz = coiso.mz
+            dup.extracted_neutral_mass = coiso.neutral_mass
+            dup.intensity = dup.extracted_intensity = coiso.intensity
+            dup.charge = dup.extracted_charge = coiso.charge
+            dup.coisolation_index = i
+            result.append(dup)
+        return result
 
 
 class TICMethods(object):

@@ -238,12 +238,14 @@ class ScanProcessor(Base, LogUtilsMixin):
         :attr:`loader_type` on :attr:`data_source`.
     ms1_deconvolution_args : :class:`dict`
         The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MS1
-        scans.
+        scans. This dictionary's keys should match the arguments of :func:`~ms_deisotope.deconvolution.deconvolute_peaks`,
+        all other arguments are passed through to configure the deconvoluter or will be ignored.
     ms1_peak_picking_args : :class:`dict`
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS1 scans.
     msn_deconvolution_args : :class:`dict`
         The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MSn
-        scans.
+        scans. This dictionary's keys should match the arguments of :func:`~ms_deisotope.deconvolution.deconvolute_peaks`,
+        all other arguments are passed through to configure the deconvoluter or will be ignored.
     msn_peak_picking_args : :class:`dict`
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MSn scans.
     pick_only_tandem_envelopes : :class:`bool`
