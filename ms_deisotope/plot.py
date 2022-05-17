@@ -11,7 +11,6 @@ try:
     has_plot = True
 except ImportError as err:
     import warnings
-    import traceback
     warnings.warn("Could not import matplotlib, plotting tools will not work\n%s" % (err, ))
     pyplot = None
     gridspec = None

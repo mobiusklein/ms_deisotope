@@ -11,13 +11,11 @@ except ImportError:
     pass
 
 from ms_deisotope.config import get_config_dir
-from ms_deisotope.task.log_utils import ProcessAwareFormatter, ColoringFormatter
+from ms_deisotope.task.log_utils import ColoringFormatter
 from urllib.request import urlopen
-from urllib.error import HTTPError
 
 _data_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "test_data"))
-
 
 _http_data_uri_prefix = "https://raw.githubusercontent.com/mobiusklein/ms_deisotope/master/ms_deisotope/test/test_data/"
 
