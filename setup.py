@@ -147,6 +147,9 @@ def make_extensions():
             OpenMPExtension(
                 name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.pyx"],
                 include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(
+                name='ms_deisotope._c.units', sources=["ms_deisotope/_c/units.pyx"],
+                include_dirs=[]),
         ],
         compiler_directives=cython_directives,
         emit_linenums=True,
@@ -204,7 +207,10 @@ def make_extensions():
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             OpenMPExtension(
                 name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.c"],
-                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()])
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(
+                name='ms_deisotope._c.units', sources=["ms_deisotope/_c/units.c"],
+                include_dirs=[]),
         ])
     return extensions
 
