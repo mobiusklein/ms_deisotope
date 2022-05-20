@@ -9,7 +9,7 @@ clean:
 	@-rm -rf build
 
 test:
-	py.test -v -s ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
+	py.test -v ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
 
 retest:
 	py.test -v ms_deisotope --lf --pdb

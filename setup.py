@@ -349,6 +349,7 @@ def run_setup(include_cext=True):
         extras_require=extra_requires,
         include_package_data=True,
         zip_safe=False,
+        python_requires=">3.8",
         project_urls={
             'Documentation': 'https://mobiusklein.github.io/ms_deisotope',
             'Source Code': 'https://github.com/mobiusklein/ms_deisotope',
