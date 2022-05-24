@@ -201,7 +201,6 @@ class SampleConsumer(TaskBase):
 
         self.log("Begin Processing")
         last_scan_time = 0
-        last_scan_index = 0
         i = 0
         for scan in sink:
             i += 1
@@ -216,10 +215,8 @@ class SampleConsumer(TaskBase):
                 else:
                     self.log("Processed %s (time: %0.3f)" % (
                         scan.id, scan.scan_time,))
-                if last_scan_index != 0:
-                    self.log("Count Since Last Log: %d" % (scan.index - last_scan_index,))
                 last_scan_time = scan.scan_time
-                last_scan_index = scan.index
+
         self.log("Finished Recieving Scans")
         sink.complete()
         self.log("Completed Sample %s" % (self.sample_name,))
