@@ -175,3 +175,11 @@ if PY2:
         '''Monkeypatch Py2 Dill
         '''
         dill._dill._save_file(pickler, obj, io.open)
+
+
+try:
+    from isal import isal_zlib as zlib
+    from pyteomics.auxiliary import utils
+    utils._default_compression_map['zlib compression'] = zlib.decompress
+except ImportError:
+    pass
