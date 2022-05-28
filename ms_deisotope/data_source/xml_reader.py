@@ -410,3 +410,14 @@ def iterparse_until(source, target_name, quit_name):
                     yield tag
                 else:
                     tag.clear()
+
+
+@xml._keepstate
+def iterparse_cvparams(source, maxiter=None):
+    gen = etree.iterparse(source, events=('start', ), tag="{http://psi.hupo.org/ms/mzml}cvParam", )
+    if maxiter is None:
+        maxiter = float('inf')
+    for i, (_, element) in enumerate(gen):
+        if i > maxiter:
+            break
+        yield element

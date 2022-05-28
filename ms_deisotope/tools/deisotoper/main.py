@@ -208,6 +208,9 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
 
     is_profile = check_if_profile(loader)
 
+    if loader.has_ms1_scans() == False:
+        extract_only_tandem_envelopes = False
+
     if name is None:
         name = os.path.splitext(os.path.basename(ms_file))[0]
 
