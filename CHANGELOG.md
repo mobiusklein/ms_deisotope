@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
   package data directory, it will be downloaded from GitHub. Downloaded files will
   be stored in the `test_data/` directory under the path returned by
   `ms_deisotope.config.get_config_dir`.
+- Use internal C extensions to speed up unit primitives.
+- When `isal` is installed, use `isal.isal_zlib` in place of the stock `zlib`.
 
 
 ### Deprecated
