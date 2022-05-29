@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [Unreleased]
+## [v0.0.39] - 22-05-29
 
 ### Added
 
@@ -26,7 +26,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 
 
-## [v0.0.38] = 22-04-28
+## [v0.0.38] - 22-04-28
 
 ### Added
 - Added `IonMobilityAware3DMzMLbSerializer` to `ms_deisotope.output.mzmlb`.
@@ -427,9 +427,12 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.36...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.39...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[v0.0.35]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.36
+[v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.39
+[v0.0.38]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.38
+[v0.0.37]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.37
+[v0.0.36]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.36
 [v0.0.35]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.35
 [v0.0.33]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.33
 [v0.0.32]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.32
