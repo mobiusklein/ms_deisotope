@@ -25,7 +25,7 @@ import logging
 
 import numpy as np
 
-from pyteomics.auxiliary import unitfloat
+from pyteomics.xml import unitfloat
 
 from ms_deisotope.data_source.common import (
     ScanDataSource, RandomAccessScanSource,

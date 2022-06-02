@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from pyteomics.auxiliary import unitfloat
+from pyteomics.xml import unitfloat
 
 from ms_deisotope.utils import Base
 

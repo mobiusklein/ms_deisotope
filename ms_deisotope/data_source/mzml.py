@@ -10,7 +10,7 @@ from six import string_types as basestring
 
 import numpy as np
 from pyteomics import mzml
-from pyteomics.auxiliary import unitfloat
+from pyteomics.xml import unitfloat
 from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
@@ -27,19 +27,18 @@ from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .metadata.sample import Sample
-from .metadata.scan_traits import FAIMS_compensation_voltage, ION_MOBILITY_TYPES, binary_data_arrays, ion_mobility_attribute
+from .metadata.scan_traits import FAIMS_compensation_voltage
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
-from .scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource, RawDataArrays3D
 
 
-def _open_if_not_file(obj, mode='rt'):
+def _open_if_not_file(obj, mode='rt', encoding='utf8'):
     if obj is None:
         return obj
     if hasattr(obj, 'read'):
         return obj
-    return open(obj, mode)
+    return open(obj, mode, encoding=encoding)
 
 
 class _MzMLParser(mzml.MzML):

@@ -9,9 +9,6 @@ try:
 except ImportError:
     from collections import MutableSequence
 
-
-from pyteomics.auxiliary import unitfloat  # pylint: disable=unused-import
-
 from ms_deisotope.utils import _MappingOverAttributeProxy
 from .cv import Term, TermSet
 
@@ -850,5 +847,5 @@ binary_data_arrays = TermSet([
 
 __all__ = [
     "IsolationWindow", "ScanAcquisitionInformation", "ScanEventInformation",
-    "ScanWindow", "ScanAttribute", "scan_attributes", "array_types"
+    "ScanWindow", "ScanAttribute", "scan_attributes",
 ]
