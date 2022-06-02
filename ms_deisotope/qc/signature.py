@@ -134,7 +134,7 @@ class SignatureIonDetector(object):
                 return 0
             else:
                 raise
-        n = len([i for i in self.signature_ions])
+        n = len(self.signature_ions)
         if n == 0:
             return 0
         oxonium = sum(

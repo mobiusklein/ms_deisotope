@@ -210,7 +210,6 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
                 bunch.precursor.peak_set = None
             writer.save_scan_bunch(bunch)
     writer.complete()
-    writer.format()
 
 
 @ms_conversion.command("mzml", short_help="Convert a mass spectrometry data file to mzML")
