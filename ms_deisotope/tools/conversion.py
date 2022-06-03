@@ -162,7 +162,7 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
         elif isinstance(default_activation, dict):
             default_activation = activation_module.ActivationInformation(**default_activation)
         else:
-            click.secho("Could not convert %r into ActivationInformation" % (default_activation, ), err=1,
+            click.secho(f"Could not convert {default_activation} into ActivationInformation", err=1,
                         fg='yellow')
             default_activation = None
     if pick_peaks:
@@ -288,7 +288,11 @@ try:
         """
         use_index = True
         if source == "-":
-            click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+            click.secho(
+                "Reading input file from STDIN, some file formats will not be supported.",
+                err=True,
+                fg='yellow'
+            )
             source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
             # Cannot use the offset index of a file we cannot seek through
             use_index = False

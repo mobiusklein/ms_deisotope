@@ -162,7 +162,7 @@ except ImportError as e:  # pragma: no cover
         '''Register the location of Thermo's MSFileReader.dll
         with the COM interop system.
         '''
-        warnings.warn("no-op: %s" % (message,))
+        warnings.warn(f"no-op: {message}")
         return False
 
 
@@ -179,13 +179,8 @@ except ImportError as e:  # pragma: no cover
         :class:`bool`:
             Whether or not the feature is enabled.
         '''
-        warnings.warn("no-op: %s" % (message,))
+        warnings.warn(f"no-op: {message}")
         return False
-
-try:
-    range = xrange
-except NameError:
-    pass
 
 
 class ThermoRawDataInterface(ScanDataSource):
@@ -219,7 +214,7 @@ class ThermoRawDataInterface(ScanDataSource):
         return scan.filter_string
 
     def _scan_title(self, scan):
-        return "%s %r" % (self._scan_id(scan), self._filter_string(scan))
+        return f"{self._scan_id(scan)} {self._filter_string(scan)}"
 
     def _scan_arrays(self, scan):
         with safearray_as_ndarray:
@@ -349,7 +344,7 @@ class ThermoRawDataInterface(ScanDataSource):
         isolation_width = 0
         trailer = self._trailer_values(scan)
         try:
-            isolation_width = trailer['MS%d Isolation Width' % ms_level]
+            isolation_width = trailer[f'MS{ms_level} Isolation Width']
         except KeyError:
             segment = self._get_scan_segment(scan)
             event = self._get_scan_event(scan)
@@ -527,7 +522,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         return self._index
 
     def __repr__(self):
-        return "ThermoRawLoader(%r)" % (self.source_file)
+        return f"ThermoRawLoader({self.source_file})"
 
     def _pack_index(self):
         index = OrderedDict()
@@ -583,7 +578,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
             if not package.validate(self):
-                raise KeyError(str(scan_id))
+                raise KeyError(str(scan_id)) from None
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan
@@ -609,7 +604,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
             if not package.validate(self):
-                raise IndexError(index)
+                raise IndexError(index) from None
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan
