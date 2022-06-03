@@ -75,6 +75,9 @@ class Envelope(Sequence[EnvelopePair]):
     def __iter__(self):
         return iter(self.pairs)
 
+    def __len__(self):
+        return len(self.pairs)
+
     def __repr__(self):
         return "[%s]" % (', '.join("(%0.4f, %0.2f)" % t for t in self),)
 
