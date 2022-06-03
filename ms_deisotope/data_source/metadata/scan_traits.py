@@ -3,11 +3,8 @@ as well as a :class:`~.Term` subclass for the `scan attribute` family.
 """
 
 from collections import namedtuple
-
-try:
-    from collections.abc import MutableSequence
-except ImportError:
-    from collections import MutableSequence
+from collections.abc import MutableSequence
+from typing import Optional
 
 from ms_deisotope.utils import _MappingOverAttributeProxy
 from .cv import Term, TermSet
@@ -184,15 +181,15 @@ class ScanAcquisitionInformation(MutableSequence):
         """
         if not isinstance(value, ScanEventInformation):
             raise TypeError(
-                "Expected ScanEventInformation but got %r" % (type(value), ))
+                f"Expected ScanEventInformation but got {type(value)}"
+            )
         self.scan_list.insert(index, value)
 
     def __len__(self):
         return len(self.scan_list)
 
     def __repr__(self):
-        return "ScanAcquisitionInformation(combination=%r, scan_list=%r)" % (
-            self.combination, self.scan_list)
+        return f"ScanAcquisitionInformation(combination={self.combination}, scan_list={self.scan_list})"
 
     def __eq__(self, other):
         return self.combination == other.combination and self.scan_list == other.scan_list
@@ -203,7 +200,8 @@ class ScanAcquisitionInformation(MutableSequence):
     def __reduce__(self):
         return self.__class__, (self.combination, self.scan_list)
 
-    def copy(self):
+    def copy(self) -> 'ScanAcquisitionInformation':
+        '''Make a shallow copy of this object'''
         return self.__class__(
             self.combination, [se.copy() for se in self.scan_list])
 
@@ -290,10 +288,17 @@ class ScanEventInformation(_IonMobilityMixin):
         self.injection_time = injection_time
 
     @property
-    def scan_configuration(self):
+    def scan_configuration(self) -> Optional[str]:
+        '''Retrieve the scan configuration ID
+
+        Returns
+        -------
+        str, optional
+        '''
         return self.traits.get('preset scan configuration')
 
-    def copy(self):
+    def copy(self) -> 'ScanEventInformation':
+        '''Return a shallow copy of this object'''
         return self.__class__(
             self.start_time, self.window_list[:],
             None, self.injection_time, self.traits.copy())
@@ -308,16 +313,15 @@ class ScanEventInformation(_IonMobilityMixin):
         return len(self.window_list)
 
     def __repr__(self):
-        template = "ScanEventInformation(start_time={}, window_list={}{})"
         if self.has_ion_mobility():
-            tail = ", drift_time={}".format(self.drift_time)
+            tail = f", drift_time={self.drift_time}"
         else:
             tail = ''
         if self.injection_time is not None:
-            tail += ', injection_time={}'.format(self.injection_time)
+            tail += f', injection_time={self.injection_time}'
         if self.traits:
-            tail += ", traits={}".format(self.traits)
-        form = template.format(self.start_time, self.window_list, tail)
+            tail += f", traits={self.traits}"
+        form = f"ScanEventInformation(start_time={self.start_time}, window_list={self.window_list}{tail})"
         return form
 
     def __eq__(self, other):
