@@ -513,9 +513,10 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
     def __init__(self, source_file, _load_metadata=True, **kwargs):
         if not _test_dll_loaded():
             register_dll()
-        self._source = _RawFileReader.RawFileReaderAdapter.FileFactory(source_file)
-        self._source.SelectInstrument(Business.Device.MS, 1)
         self.source_file = source_file
+        self._source_impl = None
+        # self._source = _RawFileReader.RawFileReaderAdapter.FileFactory(source_file)
+        # self._source.SelectInstrument(Business.Device.MS, 1)
         self._producer = None
         self._scan_type_index = dict()
 
@@ -534,6 +535,17 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             self._method = self._parse_method()
             self._build_scan_type_index()
             self._get_instrument_info()
+
+    @property
+    def _source(self):
+        if self._source_impl is None:
+            self._source_impl = _RawFileReader.RawFileReaderAdapter.FileFactory(self.source_file)
+            self._source_impl.SelectInstrument(Business.Device.MS, 1)
+        return self._source_impl
+
+    @_source.setter
+    def _source(self, value):
+        self._source_impl = value
 
     def _has_ms1_scans(self):
         if self._scan_type_index:
@@ -556,7 +568,9 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         return self._has_ms1_scans()
 
     def __reduce__(self):
-        return self.__class__, (self.source_file, False), self.__getstate__()
+        reduced = self.__class__, (self.source_file, False), self.__getstate__()
+        self._close_handle()
+        return reduced
 
     def __getstate__(self):
         state = {
@@ -592,12 +606,15 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
     def __repr__(self):
         return "ThermoRawLoader(%r)" % (self.source_file)
 
-    def close(self):
-        '''Close the underlying file reader.
-        '''
+    def _close_handle(self):
         if self._source is not None:
             self._source.Close()
             self._source = None
+
+    def close(self):
+        '''Close the underlying file reader.
+        '''
+        self._close_handle()
         self._dispose()
 
     def __del__(self):
