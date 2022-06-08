@@ -499,7 +499,11 @@ class MzMLSerializer(ScanSerializerBase):
         elif isinstance(data_processing_description, data_transformation.ProcessingMethod):
             content = []
             for op, val in data_processing_description:
-                content.append({"name": op.name, 'value': val})
+                if isinstance(val, list):
+                    for v in val:
+                        content.append({"name": op.name, 'value': v})
+                else:
+                    content.append({"name": op.name, 'value': val})
             payload = {
                 'id': "data_processing_%d" % len(self.data_processing_list),
                 'processing_methods': [{

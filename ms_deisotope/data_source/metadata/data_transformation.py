@@ -9,7 +9,7 @@ for them.
     other libraries.
 """
 
-from collections import OrderedDict
+from typing import Any, List, Union, OrderedDict
 
 from six import string_types as basestring
 
@@ -18,6 +18,7 @@ from ms_deisotope.utils import uid
 from .cv import Term, TermSet
 # from .software import Software, SoftwareName
 
+DataTransformationOrStr = Union[str, 'DataTransformation']
 
 class DataTransformation(Term):
     """Describes a named data transformation, either
@@ -274,13 +275,16 @@ class ProcessingMethod(object):
     --------
     :class:`DataTransformation`
     '''
+    operations: OrderedDict[DataTransformation, Union[Any, List[Any]]]
+    software_id: str
+    order: int
 
     def __init__(self, operations=None, software_id=None, order=0):
         self.operations = operations or OrderedDict()
         self.software_id = software_id
         self.order = order
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: Union[int, slice]):
         return list(self.operations.items())[i]
 
     def __len__(self):
@@ -296,7 +300,10 @@ class ProcessingMethod(object):
         template = "{self.__class__.__name__}({names}, order={self.order})"
         return template.format(self=self, names='[%s]' % ', '.join(self._get_names()))
 
-    def add(self, operation, value=''):
+    def remove(self, operation: DataTransformationOrStr):
+        return self.operations.pop(operation, None)
+
+    def add(self, operation: DataTransformationOrStr, value: Any=''):
         '''Add a new :class:`DataTransformation` operation to this method.
 
         Parameters
@@ -309,7 +316,24 @@ class ProcessingMethod(object):
         '''
         if isinstance(operation, basestring):
             operation = data_transformation(operation)
-        self.operations[operation] = value
+        if operation in self.operations:
+            val = self.operations[operation]
+            if not isinstance(val, list):
+                self.operations[operation] = [val, value]
+            else:
+                val.append(value)
+        else:
+            self.operations[operation] = value
+
+    def get(self, operation: DataTransformationOrStr, default: Any=None) -> Any:
+        try:
+            return self.operations[operation]
+        except KeyError:
+            for k, v in self:
+                if k == operation:
+                    return v
+            else:
+                return default
 
     def update(self, operations):
         '''Add each operation in ``operations`` to this method.
