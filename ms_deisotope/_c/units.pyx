@@ -239,6 +239,8 @@ cdef class CVPrimitiveWrapperMeta(type):
         else:
             return self.wrapped == other
 
+    def __hash__(self):
+        return hash(self.__qualname__)
 
 class cvstr(metaclass=CVPrimitiveWrapperMeta):
     wrapped = CVStr
