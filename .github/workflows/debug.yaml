@@ -33,7 +33,7 @@ jobs:
       run: python -m cibuildwheel --output-dir dist/
       # to supply options, put them in 'env', like:
       env:
-        CIBW_BUILD: cp${{ matrix.python-version }}-manylinux_x86_64
+        CIBW_BUILD: cp${{ matrix.python-version }}-*
         CIBW_BUILD_VERBOSITY: 1
     - name: Archive code coverage results
       uses: actions/upload-artifact@v3
