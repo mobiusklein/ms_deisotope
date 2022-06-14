@@ -32,6 +32,7 @@ from . import (MassLynxRawInfoReader,
                libload
               )
 
+# Cyclic arrival time = (bin number*pusher period*pushesperbin) + ADC start delay
 
 
 waters_id_pattern = re.compile(r"function=(\d+) process=(\d+) scan=(\d+)")
