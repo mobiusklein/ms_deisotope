@@ -43,7 +43,10 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: dist
-        path: dist/*.whl dist/*.tar.gz dist/*.zip
+        path: |
+          dist/*.whl
+          dist/*.tar.gz
+          dist/*.zip
         retention-days: 7
 
   publish-wheels:
