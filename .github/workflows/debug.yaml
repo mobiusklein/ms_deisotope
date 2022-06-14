@@ -42,5 +42,30 @@ jobs:
     - name: Archive code coverage results
       uses: actions/upload-artifact@v3
       with:
-        name: wheels
-        path: dist/*.whl
+        name: dist
+        path: dist/*.whl dist/*.tar.gz dist/*.zip
+        retention-days: 7
+
+  publish-wheels:
+    needs: [build-wheels]
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ['3.9']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+      - name: "Publish"
+        env:
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_USERNAME: __token__
+        run: |
+          ls -l dist/*
+          # twine upload dist/*.whl dist/*.tar.gz
