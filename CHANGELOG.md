@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 
 ### Changed
 - Updated automatic release workflow
+- Allow `ProcessingMethod` to repeat terms
 
 ### Deprecated
 
