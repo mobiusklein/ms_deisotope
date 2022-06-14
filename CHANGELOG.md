@@ -6,9 +6,25 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.40] - 22-06-14
+
+### Added
 - Make `CVPrimitiveWrapperMeta` hashable.
 
 ### Changed
+- Updated automatic release workflow
 
 ### Deprecated
 
@@ -443,8 +459,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.39...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.40...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.40
 [v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.39
 [v0.0.38]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.38
 [v0.0.37]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.37
