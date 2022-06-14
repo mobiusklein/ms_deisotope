@@ -1,12 +1,9 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Build and Publish Package
+name: debug-wheel-build
 
 on:
-  create:
-    tags:
-      - "v*"
+  push:
+    branches:
+      - 'debug/**'
 
 jobs:
   build-wheels:
@@ -42,7 +39,7 @@ jobs:
         CIBW_TEST_REQUIRES: "pytest"
         CIBW_BUILD_VERBOSITY: 5
         CIBW_ARCHS: "auto"
-    - name: Upload Distributions
+    - name: Archive code coverage results
       uses: actions/upload-artifact@v3
       with:
         name: dist
@@ -74,4 +71,4 @@ jobs:
           TWINE_USERNAME: __token__
         run: |
           ls -l dist/*
-          twine upload dist/*.whl dist/*.tar.gz
+          # twine upload dist/*.whl dist/*.tar.gz
