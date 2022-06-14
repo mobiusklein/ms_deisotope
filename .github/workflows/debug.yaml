@@ -6,9 +6,9 @@ on:
       - 'debug/**'
 
 jobs:
-  build-manylinux:
-
-    runs-on: ubuntu-latest
+  build-wheel:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: ['3.9']
@@ -34,7 +34,7 @@ jobs:
       run: python -m cibuildwheel --output-dir dist/
       env:
         CIBW_BUILD: "cp38* cp39* cp310*"
-        CIBW_SKIP: "*_i686 *win32 *musllinux*"
+        CIBW_SKIP: "*_i686 *win32 *musllinux* pp*"
         CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
         CIBW_TEST_REQUIRES: "pytest"
         CIBW_BUILD_VERBOSITY: 5
