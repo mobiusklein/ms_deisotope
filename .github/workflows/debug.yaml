@@ -6,7 +6,7 @@ on:
       - 'debug/**'
 
 jobs:
-  build-wheel:
+  build-wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
