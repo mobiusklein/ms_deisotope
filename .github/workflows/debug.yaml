@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.9']
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -32,7 +33,7 @@ jobs:
     - name: Build wheels
       run: python -m cibuildwheel --output-dir dist/
       env:
-        CIBW_BUILD: "cp38*-manylinux_x86_64 cp39*-manylinux_x86_64 cp310*-manylinux_x86_64"
+        CIBW_BUILD: "cp38* cp39* cp310*"
         CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
         CIBW_TEST_REQUIRES: "pytest"
         CIBW_BUILD_VERBOSITY: 5
