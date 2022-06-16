@@ -1,17 +1,20 @@
 '''Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 '''
+from typing import Any, Dict, Iterator, List, Optional, Union
 import warnings
+
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 try:
     from collections.abc import Sequence
 except ImportError:
     from collections import Sequence
-
+import logging
 import numpy as np
 
 from ms_peak_picker import (
     pick_peaks, reprofile, average_signal,
-    scan_filter, PeakIndex, PeakSet)
+    scan_filter, PeakIndex, PeakSet, FittedPeak)
 
 from ms_deisotope.utils import decimal_shift
 from ms_deisotope.deconvolution import deconvolute_peaks
@@ -25,6 +28,13 @@ from ms_deisotope.data_source.metadata.instrument_components import InstrumentIn
 
 
 from .base import (ScanBase, RawDataArrays, PrecursorInformation)
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+
+DEFAULT_DX: float = 0.002
 
 
 class Scan(ScanBase):
@@ -130,7 +140,7 @@ class Scan(ScanBase):
 
         self.product_scans = product_scans
 
-    def clone(self, deep=True):
+    def clone(self, deep=True) -> 'Scan':
         """Return a copy of the :class:`Scan` object
         wrapping the same reference data, potentially a deep
         one
@@ -211,7 +221,7 @@ class Scan(ScanBase):
             self._external_annotations = {}
 
     @property
-    def ms_level(self):
+    def ms_level(self) -> int:
         '''The degree of fragmentation performed. 1 corresponds to a MS1 or "Survey" scan, 2 corresponds
         to MS/MS, and so on. If :attr:`ms_level` > 1, the scan is considered a "tandem scan" or "MS^n" scan
 
@@ -228,7 +238,7 @@ class Scan(ScanBase):
         self._ms_level = int(value)
 
     @property
-    def is_profile(self):
+    def is_profile(self) -> bool:
         '''Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
         pre-centroided.
 
@@ -245,7 +255,7 @@ class Scan(ScanBase):
         self._is_profile = bool(value)
 
     @property
-    def polarity(self):
+    def polarity(self) -> int:
         '''If the scan was acquired in positive mode, the value ``+1``.  If the scan was acquired in negative
         mode, the value ``-1``. May be used to indicating how to calibrate charge state determination methods.
 
@@ -262,7 +272,7 @@ class Scan(ScanBase):
         self._polarity = int(value)
 
     @property
-    def scan_time(self):
+    def scan_time(self) -> float:
         '''The time the scan was acquired during data acquisition. The unit of time will always
         be minutes.
 
@@ -279,7 +289,7 @@ class Scan(ScanBase):
         self._scan_time = float(value)
 
     @property
-    def arrays(self):
+    def arrays(self) -> RawDataArrays:
         '''A pair of :class:`numpy.ndarray` objects corresponding to the raw m/z and
         intensity data points.
 
@@ -311,7 +321,7 @@ class Scan(ScanBase):
                 "arrays must be an instance of RawDataArrays or a pair of numpy arrays")
 
     @property
-    def title(self):
+    def title(self) -> str:
         '''The human-readable display string for this scan as shown in some external software.
 
         Returns
@@ -327,7 +337,7 @@ class Scan(ScanBase):
         self._title = value
 
     @property
-    def id(self):
+    def id(self) -> str:
         '''The within run unique scan identifier.
 
         Returns
@@ -345,7 +355,7 @@ class Scan(ScanBase):
     scan_id = id
 
     @property
-    def index(self):
+    def index(self) -> int:
         '''The integer number indicating how many scans were acquired prior to this scan.
 
         Returns
@@ -361,7 +371,7 @@ class Scan(ScanBase):
         self._index = int(value)
 
     @property
-    def precursor_information(self):
+    def precursor_information(self) -> Optional[PrecursorInformation]:
         '''Descriptive metadata for the ion which was chosen for fragmentation, and a reference to
         the precursor scan.
 
@@ -383,7 +393,7 @@ class Scan(ScanBase):
         self._precursor_information = value
 
     @property
-    def activation(self):
+    def activation(self) -> Optional[ActivationInformation]:
         '''If this scan is an MS^n scan, this attribute will contain information about the process
         used to produce it from its parent ion.
 
@@ -405,7 +415,7 @@ class Scan(ScanBase):
         self._activation = value
 
     @property
-    def isolation_window(self):
+    def isolation_window(self) -> Optional[IsolationWindow]:
         '''Describes the range of m/z that were isolated from a parent scan to create this scan.
 
         Returns
@@ -440,7 +450,7 @@ class Scan(ScanBase):
                     IsolationWindow))
 
     @property
-    def acquisition_information(self):
+    def acquisition_information(self) -> ScanAcquisitionInformation:
         '''Describes the type of event that produced this scan, as well as the scanning method
         used.'''
         if self._acquisition_information is None:
@@ -456,7 +466,7 @@ class Scan(ScanBase):
         self._acquisition_information = value
 
     @property
-    def instrument_configuration(self):
+    def instrument_configuration(self) -> InstrumentInformation:
         '''The instrument configuration used to acquire this scan.'''
         if self._instrument_configuration is None:
             self._instrument_configuration = self.source._instrument_configuration(
@@ -471,7 +481,7 @@ class Scan(ScanBase):
         self._instrument_configuration = value
 
     @property
-    def annotations(self):
+    def annotations(self) -> Dict[str, Any]:
         '''A set of key-value pairs describing the scan not part of the standard interface'''
         if self._annotations is None:
             self._annotations = self.source._annotations(self._data)
@@ -483,7 +493,7 @@ class Scan(ScanBase):
         self._external_annotations = dict(value)
         self._annotations = self._external_annotations.copy()
 
-    def bind(self, source):
+    def bind(self, source: 'ScanDataSource'):
         super(Scan, self).bind(source)
         self.source = source
         return self
@@ -505,13 +515,13 @@ class Scan(ScanBase):
 
     # peak manipulation
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[FittedPeak]:
         if self.peak_set is None:
             raise ValueError("Cannot iterate over peaks in a scan that has not been "
                              "centroided. Call `pick_peaks` first.")
         return iter(self.peak_set)
 
-    def __getitem__(self, i):
+    def __getitem__(self, i) -> FittedPeak:
         if self.peak_set is None:
             raise ValueError("Cannot retrieve peaks in a scan that has not been "
                              "centroided. Call `pick_peaks` first.")
@@ -529,7 +539,7 @@ class Scan(ScanBase):
     def __nonzero__(self):
         return self.__bool__()
 
-    def has_peak(self, *args, **kwargs):
+    def has_peak(self, *args, **kwargs) -> FittedPeak:
         """A wrapper around :meth:`ms_peak_picker.PeakSet.has_peak` to query the
         :class:`ms_peak_picker.FittedPeak` objects picked for this scan.
 
@@ -689,7 +699,7 @@ class Scan(ScanBase):
         self.deconvoluted_peak_set = decon_results.peak_set
         return self
 
-    def pack(self, bind=False):
+    def pack(self, bind=False) -> 'ProcessedScan':
         '''Pack the (dispersed) representation of the data in this :class:`Scan`
         into a packed :class:`ProcessedScan` object.
 
@@ -826,7 +836,7 @@ class Scan(ScanBase):
                            is_profile=self.is_profile,
                            annotations=self._external_annotations)
 
-    def average_with(self, scans, dx=None, weight_sigma=None):
+    def average_with(self, scans, dx=None, weight_sigma=None, num_threads=None):
         r"""Average together multiple scans' raw data arrays to create a composite intensity
         profile for a common m/z axis.
 
@@ -839,6 +849,10 @@ class Scan(ScanBase):
         weight_sigma : float, optional
             When this value is not None, scans are weighted according to a
             gaussian distribution with a $\sigma$ equal to this value
+        num_threads : int, optional
+            The maximum number of threads to use while averaging signal. Defaults
+            to the number of spectra being averaged or the maximum available from
+            the hardware, whichever is smaller.
 
         Returns
         -------
@@ -846,11 +860,12 @@ class Scan(ScanBase):
             A shallow copy of this scan with its :attr:`arrays` attribute replaced
             with the averaged array
         """
+        default_dx = False
         if dx is None:
-            dx = 0.01
-            default_dx = True
-        else:
-            default_dx = False
+            dx = DEFAULT_DX
+            # default_dx = True
+        # else:
+        #     default_dx = False
         scans = [self] + list(scans)
         arrays = []
         for scan in scans:
@@ -877,11 +892,13 @@ class Scan(ScanBase):
                 reference = arrays[0]
             empirical_dx = decimal_shift(2 * np.median(np.diff(reference.mz)))
             dx = min(dx, empirical_dx)
-        new_arrays = average_signal(arrays, dx=dx, weights=weights)
+        new_arrays = average_signal(
+            arrays, dx=dx, weights=weights, num_threads=num_threads)
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
-            indices, list(self.product_scans), is_profile=True,
+            indices, list(self.product_scans),
+            is_profile=True,
             annotations=self._external_annotations)
 
     def _get_adjacent_scans(self, index_interval=None, rt_interval=None):
@@ -982,9 +999,10 @@ class Scan(ScanBase):
             A shallow copy of this scan with its :attr:`arrays` attribute replaced
             with the averaged array
         """
+        default_dx = False
         if dx is None:
-            dx = 0.01
-            default_dx = True
+            dx = DEFAULT_DX
+            # default_dx = True
         else:
             default_dx = False
         before, after = self._get_adjacent_scans(index_interval, rt_interval)
@@ -1011,8 +1029,10 @@ class Scan(ScanBase):
                 reference = arrays[0]
             empirical_dx = decimal_shift(2 * np.median(np.diff(reference.mz)))
             dx = min(dx, empirical_dx)
-
-        new_arrays = average_signal(arrays, dx=dx, weights=weights)
+        if arrays:
+            new_arrays = average_signal(arrays, dx=dx, weights=weights)
+        else:
+            new_arrays = self.arrays[:]
         indices = [scan.index for scan in scans]
         return AveragedScan(
             self._data, self.source, new_arrays,
@@ -1166,6 +1186,24 @@ class ProcessedScan(ScanBase):
         A set of key-value pairs describing the scan not part of the standard interface
     """
 
+    id: str
+    title: str
+    ms_level: int
+    scan_time: float
+    index: int
+    polarity: int
+
+    precursor_information: Optional[PrecursorInformation]
+    activation: Optional[ActivationInformation]
+    isolation_window: Optional[IsolationWindow]
+
+    acquisition_information: ScanAcquisitionInformation
+    instrument_configuration: InstrumentInformation
+    annotations: Dict[str, Any]
+
+    peak_set: Optional[PeakSet]
+    deconvoluted_peak_set: Optional[DeconvolutedPeakSet]
+
     def __init__(self, id, title, precursor_information,
                  ms_level, scan_time, index, peak_set,
                  deconvoluted_peak_set, polarity=None, activation=None,
@@ -1210,17 +1248,17 @@ class ProcessedScan(ScanBase):
         self.product_scans = None
 
     @property
-    def scan_id(self):
+    def scan_id(self) -> str:
         return self.id
 
     @property
-    def is_profile(self):
+    def is_profile(self) -> bool:
         '''Whether this scan's raw data points corresponds to a profile scan or whether the raw data was
         pre-centroided.
         '''
         return False
 
-    def _resolve_peaks(self):
+    def _resolve_peaks(self) -> Union[PeakSet, DeconvolutedPeakSet, List[DeconvolutedPeak]]:
         if self.deconvoluted_peak_set is not None:
             return self.deconvoluted_peak_set
         elif self.peak_set is not None:
@@ -1228,16 +1266,16 @@ class ProcessedScan(ScanBase):
         else:
             return []
 
-    def __iter__(self):
+    def __iter__(self) -> Union[Iterator[DeconvolutedPeak], Iterator[FittedPeak]]:
         return iter(self._resolve_peaks())
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> Union[DeconvolutedPeak, FittedPeak]:
         return self._resolve_peaks()[index]
 
     def __len__(self):
         return len(self._resolve_peaks())
 
-    def has_peak(self, mass, error_tolerance=2e-5):
+    def has_peak(self, mass, error_tolerance=2e-5) -> Optional[Union[DeconvolutedPeak, FittedPeak]]:
         """A wrapper around :meth:`~.DeconvolutedPeakSet.has_peak` to query the
         :class:`~.DeconvolutedPeak` objects picked for this scan. If no deconvoluted
         peaks are available, but centroided peaks are, this method will instead
@@ -1278,7 +1316,7 @@ class ProcessedScan(ScanBase):
         return "ProcessedScan(id=%s, ms_level=%d, %d peaks%s)" % (
             self.id, self.ms_level, len(peaks), pinfo_string)
 
-    def bind(self, source):
+    def bind(self, source: 'ScanDataSource'):
         super(ProcessedScan, self).bind(source)
         self.source = source
         return self
@@ -1288,7 +1326,7 @@ class ProcessedScan(ScanBase):
         self.source = None
         return self
 
-    def clone(self, deep=True):
+    def clone(self, deep=True) -> 'ProcessedScan':
         """Return a copy of the :class:`ProcessedScan` object, potentially a deep
         one
 

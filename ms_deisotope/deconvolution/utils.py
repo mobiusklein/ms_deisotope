@@ -12,7 +12,7 @@ from ms_deisotope.peak_set import DeconvolutedPeak, Envelope
 from ms_deisotope.constants import ERROR_TOLERANCE
 
 
-logger = logging.getLogger("deconvolution")
+logger = logging.getLogger("ms_deisotope.deconvolution")
 logger.addHandler(logging.NullHandler())
 info = logger.info
 debug = logger.debug

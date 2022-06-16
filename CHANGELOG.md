@@ -14,9 +14,112 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Removed
 
 ### Fixed
+
+### Security
+
+
+## [v0.0.40] - 22-06-14
+
+### Added
+- Make `CVPrimitiveWrapperMeta` hashable.
+
+### Changed
+- Updated automatic release workflow
+- Allow `ProcessingMethod` to repeat terms
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.39] - 22-05-29
+
+### Added
+
+### Changed
+- When using `ms_deisotope.test.common.datafile`, if the file isn't found in the
+  package data directory, it will be downloaded from GitHub. Downloaded files will
+  be stored in the `test_data/` directory under the path returned by
+  `ms_deisotope.config.get_config_dir`.
+- Use internal C extensions to speed up unit primitives.
+- When `isal` is installed, use `isal.isal_zlib` in place of the stock `zlib`.
+
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+
+## [v0.0.38] - 22-04-28
+
+### Added
+- Added `IonMobilityAware3DMzMLbSerializer` to `ms_deisotope.output.mzmlb`.
+- Added IBT10 reporter ions to `TMTReporterExtractor`
+- Added `extract-reporter-ions` to `ms-index` to extract reporter ions to CSV.
+
+### Changed
+- Raised minimum `ms_peak_picker` version to `v0.1.38`
+- Changed the default `dx` of `Scan.average` and `Scan.average_with` from 0.01 to 0.002 to reduce distortion
+  when centroiding averaged spectra.
+- Change logging to be consistent across modules.
+
+### Deprecated
+
+### Removed
+- Removed deprecated `ScanProcessor.get_precursor_peak_for_product_scans`
+
+### Fixed
+
+### Security
+
+
+## [v0.0.36] - 2022-01-15
+
+### Added
+1. Added `get_writer` to `ms_deisotope.output` which will guess which writer (and compression) to use from a file path
+   or name of a file-like object.
+2. Added an option to skip envelope decoding during `deserialize_deconvoluted_peak_set` as a theoretical optimization.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+1. Restore unpickling of `ThermoRawLoader`s
+
+### Security
+
+
+## [v0.0.35] - 2021-12-29
+
+### Added
+1. Added `toggle_peak_loading` to `PeakSetDeserializingMixin` to toggle loading and parsing of deconvoluted peak sets.
+2. Refactored `MSFileLoader` into a callable class, `ms_deisotope.data_source.infer_type.FormatGuesser`. There is now a
+   `ms_deisotope.output.ProcessedMSFileLoader` callable that can be used to determine the correct opener for processed
+   mzML, MGF, and mzMLb files.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
 1. Added a missing parameter `use_index` to `ProcessedMGFLoader` that made positional
    argument passing fail when unpickling instances of this subclass.
 2. Repaired `peak_collection` fused functions to optimize `DeconvolutedPeakSetIndexed` too.
+3. Fixed `TheoreticalIsotopicPattern.total` using an uninitialized accumulator.
 
 ### Security
 
@@ -357,8 +460,14 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.33...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.40...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.40
+[v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.39
+[v0.0.38]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.38
+[v0.0.37]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.37
+[v0.0.36]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.36
+[v0.0.35]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.35
 [v0.0.33]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.33
 [v0.0.32]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.32
 [v0.0.31]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.31

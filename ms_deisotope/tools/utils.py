@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import warnings
-import logging
 
 import click
 
@@ -88,17 +87,25 @@ def register_debug_hook():
             pdb_api.post_mortem(tb)
 
     sys.excepthook = info
-    logging.basicConfig(level="DEBUG")
+    # logging.basicConfig(level="DEBUG")
 
 
-def is_debug_mode():
-    env_val = os.environ.get('MS_DEISOTOPE_DEBUG', '').lower()
+def envar_to_bool(env_val: str) -> bool:
+    env_val = env_val.lower()
     if not env_val:
         return False
     if env_val in ('0', 'no', 'false', 'off'):
         return False
     elif env_val in ('1', 'yes', 'true', 'on'):
         return True
+    return None
+
+
+def is_debug_mode() -> bool:
+    env_val = os.environ.get('MS_DEISOTOPE_DEBUG', '').lower()
+    val = envar_to_bool(env_val)
+    if val is not None:
+        return val
     else:
         warnings.warn("MS_DEISOTOPE_DEBUG value %r was not recognized. Enabling debug mode" % (env_val, ))
         return True
@@ -157,7 +164,8 @@ class ProgressLogger(object):
     This class tries to emulate :func:`click.progressbar` for use when the attached STDERR stream is not
     a terminal.
     """
-    def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None, file=None, **kwargs):
+    def __init__(self, iterable=None, length=None, label=None, item_show_func=None, interval=None,
+                 file=None, writer=None, **kwargs):
         if iterable is not None:
             try:
                 length = len(iterable)
@@ -183,6 +191,7 @@ class ProgressLogger(object):
         self.last_update = 0
         self.label = label
         self.file = file
+        self.writer = writer
 
     def update(self, n):
         self.count += n
@@ -203,7 +212,10 @@ class ProgressLogger(object):
         else:
             prog_label = "%s %d" % (label, i)
         message = fmt_msg("%s: %s" % (prog_label, show))
-        click.echo(message, file=self.file, err=True)
+        if self.writer is None:
+            click.echo(message, file=self.file, err=True)
+        else:
+            self.writer(message)
 
     def __iter__(self):
         for item in self.iterable:
@@ -219,10 +231,16 @@ class ProgressLogger(object):
 
 
 def progress(*args, **kwargs):
-    """A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a TTY and :class:`ProgressLogger`
-    otherwise.
+    """A wrapper that will dispatch to :func:`click.progressbar` when `sys.stdout` is a
+    TTY and :class:`ProgressLogger` otherwise.
     """
     if sys.stdout.isatty():
         return click.progressbar(*args, **kwargs)
     else:
         return ProgressLogger(*args, **kwargs)
+
+
+def progress_iter(*args, **kwargs):
+    prog = progress(*args, **kwargs)
+    with prog:
+        yield from prog

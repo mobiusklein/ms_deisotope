@@ -1,12 +1,15 @@
 '''A collection of little command line utilities for inspecting mass
 spectrum data.
 '''
+from email.policy import default
 import io
+import logging
 import os
 import math
 import csv
 import sys
 from collections import Counter
+from typing import List
 
 import click
 import six
@@ -14,6 +17,10 @@ import six
 import numpy as np
 
 import ms_deisotope
+from ms_deisotope.data_source.scan.base import ScanBase
+from ms_deisotope.data_source.scan.scan import Scan
+
+from ms_deisotope.task.log_utils import init_logging
 
 from ms_deisotope.feature_map import quick_index
 from ms_deisotope.feature_map import scan_interval_tree
@@ -22,6 +29,7 @@ from ms_deisotope.clustering.scan_clustering import (
     iterative_clustering, ScanClusterWriter, ScanClusterReader, _DynamicallyLoadingResolver)
 
 from ms_deisotope.qc.isolation import isolation_window_valid, is_isolation_window_empty
+from ms_deisotope.qc.signature import TMTReporterExtractor
 
 from ms_deisotope.data_source import (
     _compression, ScanProxyContext, MSFileLoader)
@@ -36,12 +44,15 @@ from ms_deisotope.tools.utils import processes_option, is_debug_mode, progress, 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
+logger = logging.getLogger('ms_deisotope')
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
     '''A collection of utilities for inspecting and manipulating
     mass spectrometry data.
     '''
+    init_logging()
 
 
 @cli.command("describe", short_help=("Produce a minimal textual description"
@@ -194,7 +205,7 @@ def metadata_index(paths, processes=4, deconvoluted=False):
         except AttributeError:
             pass
         if processes > 1:
-            progbar = click.progressbar(label='Building Index', length=100)
+            progbar = progress(label='Building Index', length=100)
             acc = [0]
 
             def update_bar(x):
@@ -214,7 +225,7 @@ def metadata_index(paths, processes=4, deconvoluted=False):
             reader.reset()
             try:
                 n = len(reader)
-                progbar = click.progressbar(label='Building Index', length=n)
+                progbar = progress(label='Building Index', length=n)
             except TypeError:
                 progbar = spinner(title="Building Index")
             with progbar:
@@ -275,7 +286,7 @@ def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3.,
                 interval_set.extend(chunk)
                 yield 0
     work_iterator = _run()
-    with click.progressbar(work_iterator, length=total_work_items, label='Extracting Intervals') as g:
+    with progress(work_iterator, length=total_work_items, label='Extracting Intervals') as g:
         for _ in g:
             pass
     tree = scan_interval_tree.ScanIntervalTree(scan_interval_tree.make_rt_tree(interval_set))
@@ -298,7 +309,9 @@ def _ensure_metadata_index(path):
         reader.reset()
         try:
             n = len(reader)
-            progbar = click.progressbar(label='Building Index', length=n)
+            progbar = click.progressbar(
+                label='Building Index', length=n, color=True,
+                fill_char=click.style('-', 'green'))
         except TypeError:
             progbar = spinner(title="Building Index")
         with progbar:
@@ -434,19 +447,20 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
     msn_scans = []
     n_spectra = 0
 
-    with click.progressbar(paths, label="Indexing", item_show_func=lambda x: str(x) if x else '') as progbar:
+    with progress(paths, label="Indexing", item_show_func=lambda x: str(x) if x else '', color=True, fill_char=click.style('-', 'cyan')) as progbar:
         key_seqs = []
         for path in progbar:
             if deconvoluted:
                 reader = ProcessedMzMLDeserializer(path)
+                reader.parse_envelopes = False
                 index = reader.extended_index
             else:
                 reader, index = _ensure_metadata_index(path)
             key_seqs.append((reader, index))
             n_spectra += len(index.msn_ids)
 
-    with click.progressbar(label="Loading Spectra", length=n_spectra,
-                           item_show_func=lambda x: str(x) if x else '') as progbar:
+    with progress(label="Loading Spectra", length=n_spectra,
+                  item_show_func=lambda x: str(x) if x else '', color=True, fill_char=click.style('-', 'green')) as progbar:
         for reader, index in key_seqs:
             if not in_memory:
                 if not reader.has_fast_random_access:
@@ -526,7 +540,6 @@ def cluster_evaluation(path):
             click.echo("Size {:d}: {:d}".format(key, value))
 
 
-
 @cli.command('ms1-spectrum-diagnostics')
 @click.argument('path', type=click.Path(exists=True, readable=True))
 @click.option("-o", "--output-path", type=click.Path(writable=True))
@@ -596,6 +609,56 @@ def ms1_spectrum_diagnostics(path, output_path=None):
     writer.writeheader()
     writer.writerows(ms1_metrics)
     stream.flush()
+
+
+@cli.command("extract-reporter-ions", short_help="Extract reporter ion channels from an MS file to a CSV")
+@click.argument('path', type=click.Path(exists=True, readable=True))
+@click.option("-o", "--output-path", type=click.Path(writable=True), default='-', help="The path to write output to. Defaults to STDOUT")
+@click.option("-r", "--reagent", default='tmt11', type=click.Choice(
+    sorted(TMTReporterExtractor.TMT_REAGENTS)),
+    required=False, help="The isobaric quantification tag reagent used")
+@click.option("-m", "--error-tolerance", type=float, default=1e-5, help="The mass accuracy error tolerance to use when matching reporter ions")
+def extract_reporter_ions(path, output_path=None, reagent='tmt11', error_tolerance=1e-5):
+    reader = ms_deisotope.MSFileLoader(path)
+
+    if error_tolerance > 1e-3:
+        logger.warn(
+            f"Error tolerance {error_tolerance} looks like it is not in units of PPM, multiplying by 1e-6")
+        error_tolerance *= 1e-6
+
+    reader.make_iterator(grouped=True)
+
+    extractor = TMTReporterExtractor(reagent=reagent)
+    channels = [t.name for t in extractor.signature_ions]
+    columns = ['scan_id', 'scan_time', 'precursor_mz', 'precursor_charge', 'precursor_intensity', 'tic', 'precursor_purity'] + channels
+
+    out_file = click.open_file(output_path, mode='wb')
+    out_file_wrapper = io.TextIOWrapper(out_file, encoding='utf8', newline='')
+    writer = csv.DictWriter(out_file_wrapper, columns)
+    writer.writeheader()
+
+    products: List[Scan]
+    for _precursor, products in reader:
+        for product in products:
+            pinfo = product.precursor_information
+            if product.is_profile:
+                product.pick_peaks()
+            row = {
+                "scan_id": product.id,
+                "scan_time": product.scan_time,
+                "tic": product.tic(),
+                "precursor_purity": product.annotations.get("precursor purity")
+            }
+            if pinfo is not None:
+                row['precursor_mz'] = pinfo.mz
+                row['precursor_charge'] = pinfo.charge if isinstance(pinfo.charge, int) else None
+                row['precursor_intensity'] = pinfo.intensity
+
+            row.update(extractor.extract(
+                product, error_tolerance=error_tolerance))
+            writer.writerow(row)
+
+
 
 if _compression.has_idzip:
     @cli.command("idzip", short_help='Compress a file with idzip, a gzip-compatible format with random access support')

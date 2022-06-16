@@ -59,7 +59,8 @@ def to_mgf(reader, outstream, msn_filters=None):
     progbar = progress(
         reader,
         label="Processed Spectra", length=n_spectra,
-        item_show_func=lambda x: str(x.id) if x else '')
+        item_show_func=lambda x: str(x.id) if x else '',
+        color=True, fill_char=click.style('-', 'green'))
     with progbar:
         for scan in progbar:
             if scan.ms_level == 1:
@@ -161,7 +162,7 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
         elif isinstance(default_activation, dict):
             default_activation = activation_module.ActivationInformation(**default_activation)
         else:
-            click.secho("Could not convert %r into ActivationInformation" % (default_activation, ), err=1,
+            click.secho(f"Could not convert {default_activation} into ActivationInformation", err=1,
                         fg='yellow')
             default_activation = None
     if pick_peaks:
@@ -174,7 +175,8 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
     progbar = progress(
         label="Processed Spectra", length=n_spectra,
         item_show_func=lambda x: str(x.precursor.id if x.precursor else
-                                     x.products[0].id) if x else '')
+                                     x.products[0].id) if x else '',
+        color=True, fill_char=click.style('-', 'green'))
     with progbar:
         for bunch in reader:
             progbar.current_item = bunch
@@ -208,7 +210,6 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
                 bunch.precursor.peak_set = None
             writer.save_scan_bunch(bunch)
     writer.complete()
-    writer.format()
 
 
 @ms_conversion.command("mzml", short_help="Convert a mass spectrometry data file to mzML")
@@ -287,7 +288,11 @@ try:
         """
         use_index = True
         if source == "-":
-            click.secho("Reading input file from STDIN, some file formats will not be supported.", err=True, fg='yellow')
+            click.secho(
+                "Reading input file from STDIN, some file formats will not be supported.",
+                err=True,
+                fg='yellow'
+            )
             source = PreBufferedStreamReader(click.open_file(source, mode='rb'))
             # Cannot use the offset index of a file we cannot seek through
             use_index = False

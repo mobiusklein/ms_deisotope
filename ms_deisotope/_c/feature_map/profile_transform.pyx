@@ -67,8 +67,29 @@ def interpolate(xs, ys, n=200):
     return new_xs, new_ys
 
 
-cdef object sliding_mean(np.ndarray[double, ndim=1, mode='c'] ys):
-    return (np.concatenate((ys[1:], [0])) + ys + np.concatenate(([0], ys[:-1]))) / 3
+cpdef sliding_mean(np.ndarray[cython.floating, ndim=1, mode='c'] ys):
+    cdef:
+        size_t i, n
+        np.npy_intp knd
+        np.ndarray[double, ndim=1, mode='c'] result
+        double vlo, v, vhi
+
+    n = ys.shape[0]
+    knd = n
+    result = np.PyArray_ZEROS(1, &knd, np.NPY_FLOAT64, 0)
+    for i in range(n):
+        if i == 0:
+            vlo = 0
+        else:
+            vlo = ys[i - 1]
+        v = ys[i]
+        if i == (n - 1):
+            vhi = 0
+        else:
+            vhi = ys[i + 1]
+        result[i] = (vlo + v + vhi) / 3
+    return result
+
 
 
 cdef object sliding_median(np.ndarray[double, ndim=1, mode='c'] ys):
@@ -96,7 +117,7 @@ cpdef size_t binsearch(np.ndarray[double, ndim=1, mode='c'] array, double value)
     lo = 0
     hi = array.shape[0]
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         point = array[mid]
         if value == point:
             return mid
@@ -145,9 +166,9 @@ cpdef np.ndarray[double, ndim=1, mode='c'] smooth_leveled(
     if level == 0:
         return ys
     elif level == 1:
-        return sliding_mean(ys)
+        return sliding_mean[double](ys)
     elif level == 2:
-        return sliding_mean(sliding_median(ys))
+        return sliding_mean[double](sliding_median(ys))
     elif level == 3:
         return gaussian_smooth(xs, ys, 0.05)
     else:
@@ -265,7 +286,7 @@ cdef class ProfileSplitter(object):
 
         xs = self.xs
         ys = self.ys
-        ys = sliding_mean(ys)
+        ys = sliding_mean[double](ys)
         if len(xs) > interpolate_past:
             xs, ys = self.interpolate(xs, ys, interpolate_past)
         if smooth:
@@ -385,3 +406,66 @@ def split_valleys(profiles, scale=0.3, n_levels=2):
                 out.append(case)
         profiles = out
     return profiles
+
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+cdef size_t binsearch_view(cython.floating[::1] array, cython.floating x) nogil:
+    cdef:
+        size_t lo, hi, mid
+        cython.floating y, err
+
+    lo = 0
+    hi = array.shape[0]
+
+    while hi != lo:
+        mid = (hi + lo) / 2
+        y = array[mid]
+        err = y - x
+        if hi - lo == 1:
+            return mid
+        elif err > 0:
+            hi = mid
+        else:
+            lo = mid
+    return 0
+
+
+ctypedef fused floating1:
+    float
+    double
+
+ctypedef fused floating2:
+    float
+    double
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+cpdef double interpolate_point(floating1[::1] time, floating2[::1] intensity, double x):
+    cdef:
+        size_t i, j, n
+        double contrib, tmp
+        double time_j, time_j1
+        double inten_j, inten_j1
+
+    j = binsearch_view(time, x)
+    time_j = time[j]
+    if time_j <= x and j + 1 < time.shape[0]:
+        time_j1 = time[j + 1]
+        inten_j = intensity[j]
+        inten_j1 = intensity[j + 1]
+    elif time_j > x and j > 0:
+        time_j1 = time_j
+        inten_j1 = intensity[j]
+        time_j = time[j - 1]
+        inten_j = time[j - 1]
+    else:
+        return 0.0
+    tmp = time_j1 - time_j
+    if tmp == 0:
+        contrib = 0.0
+    else:
+        contrib = ((inten_j * (time_j1 - x)) + (inten_j1 * (x - time_j))) / (time_j1 - time_j)
+    return contrib

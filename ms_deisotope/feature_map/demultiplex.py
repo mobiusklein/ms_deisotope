@@ -1,34 +1,21 @@
-from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureForest
+from typing import Dict, List, Type, TypeVar, Generic
+
+from ms_deisotope.peak_set import IonMobilityProfileDeconvolutedPeakSolution
+from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
+from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureForest, IonMobilityProfileDeconvolutedLCMSFeatureForest
 from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow
 
-class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(object):
-    '''Aggregate MS2 features per isolation window over the course of a
-    deconvoluted LC-MS/MS run.
 
-    Attributes
-    ----------
-    reader : ProcessedMzMLDeserializer
-        A reader over a deconvoluted LC-MS/MS run
-    minimum_mass : float
-        The mass below which MS2 peaks will be ignored
-    minimum_intensity : float
-        The intensity below which MS2 peaks will be ignored
-    error_tolerance : float
-        The mass error tolerance (PPM) when aggregating peaks into features
-    delta_rt : float
-        The maximum gap size to tolerate in the time dimension
+FeatureForestType = TypeVar(
+    'FeatureForestType', bound=DeconvolutedLCMSFeatureForest)
 
-    '''
 
-    def __init__(self, reader, minimum_mass=80.0, minimum_intensity=10.0, error_tolerance=1e-5, delta_rt=1.0):
-        self.reader = reader
-        self.error_tolerance = error_tolerance
-        self.minimum_mass = minimum_mass
-        self.minimum_intensity = minimum_intensity
-        self.delta_rt = delta_rt
-        self.forest_for_isolation_window = dict()
+class IsolationWindowDemultiplexerBase(Generic[FeatureForestType]):
+    forest_type: Type[FeatureForestType]
+    error_tolerance: float
+    forest_for_isolation_window: Dict[IsolationWindow, FeatureForestType]
 
-    def forest_for(self, isolation_window):
+    def forest_for(self, isolation_window: IsolationWindow) -> FeatureForestType:
         '''Get the :class:`~.DeconvolutedLCMSFeatureForest` for a specific isolation window,
         or if one does not exist, create it.
 
@@ -46,12 +33,11 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(objec
         try:
             forest = self.forest_for_isolation_window[isolation_window]
         except KeyError:
-            forest = DeconvolutedLCMSFeatureForest(
-                error_tolerance=self.error_tolerance)
+            forest = self.forest_type(error_tolerance=self.error_tolerance)
             self.forest_for_isolation_window[isolation_window] = forest
         return forest
 
-    def all_forests_overlapping_window(self, isolation_window):
+    def all_forests_overlapping_window(self, isolation_window: IsolationWindow) -> List[FeatureForestType]:
         '''Get all :class:`~.DeconvolutedLCMSFeatureForest` that are from isolation windows
         which overlap with `isolation_window`.
 
@@ -76,6 +62,39 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(objec
         if len(forests) > 1:
             forests.sort(key=lambda x: x[0].lower_bound)
         return forests
+
+
+class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(IsolationWindowDemultiplexerBase[DeconvolutedLCMSFeatureForest]):
+    '''Aggregate MS2 features per isolation window over the course of a
+    deconvoluted LC-MS/MS run.
+
+    Attributes
+    ----------
+    reader : ProcessedMzMLDeserializer
+        A reader over a deconvoluted LC-MS/MS run
+    minimum_mass : float
+        The mass below which MS2 peaks will be ignored
+    minimum_intensity : float
+        The intensity below which MS2 peaks will be ignored
+    error_tolerance : float
+        The mass error tolerance (PPM) when aggregating peaks into features
+    delta_rt : float
+        The maximum gap size to tolerate in the time dimension
+
+    '''
+    forest_type = DeconvolutedLCMSFeatureForest
+
+    minimum_mass: float
+    minimum_intensity: float
+
+
+    def __init__(self, reader, minimum_mass=80.0, minimum_intensity=10.0, error_tolerance=1e-5, delta_rt=1.0):
+        self.reader = reader
+        self.error_tolerance = error_tolerance
+        self.minimum_mass = minimum_mass
+        self.minimum_intensity = minimum_intensity
+        self.delta_rt = delta_rt
+        self.forest_for_isolation_window = dict()
 
     def handle_scan(self, scan):
         '''Add `scan`'s peaks to the appropriate feature forest by its isolation window.
@@ -143,3 +162,50 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(objec
 
 
 demultiplex_ms2_features = IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection.demultiplex
+
+
+class DemultiplexingIonMobilityProfileDeconvolutedLCMSFeatureForestCollection(IsolationWindowDemultiplexerBase[IonMobilityProfileDeconvolutedLCMSFeatureForest]):
+    forest_type = IonMobilityProfileDeconvolutedLCMSFeatureForest
+
+    reader: IonMobilitySourceRandomAccessFrameSource
+    minimum_mass: float
+    delta_rt: float
+    precursor_forest: IonMobilityProfileDeconvolutedLCMSFeatureForest
+
+    def __init__(self, reader: IonMobilitySourceRandomAccessFrameSource, minimum_mass: float=80.0, error_tolerance: float=1e-5, delta_rt: float=1.0):
+        self.reader = reader
+        self.error_tolerance = error_tolerance
+
+        self.minimum_mass = minimum_mass
+        self.delta_rt = delta_rt
+        self.forest_for_isolation_window = dict()
+
+        self.precursor_forest = self.forest_type(error_tolerance=self.error_tolerance)
+
+    def handle_ms1_frame(self, frame: IonMobilityFrame):
+        time = frame.time
+        for feature in frame.deconvoluted_features:
+            if feature.neutral_mass < self.minimum_mass:
+                continue
+            peak = IonMobilityProfileDeconvolutedPeakSolution.from_feature(feature)
+            self.precursor_forest.handle_peak(peak, time)
+
+    def handle_msn_frame(self, frame: IonMobilityFrame):
+        isolation_window = frame.isolation_window
+        forests = self.all_forests_overlapping_window(isolation_window)
+        time = frame.time
+        for feature in frame.deconvoluted_features:
+            if feature.neutral_mass < self.minimum_mass:
+                continue
+            peak = IonMobilityProfileDeconvolutedPeakSolution.from_feature(feature)
+            for forest in forests:
+                forest.handle_peak(peak, time)
+
+    def complete(self):
+        '''Apply any last post-processing to the feature forests, smoothing
+        overlapping features and breaking gaps.
+        '''
+        self.precursor_forest.smooth_overlaps().split_sparse(self.delta_rt)
+        for _key, forest in self.forest_for_isolation_window.items():
+            forest.smooth_overlaps()
+            forest.split_sparse(self.delta_rt)

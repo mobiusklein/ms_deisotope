@@ -1,20 +1,25 @@
 '''Defines the base class for organizing the multiprocessing deconvolution algorithm
 encapsulating all behaviors from start to finish.
 '''
+import os
 import multiprocessing
 
 from multiprocessing import JoinableQueue
+from typing import Any, Dict, Iterator, List, Optional, Generic, TypeVar
+
+from ms_deisotope.data_source.scan.loader import RandomAccessScanSource
+from ms_deisotope.feature_map.scan_interval_tree import ScanIntervalTree
 
 from ms_deisotope.processor import MSFileLoader
 
 from ms_deisotope.feature_map.quick_index import index as build_scan_index
 from ms_deisotope.task import TaskBase
 
-from .collator import ScanCollator
+from .collator import ScanCollator, T
 from .process import ScanIDYieldingProcess, DeconvolutingScanTransformingProcess
 
 
-class ScanGeneratorBase(object):
+class ScanGeneratorBase(Generic[T]):
     """The partial base class for the type that generates scan processing tasks.
 
     Defines getter and setters for properties expected to be used.
@@ -32,7 +37,15 @@ class ScanGeneratorBase(object):
     ignore_tandem_scans: bool
         Whether or not to ignore MSn scans.
     """
-    def configure_iteration(self, start_scan=None, end_scan=None, max_scans=None):
+    scan_source: Optional[RandomAccessScanSource]
+
+    ms1_averaging: int
+
+    deconvoluting: bool
+    extract_only_tandem_envelopes: bool
+    ignore_tandem_scans: bool
+
+    def configure_iteration(self, start_scan: Optional[int] = None, end_scan: Optional[int] = None, max_scans: Optional[int] = None):
         """Set :attr:`_iterator` to the result of :meth:`make_iterator`
 
         Parameters
@@ -46,7 +59,7 @@ class ScanGeneratorBase(object):
         """
         raise NotImplementedError()
 
-    def make_iterator(self, start_scan=None, end_scan=None, max_scans=None):
+    def make_iterator(self, start_scan: Optional[int] = None, end_scan: Optional[int] = None, max_scans: Optional[int] = None) -> Iterator[T]:
         """Create an :class:`Iterator` object over the scan product stream
 
         Parameters
@@ -69,12 +82,12 @@ class ScanGeneratorBase(object):
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> T:
         if self._iterator is None:
             self._iterator = self.make_iterator()
         return next(self._iterator)
 
-    def next(self):
+    def next(self) -> T:
         return self.__next__()
 
     def close(self):
@@ -97,7 +110,7 @@ class ScanGeneratorBase(object):
     _ms1_averaging = 0
 
     @property
-    def ms1_averaging(self):
+    def ms1_averaging(self) -> int:
         return self._ms1_averaging
 
     @ms1_averaging.setter
@@ -107,7 +120,7 @@ class ScanGeneratorBase(object):
     _ignore_tandem_scans = False
 
     @property
-    def ignore_tandem_scans(self):
+    def ignore_tandem_scans(self) -> bool:
         return self._ignore_tandem_scans
 
     @ignore_tandem_scans.setter
@@ -117,7 +130,7 @@ class ScanGeneratorBase(object):
     _extract_only_tandem_envelopes = False
 
     @property
-    def extract_only_tandem_envelopes(self):
+    def extract_only_tandem_envelopes(self) -> bool:
         return self._extract_only_tandem_envelopes
 
     @extract_only_tandem_envelopes.setter
@@ -125,7 +138,33 @@ class ScanGeneratorBase(object):
         self._extract_only_tandem_envelopes = value
 
 
-class ScanGenerator(TaskBase, ScanGeneratorBase):
+class ScanGenerator(TaskBase, ScanGeneratorBase[T]):
+    ms_file: os.PathLike
+    verbose: bool
+
+    number_of_helpers: int
+    ms1_averaging: int
+
+    scan_ids_exhausted_event: multiprocessing.Event
+    default_precursor_ion_selection_window: float
+
+    ms1_peak_picking_args: Dict[str, Any]
+    msn_peak_picking_args: Dict[str, Any]
+
+    ms1_deconvolution_args: Dict[str, Any]
+    msn_deconvolution_args: Dict[str, Any]
+
+    _scan_interval_tree: ScanIntervalTree
+    _scan_yielder_process: ScanIDYieldingProcess
+    _deconv_process: DeconvolutingScanTransformingProcess
+    _deconv_helpers: List[DeconvolutingScanTransformingProcess]
+
+    _order_manager: ScanCollator[T]
+
+    _input_queue: multiprocessing.Queue
+    _output_queue: multiprocessing.Queue
+
+
     def __init__(self, ms_file, number_of_helpers=4,
                  ms1_peak_picking_args=None, msn_peak_picking_args=None,
                  ms1_deconvolution_args=None, msn_deconvolution_args=None,
@@ -184,8 +223,11 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             for helper in self._deconv_helpers:
                 helper.terminate()
 
+    def _open_ms_file(self, **kwargs):
+        return MSFileLoader(self.ms_file, **kwargs)
+
     def _preindex_file(self):
-        reader = MSFileLoader(self.ms_file, use_index=False)
+        reader = self._open_ms_file(use_index=False)
         try:
             reader.prebuild_byte_offset_file(self.ms_file)
         except AttributeError:
@@ -198,8 +240,8 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             # something else went wrong
             self.error("An error occurred while pre-indexing.", e)
 
-    def _make_interval_tree(self, start_scan, end_scan):
-        reader = MSFileLoader(self.ms_file, decode_binary=False)
+    def _make_interval_tree(self, start_scan: str, end_scan: str):
+        reader = self._open_ms_file(decode_binary=False)
         if start_scan is not None:
             start_ix = reader.get_scan_by_id(start_scan).index
         else:
@@ -213,7 +255,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             reader, self.number_of_helpers + 1, (start_ix, end_ix))
         self._scan_interval_tree = interval_tree
 
-    def _make_transforming_process(self):
+    def _make_transforming_process(self) -> DeconvolutingScanTransformingProcess:
         return DeconvolutingScanTransformingProcess(
             self.ms_file,
             self._input_queue,
@@ -230,13 +272,20 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             deconvolute=self.deconvoluting,
             verbose=self.verbose)
 
-    def _make_collator(self):
+    def _make_collator(self) -> ScanCollator:
         return ScanCollator(
             self._output_queue, self.scan_ids_exhausted_event, self._deconv_helpers,
             self._deconv_process, input_queue=self._input_queue,
             include_fitted=not self.deconvoluting)
 
-    def _initialize_workers(self, start_scan=None, end_scan=None, max_scans=None):
+    def _make_scan_id_yielder(self, start_scan: str, end_scan: str, max_scans: int) -> ScanIDYieldingProcess:
+        return ScanIDYieldingProcess(
+            self.ms_file, self._input_queue, start_scan=start_scan, end_scan=end_scan,
+            max_scans=max_scans, no_more_event=self.scan_ids_exhausted_event,
+            ignore_tandem_scans=self.ignore_tandem_scans, batch_size=1,
+            output_queue=self._output_queue)
+
+    def _initialize_workers(self, start_scan: Optional[str] = None, end_scan: Optional[str] = None, max_scans: Optional[int] = None):
         try:
             self._input_queue = JoinableQueue(int(1e6))
             self._output_queue = JoinableQueue(int(1e6))
@@ -252,10 +301,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
             self._make_interval_tree(start_scan, end_scan)
 
         self._terminate()
-        self._scan_yielder_process = ScanIDYieldingProcess(
-            self.ms_file, self._input_queue, start_scan=start_scan, end_scan=end_scan,
-            max_scans=max_scans, no_more_event=self.scan_ids_exhausted_event,
-            ignore_tandem_scans=self.ignore_tandem_scans, batch_size=1)
+        self._scan_yielder_process = self._make_scan_id_yielder(start_scan, end_scan, max_scans)
         self._scan_yielder_process.start()
 
         self._deconv_process = self._make_transforming_process()
@@ -268,7 +314,7 @@ class ScanGenerator(TaskBase, ScanGeneratorBase):
 
         self._order_manager = self._make_collator()
 
-    def make_iterator(self, start_scan=None, end_scan=None, max_scans=None):
+    def make_iterator(self, start_scan=None, end_scan=None, max_scans=None) -> Iterator[T]:
         self._initialize_workers(start_scan, end_scan, max_scans)
 
         for scan in self._order_manager:

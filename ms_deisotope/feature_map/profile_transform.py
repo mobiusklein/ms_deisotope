@@ -318,9 +318,10 @@ try:
     _split_valleys = split_valleys
     _smooth_leveled = smooth_leveled
     _gaussian_smooth = gaussian_smooth
+    _sliding_mean = sliding_mean
 
     from ms_deisotope._c.feature_map.profile_transform import (
         ProfileSplitter, ValleyPoint, split_valleys,
-        gaussian_smooth, smooth_leveled)
+        gaussian_smooth, smooth_leveled, sliding_mean)
 except ImportError:
     has_c = False

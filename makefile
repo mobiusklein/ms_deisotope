@@ -1,11 +1,18 @@
 dev:
 	pip install -e . --no-build-isolation -v
 
+clean:
+	@-rm ms_deisotope/_c/*.pyd
+	@-rm ms_deisotope/_c/*/*.pyd
+	@-rm ms_deisotope/_c/*.pdb
+	@-rm ms_deisotope/_c/*/*.pdb
+	@-rm -rf build
+
 test:
-	py.test -v  ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
+	py.test -v ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
 
 retest:
-	py.test -v ms_deisotope --lf
+	py.test -v ms_deisotope --lf --pdb
 
 
 update-cv-lists:

@@ -39,3 +39,7 @@ from .composition_list import (
     CompositionListPeakDependenceGraphDeconvoluter)
 
 from .api import deconvolute_peaks
+
+from .peak_retention_strategy import (
+    TopNRetentionStrategy,
+    simple_peak_retention)

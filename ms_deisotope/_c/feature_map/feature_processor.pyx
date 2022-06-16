@@ -8,6 +8,7 @@ cdef extern from "numpy/npy_math.h":
 
 cimport cython
 
+from cpython cimport PyErr_SetString
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_Append, PyList_GetItem, PyList_SetItem, PyList_New
 from ms_peak_picker._c.peak_set cimport FittedPeak
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak, _isotopic_variants
@@ -51,10 +52,13 @@ cdef object double_vector_to_ndarray(dvec* vec):
 
     n = shape[0] = vec.used
     # out = np.PyArray_SimpleNew(1, shape, np.NPY_DOUBLE)
-    out = zeros(shape[0])
+    out = zeros(n)
     for i in range(n):
         out[i] = vec.v[i]
-    return out
+    # The NDArray returned here seems to get corrupted somehow.
+    # Converting it to a managed object here and converting it back
+    # into a NumPy array later at smooth_leveled seems to prevent it.
+    return tuple(out)
 
 
 @cython.final
@@ -67,7 +71,7 @@ cdef class CartesianProductIterator(object):
         public bint done
         public size_t total_combinations
 
-    cdef inline void _initialize(self, list collections):
+    cdef inline int _initialize(self, list collections) except 1:
         cdef:
             size_t i, n
             list sublist
@@ -75,7 +79,11 @@ cdef class CartesianProductIterator(object):
         self.collections = collections
         self.size = PyList_GET_SIZE(self.collections)
         self.lengths = <int*>malloc(sizeof(int) * self.size)
+        if self.lengths == NULL:
+            PyErr_SetString(MemoryError, "Failed to allocate length array in CartesianProductIterator")
         self.indices = <int*>malloc(sizeof(int) * self.size)
+        if self.indices == NULL:
+            PyErr_SetString(MemoryError, "Failed to allocate indices array in CartesianProductIterator")
         self.done = False
         self.total_combinations = 1
 
@@ -249,7 +257,7 @@ cdef int has_no_valid_features(list features):
     return cnt == n
 
 
-cdef size_t MAX_COMBINATIONS = 10000 / 2
+cdef size_t MAX_COMBINATIONS = 10000 // 2
 
 
 cdef class LCMSFeatureProcessorBase(object):
@@ -403,10 +411,10 @@ cdef class LCMSFeatureProcessorBase(object):
         missing_features = 0
         feat_n = PyList_GET_SIZE(features)
         for feat_i in range(feat_n):
-            f = <LCMSFeature>PyList_GET_ITEM(features, feat_i)
+            f = <LCMSFeature?>PyList_GET_ITEM(features, feat_i)
             if f is None:
                 missing_features += 1
-        f = <LCMSFeature>PyList_GET_ITEM(features, 0)
+        f = <LCMSFeature?>PyList_GET_ITEM(features, 0)
         neutral_mass = calc_neutral_mass(
                 f.get_mz(), charge, charge_carrier)
         scores_array = double_vector_to_ndarray(score_vec)
@@ -427,7 +435,7 @@ cdef class LCMSFeatureProcessorBase(object):
             double score, final_score, score_acc, neutral_mass
             list feature_groups, feature_fits, features
             list eid, cleaned_eid, tid
-            np.ndarray scores_array, times_array
+            object scores_array, times_array
             tuple temp
             size_t combn_size, combn_i, n_missing, missing_features, counter
             TheoreticalIsotopicPattern snapped_tid
@@ -459,11 +467,14 @@ cdef class LCMSFeatureProcessorBase(object):
                     combn_i, mz, charge, "-" if feature is None else (
                         "%0.2f-%0.2f" % (feature.start_time, feature.end_time)),
                     100. * combn_i / combn_iter.total_combinations))
+
             if has_no_valid_features(features):
                 continue
             # If the monoisotopic feature wasn't actually observed, create a dummy feature
             # since the monoisotopic feature cannot be None
+            # print("Checking monoisotopic feature")
             if features[0] is None:
+                # print("Creating monoisotopic feature stub")
                 features = list(features)
                 features[0] = EmptyFeature._create(mz)
                 snapped_tid = base_tid.clone().shift(mz)
@@ -477,7 +488,7 @@ cdef class LCMSFeatureProcessorBase(object):
 
             score_vec = make_double_vector()
             time_vec = make_double_vector()
-
+            # print("Scoring features")
             while feat_iter.has_more():
                 eid = feat_iter.get_next_value()
                 if eid is None:
@@ -497,10 +508,15 @@ cdef class LCMSFeatureProcessorBase(object):
                 score_acc += score
                 double_vector_append(score_vec, score)
                 double_vector_append(time_vec, feat_iter.get_current_time())
-
+            if score_vec.used == 0:
+                free_double_vector(score_vec)
+                free_double_vector(time_vec)
+                continue
+            # print(f"Scored over {counter} points")
             # Compute feature score from score_vec
             final_score = self._find_thresholded_score(
                 score_vec, threshold_scale)
+            # print(f"Final Score {final_score}")
             missing_features = 0
             feat_n = PyList_GET_SIZE(features)
             for feat_i in range(feat_n):
@@ -510,8 +526,11 @@ cdef class LCMSFeatureProcessorBase(object):
             f = <LCMSFeature>PyList_GET_ITEM(features, 0)
             neutral_mass = calc_neutral_mass(
                     snapped_tid.get_monoisotopic_mz(), charge, charge_carrier)
+            # print("Preparing to hand off arrays")
             scores_array = double_vector_to_ndarray(score_vec)
             times_array = double_vector_to_ndarray(time_vec)
+            # print("Creating fit")
+
             fit = LCMSFeatureSetFit._create(
                 features, snapped_tid,
                 final_score, charge,
@@ -520,11 +539,13 @@ cdef class LCMSFeatureProcessorBase(object):
                 counter, scores_array,
                 times_array)
 
+            # print("Freeing arrays")
             free_double_vector(score_vec)
             free_double_vector(time_vec)
             if self.scorer.reject_score(fit.score):
                 continue
             feature_fits.append(fit)
+        # print(f"Completed generating fits for {mz} @ {charge}: {combn_i}")
         return feature_fits
 
     cpdef list _fit_feature_set(self, double mz, double error_tolerance, int charge, int left_search=1,
@@ -535,10 +556,12 @@ cdef class LCMSFeatureProcessorBase(object):
             TheoreticalIsotopicPattern base_tid
         base_tid = self.create_theoretical_distribution(
             mz, charge, charge_carrier, truncate_after)
+        # print(f"Fitting feature set for {mz} at charge {charge}")
         feature_fits = self._fit_theoretical_distribution_on_features(
             mz, error_tolerance, charge, base_tid,
             charge_carrier, truncate_after, max_missed_peaks, threshold_scale,
             feature)
+        # print(f"Fitted {len(feature_fits)}")
         return feature_fits
 
     cpdef list _fit_composition(self, dict composition, double error_tolerance, int charge, double charge_carrier=PROTON,

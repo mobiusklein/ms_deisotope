@@ -1,20 +1,25 @@
 from __future__ import print_function
+
 import logging
+import logging.handlers
 import multiprocessing
+import sys
 import threading
 import traceback
-import six
+import re
+
+from typing import Dict
 
 from datetime import datetime
+
+from queue import Empty
+
 
 logger = logging.getLogger("ms_deisotope.task")
 
 
 def ensure_text(obj):
-    if six.PY2:
-        return unicode(obj)
-    else:
-        return str(obj)
+    return str(obj)
 
 
 def fmt_msg(*message):
@@ -62,6 +67,8 @@ class CallInterval(object):
         while not self.stopped.wait(self.interval):
             try:
                 self.call_target(*self.args)
+            except (KeyboardInterrupt, SystemExit):
+                self.stop()
             except Exception as e:
                 logger.exception("An error occurred in %r", self, exc_info=e)
 
@@ -96,6 +103,7 @@ class MessageSpooler(object):
         self.message_queue = multiprocessing.Queue()
         self.halting = False
         self.thread = threading.Thread(target=self.run)
+        self.thread.daemon = True
         self.thread.start()
 
     def run(self):
@@ -103,7 +111,7 @@ class MessageSpooler(object):
             try:
                 message = self.message_queue.get(True, 2)
                 self.handler(*message)
-            except Exception:
+            except Empty:
                 continue
 
     def stop(self):
@@ -140,6 +148,8 @@ class LogUtilsMixin(object):
     debug_print_fn = debug_printer
     error_print_fn = printer
     warn_print_fn = printer
+
+    _debug_enabled = None
 
     @classmethod
     def log_with_logger(cls, logger):
@@ -188,6 +198,8 @@ class LogUtilsMixin(object):
 class ProgressUpdater(LogUtilsMixin):
     def __init__(self, *args, **kwargs):
         kwargs['item_show_func'] = self._prepare_message
+        kwargs.setdefault("color", True)
+        kwargs.setdefault("fill_char", click.style('-', 'blue'))
         try:
             import click
             self.progress_bar = click.progressbar(*args, **kwargs)
@@ -243,3 +255,114 @@ class ProgressUpdater(LogUtilsMixin):
             self.progress_bar.update(i)
         if message:
             self.log(*message)
+
+
+class ProcessAwareFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        d = record.__dict__
+        try:
+            if d['processName'] == "MainProcess":
+                d['maybeproc'] = ''
+            else:
+                d['maybeproc'] = ":%s:" % d['processName'].replace(
+                    "Process", '')
+        except KeyError:
+            d['maybeproc'] = ''
+        return super(ProcessAwareFormatter, self).format(record)
+
+
+class LevelAwareColoredLogFormatter(ProcessAwareFormatter):
+    try:
+        from colorama import Fore, Style
+        # GREY = Fore.WHITE
+        GREY = ''
+        BLUE = Fore.BLUE
+        GREEN = Fore.GREEN
+        YELLOW = Fore.YELLOW
+        RED = Fore.RED
+        BRIGHT = Style.BRIGHT
+        DIM = Style.DIM
+        BOLD_RED = Fore.RED + Style.BRIGHT
+        RESET = Style.RESET_ALL
+    except ImportError:
+        GREY = ''
+        BLUE = ''
+        GREEN = ''
+        YELLOW = ''
+        RED = ''
+        BRIGHT = ''
+        DIM = ''
+        BOLD_RED = ''
+        RESET = ''
+
+    def _colorize_field(self, fmt: str, field: str, color: str) -> str:
+        return re.sub("(" + field + ")", color + r"\1" + self.RESET, fmt)
+
+
+    def _patch_fmt(self, fmt: str, level_color: str) -> str:
+        fmt = self._colorize_field(fmt, r"%\(asctime\)s", self.GREEN)
+        fmt = self._colorize_field(fmt, r"%\(name\).*?s", self.BLUE)
+        fmt = self._colorize_field(fmt, r"%\(message\).*?s", self.GREY)
+        if level_color:
+            fmt = self._colorize_field(fmt, r"%\(levelname\).*?s", level_color)
+        return fmt
+
+    def __init__(self, fmt, level_color=None, **kwargs):
+        fmt = self._patch_fmt(fmt, level_color=level_color)
+        super().__init__(fmt, **kwargs)
+
+
+class ColoringFormatter(logging.Formatter):
+    level_to_color = {
+        logging.INFO: LevelAwareColoredLogFormatter.GREEN,
+        logging.DEBUG: LevelAwareColoredLogFormatter.GREY + LevelAwareColoredLogFormatter.DIM,
+        logging.WARN: LevelAwareColoredLogFormatter.YELLOW + LevelAwareColoredLogFormatter.BRIGHT,
+        logging.ERROR: LevelAwareColoredLogFormatter.BOLD_RED,
+        logging.CRITICAL: LevelAwareColoredLogFormatter.BOLD_RED,
+        logging.FATAL: LevelAwareColoredLogFormatter.RED + LevelAwareColoredLogFormatter.DIM,
+    }
+
+    _formatters: Dict[int, LevelAwareColoredLogFormatter]
+
+    def __init__(self, fmt: str, **kwargs):
+        self._formatters = {}
+        for level, style in self.level_to_color.items():
+            self._formatters[level] = LevelAwareColoredLogFormatter(fmt, level_color=style, **kwargs)
+
+    def format(self, record: logging.LogRecord) -> str:
+        fmtr = self._formatters[record.levelno]
+        return fmtr.format(record)
+
+
+
+def init_logging(filename=None, queue=None):
+    logging.basicConfig(
+        level="INFO", format='[%(asctime)s] %(levelname)s: %(message)s',
+        datefmt="%H:%M:%S", handlers=[]
+    )
+    logging.captureWarnings(True)
+
+    logger = logging.getLogger('ms_deisotope')
+    format_string = '[%(asctime)s] %(levelname).1s | %(name)s | %(message)s'
+    formatter = ProcessAwareFormatter(format_string, datefmt="%H:%M:%S")
+    colorized_formatter = ColoringFormatter(format_string, datefmt="%H:%M:%S")
+
+    # If there was a queue, don't add any other handlers, route all logging through
+    # the queue
+    if queue:
+        queue_handler = logging.handlers.QueueHandler(queue)
+        queue_handler.setFormatter(formatter)
+        logger.addHandler(queue_handler)
+    else:
+        # Otherwise, configure handlers for `ms_deisotope`
+        stderr_handler = logging.StreamHandler(sys.stderr)
+        if sys.stderr.isatty():
+            stderr_handler.setFormatter(colorized_formatter)
+        else:
+            stderr_handler.setFormatter(formatter)
+        logger.addHandler(stderr_handler)
+        if filename:
+            file_handler = logging.FileHandler(filename=filename, mode='w', encoding='utf8')
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+    LogUtilsMixin.log_with_logger(logger)

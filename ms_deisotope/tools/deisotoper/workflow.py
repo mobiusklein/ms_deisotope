@@ -1,18 +1,26 @@
+from os import PathLike
+from typing import Dict, Any, Optional, Type
+
 import ms_deisotope
+from ms_deisotope.data_source.scan.loader import ScanDataSource
 from ms_deisotope.task import TaskBase
 
-from .output import ThreadedMzMLScanStorageHandler, NullScanStorageHandler
+from .output import ThreadedMzMLScanStorageHandler, NullScanStorageHandler, ScanStorageHandlerBase
 from .scan_generator import ScanGenerator
 
 
 class ScanSink(object):
-    def __init__(self, scan_generator, storage_type=NullScanStorageHandler):
+    scan_generator: ScanGenerator
+    scan_store: ScanStorageHandlerBase
+    _scan_store_type: Type[ScanStorageHandlerBase]
+
+    def __init__(self, scan_generator: ScanGenerator, storage_type: Type[ScanStorageHandlerBase] = NullScanStorageHandler):
         self.scan_generator = scan_generator
         self.scan_store = None
         self._scan_store_type = storage_type
 
     @property
-    def scan_source(self):
+    def scan_source(self) -> Optional[PathLike]:
         try:
             return self.scan_generator.scan_source
         except AttributeError:
@@ -25,7 +33,7 @@ class ScanSink(object):
         except AttributeError:
             return None
 
-    def configure_storage(self, storage_path=None, name=None, source=None):
+    def configure_storage(self, storage_path: PathLike=None, name: Optional[str]=None, source: Optional[ScanDataSource]=None):
         self.scan_store = self._scan_store_type.configure_storage(
             storage_path, name, source)
 
@@ -48,9 +56,6 @@ class ScanSink(object):
     def next_scan(self):
         scan = next(self.scan_generator)
         self.store_scan(scan)
-        while scan.ms_level != 1:
-            scan = next(self.scan_generator)
-            self.store_scan(scan)
         return scan
 
     def __iter__(self):
@@ -64,13 +69,34 @@ class ScanSink(object):
 
 
 class SampleConsumer(TaskBase):
-    MS1_ISOTOPIC_PATTERN_WIDTH = 0.95
-    MS1_IGNORE_BELOW = 0.05
-    MSN_ISOTOPIC_PATTERN_WIDTH = 0.80
-    MSN_IGNORE_BELOW = 0.05
+    MS1_ISOTOPIC_PATTERN_WIDTH: float = 0.95
+    MS1_IGNORE_BELOW: float = 0.05
+    MSN_ISOTOPIC_PATTERN_WIDTH: float = 0.80
+    MSN_IGNORE_BELOW: float = 0.05
 
-    MS1_SCORE_THRESHOLD = 20.0
-    MSN_SCORE_THRESHOLD = 10.0
+    MS1_SCORE_THRESHOLD: float = 20.0
+    MSN_SCORE_THRESHOLD: float = 10.0
+
+    storage_type: Type[ScanStorageHandlerBase]
+    scan_generator: ScanGenerator
+
+    ms1_processing_args: Dict[str, Dict[str, Any]]
+    msn_processing_args: Dict[str, Dict[str, Any]]
+
+    ms1_averaging: int
+    extract_only_tandem_envelopes: bool
+    ignore_tandem_scans: bool
+    deconvolute: bool
+
+    n_processes: int
+
+    start_scan_id: str
+    end_scan_id: str
+    start_scan_time: float
+    end_scan_time: float
+
+    verbose: bool
+
 
     def __init__(self, ms_file,
                  ms1_peak_picking_args=None, msn_peak_picking_args=None, ms1_deconvolution_args=None,
@@ -78,7 +104,7 @@ class SampleConsumer(TaskBase):
                  sample_name=None, storage_type=None, n_processes=5,
                  extract_only_tandem_envelopes=False, ignore_tandem_scans=False,
                  ms1_averaging=0, default_precursor_ion_selection_window=1.5,
-                 deconvolute=True, verbose=False):
+                 deconvolute=True, verbose=False, start_scan_time=None, end_scan_time=None):
 
         if storage_type is None:
             storage_type = ThreadedMzMLScanStorageHandler
@@ -125,6 +151,8 @@ class SampleConsumer(TaskBase):
 
         self.start_scan_id = start_scan_id
         self.end_scan_id = end_scan_id
+        self.start_scan_time = start_scan_time
+        self.end_scan_time = end_scan_time
 
         self.sample_run = None
 
@@ -173,17 +201,22 @@ class SampleConsumer(TaskBase):
 
         self.log("Begin Processing")
         last_scan_time = 0
-        last_scan_index = 0
         i = 0
         for scan in sink:
             i += 1
             if (scan.scan_time - last_scan_time > 1.0) or (i % 1000 == 0):
-                self.log("Processed %s (time: %f)" % (
-                    scan.id, scan.scan_time,))
-                if last_scan_index != 0:
-                    self.log("Count Since Last Log: %d" % (scan.index - last_scan_index,))
+                percent_complete = None
+                if self.end_scan_time is not None:
+                    percent_complete = (
+                        scan.scan_time - self.start_scan_time) / (self.end_scan_time - self.start_scan_time)
+                if percent_complete is not None:
+                    self.log("Processed %s (time: %0.3f %0.2f%% Done)" % (
+                        scan.id, scan.scan_time, percent_complete * 100))
+                else:
+                    self.log("Processed %s (time: %0.3f)" % (
+                        scan.id, scan.scan_time,))
                 last_scan_time = scan.scan_time
-                last_scan_index = scan.index
+
         self.log("Finished Recieving Scans")
         sink.complete()
         self.log("Completed Sample %s" % (self.sample_name,))

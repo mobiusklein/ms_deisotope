@@ -201,7 +201,7 @@ cdef class LCMSFeatureMap(object):
                 node = <LCMSFeatureTreeNode>feature.getitem(j)
                 time = node.time
                 q = node.get_members_size()
-                for k in range(k):
+                for k in range(q):
                     peak = <PeakBase>node.getitem(k)
                     ion_mobility_array.append(time)
                     mz_array.append(peak.mz)
@@ -243,7 +243,7 @@ cpdef tuple binary_search_with_flag(list array, double mz, double error_toleranc
     lo = 0
     n = hi = len(array)
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         x = <LCMSFeature>PyList_GET_ITEM(array, mid)
         err = (x.get_mz() - mz) / mz
         if abs(err) <= error_tolerance:

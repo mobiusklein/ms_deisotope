@@ -37,26 +37,33 @@ with fewer configurable parameters.
     print(bunch.precursor.deconvoluted_peak_set)
 '''
 import logging
+import os
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+import warnings
 
 from six import string_types as basestring
 
 import numpy as np
 
-from ms_peak_picker import pick_peaks, PeakSet, PeakIndex
+from ms_peak_picker import pick_peaks, PeakSet, PeakIndex, FittedPeak
 from ms_peak_picker.scan_filter import FTICRBaselineRemoval
 
 from ms_deisotope import constants
+from ms_deisotope.data_source.scan.base import PrecursorInformation
+from ms_deisotope.data_source.scan.loader import RandomAccessScanSource, ScanIterator
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
+
 from .averagine import AveragineCache, peptide, PROTON
 from .scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 from .deconvolution import deconvolute_peaks
-from .data_source import MSFileLoader, ScanIterator
+from .data_source import MSFileLoader
 from .data_source.common import Scan, ScanBunch, ChargeNotProvided
-from .utils import Base
+from .utils import Base, TargetedDeconvolutionResultBase
 from .peak_dependency_network import NoIsotopicClustersError
 from .qc.isolation import PrecursorPurityEstimator
 from .task import LogUtilsMixin
 
-logger = logging.getLogger("deconvolution_scan_processor")
+logger = logging.getLogger("ms_deisotope.scan_processor")
 logger.addHandler(logging.NullHandler())
 
 
@@ -162,9 +169,9 @@ class PriorityTarget(Base):
             self.mz, self.peak.intensity, self.charge)
 
 
-def _loader_creator(specification):
+def _loader_creator(specification, **kwargs):
     if isinstance(specification, basestring):
-        return MSFileLoader(specification)
+        return MSFileLoader(specification, **kwargs)
     elif isinstance(specification, ScanIterator):
         return specification
     else:
@@ -231,12 +238,14 @@ class ScanProcessor(Base, LogUtilsMixin):
         :attr:`loader_type` on :attr:`data_source`.
     ms1_deconvolution_args : :class:`dict`
         The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MS1
-        scans.
+        scans. This dictionary's keys should match the arguments of :func:`~ms_deisotope.deconvolution.deconvolute_peaks`,
+        all other arguments are passed through to configure the deconvoluter or will be ignored.
     ms1_peak_picking_args : :class:`dict`
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS1 scans.
     msn_deconvolution_args : :class:`dict`
         The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MSn
-        scans.
+        scans. This dictionary's keys should match the arguments of :func:`~ms_deisotope.deconvolution.deconvolute_peaks`,
+        all other arguments are passed through to configure the deconvoluter or will be ignored.
     msn_peak_picking_args : :class:`dict`
         The arguments passed to :func:`ms_peak_picker.pick_peaks` for MSn scans.
     pick_only_tandem_envelopes : :class:`bool`
@@ -256,6 +265,27 @@ class ScanProcessor(Base, LogUtilsMixin):
     ms1_averaging: :class:`int`
         The number of adjacent MS1 scans to average prior to picking peaks.
     """
+
+    data_source: Union[os.PathLike, ScanIterator, RandomAccessScanSource]
+    loader_type: Callable
+    _signal_source: Union[ScanIterator, RandomAccessScanSource]
+
+    pick_only_tandem_envelopes: bool
+    envelope_selector: Callable
+
+    ms1_averaging: int
+    ms1_peak_picking_args: Dict[str, Any]
+    msn_peak_picking_args: Dict[str, Any]
+
+    ms1_deconvolution_args: Dict[str, Any]
+    msn_deconvolution_args: Dict[str, Any]
+
+    default_precursor_ion_selection_window: float
+    trust_charge_hint: bool
+    terminate_on_error: bool
+    respect_isolation_window: bool
+    too_many_peaks_threshold: int
+
 
     def __init__(self, data_source, ms1_peak_picking_args=None,
                  msn_peak_picking_args=None,
@@ -352,7 +382,7 @@ class ScanProcessor(Base, LogUtilsMixin):
                     charge_carrier=msn_charge_carrier)
             self.msn_deconvolution_args['averagine'] = averagine
 
-    def _reject_candidate_precursor_peak(self, peak, product_scan):
+    def _reject_candidate_precursor_peak(self, peak: Union[DeconvolutedPeak, FittedPeak], product_scan: Scan) -> bool:
         isolation = product_scan.isolation_window
         if isolation is None or isolation.is_empty():
             pinfo = product_scan.precursor_information
@@ -362,7 +392,7 @@ class ScanProcessor(Base, LogUtilsMixin):
             return peak.mz not in isolation and self.respect_isolation_window
 
     @property
-    def reader(self):
+    def reader(self) -> ScanIterator:
         '''The :class:`~.ScanIterator` which generates the raw scans that will
         be processed.
 
@@ -372,7 +402,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         '''
         return self._signal_source
 
-    def _get_envelopes(self, precursor_scan):
+    def _get_envelopes(self, precursor_scan: Scan) -> Optional[List[Tuple[float, float]]]:
         """Get the m/z intervals to pick peaks from for the
         given MS1 scan
 
@@ -393,7 +423,7 @@ class ScanProcessor(Base, LogUtilsMixin):
             chosen_envelopes = self.envelope_selector(precursor_scan)
         return chosen_envelopes
 
-    def _pick_precursor_scan_peaks(self, precursor_scan, chosen_envelopes=None):
+    def _pick_precursor_scan_peaks(self, precursor_scan: Scan, chosen_envelopes: Optional[List[Tuple[float, float]]]=None) -> Union[PeakIndex, PeakSet]:
         """Pick peaks from the given precursor scan
 
         Parameters
@@ -422,7 +452,7 @@ class ScanProcessor(Base, LogUtilsMixin):
                                     **self.ms1_peak_picking_args)
         return prec_peaks
 
-    def _average_ms1(self, precursor_scan):
+    def _average_ms1(self, precursor_scan: Scan) -> Union[PeakIndex, PeakSet]:
         """Average signal from :attr:`self.ms1_averaging` scans from
         before and after ``precursor_scan`` and pick peaks from the
         averaged arrays.
@@ -443,7 +473,7 @@ class ScanProcessor(Base, LogUtilsMixin):
                                 **self.ms1_peak_picking_args)
         return prec_peaks
 
-    def pick_precursor_scan_peaks(self, precursor_scan):
+    def pick_precursor_scan_peaks(self, precursor_scan: Scan) -> Union[PeakIndex, PeakSet]:
         """Picks peaks for the given ``precursor_scan`` using the
         appropriate strategy.
 
@@ -470,7 +500,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         precursor_scan.peak_set = prec_peaks
         return prec_peaks
 
-    def pick_product_scan_peaks(self, product_scan):
+    def pick_product_scan_peaks(self, product_scan: Scan) -> Union[PeakIndex, PeakSet]:
         """Pick the peaks of product scan
 
         Parameters
@@ -496,42 +526,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         product_scan.peak_set = peaks
         return peaks
 
-    def get_precursor_peak_for_product_scans(self, precursor_scan):  # pragma: no cover
-        """A utility method to obtain :class:`PriorityTarget` objects for
-        each product scan of `precursor_scan`.
-
-        Parameters
-        ----------
-        precursor_scan: :class:`~.Scan`
-            The scan to extract.
-
-        Returns
-        -------
-        :class:`list` of :class:`PriorityTarget`
-        """
-        priorities = []
-        peaks = precursor_scan.peak_set
-        for scan in precursor_scan.product_scans:
-            precursor_ion = scan.precursor_information
-            if peaks is None:
-                peaks = self.pick_precursor_scan_peaks(precursor_scan)
-            peak, _ = peaks.get_nearest_peak(precursor_ion.mz)
-            precursor_ion.peak = peak
-            target = PriorityTarget(
-                peak,
-                precursor_ion,
-                self.trust_charge_hint,
-                isolation_window=scan.isolation_window)
-            if self._reject_candidate_precursor_peak(peak, scan):
-                self.log(
-                    "Unable to locate a peak for precursor ion %r for tandem scan %s of precursor scan %s" % (
-                        precursor_ion, scan.title,
-                        precursor_scan.title))
-            else:
-                priorities.append(target)
-        return priorities
-
-    def process_scan_group(self, precursor_scan, product_scans):
+    def process_scan_group(self, precursor_scan: Scan, product_scans: List[Scan]) -> Tuple[Scan, List[PriorityTarget], List[Scan]]:
         """Performs the initial extraction of information relating
         `precursor_scan` to `product_scans` and picks peaks for ``precursor_scan``.
         Called by :meth:`process`. May be used separately if doing the process step
@@ -562,7 +557,7 @@ class ScanProcessor(Base, LogUtilsMixin):
                 "Could not pick peaks for empty precursor scan", self)
 
         for scan in product_scans:
-            precursor_ion = scan.precursor_information
+            precursor_ion: PrecursorInformation = scan.precursor_information
             if precursor_ion is None:
                 continue
             peak = prec_peaks.has_peak(precursor_ion.mz)
@@ -588,12 +583,12 @@ class ScanProcessor(Base, LogUtilsMixin):
 
         return precursor_scan, priorities, product_scans
 
-    def _default_all_precursor_information(self, scans):
+    def _default_all_precursor_information(self, scans: List[Scan]):
         for scan in scans:
             if scan.ms_level > 1:
                 scan.precursor_information.default(orphan=True)
 
-    def deconvolute_precursor_scan(self, precursor_scan, priorities=None, product_scans=None):
+    def deconvolute_precursor_scan(self, precursor_scan: Scan, priorities: Optional[List[PriorityTarget]]=None, product_scans: Optional[List[Scan]]=None) -> Tuple[DeconvolutedPeakSet, TargetedDeconvolutionResultBase]:
         """Deconvolute the given precursor scan, giving priority to its product ions,
         correcting the :attr:`precursor_information` attributes of priority targets,
         as well as calculating the degree of precursor purity and coisolating ions.
@@ -729,7 +724,7 @@ class ScanProcessor(Base, LogUtilsMixin):
             precursor_information.extract(peak)
         return dec_peaks, priority_results
 
-    def deconvolute_product_scan(self, product_scan):
+    def deconvolute_product_scan(self, product_scan: Scan) -> DeconvolutedPeakSet:
         """Deconvolute the peaks of `product_scan`.
 
         This method will override the upper limit "charge_range" of
@@ -783,7 +778,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         product_scan.deconvoluted_peak_set = dec_peaks
         return dec_peaks
 
-    def _get_next_scans(self):
+    def _get_next_scans(self) -> Tuple[Scan, List[Scan]]:
         bunch = next(self.reader)
         try:
             precursor, products = bunch
@@ -802,7 +797,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
         return precursor, products
 
-    def process(self, precursor, products):
+    def process(self, precursor: Scan, products: List[Scan]) -> ScanBunch:
         """Fully preprocesses the `precursor` and `products` scans, performing
         any necessary information sharing.
 
@@ -834,7 +829,7 @@ class ScanProcessor(Base, LogUtilsMixin):
 
         return ScanBunch(precursor_scan, product_scans)
 
-    def next(self):
+    def next(self) -> ScanBunch:
         """Fetches the next bunch of scans from :attr:`reader` and
         invokes :meth:`process` on them, picking peaks and deconvoluting them.
 
@@ -846,7 +841,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         bunch = self.process(precursor, products)
         return bunch
 
-    def __next__(self):
+    def __next__(self) -> ScanBunch:
         """Fetches the next bunch of scans from :attr:`reader` and
         invokes :meth:`process` on them, picking peaks and deconvoluting them.
 
@@ -856,10 +851,10 @@ class ScanProcessor(Base, LogUtilsMixin):
         """
         return self.next()
 
-    def __iter__(self):
+    def __iter__(self) -> 'ScanProcessor':
         return self
 
-    def pack_next(self):
+    def pack_next(self) -> ScanBunch:
         """As :meth:`next`, except instead of producing :class:`ScanBunch` of
         :class:`Scan` instances, instead it uses :class:`ProcessedScan` to strip away
         much of the heavy information like the raw data arrays.
@@ -872,7 +867,7 @@ class ScanProcessor(Base, LogUtilsMixin):
         precursor_scan, product_scans = self.process(precursor, products)
         return ScanBunch(precursor_scan.pack() if precursor_scan else None, [p.pack() for p in product_scans])
 
-    def start_from_scan(self, *args, **kwargs):
+    def start_from_scan(self, *args, **kwargs) -> 'ScanProcessor':
         """A wrapper around :meth:`~.RandomAccessScanSource.start_from_scan` provided by
         :attr:`reader`, if available.
 
@@ -982,6 +977,9 @@ class EmptyScanError(ValueError):
     """A sub-type of :class:`ValueError` which is used to indicate
     that a spectrum is empty and could not be manipulated.
     """
+
+    scan_id: str
+
     def __init__(self, msg, scan_id=None):
         ValueError.__init__(self, msg)
         self.scan_id = scan_id

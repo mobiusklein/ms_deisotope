@@ -1,15 +1,21 @@
 import re
 import functools
+import io
+import os
+
+from typing import Optional, Union
 
 import numpy as np
 
 from ms_deisotope.data_source.scan.base import RawDataArrays, ChargeNotProvided, PrecursorInformation
 from ms_deisotope.data_source.memory import make_scan
 from ms_deisotope.data_source._compression import get_opener
+from ms_deisotope.data_source.scan.scan import WrappedScan
 
 
-def scan_from_csv(file_handle, delimiter=',', ms_level=2, is_profile=True, polarity=1,
-                  precursor_mz=None, precursor_charge=None, skiprows=None):
+def scan_from_csv(file_handle: Union[io.IOBase, os.PathLike], delimiter: str=',', ms_level: int=2,
+                  is_profile: bool=True, polarity: int=1, precursor_mz: Optional[float]=None,
+                  precursor_charge: Optional[int]=None, skiprows: Optional[int]=None) -> WrappedScan:
     """Read an m/z-intensity point list from a text file stream.
 
     Parameters

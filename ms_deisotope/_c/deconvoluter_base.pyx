@@ -18,7 +18,7 @@ from ms_deisotope._c.averagine cimport (AveragineCache, isotopic_shift, PROTON,
 from ms_deisotope._c.peak_set cimport DeconvolutedPeak
 from ms_deisotope._c.peak_dependency_network.peak_network cimport PeakDependenceGraphBase
 
-from cpython cimport Py_INCREF
+from cpython cimport Py_INCREF, PyErr_SetString
 from cpython.list cimport PyList_GET_ITEM, PyList_GET_SIZE, PyList_New, PyList_SET_ITEM, PyList_GetSlice
 from cpython.tuple cimport PyTuple_GET_ITEM
 from cpython.int cimport PyInt_AsLong
@@ -664,17 +664,23 @@ cdef class ChargeIterator(object):
         if n == 0:
             self.size = 1
             self.values = <int*>malloc(sizeof(int) * 1)
+            if self.values == NULL:
+                raise MemoryError("Failed to allocate values array for ChargeIterator.sequence_from_quickcharge")
             self.values[0] = self.sign
         elif charges[0] != 1:
             n += 1
             self.size = n
             self.values = <int*>malloc(sizeof(int) * n)
+            if self.values == NULL:
+                raise MemoryError("Failed to allocate values array for ChargeIterator.sequence_from_quickcharge")
             self.values[0] = self.sign
             for i in range(1, n):
                 self.values[i] = self.sign * charges[i - 1]
         else:
             self.size = n
             self.values = <int*>malloc(sizeof(int) * n)
+            if self.values == NULL:
+                raise MemoryError("Failed to allocate values array for ChargeIterator.sequence_from_quickcharge")
             for i in range(n):
                 self.values[i] = self.sign * charges[i]
 

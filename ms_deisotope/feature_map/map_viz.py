@@ -42,24 +42,28 @@ def feature_to_segments(feature):
     return np.concatenate([points[:-1], points[1:]], axis=1), np.array(intensities)
 
 
-def draw_features(features, ax=None, alpha=0.65, norm=None, cmap=None, **kwargs):
+def draw_features(features, ax=None, alpha=0.65, norm=None, cmap=None, cbar=False, **kwargs):
     if norm is None:
-        norm = Normalize(*compute_intensity_range(features))
+        norm = Normalize(0, compute_intensity_range(features)[1])
     if ax is None:
         fig, ax = plt.subplots(1)
     if not features:
         return ax
     lines = []
-    kwargs.setdefault("lw", 0.05)
+    kwargs.setdefault("lw", 1)
     lw = kwargs.get("linewidth", kwargs.get("lw"))
-    for feat in features:
+    for feat in sorted(features, key=lambda x: x.intensity):
         segments, intensities = feature_to_segments(feat)
-        art = LineCollection(segments, linewidths=lw, cmap=cmap, alpha=alpha)
+        art = LineCollection(segments, linewidths=lw, cmap=cmap, alpha=alpha, norm=norm)
         art.set_array(intensities)
         lines.append(art)
 
     for line in lines:
         ax.add_collection(line)
+
+    if cbar:
+        cbar = ax.figure.colorbar(lines[0])
+        cbar.set_label("Intensity")
 
     ax.set_xlim(
         min(features, key=lambda x: x.mz if x is not None else float('inf')).mz - 1,
@@ -141,9 +145,17 @@ def labeler(profile, *args, **kwargs):
     return label
 
 
+def threshold_labeler(threshold):
+    def label_func(profile, *args, **kwargs):
+        if profile.intensity > threshold:
+            return "%0.4f, %d" % (profile.neutral_mass, profile.charge)
+        return ''
+    return label_func
+
+
 def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size=10,
                   axis_label_font_size=16, axis_font_size=16, label=True,
-                  colorizer=random_colorizer, label_function=labeler):
+                  colorizer=random_colorizer, label_function=labeler, legend=True):
     if ax is None:
         _fig, ax = plt.subplots(1)
 
@@ -190,7 +202,8 @@ def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size
     ax.set_xlim(minimum_ident_time - 0.02,
                 maximum_ident_time + 0.02)
     ax.set_ylim(0, maximum_intensity * 1.1)
-    ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1.), ncol=2, fontsize=10)
+    if legend:
+        ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1.), ncol=2, fontsize=10)
     ax.axes.spines['right'].set_visible(False)
     ax.axes.spines['top'].set_visible(False)
     ax.yaxis.tick_left()

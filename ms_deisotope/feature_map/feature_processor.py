@@ -1,3 +1,5 @@
+import logging
+
 from collections import defaultdict
 from itertools import product
 
@@ -7,8 +9,8 @@ from ms_peak_picker import FittedPeak
 
 from .feature_map import (
     LCMSFeatureMap,
-    DeconvolutedLCMSFeatureMap,
-    smooth_overlaps_neutral)
+    DeconvolutedLCMSFeatureMap)
+from .feature_graph import (GapAwareDeconvolutedFeatureSmoother)
 from .lcms_feature import (
     LCMSFeature,
     EmptyFeature,
@@ -30,6 +32,9 @@ from ms_deisotope.deconvolution import (
     charge_range_, drop_placeholders, first_peak,
     mean)
 from ms_deisotope.task import LogUtilsMixin
+
+
+logger = logging.getLogger("ms_deisotope.feature_processor")
 
 
 def conform_envelopes(experimental, base_theoretical, minimum_theoretical_abundance=0.05):
@@ -205,7 +210,7 @@ def count_placeholders(peaks):
 
 def test_finalize(self, feature_fit, charge_carrier=PROTON, detection_threshold=0.1,
                   max_missed_peaks=1):
-    start_time, end_time = find_bounds(feature_fit, detection_threshold)
+    start_time, end_time, _segments = find_bounds(feature_fit, detection_threshold)
     feat_iter = FeatureSetIterator(
         feature_fit.features, start_time, end_time)
     base_tid = feature_fit.theoretical
@@ -278,14 +283,15 @@ class PrecursorMap(object):
 
 class LCMSFeatureProcessor(LCMSFeatureProcessorBase, LogUtilsMixin):
     def __init__(self, feature_map, averagine, scorer, precursor_map=None, minimum_size=3,
-                 maximum_time_gap=0.25, prefer_multiply_charged=True):
+                 maximum_time_gap=0.25, prefer_multiply_charged=True, copy=True):
         if precursor_map is None:
             precursor_map = PrecursorMap({})
         if isinstance(feature_map, LCMSFeatureMap):
-            feature_map = feature_map.clone(deep=True)
+            if copy:
+                feature_map = feature_map.clone(deep=True)
         else:
             feature_map = LCMSFeatureMap(
-                [f.clone(deep=True) for f in feature_map])
+                [f.clone(deep=True) if copy else f for f in feature_map])
         self.feature_map = feature_map
         self.averagine = AveragineCache(averagine)
         self.prefer_multiply_charged = prefer_multiply_charged
@@ -418,7 +424,7 @@ class LCMSFeatureProcessor(LCMSFeatureProcessorBase, LogUtilsMixin):
     def finalize_fit(self, feature_fit, charge_carrier=PROTON, subtract=True,
                      detection_threshold=0.1, max_missed_peaks=1):
         nodes = []
-        start_time, end_time = find_bounds(feature_fit, detection_threshold)
+        start_time, end_time, _segments = find_bounds(feature_fit, detection_threshold)
         feat_iter = FeatureSetIterator(
             feature_fit.features, start_time, end_time)
         base_tid = feature_fit.theoretical
@@ -631,7 +637,8 @@ class FeatureDeconvolutionIterationState(LogUtilsMixin):
 
     def update_signal_ratio(self):
         self.next_signal_magnitude = sum(f.total_signal for f in self.processor.feature_map)
-        self.total_signal_ratio = (self.last_signal_magnitude - self.next_signal_magnitude) / self.next_signal_magnitude
+        self.total_signal_ratio = (self.last_signal_magnitude - self.next_signal_magnitude) / (
+            self.next_signal_magnitude or 1e-6)
         self.log("Signal Ratio: %0.3e (%0.3e, %0.3e)" % (
             self.total_signal_ratio, self.last_signal_magnitude, self.next_signal_magnitude))
         self.last_signal_magnitude = self.next_signal_magnitude
@@ -711,53 +718,72 @@ class FeatureDeconvolutionIterationState(LogUtilsMixin):
                 keep_going = False
         self.solutions = self.processor._clean_solutions(self.solutions)
         return DeconvolutedLCMSFeatureMap(
-            smooth_overlaps_neutral(
+            GapAwareDeconvolutedFeatureSmoother.smooth(
                 self.solutions,
-                self.error_tolerance))
+                0.25,
+                self.error_tolerance).features)
 
 
-def find_bounds(fit, detection_threshold=0.1, find_separation=True):
-    start_time = 0
+FeatureDeconvolutionIterationState.log_with_logger(logger)
+LCMSFeatureProcessor.log_with_logger(logger)
+
+def find_bounds(fit, detection_threshold=0.1, find_separation=True, smooth=1):
+    start_time = float('inf')
     end_time = float('inf')
 
     for f, p in zip(fit, fit.theoretical):
         if f is None:
             continue
         passed_threshold = p.intensity >= detection_threshold
-        if f.start_time > start_time and passed_threshold:
+        if f.start_time < start_time and passed_threshold:
             start_time = f.start_time
         if f.end_time < end_time and passed_threshold:
             end_time = f.end_time
 
+    segments = None
+
     if fit.n_points > 0 and find_separation:
+        segments = []
         last_score = float('inf')
         begin_i = 0
         end_i = len(fit.scores) - 1
-        smoothed_scores = smooth_leveled(fit.times, fit.scores, 3)
+        smoothed_scores = smooth_leveled(
+            np.array(fit.times), np.array(fit.scores), smooth)
         for i, score in enumerate(smoothed_scores):
             if score > 0 and last_score < 0:
                 begin_i = i
             elif score < 0 and last_score > 0:
                 end_i = i
+                segments.append((
+                    begin_i, end_i, smoothed_scores[begin_i:end_i].sum()
+                ))
+                begin_i = i
+                end_i = len(fit.scores) - 1
             last_score = score
-            pass
+
         if end_i < begin_i:
-            end_i = len(fit.scores) - 1
+            raise ValueError("Somehow intervals are out of order")
+
+        segments.append((
+                    begin_i, end_i, smoothed_scores[begin_i:end_i].sum()
+                ))
+
+        begin_i, end_i, _ = max(segments, key=lambda x: x[2])
 
         if start_time < fit.times[begin_i] and begin_i != 0:
             start_time = fit.times[begin_i]
 
-        # if end_time > fit.times[end_i]:
-        #     end_time = fit.times[end_i]
+        if end_time > fit.times[end_i]:
+            end_time = fit.times[end_i]
 
-    return start_time, end_time
+    return start_time, end_time, segments
 
 
 def extract_fitted_region(feature_fit, detection_threshold=0.1):
     fitted_features = []
     if feature_fit.n_points == 0:
         return None
-    start_time, end_time = find_bounds(feature_fit, detection_threshold)
+    start_time, end_time, _segments = find_bounds(feature_fit, detection_threshold)
     for feature in feature_fit:
         if feature is None or isinstance(feature, EmptyFeature):
             fitted_features.append(feature)

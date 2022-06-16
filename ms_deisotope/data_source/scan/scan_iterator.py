@@ -3,6 +3,9 @@ of :class:`~.Scan`-like objects.
 '''
 import bisect
 import warnings
+
+from typing import Callable, Generic, Iterator, Optional, TypeVar
+
 from collections import deque, defaultdict
 from six import PY2
 
@@ -21,7 +24,11 @@ ITERATION_MODE_GROUPED = "grouped"
 ITERATION_MODE_SINGLE = "single"
 
 
-class _ScanIteratorImplBase(object):
+G = TypeVar("G")
+T = TypeVar("T")
+
+
+class _ScanIteratorImplBase(Generic[T, G]):
     """Internal base class for scan iteration strategies
 
     Attributes
@@ -84,7 +91,7 @@ class _ScanIteratorImplBase(object):
         return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan, **kwargs)
 
 
-class _SingleScanIteratorImpl(_ScanIteratorImplBase):
+class _SingleScanIteratorImpl(_ScanIteratorImplBase[T, G], Iterator[T]):
     """Iterate over individual scans.
 
     The default strategy when MS1 scans are missing.
@@ -106,7 +113,7 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase):
             yield packed
 
 
-class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl):
+class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[T, G], Iterator[G]):
     '''Mimics the interface of :class:`_GroupedScanIteratorImpl` for
     scan sequences which only support single scans, or which do not
     guarantee sequential access to precursor/product collections.
@@ -124,7 +131,7 @@ class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl):
                 yield ScanBunch(None, [scan])
 
 
-class _GroupedScanIteratorImpl(_ScanIteratorImplBase):
+class _GroupedScanIteratorImpl(_ScanIteratorImplBase[T, G], Iterator[G]):
     """Iterate over related scan bunches.
 
     The default strategy when MS1 scans are known to be
@@ -226,8 +233,7 @@ class GenerationTracker(object):
         return result
 
 
-
-class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
+class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
     """Iterate over related scan bunches.
 
     The default strategy when MS1 scans are known to be
@@ -407,7 +413,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl):
             yield self.deque_group(flush_products=True)
 
 
-class MSEIterator(_GroupedScanIteratorImpl):
+class MSEIterator(_GroupedScanIteratorImpl[T, G]):
     '''A scan iterator implementation for grouping MS^E spectra according
     to the specified functions.
 
@@ -420,12 +426,19 @@ class MSEIterator(_GroupedScanIteratorImpl):
         The function corresponding to the lockmass. Lockmass scans
         will be skipped.
     '''
-    def __init__(self, iterator, scan_packer, low_energy_config, lock_mass_config, scan_validator=None,
-                 scan_cacher=None):
+
+    low_energy_config: int = 1
+    lock_mass_config: int = 3
+    low_energy_config: Optional[Callable]
+
+    def __init__(self, iterator, scan_packer, scan_validator=None,
+                 scan_cacher=None, low_energy_config=1, lock_mass_config=3,
+                 on_lock_mass_scan: Optional[Callable] = None, **kwargs):
         super(MSEIterator, self).__init__(
             iterator, scan_packer, scan_validator, scan_cacher)
         self.low_energy_config = low_energy_config
         self.lock_mass_config = lock_mass_config
+        self.on_lock_mass_scan = on_lock_mass_scan
 
     def _make_producer(self):
         _make_scan = self.scan_packer
@@ -444,6 +457,8 @@ class MSEIterator(_GroupedScanIteratorImpl):
             _cache_scan(packed)
             config = packed.acquisition_information[0].scan_configuration
             if config == self.lock_mass_config:
+                if self.on_lock_mass_scan is not None:
+                    self.on_lock_mass_scan(scan)
                 continue
 
             if config != self.low_energy_config:

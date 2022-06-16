@@ -6,6 +6,8 @@ from array import array
 import ms_deisotope
 from ms_deisotope import plot
 
+from ms_deisotope.tools.utils import progress
+
 
 @click.group('draw')
 def draw():
@@ -49,8 +51,8 @@ def draw_tic(path, output_path=None, start_time=None, end_time=None):
     time = array('d')
     intensity = array('d')
 
-    bar = click.progressbar(reader, item_show_func=lambda x: str(
-        x.id) if x is not None else '')
+    bar = progress(reader, item_show_func=lambda x: str(
+        x.id) if x is not None else '', color=True, fill_char=click.style('-', 'green'))
     with bar:
         for scan in bar:
             if scan.ms_level != 1:

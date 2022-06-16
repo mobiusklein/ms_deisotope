@@ -1,6 +1,7 @@
 import array
-from ms_deisotope.data_source.metadata import activation
+from typing import Any, Dict, List, Optional
 import warnings
+import logging
 
 from abc import abstractmethod
 from weakref import WeakValueDictionary
@@ -10,36 +11,50 @@ from collections import namedtuple, defaultdict
 
 import numpy as np
 
+from ms_peak_picker import average_signal, FittedPeak
+from ms_deisotope.data_source.metadata.activation import ActivationInformation
+from ms_deisotope.data_source.metadata.scan_traits import IsolationWindow, ScanAcquisitionInformation
+
+try:
+    from ms_peak_picker.scan_averaging import GridAverager
+except ImportError:
+    GridAverager = None
+
+from ms_deisotope.data_source.scan.scan import Scan, WrappedScan
+
 from ms_deisotope.peak_set import IonMobilityDeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.peak_dependency_network import IntervalTreeNode, Interval
 
-from .base import RawDataArrays, ScanBunch
+from .base import PrecursorInformation, RawDataArrays, ScanBase, ScanBunch
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 class IonMobilitySource(object):
     @abstractmethod
-    def _frame_id(self, data):
+    def _frame_id(self, data) -> str:
         raise NotImplementedError()
 
     @abstractmethod
-    def _frame_index(self, data):
+    def _frame_index(self, data) -> int:
         raise NotImplementedError()
 
-    def _frame_time(self, data):
+    def _frame_time(self, data) -> float:
         scan = self.get_scan_by_index(
             self._frame_start_scan_index(data))
         return scan.scan_time
 
-    def _frame_ms_level(self, data):
+    def _frame_ms_level(self, data) -> int:
         scan = self.get_scan_by_index(
             self._frame_start_scan_index(data))
         return scan.ms_level
 
     @abstractmethod
-    def _frame_start_scan_index(self, data):
+    def _frame_start_scan_index(self, data) -> int:
         raise NotImplementedError()
 
     @abstractmethod
-    def _frame_end_scan_index(self, data):
+    def _frame_end_scan_index(self, data) -> int:
         raise NotImplementedError()
 
     def _frame_precursor_information(self, data):
@@ -57,33 +72,33 @@ class IonMobilitySource(object):
             self._frame_start_scan_index(data))
         return scan.isolation_window
 
-    def _frame_polarity(self, data):
+    def _frame_polarity(self, data) -> int:
         scan = self.get_scan_by_index(
             self._frame_start_scan_index(data))
         return scan.polarity
 
-    def _frame_drift_times(self, data):
+    def _frame_drift_times(self, data) -> List[float]:
         scans = []
         for i in range(self._frame_start_scan_index(data), self._frame_end_scan_index(data)):
             scan = self.get_scan_by_index(i)
             scans.append(scan.drift_time)
         return scans
 
-    def _frame_scans(self, data):
+    def _frame_scans(self, data) -> List[ScanBase]:
         scans = []
         for i in range(self._frame_start_scan_index(data), self._frame_end_scan_index(data)):
             scan = self.get_scan_by_index(i)
             scans.append(scan)
         return scans
 
-    def _frame_annotations(self, data):
+    def _frame_annotations(self, data) -> dict:
         return {}
 
-    def _frame_arrays(self, data):
+    def _frame_arrays(self, data) -> 'RawDataArrays3D':
         scans = self._frame_scans(data)
         return RawDataArrays3D.stack(scans)
 
-    def _frame_ion_mobilities(self, data):
+    def _frame_ion_mobilities(self, data) -> np.ndarray:
         scans = self._frame_scans(data)
         return np.array([s.drift_time for s in scans])
 
@@ -103,17 +118,21 @@ class IonMobilitySource(object):
 
 class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
     @abstractmethod
-    def get_frame_by_index(self, index):
+    def get_frame_by_index(self, index: int) -> 'IonMobilityFrame':
         raise NotImplementedError()
 
     @abstractmethod
-    def get_frame_by_time(self, time):
+    def get_frame_by_time(self, time: float) -> 'IonMobilityFrame':
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_frame_by_id(self, id: str) -> 'IonMobilityFrame':
         raise NotImplementedError()
 
     def _validate_frame(self, data):
         return True
 
-    def _make_frame(self, data):
+    def _make_frame(self, data) -> 'IonMobilityFrame':
         return IonMobilityFrame(data, self)
 
     def _cache_frame(self, frame):
@@ -161,8 +180,14 @@ class _upto_index(object):
     def values_up_to(self, value):
         i = np.searchsorted(self.values, value)
         intermediate = self.values[self.index:i]
+        if len(intermediate):
+            # The slice will contain the last stored value, which we don't
+            # want to include, but unless we know that we aren't skipping
+            # several values on the first request, we can't exclude it automatically.
+            if np.isclose(intermediate[0], self.last_value):
+                intermediate = intermediate[1:]
         self.index = i
-        self.last_value = self.values[i - 1]
+        self.last_value = value
         return intermediate
 
     def __call__(self, value):
@@ -319,19 +344,25 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             except AttributeError:
                 im = scan[0]
                 arrays = scan[1]
-            distinct_ion_mobility.append(im)
+            if im is not None:
+                distinct_ion_mobility.append(im)
             if arrays.mz.size > 0:
                 mz.extend(arrays.mz)
                 intensity.extend(arrays.intensity)
-                ion_mobility.extend([im] * arrays.mz.size)
+                if im is not None:
+                    ion_mobility.extend([im] * arrays.mz.size)
                 for key, val in arrays.data_arrays.items():
                     data_arrays[key].extend(val)
         mz = np.array(mz)
-        ion_mobility = np.array(ion_mobility)
-        mask = np.lexsort(np.stack((ion_mobility, mz,)))
-        return cls(mz[mask], np.array(intensity)[mask], ion_mobility[mask],
-                   np.sort(distinct_ion_mobility), ion_mobility_array_type,
-                   {k: np.array(v)[mask] for k, v in data_arrays.items()})
+        if len(ion_mobility) > 0:
+            ion_mobility = np.array(ion_mobility)
+            mask = np.lexsort(np.stack((ion_mobility, mz,)))
+            return cls(mz[mask], np.array(intensity)[mask], ion_mobility[mask],
+                    np.sort(distinct_ion_mobility), ion_mobility_array_type,
+                    {k: np.array(v)[mask] for k, v in data_arrays.items()})
+        else:
+            return cls(mz, np.array(intensity), None, np.array([]), None,
+                       {k: np.array(v) for k, v in data_arrays.items()})
 
     @classmethod
     def from_arrays(cls, mz_array, intensity_array, ion_mobility_array, ion_mobility_array_type=None, data_arrays=None):
@@ -522,18 +553,20 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
 
 class FrameBase(object):
 
+    time: float
+
     @property
-    def scan_time(self):
+    def scan_time(self) -> float:
         return self.time
 
     @property
-    def ion_mobilities(self):
+    def ion_mobilities(self) -> np.ndarray:
         return self.source._frame_ion_mobilities(self._data)
 
-    def scans(self):
+    def scans(self) -> List[Scan]:
         return self.source._frame_scans(self._data)
 
-    def bind(self, source):
+    def bind(self, source: IonMobilitySource):
         self.source = source
         if self.precursor_information is not None:
             self.precursor_information.bind(source)
@@ -552,6 +585,8 @@ class FrameBase(object):
 
     def __eq__(self, other):
         if other is None:
+            return False
+        if not isinstance(other, FrameBase):
             return False
         if self.id != other.id:
             return False
@@ -578,6 +613,9 @@ class IonMobilityFrame(FrameBase):
     :class:`~.LCMSFeatureMap`-like data structures which conserve the over-time
     property.
     '''
+
+    source: IonMobilitySource
+
     def __init__(self, data, source):
         self._data = data
         self.source = source
@@ -604,7 +642,7 @@ class IonMobilityFrame(FrameBase):
         self._acquisition_information = None
 
     @property
-    def id(self):
+    def id(self) -> str:
         if self._id is None:
             self._id = self.source._frame_id(self._data)
         return self._id
@@ -614,7 +652,7 @@ class IonMobilityFrame(FrameBase):
         self._id = value
 
     @property
-    def index(self):
+    def index(self) -> int:
         if self._index is None:
             self._index = self.source._frame_index(self._data)
         return self._index
@@ -624,7 +662,7 @@ class IonMobilityFrame(FrameBase):
         self._index = value
 
     @property
-    def time(self):
+    def time(self) -> float:
         if self._time is None:
             self._time = self.source._frame_time(self._data)
         return self._time
@@ -634,7 +672,7 @@ class IonMobilityFrame(FrameBase):
         self._time = value
 
     @property
-    def ms_level(self):
+    def ms_level(self) -> int:
         if self._ms_level is None:
             self._ms_level = self.source._frame_ms_level(self._data)
         return self._ms_level
@@ -644,7 +682,7 @@ class IonMobilityFrame(FrameBase):
         self._ms_level = value
 
     @property
-    def polarity(self):
+    def polarity(self) -> int:
         if self._polarity is None:
             self._polarity = self.source._frame_polarity(self._data)
         return self._polarity
@@ -654,7 +692,7 @@ class IonMobilityFrame(FrameBase):
         self._polarity = value
 
     @property
-    def start_scan_index(self):
+    def start_scan_index(self) -> int:
         if self._start_scan_index is None:
             self._start_scan_index = self.source._frame_start_scan_index(self._data)
         return self._start_scan_index
@@ -664,7 +702,7 @@ class IonMobilityFrame(FrameBase):
         self._start_scan_index = value
 
     @property
-    def end_scan_index(self):
+    def end_scan_index(self) -> int:
         if self._end_scan_index is None:
             self._end_scan_index = self.source._frame_end_scan_index(self._data)
         return self._end_scan_index
@@ -674,7 +712,7 @@ class IonMobilityFrame(FrameBase):
         self._end_scan_index = value
 
     @property
-    def precursor_information(self):
+    def precursor_information(self) -> Optional[PrecursorInformation]:
         if self._precursor_information is None:
             self._precursor_information = self.source._frame_precursor_information(self._data)
         return self._precursor_information
@@ -684,7 +722,7 @@ class IonMobilityFrame(FrameBase):
         self._precursor_information = value
 
     @property
-    def activation(self):
+    def activation(self) -> Optional[ActivationInformation]:
         if self._activation is None:
             self._activation = self.source._frame_activation(self._data)
         return self._activation
@@ -694,7 +732,7 @@ class IonMobilityFrame(FrameBase):
         self._activation = value
 
     @property
-    def isolation_window(self):
+    def isolation_window(self) -> Optional[IsolationWindow]:
         if self._isolation_window is None:
             self._isolation_window = self.source._frame_isolation_window(self._data)
         return self._isolation_window
@@ -704,7 +742,7 @@ class IonMobilityFrame(FrameBase):
         self._isolation_window = value
 
     @property
-    def acquisition_information(self):
+    def acquisition_information(self) -> ScanAcquisitionInformation:
         if self._acquisition_information is None:
             self._acquisition_information = self.source._frame_acquisition_information(self._data)
         return self._acquisition_information
@@ -714,17 +752,19 @@ class IonMobilityFrame(FrameBase):
         self._acquisition_information = value
 
     @property
-    def arrays(self):
+    def arrays(self) -> RawDataArrays3D:
         if self._arrays is None:
             self._arrays = self.source._frame_arrays(self._data)
         return self._arrays
 
     @arrays.setter
-    def arrays(self, value):
+    def arrays(self, value: Optional[RawDataArrays3D]):
+        if value is not None and not isinstance(value, RawDataArrays3D):
+            raise TypeError(f"Cannot assign type {type(value)} to arrays!")
         self._arrays = value
 
     @property
-    def annotations(self):
+    def annotations(self) -> Dict[str, Any]:
         if self._annotations is None:
             self._annotations = self.source._frame_annotations(self._data)
         return self._annotations
@@ -733,7 +773,14 @@ class IonMobilityFrame(FrameBase):
     def annotations(self, value):
         self._annotations = dict(value)
 
-    def get_scan_by_drift_time(self, drift_time):
+    def flatten_to_scan(self) -> WrappedScan:
+        scans = self.scans()
+        mz, intensity = average_signal([scan.arrays for scan in scans], dx=0.002)
+        intensity *= len(scans)
+        arrays = RawDataArrays(mz, intensity)
+        return WrappedScan(scans[0]._data, self.source, arrays, id="merged=%d" % self.index)
+
+    def get_scan_by_drift_time(self, drift_time: float) -> ScanBase:
         dt_axis = self.ion_mobilities
         lo = 0
         hi = n = len(dt_axis)
@@ -776,30 +823,77 @@ class IonMobilityFrame(FrameBase):
             else:
                 lo = mid
 
-    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average=0, dx=0.001, **kwargs):
+    def extract_features(self, error_tolerance=1.5e-5, max_gap_size=0.25, min_size=2, average_within=0, average_across=0, dx=0.002, num_threads=3,
+                         low_memory=False, minimum_intensity=0.0, denoise=0, **kwargs) -> 'IonMobilityFrame':
         from ms_deisotope.feature_map import feature_map
-        scans = self.scans()
-        lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
+        scans: List[Scan] = self.scans()
         n = len(scans)
+        lff = feature_map.LCMSFeatureForest(error_tolerance=error_tolerance)
+        scan: Scan
+        averager = None
+        if not low_memory:
+            min_mz = float('inf')
+            max_mz = 0
+            arrays = []
+            for scan in scans:
+                a = scan.arrays
+                arrays.append((a.mz.astype(float), a.intensity.astype(float)))
+                if len(a.mz):
+                    min_mz = min(a.mz[0], min_mz)
+                    max_mz = max(a.mz[-1], max_mz)
+            if min_mz > max_mz:
+                min_mz = 0
+                max_mz = 1
+
+            averager = GridAverager(min_mz, max_mz, len(scans), dx=dx)
+            averager.add_spectra(arrays, num_threads)
+
         for i, scan in enumerate(scans):
-            if average:
-                acc = []
-                if i > 0:
-                    for j in range(max((i - average, 0)), i):
-                        acc.append(scans[j])
-                    for j in range(i + 1, min(i + average + 1, n)):
-                        acc.append(scans[j])
-                scan = scan.average_with(acc, dx=dx)
+            if average_within:
+                if not low_memory:
+                    lo = max(i - average_within, 0)
+                    hi = min(i + average_within + 1, len(scans))
+                    array_data = RawDataArrays(
+                        averager.mz_axis, averager.average_indices(lo, hi, n_workers=1))
+                    acq_info = scan.acquisition_information
+                    scan = WrappedScan(scan._data, scan.source, array_data, _acquisition_information=acq_info)
+                else:
+                    acc: List[ScanBase] = []
+                    for j in range(max((i - average_within, 0)), i):
+                        other_scan = scans[j]
+                        acc.append(other_scan)
+                    for j in range(i + 1, min(i + average_within + 1, n)):
+                        other_scan = scans[j]
+                        acc.append(other_scan)
+                    if acc:
+                        acq_info = scan.acquisition_information
+                        scan = scan.average_with(
+                            acc, dx=dx, num_threads=num_threads)
+                        scan.acquisition_information = acq_info
+
+            if average_across:
+                pass
+
+            if denoise > 0 and scan.arrays.mz.size > 0:
+                scan = scan.denoise(denoise).transform(['savitsky_golay'])
             scan.pick_peaks(**kwargs)
+            scan.peak_set.intensity_array = None
+            scan.peak_set.mz_array = None
             for peak in scan:
+                peak: FittedPeak
+                if peak.intensity < minimum_intensity:
+                    continue
                 lff.handle_peak(peak, scan.drift_time)
+
+        del averager
         lff.split_sparse(max_gap_size, min_size).smooth_overlaps(
             error_tolerance)
         self.features = lff
         return self
 
     def deconvolute_features(self, averagine=None, scorer=None, truncate_after=0.95,
-                             minimum_intensity=5, min_size=2, max_gap_size=0.25, **kwargs):
+                             minimum_intensity=5, min_size=2, max_gap_size=0.25, copy=True,
+                             **kwargs) -> 'IonMobilityFrame':
         from ms_deisotope.feature_map import feature_processor
         if averagine is None:
             from ms_deisotope.averagine import peptide
@@ -812,12 +906,12 @@ class IonMobilityFrame(FrameBase):
                 "IM-MS Features must be extracted before they can be charge state deconvoluted")
         decon = feature_processor.LCMSFeatureProcessor(
             self.features, averagine, scorer, minimum_size=min_size,
-            maximum_time_gap=max_gap_size)
+            maximum_time_gap=max_gap_size, copy=copy)
         self.deconvoluted_features = decon.deconvolute(
             minimum_intensity=minimum_intensity, truncate_after=truncate_after, **kwargs)
         return self
 
-    def to_deconvoluted_peak_set(self, time_bound=None):
+    def to_deconvoluted_peak_set(self, time_bound=None) -> DeconvolutedPeakSet:
         if self.deconvoluted_features is None:
             raise ValueError("Must first deconvolute IMS features before converting to a time-binned peak set!")
         if time_bound is not None:
@@ -828,7 +922,7 @@ class IonMobilityFrame(FrameBase):
             features = self.deconvoluted_features
         return features_to_peak_set(features)
 
-    def pack(self, bind=False):
+    def pack(self, bind=False) -> 'ProcessedIonMobilityFrame':
         packed = ProcessedIonMobilityFrame(
             self.id, self.precursor_information, self.ms_level,
             self.time, self.index, self.features, self.deconvoluted_features,
@@ -840,6 +934,11 @@ class IonMobilityFrame(FrameBase):
 
 
 class ProcessedIonMobilityFrame(FrameBase):
+
+    id: str
+    index: int
+
+
     def __init__(self, id, precursor_information, ms_level, time, index,
                  features=None, deconvoluted_features=None,
                  start_scan_index=None, end_scan_index=None,
@@ -1007,19 +1106,22 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
             scans.append(scan)
         return scans
 
-    def get_frame_by_index(self, index):
+    def _frame_ion_mobilities(self, data):
+        return self._frame_arrays(data).distinct_ion_mobility
+
+    def get_frame_by_index(self, index: int) -> IonMobilityFrame:
         scan = self.loader.get_scan_by_index(index)
         frame = self._make_frame(scan._data)
         self._cache_frame(frame)
         return frame
 
-    def get_frame_by_id(self, id):
+    def get_frame_by_id(self, id: str) -> IonMobilityFrame:
         scan = self.loader.get_scan_by_id(id)
         frame = self._make_frame(scan._data)
         self._cache_frame(frame)
         return frame
 
-    def get_frame_by_time(self, time):
+    def get_frame_by_time(self, time: float) -> IonMobilityFrame:
         scan = self.loader.get_scan_by_time(time)
         frame = self._make_frame(scan._data)
         self._cache_frame(frame)
@@ -1046,8 +1148,11 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
     def _wrap_iterator(self, iterator):
         for val in iterator:
             if isinstance(val, ScanBunch):
-                precursor = self._make_frame(val.precursor._data)
-                self._cache_frame(precursor)
+                if val.precursor is None:
+                    precursor = None
+                else:
+                    precursor = self._make_frame(val.precursor._data)
+                    self._cache_frame(precursor)
                 products = []
                 for product in val.products:
                     product = self._make_frame(product._data)
@@ -1064,14 +1169,17 @@ class Generic3DIonMobilityFrameSource(IonMobilitySourceRandomAccessFrameSource):
         self.loader.start_from_scan(index=start_index, grouped=False)
         return self._wrap_iterator(self.loader)
 
-    def make_frame_iterator(self, iterator=None, grouped=False):
-        self.loader.make_iterator(iterator, grouped=grouped)
+    def make_frame_iterator(self, iterator=None, grouped=False, **kwargs):
+        self.loader.make_iterator(iterator, grouped=grouped, **kwargs)
         return self._wrap_iterator(self.loader)
 
-    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         self.loader.start_from_scan(
-            scan_id=scan_id, rt=rt, index=index, require_ms1=require_ms1, grouped=grouped)
+            scan_id=scan_id, rt=rt, index=index, require_ms1=require_ms1, grouped=grouped, **kwargs)
         self._producer = self._wrap_iterator(self.loader)
+        return self
+
+    def __iter__(self):
         return self
 
     def __next__(self):

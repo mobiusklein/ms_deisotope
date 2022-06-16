@@ -2,10 +2,10 @@ from .common import (
     ScanSerializerBase, ScanDeserializerBase)
 
 from .mzml import (
-    ProcessedMzMLDeserializer, ProcessedMzMLLoader, MzMLSerializer)
+    ProcessedMzMLDeserializer, ProcessedMzMLLoader, MzMLSerializer, ProcessedGeneric3DIonMobilityFrameSource, IonMobilityAware3DMzMLSerializer)
 
 from .mzmlb import (
-    MzMLbSerializer, ProcessedMzMLbDeserializer, ProcessedMzMLbLoader
+    MzMLbSerializer, ProcessedMzMLbDeserializer, ProcessedMzMLbLoader, IonMobilityAware3DMzMLbSerializer
 )
 
 from .text import (
@@ -15,7 +15,7 @@ from .mgf import (
     ProcessedMGFDeserializer, MGFSerializer)
 
 
-from .infer_type import (ProcessedMSFileLoader, )
+from .infer_type import (ProcessedMSFileLoader, get_writer)
 
 __all__ = [
     "ScanSerializerBase",
@@ -27,7 +27,10 @@ __all__ = [
     "ProcessedMGFDeserializer",
     "TextScanSerializerBase",
     "HeaderedDelimitedWriter",
-    "ProcessedMSFileLoader"
+    "ProcessedMSFileLoader",
+    "get_writer",
+    "IonMobilityAware3DMzMLSerializer",
+    "ProcessedGeneric3DIonMobilityFrameSource",
 ]
 
 if MzMLbSerializer is None:
@@ -36,5 +39,6 @@ else:
     __all__.extend([
         'MzMLbSerializer',
         'ProcessedMzMLbLoader',
-        'ProcessedMzMLbDeserializer'
+        'ProcessedMzMLbDeserializer',
+        'IonMobilityAware3DMzMLbSerializer',
     ])

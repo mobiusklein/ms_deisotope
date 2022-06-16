@@ -8,6 +8,8 @@ from collections import deque
 from random import sample as _sample
 
 from libc.stdlib cimport malloc, free
+
+from cpython cimport PyErr_SetString
 from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_GetSlice, PyList_GetItem
 from ms_peak_picker._c.peak_set cimport FittedPeak, PeakBase
 from brainpy._c.isotopic_distribution cimport TheoreticalPeak
@@ -65,7 +67,7 @@ cdef class LCMSFeatureTreeList(object):
             raise ValueError()
         lo = 0
         while lo != hi:
-            i = (lo + hi) / 2
+            i = (lo + hi) // 2
             node = <LCMSFeatureTreeNodeBase>PyList_GET_ITEM(self.roots, i)
             rt = node.time
             if rt == time:
@@ -95,6 +97,7 @@ cdef class LCMSFeatureTreeList(object):
         cdef:
             LCMSFeatureTreeNodeBase root
             size_t i
+        i = 0
         try:
             root = self._find_time(node.time, &i)
             if root is None:
@@ -389,18 +392,21 @@ cdef class LCMSFeature(FeatureBase):
         self.adducts = adducts
         self.used_as_adduct = used_as_adduct
         self.feature_id = feature_id
-        self._peak_averager = RunningWeightedAverage._create(None)
-        if self.get_size() > 0:
-            self._feed_peak_averager()
+        self._initialize_averager()
 
-    cdef void _feed_peak_averager(self):
-        cdef:
-            size_t i, n
-            LCMSFeatureTreeNode node
-        n = self.get_size()
-        for i in range(n):
-            node = self.getitem(i)
-            self._peak_averager._update(node.members)
+    cpdef _initialize_averager(self):
+        self._peak_averager = RunningWeightedAverage._create(None)
+
+    cpdef _update_from_averager(self):
+        best_mz = self._peak_averager.current_mean
+        if best_mz < 0:
+            raise ValueError("best_mz < 0")
+        self._last_mz = self._mz = best_mz
+
+    cpdef _reaverage_and_update(self):
+        self._peak_averager.reset()
+        self._peak_averager.feed_from_feature(self)
+        self._update_from_averager()
 
     def invalidate(self, reaverage=False):
         self._invalidate(reaverage)
@@ -414,8 +420,7 @@ cdef class LCMSFeature(FeatureBase):
         self._start_time = -1
         self._end_time = -1
         if reaverage:
-            self._peak_averager = RunningWeightedAverage._create(None)
-            self._feed_peak_averager()
+            self._reaverage_and_update()
 
     @property
     def total_signal(self):
@@ -441,15 +446,8 @@ cdef class LCMSFeature(FeatureBase):
         return self.mz
 
     cdef double get_mz(self):
-        cdef:
-            size_t i, n
-            double best_mz, temp
-            LCMSFeatureTreeNode node
         if self._mz == -1:
-            temp = best_mz = self._peak_averager.current_mean
-            if best_mz < 0:
-                raise ValueError("best_mz < 0")
-            self._last_mz = self._mz = best_mz
+            self._reaverage_and_update()
         return self._mz
 
     @property
@@ -461,10 +459,13 @@ cdef class LCMSFeature(FeatureBase):
         cdef:
             size_t i, n
             LCMSFeatureTreeNode node
+            np.npy_intp knd
             np.ndarray[double, ndim=1, mode='c'] acc
         if self._times is None:
             n = self.get_size()
-            acc = _zeros(n)
+            knd = n
+            acc = np.PyArray_ZEROS(1, &knd, np.NPY_FLOAT64, 0)
+            # acc = _zeros(n)
             for i in range(n):
                 node = self.getitem(i)
                 acc[i] = node.time
@@ -550,7 +551,7 @@ cdef class LCMSFeature(FeatureBase):
         '''
         return self.get_start_time() <= time <= self.get_end_time()
 
-    def as_arrays(self):
+    def as_arrays(self, dtype=np.float64):
         '''Convert this object into a pair of time and intensity arrays, summing
         all peaks at the same time point.
 
@@ -562,9 +563,9 @@ cdef class LCMSFeature(FeatureBase):
             The intensity array for this feature.
         '''
         rts = np.array(
-            [node.time for node in self.nodes], dtype=np.float64)
+            [node.time for node in self.nodes], dtype=dtype)
         signal = np.array([node.total_intensity()
-                           for node in self.nodes], dtype=np.float64)
+                           for node in self.nodes], dtype=dtype)
         return rts, signal
 
     def __repr__(self):
@@ -596,6 +597,18 @@ cdef class LCMSFeature(FeatureBase):
         if self.nodes[i].time < time:
             i += 1
         return LCMSFeature(self.nodes[:i]), LCMSFeature(self.nodes[i:])
+
+    def between_times(self, start, end):
+        cdef:
+            size_t i, j
+            LCMSFeatureTreeNode node
+        i = 0
+        j = 0
+        node = self._find_time(start, &i)
+        if node is not None and node.time < start:
+            i += 1
+        node = self._find_time(end, &j)
+        return self._copy_chunk(self.nodes[i:j + 1])
 
     cpdef list split_sparse(self, double delta_rt=1.):
         '''Split this feature at any point where the distance from the
@@ -763,6 +776,16 @@ cdef class LCMSFeature(FeatureBase):
     cdef LCMSFeatureTreeNode getitem(self, size_t i):
         return self.nodes.getitem(i)
 
+    cpdef double max_intensity(self):
+        cdef:
+            size_t i, n
+            double max_intensity
+        max_intensity = 0.0
+        n = self.get_size()
+        for i in range(n):
+            max_intensity = max(self.getitem(i).max_intensity(), max_intensity)
+        return max_intensity
+
 
 cdef class EmptyFeature(FeatureBase):
     def __init__(self, mz):
@@ -811,6 +834,8 @@ cdef class FeatureSetIterator(object):
         n = PyList_GET_SIZE(self.features)
         self.real_features = []
         self.index_list = <size_t*>malloc(sizeof(size_t) * n)
+        if self.index_list == NULL:
+            raise MemoryError("Failed to allocate index list for LCMS Feature Iterator")
         self.start_time = 0
         self.end_time = INF
 
@@ -835,14 +860,16 @@ cdef class FeatureSetIterator(object):
         self.init_indices()
         self.last_time_seen = -1
 
-    cdef void _initialize(self, list features):
+    cdef int _initialize(self, list features) except 1:
         cdef:
             size_t i, n
         self.features = features
         n = PyList_GET_SIZE(self.features)
         self.real_features = []
         self.index_list = <size_t*>malloc(sizeof(size_t) * n)
-
+        if self.index_list == NULL:
+            PyErr_SetString(MemoryError, "Failed to allocate index list for LCMS Feature Iterator")
+            return 1
         self.start_time = 0
         self.end_time = INF
 
@@ -861,6 +888,7 @@ cdef class FeatureSetIterator(object):
 
         self.init_indices()
         self.last_time_seen = -1
+        return 0
 
     @staticmethod
     cdef FeatureSetIterator _create(list features):
@@ -918,10 +946,9 @@ cdef class FeatureSetIterator(object):
             if f is None:
                 self.index_list[i] = 0
                 continue
+            ix = 0
             if f.get_size() > 0:
                 node = f._find_time(self.start_time, &ix)
-            else:
-                ix = 0
             self.index_list[i] = ix
 
     cpdef double get_next_time(self):
@@ -992,6 +1019,7 @@ cdef class FeatureSetIterator(object):
             feature = self.getitem(i)
             if feature is not None:
                 if feature.get_size() > 0:
+                    ix = 0
                     node = feature._find_time(time, &ix)
                     if ix == self.index_list[i] and self.index_list[i] == 0 and node is None:
                         pass
@@ -1056,6 +1084,9 @@ cdef class RunningWeightedAverage(object):
         if iterable is not None:
             self.update(iterable)
 
+    cpdef reset(self):
+        self._initialize()
+
     @staticmethod
     cdef RunningWeightedAverage _create(list peaks):
         cdef:
@@ -1089,6 +1120,21 @@ cdef class RunningWeightedAverage(object):
         else:
             print("NaN produced in add()")
         return self
+
+    cpdef int feed_from_feature(self, LCMSFeature feature):
+        cdef:
+            size_t i, j, n, m
+            LCMSFeatureTreeNode node
+            PeakBase peak
+
+        n = feature.get_size()
+        for i in range(n):
+            node = feature.getitem(i)
+            m = node.get_members_size()
+            for j in range(m):
+                peak = node.getitem(j)
+                self.add(peak)
+        return n
 
     cpdef RunningWeightedAverage update(self, iterable):
         for x in iterable:

@@ -3,7 +3,7 @@ import traceback
 import os
 import platform
 
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension as _Extension, find_packages
 
 from distutils.command.build_ext import build_ext
 from distutils.errors import (CCompilerError, DistutilsExecError,
@@ -26,6 +26,8 @@ def has_option(name):
 include_diagnostics = has_option("include-diagnostics")
 force_cythonize = has_option("force-cythonize")
 no_openmp = has_option('no-openmp')
+debug_symbols = has_option("debug")
+
 
 with_openmp = not no_openmp
 
@@ -40,6 +42,19 @@ def configure_openmp(ext):
         ext.extra_compile_args.append("-fopenmp")
         ext.extra_link_args.append("-fopenmp")
 
+
+def Extension(*args, **kwargs):
+    ext = _Extension(*args, **kwargs)
+    if debug_symbols:
+        if os.name == 'nt':
+            ext.extra_compile_args.append("-Zi")
+            ext.extra_compile_args.append("-Ox")
+            ext.extra_link_args.append("-debug:full")
+        else:
+            ext.extra_compile_args.append("-g3")
+            ext.extra_compile_args.append("-O0")
+    # ext.extra_compile_args.append("/fsanitize=address")
+    return ext
 
 def OpenMPExtension(*args, **kwargs):
     ext = Extension(*args, **kwargs)
@@ -126,10 +141,19 @@ def make_extensions():
             Extension(name='ms_deisotope._c.spectrum_graph',
                       sources=['ms_deisotope/_c/spectrum_graph.pyx'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.feature_graph',
+                      sources=['ms_deisotope/_c/feature_map/feature_graph.pyx'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             OpenMPExtension(
                 name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.pyx"],
                 include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-        ], compiler_directives=cython_directives, force=force_cythonize)
+            Extension(
+                name='ms_deisotope._c.units', sources=["ms_deisotope/_c/units.pyx"],
+                include_dirs=[]),
+        ],
+        compiler_directives=cython_directives,
+        emit_linenums=True,
+        force=force_cythonize)
     except ImportError:
         extensions = ([
             Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],
@@ -178,9 +202,15 @@ def make_extensions():
             Extension(name='ms_deisotope._c.spectrum_graph',
                       sources=['ms_deisotope/_c/spectrum_graph.c'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.feature_graph',
+                      sources=['ms_deisotope/_c/feature_map/feature_graph.c'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             OpenMPExtension(
                 name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.c"],
-                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()])
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(
+                name='ms_deisotope._c.units', sources=["ms_deisotope/_c/units.c"],
+                include_dirs=[]),
         ])
     return extensions
 
@@ -242,12 +272,13 @@ install_requires = [
     "scipy",
     "six",
     "dill",
-    "ms_peak_picker",
+    "ms_peak_picker >= 0.1.38",
     "brain-isotopic-distribution >= 1.5.8",
     "pyteomics >= 4.5",
     "lxml",
-    "psims >= 0.1.35",
-    "python-idzip >=0.3.2"
+    "psims >= 0.1.44",
+    "python-idzip >=0.3.2",
+    "pyzstd",
 ]
 
 
@@ -318,6 +349,7 @@ def run_setup(include_cext=True):
         extras_require=extra_requires,
         include_package_data=True,
         zip_safe=False,
+        python_requires=">3.8",
         project_urls={
             'Documentation': 'https://mobiusklein.github.io/ms_deisotope',
             'Source Code': 'https://github.com/mobiusklein/ms_deisotope',

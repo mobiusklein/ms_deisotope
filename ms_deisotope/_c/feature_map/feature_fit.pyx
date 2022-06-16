@@ -1,12 +1,20 @@
 # cython: embedsignature=True
 cimport cython
 
-from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM
+from cpython.list cimport PyList_GET_SIZE, PyList_GET_ITEM, PyList_AsTuple
 
-from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature, EmptyFeature, FeatureBase
+from brainpy._c.double_vector cimport (
+    DoubleVector as dvec,
+    make_double_vector,
+    free_double_vector,
+    double_vector_append,
+    double_vector_to_list)
+
+from ms_deisotope._c.feature_map.lcms_feature cimport LCMSFeature, EmptyFeature, FeatureBase, LCMSFeatureTreeNodeBase
 from ms_deisotope._c.averagine cimport (
     neutral_mass as calc_neutral_mass, TheoreticalIsotopicPattern)
-from ms_deisotope._c.peak_set cimport DeconvolutedPeak
+
+from ms_deisotope._c.peak_set cimport DeconvolutedPeak, Envelope, EnvelopePair
 
 cimport numpy as np
 import numpy as np
@@ -138,7 +146,7 @@ cdef class LCMSFeatureSetFit(object):
     cdef LCMSFeatureSetFit _create(list features, TheoreticalIsotopicPattern theoretical,
                                    double score, int charge, size_t missing_features,
                                    list supporters, object data, double neutral_mass,
-                                   size_t n_points, np.ndarray scores, np.ndarray times):
+                                   size_t n_points, object scores, object times):
         cdef:
             LCMSFeatureSetFit inst
         inst = LCMSFeatureSetFit.__new__(LCMSFeatureSetFit)
@@ -199,7 +207,8 @@ cdef class LCMSFeatureSetFit(object):
 
     cpdef int count_null_features(self):
         cdef:
-            int i, n, n_null
+            Py_ssize_t n, i
+            int n_null
             FeatureBase feature
         n = PyList_GET_SIZE(self.features)
         n_null = 0
@@ -211,7 +220,7 @@ cdef class LCMSFeatureSetFit(object):
 
     cpdef bint has_multiple_real_features(self):
         cdef:
-            int n
+            Py_ssize_t n
         n = PyList_GET_SIZE(self.features)
         return n - self.count_null_features() > 1
 
@@ -271,3 +280,44 @@ cdef class LCMSFeatureSetFit(object):
             if last is None:
                 continue
             return map_coord(last.mz, last.end_time)
+
+
+@cython.binding(True)
+cpdef Envelope _sum_envelopes(LCMSFeature self):
+    cdef:
+        size_t i, j, k, n, m
+        dvec *mzs
+        dvec *intensities
+        LCMSFeatureTreeNodeBase node
+        DeconvolutedPeak peak
+        Envelope envelope
+        EnvelopePair pair
+        list pairs
+
+    mzs = make_double_vector()
+    intensities = make_double_vector()
+    n = self.get_size()
+    for i in range(n):
+        node = self.getitem(i)
+        m = node.get_members_size()
+        for j in range(m):
+            peak = <DeconvolutedPeak?>node.getitem(j)
+            envelope = peak.envelope
+            for k in range(envelope.get_size()):
+                pair = envelope.getitem(k)
+                if mzs.used <= k:
+                    double_vector_append(mzs, pair.mz * pair.intensity)
+                    double_vector_append(intensities, pair.intensity)
+                else:
+                    mzs.v[k] += pair.mz * pair.intensity
+                    intensities.v[k] += pair.intensity
+    pairs = []
+    for i in range(mzs.used):
+        pairs.append(
+            EnvelopePair._create(mzs.v[i] / intensities.v[i], intensities.v[i]))
+    envelope = Envelope._create(PyList_AsTuple(pairs))
+    free_double_vector(mzs)
+    free_double_vector(intensities)
+    return envelope
+
+#

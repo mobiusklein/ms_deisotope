@@ -15,7 +15,7 @@ from .scan import ScanBase
 UNLOAD_POLICY_FULL = "unload_policy_full"
 UNLOAD_POLICY_KEEP = "unload_policy_keep"
 
-logger = logging.getLogger("ms_deisotope.scan_proxy")
+logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 LOAD_METHOD_ID = 'id'
@@ -163,6 +163,8 @@ class proxyproperty(object):
     name: :class:`str`
         The name of the attribute to retrieve from the wrapped scan
     '''
+
+    __slots__ = ('name', 'caching', 'is_null_slot', 'cache_slot', '_null_getter', '_cache_getter', '_name_getter')
 
     def __init__(self, name, caching=False):
         self.name = name

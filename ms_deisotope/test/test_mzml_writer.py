@@ -57,6 +57,8 @@ class TestMzMLSerializer(unittest.TestCase):
         for a, b in zip(source_reader, processed_reader):
             assert a.precursor.id == b.precursor.id
             assert (a.precursor.acquisition_information == b.precursor.acquisition_information)
+            for peak_b in b.precursor.deconvoluted_peak_set:
+                assert abs(peak_b.mz - peak_b.envelope[0].mz) < 0.1
             for an, bn in zip(a.products, b.products):
                 assert an.id == bn.id
                 assert abs(an.precursor_information.neutral_mass - bn.precursor_information.neutral_mass) < 1e-6

@@ -5,12 +5,16 @@ import logging
 import hashlib
 import json
 
+import dataclasses
+from dataclasses import dataclass, field as dfield
 from collections import defaultdict
 from threading import RLock, Thread, local
+from typing import Dict, List
 
 import idzip
 
 import ms_deisotope
+from ms_deisotope.data_source.scan.base import ScanBase
 
 from ms_deisotope.utils import LRUDict
 from ms_deisotope.data_source._compression import get_opener
@@ -19,6 +23,77 @@ from ms_deisotope.data_source.usi import USI
 
 BLOCK_SIZE = 2 ** 20
 logger = logging.getLogger("proxi_backend")
+
+@dataclass(frozen=True)
+class FileType:
+    accession: str
+    name: str
+
+    def __str__(self):
+        return self.name
+
+    def to_dict(self) -> Dict:
+        return dataclasses.asdict(self)
+
+
+PeakListFile = FileType("MS:1002850", "Peak list file URI")
+AssociatedRawFile = FileType("MS:1002846", "Associated raw file URI")
+
+
+@dataclass(frozen=True)
+class PROXIDataFile:
+    uri: str
+    file_type: FileType
+
+    def to_dict(self) -> Dict:
+        d = self.file_type.to_dict()
+        d['value'] = self.uri
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        ft = FileType(d['accession'], d['name'])
+        return cls(d['value'], ft)
+
+
+@dataclass
+class PROXIDataset:
+    accession: str = dfield(default=None)
+    title: str = dfield(default=None)
+    summary: str = dfield(default=None)
+    instruments: List[str] = dfield(default_factory=list)
+    identifiers: List[str] = dfield(default_factory=list)
+    species: List[str] = dfield(default_factory=list)
+    modifications: List[str] = dfield(default_factory=list)
+    contacts: List[str] = dfield(default_factory=list)
+    publications: List[str] = dfield(default_factory=list)
+    keywords: List[str] = dfield(default_factory=list)
+    dataset_link: str = dfield(default=None)
+    dataset_files: List[PROXIDataFile] = dfield(default_factory=list)
+    links: List[str] = dfield(default_factory=list)
+
+    def to_dict(self):
+        d = dataclasses.asdict(self)
+        d['datasetLinks'] = d.pop("dataset_links", None)
+        # TODO: Make this consistent whether or not it is a dict or an instance
+        d['dataFiles'] = [PROXIDataFile(f['uri'], FileType(**f['file_type'])).to_dict() for f in d.pop('dataset_files', [])]
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        d = d.copy()
+        d['dataset_links'] = d.pop('datasetLinks', None)
+        d['dataset_files'] = [
+            PROXIDataFile.from_dict(f) for f in d.pop('datasetFiles', [])]
+        return cls(**d)
+
+    @classmethod
+    def new(cls, dataset_id):
+        self = cls()
+        self.accession = dataset_id
+        self.title = dataset_id
+        self.summary = dataset_id
+        return self
 
 
 class PROXIDatasetAPIMixinBase(object):
@@ -45,31 +120,16 @@ class PROXIDatasetAPIMixinBase(object):
         list[str]'''
         return self.valid_file_types
 
-    def describe_dataset(self, dataset_id):
-        record = {
-            "accession": dataset_id,
-            "title": dataset_id,
-            "summary": dataset_id,
-            "instruments": [],
-            "identifiers": [],
-            "species": [],
-            "modifications": [],
-            "contacts": [],
-            "publications": [],
-            "keywords": [],
-            "datasetLink": None,
-            "dataFiles": [],
-            "links": [],
-        }
+    def describe_dataset(self, dataset_id: str) -> PROXIDataset:
+        record = PROXIDataset.new(dataset_id)
         data_files = self._find_mz_files(self.index[dataset_id])
         for d in data_files:
+            uri = self._datafile_uri(dataset_id, d)
             if self._is_peaklist(d):
-                rep = {"accession": "MS:1002850", "name": "Peak list file URI",
-                       "value": self._datafile_uri(dataset_id, d)}
+                f = PROXIDataFile(uri, PeakListFile)
             else:
-                rep = {"accession": "MS:1002846", "name": "Associated raw file URI",
-                       "value": self._datafile_uri(dataset_id, d)}
-            record['dataFiles'].append(rep)
+                f = PROXIDataFile(uri, AssociatedRawFile)
+            record.dataset_files.append(f)
         return record
 
     def enumerate_datasets(self, result_type=None):
@@ -77,7 +137,7 @@ class PROXIDatasetAPIMixinBase(object):
             result = list(self.index.keys())
             return result
         return [
-            self.describe_dataset(d) for d in self.index.keys()]
+            self.describe_dataset(d).to_dict() for d in self.index.keys()]
 
 
 class IndexManagingMixin(object):
@@ -125,7 +185,7 @@ class IndexManagingMixin(object):
 
 class SpectrumSerializerServiceMixin(object):
 
-    def build_response(self, usi, scan):
+    def build_response(self, usi: USI, scan: ScanBase):
         payload = {
             "usi": str(usi),
             "status": "READABLE",

@@ -8,7 +8,7 @@ from .intervals import SpanningMixin, IntervalTreeNode
 from ..utils import Base, TargetedDeconvolutionResultBase
 from ..task import LogUtilsMixin
 
-logger = logging.getLogger("deconvolution_scan_processor")
+logger = logging.getLogger("ms_deisotope.scan_processor")
 
 
 def ident(x):

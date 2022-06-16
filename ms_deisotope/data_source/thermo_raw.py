@@ -25,7 +25,7 @@ import logging
 
 import numpy as np
 
-from pyteomics.auxiliary import unitfloat
+from pyteomics.xml import unitfloat
 
 from ms_deisotope.data_source.common import (
     ScanDataSource, RandomAccessScanSource,
@@ -162,7 +162,7 @@ except ImportError as e:  # pragma: no cover
         '''Register the location of Thermo's MSFileReader.dll
         with the COM interop system.
         '''
-        warnings.warn("no-op: %s" % (message,))
+        warnings.warn(f"no-op: {message}")
         return False
 
 
@@ -179,13 +179,8 @@ except ImportError as e:  # pragma: no cover
         :class:`bool`:
             Whether or not the feature is enabled.
         '''
-        warnings.warn("no-op: %s" % (message,))
+        warnings.warn(f"no-op: {message}")
         return False
-
-try:
-    range = xrange
-except NameError:
-    pass
 
 
 class ThermoRawDataInterface(ScanDataSource):
@@ -219,7 +214,7 @@ class ThermoRawDataInterface(ScanDataSource):
         return scan.filter_string
 
     def _scan_title(self, scan):
-        return "%s %r" % (self._scan_id(scan), self._filter_string(scan))
+        return f"{self._scan_id(scan)} {self._filter_string(scan)}"
 
     def _scan_arrays(self, scan):
         with safearray_as_ndarray:
@@ -349,7 +344,7 @@ class ThermoRawDataInterface(ScanDataSource):
         isolation_width = 0
         trailer = self._trailer_values(scan)
         try:
-            isolation_width = trailer['MS%d Isolation Width' % ms_level]
+            isolation_width = trailer[f'MS{ms_level} Isolation Width']
         except KeyError:
             segment = self._get_scan_segment(scan)
             event = self._get_scan_event(scan)
@@ -429,6 +424,8 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
     def __init__(self, source_file, _load_metadata=True, **kwargs):
         self.source_file = source_file
         self._source = _ThermoRawFileAPI(self.source_file)
+        warnings.warn(("ThermoRawLoader COM implementation is deprecated."
+                       " Please consider switching to the newer .NET implementation"), DeprecationWarning)
         self._producer = None
         self._scan_type_index = dict()
         self.make_iterator()
@@ -494,7 +491,24 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         return self._has_ms1_scans()
 
     def __reduce__(self):
-        return self.__class__, (self.source_file, False)
+        return self.__class__, (self.source_file, False), self.__getstate__()
+
+    def __getstate__(self):
+        state = {
+            "method": self._method,
+            "scan_type_index": self._scan_type_index,
+            "analyzer_to_configuration_index": self._analyzer_to_configuration_index,
+            "instrument_config": self._instrument_config,
+            "previous_ms_levels": self._previous_ms_levels,
+        }
+        return state
+
+    def __setstate__(self, state):
+        self._method = state['method']
+        self._scan_type_index = state['scan_type_index']
+        self._analyzer_to_configuration_index = state['analyzer_to_configuration_index']
+        self._instrument_config = state['instrument_config']
+        self._previous_ms_levels = state['previous_ms_levels']
 
     @property
     def index(self):
@@ -508,7 +522,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         return self._index
 
     def __repr__(self):
-        return "ThermoRawLoader(%r)" % (self.source_file)
+        return f"ThermoRawLoader({self.source_file})"
 
     def _pack_index(self):
         index = OrderedDict()
@@ -564,7 +578,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
             if not package.validate(self):
-                raise KeyError(str(scan_id))
+                raise KeyError(str(scan_id)) from None
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan
@@ -590,7 +604,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         except KeyError:
             package = ThermoRawScanPtr(scan_number)
             if not package.validate(self):
-                raise IndexError(index)
+                raise IndexError(index) from None
             scan = Scan(package, self)
             self._scan_cache[scan_number] = scan
             return scan
@@ -623,7 +637,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             self._scan_cache[scan_number] = scan
             return scan
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
@@ -661,9 +675,9 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             scan_number = start_index
         iterator = self._make_pointer_iterator(start_index=scan_number)
         if grouped:
-            self._producer = self._scan_group_iterator(iterator)
+            self._producer = self._scan_group_iterator(iterator, grouped, **kwargs)
         else:
-            self._producer = self._single_scan_iterator(iterator)
+            self._producer = self._single_scan_iterator(iterator, grouped, **kwargs)
         return self
 
     def _make_scan_index_producer(self, start_index=None, start_time=None):

@@ -3,13 +3,20 @@
 cimport cython
 from cpython.list cimport PyList_Append, PyList_GET_ITEM, PyList_GET_SIZE
 
+from libc.math cimport sqrt
+
+
 import numpy as np
 cimport numpy as np
 
+from numpy.math cimport isnan, NAN
+
 from ms_peak_picker._c.peak_index cimport PeakIndex
 from ms_peak_picker._c.peak_set cimport PeakSet, FittedPeak, PeakSetIndexed
+
 from ms_deisotope._c.peak_set cimport (
     Envelope, EnvelopePair, DeconvolutedPeak, DeconvolutedPeakSet, DeconvolutedPeakSetIndexed, PeakBase)
+
 from ms_deisotope._c.averagine cimport neutral_mass
 
 
@@ -66,6 +73,11 @@ cpdef list decode_envelopes(np.ndarray[np.float32_t, ndim=1] array):
                 if n_members > 0:
                     current_envelope_tuple = tuple(current_envelope)
                     PyList_Append(envelope_list, Envelope._create(current_envelope_tuple))
+                elif i > 2:
+                    PyList_Append(envelope_list, Envelope._create(
+                            ()
+                        )
+                    )
                 current_envelope = []
                 n_members = 0
         else:
@@ -103,7 +115,7 @@ cpdef np.ndarray[np.float32_t] envelopes_to_array(list envelope_list):
 
 
 @cython.boundscheck(False)
-cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dict):
+cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dict, bint include_envelopes=True):
     cdef:
         list envelopes, peaks
         np.ndarray[np.float64_t] mz_array
@@ -117,7 +129,10 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
         DeconvolutedPeakSetIndexed peak_set
 
     peaks = []
-    envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    if include_envelopes:
+        envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    else:
+        envelopes = None
     mz_array = scan_dict['m/z array'].astype(np.float64)
     intensity_array = scan_dict['intensity array'].astype(np.float64)
     charge_array = scan_dict['charge array'].astype(np.int8)
@@ -135,7 +150,8 @@ cpdef DeconvolutedPeakSetIndexed deserialize_deconvoluted_peak_set(dict scan_dic
             charge_array[i],
             score_array[i],
             mz,
-            <Envelope>PyList_GET_ITEM(envelopes, i))
+            <Envelope>PyList_GET_ITEM(envelopes, i) if include_envelopes else None
+        )
         peaks.append(peak)
     peak_set = DeconvolutedPeakSetIndexed(peaks)
     peak_set.reindex()
@@ -253,3 +269,28 @@ cpdef PeakBase _peak_sequence_bp(self, peak_collection peaks):
             base_peak = peak
             max_intensity = peak.intensity
     return base_peak
+
+
+cpdef double correlation(cython.floating[:] x, cython.floating[:] y):
+    cdef:
+        size_t i, n
+        double xsum, ysum, xmean, ymean
+        double cov, varx, vary
+    n = len(x)
+    if n == 0:
+        return NAN
+    xsum = 0.
+    ysum = 0.
+    for i in range(n):
+        xsum += x[i]
+        ysum += y[i]
+    xmean = xsum / n
+    ymean = ysum / n
+    cov = 0.
+    varx = 0.
+    vary = 0.
+    for i in range(n):
+        cov += (x[i] - xmean) * (y[i] - ymean)
+        varx += (x[i] - xmean) ** 2
+        vary += (y[i] - ymean) ** 2
+    return cov / (sqrt(varx) * sqrt(vary))

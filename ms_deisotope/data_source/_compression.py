@@ -29,6 +29,8 @@ try:
             value = self._impl.write(b)
             return value
 
+    idzip.compressor.IdzipWriter.enforce_extension = False
+
     GzipFile = IdzipFile
     WRITE_BUFFER_SIZE = idzip.MAX_MEMBER_SIZE
     has_idzip = True
@@ -123,6 +125,24 @@ def starts_with_gz_magic(bytestring):
     return bytestring.startswith(GZIP_MAGIC)
 
 
+ZSTD_MAGIC = b'(\xb5/\xfd'
+
+def starts_with_zstd_magic(bytestring):
+    '''Tests whether or not a byte string starts with
+    the ZSTD magic bytes.
+
+    Parameters
+    ----------
+    bytestring : bytes
+        The bytes to test.
+
+    Returns
+    -------
+    bool
+    '''
+    return bytestring.startswith(ZSTD_MAGIC)
+
+
 def get_opener(f, buffer_size=None):
     '''Select the file reading type for the given path or stream.
 
@@ -155,3 +175,11 @@ if PY2:
         '''Monkeypatch Py2 Dill
         '''
         dill._dill._save_file(pickler, obj, io.open)
+
+
+try:
+    from isal import isal_zlib as zlib
+    from pyteomics.auxiliary import utils
+    utils._default_compression_map['zlib compression'] = zlib.decompress
+except ImportError:
+    pass

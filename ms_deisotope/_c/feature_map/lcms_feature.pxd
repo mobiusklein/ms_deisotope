@@ -88,13 +88,17 @@ cdef class LCMSFeature(FeatureBase):
     cpdef bint spans_in_time(self, double time)
 
     cdef LCMSFeatureTreeNode getitem(self, size_t i)
-    cdef void _feed_peak_averager(self)
+
+    cpdef _initialize_averager(self)
+    cpdef _update_from_averager(self)
+    cpdef _reaverage_and_update(self)
 
     cpdef insert_node(self, LCMSFeatureTreeNode node)
     cpdef insert(self, PeakBase peak, double time)
     cpdef _invalidate(self, bint reaverage=*)
     cpdef list split_sparse(self, double delta_rt=*)
     cpdef LCMSFeature clone(self, deep=*, cls=*)
+    cpdef double max_intensity(self)
 
 
 cdef class EmptyFeature(FeatureBase):
@@ -117,7 +121,7 @@ cdef class FeatureSetIterator(object):
         @staticmethod
         cdef FeatureSetIterator _create_with_threshold(list features, list theoretical_distribution, double detection_threshold)
 
-        cdef void _initialize(self, list features)
+        cdef int _initialize(self, list features) except 1
 
         cpdef init_indices(self)
         cpdef double get_next_time(self)
@@ -136,9 +140,11 @@ cdef class RunningWeightedAverage(object):
         public size_t current_count
         public double total_weight
 
+    cpdef reset(self)
     cpdef _initialize(self)
     cpdef add(self, PeakBase peak)
     cpdef RunningWeightedAverage update(self, iterable)
+    cpdef int feed_from_feature(self, LCMSFeature feature)
 
     @staticmethod
     cdef RunningWeightedAverage _create(list peaks)

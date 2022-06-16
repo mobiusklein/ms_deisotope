@@ -1,22 +1,52 @@
 import logging
 import array
+
 from collections import defaultdict
+from typing import List, Optional, Tuple
 
 import numpy as np
 
+from ms_peak_picker import PeakSet, PeakLike as PeakBase
+
 from ms_deisotope.data_source.common import ProcessedScan
 from ms_deisotope import DeconvolutedPeakSet
-from ms_peak_picker import PeakSet
 from ms_deisotope.peak_dependency_network.intervals import Interval, IntervalTreeNode
+from ms_deisotope.peak_set import DeconvolutedPeak, IonMobilityProfileDeconvolutedPeakSolution
 
 from .lcms_feature import LCMSFeature
-from .feature_fit import DeconvolutedLCMSFeature, IonMobilityDeconvolutedLCMSFeature
+from .feature_fit import DeconvolutedLCMSFeature, IonMobilityDeconvolutedLCMSFeature, IonMobilityProfileDeconvolutedLCMSFeature
+from ._mz_feature_search import (
+    search_sweep,
+    binary_search,
+    binary_search_exact,
+    binary_search_with_flag,
 
+    search_sweep_neutral,
+    binary_search_neutral,
+    binary_search_exact_neutral,
+    binary_search_with_flag_neutral,
+
+    _FeatureIndex,
+    MZIndex,
+    NeutralMassIndex)
+
+from .feature_graph import GapAwareFeatureSmoother, GapAwareDeconvolutedFeatureSmoother, GapAwareIonMobilityDeconvolutedFeatureSmoother
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+
+class _QueryMixin(object):
+    __slots__ = ()
+
+    def between_times(self, start: float, end: float) -> list:
+        itree: IntervalTreeNode = build_rt_interval_tree(self)
+        return [f for i in itree.overlaps(start, end) for f in i]
+
+
 class _FeatureCollection(object):
+    __slots__ = ()
+
     def __len__(self):
         return len(self.features)
 
@@ -38,12 +68,13 @@ class _FeatureCollection(object):
         return not self == other
 
 
-class LCMSFeatureMap(_FeatureCollection):
+class LCMSFeatureMap(_FeatureCollection, _QueryMixin):
+    features: List[LCMSFeature]
 
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: (x.mz, x.start_time))
 
-    def search(self, mz, error_tolerance=2e-5):
+    def search(self, mz: float, error_tolerance: Optional[float]=2e-5) -> Optional[LCMSFeature]:
         '''Search for a single feature within `error_tolerance` of `mz`.
 
         Parameters
@@ -69,7 +100,7 @@ class LCMSFeatureMap(_FeatureCollection):
         match = self[i]
         return match
 
-    def find_all(self, mz, error_tolerance=2e-5):
+    def find_all(self, mz: float, error_tolerance: Optional[float]=2e-5) -> List[LCMSFeature]:
         '''Search for all features within `error_tolerance` of `mz`.
 
         Parameters
@@ -96,17 +127,17 @@ class LCMSFeatureMap(_FeatureCollection):
         else:
             return []
 
-    def spanning_time(self, time_point):
+    def spanning_time(self, time_point: float) -> List[LCMSFeature]:
         return [feature for feature in self if feature.spans_in_time(time_point)]
 
-    def index_range(self, lo, hi, error_tolerance=2e-5):
+    def index_range(self, lo: float, hi: float, error_tolerance: Optional[float]=2e-5) -> Tuple[int, int]:
         return (
             binary_search_with_flag(
                 self.features, lo, error_tolerance)[0][0],
             binary_search_with_flag(
                 self.features, hi, error_tolerance)[0][0])
 
-    def between(self, lo, hi, error_tolerance=2e-5):
+    def between(self, lo: float, hi: float, error_tolerance: Optional[float]=2e-5) -> List[LCMSFeature]:
         '''Search for all features between `lo` and `hi`, allowing `error_tolerance`
         around the edges.
 
@@ -171,12 +202,16 @@ class LCMSFeatureMap(_FeatureCollection):
 
 
 try:
-    from ms_deisotope._c.feature_map.feature_map import LCMSFeatureMap
+    from ms_deisotope._c.feature_map.feature_map import LCMSFeatureMap as _CLCMSFeatureMap
+
+    class LCMSFeatureMap(_CLCMSFeatureMap, _QueryMixin):
+        __slots__ = ()
+
 except ImportError:
     pass
 
 
-class LCMSFeatureForest(LCMSFeatureMap):
+class LCMSFeatureForest(LCMSFeatureMap, _QueryMixin):
     """An an algorithm for aggregating features from peaks of similar m/z.
 
     Attributes
@@ -188,6 +223,9 @@ class LCMSFeatureForest(LCMSFeatureMap):
     error_tolerance : float
         The mass error tolerance between peaks and possible features (in ppm)
     """
+    error_tolerance: float
+    count: int
+
     def __init__(self, features=None, error_tolerance=1e-5):
         if features is None:
             features = []
@@ -195,7 +233,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
         self.error_tolerance = error_tolerance
         self.count = 0
 
-    def find_insertion_point(self, peak):
+    def find_insertion_point(self, peak: PeakBase) -> Tuple[int, bool]:
         '''Find the position in `self` where the peak's matching feature
         should be, and whether there was a feature that matched.
 
@@ -215,7 +253,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
             self.features, peak.mz, self.error_tolerance)
         return index, matched
 
-    def find_minimizing_index(self, peak, indices):
+    def find_minimizing_index(self, peak: PeakBase, indices: List[int]) -> int:
         '''Amongst the set of `indices`, find the one that
         minimizes the distance to `peak`
 
@@ -242,7 +280,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
                 best_error = err
         return best_index
 
-    def handle_peak(self, peak, scan_time):
+    def handle_peak(self, peak: PeakBase, scan_time: float):
         '''Add `peak` at `scan_time` to the feature forest.
 
         If `peak` matches an existing feature, insert it into that feature
@@ -272,7 +310,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
             self.insert_feature(feature, index)
         self.count += 1
 
-    def insert_feature(self, feature, index):
+    def insert_feature(self, feature: LCMSFeature, index: int):
         '''Insert `feature` at `index` in :attr:`self.features`
 
         This method does minimal order-correctness checking.
@@ -321,11 +359,15 @@ class LCMSFeatureForest(LCMSFeatureMap):
         --------
         LCMSFeature.split_sparse
         '''
-        features = [fi for f in self.features for fi in f.split_sparse(delta_rt) if len(fi) >= min_size]
+        features = []
+        for f in self.features:
+            for fi in f.split_sparse(delta_rt):
+                if len(fi) >= min_size:
+                    features.append(fi)
         self.features = features
         return self
 
-    def smooth_overlaps(self, error_tolerance=None):
+    def smooth_overlaps(self, error_tolerance=None, time_bridge: float=0.25):
         '''Use a single pass of :func:`smooth_overlaps` to merge features which
         are nearby in the m/z dimension and overlap in the time dimension.
 
@@ -349,7 +391,13 @@ class LCMSFeatureForest(LCMSFeatureMap):
         '''
         if error_tolerance is None:
             error_tolerance = self.error_tolerance
-        self.features = smooth_overlaps(self.features, error_tolerance)
+        # self.features = smooth_overlaps(self.features, error_tolerance)
+
+        self.features = GapAwareFeatureSmoother.smooth(
+            self.features,
+            time_bridge=time_bridge,
+            mass_error_tolerance=error_tolerance).features
+
         return self
 
     def aggregate_peaks(self, scans, minimum_mz=160, minimum_intensity=500., maximum_mz=float('inf')):
@@ -414,334 +462,7 @@ class LCMSFeatureForest(LCMSFeatureMap):
         return self
 
 
-def smooth_overlaps_simple(feature_list, error_tolerance=1e-5):
-    feature_list = sorted(feature_list, key=lambda x: x.mz)
-    out = []
-    last = feature_list[0]
-    i = 1
-    while i < len(feature_list):
-        current = feature_list[i]
-        mass_error = abs((last.mz - current.mz) / current.mz)
-        if mass_error <= error_tolerance:
-            if last.overlaps_in_time(current):
-                last = last.merge(current)
-                last.created_at = "smooth_overlaps"
-            else:
-                out.append(last)
-                last = current
-        else:
-            out.append(last)
-            last = current
-        i += 1
-    out.append(last)
-    return out
-
-
-def smooth_overlaps(feature_list, error_tolerance=1e-5, time_bridge=0):
-    smoother = LCMSFeatureOverlapSmoother(feature_list, error_tolerance)
-    return smoother.smooth()
-
-
-def smooth_overlaps_neutral(feature_list, error_tolerance=1e-5, time_bridge=0):
-    smoother = NeutralMassLCMSFeatureOverlapSmoother(feature_list, error_tolerance)
-    return smoother.smooth()
-
-
-def binary_search_with_flag(array, mz, error_tolerance=1e-5):
-    lo = 0
-    n = hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.mz - mz) / mz
-        if abs(err) <= error_tolerance:
-            i = mid - 1
-            # Begin Sweep forward
-            while i > 0:
-                x = array[i]
-                err = (x.mz - mz) / mz
-                if abs(err) <= error_tolerance:
-                    i -= 1
-                    continue
-                else:
-                    break
-            low_end = i
-            i = mid + 1
-
-            # Begin Sweep backward
-            while i < n:
-                x = array[i]
-                err = (x.mz - mz) / mz
-                if abs(err) <= error_tolerance:
-                    i += 1
-                    continue
-                else:
-                    break
-            high_end = i
-            return list(range(low_end, high_end)), True
-        elif (hi - lo) == 1:
-            return [mid], False
-        elif err > 0:
-            hi = mid
-        elif err < 0:
-            lo = mid
-    return [0], False
-
-
-def binary_search(array, mz, error_tolerance=1e-5):
-    """Binary search an ordered array of objects with :attr:`mz`
-    using a PPM error tolerance of `error_tolerance`
-
-    Parameters
-    ----------
-    array : list
-        An list of objects, sorted over :attr:`mz` in increasing order
-    mz : float
-        The mz to search for
-    error_tolerance : float, optional
-        The PPM error tolerance to use when deciding whether a match has been found
-
-    Returns
-    -------
-    int:
-        The index in `array` of the best match
-    """
-    lo = 0
-    n = hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.mz - mz) / mz
-        if abs(err) <= error_tolerance:
-            best_index = mid
-            best_error = abs(err)
-            i = mid - 1
-            while i >= 0:
-                x = array[i]
-                err = abs((x.mz - mz) / mz)
-                if err < best_error:
-                    best_error = err
-                    best_index = i
-                i -= 1
-
-            i = mid + 1
-            while i < n:
-                x = array[i]
-                err = abs((x.mz - mz) / mz)
-                if err < best_error:
-                    best_error = err
-                    best_index = i
-                i += 1
-            return best_index
-        elif (hi - lo) == 1:
-            return None
-        elif err > 0:
-            hi = mid
-        elif err < 0:
-            lo = mid
-    return 0
-
-
-def binary_search_exact(array, mz):
-    lo = 0
-    hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.mz - mz)
-        if err == 0:
-            return mid
-        elif (hi - lo) == 1:
-            return mid
-        elif err > 0:
-            hi = mid
-        else:
-            lo = mid
-    return 0
-
-
-def search_sweep(array, mz, error_tolerance=1e-5):
-    lo = 0
-    n = hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.mz - mz) / mz
-        if abs(err) <= error_tolerance:
-            i = mid - 1
-            while i >= 0:
-                x = array[i]
-                err = abs((x.mz - mz) / mz)
-                if err > error_tolerance:
-                    break
-                i -= 1
-            start = i + 1
-            i = mid + 1
-            while i < n:
-                x = array[i]
-                err = abs((x.mz - mz) / mz)
-                if err > error_tolerance:
-                    break
-                i += 1
-            end = i
-            return (start, end)
-        elif (hi - lo) == 1:
-            return None
-        elif err > 0:
-            hi = mid
-        elif err < 0:
-            lo = mid
-    return 0
-
-
-def binary_search_with_flag_neutral(array, neutral_mass, error_tolerance=1e-5):
-    lo = 0
-    n = hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.neutral_mass - neutral_mass) / neutral_mass
-        if abs(err) <= error_tolerance:
-            i = mid - 1
-            # Begin Sweep forward
-            while i > 0:
-                x = array[i]
-                err = (x.neutral_mass - neutral_mass) / neutral_mass
-                if abs(err) <= error_tolerance:
-                    i -= 1
-                    continue
-                else:
-                    break
-            low_end = i
-            i = mid + 1
-
-            # Begin Sweep backward
-            while i < n:
-                x = array[i]
-                err = (x.neutral_mass - neutral_mass) / neutral_mass
-                if abs(err) <= error_tolerance:
-                    i += 1
-                    continue
-                else:
-                    break
-            high_end = i
-            return list(range(low_end, high_end)), True
-        elif (hi - lo) == 1:
-            return [mid], False
-        elif err > 0:
-            hi = mid
-        elif err < 0:
-            lo = mid
-    return [0], False
-
-
-def binary_search_neutral(array, neutral_mass, error_tolerance=1e-5):
-    """Binary search an ordered array of objects with :attr:`neutral_mass`
-    using a PPM error tolerance of `error_toler
-
-    Parameters
-    ----------
-    array : list
-        An list of objects, sorted over :attr:`neutral_mass` in increasing order
-    neutral_mass : float
-        The neutral_mass to search for
-    error_tolerance : float, optional
-        The PPM error tolerance to use when deciding whether a match has been found
-
-    Returns
-    -------
-    int:
-        The index in `array` of the best match
-    """
-    lo = 0
-    n = hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.neutral_mass - neutral_mass) / neutral_mass
-        if abs(err) <= error_tolerance:
-            best_index = mid
-            best_error = abs(err)
-            i = mid - 1
-            while i >= 0:
-                x = array[i]
-                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
-                if err < best_error:
-                    best_error = err
-                    best_index = i
-                i -= 1
-
-            i = mid + 1
-            while i < n:
-                x = array[i]
-                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
-                if err < best_error:
-                    best_error = err
-                    best_index = i
-                i += 1
-            return best_index
-        elif (hi - lo) == 1:
-            return None
-        elif err > 0:
-            hi = mid
-        elif err < 0:
-            lo = mid
-    return 0
-
-
-def search_sweep_neutral(array, neutral_mass, error_tolerance=1e-5):
-    lo = 0
-    n = hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.neutral_mass - neutral_mass) / neutral_mass
-        if abs(err) <= error_tolerance:
-            i = mid - 1
-            while i >= 0:
-                x = array[i]
-                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
-                if err > error_tolerance:
-                    break
-                i -= 1
-            start = i + 1
-            i = mid + 1
-            while i < n:
-                x = array[i]
-                err = abs((x.neutral_mass - neutral_mass) / neutral_mass)
-                if err > error_tolerance:
-                    break
-                i += 1
-            end = i
-            return (start, end)
-        elif (hi - lo) == 1:
-            return None
-        elif err > 0:
-            hi = mid
-        elif err < 0:
-            lo = mid
-    return 0, 0
-
-
-def binary_search_exact_neutral(array, neutral_mass):
-    lo = 0
-    hi = len(array)
-    while hi != lo:
-        mid = (hi + lo) // 2
-        x = array[mid]
-        err = (x.neutral_mass - neutral_mass)
-        if err == 0:
-            return mid
-        elif (hi - lo) == 1:
-            return mid
-        elif err > 0:
-            hi = mid
-        else:
-            lo = mid
-    return 0
-
-
-class DeconvolutedLCMSFeatureMap(_FeatureCollection):
+class DeconvolutedLCMSFeatureMap(_FeatureCollection, _QueryMixin):
 
     def __init__(self, features):
         self.features = sorted(features, key=lambda x: (round(x.neutral_mass, 6), x.start_time))
@@ -966,52 +687,6 @@ def convert_map_to_scan_peak_list(feature_map, peak_loader, time_precision=4, de
     return packed
 
 
-class _FeatureIndex(object):
-    def __iter__(self):
-        return iter(self.features)
-
-    def __getitem__(self, i):
-        return self.features[i]
-
-    def __len__(self):
-        return len(self.features)
-
-    def __nonzero__(self):
-        return bool(self.features)
-
-    def __bool__(self):
-        return bool(self.features)
-
-    def __repr__(self):
-        return "{self.__class__.__name__}(<{size} features>)".format(self=self, size=len(self))
-
-
-class MZIndex(_FeatureIndex):
-    def __init__(self, features):
-        self.features = sorted(features, key=lambda x: x.mz)
-
-    def find_all(self, mz, error_tolerance=2e-5):
-        bounds = search_sweep(self.features, mz, error_tolerance)
-        if bounds is not None:
-            lo, hi = bounds
-            return self[lo:hi]
-        else:
-            return []
-
-
-class NeutralMassIndex(_FeatureIndex):
-    def __init__(self, features):
-        self.features = sorted(features, key=lambda x: x.neutral_mass)
-
-    def find_all(self, mass, error_tolerance=2e-5):
-        bounds = search_sweep_neutral(self.features, mass, error_tolerance)
-        if bounds is not None:
-            lo, hi = bounds
-            return self[lo:hi]
-        else:
-            return []
-
-
 try:
     from ms_deisotope._c.feature_map.feature_map import binary_search_with_flag
 except ImportError:
@@ -1025,7 +700,6 @@ class FeatureRetentionTimeInterval(Interval):
         self.neutral_mass = chromatogram.neutral_mass
         self.start_time = self.start
         self.end_time = self.end
-        self.data['neutral_mass'] = self.neutral_mass
 
 
 def build_rt_interval_tree(chromatogram_list, interval_tree_type=IntervalTreeNode):
@@ -1146,77 +820,6 @@ def layered_traversal(nodes):
     return sorted(nodes, key=lambda x: (x.level, x.center), reverse=True)
 
 
-class LCMSFeatureOverlapSmoother(_FeatureCollection):
-    '''Merge features which overlap in time but which are within :attr:`error_tolerance`
-    mass units of another, recursively merging upwards from smallest to largest intervals.
-
-    Attributes
-    ----------
-    '''
-    def __init__(self, features, error_tolerance=1e-5, time_bridge=0):
-        self.retention_interval_tree = build_rt_interval_tree(features)
-        self.error_tolerance = error_tolerance
-        self.time_bridge = time_bridge
-        self.solution_map = {None: []}
-        self.features = self.smooth()
-
-    def _merge_features(self, features):
-        merger = LCMSFeatureMerger(error_tolerance=self.error_tolerance)
-        merger.aggregate_features(features)
-        return list(merger)
-
-    def aggregate_interval(self, tree):
-        features = [interval[0] for interval in tree.contained]
-        features.extend(self.solution_map[tree.left])
-        features.extend(self.solution_map[tree.right])
-        merged = self.solution_map[tree] = self._merge_features(features)
-        return merged
-
-    def smooth(self):
-        nodes = layered_traversal(flatten_tree(self.retention_interval_tree))
-        for node in nodes:
-            self.aggregate_interval(node)
-        final = self.solution_map[self.retention_interval_tree]
-        result = self._merge_features(final)
-        return result
-
-
-class NeutralMassLCMSFeatureMerger(LCMSFeatureMerger):
-    def _mass_coordinate(self, x):
-        return x.neutral_mass
-
-    # Mass Coordinate Explicit
-    def find_candidates(self, new_feature):
-        index, matched = binary_search_with_flag_neutral(
-            self.features, new_feature.neutral_mass, self.error_tolerance)
-        return index, matched
-
-    def merge_overlaps(self, new_feature, feature_range):
-        has_merged = False
-        query_mass = self._mass_coordinate(new_feature)
-        for chroma in feature_range:
-            cond = chroma.overlaps_in_time(new_feature)
-            cond = (cond and chroma.charge == new_feature.charge and abs(
-                    (self._mass_coordinate(chroma) - query_mass) / query_mass) < self.error_tolerance)
-            if cond:
-                chroma.merge(new_feature)
-                has_merged = True
-                break
-        return has_merged
-
-    # Mass Coordinate Explicit
-    def find_insertion_point(self, new_feature):
-        return binary_search_exact_neutral(
-            self.features, new_feature.neutral_mass)
-
-
-class NeutralMassLCMSFeatureOverlapSmoother(LCMSFeatureOverlapSmoother):
-    def _merge_features(self, features):
-        merger = NeutralMassLCMSFeatureMerger(error_tolerance=self.error_tolerance)
-        merger.aggregate_features(features)
-        return list(merger)
-
-
 class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
     """An algorithm for aggregating features from peaks of close mass.
 
@@ -1239,7 +842,7 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         self.count = 0
 
 
-    def find_insertion_point(self, peak):
+    def find_insertion_point(self, peak: DeconvolutedPeak) -> Tuple[int, bool]:
         '''Find the position in `self` where the peak's matching feature
         should be, and whether there was a feature that matched.
 
@@ -1259,7 +862,7 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
             self.features, peak.neutral_mass, self.error_tolerance)
         return index, matched
 
-    def find_minimizing_index(self, peak, indices):
+    def find_minimizing_index(self, peak: DeconvolutedPeak, indices: List[int]) -> int:
         '''Amongst the set of `indices`, find the one that
         minimizes the distance to `peak`
 
@@ -1289,7 +892,7 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
                 best_error = err
         return best_index
 
-    def handle_peak(self, peak, scan_time):
+    def handle_peak(self, peak: DeconvolutedPeak, scan_time: float):
         '''Add `peak` at `scan_time` to the feature forest.
 
         If `peak` matches an existing feature, insert it into that feature
@@ -1326,7 +929,7 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
             self.insert_feature(feature, index)
         self.count += 1
 
-    def insert_feature(self, feature, index):
+    def insert_feature(self, feature: DeconvolutedLCMSFeature, index: int):
         '''Insert `feature` at `index` in :attr:`self.features`
 
         This method does minimal order-correctness checking.
@@ -1404,7 +1007,8 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         '''
         if error_tolerance is None:
             error_tolerance = self.error_tolerance
-        self.features = smooth_overlaps_neutral(self.features, error_tolerance)
+
+        self.features = GapAwareDeconvolutedFeatureSmoother.smooth(self.features, mass_error_tolerance=error_tolerance)
         self._by_mz = sorted(self.features, key=lambda x: x.mz)
         return self
 
@@ -1472,44 +1076,6 @@ class DeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureMap):
         return self
 
 
-class IonMobilityNeutralMassLCMSFeatureMerger(NeutralMassLCMSFeatureMerger):
-    def __init__(self, features=None, error_tolerance=1e-5, drift_error_tolerance=0.1):
-        self.drift_error_tolerance = drift_error_tolerance
-        super(IonMobilityNeutralMassLCMSFeatureMerger, self).__init__(features, error_tolerance)
-
-    def merge_overlaps(self, new_feature, feature_range):
-        has_merged = False
-        query_mass = self._mass_coordinate(new_feature)
-        for chroma in feature_range:
-            cond = chroma.overlaps_in_time(new_feature)
-            cond = (cond and chroma.charge == new_feature.charge and abs(
-                    (self._mass_coordinate(chroma) - query_mass) / query_mass) < self.error_tolerance)
-            cond = (cond and abs(chroma.drift_time - new_feature.drift_time) < self.drift_error_tolerance)
-            if cond:
-                chroma.merge(new_feature)
-                has_merged = True
-                break
-        return has_merged
-
-
-class IonMobilityNeutralMassLCMSFeatureOverlapSmoother(NeutralMassLCMSFeatureOverlapSmoother):
-    def __init__(self, features, error_tolerance=1e-5, time_bridge=0, drift_error_tolerance=0.1):
-        self.drift_error_tolerance = drift_error_tolerance
-        super(IonMobilityNeutralMassLCMSFeatureOverlapSmoother, self).__init__(features, error_tolerance, time_bridge)
-
-    def _merge_features(self, features):
-        merger = IonMobilityNeutralMassLCMSFeatureMerger(
-            error_tolerance=self.error_tolerance, drift_error_tolerance=self.drift_error_tolerance)
-        merger.aggregate_features(features)
-        return list(merger)
-
-
-def smooth_overlaps_neutral_ims(feature_list, error_tolerance=1e-5, time_bridge=0, drift_error_tolerance=0.1):
-    smoother = IonMobilityNeutralMassLCMSFeatureOverlapSmoother(
-        feature_list, error_tolerance, drift_error_tolerance=drift_error_tolerance)
-    return smoother.smooth()
-
-
 class IonMobilityDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
     def __init__(self, features=None, error_tolerance=1e-5, drift_error_tolerance=0.1):
         self.drift_error_tolerance = drift_error_tolerance
@@ -1518,8 +1084,8 @@ class IonMobilityDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
     def smooth_overlaps(self, error_tolerance=None):
         if error_tolerance is None:
             error_tolerance = self.error_tolerance
-        self.features = smooth_overlaps_neutral_ims(
-            self.features, error_tolerance, drift_error_tolerance=self.drift_error_tolerance)
+        self.features = GapAwareIonMobilityDeconvolutedFeatureSmoother.smooth(
+            self.features, error_tolerance, ion_mobility_error_tolerance=self.drift_error_tolerance).features
         return self
 
     def find_minimizing_index(self, peak, indices):
@@ -1589,3 +1155,103 @@ class IonMobilityDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
             minimum_intensity=minimum_intensity,
             maximum_mass=maximum_mass)
         return self
+
+
+class IonMobilityProfileDeconvolutedLCMSFeatureForest(DeconvolutedLCMSFeatureForest):
+    def find_minimizing_index(self, peak: IonMobilityProfileDeconvolutedPeakSolution, indices):
+        '''Amongst the set of `indices`, find the one that
+        minimizes the distance to `peak`
+
+        Parameters
+        ----------
+        peak : PeakBase
+            The peak to match
+        indicies : Iterable of int
+            The feature inidices in `self` to choose between
+
+        Returns
+        -------
+        int:
+            The best index out of `indices`, with the smallest distance
+            to `peak`
+        '''
+        best_index = None
+        best_error = float('inf')
+        for index_case in indices:
+            feature = self[index_case]
+            if feature.charge != peak.charge:
+                continue
+            if not feature.ion_mobility_interval.overlaps(peak.ion_mobility_interval):
+                continue
+            err = abs(feature.neutral_mass - peak.neutral_mass) / \
+                peak.neutral_mass
+            if err < best_error and err < self.error_tolerance:
+                best_index = index_case
+                best_error = err
+        return best_index
+
+    def handle_peak(self, peak, scan_time):
+        '''Add `peak` at `scan_time` to the feature forest.
+
+        If `peak` matches an existing feature, insert it into that feature
+        with `scan_time`. If no feature is matched, create a new feature wit
+        `peak` and add it to the feature forest.
+
+        Parameters
+        ----------
+        peak : DeconvolutedPeak
+            The peak to add.
+        scan_time : float
+            The time the peak was observed.
+
+        '''
+        if len(self) == 0:
+            index = [0]
+            matched = False
+        else:
+            index, matched = self.find_insertion_point(peak)
+        if matched:
+            minimized_feature_index = self.find_minimizing_index(peak, index)
+            if minimized_feature_index is not None:
+                feature = self.features[minimized_feature_index]
+                feature.insert(peak, scan_time)
+            else:
+                feature = IonMobilityProfileDeconvolutedLCMSFeature(charge=peak.charge)
+                feature.created_at = "forest"
+                feature.insert(peak, scan_time)
+                self.insert_feature(feature, index)
+        else:
+            feature = IonMobilityProfileDeconvolutedLCMSFeature(charge=peak.charge)
+            feature.created_at = "forest"
+            feature.insert(peak, scan_time)
+            self.insert_feature(feature, index)
+        self.count += 1
+
+    def smooth_overlaps(self, error_tolerance=None):
+        from .feature_graph import GapAwareIonMobilityProfileDeconvolutedFeatureSmoother
+        if error_tolerance is None:
+            error_tolerance = self.error_tolerance
+        self.features = GapAwareIonMobilityProfileDeconvolutedFeatureSmoother.smooth(
+            self.features, mass_error_tolerance=error_tolerance).features
+        return self
+
+
+def remove_peaks_below_threshold(feature_map: _FeatureCollection, minimum_intensity: float, min_size: int = 2, maximum_time_gap: float = 1.0) -> _FeatureCollection:
+    out = []
+    feature: LCMSFeature
+    for feature in feature_map:
+        keep = []
+        for node in feature:
+            if node.total_intensity() > minimum_intensity:
+                keep.append(node)
+
+        if keep:
+            filtered_feature: LCMSFeature = feature._copy_chunk(
+                keep)
+            filtered_feature.feature_id = feature.feature_id
+            out.extend(filter(
+                lambda f: len(f) >= min_size,
+                filtered_feature.split_sparse(
+                    delta_rt=maximum_time_gap)))
+    feature_map = feature_map.__class__(out)
+    return feature_map

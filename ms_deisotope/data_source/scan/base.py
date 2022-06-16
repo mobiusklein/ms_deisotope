@@ -1,9 +1,12 @@
 '''Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 '''
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 import warnings
 
 from collections import namedtuple
+
+from ms_deisotope.qc.isolation import CoIsolation
 
 try:
     from collections.abc import Sequence as _SequenceABC
@@ -14,10 +17,11 @@ from numbers import Number
 
 import numpy as np
 
-from ms_peak_picker import average_signal
+from ms_peak_picker import average_signal, FittedPeak
 from ms_peak_picker.base import PeakLike
 
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
+from ms_deisotope.peak_set import DeconvolutedPeak
 from ms_deisotope.deconvolution import deconvolute_peaks
 
 from ms_deisotope.data_source.metadata.scan_traits import _IonMobilityMixin
@@ -32,6 +36,11 @@ except ImportError:
     draw_raw = _missing_matplotlib
 
 from ms_deisotope.utils import Constant
+
+
+if TYPE_CHECKING:
+    from ms_deisotope.data_source.scan.loader import ScanDataSource
+    from ms_deisotope.qc.isolation import CoIsolation
 
 
 DEFAULT_CHARGE_WHEN_NOT_RESOLVED = 1
@@ -51,6 +60,9 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         from :attr:`precursor` or another element of this list derived
         from it.
     """
+    precursor: 'ScanBase'
+    produces: List['ScanBase']
+    _id_map: Dict[str, 'ScanBase']
 
     def __new__(cls, *args, **kwargs):
         inst = super(ScanBunch, cls).__new__(cls, *args, **kwargs)
@@ -61,7 +73,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
             inst._id_map[scan.id] = scan
         return inst
 
-    def precursor_for(self, scan):
+    def precursor_for(self, scan: 'ScanBase') -> Optional['ScanBase']:
         """Find the precursor :class:`~.ScanBase` instance
         for the given scan object
 
@@ -79,7 +91,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
             return self.get_scan_by_id(scan_id)
         return None
 
-    def get_scan_by_id(self, scan_id):
+    def get_scan_by_id(self, scan_id: str) -> 'ScanBase':
         """Retrieve the scan object for the specified scan id from this
         group in memory.
 
@@ -143,7 +155,6 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         return inst
 
 
-
 class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
     """Represent the m/z and intensity arrays associated with a raw
     mass spectrum.
@@ -161,6 +172,10 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         The intensity measured at the corresponding m/z of a mass spectrum
     """
 
+    mz: np.ndarray
+    intensity: np.ndarray
+    data_arrays: Dict[str, np.ndarray]
+
     def __new__(cls, mz, intensity, data_arrays=None):
         inst = super(RawDataArrays, cls).__new__(cls, mz, intensity)
         inst.data_arrays = dict()
@@ -168,7 +183,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             inst.data_arrays.update(data_arrays)
         return inst
 
-    def __copy__(self):
+    def __copy__(self) -> 'RawDataArrays':
         inst = self.__class__(self.mz.copy(), self.intensity.copy(), {
             k: v.copy() for k, v in self.data_arrays.items()
         })
@@ -273,7 +288,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         else:
             return self.__class__(*average_signal([self, other])) * 2
 
-    def find_mz(self, mz):
+    def find_mz(self, mz: float) -> int:
         """Find the nearest index to the query ``mz``
 
         Parameters
@@ -328,7 +343,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
                 lo = mid
         return 0
 
-    def between_mz(self, low, high):
+    def between_mz(self, low: float, high: float) -> 'RawDataArrays':
         """Returns a slice of the arrays between ``low`` and ``high``
         m/z
 
@@ -350,7 +365,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return self.__class__(self.mz[i:j], self.intensity[i:j])
 
     @classmethod
-    def empty(cls):
+    def empty(cls) -> 'RawDataArrays':
         '''Create a new, empty instance.
 
         Returns
@@ -368,7 +383,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
             return self.data_arrays[i]
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.mz.size
 
 
@@ -376,7 +391,9 @@ class ScanBase(object):
     '''Abstract base class for Scan-like objects
     '''
 
-    def has_ion_mobility(self):
+    source: 'ScanDataSource'
+
+    def has_ion_mobility(self) -> bool:
         '''Check whether this scan has drift time information associated with
         it.
 
@@ -405,7 +422,7 @@ class ScanBase(object):
         return scan_event.ion_mobility_type
 
     @property
-    def drift_time(self):
+    def drift_time(self) -> Optional[float]:
         '''A convenience method to access the first
         scan event to retrieve its drift time.
 
@@ -420,13 +437,13 @@ class ScanBase(object):
         return scan_event.drift_time
 
     @property
-    def scan_id(self):
+    def scan_id(self) -> str:
         '''An alias for :attr:`id`
         '''
         return self.id
 
     @property
-    def tic(self):
+    def tic(self) -> 'TICMethods':
         """A facade function for calculating the total ion current (TIC) of a spectrum.
 
         This exposes a facade object of type :class:`TICMethods` to take care of the different
@@ -466,7 +483,7 @@ class ScanBase(object):
         return TICMethods(self)
 
     @property
-    def base_peak(self):
+    def base_peak(self) -> 'BasePeakMethods':
         """A facade function for calculating the base peak, the most abundant peak,
         of a spectrum.
 
@@ -486,7 +503,7 @@ class ScanBase(object):
         return BasePeakMethods(self)
 
     @property
-    def plot(self):
+    def plot(self) -> 'PlottingMethods':
         """A facade function for plotting different layers of signal in the scan from raw,
         centroided, and deconvoluted representation, as well as limited precursor annotation.
 
@@ -497,7 +514,7 @@ class ScanBase(object):
         return PlottingMethods(self)
 
     @property
-    def peaks(self):
+    def peaks(self) -> 'PeakSetMethods':
         """Automatically locate the most refined representation of the signal from the :class:`Scan`
         object.
 
@@ -507,7 +524,7 @@ class ScanBase(object):
         """
         return PeakSetMethods(self)
 
-    def copy(self, deep=True):
+    def copy(self, deep=True) -> 'ScanBase':
         """Return a deep copy of the :class:`Scan` object
         wrapping the same reference data.
 
@@ -517,7 +534,7 @@ class ScanBase(object):
         """
         return self.clone(deep)
 
-    def __copy__(self):
+    def __copy__(self) -> 'ScanBase':
         return self.clone()
 
     def __eq__(self, other):
@@ -600,7 +617,7 @@ class ScanBase(object):
     __hash__ = None
     # Scan objects shouldn't be hashed.
 
-    def bind(self, source):
+    def bind(self, source: 'ScanDataSource') -> 'ScanBase':
         '''Attach this object and its other referent members
         to ``source``, letting them load information.
         '''
@@ -608,7 +625,7 @@ class ScanBase(object):
             self.precursor_information.bind(source)
         return self
 
-    def unbind(self):
+    def unbind(self) -> 'ScanBase':
         '''Detattch this object and its other referent members
         from their currently bound :attr:`source`.
 
@@ -620,7 +637,7 @@ class ScanBase(object):
         return self
 
     @property
-    def source_file_name(self):
+    def source_file_name(self) -> Optional[str]:
         '''Get the name of the source file this :class:`~.ScanBase` object is bound to
 
         Returns
@@ -673,11 +690,33 @@ class PrecursorInformation(_IonMobilityMixin):
         Any object implementing the :class:`ScanIterator` interface to be used to look up
         the precursor scan with :attr:`precursor_scan_id`
     """
+    mz: float
+    intensity: float
+    charge: Union[int, Constant]
+
+    precursor_scan_id: Optional[str]
+    product_scan_id: Optional[str]
+    source: Optional['ScanDataSource']
+
+    extracted_neutral_mass: Optional[float]
+    extracted_intensity: Optional[float]
+    extracted_charge: Optional[Union[int, Constant]]
+
+    peak: Optional[FittedPeak]
+    extracted_peak: Optional[DeconvolutedPeak]
+
+    defaulted: bool
+    orphan: bool
+
+    annotations: Dict[str, Any]
+    coisolation: List[CoIsolation]
+    coisolation_index: Optional[int]
 
     def __init__(self, mz, intensity, charge, precursor_scan_id=None, source=None,
                  extracted_neutral_mass=0, extracted_charge=0, extracted_intensity=0,
                  peak=None, extracted_peak=None, defaulted=False, orphan=False,
-                 product_scan_id=None, annotations=None, coisolation=None):
+                 product_scan_id=None, annotations=None, coisolation=None,
+                 coisolation_index: Optional[int]=None):
         try:
             charge = int(charge)
         except Exception:
@@ -710,6 +749,7 @@ class PrecursorInformation(_IonMobilityMixin):
 
         self.annotations = annotations
         self.coisolation = coisolation
+        self.coisolation_index = coisolation_index
 
     def __repr__(self):
         return "PrecursorInformation(mz=%0.4f/%0.4f, intensity=%0.4f/%0.4f, charge=%r/%r, scan_id=%r)" % (
@@ -725,7 +765,8 @@ class PrecursorInformation(_IonMobilityMixin):
         # explicitly do not propagate :attr:`source` when serializing.
         return (self.mz, self.intensity, self.charge, self.precursor_scan_id, None, self.extracted_neutral_mass,
                 self.extracted_charge, self.extracted_intensity, self.peak, self.extracted_peak,
-                self.defaulted, self.orphan, self.product_scan_id, self.annotations, self.coisolation)
+                self.defaulted, self.orphan, self.product_scan_id, self.annotations,
+                self.coisolation, self.coisolation_index)
 
     def __setstate__(self, state):
         (self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source, self.extracted_neutral_mass,
@@ -735,6 +776,8 @@ class PrecursorInformation(_IonMobilityMixin):
             self.annotations = state[13]
         if len(state) > 14:
             self.coisolation = list(state[14])
+        if len(state) > 15:
+            self.coisolation_index = state[15]
 
     def __eq__(self, other):
         if other is None:
@@ -760,13 +803,13 @@ class PrecursorInformation(_IonMobilityMixin):
         return True
 
     @property
-    def traits(self):
+    def traits(self) -> Dict[str, Any]:
         return self.annotations
 
     def __ne__(self, other):
         return not (self == other)
 
-    def bind(self, source):
+    def bind(self, source: 'ScanDataSource') -> 'PrecursorInformation':
         '''Attach this object and its other referent members
         to ``source``, letting them load information.
         '''
@@ -778,7 +821,7 @@ class PrecursorInformation(_IonMobilityMixin):
         '''
         self.source = None
 
-    def extract(self, peak, override_charge=None):
+    def extract(self, peak: DeconvolutedPeak, override_charge: Optional[int]=None):
         '''Populate the extracted attributes of this object from the attributes
         of a :class:`~.DeconvolutedPeak` instance.
 
@@ -797,7 +840,7 @@ class PrecursorInformation(_IonMobilityMixin):
         self.orphan = False
         self.defaulted = False
 
-    def default(self, orphan=False):
+    def default(self, orphan: bool=False):
         '''Populate the extracted attributes of this object from the matching
         original attributes.
 
@@ -836,7 +879,7 @@ class PrecursorInformation(_IonMobilityMixin):
             self.charge = self.extracted_charge
 
     @property
-    def neutral_mass(self):
+    def neutral_mass(self) -> float:
         """Calculate the neutral mass of the precursor from the given m/z and charge.
 
         Returns
@@ -850,7 +893,7 @@ class PrecursorInformation(_IonMobilityMixin):
         return neutral_mass(self.mz, self.charge)
 
     @property
-    def extracted_mz(self):
+    def extracted_mz(self) -> float:
         """Recalculate the m/z of the precursor from the fitted neutral mass and charge
 
         Returns
@@ -865,7 +908,7 @@ class PrecursorInformation(_IonMobilityMixin):
         return mass_charge_ratio(self.extracted_neutral_mass, self.extracted_charge)
 
     @property
-    def precursor(self):
+    def precursor(self) -> Optional[ScanBase]:
         """The scan in which the precursor ion was isolated.
 
         Returns
@@ -877,7 +920,7 @@ class PrecursorInformation(_IonMobilityMixin):
         return self.source.get_scan_by_id(self.precursor_scan_id)
 
     @property
-    def product(self):
+    def product(self) -> Optional[ScanBase]:
         """The scan in which the precursor ion was fragmented and daughter ions were observed.
 
         Returns
@@ -888,7 +931,7 @@ class PrecursorInformation(_IonMobilityMixin):
             return None
         return self.source.get_scan_by_id(self.product_scan_id)
 
-    def copy(self):
+    def copy(self) -> 'PrecursorInformation':
         """Make a shallow copy of this object.
 
         Returns
@@ -899,10 +942,11 @@ class PrecursorInformation(_IonMobilityMixin):
             self.mz, self.intensity, self.charge, self.precursor_scan_id, self.source,
             self.extracted_neutral_mass, self.extracted_charge, self.extracted_intensity,
             self.peak, self.extracted_peak, self.defaulted, self.orphan,
-            self.product_scan_id, self.annotations, self.coisolation)
+            self.product_scan_id, self.annotations, self.coisolation,
+            self.coisolation_index)
         return dup
 
-    def clone(self):
+    def clone(self) -> 'PrecursorInformation':
         """Make a shallow copy of this object.
 
         .. note::
@@ -915,7 +959,7 @@ class PrecursorInformation(_IonMobilityMixin):
         """
         return self.copy()
 
-    def correct_mz(self, error_tolerance=2e-5, enforce_isolation_window=False):
+    def correct_mz(self, error_tolerance: float=2e-5, enforce_isolation_window: bool=False):
         """Find the peak nearest to :attr:`mz` in :attr:`precursor` and
         update :attr:`mz` from it.
 
@@ -955,7 +999,7 @@ class PrecursorInformation(_IonMobilityMixin):
                         peak = max(region, key=lambda x: x.intensity)
                         self.mz = peak.mz
 
-    def find_monoisotopic_peak(self, trust_charge_state=True, precursor_scan=None, **kwargs):
+    def find_monoisotopic_peak(self, trust_charge_state: bool=True, precursor_scan: ScanBase=None, **kwargs) -> Tuple[float, bool]:
         """Find the monoisotopic peak for this precursor.
 
         This convenience method carries out a simplified procedure for finding the
@@ -1037,6 +1081,19 @@ class PrecursorInformation(_IonMobilityMixin):
         self.extract(peak)
         return self.extracted_mz, True
 
+    def split_coisolations(self) -> List['PrecursorInformation']:
+        result = [self.clone()]
+        result[0].coisolation_index = 0
+        for i, coiso in enumerate(self.coisolation, 1):
+            dup = self.clone()
+            dup.mz = coiso.mz
+            dup.extracted_neutral_mass = coiso.neutral_mass
+            dup.intensity = dup.extracted_intensity = coiso.intensity
+            dup.charge = dup.extracted_charge = coiso.charge
+            dup.coisolation_index = i
+            result.append(dup)
+        return result
+
 
 class TICMethods(object):
     """A helper class that will figure out the most refined signal source to
@@ -1045,22 +1102,22 @@ class TICMethods(object):
     def __init__(self, scan):
         self.scan = scan
 
-    def _peak_sequence_tic(self, peaks):
+    def _peak_sequence_tic(self, peaks) -> float:
         total = 0
         for peak in peaks:
             total += peak.intensity
         return total
 
-    def _simple_tic(self, points):
+    def _simple_tic(self, points) -> float:
         return sum(points)
 
-    def _tic_raw_data_arrays(self, arrays):
+    def _tic_raw_data_arrays(self, arrays) -> float:
         return arrays.intensity.sum()
 
-    def __call__(self):
+    def __call__(self) -> float:
         return self._guess()
 
-    def _guess(self):
+    def _guess(self) -> float:
         """Guess which strategy to use to calculate the most refined representation of
         the TIC.
 
@@ -1098,7 +1155,7 @@ class TICMethods(object):
                 "Cannot determine how to calculate a TIC from %r of type %r" % (
                     self.scan, type(self.scan)))
 
-    def raw(self):
+    def raw(self) -> float:
         """Calculate the TIC from the raw intensity signal of the spectrum with no processing.
 
         Returns
@@ -1107,7 +1164,7 @@ class TICMethods(object):
         """
         return self._tic_raw_data_arrays(self.scan.arrays)
 
-    def centroided(self):
+    def centroided(self) -> float:
         """Calculate the TIC from the picked peak list of the spectrum.
 
         Returns
@@ -1116,7 +1173,7 @@ class TICMethods(object):
         """
         return self._peak_sequence_tic(self.scan.peak_set)
 
-    def deconvoluted(self):
+    def deconvoluted(self) -> float:
         """Calculate the TIC from the deconvoluted peak list of the spectrum.
 
         Returns
@@ -1136,20 +1193,20 @@ class BasePeakMethods(object):
     def __init__(self, scan):
         self.scan = scan
 
-    def _peak_sequence_bp(self, peaks):
+    def _peak_sequence_bp(self, peaks) -> float:
         if not peaks:
             return None
         peak = max(peaks, key=lambda x: x.intensity)
         return peak
 
-    def _bp_raw_data_arrays(self, arrays):
+    def _bp_raw_data_arrays(self, arrays) -> float:
         i = np.argmax(arrays.intensity)
         return self.base_peak_t(arrays.mz[i], arrays.intensity[i])
 
-    def __call__(self):
+    def __call__(self) -> float:
         return self._guess()
 
-    def _guess(self):
+    def _guess(self) -> float:
         """Guess which strategy to use to produce the most refined representation
         of the base peak.
 
@@ -1182,7 +1239,7 @@ class BasePeakMethods(object):
                 "Cannot determine how to calculate a base peak from %r of type %r" % (
                     self.scan, type(self.scan)))
 
-    def raw(self):
+    def raw(self) -> float:
         """Calculate the base peak from the raw intensity signal of the spectrum with no processing.
 
         Returns
@@ -1191,7 +1248,7 @@ class BasePeakMethods(object):
         """
         return self._bp_raw_data_arrays(self.scan.arrays)
 
-    def centroided(self):
+    def centroided(self) -> float:
         """Calculate the base peak from the picked peak list of the spectrum.
 
         Returns
@@ -1200,7 +1257,7 @@ class BasePeakMethods(object):
         """
         return self._peak_sequence_bp(self.scan.peak_set)
 
-    def deconvoluted(self):
+    def deconvoluted(self) -> float:
         """Calculate the base peak from the deconvoluted peak list of the spectrum.
 
         Returns

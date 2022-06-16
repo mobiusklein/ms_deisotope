@@ -4,13 +4,18 @@ implementation.
 
 The parser is based on :mod:`pyteomics.mzml`.
 '''
+import io
+from typing import Tuple
 import warnings
 import zlib
+import re
+import hashlib
+
 from six import string_types as basestring
 
 import numpy as np
 from pyteomics import mzml
-from pyteomics.auxiliary import unitfloat
+from pyteomics.xml import unitfloat
 from .common import (
     PrecursorInformation, ScanDataSource,
     ChargeNotProvided, ActivationInformation,
@@ -27,19 +32,18 @@ from .metadata.software import Software
 from .metadata import file_information
 from .metadata import data_transformation
 from .metadata.sample import Sample
-from .metadata.scan_traits import FAIMS_compensation_voltage, ION_MOBILITY_TYPES, binary_data_arrays, ion_mobility_attribute
+from .metadata.scan_traits import FAIMS_compensation_voltage
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
-from .scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource, RawDataArrays3D
 
 
-def _open_if_not_file(obj, mode='rt'):
+def _open_if_not_file(obj, mode='rt', encoding='utf8'):
     if obj is None:
         return obj
     if hasattr(obj, 'read'):
         return obj
-    return open(obj, mode)
+    return open(obj, mode, encoding=encoding)
 
 
 class _MzMLParser(mzml.MzML):
@@ -139,8 +143,8 @@ class MzMLDataInterface(ScanDataSource):
             arrays = _find_arrays(scan, decode=decode)
         except zlib.error as zerr:
             warnings.warn(
-                "An error occurred while decompressing the spectrum data arrays for scan %r: %r" % (
-                    self._scan_id(scan), zerr))
+                f"An error occurred while decompressing the spectrum data arrays for scan {self._scan_id(scan)}: {zerr}"
+            )
             # Fall back assuming the missing key error handling below will just work *tm*
             arrays = {}
         try:
@@ -624,7 +628,7 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         return get_tag_attributes(self.source, "spectrumList")
 
 
-def checksum_mzml_stream(stream):
+def checksum_mzml_stream(stream: io.IOBase) -> Tuple[bytes, bytes]:
     """Calculate the SHA1 checksum of an indexed mzML file for the purposes
     of validating the checksum at the end of the file.
 
@@ -635,15 +639,13 @@ def checksum_mzml_stream(stream):
 
     Returns
     -------
-    calculated_checksum: str
+    calculated_checksum: bytes
         The checksum calculated from the file's contents up to the first occurrence
         of <fileChecksum>, exclusive.
-    obsesrved_checksum: str or :const:`None`
+    obsesrved_checksum: bytes or :const:`None`
         The checksum written in the file within the <fileChecksum> tag. Will be :const:`None`
         if the tag is not found and closed. Expected to match the calculated checksum.
     """
-    import re
-    import hashlib
     hasher = hashlib.sha1()
     target = b"<fileChecksum>"
     target_pattern = re.compile(b"(" + target + b")")
@@ -671,8 +673,9 @@ def checksum_mzml_stream(stream):
     return hasher.hexdigest(), observed_checksum
 
 
-def read_file_checksum(stream):
-    import re
+def read_file_checksum(stream: io.IOBase) -> bytes:
+    '''Read the stored file checksum of an indexedmzML file.
+    '''
     stream.seek(-5000, 2)
     chunk = stream.read(5001)
     target = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
@@ -710,6 +713,16 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
         }
         self._file_description = self.file_description()
         self.make_iterator()
+
+    @property
+    def decode_binary(self) -> bool:
+        '''Whether or not to eagerly decode binary data arrays'''
+        return self._decode_binary
+
+    @decode_binary.setter
+    def decode_binary(self, value):
+        self._decode_binary = value
+        self._source.decode_binary = value
 
     def _has_msn_scans(self):
         has_msn_key = file_information.MS_MSn_Spectrum in self._file_description
@@ -763,9 +776,10 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
             if isinstance(start, basestring):
                 start = keys.index(start)
             elif isinstance(start, int):
-                start = start
+                # start already refers to the correct value
+                pass
             else:
-                raise TypeError("Cannot start from object %r" % start)
+                raise TypeError(f"Cannot start from object {start}")
         else:
             start = 0
         for key in keys[start:]:

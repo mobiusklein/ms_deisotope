@@ -4,14 +4,19 @@ import re
 import sys
 
 from collections import defaultdict, OrderedDict
+from typing import Iterator
 
 import numpy as np
+from ms_deisotope.data_source.metadata.data_transformation import DataProcessingInformation, ProcessingMethod
+from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation, instrument_models
+from ms_deisotope.data_source.metadata.software import software_names
+from ms_deisotope.data_source.scan.scan_iterator import _ScanIteratorImplBase
 
 from ms_deisotope.utils import Base
 from ms_deisotope.data_source.common import (
     Scan, ActivationInformation, PrecursorInformation,
     ChargeNotProvided, IsolationWindow)
-from ms_deisotope.data_source.scan.loader import ScanDataSource, RandomAccessScanSource
+from ms_deisotope.data_source.scan.loader import ScanDataSource, RandomAccessScanSource, ScanFileMetadataBase
 from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
 from ms_deisotope.data_source.metadata.scan_traits import (
     ScanAcquisitionInformation, ScanWindow, ScanEventInformation,
@@ -27,6 +32,7 @@ from . import (MassLynxRawInfoReader,
                libload
               )
 
+# Cyclic arrival time = (bin number*pusher period*pushesperbin) + ADC start delay
 
 
 waters_id_pattern = re.compile(r"function=(\d+) process=(\d+) scan=(\d+)")
@@ -118,47 +124,51 @@ class IndexEntry(Base):
 
 
 class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
-    def _frame_id(self, data):
+    def _frame_id(self, data) -> str:
         return data.id
 
-    def _frame_index(self, data):
+    def _frame_index(self, data) -> int:
         return data.index
 
-    def _frame_time(self, data):
+    def _frame_time(self, data) -> float:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.scan_time
 
-    def _frame_ms_level(self, data):
+    def _frame_ms_level(self, data) -> int:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.ms_level
 
-    def _frame_start_scan_index(self, data):
+    def _frame_start_scan_index(self, data) -> int:
         return data.start_scan
 
-    def _frame_end_scan_index(self, data):
+    def _frame_end_scan_index(self, data) -> int:
         return data.end_scan
 
-    def _frame_precursor_information(self, data):
+    def _frame_precursor_information(self, data) -> PrecursorInformation:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.precursor_information
 
-    def _frame_activation(self, data):
+    def _frame_activation(self, data) -> ActivationInformation:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.activation
 
-    def _frame_isolation_window(self, data):
+    def _frame_isolation_window(self, data) -> IsolationWindow:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.isolation_window
 
-    def _frame_polarity(self, data):
+    def _frame_polarity(self, data) -> int:
         scan = self.get_scan_by_index(data.start_scan)
         return scan.polarity
 
-    def get_frame_by_index(self, index):
+    def get_frame_by_id(self, id: str) -> IonMobilityFrame:
+        index = self._cycle_id_to_index[id]
+        return self.get_frame_by_index(index)
+
+    def get_frame_by_index(self, index: int) -> IonMobilityFrame:
         cycle = self.cycle_index[index]
         return self._make_frame(cycle)
 
-    def get_frame_by_time(self, time):
+    def get_frame_by_time(self, time: float) -> IonMobilityFrame:
         lo = 0
         hi = len(self.cycle_index)
 
@@ -212,22 +222,22 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
             else:
                 lo = mid
 
-    def _validate_frame(self, data):
+    def _validate_frame(self, data) -> bool:
         return True
 
-    def _make_frame(self, data):
+    def _make_frame(self, data) -> IonMobilityFrame:
         return IonMobilityFrame(data, self)
 
-    def _cache_frame(self, frame):
+    def _cache_frame(self, frame: IonMobilityFrame):
         pass
 
-    def _default_frame_iterator(self, start_index=None):
+    def _default_frame_iterator(self, start_index: int=None) -> Iterator['Cycle']:
         if start_index is None:
             start_index = 0
         for i in range(start_index, len(self.cycle_index)):
             yield self.cycle_index[i]
 
-    def make_frame_iterator(self, iterator=None, grouped=False):
+    def make_frame_iterator(self, iterator=None, grouped=False, **kwargs) -> _ScanIteratorImplBase:
         from ms_deisotope.data_source.scan.scan_iterator import (
             _SingleScanIteratorImpl, _GroupedScanIteratorImpl, MSEIterator)
         if iterator is None:
@@ -235,17 +245,19 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
 
         if grouped == 'mse':
             strategy = MSEIterator(
-                iterator, self._make_frame, self.low_energy_function, self.lockmass_function,
-                self._validate_frame, self._cache_frame)
+                iterator, self._make_frame,
+                self._validate_frame, self._cache_frame,
+                low_energy_config=self.low_energy_function,
+                lock_mass_config=self.lockmass_function, **kwargs)
         elif grouped:
             strategy = _GroupedScanIteratorImpl(
-                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+                iterator, self._make_frame, self._validate_frame, self._cache_frame, **kwargs)
         else:
             strategy = _SingleScanIteratorImpl(
-                iterator, self._make_frame, self._validate_frame, self._cache_frame)
+                iterator, self._make_frame, self._validate_frame, self._cache_frame, **kwargs)
         return strategy
 
-    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_frame(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped='mse', **kwargs):
         if scan_id is not None:
             frame = self.get_frame_by_id(scan_id)
             start_index = frame.index
@@ -262,11 +274,13 @@ class WatersMSECycleSourceMixin(IonMobilitySourceRandomAccessFrameSource):
                 else:
                     break
         self._producer = self.make_frame_iterator(
-            self._default_frame_iterator(start_index), grouped=grouped)
+            self._default_frame_iterator(start_index), grouped=grouped, **kwargs)
         return self
 
 
 class WatersMassLynxScanSource(ScanDataSource):
+    default_isolation_width = 0.0
+
     def _make_scan(self, data):
         return Scan(data, self)
 
@@ -298,7 +312,7 @@ class WatersMassLynxScanSource(ScanDataSource):
                 scan.function, scan.block, scan.scan)
         else:
             mz, inten = self.scan_reader.ReadScan(scan.function, scan.scan)
-        return np.array(mz), np.array(inten)
+        return np.array(mz).astype(float), np.array(inten).astype(float)
 
     def _precursor_information(self, scan):
         if self._ms_level(scan) == 1:
@@ -338,7 +352,13 @@ class WatersMassLynxScanSource(ScanDataSource):
             set_mass = (lower_bound + upper_bound) / 2.
             lower_bound_offset = upper_bound_offset = upper_bound - set_mass
         else:
-            lower_bound_offset = upper_bound_offset = 0
+            if self.default_isolation_width:
+                lower_bound_offset = upper_bound_offset = self.default_isolation_width
+            else:
+                lower_bound, upper_bound = self.info_reader.GetAcquisitionMassRange(
+                    scan.function)
+                lower_bound_offset = set_mass - lower_bound
+                upper_bound_offset = upper_bound - set_mass
         return IsolationWindow(
             lower_bound_offset, set_mass, upper_bound_offset)
 
@@ -379,8 +399,25 @@ class WatersMassLynxScanSource(ScanDataSource):
             return ActivationInformation(HCD, energy)
 
 
-class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, WatersMSECycleSourceMixin):
-    def __init__(self, raw_path, lockmass_config=None):
+class MassLynxMetadata(ScanFileMetadataBase):
+    def instrument_configuration(self):
+        inst_model = instrument_models['Waters instrument model']
+        return [InstrumentInformation(1, [], inst_model)]
+
+    def file_description(self):
+        finfo = super().file_description()
+        return finfo
+
+    def data_processing(self):
+        return super().data_processing()
+
+    def software_list(self):
+        sw = software_names['MassLynx']
+        return [sw]
+
+
+class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, WatersMSECycleSourceMixin, MassLynxMetadata):
+    def __init__(self, raw_path, lockmass_config=None, default_isolation_width=0.0, **kwargs):
         if sys.version_info.major == 2:
             if not isinstance(raw_path, str):
                 raw_path = str(raw_path)
@@ -397,6 +434,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self.configure_lockmass(lockmass_config)
         self.index = []
         self.cycle_index = []
+        self._cycle_id_to_index = {}
         self._producer = None
         self.initialize_scan_cache()
 
@@ -404,6 +442,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self._build_scan_index()
         self.lockmass_function = self.function_index_list[-1] + 1
         self.low_energy_function = self.function_index_list[0] + 1
+        self.default_isolation_width = default_isolation_width or 0.0
 
         self._producer = self.make_frame_iterator()
 
@@ -467,8 +506,9 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
             self.ion_mobility_by_function_index[fnum] = False
             if os.path.exists(cdt) and self.info_reader.GetDriftScanCount(fnum) > 0:
                 self.ion_mobility_by_function_index[fnum] = True
-                self.sonar_enabled_by_function_index[fnum] = self.info_reader.GetScanItem(
-                    fnum, 0, MassLynxRawDefs.MassLynxScanItem.SONAR_ENABLED.value)
+                self.sonar_enabled_by_function_index[fnum] = int(
+                    self.info_reader.GetScanItem(
+                        fnum, 0, MassLynxRawDefs.MassLynxScanItem.SONAR_ENABLED.value))
             time, tic = self.chrom_reader.ReadTIC(fnum)
             self.tic_by_function_index[fnum] = np.array(tic)
             self.times_by_function_index[fnum] = np.array(time)
@@ -507,6 +547,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         function_and_scan_by_rt.sort(key=lambda x: x[0])
         self.index = []
         self.cycle_index = []
+        self._cycle_id_to_index = {}
         self.function_blocks = defaultdict(list)
         for _rt, (fnum, i) in function_and_scan_by_rt:
             if self.ion_mobility_by_function_index[fnum]:
@@ -533,6 +574,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
                         num_scans_in_block * i + num_scans_in_block,
                     ))
                 self.cycle_index.append(cyc)
+                self._cycle_id_to_index[cyc.id] = len(self.cycle_index) - 1
             else:
                 block_start = len(self.index)
                 self.index.append(IndexEntry())
@@ -555,12 +597,13 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
                         i + 2,
                     ))
                 self.cycle_index.append(cyc)
+                self._cycle_id_to_index[cyc.id] = len(self.cycle_index) - 1
 
     # RandomAccessScanSource methods
     def __len__(self):
         return len(self.index)
 
-    def get_scan_by_index(self, index):
+    def get_scan_by_index(self, index: int) -> Scan:
         ie = self.index[index]
         if ie.id in self._scan_cache:
             return self._scan_cache[ie.id]
@@ -568,7 +611,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
         self._scan_cache[ie.id] = scan
         return scan
 
-    def get_scan_by_id(self, scan_id):
+    def get_scan_by_id(self, scan_id: str) -> Scan:
         match = waters_id_pattern.search(scan_id)
         if not match:
             raise KeyError(scan_id)
@@ -588,7 +631,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
                             return self.get_scan_by_index(ie.index)
                     raise KeyError(scan_id)
 
-    def get_scan_by_time(self, time):
+    def get_scan_by_time(self, time: float) -> Scan:
         lo = 0
         hi = len(self.index)
 
@@ -642,7 +685,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
             else:
                 lo = mid
 
-    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
+    def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
         if scan_id is not None:
             scan = self.get_scan_by_id(scan_id)
             start_index = scan.index
@@ -694,7 +737,7 @@ class MassLynxRawLoader(RandomAccessScanSource, WatersMassLynxScanSource, Waters
     def _make_pointer_iterator(self, start_index=None, start_time=None):
         iterator = self._make_scan_index_producer(start_index, start_time)
         for i in iterator:
-            yield self.index[i]
+            yield self._make_scan(self.index[i])
 
     def reset(self):
         self.initialize_scan_cache()

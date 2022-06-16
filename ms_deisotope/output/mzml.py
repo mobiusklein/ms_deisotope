@@ -39,16 +39,16 @@ import hashlib
 import array
 import warnings
 
+
+from contextlib import contextmanager
 from collections import OrderedDict
 try:
-    from collections import Sequence, Mapping
-except ImportError:
     from collections.abc import Sequence, Mapping
+except ImportError:
+    from collections import Sequence, Mapping
 from uuid import uuid4, UUID
 
 import numpy as np
-
-from six import string_types as basestring
 
 from ms_peak_picker import PeakIndex, PeakSet, FittedPeak
 
@@ -70,7 +70,7 @@ from ms_deisotope.data_source.common import (
 from ms_deisotope.data_source.metadata import data_transformation
 from ms_deisotope.data_source.metadata.software import (Software, software_name)
 from ms_deisotope.data_source.mzml import MzMLLoader
-from ms_deisotope.data_source.scan.mobility_frame import Generic3DIonMobilityFrameSource
+from ms_deisotope.data_source.scan.mobility_frame import Generic3DIonMobilityFrameSource, RawDataArrays3D
 
 from ms_deisotope.feature_map import ExtendedScanIndex
 from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature, DeconvolutedLCMSFeatureTreeNode
@@ -499,7 +499,11 @@ class MzMLSerializer(ScanSerializerBase):
         elif isinstance(data_processing_description, data_transformation.ProcessingMethod):
             content = []
             for op, val in data_processing_description:
-                content.append({"name": op.name, 'value': val})
+                if isinstance(val, list):
+                    for v in val:
+                        content.append({"name": op.name, 'value': v})
+                else:
+                    content.append({"name": op.name, 'value': val})
             payload = {
                 'id': "data_processing_%d" % len(self.data_processing_list),
                 'processing_methods': [{
@@ -808,6 +812,9 @@ class MzMLSerializer(ScanSerializerBase):
                 [peak.envelope for peak in scan.deconvoluted_peak_set])
             extra_arrays.append(("isotopic envelopes array", envelope_array))
         else:
+            arrays = scan.arrays
+            if isinstance(arrays, RawDataArrays3D):
+                extra_arrays.append((arrays.ion_mobility_array_type or "raw ion mobility array", arrays.ion_mobility))
             if scan.arrays.data_arrays:
                 extra_arrays.extend(sorted(scan.arrays.data_arrays.items()))
         return extra_arrays
@@ -1076,8 +1083,11 @@ class MzMLSerializer(ScanSerializerBase):
 MzMLScanSerializer = MzMLSerializer
 
 
-def deserialize_deconvoluted_peak_set(scan_dict):
-    envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+def deserialize_deconvoluted_peak_set(scan_dict, include_envelopes=True):
+    if include_envelopes:
+        envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
+    else:
+        envelopes = None
     peaks = []
     mz_array = scan_dict['m/z array']
     intensity_array = scan_dict['intensity array']
@@ -1090,7 +1100,7 @@ def deserialize_deconvoluted_peak_set(scan_dict):
         peak = DeconvolutedPeak(
             neutral_mass(mz, charge), intensity_array[i], charge=charge, signal_to_noise=score_array[i],
             index=0, full_width_at_half_max=0, a_to_a2_ratio=0, most_abundant_mass=0,
-            average_mass=0, score=score_array[i], envelope=envelopes[i], mz=mz
+            average_mass=0, score=score_array[i], envelope=envelopes[i] if include_envelopes else None, mz=mz
         )
         peaks.append(peak)
     peaks = DeconvolutedPeakSet(peaks)
@@ -1166,6 +1176,8 @@ def deserialize_peak_set(scan_dict):
 
 
 class PeakSetDeserializingMixin(object):
+    parse_peaks = True
+    parse_envelopes = True
 
     def deserialize_deconvoluted_peak_set(self, scan_dict):
         try:
@@ -1185,7 +1197,19 @@ class PeakSetDeserializingMixin(object):
         return deserialize_peak_set(scan_dict)
 
     def _validate(self, scan):
-        return bool(scan.deconvoluted_peak_set) or bool(scan.peak_set)
+        if self.parse_peaks:
+            return bool(scan.deconvoluted_peak_set) or bool(scan.peak_set)
+        else:
+            return True
+
+    @contextmanager
+    def toggle_peak_loading(self):
+        self.parse_peaks = False
+        self.decode_binary = False
+        yield self
+        self.reset()
+        self.parse_peaks = True
+        self.decode_binary = True
 
     def _precursor_information(self, scan):
         """Returns information about the precursor ion,
@@ -1238,21 +1262,25 @@ class PeakSetDeserializingMixin(object):
                     'precursor purity', 0)
         except KeyError:
             pass
-        if "m/z array" not in data:
-            warnings.warn("No m/z array found for scan %r" % (scan.id, ))
-            scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-            scan.deconvoluted_peak_set = DeconvolutedPeakSet([])
-        elif "charge array" in data:
-            scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
-            scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
-                data)
-            if self.has_extended_index() and scan.id in self.extended_index.ms1_ids:
-                chosen_indices = self.extended_index.ms1_ids[
-                    scan.id]['msms_peaks']
-                for ix in chosen_indices:
-                    scan.deconvoluted_peak_set[ix].chosen_for_msms = True
+        if self.parse_peaks:
+            if "m/z array" not in data:
+                warnings.warn("No m/z array found for scan %r" % (scan.id, ))
+                scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
+                scan.deconvoluted_peak_set = DeconvolutedPeakSet([])
+            elif "charge array" in data:
+                scan.peak_set = PeakIndex(np.array([]), np.array([]), PeakSet([]))
+                scan.deconvoluted_peak_set = self.deserialize_deconvoluted_peak_set(
+                    data)
+                if self.has_extended_index() and scan.id in self.extended_index.ms1_ids:
+                    chosen_indices = self.extended_index.ms1_ids[
+                        scan.id]['msms_peaks']
+                    for ix in chosen_indices:
+                        scan.deconvoluted_peak_set[ix].chosen_for_msms = True
+            else:
+                scan.peak_set = self.deserialize_peak_set(data)
+                scan.deconvoluted_peak_set = None
         else:
-            scan.peak_set = self.deserialize_peak_set(data)
+            scan.peak_set = None
             scan.deconvoluted_peak_set = None
         packed = scan.pack(bind=True)
         return packed
@@ -1491,11 +1519,7 @@ def deserialize_deconvoluted_features(scan_dict, ion_mobility_array_name='raw io
     return feature_map
 
 
-class IonMobilityAware3DMzMLSerializer(MzMLSerializer):
-    default_data_encoding = MzMLSerializer.default_data_encoding.copy()
-    default_data_encoding.update({
-        "feature id array": np.int32,
-    })
+class _IonMobility3DSerializerBase:
     def _get_peak_data(self, scan, kwargs):
         deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
         if deconvoluted:
@@ -1535,11 +1559,19 @@ class IonMobilityAware3DMzMLSerializer(MzMLSerializer):
             intensity_array = peak_data.intensity
             charge_array = None
             ion_mobility_array = peak_data.ion_mobility
-            other_arrays = [
-                ('raw ion mobility array', ion_mobility_array),
-            ]
+            other_arrays = []
+            if ion_mobility_array is not None:
+                other_arrays.append(
+                    ('raw ion mobility array', ion_mobility_array))
         return (centroided, descriptors, mz_array, intensity_array,
                 charge_array, other_arrays)
+
+
+class IonMobilityAware3DMzMLSerializer(_IonMobility3DSerializerBase, MzMLSerializer):
+    default_data_encoding = MzMLSerializer.default_data_encoding.copy()
+    default_data_encoding.update({
+        "feature id array": np.int32,
+    })
 
 
 class ProcessedGeneric3DIonMobilityFrameSource(Generic3DIonMobilityFrameSource):
@@ -1550,4 +1582,4 @@ class ProcessedGeneric3DIonMobilityFrameSource(Generic3DIonMobilityFrameSource):
                 frame.deconvoluted_features = deserialize_deconvoluted_features(frame._data)
             else:
                 frame.features = deserialize_features(frame._data)
-        return frame
+        return frame.pack()
