@@ -3,6 +3,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [Unreleased]
+
+### Added
+-
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
 ## [v0.0.42] - 22-06-15
 
 ### Added
@@ -463,9 +479,10 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.40...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.42...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
-[v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.40
+[v0.0.42]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.42
+[v0.0.40]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.40
 [v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.39
 [v0.0.38]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.38
 [v0.0.37]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.37
