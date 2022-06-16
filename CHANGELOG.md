@@ -3,9 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [Unreleased]
+## [v0.0.42] - 22-06-15
 
 ### Added
+1. Added `close` parameter to `MzMLSerializer` and `MzMLbSerializer` to reflect the change made upstream in
+   `psims`. These govern the automatic closing behavior of the buffer after completing the data document. If
+   you *need* the buffer to remain open after completing file writing, pass `close=False` to the writer.
 
 ### Changed
 
