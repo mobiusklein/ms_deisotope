@@ -66,7 +66,12 @@ class MzMLbSerializer(_MzMLSerializer):
             compression = 'gzip'
             compression_opts = 4
         self.compression = 'none'
-        return _MzMLbWriter(self.handle, h5_compression=compression, h5_compression_options=compression_opts)
+        return _MzMLbWriter(
+            self.handle,
+            close=self._should_close,
+            h5_compression=compression,
+            h5_compression_options=compression_opts
+        )
 
 
 class IonMobilityAware3DMzMLbSerializer(_IonMobility3DSerializerBase, MzMLbSerializer):

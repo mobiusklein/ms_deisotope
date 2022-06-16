@@ -47,8 +47,7 @@ class TestMzMLSerializer(unittest.TestCase):
                 product.deconvolute()
             writer.save(bunch)
             writer.complete()
-            fh.flush()
-            writer.format()
+
         source_reader.reset()
         processed_reader = ProcessedMzMLDeserializer(_compression.get_opener(writer.handle.name))
 

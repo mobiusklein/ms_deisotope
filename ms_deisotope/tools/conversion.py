@@ -102,7 +102,7 @@ def mgf(source, output, compress=False, msn_filters=None):
 
 def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
             default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True,
-            writer_type=None, compression='zlib'):
+            writer_type=None, compression='zlib', close=True):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -141,9 +141,15 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
     if msn_filters is None:
         msn_filters = []
     reader.make_iterator(grouped=True)
-    writer = writer_type(outstream, len(
-        reader), deconvoluted=False, build_extra_index=write_index,
-        include_software_entry=update_metadata, compression=compression)
+    writer = writer_type(
+        outstream,
+        len(reader),
+        deconvoluted=False,
+        build_extra_index=write_index,
+        include_software_entry=update_metadata,
+        compression=compression,
+        close=close
+    )
     writer.copy_metadata_from(reader)
     if update_metadata:
         method = data_transformation.ProcessingMethod(software_id='ms_deisotope_1')
@@ -260,7 +266,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
     with stream:
         to_mzml(reader, stream, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
-                write_index=write_index, update_metadata=update_metadata)
+                write_index=write_index, update_metadata=update_metadata, close=False)
 
 
 try:

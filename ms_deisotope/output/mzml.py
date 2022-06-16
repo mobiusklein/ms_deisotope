@@ -287,7 +287,7 @@ class MzMLSerializer(ScanSerializerBase):
 
     def __init__(self, handle, n_spectra=int(2e5), compression=None,
                  deconvoluted=True, sample_name=None, build_extra_index=True,
-                 data_encoding=None, include_software_entry=True):
+                 data_encoding=None, include_software_entry=True, close=None):
         if data_encoding is None:
             data_encoding = self.default_data_encoding
         if writer is None:
@@ -301,7 +301,7 @@ class MzMLSerializer(ScanSerializerBase):
         self.compression = compression
         self.data_encoding = data_encoding
         self._has_started_writing_spectra = False
-
+        self._should_close = close
         self.writer = self._make_writer(handle)
         self.writer.begin()
         self._run_tag = None
@@ -325,7 +325,7 @@ class MzMLSerializer(ScanSerializerBase):
         self._this_software = None
 
     def _make_writer(self, handle):
-        return writer.MzMLWriter(handle)
+        return writer.MzMLWriter(handle, close=self._should_close)
 
     def _init_sample(self, sample_name, **kwargs):
         self.sample_name = sample_name
