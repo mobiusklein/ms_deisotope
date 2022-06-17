@@ -661,7 +661,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
         """
         result = []
         si = self._source.SampleInformation
-        sample = Sample(si.SampleId or 'sample_1')
+        raw_name = os.path.basename(self.source_file_name)
+        sample = Sample(si.SampleId or raw_name)
         sample.name = si.SampleName or si.SampleId
         if si.SampleVolume:
             sample.parameters['sample volume'] = si.SampleVolume

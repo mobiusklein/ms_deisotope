@@ -18,6 +18,7 @@ The public interface of this module should be identical to
 '''
 # pragma: no cover
 
+import os
 import warnings
 from collections import OrderedDict
 
@@ -454,7 +455,8 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         """
         result = []
         si = self._source
-        sample = Sample(si.GetSeqRowSampleID() or 'sample_1')
+        raw_name = os.path.basename(self.source_file_name)
+        sample = Sample(si.GetSeqRowSampleID() or raw_name)
         sample.name = si.GetSeqRowSampleName() or si.GetSeqRowSampleID()
         if si.GetSeqRowSampleVolume():
             sample.parameters['sample volume'] = si.GetSeqRowSampleVolume()
