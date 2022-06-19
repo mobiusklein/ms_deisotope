@@ -17,11 +17,11 @@ from numbers import Number
 
 import numpy as np
 
-from ms_peak_picker import average_signal, FittedPeak
+from ms_peak_picker import average_signal, FittedPeak, PeakSet
 from ms_peak_picker.base import PeakLike
 
 from ms_deisotope.averagine import neutral_mass, mass_charge_ratio
-from ms_deisotope.peak_set import DeconvolutedPeak
+from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
 from ms_deisotope.deconvolution import deconvolute_peaks
 
 from ms_deisotope.data_source.metadata.scan_traits import _IonMobilityMixin
@@ -392,6 +392,8 @@ class ScanBase(object):
     '''
 
     source: 'ScanDataSource'
+    peak_set: Optional[PeakSet]
+    deconvoluted_peak_set: Optional[DeconvolutedPeakSet]
 
     def has_ion_mobility(self) -> bool:
         '''Check whether this scan has drift time information associated with
@@ -537,7 +539,7 @@ class ScanBase(object):
     def __copy__(self) -> 'ScanBase':
         return self.clone()
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if other is None:
             return False
         if not isinstance(other, ScanBase):

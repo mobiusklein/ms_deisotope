@@ -1,7 +1,7 @@
 '''Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
 '''
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union, TYPE_CHECKING
 import warnings
 
 from ms_deisotope.peak_set import DeconvolutedPeak, DeconvolutedPeakSet
@@ -28,6 +28,10 @@ from ms_deisotope.data_source.metadata.instrument_components import InstrumentIn
 
 
 from .base import (ScanBase, RawDataArrays, PrecursorInformation)
+
+
+if TYPE_CHECKING:
+    from .loader import ScanDataSource
 
 
 logger = logging.getLogger(__name__)
