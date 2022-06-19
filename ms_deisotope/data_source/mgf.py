@@ -38,6 +38,9 @@ class _MGFParser(mgf.IndexedMGF):
                 return int(charge_text.replace("-", '')) * -1
             raise
 
+    def parse_peak_charge(self, charge_text, list_only=False):
+        return self.parse_charge(charge_text, list_only=list_only)
+
 
 class _MGFMetadata(ScanFileMetadataBase):
     """Objects implementing this interface can describe the original source
