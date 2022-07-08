@@ -4,7 +4,7 @@
 name: Build and Publish Package
 
 on:
-  create:
+  push:
     tags:
       - "v*"
 
