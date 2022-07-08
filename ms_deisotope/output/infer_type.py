@@ -1,5 +1,6 @@
 import io
 import os
+from typing import Union
 
 from ms_deisotope.data_source.infer_type import FormatGuesser, is_random_access
 from ms_deisotope.data_source import _compression
@@ -19,7 +20,7 @@ ProcessedMSFileLoader.add_file_extension_guesser({
 
 
 @ProcessedMSFileLoader.register_type_guesser
-def guess_type_from_file_sniffing(file_path):
+def guess_type_from_file_sniffing(file_path: Union[os.PathLike, io.IOBase]):
     is_random_access_file = is_random_access(file_path)
     if is_random_access_file:
         handle = file_path

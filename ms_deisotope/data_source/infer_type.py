@@ -1,20 +1,28 @@
 import os
+import io
+
+from typing import Union, List, Type, Callable
+
 from .mzml import MzMLLoader
 from .mzxml import MzXMLLoader
 from .mgf import MGFLoader
+from .scan.loader import RandomAccessScanSource, ScanIterator
 from . import _compression
 
 
 class FormatGuesser(object):
-    def __init__(self, guessers, reader_types):
+    guessers: List[Callable]
+    reader_types: List[Type]
+
+    def __init__(self, guessers: List[Callable], reader_types: List[Type]):
         self.guessers = list(guessers or [])
         self.reader_types = list(reader_types or [])
 
-    def register_type_guesser(self, reader_guesser):
+    def register_type_guesser(self, reader_guesser: Callable):
         self.guessers.append(reader_guesser)
         return reader_guesser
 
-    def guess_type(self, file_path):
+    def guess_type(self, file_path: Union[io.IOBase, os.PathLike]):
         for guesser in self.guessers:
             try:
                 reader_type = guesser(file_path)
@@ -26,7 +34,7 @@ class FormatGuesser(object):
     def add_reader_type(self, reader):
         self.reader_types.append(reader)
 
-    def guess_from_file_extension(self, file_path, ext_map):
+    def guess_from_file_extension(self, file_path: Union[io.IOBase, os.PathLike], ext_map):
         if hasattr(file_path, 'name'):
             file_path = file_path.name
         if file_path.endswith(".gz"):
@@ -44,7 +52,7 @@ class FormatGuesser(object):
         self.register_type_guesser(guesser)
         return guesser
 
-    def open_file(self, file_path, *args, **kwargs):
+    def open_file(self, file_path: Union[io.IOBase, os.PathLike], *args, **kwargs) -> Union[RandomAccessScanSource, ScanIterator]:
         """Factory function to create an object that reads scans from
         any supported data file format. Provides both iterative and
         random access.
@@ -64,7 +72,7 @@ class FormatGuesser(object):
             fobj = file_path
         return reader_type(fobj, *args, **kwargs)
 
-    def __call__(self, file_path, *args, **kwargs):
+    def __call__(self, file_path: Union[io.IOBase, os.PathLike], *args, **kwargs) -> Union[RandomAccessScanSource, ScanIterator]:
         return self.open_file(file_path, *args, **kwargs)
 
 
