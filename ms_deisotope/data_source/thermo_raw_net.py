@@ -73,6 +73,17 @@ IntPtr = None
 Int64 = None
 
 
+def _open_raw_file(path):
+    if not _test_dll_loaded():
+        register_dll()
+        if not _test_dll_loaded():
+            raise ValueError(
+                "Could not load .NET runtime or library. Verify `pythonnet` "
+                "is installed correctly and the RawFileReader library is registered")
+    raw_file = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
+    return raw_file
+
+
 def is_thermo_raw_file(path):
     '''Detect whether or not the file referenced by ``path``
     is a Thermo RAW file.
@@ -97,7 +108,7 @@ def is_thermo_raw_file(path):
         decoded = lead_bytes.decode("utf-16")[1:9]
         if decoded == "Finnigan":
             try:
-                source = _RawFileReader.RawFileReaderAdapter.FileFactory(path)
+                source = _open_raw_file(path)
                 source.SelectInstrument(Business.Device.MS, 1)
                 return True
             except NullReferenceException:   # pylint: disable=broad-except
@@ -513,6 +524,10 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
     def __init__(self, source_file, _load_metadata=True, **kwargs):
         if not _test_dll_loaded():
             register_dll()
+            if not _test_dll_loaded():
+                raise ValueError(
+                    "Could not load .NET runtime or library. Verify `pythonnet` "
+                    "is installed correctly and the RawFileReader library is registered")
         self.source_file = source_file
         self._source_impl = None
         # self._source = _RawFileReader.RawFileReaderAdapter.FileFactory(source_file)
@@ -539,7 +554,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
     @property
     def _source(self):
         if self._source_impl is None:
-            self._source_impl = _RawFileReader.RawFileReaderAdapter.FileFactory(self.source_file)
+            self._source_impl = _open_raw_file(self.source_file)
             self._source_impl.SelectInstrument(Business.Device.MS, 1)
         return self._source_impl
 

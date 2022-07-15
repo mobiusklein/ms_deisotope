@@ -183,6 +183,9 @@ except ImportError as e:  # pragma: no cover
         warnings.warn(f"no-op: {message}")
         return False
 
+    def _ThermoRawFileAPI(*args, **kwargs):
+        raise ValueError(message)
+
 
 class ThermoRawDataInterface(ScanDataSource):
     ''':class:`~.ScanDataSource` implementation for Thermo's MSFileReader API.
