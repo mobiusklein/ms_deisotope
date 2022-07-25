@@ -21,9 +21,13 @@ logging.getLogger("hdf5plugin").addHandler(logging.NullHandler())
 try:
     from pyteomics import mzmlb
     _BaseParser = mzmlb.MzMLb
-except ImportError:
+
+except ImportError as impl_import_err:
     mzmlb = None
-    _BaseParser = object
+
+    class _BaseParser:
+        def __init__(self, *args, **kwargs):
+            raise impl_import_err
 
 from .mzml import MzMLLoader as _MzMLLoader
 from ._compression import DefinitelyFastRandomAccess
@@ -84,8 +88,8 @@ def is_mzmlb_file(path):
     '''
     try:
         import h5py
-        if _BaseParser == object:
-            raise ImportError('pyteomics.mzmlb')
+        if mzmlb is None:
+            raise impl_import_err
     except ImportError:
         return False
     try:
@@ -132,7 +136,7 @@ def determine_if_available():
     '''
     try:
         import h5py
-        if _BaseParser == object:
+        if mzmlb is None:
             raise ImportError('pyteomics.mzmlb')
         return True
     except (OSError, ImportError):
