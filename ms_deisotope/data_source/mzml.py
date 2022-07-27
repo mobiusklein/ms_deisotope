@@ -554,7 +554,20 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
             instrument_model = potential_models[0]
         else:
             instrument_model = None
-        config = InstrumentInformation(conf_id, group_collection, serial_number=serial_number, model=instrument_model)
+        acq_software = None
+        if 'softwareRef' in configuration:
+            software_list = self.software_list()
+            sw_id = configuration['softwareRef']['ref']
+            for sw in software_list:
+                if sw.id == sw_id:
+                    acq_software = sw
+                    break
+        config = InstrumentInformation(
+            conf_id, group_collection,
+            serial_number=serial_number,
+            model=instrument_model,
+            software=acq_software
+        )
         return config
 
     def instrument_configuration(self):

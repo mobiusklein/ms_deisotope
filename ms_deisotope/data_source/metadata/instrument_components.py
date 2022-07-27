@@ -1,4 +1,6 @@
 from __future__ import print_function
+from typing import List, Union
+from ms_deisotope.data_source.metadata.software import Software
 
 from ms_deisotope.utils import uid
 
@@ -2312,7 +2314,17 @@ class InstrumentInformation(object):
         A convenience list for storing the :class:`Component` objects which are ``analyzer``s
     '''
 
-    def __init__(self, id=None, groups=None, model=None, serial_number=None, name=None):
+    id: Union[str, int]
+    groups: List[ComponentGroup]
+    analyzer_types: List[Component]
+
+    model: str
+    serial_number: str
+    name: str
+    software: Software
+
+    def __init__(self, id=None, groups=None, model=None, serial_number=None,
+                 name=None, software=None):
         self.id = id or uid()
         self.groups = sorted(groups or [], key=lambda x: x.order)
         self.analyzers = []
@@ -2320,6 +2332,7 @@ class InstrumentInformation(object):
         self.model = model
         self.serial_number = serial_number
         self.name = name
+        self.software = software
 
         for group in self.groups:
             if group.type == 'analyzer':

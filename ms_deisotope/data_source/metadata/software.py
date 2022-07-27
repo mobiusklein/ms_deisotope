@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from ms_deisotope.utils import dict_proxy
 from .cv import Term, TermSet
 
@@ -8,6 +9,11 @@ class SoftwareName(Term):
 
 @dict_proxy('options')
 class Software(object):
+
+    name: str
+    id: str
+    version: str
+    options: Dict[str, Any]
 
     @classmethod
     def is_name(cls, name):
@@ -23,7 +29,7 @@ class Software(object):
         self.version = version
         self.options = options
 
-    def _resolve_name_from_kwargs(self, options):
+    def _resolve_name_from_kwargs(self, options: Dict[str, Any]):
         names = dict()
         not_names = dict()
         for key, value in options.items():

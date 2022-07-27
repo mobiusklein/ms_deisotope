@@ -42,6 +42,8 @@ import warnings
 
 from contextlib import contextmanager
 from collections import OrderedDict
+
+from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation
 try:
     from collections.abc import Sequence, Mapping
 except ImportError:
@@ -347,7 +349,7 @@ class MzMLSerializer(ScanSerializerBase):
 
         self.processing_parameters = []
 
-    def add_instrument_configuration(self, configuration):
+    def add_instrument_configuration(self, configuration: InstrumentInformation):
         """Add an :class:`~.InstrumentInformation` object to
         the output document.
 
@@ -369,8 +371,22 @@ class MzMLSerializer(ScanSerializerBase):
                 continue
             component_list.append(
                 tag(order=group.order, params=[g.name for g in group]))
+
+        params = []
+        instrument_model = configuration.model
+        if instrument_model:
+            params.append(instrument_model)
+        instrument_serial = configuration.serial_number
+        if instrument_serial:
+            params.append({
+                "name": "instrument serial number",
+                "value": instrument_serial
+            })
         config_element = self.writer.InstrumentConfiguration(
-            configuration.id, component_list)
+            configuration.id, component_list,
+            params=params,
+            software_reference=configuration.software.id if configuration.software else None)
+
         self.instrument_configuration_list.append(config_element)
 
     def add_software(self, software_description):

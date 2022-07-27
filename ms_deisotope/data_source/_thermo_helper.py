@@ -4,11 +4,12 @@ and .NET Thermo Reader implementations.
 
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Optional, OrderedDict
+from typing import TYPE_CHECKING, Any, List, Optional, OrderedDict
 
 import numpy as np
 
 from pyteomics.xml import unitfloat
+from ms_deisotope.data_source.metadata.software import Software
 
 from ms_deisotope.utils import Base
 
@@ -278,9 +279,13 @@ class _RawFileMetadataLoader(ScanFileMetadataBase):
             # we'd need to reproduce the Proteowizard conversion table @
             # Thermo::(Reader_Thermo_Detail::)createInstrumentConfigurations
             detector_group = ComponentGroup("detector", [component('inductive detector')], 3)
-            configs.append(InstrumentInformation(
-                counter, [source_group, analyzer_group, detector_group],
-                self._get_instrument_model_name(), self._get_instrument_serial_number())
+            configs.append(
+                InstrumentInformation(
+                    counter, [source_group, analyzer_group, detector_group],
+                    self._get_instrument_model_name(),
+                    self._get_instrument_serial_number(),
+                    software='Xcalibur'
+                )
             )
         self._instrument_config = {
             c.id: c for c in configs

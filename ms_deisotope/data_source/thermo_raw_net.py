@@ -21,6 +21,7 @@ import sys
 import os
 
 from collections import OrderedDict
+from typing import List
 
 import numpy as np
 
@@ -43,6 +44,8 @@ from ms_deisotope.data_source._thermo_helper import (
 
 from ms_deisotope.data_source.metadata.activation import (
     supplemental_term_map, dissociation_methods_map)
+
+from ms_deisotope.data_source.metadata import software
 from ms_deisotope.data_source.metadata.sample import Sample
 from ms_deisotope.data_source.metadata.scan_traits import FAIMS_compensation_voltage
 
@@ -550,6 +553,13 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             self._method = self._parse_method()
             self._build_scan_type_index()
             self._get_instrument_info()
+
+    def software_list(self) -> List[software.Software]:
+        inst_data = self._source.GetInstrumentData()
+        sw_list = [
+            software.Software('Xcalibur', 'Xcalibur', inst_data.SoftwareVersion)
+        ]
+        return sw_list
 
     @property
     def _source(self):
