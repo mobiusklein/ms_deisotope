@@ -1,7 +1,7 @@
 import operator
 import math
 from collections import namedtuple
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, TYPE_CHECKING
 
 from brainpy import mass_charge_ratio, neutral_mass as calc_neutral_mass, PROTON
 
@@ -649,6 +649,10 @@ class IonMobilityDeconvolutedPeakSet(DeconvolutedPeakSet):
         for i, peak in enumerate(self._mz_ordered):
             peak.index.mz = i
         return self
+
+
+if TYPE_CHECKING:
+    from ms_deisotope.feature_map.feature_fit import IonMobilityProfileDeconvolutedLCMSFeature
 
 
 class IonMobilityProfileDeconvolutedPeakSolution(DeconvolutedPeakSolution):
