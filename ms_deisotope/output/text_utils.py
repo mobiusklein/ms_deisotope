@@ -44,7 +44,7 @@ def envelopes_to_array(envelope_list, dtype=np.float32):
         collection.append(0)
         for pair in envelope:
             collection.extend(pair)
-    return np.array(collection, dtype=np.float32)
+    return np.array(collection, dtype=dtype)
 
 
 def decode_envelopes(array):

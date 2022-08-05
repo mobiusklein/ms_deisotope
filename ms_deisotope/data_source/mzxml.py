@@ -5,6 +5,7 @@ implementation.
 
 The parser is based on :mod:`pyteomics.mzxml`.
 '''
+from typing import List
 from six import string_types as basestring
 
 import numpy as np
@@ -15,7 +16,7 @@ from .common import (
     ScanEventInformation, ScanWindow,
     ComponentGroup, component, InstrumentInformation,
     FileInformation, ScanFileMetadataBase)
-from .metadata import data_transformation, file_information
+from .metadata import data_transformation, file_information, software
 from .xml_reader import (
     XMLReaderBase, iterparse_until)
 
@@ -93,7 +94,36 @@ class _MzXMLMetadataLoader(ScanFileMetadataBase):
             ComponentGroup("analyzer", [analyzer], 2),
             ComponentGroup("detector", [detector], 3)
         ]
-        return InstrumentInformation(configuration.get('msInstrumentID', 1), parts)
+        inst_model = configuration.get("msManufacturer", {}).get('value')
+        inst_software_conf = configuration.get("software", {})
+        inst_software = None
+        if inst_software_conf:
+            inst_software = software.Software(
+                inst_software_conf.get('name'),
+                inst_software_conf.get('name'),
+                inst_software_conf.get('version')
+            )
+        return InstrumentInformation(
+            configuration.get('msInstrumentID', 1),
+            parts,
+            inst_model,
+            software=inst_software)
+
+    def software_list(self) -> List[software.Software]:
+        sws = []
+        softwares = map(self.source._get_info_smart, iterparse_until(
+            self.source, "software", "scan"))
+        self.source.reset()
+
+        for sw in softwares:
+            sws.append(
+                software.Software(
+                    sw.get('name'),
+                    sw.get('name'),
+                    sw.get('version')
+                )
+            )
+        return sws
 
     def data_processing(self):
         data_processing = map(self.source._get_info_smart, iterparse_until(
