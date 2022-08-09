@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
--
 
 ### Changed
+1. mzML and mzXML now properly capture the relationship between instrument configuration and software.
 
 ### Deprecated
 

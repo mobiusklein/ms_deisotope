@@ -425,7 +425,7 @@ scan_attributes = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('scan attribute', term_cls_name="ScanAttribute", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 scan_attributes = TermSet([
     ScanAttribute('mass resolution', 'MS:1000011',
                   ('Smallest mass difference between two equal magnitude peaks '
@@ -666,7 +666,7 @@ binary_data_arrays = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('binary data array', writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 binary_data_arrays = TermSet([
     Term('m/z array', 'MS:1000514',
          ('A data array of m/z values.'),

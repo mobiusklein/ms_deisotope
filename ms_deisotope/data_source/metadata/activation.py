@@ -217,7 +217,7 @@ dissociation_methods = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('dissociation method', term_cls_name="DissociationMethod", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 dissociation_methods = TermSet([
     DissociationMethod('collision-induced dissociation', 'MS:1000133',
                        ('The dissociation of an ion after collisional excitation. The '
@@ -260,11 +260,6 @@ dissociation_methods = TermSet([
                         'electron ion, which readily fragments.'),
                        'dissociation method',
                        ['dissociation method']),
-    DissociationMethod('infrared multiphoton dissociation', 'MS:1000262',
-                       ('Multiphoton ionization where the reactant ion dissociates as '
-                        'a result of the absorption of multiple infrared photons.'),
-                       'dissociation method',
-                       ['dissociation method']),
     DissociationMethod('sustained off-resonance irradiation', 'MS:1000282',
                        ('A technique associated with Fourier transform ion cyclotron '
                         'resonance (FT-ICR) mass spectrometry to carry out '
@@ -294,7 +289,8 @@ dissociation_methods = TermSet([
     DissociationMethod('electron transfer dissociation', 'MS:1000598',
                        ('A process to fragment ions in a mass spectrometer by '
                         'inducing fragmentation of cations (e.g. peptides or '
-                        'proteins) by transferring electrons to them.'),
+                        'proteins) by transferring electrons from radical-anions." '
+                        '[DOI:10.1073/pnas.0402700101, PMID:15210983'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('pulsed q dissociation', 'MS:1000599',
@@ -320,10 +316,16 @@ dissociation_methods = TermSet([
                         '[DOI:10.1007/s00216-003-2057-0'),
                        'dissociation method',
                        ['dissociation method']),
-    DissociationMethod('Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)', 'MS:1002631',
-                       ('A dissociation process combining electron-transfer and '
-                        'higher-energy collision dissociation (EThcD). It combines '
-                        'ETD (reaction time) followed by HCD (activation energy).'),
+    DissociationMethod('combined dissociation method', 'MS:1003181',
+                       ('Combination of two or more dissociation methods that are '
+                        'known by a special term.'),
+                       'dissociation method',
+                       ['dissociation method']),
+    DissociationMethod('negative electron transfer dissociation', 'MS:1003247',
+                       ('A process to fragment ions in a mass spectrometer by '
+                        'inducing fragmentation of anions (e.g. peptides or proteins) '
+                        'by transferring electrons to a radical-cation." '
+                        '[DOI:10.1016/j.jasms.2005.01.015'),
                        'dissociation method',
                        ['dissociation method']),
     DissociationMethod('beam-type collision-induced dissociation', 'MS:1000422',
@@ -341,6 +343,28 @@ dissociation_methods = TermSet([
                         'excitation.'),
                        'dissociation method',
                        ['collision-induced dissociation', 'dissociation method']),
+    DissociationMethod('infrared multiphoton dissociation', 'MS:1000262',
+                       ('Multiphoton ionization where the reactant ion dissociates as '
+                        'a result of the absorption of multiple infrared photons.'),
+                       'dissociation method',
+                       ['photodissociation', 'dissociation method']),
+    DissociationMethod('ultraviolet photodissociation', 'MS:1003246',
+                       ('Multiphoton ionization where the reactant ion dissociates as '
+                        'a result of the absorption of multiple UV photons.'),
+                       'dissociation method',
+                       ['photodissociation', 'dissociation method']),
+    DissociationMethod('electron-transfer/higher-energy collision dissociation', 'MS:1002631',
+                       ('Dissociation process combining electron-transfer '
+                        'dissociation and higher-energy collision dissociation. It '
+                        'combines ETD (reaction time) followed by HCD (activation '
+                        'energy).'),
+                       'dissociation method',
+                       ['combined dissociation method', 'dissociation method']),
+    DissociationMethod('electron-transfer/collision-induced dissociation', 'MS:1003182',
+                       ('Dissociation process combining electron-transfer '
+                        'dissociation (ETD) and collision-induced dissociation (CID).'),
+                       'dissociation method',
+                       ['combined dissociation method', 'dissociation method']),
     DissociationMethod('higher energy beam-type collision-induced dissociation', 'MS:1002481',
                        ('A collision-induced dissociation process wherein the '
                         'projectile ion has the translational energy higher than '

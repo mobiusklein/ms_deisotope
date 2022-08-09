@@ -28,6 +28,7 @@ except NameError:
 class IDParserBase(object):
     """A base class for ID parsing and formatting.
     """
+
     def parse(self, text):
         """Parse a string looking for fields defined by this ID format.
 
@@ -134,6 +135,7 @@ class IDFormat(Term, IDParserBase):
 
     def __call__(self, text):
         return self.parse(text)
+
 
 class FileFormat(Term):
     """Describes a named mass spectrometry data file format, either
@@ -278,6 +280,7 @@ class MultipleIDFormats(Mapping, IDParserBase):
     id_formats : OrderedDict
         A mapping of format name to :class:`IDFormat` instances
     '''
+
     def __init__(self, id_formats):
         self.id_formats = id_formats
 
@@ -319,7 +322,7 @@ id_formats = []
 # render_list('native spectrum identifier format',
 #             "id_formats", term_cls_name="IDFormat", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 id_formats = TermSet([
     IDFormat('Thermo nativeID format', 'MS:1000768',
              ('Native format defined by '
@@ -448,7 +451,7 @@ file_formats = []
 # render_list('mass spectrometer file format',
 #             "file_formats", term_cls_name="FileFormat", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 file_formats = TermSet([
     FileFormat('Waters raw format', 'MS:1000526',
                ('Waters data file format found in a Waters RAW directory, '
@@ -633,7 +636,7 @@ content_keys = []
 # render_list('data file content',
 #             "content_keys", term_cls_name="FileContent", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 content_keys = TermSet([
     FileContent('mass spectrum', 'MS:1000294',
                 ('A plot of the relative abundance of a beam or other '
@@ -669,6 +672,11 @@ content_keys = TermSet([
                 ('Representation of electromagnetic properties versus time.'),
                 'data file content',
                 ['data file content', 'chromatogram type']),
+    FileContent('mass spectrometry acquisition method', 'MS:1003213',
+                ('Specific aspect of a mass spectrometer method by which mass '
+                 'ranges are selected and possibly dissociated.'),
+                'data file content',
+                ['data file content', 'acquisition parameter']),
     FileContent('charge inversion mass spectrum', 'MS:1000322',
                 ('The measurement of the relative abundance of ions that '
                  'result from a charge inversion reaction as a function of '
@@ -787,6 +795,51 @@ content_keys = TermSet([
                 ('Representation of light emitted by the sample versus time.'),
                 'data file content',
                 ['electromagnetic radiation chromatogram', 'data file content', 'chromatogram type']),
+    FileContent('selected ion monitoring', 'MS:1000205',
+                ('The operation of a mass spectrometer in which the '
+                 'intensities of several specific m/z values are recorded '
+                 'rather than the entire mass spectrum.'),
+                'data file content',
+                ['data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    FileContent('selected reaction monitoring', 'MS:1000206',
+                ('Data acquired from specific product ions corresponding to '
+                 'm/z selected precursor ions recorded via multiple stages of '
+                 'mass spectrometry. Selected reaction monitoring can be '
+                 'performed in time or in space.'),
+                'data file content',
+                ['data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    FileContent('data independent acquisition from dissociation of sequential mass ranges', 'MS:1003224',
+                ('Data independent mass spectrometer acquisition method '
+                 'wherein a preconfigured sequence of mass ranges are '
+                 'fragmented. Examples of such an approach include SWATH-MS, '
+                 'FT-ARM, HRM, and PAcIFIC.'),
+                'data file content',
+                ['dissociation of sequential mass ranges', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    FileContent('data independent acquisition from dissociation of sequential mass ranges after ion mobility separation', 'MS:1003225',
+                ('Data independent mass spectrometer acquisition method '
+                 'wherein a preconfigured sequence of mass ranges are '
+                 'fragmented after being separated by ion mobility. An example '
+                 'of such an approach is Bruker diaPASEF.'),
+                'data file content',
+                ['dissociation of sequential mass ranges', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    FileContent('data independent acquisition from dissociation of full mass range after ion mobility separation', 'MS:1003226',
+                ('Data independent mass spectrometer acquisition method '
+                 'wherein the full mass range is fragmented after being '
+                 'separated by ion mobility. Examples of such an approach '
+                 'include HDMS^E and IMS-AIF.'),
+                'data file content',
+                ['dissociation of full mass range', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    FileContent('data independent acquisition from dissociation of full mass range', 'MS:1003227',
+                ('Data independent mass spectrometer acquisition method '
+                 'wherein the full mass range is fragmented. Examples of such '
+                 'an approach include MS^E, AIF, and bbCID.'),
+                'data file content',
+                ['dissociation of full mass range', 'ion mobility separation', 'data-independent acquisition', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
+    FileContent('data independent acquisition from dissociation of scanning quadrupole across mass range', 'MS:1003228',
+                ('Data independent mass spectrometer acquisition method '
+                 'wherein ???. An example of such an approach is Waters SONAR.'),
+                'data file content',
+                ['data-independent acquisition', 'dissociation of scanning quadrupole across a specified mass range', 'mass spectrometry acquisition method', 'mass spectrometry acquisition method aspect', 'data file content', 'acquisition parameter', 'spectrum generation information']),
     FileContent('enhanced multiply charged spectrum', 'MS:1000789',
                 ('MS1 spectrum that is enriched in multiply-charged ions '
                  'compared to singly-charged ions.'),
@@ -809,7 +862,7 @@ spectrum_representation = []
 # render_list('spectrum representation',
 #             "spectrum_representation", term_cls_name="FileContent", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 spectrum_representation = TermSet([
     FileContent('centroid spectrum', 'MS:1000127',
                 ('Processing of profile data to produce spectra that contains '
@@ -1223,7 +1276,8 @@ class SourceFile(object):
             elif os.path.basename(path).replace(os.sep, '').endswith("raw"):
                 return format_parameter_map['waters']
             else:
-                warnings.warn("Could not determine source file type from directory path %r" % (path, ))
+                warnings.warn(
+                    "Could not determine source file type from directory path %r" % (path, ))
                 return id_fmt, None
 
         parts = os.path.splitext(path)

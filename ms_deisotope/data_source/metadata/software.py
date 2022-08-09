@@ -67,7 +67,7 @@ software_names = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('software', list_name='software_names', term_cls_name="SoftwareName", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 software_names = TermSet([
     SoftwareName('Agilent software', 'MS:1000689',
                  ('Agilent software for data acquisition and analysis.'),
@@ -145,6 +145,10 @@ software_names = TermSet([
                  ('SCiLS software for data acquisition and analysis.'),
                  'software',
                  ['software']),
+    SoftwareName('library creation software', 'MS:1003207',
+                 ('Library creation software'),
+                 'software',
+                 ['software', 'spectral library attribute']),
     SoftwareName('MassHunter Data Acquisition', 'MS:1000678',
                  ('Software for data acquisition of 6000 series instruments.'),
                  'software',
@@ -601,6 +605,11 @@ software_names = TermSet([
                   'mixtures'),
                  'software',
                  ['quantitation software name', 'software', 'quantification information']),
+    SoftwareName('DIA-NN', 'MS:1003253',
+                 ('A universal software for data-independent acquisition (DIA) '
+                  'proteomics data processing" [PMID:31768060'),
+                 'software',
+                 ['quantitation software name', 'analysis software', 'software', 'quantification information']),
     SoftwareName('MALDI Solutions', 'MS:1001558',
                  ('Shimadzu Biotech software for data acquisition, processing, '
                   'and analysis.'),
@@ -660,9 +669,12 @@ software_names = TermSet([
                  'software',
                  ['analysis software', 'software']),
     SoftwareName('SpectraST', 'MS:1001477',
-                 ('SpectraST was used to analyze the spectra.'),
+                 ('Open-source software for mass spectral library creation and '
+                  'searching, developed at the Institute for Systems Biology '
+                  'and the Hong Kong University of Science and Technology. Part '
+                  'of the Trans-Proteomic Pipeline.'),
                  'software',
-                 ['analysis software', 'software']),
+                 ['analysis software', 'library creation software', 'software', 'spectral library attribute']),
     SoftwareName('Mascot Parser', 'MS:1001478',
                  ('Mascot Parser was used to analyze the spectra.'),
                  'software',
@@ -949,6 +961,36 @@ software_names = TermSet([
                   'analysis tasks." [DOI:10.1021/acs.jproteome.8b00717'),
                  'software',
                  ['analysis software', 'software']),
+    SoftwareName('PTX-QC', 'MS:1003162',
+                 ('Proteomics (PTX) - QualityControl (QC) software for QC '
+                  'report generation and visualization." '
+                  '[DOI:10.1021/acs.jproteome.5b00780, PMID:26653327'),
+                 'software',
+                 ['analysis software', 'software']),
+    SoftwareName('QuaMeter IDFree', 'MS:1003164',
+                 ('QuaMeter IDFree software for QC metric calculation." '
+                  '[DOI:10.1021/ac4034455'),
+                 'software',
+                 ['analysis software', 'software']),
+    SoftwareName('iMonDB', 'MS:1003165',
+                 ('iMonDB software to extract, store, and manage mass '
+                  'spectrometry instrument parameters from raw data files." '
+                  '[DOI:10.1021/acs.jproteome.5b00127, PMID:25798920'),
+                 'software',
+                 ['analysis software', 'software']),
+    SoftwareName('BiblioSpec', 'MS:1003202',
+                 ('A suite of software tools for creating and searching MS/MS '
+                  'peptide spectrum libraries, developed at the University of '
+                  'Washington'),
+                 'software',
+                 ['analysis software', 'library creation software', 'software', 'spectral library attribute']),
+    SoftwareName('PeakForest', 'MS:1003232',
+                 ('comprehensive infrastructure to organize, curate and share a '
+                  'multi- instrument spectral library for metabolomics data '
+                  'annotation developed and distributed by the French National '
+                  'infrastructure in metabolomics and fluxomics (MetaboHUB).'),
+                 'software',
+                 ['analysis software', 'library creation software', 'small molecule analysis software', 'software', 'spectral library attribute']),
     SoftwareName('massWolf', 'MS:1000538',
                  ('A software for converting Waters raw directory format to '
                   'mzXML or mzML. MassWolf was originally developed at the '

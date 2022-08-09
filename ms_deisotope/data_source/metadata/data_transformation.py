@@ -20,6 +20,7 @@ from .cv import Term, TermSet
 
 DataTransformationOrStr = Union[str, 'DataTransformation']
 
+
 class DataTransformation(Term):
     """Describes a named data transformation, either
     using a controlled-vocabulary term or user-defined name.
@@ -38,7 +39,7 @@ data_transformations = []
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('data transformation', term_cls_name="DataTransformation", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 data_transformations = TermSet([
     DataTransformation('file format conversion', 'MS:1000530',
                        ('Conversion of one file format to another.'),
@@ -129,6 +130,25 @@ data_transformations = TermSet([
                        ['data processing action', 'data transformation']),
     DataTransformation('data filtering', 'MS:1001486',
                        ('Filtering out part of the data.'),
+                       'data transformation',
+                       ['data processing action', 'data transformation']),
+    DataTransformation('adduct deconvolution', 'MS:1003220',
+                       ('Data processing action of merging of the measurements of '
+                        'potentially multiple adducts into a single representation '
+                        'that is independent of the small ion that adds charge to a '
+                        'larger molecule.'),
+                       'data transformation',
+                       ['data processing action', 'data transformation']),
+    DataTransformation('ion mobility deconvolution', 'MS:1003222',
+                       ('Data processing action of merging multiple ion peaks '
+                        'acquired at different ion mobility steps into a single mass '
+                        'spectrum representing a single analyte.'),
+                       'data transformation',
+                       ['data processing action', 'data transformation']),
+    DataTransformation('peak intensity transform', 'MS:1003240',
+                       ('A mathematical transformation applied to peak intensities, '
+                        'for example, as a way to modify the weight put on each peak '
+                        'when computing spectral match scores'),
                        'data transformation',
                        ['data processing action', 'data transformation']),
     DataTransformation('area peak picking', 'MS:1000801',
@@ -228,6 +248,16 @@ data_transformations = TermSet([
                        ('The removal of very high intensity data points.'),
                        'data transformation',
                        ['data filtering', 'data processing action', 'data transformation']),
+    DataTransformation('square root transform', 'MS:1003241',
+                       ('A mathematical transformation applied to peak intensities, '
+                        'in which peak intensities are replaced by their square roots'),
+                       'data transformation',
+                       ['peak intensity transform', 'data processing action', 'data transformation']),
+    DataTransformation('rank transform', 'MS:1003242',
+                       ('A mathematical transformation applied to peak intensities, '
+                        'in which peak intensities are replaced by their ranks'),
+                       'data transformation',
+                       ['peak intensity transform', 'data processing action', 'data transformation']),
     DataTransformation('sophisticated numerical annotation procedure', 'MS:1001998',
                        ('It searches for known patterns in the measured spectrum." '
                         '[DOI:10.1021/ac951158i'),
@@ -275,7 +305,10 @@ class ProcessingMethod(object):
     --------
     :class:`DataTransformation`
     '''
-    operations: OrderedDict[DataTransformation, Union[Any, List[Any]]]
+    operations: OrderedDict[
+        DataTransformation,
+        Union[Any, List[Any]]
+    ]
     software_id: str
     order: int
 
@@ -303,7 +336,7 @@ class ProcessingMethod(object):
     def remove(self, operation: DataTransformationOrStr):
         return self.operations.pop(operation, None)
 
-    def add(self, operation: DataTransformationOrStr, value: Any=''):
+    def add(self, operation: DataTransformationOrStr, value: Any = ''):
         '''Add a new :class:`DataTransformation` operation to this method.
 
         Parameters
@@ -325,7 +358,7 @@ class ProcessingMethod(object):
         else:
             self.operations[operation] = value
 
-    def get(self, operation: DataTransformationOrStr, default: Any=None) -> Any:
+    def get(self, operation: DataTransformationOrStr, default: Any = None) -> Any:
         try:
             return self.operations[operation]
         except KeyError:

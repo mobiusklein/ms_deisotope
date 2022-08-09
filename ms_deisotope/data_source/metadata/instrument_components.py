@@ -23,7 +23,7 @@ class Component(Term):
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('ionization type', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 ionization_types = TermSet([
     Component('chemical ionization', 'MS:1000071',
               ('The formation of a new ion by the reaction of a neutral '
@@ -228,6 +228,25 @@ ionization_types = TermSet([
                'several thousand eV with a solid sample.'),
               'ionization type',
               ['ionization type']),
+    Component('paper spray ionization', 'MS:1003235',
+              ('The ionization of analytes from a piece of paper by applying '
+               'a solvent and voltage.'),
+              'ionization type',
+              ['ionization type']),
+    Component('proton transfer reaction', 'MS:1003248',
+              ('Process to transfer a proton from a hydronium ion (H3O+) to '
+               'neutral analyte, leading to a protonated analyte, which '
+               'typically does not lead to fragmentation." '
+               '[DOI:10.1002/mas.20048'),
+              'ionization type',
+              ['ionization type']),
+    Component('proton transfer charge reduction', 'MS:1003249',
+              ('Process to transfer one or more protons from a multiply '
+               'charged cation (peptide or protein ion) to a proton acceptor '
+               'anion or neutral basic compound, thereby reducing the charge '
+               'of the original analyte.'),
+              'ionization type',
+              ['ionization type']),
     Component('microelectrospray', 'MS:1000397',
               ('Electrospray ionization at a solvent flow rate of 300-800 '
                'nL/min where the flow is a result of a mechanical pump. See '
@@ -320,7 +339,7 @@ ionization_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('detector type', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 detector_types = TermSet([
     Component('channeltron', 'MS:1000107',
               ('A horn-shaped (or cone-shaped) continuous dynode particle '
@@ -471,7 +490,7 @@ detector_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('mass analyzer type', 'analyzer_types', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 analyzer_types = TermSet([
     Component('fourier transform ion cyclotron resonance mass spectrometer', 'MS:1000079',
               ('A mass spectrometer based on the principle of ion cyclotron '
@@ -580,7 +599,7 @@ analyzer_types = TermSet([
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('inlet type', term_cls_name="Component", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 inlet_types = TermSet([
     Component('continuous flow fast atom bombardment', 'MS:1000055',
               ('Fast atom bombardment ionization in which the analyte in '
@@ -709,7 +728,7 @@ class InstrumentModel(Term):
 # from ms_deisotope.data_source.metadata.cv import render_list
 # render_list('instrument model', term_cls_name="InstrumentModel", writer=cog.out)
 # ]]]
-# CV Version: 4.1.55
+# CV Version: 4.1.95
 instrument_models = TermSet([
     InstrumentModel('SCIEX instrument model', 'MS:1000121',
                     ('The brand of instruments from the joint venture between '
@@ -1216,7 +1235,7 @@ instrument_models = TermSet([
                      'time-of-flight mass spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
-    InstrumentModel('Xevo G2 XS Tof', 'MS:1002729',
+    InstrumentModel('Xevo G2-XS Tof', 'MS:1002729',
                     ('Waters Corporation Xevo G2 XS Tof orthogonal acceleration '
                      'time-of-flight mass spectrometer.'),
                     'instrument model',
@@ -1229,6 +1248,23 @@ instrument_models = TermSet([
     InstrumentModel('Xevo TQ-S micro', 'MS:1002731',
                     ('Waters Corporation Xevo TQ-S micro triple quadrupole mass '
                      'spectrometer.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Synapt XS', 'MS:1003183',
+                    ('Waters oa-ToF based Synapt XS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('SELECT SERIES Cyclic IMS', 'MS:1003184',
+                    ('Waters oa-ToF based SELECT SERIES Cyclic IMS.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('SELECT SERIES MRT', 'MS:1003185',
+                    ('Waters oa-ToF based SELECT SERIES MRT.'),
+                    'instrument model',
+                    ['Waters instrument model', 'instrument model']),
+    InstrumentModel('Xevo G2-XS QTof', 'MS:1003252',
+                    ('Waters Corporation Xevo G2-XS QTof quadrupole time-of-flight '
+                     'mass spectrometer.'),
                     'instrument model',
                     ['Waters instrument model', 'instrument model']),
     InstrumentModel('Thermo Finnigan instrument model', 'MS:1000125',
@@ -1390,6 +1426,24 @@ instrument_models = TermSet([
                      'less than 2 ppm and resolution greater than 26,000 at m/z '
                      '2722. It has multiple ion sources and can be used with '
                      'multimode ion sources.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6470A Triple Quadrupole LC/MS', 'MS:1000935',
+                    ('The 6470A Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6470B Triple Quadrupole LC/MS', 'MS:1000936',
+                    ('The 6470B Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
+                     'quadrupole mass spectrometer.'),
+                    'instrument model',
+                    ['Agilent instrument model', 'instrument model']),
+    InstrumentModel('6495C Triple Quadrupole LC/MS', 'MS:1000937',
+                    ('The 6495C Quadrupole LC/MS system is a Agilent liquid '
+                     'chromatography instrument combined with a Agilent triple '
+                     'quadrupole mass spectrometer.'),
                     'instrument model',
                     ['Agilent instrument model', 'instrument model']),
     InstrumentModel('6420 Triple Quadrupole LC/MS', 'MS:1002444',
@@ -1838,6 +1892,18 @@ instrument_models = TermSet([
                     ("Bruker Daltonics' timsTOF fleX"),
                     'instrument model',
                     ['Bruker Daltonics timsTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('timsTOF', 'MS:1003229',
+                    ("Bruker Daltonics' timsTOF."),
+                    'instrument model',
+                    ['Bruker Daltonics timsTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('timsTOF Pro 2', 'MS:1003230',
+                    ("Bruker Daltonics' timsTOF Pro 2."),
+                    'instrument model',
+                    ['Bruker Daltonics timsTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
+    InstrumentModel('timsTOF SCP', 'MS:1003231',
+                    ("Bruker Daltonics' timsTOF SCP."),
+                    'instrument model',
+                    ['Bruker Daltonics timsTOF series', 'Bruker Daltonics instrument model', 'instrument model']),
     InstrumentModel('AXIMA CFR MALDI-TOF', 'MS:1000607',
                     ('Shimadzu Biotech AXIMA CFR MALDI-TOF MS.'),
                     'instrument model',
@@ -2234,6 +2300,11 @@ instrument_models = TermSet([
                     ('Thermo Scientific Orbitrap ID-X mass spectrometer with '
                      'Tribrid architecture consisting of quadrupole mass filter, '
                      'linear ion trap and Orbitrap mass analyzers.'),
+                    'instrument model',
+                    ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
+    InstrumentModel('Q Exactive UHMR', 'MS:1003245',
+                    ('Thermo Scientific Q Exactive UHMR (Ultra High Mass Range) '
+                     'Hybrid Quadrupole Orbitrap MS.'),
                     'instrument model',
                     ['Thermo Scientific instrument model', 'Thermo Fisher Scientific instrument model', 'instrument model']),
     InstrumentModel('explorer', 'MS:1000158',
