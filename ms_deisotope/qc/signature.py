@@ -70,7 +70,7 @@ class SignatureIonDetector(object):
 
     signature_ions: List[Target]
 
-    def __init__(self, signature_ions=None, method='ratio'):
+    def __init__(self, signature_ions: List[Target]=None, method='ratio'):
         if signature_ions is None:
             signature_ions = []
         self.signature_ions = signature_ions

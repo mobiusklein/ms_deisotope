@@ -5,7 +5,7 @@ implementation.
 The parser is based on :mod:`pyteomics.mzml`.
 '''
 import io
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 import warnings
 import zlib
 import re
@@ -36,6 +36,7 @@ from .metadata.scan_traits import FAIMS_compensation_voltage
 from .xml_reader import (
     XMLReaderBase, iterparse_until,
     get_tag_attributes, _find_section, in_minutes)
+from ms_deisotope.data_source.metadata import software
 
 
 def _open_if_not_file(obj, mode='rt', encoding='utf8'):
@@ -570,7 +571,7 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
         )
         return config
 
-    def instrument_configuration(self):
+    def instrument_configuration(self) -> List[InstrumentInformation]:
         """Read the instrument configurations settings from the
         ``<instrumentConfigurationList>``
 
@@ -591,15 +592,15 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
             out.append(self._convert_instrument(instrument_info))
         return out
 
-    def software_list(self):
+    def software_list(self) -> List[software.Software]:
         softwares = _find_section(self._source, "softwareList")
-        software_list = []
+        software_list: List[software.Software] = []
         for software in softwares.get('software', []):
             software_list.append(
                 Software(**software))
         return software_list
 
-    def data_processing(self):
+    def data_processing(self) -> List[data_transformation.DataProcessingInformation]:
         data_processing_list = _find_section(self._source, "dataProcessingList")
         processing_list = []
         for processing_group in data_processing_list.get("dataProcessing", []):
@@ -618,7 +619,7 @@ class _MzMLMetadataLoader(ScanFileMetadataBase):
             processing_list.append(dpinfo)
         return processing_list
 
-    def samples(self):
+    def samples(self) -> List[Sample]:
         """Describe the sample(s) used to generate the mass spectrometry
         data contained in this file.
 
@@ -709,6 +710,15 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
     """
 
     _parser_cls = _MzMLParser
+
+    _run_information: Dict[str, Any]
+    _spectrum_list_information: Dict[str, Any]
+
+    _decode_binary: bool
+    _use_index: bool
+    _instrument_config: Dict[str, InstrumentInformation]
+    _file_description: FileInformation
+
 
 
     def __init__(self, source_file, use_index=True, decode_binary=True, index_file=None, **kwargs):

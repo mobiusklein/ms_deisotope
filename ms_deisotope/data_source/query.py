@@ -27,6 +27,7 @@ class ScanIteratorProxyBase(object):
         that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced
         by iteration.
     """
+    scan_source: ScanIterator
 
     def __init__(self, scan_source, *args, **kwargs):
         self.scan_source = scan_source
@@ -468,6 +469,60 @@ class CallableFilter(_PredicateFilterIterator):
 
 
 filter_scans = CallableFilter
+
+
+class HasProductMZFilter(_PredicateFilterIterator):
+    product_mz: float
+    error_tolerance: float
+
+    def __init__(self, scan_source, product_mz, error_tolerance, *args, **kwargs):
+        super(HasProductMZFilter, self).__init__(scan_source, *args, **kwargs)
+        self.product_mz = product_mz
+        self.error_tolerance = error_tolerance
+
+    def _check(self, scan: ScanBase):
+        if scan.peak_set is None and scan.deconvoluted_peak_set is None:
+            scan.pick_peaks()
+        if scan.peak_set is not None:
+            return bool(scan.peak_set.all_peaks_for(self.product_mz, self.error_tolerance))
+        elif scan.deconvoluted_peak_set is not None:
+            lower = self.product_mz - self.product_mz * self.error_tolerance
+            upper = self.product_mz + self.product_mz * self.error_tolerance
+            return bool(scan.deconvoluted_peak_set.between(lower, upper, use_mz=True))
+        raise ValueError("Could not find peak list to pick from!")
+
+    @property
+    def key(self):
+        return self.product_mz
+
+
+class HasPrecursorLossMZFilter(_PredicateFilterIterator):
+    loss_mz: float
+    error_tolerance: float
+
+    def __init__(self, scan_source, loss_mz, error_tolerance, *args, **kwargs):
+        super(HasPrecursorLossMZFilter, self).__init__(
+            scan_source, *args, **kwargs)
+        self.loss_mz = loss_mz
+        self.error_tolerance = error_tolerance
+
+    def _check(self, scan: ScanBase):
+        if not scan.precursor_information:
+            return False
+        mz = scan.precursor_information.mz - self.loss_mz
+        if scan.peak_set is None and scan.deconvoluted_peak_set is None:
+            scan.pick_peaks()
+        if scan.peak_set is not None:
+            return bool(scan.peak_set.all_peaks_for(mz, self.error_tolerance))
+        elif scan.deconvoluted_peak_set is not None:
+            lower = mz - mz * self.error_tolerance
+            upper = mz + mz * self.error_tolerance
+            return bool(scan.deconvoluted_peak_set.between(lower, upper, use_mz=True))
+        raise ValueError("Could not find peak list to pick from!")
+
+    @property
+    def key(self):
+        return self.loss_mz
 
 
 class MS1MergingTransformer(ScanIteratorProxyBase):

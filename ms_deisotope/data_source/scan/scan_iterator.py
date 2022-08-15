@@ -4,7 +4,7 @@ of :class:`~.Scan`-like objects.
 import bisect
 import warnings
 
-from typing import Callable, Generic, Iterator, Optional, TypeVar
+from typing import Any, Callable, DefaultDict, Deque, Generic, Iterator, List, Optional, TypeVar, Union
 
 from collections import deque, defaultdict
 from six import PY2
@@ -24,11 +24,11 @@ ITERATION_MODE_GROUPED = "grouped"
 ITERATION_MODE_SINGLE = "single"
 
 
-G = TypeVar("G")
-T = TypeVar("T")
+ScanGroupType = TypeVar("ScanGroupType")
+ScanType = TypeVar("ScanType")
 
 
-class _ScanIteratorImplBase(Generic[T, G]):
+class _ScanIteratorImplBase(Generic[ScanType, ScanGroupType]):
     """Internal base class for scan iteration strategies
 
     Attributes
@@ -43,6 +43,9 @@ class _ScanIteratorImplBase(Generic[T, G]):
         A callable that will check if a raw scan object is valid or not for filtering
         out unwanted entries, or a no-op
     """
+
+    iterator: Iterator[Any]
+    _producer: Union[Iterator[ScanType], Iterator[ScanGroupType]]
 
     def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, **kwargs):
         if scan_validator is None:
@@ -68,7 +71,7 @@ class _ScanIteratorImplBase(Generic[T, G]):
     def __next__(self):
         return self.next() # pylint: disable=not-callable
 
-    def _make_producer(self):
+    def _make_producer(self) -> Union[Iterator[ScanType], Iterator[ScanGroupType]]:
         raise NotImplementedError()
 
     @property
@@ -91,17 +94,19 @@ class _ScanIteratorImplBase(Generic[T, G]):
         return cls(iterator, scan_source._make_scan, scan_source._validate, scan_source._cache_scan, **kwargs)
 
 
-class _SingleScanIteratorImpl(_ScanIteratorImplBase[T, G], Iterator[T]):
+class _SingleScanIteratorImpl(_ScanIteratorImplBase[ScanType, ScanGroupType], Iterator[ScanType]):
     """Iterate over individual scans.
 
     The default strategy when MS1 scans are missing.
     """
 
+    _producer: Iterator[ScanType]
+
     @property
     def iteration_mode(self):
         return ITERATION_MODE_SINGLE
 
-    def _make_producer(self):
+    def _make_producer(self) -> Iterator[ScanType]:
         _make_scan = self.scan_packer
         _validate = self.scan_validator
         _cache_scan = self.scan_cacher
@@ -113,16 +118,19 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase[T, G], Iterator[T]):
             yield packed
 
 
-class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[T, G], Iterator[G]):
+class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[ScanType, ScanGroupType], Iterator[ScanGroupType]):
     '''Mimics the interface of :class:`_GroupedScanIteratorImpl` for
     scan sequences which only support single scans, or which do not
     guarantee sequential access to precursor/product collections.
     '''
+
+    _producer: Iterator[ScanGroupType]
+
     @property
     def iteration_mode(self):
         return ITERATION_MODE_GROUPED
 
-    def _make_producer(self):
+    def _make_producer(self) -> Iterator[ScanGroupType]:
         generator = super(_FakeGroupedScanIteratorImpl, self)._make_producer()
         for scan in generator:
             if scan.ms_level == 1:
@@ -131,18 +139,20 @@ class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[T, G], Iterator[G]):
                 yield ScanBunch(None, [scan])
 
 
-class _GroupedScanIteratorImpl(_ScanIteratorImplBase[T, G], Iterator[G]):
+class _GroupedScanIteratorImpl(_ScanIteratorImplBase[ScanType, ScanGroupType], Iterator[ScanGroupType]):
     """Iterate over related scan bunches.
 
     The default strategy when MS1 scans are known to be
     present, even if MSn scans are not.
     """
 
+    _producer: Iterator[ScanGroupType]
+
     @property
     def iteration_mode(self):
         return ITERATION_MODE_GROUPED
 
-    def _make_producer(self):
+    def _make_producer(self) -> Iterator[ScanGroupType]:
         _make_scan = self.scan_packer
         _validate = self.scan_validator
         _cache_scan = self.scan_cacher
@@ -233,12 +243,23 @@ class GenerationTracker(object):
         return result
 
 
-class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
+class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, ScanGroupType]):
     """Iterate over related scan bunches.
 
     The default strategy when MS1 scans are known to be
     present, even if MSn scans are not.
     """
+
+    buffering: int
+    ms1_buffer: Deque[ScanType]
+    product_mapping: DefaultDict[str, List[ScanType]]
+
+    generation_tracker: GenerationTracker
+    orphans: List[ScanType]
+
+    passed_first_ms1: bool
+    highest_ms_level: int
+    generation: int
 
     def __init__(self, iterator, scan_packer, scan_validator=None, scan_cacher=None, buffering=5):
         super(_InterleavedGroupedScanIteratorImpl, self).__init__(
@@ -254,11 +275,11 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
         self.highest_ms_level = 0
         self.generation = 0
 
-    def pop_precursor(self, precursor_id):
+    def pop_precursor(self, precursor_id: str) -> List[ScanType]:
         self.generation_tracker.remove(precursor_id)
         return self.product_mapping.pop(precursor_id, [])
 
-    def deque_group(self, flush_products=False):
+    def deque_group(self, flush_products=False) -> ScanGroupType:
         '''Remove the next scan from the MS1 queue, grouped with
         any associated MSn scans.
 
@@ -336,7 +357,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
         self.generation += 1
         return ScanBunch(precursor, products)
 
-    def add_product(self, scan):
+    def add_product(self, scan: ScanType):
         '''Add MSn scan to :attr:`product_mapping` for the associated
         precursor scan ID.
 
@@ -359,7 +380,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
             self.generation_tracker.add(precursor_id, self.generation)
         self.product_mapping[precursor_id].append(scan)
 
-    def add_precursor(self, scan):
+    def add_precursor(self, scan: ScanType) -> bool:
         '''Add MS1 scan to :attr:`ms1_buffer`
 
         Parameters
@@ -375,7 +396,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
         self.ms1_buffer.append(scan)
         return len(self.ms1_buffer) >= self.buffering
 
-    def _make_producer(self):
+    def _make_producer(self) -> Iterator[ScanGroupType]:
         _make_scan = self.scan_packer
         _validate = self.scan_validator
         _cache_scan = self.scan_cacher
@@ -413,7 +434,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[T, G]):
             yield self.deque_group(flush_products=True)
 
 
-class MSEIterator(_GroupedScanIteratorImpl[T, G]):
+class MSEIterator(_GroupedScanIteratorImpl[ScanType, ScanGroupType]):
     '''A scan iterator implementation for grouping MS^E spectra according
     to the specified functions.
 
@@ -440,7 +461,7 @@ class MSEIterator(_GroupedScanIteratorImpl[T, G]):
         self.lock_mass_config = lock_mass_config
         self.on_lock_mass_scan = on_lock_mass_scan
 
-    def _make_producer(self):
+    def _make_producer(self) -> Iterator[ScanGroupType]:
         _make_scan = self.scan_packer
         _validate = self.scan_validator
         _cache_scan = self.scan_cacher

@@ -398,7 +398,7 @@ class ScanIterator(ScanDataSource):
         '''
         raise NotImplementedError()
 
-    def make_iterator(self, iterator=None, grouped=None, **kwargs):
+    def make_iterator(self, iterator=None, grouped=None, **kwargs) -> 'ScanIterator':
         """Configure the :class:`ScanIterator`'s behavior, selecting it's iteration strategy over
         either its default iterator or the provided ``iterator`` argument.
 
@@ -512,7 +512,7 @@ class RandomAccessScanSource(ScanIterator):
         return MaybeFastRandomAccess
 
     @abc.abstractmethod
-    def get_scan_by_id(self, scan_id: str):
+    def get_scan_by_id(self, scan_id: str) -> ScanBase:
         """Retrieve the scan object for the specified scan id.
 
         If the scan object is still bound and in memory somewhere,
@@ -531,7 +531,7 @@ class RandomAccessScanSource(ScanIterator):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_scan_by_time(self, time: float):
+    def get_scan_by_time(self, time: float) -> ScanBase:
         """Retrieve the scan object for the specified scan time.
 
         This internally calls :meth:`get_scan_by_id` which will
@@ -549,7 +549,7 @@ class RandomAccessScanSource(ScanIterator):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_scan_by_index(self, index: int):
+    def get_scan_by_index(self, index: int) -> ScanBase:
         """Retrieve the scan object for the specified scan index.
 
         This internally calls :meth:`get_scan_by_id` which will
@@ -568,7 +568,7 @@ class RandomAccessScanSource(ScanIterator):
 
     @abc.abstractmethod
     def start_from_scan(self, scan_id: Optional[str]=None, rt: Optional[float]=None, index: Optional[int]=None,
-                        require_ms1: bool=True, grouped=True, **kwargs):
+                        require_ms1: bool=True, grouped=True, **kwargs) -> 'RandomAccessScanSource':
         '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
@@ -594,7 +594,7 @@ class RandomAccessScanSource(ScanIterator):
         '''
         raise NotImplementedError()
 
-    def _locate_ms1_scan(self, scan, search_range=150):
+    def _locate_ms1_scan(self, scan: ScanBase, search_range: int=150) -> Optional[ScanBase]:
         i = 0
         initial_scan = scan
         if (self.has_ms1_scans() is False):
@@ -663,7 +663,7 @@ class RandomAccessScanSource(ScanIterator):
     def __len__(self) -> int:
         raise NotImplementedError()
 
-    def __getitem__(self, i: int) -> ScanBase:
+    def __getitem__(self, i: int) -> Union[ScanBase, List[ScanBase]]:
         """Retrieve the scan object for the specified scan index.
 
         This internally calls :meth:`get_scan_by_index` but supports
