@@ -29,7 +29,7 @@ jobs:
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy,matplotlib numpy scipy matplotlib -U
         pip install -r test-requirements.txt
-        pip install -e .
+        pip install .
         python setup.py build sdist
     - name: Install cibuildwheel
       run: python -m pip install cibuildwheel
