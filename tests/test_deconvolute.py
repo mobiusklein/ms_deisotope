@@ -17,10 +17,10 @@ from ms_deisotope.deconvolution import (
 from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 from brainpy import neutral_mass
 
-from ms_deisotope.test.test_scan import (
+from .test_scan import (
     make_profile, points, fwhm,
     FittedPeak)
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 import pickle
 

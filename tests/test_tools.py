@@ -10,7 +10,7 @@ from ms_deisotope.data_source.mzml import MzMLLoader
 from ms_deisotope.output import ProcessedMzMLDeserializer
 from ms_deisotope.data_source import _compression
 from ms_deisotope.tools import indexing, conversion, deisotoper
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 
 def test_describe():

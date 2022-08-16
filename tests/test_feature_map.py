@@ -2,7 +2,7 @@ import unittest
 
 import ms_deisotope
 from ms_deisotope.feature_map import feature_map
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 complex_compressed_mzml = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
 

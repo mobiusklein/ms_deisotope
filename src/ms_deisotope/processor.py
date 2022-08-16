@@ -17,7 +17,7 @@ with fewer configurable parameters.
 
     from ms_deisotope import ScanProcessor, glycopeptide, peptide
     from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
-    from ms_deisotope.test.common import datafile
+    from .common import datafile
 
     # Locate example dataset
     path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")

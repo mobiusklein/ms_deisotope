@@ -7,7 +7,7 @@ from ms_deisotope.data_source import get_opener
 
 from ms_deisotope.clustering import scan_clustering
 
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 
 @pytest.mark.slow

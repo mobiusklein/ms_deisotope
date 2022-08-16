@@ -4,7 +4,7 @@ from ms_deisotope import processor
 from ms_deisotope.averagine import glycopeptide, peptide
 from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
 
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 
 class TestScanProcessor(unittest.TestCase):

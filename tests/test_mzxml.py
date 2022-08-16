@@ -1,7 +1,7 @@
 import unittest
 
 from ms_deisotope.data_source import MzXMLLoader
-from ms_deisotope.test.common import datafile
+from .common import datafile
 from ms_deisotope.data_source import infer_type
 
 

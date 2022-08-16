@@ -1,6 +1,6 @@
 import unittest
 
-from ms_deisotope.test.common import datafile, gzload
+from .common import datafile, gzload
 
 from ms_deisotope.data_source import common, mzml
 from ms_deisotope.averagine import peptide, AveragineCache

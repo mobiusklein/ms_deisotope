@@ -1,7 +1,7 @@
 import ms_deisotope
 
 from ms_deisotope.feature_map import quick_index
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 
 mzml_path = datafile("small.mzML")

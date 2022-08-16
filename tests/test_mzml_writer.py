@@ -6,7 +6,7 @@ import gzip
 import ms_deisotope
 from ms_deisotope.data_source import MzMLLoader
 from ms_deisotope.data_source import _compression
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 from ms_deisotope.output.mzml import MzMLSerializer, ProcessedMzMLDeserializer
 

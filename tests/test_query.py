@@ -2,7 +2,7 @@ import unittest
 
 import ms_deisotope
 from ms_deisotope.data_source import query
-from ms_deisotope.test.common import datafile
+from .common import datafile
 
 
 

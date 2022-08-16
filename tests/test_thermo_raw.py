@@ -7,7 +7,7 @@ from ms_deisotope.data_source.thermo_raw import (
     determine_if_available)
 from ms_deisotope.data_source.thermo_raw_net import (
     determine_if_available as determine_if_available_net)
-from ms_deisotope.test.common import datafile
+from .common import datafile
 from ms_deisotope.data_source import infer_type
 
 not_windows = not platform.platform().lower().startswith("windows")

@@ -1,6 +1,6 @@
 import unittest
 
-from ms_deisotope.test.common import datafile
+from .common import datafile
 from ms_deisotope.data_source import infer_type
 from ms_deisotope.data_source.metadata import file_information
 

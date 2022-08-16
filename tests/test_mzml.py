@@ -2,7 +2,7 @@ import unittest
 import os
 
 from ms_deisotope.data_source import MzMLLoader
-from ms_deisotope.test.common import datafile
+from .common import datafile
 from ms_deisotope.data_source import infer_type
 
 scan_ids = [
