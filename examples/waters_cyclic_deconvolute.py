@@ -399,10 +399,11 @@ def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0
                           isolation_window_width=0.0, denoise=1.0, signal_averaging=2):
     '''Extract features from each IM-MS cycle followed by deisotoping and charge state deconvolution.
     '''
+    sample_name = os.path.basename(input_path).rsplit(".", 1)[0]
     logging.basicConfig(
         level="INFO", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
         filemode='w',
-        filename="cyclic_deconvolute_%s_%s.log" % (os.path.basename(input_path).rsplit(".", 1)[0], start_time))
+        filename="cyclic_deconvolute_%s_%s.log" % (sample_name, start_time))
     logging.getLogger().addHandler(_default_log_handler())
     input_path = str(input_path)
 
@@ -444,6 +445,7 @@ def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0
         }, ms1_averaging=signal_averaging,
         reader_options={"lockmass_config": lockmass_config,
                         "default_isolation_width": isolation_window_width},
+        sample_name=sample_name,
         deconvolute=True,
         n_processes=processes,
         start_scan_id=start_id,
