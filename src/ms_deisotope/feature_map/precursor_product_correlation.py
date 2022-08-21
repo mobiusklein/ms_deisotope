@@ -186,10 +186,10 @@ class PrecursorProductCorrelationGraph(LogUtilsMixin):
             self.find_edges(precursor)
         self._is_built = True
 
-    def iterspectra(self, **kwargs):
+    def iterspectra(self, weight_scale_factor: float=1.0, **kwargs):
         if not self._is_built:
             self.build(**kwargs)
-        iterator = PrecursorProductCorrelatingIterator(self.precursor_graph, self.product_graph)
+        iterator = PrecursorProductCorrelatingIterator(self.precursor_graph, self.product_graph, weight_scale_factor=weight_scale_factor)
         for batch in iterator:
             yield batch
 
@@ -206,7 +206,7 @@ def edge_to_pseudopeak(edge: FeatureGraphEdge) -> IonMobilityProfileDeconvoluted
     return peak
 
 
-def get_weighted_output_xic(edge: FeatureGraphEdge, rt: float, return_weight=False):
+def get_weighted_output_xic(edge: FeatureGraphEdge, rt: float, return_weight=False, weight_scale_factor: float=1.0):
     weights = []
     index = None
     o: FeatureGraphEdge
@@ -222,6 +222,8 @@ def get_weighted_output_xic(edge: FeatureGraphEdge, rt: float, return_weight=Fal
         weights.append(v * o.transition)
     weights = np.array(weights)
     weights /= weights.max()
+    if weight_scale_factor != 1.0:
+        weights *= weight_scale_factor
     product = reduce_feature(edge.node_a.feature, edge.node_b.feature)
     f = PseudoXIC.from_feature(product)
     if return_weight:
@@ -398,7 +400,7 @@ class XICPseudoSpectrumGenerator(SpanningMixin):
         self.edge_to_pseudo_xic.clear()
         self.edge_to_pseudo_xic_children.clear()
 
-    def get_weighted_output(self, edge: FeatureGraphEdge, time: float) -> float:
+    def get_weighted_output(self, edge: FeatureGraphEdge, time: float, weight_scale_factor: float=1.0) -> float:
         weights = []
         index = None
         o: FeatureGraphEdge
@@ -424,21 +426,25 @@ class XICPseudoSpectrumGenerator(SpanningMixin):
         index -= step_back
         weights = np.array(weights)
         weights /= weights.max()
+        if weight_scale_factor != 1.0:
+            weights *= weight_scale_factor
         product = self.get_xic_for_edge_child(edge)
         return (weights[index] * product.interpolate(time) * edge.transition ** 2)
 
-    def pseudopeak_for(self, edge: FeatureGraphEdge, time: float) -> IonMobilityProfileDeconvolutedPeakSolution:
-        weight = self.get_weighted_output(edge, time)
+    def pseudopeak_for(self, edge: FeatureGraphEdge, time: float, weight_scale_factor: float=1.0) -> IonMobilityProfileDeconvolutedPeakSolution:
+        weight = self.get_weighted_output(
+            edge, time, weight_scale_factor=weight_scale_factor)
         xic = self.get_xic_for_edge_child(edge)
         f = xic.source
         peak = IonMobilityProfileDeconvolutedPeakSolution.from_feature(f)
         peak.intensity = weight
         return peak
 
-    def pseudospectrum_for(self, time: float) -> DeconvolutedPeakSet:
+    def pseudospectrum_for(self, time: float, weight_scale_factor: float = 1.0) -> DeconvolutedPeakSet:
         peaks = []
         for edge in self.node.edges:
-            p = self.pseudopeak_for(edge, time)
+            p = self.pseudopeak_for(
+                edge, time, weight_scale_factor=weight_scale_factor)
             if p.intensity > self.minimum_intensity:
                 peaks.append(p)
         peaks = DeconvolutedPeakSet(peaks)
@@ -449,11 +455,12 @@ class XICPseudoSpectrumGenerator(SpanningMixin):
 class PrecursorProductCorrelatingIterator(LogUtilsMixin):
     precursor_graph: IonMobilityProfileDeconvolutedFeatureGraph
     product_graph: IonMobilityProfileDeconvolutedFeatureGraph
+    weight_scale_factor: float
 
     edge_to_pseudo_xic: EdgeToXICCache
     edge_to_pseudo_xic_children: EdgeToXICCache
 
-    def __init__(self, precursor_graph, product_graph):
+    def __init__(self, precursor_graph, product_graph, weight_scale_factor: float=1.0):
         self.precursor_graph = precursor_graph
         self.product_graph = product_graph
         self.scan_counter = 0
@@ -462,6 +469,7 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
         self.edge_to_pseudo_xic = EdgeToXICCache()
         self.edge_to_pseudo_xic_children = EdgeToXICCache()
         self._prepass_ms1()
+        self.weight_scale_factor = weight_scale_factor
 
     def _prepass_ms1(self):
         times = set()
@@ -503,9 +511,11 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
                 if not cn:
                     continue
                 peaks_for_scan.extend(cn.members)
-                msn_for = node_k.generator.pseudospectrum_for(time)
+                generator: XICPseudoSpectrumGenerator = node_k.generator
+                msn_for = generator.pseudospectrum_for(
+                    time, weight_scale_factor=self.weight_scale_factor)
                 if msn_for:
-                    pinfo = node_k.generator.precursor_information.copy()
+                    pinfo = generator.precursor_information.copy()
                     pinfo.intensity = cn.total_intensity()
                     msn_spectra.append(
                         (msn_for, pinfo)

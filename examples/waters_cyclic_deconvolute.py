@@ -1,3 +1,4 @@
+from email.policy import default
 import os
 import logging
 import sys
@@ -382,7 +383,7 @@ def cli():
 @cli.command("feature-deconvolution", short_help="Deisotope and charge state deconvolute LC-IM-MSe run")
 @click.argument("input_path", type=click.Path())
 @click.argument("output_path", type=click.Path(writable=True))
-@click.option("-m", "--lockmass-config", type=float, help="The lock mass used", default=785.8421)
+@click.option("-m", "--lockmass-config", type=float, help="The lock mass used")
 @click.option("-s", "--start-time", type=float, help="The time to start processing cycles from", default=0)
 @click.option("-e", "--end-time", type=float, help="The time to stop processing cycles at", default=None)
 @click.option("-a", "--averagine", type=click.Choice(list(averagine_map)), default='glycopeptide',
@@ -394,7 +395,7 @@ def cli():
 @click.option("-k", "--lock-mass-function", type=int, default=3, help="The number of the lock mass function. For normal low-high MSE this is 3.")
 @click.option("-d", "--denoise", type=float, default=1.0, help="Aggressiveness of background noise removal. Defaults to 1.0")
 @click.option("-g", "--signal-averaging", type=int, default=2, help="The number of adjacent IM-MS spectra to average within a single cycle.")
-def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0, end_time=None, averagine='glycopeptide',
+def feature_deconvolution(input_path, output_path, lockmass_config=None, start_time=0, end_time=None, averagine='glycopeptide',
                           minimum_intensity=10.0, lock_mass_function=3, processes: int = 4,
                           isolation_window_width=0.0, denoise=1.0, signal_averaging=2):
     '''Extract features from each IM-MS cycle followed by deisotoping and charge state deconvolution.
@@ -409,8 +410,11 @@ def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0
 
     print(f"Running on PID {os.getpid()}")
 
-    reader = open_mse_file(
-        input_path, lockmass_config=lockmass_config)
+    open_options = {}
+    if lockmass_config is not None:
+        open_options['lockmass_config'] = lockmass_config
+
+    reader = open_mse_file(input_path, **open_options)
 
     if start_time is not None:
         start_id = reader.get_frame_by_time(start_time).id
@@ -460,7 +464,11 @@ def feature_deconvolution(input_path, output_path, lockmass_config, start_time=0
 @cli.command("deconvolve-products", short_help="Deconvolve correlated precursor-product ion relationships")
 @click.argument("input_path", type=click.Path())
 @click.argument("output_path", type=click.Path(writable=True))
-def precursor_product_deconvolution(input_path, output_path):
+@click.option("-e", "--edges-per-feature", type=int, default=1000,
+              help='The maximum number of precursor features a product feature can connect to.')
+@click.option("-w", "--weight-scaling", type=float, default=1.0,
+              help="A weight scaling factor. >1 to incrase the overall abundance of deconvolved peaks")
+def precursor_product_deconvolution(input_path, output_path, edges_per_feature: int=1000, weight_scaling: float=1.0):
     '''Takes a deconvolved LC-IM-MSe run and generate pseudospectra for
     precursor ions using correlated product ion features enclosed in the IM
     and RT dimensions.
@@ -509,7 +517,7 @@ def precursor_product_deconvolution(input_path, output_path):
     precursor_graph = IonMobilityProfileDeconvolutedFeatureGraph(precursor_forest)
     product_graph = IonMobilityProfileDeconvolutedFeatureGraph(product_forest)
     corr_graph = PrecursorProductCorrelationGraph(
-        precursor_graph, product_graph, max_edge_count_per_node=1000)
+        precursor_graph, product_graph, max_edge_count_per_node=edges_per_feature)
     corr_graph.build()
 
     logger.info("Generating pseudo-spectra")
@@ -518,7 +526,7 @@ def precursor_product_deconvolution(input_path, output_path):
         writer.copy_metadata_from(scan_reader)
         proc_method = writer.build_processing_method()
         writer.add_data_processing(proc_method)
-        for bunch in corr_graph.iterspectra():
+        for bunch in corr_graph.iterspectra(weight_scale_factor=weight_scaling):
             writer.save(bunch)
 
 if __name__ == "__main__":
