@@ -170,7 +170,7 @@ class PriorityTarget(Base):
 
 
 def _loader_creator(specification, **kwargs):
-    if isinstance(specification, basestring):
+    if isinstance(specification, (basestring, os.PathLike)):
         return MSFileLoader(specification, **kwargs)
     elif isinstance(specification, ScanIterator):
         return specification

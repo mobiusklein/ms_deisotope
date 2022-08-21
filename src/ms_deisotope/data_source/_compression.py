@@ -2,9 +2,10 @@
 '''
 
 import io
+import os
 import gzip
 
-from six import string_types as basestring, PY2
+from six import string_types as basestring
 
 from ms_deisotope.utils import Constant
 
@@ -16,7 +17,6 @@ try:
     slow_random_access_file_types.append(bz2.BZ2File)
 except ImportError:
     pass
-
 
 try:
     import idzip
@@ -39,10 +39,8 @@ except (ImportError, AttributeError):
     WRITE_BUFFER_SIZE = 2 ** 16
     has_idzip = False
 
-if PY2:
-    file_like_object_bases = (file, io.IOBase) # pylint: disable=undefined-variable
-else:
-    file_like_object_bases = (io.IOBase, )
+
+file_like_object_bases = (io.IOBase, )
 
 
 def test_if_file_has_fast_random_access(file_obj):
@@ -100,7 +98,7 @@ def test_gzipped(f):
     -------
     bool
     """
-    if isinstance(f, basestring):
+    if isinstance(f, (os.PathLike, basestring)):
         f = io.open(f, 'rb')
     current = f.tell()
     f.seek(0)
@@ -163,18 +161,6 @@ def get_opener(f, buffer_size=None):
     else:
         handle = buffered_reader
     return handle
-
-
-
-if PY2:
-    # Begin Monkeypatching Dill
-    import dill
-
-    @dill.register(io.BufferedReader)
-    def save_file(pickler, obj):
-        '''Monkeypatch Py2 Dill
-        '''
-        dill._dill._save_file(pickler, obj, io.open)
 
 
 try:

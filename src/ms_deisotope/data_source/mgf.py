@@ -7,6 +7,7 @@ implementation.
 The parser is based on :mod:`pyteomics.mgf`.
 '''
 
+import os
 from pyteomics import mgf
 from pyteomics.auxiliary import OffsetIndex
 import numpy as np
@@ -62,7 +63,7 @@ class _MGFMetadata(ScanFileMetadataBase):
         finfo = FileInformation()
         finfo.add_content("centroid spectrum")
         finfo.add_content(MS_MSn_Spectrum)
-        if isinstance(self.source_file, basestring):
+        if isinstance(self.source_file, (basestring, os.PathLike)):
             finfo.add_file(self.source_file)
         elif hasattr(self.source_file, 'name'):
             finfo.add_file(self.source_file.name)

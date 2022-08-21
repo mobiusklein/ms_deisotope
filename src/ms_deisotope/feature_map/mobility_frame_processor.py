@@ -26,7 +26,7 @@ def _loader_creator(specification, **kwargs):
         specification, options = specification
         if options:
             kwargs.update(options)
-    if isinstance(specification, basestring):
+    if isinstance(specification, (basestring, os.PathLike)):
         return MSFileLoader(specification, **kwargs)
     if isinstance(specification, IonMobilitySourceRandomAccessFrameSource):
         return specification

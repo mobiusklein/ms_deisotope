@@ -3,6 +3,7 @@ load data for :class:`~.Scan` objects.
 '''
 import abc
 import logging
+import os
 from typing import Any, Dict, Hashable, Iterator, List, Optional, Tuple, Union
 
 from weakref import WeakValueDictionary
@@ -287,7 +288,7 @@ class ScanDataSource(object):
             file_ = self.source_file
         except AttributeError:
             return None
-        if isinstance(file_, basestring):
+        if isinstance(file_, (basestring, os.PathLike)):
             return file_
         try:
             name = file_.name
