@@ -43,7 +43,7 @@ import warnings
 from contextlib import contextmanager
 from collections import OrderedDict
 
-from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation
+from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation, InstrumentModel
 try:
     from collections.abc import Sequence, Mapping
 except ImportError:
@@ -375,6 +375,8 @@ class MzMLSerializer(ScanSerializerBase):
         params = []
         instrument_model = configuration.model
         if instrument_model:
+            if isinstance(instrument_model, InstrumentModel):
+                instrument_model = instrument_model.name
             params.append(instrument_model)
         instrument_serial = configuration.serial_number
         if instrument_serial:

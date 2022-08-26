@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+1. Add support for `os.PathLike` objects to `ms_deisotope.MSFileLoader`.
 
 ### Changed
 1. mzML and mzXML now properly capture the relationship between instrument configuration and software.
