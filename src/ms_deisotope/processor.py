@@ -17,12 +17,12 @@ with fewer configurable parameters.
 
     from ms_deisotope import ScanProcessor, glycopeptide, peptide
     from ms_deisotope.scoring import PenalizedMSDeconVFitter, MSDeconVFitter
-    from .common import datafile
+    from ms_deisotope.test.common import datafile
 
     # Locate example dataset
-    path = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+    example_file = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
 
-    proc = processor.ScanProcessor(path, ms1_deconvolution_args={
+    proc = processor.ScanProcessor(example_file, ms1_deconvolution_args={
         "averagine": glycopeptide,
         "scorer": PenalizedMSDeconVFitter(20., 2.),
         "truncate_after": 0.95

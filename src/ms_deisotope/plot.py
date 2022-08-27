@@ -48,9 +48,11 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
 
         import ms_deisotope
         from ms_deisotope import plot
-        from .common import datafile
+        from ms_deisotope.test.common import datafile
 
-        reader = ms_deisotope.MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+        example_file = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+
+        reader = ms_deisotope.MSFileLoader(example_file)
         bunch = next(reader)
 
         bunch.precursor.pick_peaks()
@@ -197,9 +199,11 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
 
         import ms_deisotope
         from ms_deisotope import plot
-        from .common import datafile
+        from ms_deisotope.test.common import datafile
 
-        reader = ms_deisotope.MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+        example_file = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+
+        reader = ms_deisotope.MSFileLoader(example_file)
         bunch = next(reader)
 
         bunch.precursor.pick_peaks()
@@ -314,9 +318,10 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
 
         import ms_deisotope
         from ms_deisotope import plot
-        from .common import datafile
+        from ms_deisotope.test.common import datafile
 
-        reader = ms_deisotope.MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+        example_file = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+        reader = ms_deisotope.MSFileLoader(example_file)
         bunch = next(reader)
 
         bunch.precursor.pick_peaks()
