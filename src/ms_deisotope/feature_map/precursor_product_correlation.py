@@ -1,14 +1,18 @@
 import logging
 
 from collections import defaultdict
-from typing import DefaultDict, Dict, Union
+from typing import DefaultDict, Dict, Iterator, List, Sized, Union
+from ms_deisotope.data_source.metadata.activation import ActivationInformation
+from ms_deisotope.data_source.scan.mobility_frame import IonMobilityFrame, IonMobilitySourceRandomAccessFrameSource
+from ms_deisotope.data_source.scan.scan import ProcessedScan, WrappedScan
+from ms_deisotope.data_source.metadata.scan_traits import ion_mobility_drift_time
 
 import numpy as np
 
 from ms_deisotope.task import LogUtilsMixin
-from ms_deisotope.data_source.scan.base import ScanBunch
+from ms_deisotope.data_source.scan.base import ScanBase, ScanBunch
 
-from ms_deisotope.peak_set import IonMobilityProfileDeconvolutedPeakSolution, DeconvolutedPeakSet
+from ms_deisotope.peak_set import IonMobilityProfileDeconvolutedPeakSolution, DeconvolutedPeakSet, IonMobilityDeconvolutedPeak
 from ms_deisotope.peak_dependency_network.intervals import SpanningMixin
 
 from ms_deisotope.data_source import PrecursorInformation, make_scan
@@ -504,7 +508,9 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
 
             nodes_to_clear = []
             self.log(
-                f"... Processing time point {time:0.3f} with {self.scan_counter} scans produced, set size: {len(self.edge_to_pseudo_xic) + len(self.edge_to_pseudo_xic_children)} ({i / len(self.ms1_times) * 100.0:0.2f}%)")
+                f"... Processing time point {time:0.3f} with {self.scan_counter} scans produced, set size: \
+{len(self.edge_to_pseudo_xic) + len(self.edge_to_pseudo_xic_children)} (\
+{i / len(self.ms1_times) * 100.0:0.2f}%)")
 
             for node_k in self.precursor_graph.rt_tree.contains_point(time):
                 cn, _ = node_k.feature.find_time(time)
@@ -554,3 +560,83 @@ class PrecursorProductCorrelatingIterator(LogUtilsMixin):
 
 
 PrecursorProductCorrelatingIterator.log_with_logger(logger)
+
+
+class NaiveIonMobilityOverlapIterator(LogUtilsMixin):
+    frame_pair_iterator: Union[Iterator[ScanBunch],
+                               IonMobilitySourceRandomAccessFrameSource]
+
+    def __init__(self, frame_pair_iterator):
+        self.frame_pair_iterator = frame_pair_iterator
+        self.scan_counter = 0
+
+    def make_ms1_scan(self, precursor: IonMobilityFrame) -> WrappedScan:
+        peaks_for_scan = [
+            IonMobilityDeconvolutedPeak(
+                f.neutral_mass, f.intensity, f.charge, f.intensity, 0,
+                0, 0, 0, 0,
+                score=f.score,
+                envelope=f.sum_envelopes(),
+                mz=f.mz,
+                drift_time=f.apex_time)
+            for f in
+            precursor.deconvoluted_features
+        ]
+
+        ms1_scan = make_scan(
+            id=precursor.id,
+            ms_level=1, scan_time=precursor.time,
+            index=self.scan_counter,
+            deconvoluted_peak_set=DeconvolutedPeakSet(peaks_for_scan))
+
+        self.scan_counter += 1
+        return ms1_scan
+
+    def __len__(self):
+        return len(self.frame_pair_iterator)
+
+    def split_products(self, ms1_scan: ScanBase, precursor: IonMobilityFrame, product: IonMobilityFrame) -> List[WrappedScan]:
+        msn_scans = []
+        for precursor_feature in precursor.deconvoluted_features:
+            peaks = product.to_deconvoluted_peak_set(
+                (precursor_feature.start_time,
+                 precursor_feature.end_time),
+                precursor_feature.neutral_mass)
+            if not peaks:
+                continue
+            pinfo = PrecursorInformation(
+                precursor_feature.mz,
+                precursor_feature.intensity,
+                precursor_feature.charge,
+                ms1_scan.id,
+                None,
+                precursor_feature.neutral_mass,
+                precursor_feature.charge,
+                precursor_feature.intensity)
+            pinfo._ion_mobility.add_ion_mobility(
+                ion_mobility_drift_time,
+                precursor_feature.apex_time
+            )
+            scan = make_scan(
+                id=f"merged={self.scan_counter}",
+                ms_level=2, scan_time=product.time,
+                index=self.scan_counter,
+                activation=ActivationInformation('cid', 2),
+                deconvoluted_peak_set=peaks,
+                precursor_information=pinfo)
+
+            scan.annotations['source frame'] = product.id
+            self.scan_counter += 1
+            msn_scans.append(scan)
+        return msn_scans
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        bunch: ScanBunch = next(self.frame_pair_iterator)
+        ms1_scan = self.make_ms1_scan(bunch.precursor)
+        msn_scans = []
+        for product in bunch.products:
+            msn_scans.extend(self.split_products(ms1_scan, bunch.precursor, product))
+        return ScanBunch(ms1_scan, msn_scans)
