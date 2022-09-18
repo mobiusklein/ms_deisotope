@@ -37,6 +37,7 @@ metadata that :class:`~.MzMLSerializer` writes to an external file.
 '''
 import hashlib
 import array
+from typing import Any, Union
 import warnings
 
 
@@ -65,6 +66,7 @@ from ms_deisotope.peak_set import (DeconvolutedPeak, DeconvolutedPeakSet, Envelo
 from ms_deisotope.averagine import neutral_mass
 from ms_deisotope.qc.isolation import CoIsolation
 
+from ms_deisotope.data_source.metadata.cv import Term
 from ms_deisotope.data_source.common import (
     ChargeNotProvided,
     _SingleScanIteratorImpl,
@@ -81,6 +83,31 @@ from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureMap, LCM
 
 from .common import ScanSerializerBase, ScanDeserializerBase, SampleRun, LCMSMSQueryInterfaceMixin
 from .text_utils import (envelopes_to_array, decode_envelopes)
+
+
+def _param(key: Union[str, Term, Any]) -> str:
+    '''Try to coerce a name into something we can convert into a controlled
+    vocabulary parameter in :mod:`psims`.
+
+    Parameters
+    ----------
+    key : :class:`str`, :class:`~.Term`, or other types
+        The object to convert into a CV param
+
+    Returns
+    -------
+    identifier : :class:`str`
+        The converted identifier
+    '''
+    if not isinstance(key, str):
+        try:
+            key = key.accession
+        except AttributeError:
+            try:
+                key = key.name
+            except AttributeError:
+                key = str(key)
+    return key
 
 
 class SpectrumDescription(Sequence):
@@ -793,6 +820,7 @@ class MzMLSerializer(ScanSerializerBase):
                 }
             # This implicitly captures ion mobility which is stored as an annotation key-value pair.
             for key, value in precursor_information.annotations.items():
+                key = _param(key)
                 package['params'].append({
                     key: value
                 })
