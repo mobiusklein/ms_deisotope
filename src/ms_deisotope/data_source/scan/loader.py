@@ -4,7 +4,7 @@ load data for :class:`~.Scan` objects.
 import abc
 import logging
 import os
-from typing import Any, Dict, Hashable, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Hashable, Iterator, List, Optional, Tuple, Union, Generic, TypeVar
 
 from weakref import WeakValueDictionary
 
@@ -40,8 +40,12 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+DataPtrType = TypeVar("DataPtrType")
+ScanType = TypeVar("ScanType", bound=ScanBase)
+
+
 @add_metaclass(abc.ABCMeta)
-class ScanDataSource(object):
+class ScanDataSource(Generic[DataPtrType, ScanType]):
     """An Abstract Base Class describing an object
     which can provide a consistent set of accessors
     for a particular format of mass spectrometry data.
@@ -52,10 +56,10 @@ class ScanDataSource(object):
     of :class:`Scan` objects.
     """
 
-    def _make_scan(self, data):
+    def _make_scan(self, data: DataPtrType) -> ScanType:
         return Scan(data, self)
 
-    def _pick_peaks_vendor(self, scan, *args, **kwargs):
+    def _pick_peaks_vendor(self, scan: DataPtrType, *args, **kwargs):
         """Invoke the underlying data access library's peak picking procedure.
 
         Not available for open format readers, where behavior will default to
@@ -79,7 +83,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _scan_arrays(self, scan) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]]:
+    def _scan_arrays(self, scan: DataPtrType) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]]:
         """Returns raw data arrays for m/z and intensity
 
         Parameters
@@ -98,7 +102,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _precursor_information(self, scan) -> Optional[PrecursorInformation]:
+    def _precursor_information(self, scan: DataPtrType) -> Optional[PrecursorInformation]:
         """Returns information about the precursor ion,
         if any, that this scan was derived form.
 
@@ -117,7 +121,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _scan_title(self, scan) -> str:
+    def _scan_title(self, scan: DataPtrType) -> str:
         """Returns a verbose name for this scan, if one
         was stored in the file. Usually includes both the
         scan's id string, as well as information about the
@@ -136,7 +140,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _scan_id(self, scan) -> str:
+    def _scan_id(self, scan: DataPtrType) -> str:
         """Returns the scan's id string, a unique
         identifier for this scan in the context of
         the data file it is recordered in
@@ -154,7 +158,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _scan_index(self, scan) -> int:
+    def _scan_index(self, scan: DataPtrType) -> int:
         """Returns the base 0 offset from the start
         of the data file in number of scans to reach
         this scan.
@@ -176,7 +180,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _ms_level(self, scan) -> int:
+    def _ms_level(self, scan: DataPtrType) -> int:
         """Returns the degree of exponential fragmentation
         used to produce this scan. 1 refers to a survey scan
         of unfragmented ions, 2 refers to a tandem scan derived
@@ -195,7 +199,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _scan_time(self, scan) -> float:
+    def _scan_time(self, scan: DataPtrType) -> float:
         """Returns the time in minutes from the start of data
         acquisition to when this scan was acquired.
 
@@ -212,7 +216,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _is_profile(self, scan) -> bool:
+    def _is_profile(self, scan: DataPtrType) -> bool:
         """Returns whether the scan contains profile data (`True`)
         or centroided data (`False`).
 
@@ -229,7 +233,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _polarity(self, scan) -> int:
+    def _polarity(self, scan: DataPtrType) -> int:
         """Returns whether this scan was acquired in positive mode (+1)
         or negative mode (-1).
 
@@ -246,7 +250,7 @@ class ScanDataSource(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _activation(self, scan) -> Optional[ActivationInformation]:
+    def _activation(self, scan: DataPtrType) -> Optional[ActivationInformation]:
         """Returns information about the activation method used to
         produce this scan, if any.
 
@@ -264,16 +268,16 @@ class ScanDataSource(object):
         """
         raise NotImplementedError()
 
-    def _acquisition_information(self, scan) -> Optional[ScanAcquisitionInformation]:
+    def _acquisition_information(self, scan: DataPtrType) -> Optional[ScanAcquisitionInformation]:
         return None
 
-    def _isolation_window(self, scan) -> Optional[IsolationWindow]:
+    def _isolation_window(self, scan: DataPtrType) -> Optional[IsolationWindow]:
         return None
 
-    def _instrument_configuration(self, scan) -> Optional[InstrumentInformation]:
+    def _instrument_configuration(self, scan: DataPtrType) -> Optional[InstrumentInformation]:
         return None
 
-    def _annotations(self, scan) -> Dict[str, Any]:
+    def _annotations(self, scan: DataPtrType) -> Dict[str, Any]:
         return dict()
 
     @property
@@ -316,7 +320,7 @@ class ScanDataSource(object):
 
 
 @add_metaclass(abc.ABCMeta)
-class ScanIterator(ScanDataSource):
+class ScanIterator(ScanDataSource[DataPtrType, ScanType]):
     """An Abstract Base Class that extends ScanDataSource
     with additional requirements that enable clients of the
     class to treat the object as an iterator over the underlying
@@ -355,7 +359,7 @@ class ScanIterator(ScanDataSource):
         return True
 
     @abc.abstractmethod
-    def next(self) -> Union[ScanBase, ScanBunch]:
+    def next(self) -> Union[ScanType, ScanBunch]:
         '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
@@ -365,7 +369,7 @@ class ScanIterator(ScanDataSource):
         '''
         raise NotImplementedError()
 
-    def __next__(self) -> Union[ScanBase, ScanBunch]:
+    def __next__(self) -> Union[ScanType, ScanBunch]:
         '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
@@ -375,7 +379,7 @@ class ScanIterator(ScanDataSource):
         '''
         return self.next()
 
-    def __iter__(self) -> Iterator[Union[ScanBase, ScanBunch]]:
+    def __iter__(self) -> Iterator[Union[ScanType, ScanBunch]]:
         return self
 
     def reset(self):
@@ -485,7 +489,7 @@ class ScanIterator(ScanDataSource):
 
 
 @add_metaclass(abc.ABCMeta)
-class RandomAccessScanSource(ScanIterator):
+class RandomAccessScanSource(ScanIterator[DataPtrType, ScanType]):
     """An Abstract Base Class that extends ScanIterator
     with additional requirements that the implementation support
     random access to individual scans. This should be doable by unique
@@ -513,7 +517,7 @@ class RandomAccessScanSource(ScanIterator):
         return MaybeFastRandomAccess
 
     @abc.abstractmethod
-    def get_scan_by_id(self, scan_id: str) -> ScanBase:
+    def get_scan_by_id(self, scan_id: str) -> ScanType:
         """Retrieve the scan object for the specified scan id.
 
         If the scan object is still bound and in memory somewhere,
@@ -532,7 +536,7 @@ class RandomAccessScanSource(ScanIterator):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_scan_by_time(self, time: float) -> ScanBase:
+    def get_scan_by_time(self, time: float) -> ScanType:
         """Retrieve the scan object for the specified scan time.
 
         This internally calls :meth:`get_scan_by_id` which will
@@ -550,7 +554,7 @@ class RandomAccessScanSource(ScanIterator):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_scan_by_index(self, index: int) -> ScanBase:
+    def get_scan_by_index(self, index: int) -> ScanType:
         """Retrieve the scan object for the specified scan index.
 
         This internally calls :meth:`get_scan_by_id` which will
@@ -595,7 +599,7 @@ class RandomAccessScanSource(ScanIterator):
         '''
         raise NotImplementedError()
 
-    def _locate_ms1_scan(self, scan: ScanBase, search_range: int=150) -> Optional[ScanBase]:
+    def _locate_ms1_scan(self, scan: ScanType, search_range: int=150) -> Optional[ScanType]:
         i = 0
         initial_scan = scan
         if (self.has_ms1_scans() is False):
@@ -617,7 +621,7 @@ class RandomAccessScanSource(ScanIterator):
                 raise IndexError("Cannot locate MS1 Scan")
         return scan
 
-    def find_previous_ms1(self, start_index: int) -> Optional[ScanBase]:
+    def find_previous_ms1(self, start_index: int) -> Optional[ScanType]:
         '''Locate the MS1 scan preceding ``start_index``, iterating backwards through
         scans until either the first scan is reached or an MS1 scan is found.
 
@@ -638,7 +642,7 @@ class RandomAccessScanSource(ScanIterator):
                 return None
         return None
 
-    def find_next_ms1(self, start_index: int) -> Optional[ScanBase]:
+    def find_next_ms1(self, start_index: int) -> Optional[ScanType]:
         '''Locate the MS1 scan following ``start_index``, iterating forwards through
         scans until either the last scan is reached or an MS1 scan is found.
 
@@ -664,7 +668,7 @@ class RandomAccessScanSource(ScanIterator):
     def __len__(self) -> int:
         raise NotImplementedError()
 
-    def __getitem__(self, i: int) -> Union[ScanBase, List[ScanBase]]:
+    def __getitem__(self, i: int) -> Union[ScanType, List[ScanType]]:
         """Retrieve the scan object for the specified scan index.
 
         This internally calls :meth:`get_scan_by_index` but supports
