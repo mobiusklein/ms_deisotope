@@ -605,6 +605,21 @@ class FrameBase(object):
 
     __hash__ = None
 
+    def to_deconvoluted_peak_set(self, time_bound=None, mass_upper_bound: float = float('inf')) -> DeconvolutedPeakSet:
+        if self.deconvoluted_features is None:
+            raise ValueError(
+                "Must first deconvolute IMS features before converting to a time-binned peak set!")
+        if time_bound is not None:
+            cft = IntervalTreeNode.build([
+                Interval(f.start_time, f.end_time, [f])
+                for f in self.deconvoluted_features
+                if f.neutral_mass <= mass_upper_bound
+            ])
+            features = chain.from_iterable(cft.overlaps(*time_bound))
+        else:
+            features = self.deconvoluted_features
+        return features_to_peak_set(features)
+
 
 class IonMobilityFrame(FrameBase):
     '''A :class:`IonMobilityFrame` represents an single time point acquisition of
@@ -910,17 +925,6 @@ class IonMobilityFrame(FrameBase):
         self.deconvoluted_features = decon.deconvolute(
             minimum_intensity=minimum_intensity, truncate_after=truncate_after, **kwargs)
         return self
-
-    def to_deconvoluted_peak_set(self, time_bound=None) -> DeconvolutedPeakSet:
-        if self.deconvoluted_features is None:
-            raise ValueError("Must first deconvolute IMS features before converting to a time-binned peak set!")
-        if time_bound is not None:
-            cft = IntervalTreeNode.build(
-                [Interval(f.start_time, f.end_time, [f]) for f in self.deconvoluted_features])
-            features = chain.from_iterable(cft.overlaps(*time_bound))
-        else:
-            features = self.deconvoluted_features
-        return features_to_peak_set(features)
 
     def pack(self, bind=False) -> 'ProcessedIonMobilityFrame':
         packed = ProcessedIonMobilityFrame(
