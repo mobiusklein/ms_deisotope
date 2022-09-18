@@ -23,7 +23,7 @@ from ms_deisotope.output.mzml import MzMLSerializer, IonMobilityAware3DMzMLSeria
 from ms_deisotope.feature_map.mobility_frame_processor import IonMobilityFrameProcessor
 from ms_deisotope.feature_map.feature_map import IonMobilityProfileDeconvolutedLCMSFeatureForest
 from ms_deisotope.feature_map.feature_graph import IonMobilityProfileDeconvolutedFeatureGraph
-from ms_deisotope.feature_map.precursor_product_correlation import PrecursorProductCorrelationGraph
+from ms_deisotope.feature_map.precursor_product_correlation import PrecursorProductCorrelationGraph, NaiveIonMobilityOverlapIterator
 
 from ms_deisotope.tools.deisotoper.process import ScanIDYieldingProcess, ScanBunchLoader, DeconvolutingScanTransformingProcess
 from ms_deisotope.tools.deisotoper.scan_generator import ScanGenerator
@@ -31,8 +31,7 @@ from ms_deisotope.tools.deisotoper.workflow import SampleConsumer
 from ms_deisotope.tools.deisotoper.output import ThreadedMzMLScanStorageHandler
 
 from ms_deisotope.task import TaskBase
-from ms_deisotope.tools.utils import processes_option
-
+from ms_deisotope.tools.utils import processes_option, register_debug_hook, progress
 
 
 faulthandler.enable()
@@ -527,6 +526,49 @@ def precursor_product_deconvolution(input_path, output_path, edges_per_feature: 
         writer.add_data_processing(proc_method)
         for bunch in corr_graph.iterspectra(weight_scale_factor=weight_scaling):
             writer.save(bunch)
+
+
+@cli.command("ion-mobility-overlap-pseudospectra", short_help="Generate naive pseudo-spectra from ion mobility overlaps")
+@click.argument("input_path", type=click.Path())
+@click.argument("output_path", type=click.Path(writable=True))
+def naive_ion_mobility_overlap_pseudospectra(input_path, output_path):
+    '''Generate pseudo-spectra from deconvolved cycles where the precursor ion spans
+    some or all of the ion dimension of the product ion's mobility dimension and has
+    a larger neutral mass. Makes no use of retention time.
+    '''
+    logging.basicConfig(
+        level="INFO", format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
+        filemode='w',
+        filename="naive_ion_mobility_overlap_pseudospectra_%s.log" % (
+            os.path.basename(input_path).rsplit(".", 1)[0]))
+
+    print(f"Running on PID {os.getpid()}")
+
+    logging.getLogger().addHandler(_default_log_handler())
+    input_path = str(input_path)
+
+    scan_reader = ms_deisotope.MSFileLoader(input_path)
+    frame_reader = ProcessedGeneric3DIonMobilityFrameSource(scan_reader)
+    frame_reader.make_frame_iterator(grouped='mse')
+
+    n_frames = len(scan_reader)
+
+    iterator = NaiveIonMobilityOverlapIterator(frame_reader)
+
+    logger.info("Generating pseudo-spectra")
+    fh = open(output_path, 'wb')
+    with click.progressbar(length=n_frames, item_show_func=lambda x: x if x else "-") as prog:
+        with MzMLSerializer(fh, len(scan_reader) * 50, sample_name=os.path.basename(output_path)) as writer:
+            writer.copy_metadata_from(scan_reader)
+            proc_method = writer.build_processing_method()
+            writer.add_data_processing(proc_method)
+            for bunch in iterator:
+                prog.update(n_steps=2, current_item=bunch.precursor.id)
+                writer.save(bunch)
+
+
+
+register_debug_hook()
 
 if __name__ == "__main__":
     import multiprocessing
