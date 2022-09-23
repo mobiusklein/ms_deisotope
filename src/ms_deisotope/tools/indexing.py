@@ -359,7 +359,7 @@ def _binsearch(array, x):
     hi = n
 
     while hi != lo:
-        mid = (hi + lo) / 2
+        mid = (hi + lo) // 2
         y = array[mid][0]
         err = y - x
         if hi - lo == 1:
