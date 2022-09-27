@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ### Removed
 
 ### Fixed
+1. Fixed division in `_binsearch` used for `precursor-clustering`.
 
 ### Security
 
