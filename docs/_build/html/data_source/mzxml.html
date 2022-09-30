@@ -111,7 +111,7 @@ was not part of the mzXML schema</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.find_next_ms1">
-<span class="sig-name descname"><span class="pre">find_next_ms1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.find_next_ms1" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">find_next_ms1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ms_deisotope.data_source.scan.loader.ScanType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.find_next_ms1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Locate the MS1 scan following <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating forwards through
 scans until either the last scan is reached or an MS1 scan is found.</p>
 <dl class="field-list simple">
@@ -126,7 +126,7 @@ scans until either the last scan is reached or an MS1 scan is found.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.find_previous_ms1">
-<span class="sig-name descname"><span class="pre">find_previous_ms1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.find_previous_ms1" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">find_previous_ms1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ms_deisotope.data_source.scan.loader.ScanType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.find_previous_ms1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Locate the MS1 scan preceding <code class="docutils literal notranslate"><span class="pre">start_index</span></code>, iterating backwards through
 scans until either the first scan is reached or an MS1 scan is found.</p>
 <dl class="field-list simple">
@@ -221,7 +221,7 @@ will evaluate to <code class="xref py py-const docutils literal notranslate"><sp
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.has_ms1_scans">
-<span class="sig-name descname"><span class="pre">has_ms1_scans</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.has_ms1_scans" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">has_ms1_scans</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.has_ms1_scans" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if this <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code> contains MS1 spectra.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -236,7 +236,7 @@ if it cannot be determined in the case of missing metadata.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.has_msn_scans">
-<span class="sig-name descname"><span class="pre">has_msn_scans</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.has_msn_scans" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">has_msn_scans</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.has_msn_scans" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if this <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanDataSource</span></code> contains MSn spectra.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -291,7 +291,7 @@ existing object is returned rather than re-read from disk.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.make_iterator">
-<span class="sig-name descname"><span class="pre">make_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.make_iterator" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">make_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="common_reader.html#ms_deisotope.data_source.common.ScanIterator" title="ms_deisotope.data_source.scan.loader.ScanIterator"><span class="pre">ms_deisotope.data_source.scan.loader.ScanIterator</span></a></span></span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.make_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configure the <code class="xref py py-class docutils literal notranslate"><span class="pre">ScanIterator</span></code>’s behavior, selecting it’s iteration strategy over
 either its default iterator or the provided <code class="docutils literal notranslate"><span class="pre">iterator</span></code> argument.</p>
 <dl class="field-list simple">
@@ -363,7 +363,7 @@ scans from memory if available before re-reading them from disk.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.software_list">
-<span class="sig-name descname"><span class="pre">software_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.software_list" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">software_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ms_deisotope.data_source.metadata.software.Software</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.software_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describe any software used on the data described by this instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -383,7 +383,7 @@ scans from memory if available before re-reading them from disk.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.source_file_name">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">source_file_name</span></span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.source_file_name" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">source_file_name</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.source_file_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the name of the file that backs this data source, if available.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -397,7 +397,7 @@ scans from memory if available before re-reading them from disk.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ms_deisotope.data_source.mzxml.MzXMLLoader.start_from_scan">
-<span class="sig-name descname"><span class="pre">start_from_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">require_ms1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.start_from_scan" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">start_from_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">require_ms1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ms_deisotope.data_source.mzxml.MzXMLLoader.start_from_scan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reconstruct an iterator which will start from the scan matching one of <code class="docutils literal notranslate"><span class="pre">scan_id</span></code>,
 <code class="docutils literal notranslate"><span class="pre">rt</span></code>, or <code class="docutils literal notranslate"><span class="pre">index</span></code>. Only one may be provided.</p>
 <p>After invoking this method, the iterator this object wraps will be changed to begin

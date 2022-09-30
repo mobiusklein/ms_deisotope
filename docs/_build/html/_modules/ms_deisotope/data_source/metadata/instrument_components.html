@@ -33,6 +33,8 @@
         
   <h1>Source code for ms_deisotope.data_source.metadata.instrument_components</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.software</span> <span class="kn">import</span> <span class="n">Software</span>
 
 <span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">uid</span>
 
@@ -55,7 +57,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;ionization type&#39;, term_cls_name=&quot;Component&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">ionization_types</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;chemical ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000071&#39;</span><span class="p">,</span>
               <span class="p">(</span><span class="s1">&#39;The formation of a new ion by the reaction of a neutral &#39;</span>
@@ -260,6 +262,25 @@
                <span class="s1">&#39;several thousand eV with a solid sample.&#39;</span><span class="p">),</span>
               <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span>
               <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;paper spray ionization&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003235&#39;</span><span class="p">,</span>
+              <span class="p">(</span><span class="s1">&#39;The ionization of analytes from a piece of paper by applying &#39;</span>
+               <span class="s1">&#39;a solvent and voltage.&#39;</span><span class="p">),</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span>
+              <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;proton transfer reaction&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003248&#39;</span><span class="p">,</span>
+              <span class="p">(</span><span class="s1">&#39;Process to transfer a proton from a hydronium ion (H3O+) to &#39;</span>
+               <span class="s1">&#39;neutral analyte, leading to a protonated analyte, which &#39;</span>
+               <span class="s1">&#39;typically does not lead to fragmentation.&quot; &#39;</span>
+               <span class="s1">&#39;[DOI:10.1002/mas.20048&#39;</span><span class="p">),</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span>
+              <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
+    <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;proton transfer charge reduction&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003249&#39;</span><span class="p">,</span>
+              <span class="p">(</span><span class="s1">&#39;Process to transfer one or more protons from a multiply &#39;</span>
+               <span class="s1">&#39;charged cation (peptide or protein ion) to a proton acceptor &#39;</span>
+               <span class="s1">&#39;anion or neutral basic compound, thereby reducing the charge &#39;</span>
+               <span class="s1">&#39;of the original analyte.&#39;</span><span class="p">),</span>
+              <span class="s1">&#39;ionization type&#39;</span><span class="p">,</span>
+              <span class="p">[</span><span class="s1">&#39;ionization type&#39;</span><span class="p">]),</span>
     <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;microelectrospray&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000397&#39;</span><span class="p">,</span>
               <span class="p">(</span><span class="s1">&#39;Electrospray ionization at a solvent flow rate of 300-800 &#39;</span>
                <span class="s1">&#39;nL/min where the flow is a result of a mechanical pump. See &#39;</span>
@@ -352,7 +373,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;detector type&#39;, term_cls_name=&quot;Component&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">detector_types</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;channeltron&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000107&#39;</span><span class="p">,</span>
               <span class="p">(</span><span class="s1">&#39;A horn-shaped (or cone-shaped) continuous dynode particle &#39;</span>
@@ -503,7 +524,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;mass analyzer type&#39;, &#39;analyzer_types&#39;, term_cls_name=&quot;Component&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">analyzer_types</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;fourier transform ion cyclotron resonance mass spectrometer&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000079&#39;</span><span class="p">,</span>
               <span class="p">(</span><span class="s1">&#39;A mass spectrometer based on the principle of ion cyclotron &#39;</span>
@@ -612,7 +633,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;inlet type&#39;, term_cls_name=&quot;Component&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">inlet_types</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">Component</span><span class="p">(</span><span class="s1">&#39;continuous flow fast atom bombardment&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000055&#39;</span><span class="p">,</span>
               <span class="p">(</span><span class="s1">&#39;Fast atom bombardment ionization in which the analyte in &#39;</span>
@@ -741,7 +762,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;instrument model&#39;, term_cls_name=&quot;InstrumentModel&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">instrument_models</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;SCIEX instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000121&#39;</span><span class="p">,</span>
                     <span class="p">(</span><span class="s1">&#39;The brand of instruments from the joint venture between &#39;</span>
@@ -1248,7 +1269,7 @@
                      <span class="s1">&#39;time-of-flight mass spectrometer.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
                     <span class="p">[</span><span class="s1">&#39;Waters instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
-    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;Xevo G2 XS Tof&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002729&#39;</span><span class="p">,</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;Xevo G2-XS Tof&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002729&#39;</span><span class="p">,</span>
                     <span class="p">(</span><span class="s1">&#39;Waters Corporation Xevo G2 XS Tof orthogonal acceleration &#39;</span>
                      <span class="s1">&#39;time-of-flight mass spectrometer.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
@@ -1261,6 +1282,23 @@
     <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;Xevo TQ-S micro&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002731&#39;</span><span class="p">,</span>
                     <span class="p">(</span><span class="s1">&#39;Waters Corporation Xevo TQ-S micro triple quadrupole mass &#39;</span>
                      <span class="s1">&#39;spectrometer.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Waters instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;Synapt XS&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003183&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;Waters oa-ToF based Synapt XS.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Waters instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;SELECT SERIES Cyclic IMS&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003184&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;Waters oa-ToF based SELECT SERIES Cyclic IMS.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Waters instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;SELECT SERIES MRT&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003185&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;Waters oa-ToF based SELECT SERIES MRT.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Waters instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;Xevo G2-XS QTof&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003252&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;Waters Corporation Xevo G2-XS QTof quadrupole time-of-flight &#39;</span>
+                     <span class="s1">&#39;mass spectrometer.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
                     <span class="p">[</span><span class="s1">&#39;Waters instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
     <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;Thermo Finnigan instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000125&#39;</span><span class="p">,</span>
@@ -1422,6 +1460,24 @@
                      <span class="s1">&#39;less than 2 ppm and resolution greater than 26,000 at m/z &#39;</span>
                      <span class="s1">&#39;2722. It has multiple ion sources and can be used with &#39;</span>
                      <span class="s1">&#39;multimode ion sources.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Agilent instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;6470A Triple Quadrupole LC/MS&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000935&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;The 6470A Quadrupole LC/MS system is a Agilent liquid &#39;</span>
+                     <span class="s1">&#39;chromatography instrument combined with a Agilent triple &#39;</span>
+                     <span class="s1">&#39;quadrupole mass spectrometer.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Agilent instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;6470B Triple Quadrupole LC/MS&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000936&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;The 6470B Quadrupole LC/MS system is a Agilent liquid &#39;</span>
+                     <span class="s1">&#39;chromatography instrument combined with a Agilent triple &#39;</span>
+                     <span class="s1">&#39;quadrupole mass spectrometer.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Agilent instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;6495C Triple Quadrupole LC/MS&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000937&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;The 6495C Quadrupole LC/MS system is a Agilent liquid &#39;</span>
+                     <span class="s1">&#39;chromatography instrument combined with a Agilent triple &#39;</span>
+                     <span class="s1">&#39;quadrupole mass spectrometer.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
                     <span class="p">[</span><span class="s1">&#39;Agilent instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
     <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;6420 Triple Quadrupole LC/MS&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002444&#39;</span><span class="p">,</span>
@@ -1870,6 +1926,18 @@
                     <span class="p">(</span><span class="s2">&quot;Bruker Daltonics&#39; timsTOF fleX&quot;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
                     <span class="p">[</span><span class="s1">&#39;Bruker Daltonics timsTOF series&#39;</span><span class="p">,</span> <span class="s1">&#39;Bruker Daltonics instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;timsTOF&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003229&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s2">&quot;Bruker Daltonics&#39; timsTOF.&quot;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Bruker Daltonics timsTOF series&#39;</span><span class="p">,</span> <span class="s1">&#39;Bruker Daltonics instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;timsTOF Pro 2&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003230&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s2">&quot;Bruker Daltonics&#39; timsTOF Pro 2.&quot;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Bruker Daltonics timsTOF series&#39;</span><span class="p">,</span> <span class="s1">&#39;Bruker Daltonics instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;timsTOF SCP&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003231&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s2">&quot;Bruker Daltonics&#39; timsTOF SCP.&quot;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Bruker Daltonics timsTOF series&#39;</span><span class="p">,</span> <span class="s1">&#39;Bruker Daltonics instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
     <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;AXIMA CFR MALDI-TOF&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000607&#39;</span><span class="p">,</span>
                     <span class="p">(</span><span class="s1">&#39;Shimadzu Biotech AXIMA CFR MALDI-TOF MS.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
@@ -2268,6 +2336,11 @@
                      <span class="s1">&#39;linear ion trap and Orbitrap mass analyzers.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
                     <span class="p">[</span><span class="s1">&#39;Thermo Scientific instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;Thermo Fisher Scientific instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
+    <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;Q Exactive UHMR&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003245&#39;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="s1">&#39;Thermo Scientific Q Exactive UHMR (Ultra High Mass Range) &#39;</span>
+                     <span class="s1">&#39;Hybrid Quadrupole Orbitrap MS.&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;Thermo Scientific instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;Thermo Fisher Scientific instrument model&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument model&#39;</span><span class="p">]),</span>
     <span class="n">InstrumentModel</span><span class="p">(</span><span class="s1">&#39;explorer&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000158&#39;</span><span class="p">,</span>
                     <span class="p">(</span><span class="s1">&#39;IonSpec Explorer MS.&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;instrument model&#39;</span><span class="p">,</span>
@@ -2346,7 +2419,17 @@
 <span class="sd">        A convenience list for storing the :class:`Component` objects which are ``analyzer``s</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serial_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">groups</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentGroup</span><span class="p">]</span>
+    <span class="n">analyzer_types</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Component</span><span class="p">]</span>
+
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">serial_number</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">software</span><span class="p">:</span> <span class="n">Software</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serial_number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">software</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span> <span class="ow">or</span> <span class="n">uid</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">groups</span> <span class="ow">or</span> <span class="p">[],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span> <span class="o">=</span> <span class="p">[]</span>
@@ -2354,6 +2437,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span> <span class="o">=</span> <span class="n">serial_number</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">software</span> <span class="o">=</span> <span class="n">software</span>
 
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;analyzer&#39;</span><span class="p">:</span>

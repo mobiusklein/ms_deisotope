@@ -39,4 +39,19 @@ File Format Glossary
         spectrum, depending upon design.
 
 
+    scan id : scan_id
+    scan_id : scan_id
+    scan ID : scan_id
+        A textual identifier for a scan or spectrum that uniquely identifies it within its source
+        file or collection. This may be a :term:`nativeID` with information encoded in it or an
+        arbitrary string.
 
+    nativeID : nativeID
+        A :term:`nativeID` is a :term:`scan_id` that contains specific information about how
+        the spectrum was acquired in the context of the instrument run.
+
+    scan index : scan_index
+    scan number : scan_index
+        An integer value starting at 0 which specifies the position in the sequence of scans/spectra
+        in a dataset. The term :term:`scan number` also refers to this concept but starts at 1. The
+        :term:`scan number` is often encoded in :term:`nativeID` identifiers.

@@ -37,32 +37,49 @@
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">weakref</span> <span class="kn">import</span> <span class="n">WeakValueDictionary</span>
 
 <span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
 <span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">add_metaclass</span>
 
+<span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">Constant</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.file_information</span> <span class="kn">import</span> <span class="n">FileInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.activation</span> <span class="kn">import</span> <span class="n">ActivationInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.instrument_components</span> <span class="kn">import</span> <span class="n">InstrumentInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.data_transformation</span> <span class="kn">import</span> <span class="n">DataProcessingInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.software</span> <span class="kn">import</span> <span class="n">Software</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.scan_traits</span> <span class="kn">import</span> <span class="n">IsolationWindow</span><span class="p">,</span> <span class="n">ScanAcquisitionInformation</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source._compression</span> <span class="kn">import</span> <span class="n">MaybeFastRandomAccess</span>
 
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">ScanBase</span><span class="p">,</span> <span class="n">ScanBunch</span>
 <span class="kn">from</span> <span class="nn">.scan</span> <span class="kn">import</span> <span class="n">Scan</span>
 <span class="kn">from</span> <span class="nn">.scan_iterator</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_ScanIteratorImplBase</span><span class="p">,</span>
     <span class="n">_SingleScanIteratorImpl</span><span class="p">,</span>
     <span class="n">_GroupedScanIteratorImpl</span><span class="p">,</span>
     <span class="n">_FakeGroupedScanIteratorImpl</span><span class="p">,</span>
     <span class="n">_InterleavedGroupedScanIteratorImpl</span><span class="p">,</span>
     <span class="n">ITERATION_MODE_GROUPED</span><span class="p">,</span>
-    <span class="n">ITERATION_MODE_SINGLE</span><span class="p">)</span>
+    <span class="n">ITERATION_MODE_SINGLE</span><span class="p">,</span>
+    <span class="n">MSEIterator</span><span class="p">)</span>
 
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 
 
+<span class="n">DataPtrType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;DataPtrType&quot;</span><span class="p">)</span>
+<span class="n">ScanType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;ScanType&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">ScanBase</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="ScanDataSource"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanDataSource">[docs]</a><span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ScanDataSource</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ScanDataSource</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">DataPtrType</span><span class="p">,</span> <span class="n">ScanType</span><span class="p">]):</span>
     <span class="sd">&quot;&quot;&quot;An Abstract Base Class describing an object</span>
 <span class="sd">    which can provide a consistent set of accessors</span>
 <span class="sd">    for a particular format of mass spectrometry data.</span>
@@ -73,10 +90,10 @@
 <span class="sd">    of :class:`Scan` objects.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_make_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_make_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanType</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Scan</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_pick_peaks_vendor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_pick_peaks_vendor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Invoke the underlying data access library&#39;s peak picking procedure.</span>
 
 <span class="sd">        Not available for open format readers, where behavior will default to</span>
@@ -100,7 +117,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_scan_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_scan_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]]:</span>
         <span class="sd">&quot;&quot;&quot;Returns raw data arrays for m/z and intensity</span>
 
 <span class="sd">        Parameters</span>
@@ -119,7 +136,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecursorInformation</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Returns information about the precursor ion,</span>
 <span class="sd">        if any, that this scan was derived form.</span>
 
@@ -138,7 +155,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_scan_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_scan_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns a verbose name for this scan, if one</span>
 <span class="sd">        was stored in the file. Usually includes both the</span>
 <span class="sd">        scan&#39;s id string, as well as information about the</span>
@@ -157,7 +174,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_scan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_scan_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns the scan&#39;s id string, a unique</span>
 <span class="sd">        identifier for this scan in the context of</span>
 <span class="sd">        the data file it is recordered in</span>
@@ -175,7 +192,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_scan_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_scan_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns the base 0 offset from the start</span>
 <span class="sd">        of the data file in number of scans to reach</span>
 <span class="sd">        this scan.</span>
@@ -197,7 +214,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_ms_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_ms_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns the degree of exponential fragmentation</span>
 <span class="sd">        used to produce this scan. 1 refers to a survey scan</span>
 <span class="sd">        of unfragmented ions, 2 refers to a tandem scan derived</span>
@@ -216,7 +233,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_scan_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_scan_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns the time in minutes from the start of data</span>
 <span class="sd">        acquisition to when this scan was acquired.</span>
 
@@ -233,7 +250,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_is_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_is_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns whether the scan contains profile data (`True`)</span>
 <span class="sd">        or centroided data (`False`).</span>
 
@@ -250,7 +267,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_polarity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Returns whether this scan was acquired in positive mode (+1)</span>
 <span class="sd">        or negative mode (-1).</span>
 
@@ -267,7 +284,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ActivationInformation</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Returns information about the activation method used to</span>
 <span class="sd">        produce this scan, if any.</span>
 
@@ -285,20 +302,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_acquisition_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_acquisition_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ScanAcquisitionInformation</span><span class="p">]:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_isolation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_isolation_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IsolationWindow</span><span class="p">]:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InstrumentInformation</span><span class="p">]:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">DataPtrType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">source_file_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">source_file_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Return the name of the file that backs this data source, if available.</span>
 
 <span class="sd">        Returns</span>
@@ -309,7 +326,7 @@
             <span class="n">file_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_</span><span class="p">,</span> <span class="p">(</span><span class="n">basestring</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">file_</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">file_</span><span class="o">.</span><span class="n">name</span>
@@ -337,7 +354,7 @@
 
 
 <div class="viewcode-block" id="ScanIterator"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator">[docs]</a><span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">ScanIterator</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ScanIterator</span><span class="p">(</span><span class="n">ScanDataSource</span><span class="p">[</span><span class="n">DataPtrType</span><span class="p">,</span> <span class="n">ScanType</span><span class="p">]):</span>
     <span class="sd">&quot;&quot;&quot;An Abstract Base Class that extends ScanDataSource</span>
 <span class="sd">    with additional requirements that enable clients of the</span>
 <span class="sd">    class to treat the object as an iterator over the underlying</span>
@@ -353,7 +370,7 @@
 
     <span class="n">iteration_mode</span> <span class="o">=</span> <span class="n">ITERATION_MODE_GROUPED</span>
 
-<div class="viewcode-block" id="ScanIterator.has_ms1_scans"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.has_ms1_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanIterator.has_ms1_scans"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.has_ms1_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_ms1_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39;Checks if this :class:`ScanDataSource` contains MS1 spectra.</span>
 
 <span class="sd">        Returns</span>
@@ -364,7 +381,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="ScanIterator.has_msn_scans"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.has_msn_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_msn_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanIterator.has_msn_scans"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.has_msn_scans">[docs]</a>    <span class="k">def</span> <span class="nf">has_msn_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39;Checks if this :class:`ScanDataSource` contains MSn spectra.</span>
 
 <span class="sd">        Returns</span>
@@ -376,7 +393,7 @@
         <span class="k">return</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="ScanIterator.next"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.next">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ScanType</span><span class="p">,</span> <span class="n">ScanBunch</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`</span>
 <span class="sd">        depending upon iteration strategy.</span>
 
@@ -386,7 +403,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ScanType</span><span class="p">,</span> <span class="n">ScanBunch</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`</span>
 <span class="sd">        depending upon iteration strategy.</span>
 
@@ -396,7 +413,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ScanType</span><span class="p">,</span> <span class="n">ScanBunch</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="ScanIterator.reset"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -420,7 +437,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-<div class="viewcode-block" id="ScanIterator.make_iterator"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.make_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">make_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanIterator.make_iterator"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.make_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">make_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ScanIterator&#39;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Configure the :class:`ScanIterator`&#39;s behavior, selecting it&#39;s iteration strategy over</span>
 <span class="sd">        either its default iterator or the provided ``iterator`` argument.</span>
 
@@ -438,14 +455,14 @@
             <span class="n">grouped</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ms1_scans</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">grouped</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_group_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">grouped</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_group_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">grouped</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">iteration_mode</span> <span class="o">=</span> <span class="n">ITERATION_MODE_GROUPED</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_scan_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">grouped</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_producer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_scan_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">grouped</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">iteration_mode</span> <span class="o">=</span> <span class="n">ITERATION_MODE_SINGLE</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
-    <span class="k">def</span> <span class="nf">_make_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_make_cache_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hashable</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">id</span>
 
     <span class="k">def</span> <span class="nf">_cache_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
@@ -453,23 +470,32 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_scan_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan</span>
         <span class="k">return</span> <span class="n">key</span>
 
-    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">_single_scan_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_single_scan_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">:</span> <span class="n">Iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_SingleScanIteratorImpl</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">iterator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_default_iterator</span><span class="p">()</span>
 
-        <span class="n">impl</span> <span class="o">=</span> <span class="n">_SingleScanIteratorImpl</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">impl</span> <span class="o">=</span> <span class="n">_SingleScanIteratorImpl</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">impl</span>
 
-    <span class="k">def</span> <span class="nf">_scan_group_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_scan_group_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">:</span> <span class="n">Iterator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">_InterleavedGroupedScanIteratorImpl</span><span class="p">,</span> <span class="n">_FakeGroupedScanIteratorImpl</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">iterator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_default_iterator</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ms1_scans</span><span class="p">():</span>
-                <span class="n">impl</span> <span class="o">=</span> <span class="n">_InterleavedGroupedScanIteratorImpl</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">_ScanIteratorImplBase</span><span class="p">):</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="n">mode</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">impl</span>
+        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">mode</span><span class="p">):</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="n">mode</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">impl</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;mse&quot;</span><span class="p">:</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="n">MSEIterator</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">impl</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ms1_scans</span><span class="p">():</span>
+                <span class="n">impl</span> <span class="o">=</span> <span class="n">_InterleavedGroupedScanIteratorImpl</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">impl</span> <span class="o">=</span> <span class="n">_FakeGroupedScanIteratorImpl</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="n">impl</span> <span class="o">=</span> <span class="n">_FakeGroupedScanIteratorImpl</span><span class="o">.</span><span class="n">from_scan_source</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">impl</span>
 
     <span class="k">def</span> <span class="nf">_scan_cleared</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
@@ -497,7 +523,7 @@
 
 
 <div class="viewcode-block" id="RandomAccessScanSource"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource">[docs]</a><span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">RandomAccessScanSource</span><span class="p">(</span><span class="n">ScanIterator</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomAccessScanSource</span><span class="p">(</span><span class="n">ScanIterator</span><span class="p">[</span><span class="n">DataPtrType</span><span class="p">,</span> <span class="n">ScanType</span><span class="p">]):</span>
     <span class="sd">&quot;&quot;&quot;An Abstract Base Class that extends ScanIterator</span>
 <span class="sd">    with additional requirements that the implementation support</span>
 <span class="sd">    random access to individual scans. This should be doable by unique</span>
@@ -505,7 +531,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">has_fast_random_access</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">has_fast_random_access</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Constant</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Check whether the underlying data stream supports fast random access</span>
 <span class="sd">        or not.</span>
 
@@ -525,7 +551,7 @@
         <span class="k">return</span> <span class="n">MaybeFastRandomAccess</span>
 
 <div class="viewcode-block" id="RandomAccessScanSource.get_scan_by_id"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_id">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">get_scan_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_scan_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanType</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan id.</span>
 
 <span class="sd">        If the scan object is still bound and in memory somewhere,</span>
@@ -544,7 +570,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="RandomAccessScanSource.get_scan_by_time"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_time">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">get_scan_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_scan_by_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanType</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan time.</span>
 
 <span class="sd">        This internally calls :meth:`get_scan_by_id` which will</span>
@@ -562,7 +588,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="RandomAccessScanSource.get_scan_by_index"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.get_scan_by_index">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">get_scan_by_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_scan_by_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanType</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan index.</span>
 
 <span class="sd">        This internally calls :meth:`get_scan_by_id` which will</span>
@@ -580,7 +606,8 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="RandomAccessScanSource.start_from_scan"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.start_from_scan">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">require_ms1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">require_ms1</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">grouped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;RandomAccessScanSource&#39;</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39;Reconstruct an iterator which will start from the scan matching one of ``scan_id``,</span>
 <span class="sd">        ``rt``, or ``index``. Only one may be provided.</span>
 
@@ -606,7 +633,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">_locate_ms1_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="n">search_range</span><span class="o">=</span><span class="mi">150</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_locate_ms1_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">:</span> <span class="n">ScanType</span><span class="p">,</span> <span class="n">search_range</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ScanType</span><span class="p">]:</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">initial_scan</span> <span class="o">=</span> <span class="n">scan</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_ms1_scans</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">):</span>
@@ -628,7 +655,7 @@
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Cannot locate MS1 Scan&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">scan</span>
 
-<div class="viewcode-block" id="RandomAccessScanSource.find_previous_ms1"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.find_previous_ms1">[docs]</a>    <span class="k">def</span> <span class="nf">find_previous_ms1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAccessScanSource.find_previous_ms1"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.find_previous_ms1">[docs]</a>    <span class="k">def</span> <span class="nf">find_previous_ms1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ScanType</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Locate the MS1 scan preceding ``start_index``, iterating backwards through</span>
 <span class="sd">        scans until either the first scan is reached or an MS1 scan is found.</span>
 
@@ -649,7 +676,7 @@
                 <span class="k">return</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
-<div class="viewcode-block" id="RandomAccessScanSource.find_next_ms1"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.find_next_ms1">[docs]</a>    <span class="k">def</span> <span class="nf">find_next_ms1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAccessScanSource.find_next_ms1"><a class="viewcode-back" href="../../../../data_source/common_reader.html#ms_deisotope.data_source.common.RandomAccessScanSource.find_next_ms1">[docs]</a>    <span class="k">def</span> <span class="nf">find_next_ms1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ScanType</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Locate the MS1 scan following ``start_index``, iterating forwards through</span>
 <span class="sd">        scans until either the last scan is reached or an MS1 scan is found.</span>
 
@@ -672,10 +699,10 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ScanType</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">ScanType</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;Retrieve the scan object for the specified scan index.</span>
 
 <span class="sd">        This internally calls :meth:`get_scan_by_index` but supports</span>
@@ -774,7 +801,7 @@
         <span class="k">return</span> <span class="n">file_desc</span><span class="o">.</span><span class="n">id_format</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">InstrumentInformation</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Describe the different instrument components and configurations used</span>
 <span class="sd">        to acquire scans in this run.</span>
 
@@ -785,7 +812,7 @@
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">DataProcessingInformation</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Describe any preprocessing steps applied to the data described by this</span>
 <span class="sd">        instance.</span>
 
@@ -795,7 +822,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="p">[]</span>
 
-    <span class="k">def</span> <span class="nf">software_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">software_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Software</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Describe any software used on the data described by this instance.</span>
 
 <span class="sd">        Returns</span>

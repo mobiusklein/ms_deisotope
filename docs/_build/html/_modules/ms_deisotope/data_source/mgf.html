@@ -41,6 +41,7 @@
 <span class="sd">The parser is based on :mod:`pyteomics.mgf`.</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">pyteomics</span> <span class="kn">import</span> <span class="n">mgf</span>
 <span class="kn">from</span> <span class="nn">pyteomics.auxiliary</span> <span class="kn">import</span> <span class="n">OffsetIndex</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -72,6 +73,9 @@
                 <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">charge_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
             <span class="k">raise</span>
 
+    <span class="k">def</span> <span class="nf">parse_peak_charge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">charge_text</span><span class="p">,</span> <span class="n">list_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_charge</span><span class="p">(</span><span class="n">charge_text</span><span class="p">,</span> <span class="n">list_only</span><span class="o">=</span><span class="n">list_only</span><span class="p">)</span>
+
 
 <span class="k">class</span> <span class="nc">_MGFMetadata</span><span class="p">(</span><span class="n">ScanFileMetadataBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Objects implementing this interface can describe the original source</span>
@@ -93,7 +97,7 @@
         <span class="n">finfo</span> <span class="o">=</span> <span class="n">FileInformation</span><span class="p">()</span>
         <span class="n">finfo</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="s2">&quot;centroid spectrum&quot;</span><span class="p">)</span>
         <span class="n">finfo</span><span class="o">.</span><span class="n">add_content</span><span class="p">(</span><span class="n">MS_MSn_Spectrum</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="p">(</span><span class="n">basestring</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)):</span>
             <span class="n">finfo</span><span class="o">.</span><span class="n">add_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
             <span class="n">finfo</span><span class="o">.</span><span class="n">add_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -107,7 +111,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        :class:`list` of :class:`~.InstrumentInformation`</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MGFMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">data_processing</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">_MGFMetadata</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">instrument_configuration</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Describe any preprocessing steps applied to the data described by this</span>
@@ -210,7 +214,7 @@
         <span class="n">pinfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_precursor_information</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">pinfo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span> <span class="o">==</span> <span class="n">ChargeNotProvided</span> <span class="ow">or</span> <span class="n">pinfo</span><span class="o">.</span><span class="n">charge</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">return</span> <span class="mi">1</span>
                 <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
             <span class="k">return</span> <span class="mi">1</span>

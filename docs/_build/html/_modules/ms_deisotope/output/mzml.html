@@ -71,18 +71,21 @@
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">hashlib</span>
 <span class="kn">import</span> <span class="nn">array</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
+
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.instrument_components</span> <span class="kn">import</span> <span class="n">InstrumentInformation</span><span class="p">,</span> <span class="n">InstrumentModel</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span><span class="p">,</span> <span class="n">UUID</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
 <span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">,</span> <span class="n">FittedPeak</span>
 
@@ -97,6 +100,7 @@
 <span class="kn">from</span> <span class="nn">ms_deisotope.averagine</span> <span class="kn">import</span> <span class="n">neutral_mass</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.qc.isolation</span> <span class="kn">import</span> <span class="n">CoIsolation</span>
 
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.cv</span> <span class="kn">import</span> <span class="n">Term</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.common</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ChargeNotProvided</span><span class="p">,</span>
     <span class="n">_SingleScanIteratorImpl</span><span class="p">,</span>
@@ -104,7 +108,7 @@
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata</span> <span class="kn">import</span> <span class="n">data_transformation</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata.software</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Software</span><span class="p">,</span> <span class="n">software_name</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.data_source.mzml</span> <span class="kn">import</span> <span class="n">MzMLLoader</span>
-<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.mobility_frame</span> <span class="kn">import</span> <span class="n">Generic3DIonMobilityFrameSource</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.mobility_frame</span> <span class="kn">import</span> <span class="n">Generic3DIonMobilityFrameSource</span><span class="p">,</span> <span class="n">RawDataArrays3D</span>
 
 <span class="kn">from</span> <span class="nn">ms_deisotope.feature_map</span> <span class="kn">import</span> <span class="n">ExtendedScanIndex</span>
 <span class="kn">from</span> <span class="nn">ms_deisotope.feature_map.feature_fit</span> <span class="kn">import</span> <span class="n">DeconvolutedLCMSFeature</span><span class="p">,</span> <span class="n">DeconvolutedLCMSFeatureTreeNode</span>
@@ -113,6 +117,31 @@
 
 <span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">ScanSerializerBase</span><span class="p">,</span> <span class="n">ScanDeserializerBase</span><span class="p">,</span> <span class="n">SampleRun</span><span class="p">,</span> <span class="n">LCMSMSQueryInterfaceMixin</span>
 <span class="kn">from</span> <span class="nn">.text_utils</span> <span class="kn">import</span> <span class="p">(</span><span class="n">envelopes_to_array</span><span class="p">,</span> <span class="n">decode_envelopes</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_param</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Term</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Try to coerce a name into something we can convert into a controlled</span>
+<span class="sd">    vocabulary parameter in :mod:`psims`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    key : :class:`str`, :class:`~.Term`, or other types</span>
+<span class="sd">        The object to convert into a CV param</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    identifier : :class:`str`</span>
+<span class="sd">        The converted identifier</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">accession</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">key</span>
 
 
 <span class="k">class</span> <span class="nc">SpectrumDescription</span><span class="p">(</span><span class="n">Sequence</span><span class="p">):</span>
@@ -321,7 +350,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">n_spectra</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">2e5</span><span class="p">),</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">deconvoluted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">build_extra_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">data_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_software_entry</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                 <span class="n">data_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_software_entry</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">close</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">data_encoding</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">data_encoding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_data_encoding</span>
         <span class="k">if</span> <span class="n">writer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -335,7 +364,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">compression</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_encoding</span> <span class="o">=</span> <span class="n">data_encoding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_has_started_writing_spectra</span> <span class="o">=</span> <span class="kc">False</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_should_close</span> <span class="o">=</span> <span class="n">close</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_writer</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_tag</span> <span class="o">=</span> <span class="kc">None</span>
@@ -359,7 +388,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_this_software</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">_make_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">writer</span><span class="o">.</span><span class="n">MzMLWriter</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">writer</span><span class="o">.</span><span class="n">MzMLWriter</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">close</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_should_close</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_init_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_name</span> <span class="o">=</span> <span class="n">sample_name</span>
@@ -381,7 +410,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">processing_parameters</span> <span class="o">=</span> <span class="p">[]</span>
 
-<div class="viewcode-block" id="MzMLSerializer.add_instrument_configuration"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_instrument_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">add_instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+<div class="viewcode-block" id="MzMLSerializer.add_instrument_configuration"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_instrument_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">add_instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">:</span> <span class="n">InstrumentInformation</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Add an :class:`~.InstrumentInformation` object to</span>
 <span class="sd">        the output document.</span>
 
@@ -403,8 +432,24 @@
                 <span class="k">continue</span>
             <span class="n">component_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">tag</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">group</span><span class="p">]))</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">instrument_model</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">if</span> <span class="n">instrument_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instrument_model</span><span class="p">,</span> <span class="n">InstrumentModel</span><span class="p">):</span>
+                <span class="n">instrument_model</span> <span class="o">=</span> <span class="n">instrument_model</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instrument_model</span><span class="p">)</span>
+        <span class="n">instrument_serial</span> <span class="o">=</span> <span class="n">configuration</span><span class="o">.</span><span class="n">serial_number</span>
+        <span class="k">if</span> <span class="n">instrument_serial</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;instrument serial number&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">instrument_serial</span>
+            <span class="p">})</span>
         <span class="n">config_element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">InstrumentConfiguration</span><span class="p">(</span>
-            <span class="n">configuration</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">component_list</span><span class="p">)</span>
+            <span class="n">configuration</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">component_list</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">software_reference</span><span class="o">=</span><span class="n">configuration</span><span class="o">.</span><span class="n">software</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="n">configuration</span><span class="o">.</span><span class="n">software</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument_configuration_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_element</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="MzMLSerializer.add_software"><a class="viewcode-back" href="../../../output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.add_software">[docs]</a>    <span class="k">def</span> <span class="nf">add_software</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">software_description</span><span class="p">):</span>
@@ -533,7 +578,11 @@
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_processing_description</span><span class="p">,</span> <span class="n">data_transformation</span><span class="o">.</span><span class="n">ProcessingMethod</span><span class="p">):</span>
             <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">op</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data_processing_description</span><span class="p">:</span>
-                <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">val</span><span class="p">})</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                        <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">v</span><span class="p">})</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">op</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">val</span><span class="p">})</span>
             <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s2">&quot;data_processing_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_processing_list</span><span class="p">),</span>
                 <span class="s1">&#39;processing_methods&#39;</span><span class="p">:</span> <span class="p">[{</span>
@@ -805,6 +854,7 @@
                 <span class="p">}</span>
             <span class="c1"># This implicitly captures ion mobility which is stored as an annotation key-value pair.</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">precursor_information</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">_param</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
                 <span class="n">package</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
                     <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
                 <span class="p">})</span>
@@ -842,6 +892,9 @@
                 <span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">envelope</span> <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">])</span>
             <span class="n">extra_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;isotopic envelopes array&quot;</span><span class="p">,</span> <span class="n">envelope_array</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="n">arrays</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">arrays</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">RawDataArrays3D</span><span class="p">):</span>
+                <span class="n">extra_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">arrays</span><span class="o">.</span><span class="n">ion_mobility_array_type</span> <span class="ow">or</span> <span class="s2">&quot;raw ion mobility array&quot;</span><span class="p">,</span> <span class="n">arrays</span><span class="o">.</span><span class="n">ion_mobility</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">data_arrays</span><span class="p">:</span>
                 <span class="n">extra_arrays</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">data_arrays</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
         <span class="k">return</span> <span class="n">extra_arrays</span>
@@ -1110,8 +1163,11 @@
 <span class="n">MzMLScanSerializer</span> <span class="o">=</span> <span class="n">MzMLSerializer</span>
 
 
-<span class="k">def</span> <span class="nf">deserialize_deconvoluted_peak_set</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">):</span>
-    <span class="n">envelopes</span> <span class="o">=</span> <span class="n">decode_envelopes</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">[</span><span class="s2">&quot;isotopic envelopes array&quot;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">deserialize_deconvoluted_peak_set</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">,</span> <span class="n">include_envelopes</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">include_envelopes</span><span class="p">:</span>
+        <span class="n">envelopes</span> <span class="o">=</span> <span class="n">decode_envelopes</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">[</span><span class="s2">&quot;isotopic envelopes array&quot;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">envelopes</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">mz_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;m/z array&#39;</span><span class="p">]</span>
     <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">scan_dict</span><span class="p">[</span><span class="s1">&#39;intensity array&#39;</span><span class="p">]</span>
@@ -1124,7 +1180,7 @@
         <span class="n">peak</span> <span class="o">=</span> <span class="n">DeconvolutedPeak</span><span class="p">(</span>
             <span class="n">neutral_mass</span><span class="p">(</span><span class="n">mz</span><span class="p">,</span> <span class="n">charge</span><span class="p">),</span> <span class="n">intensity_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">charge</span><span class="o">=</span><span class="n">charge</span><span class="p">,</span> <span class="n">signal_to_noise</span><span class="o">=</span><span class="n">score_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
             <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">full_width_at_half_max</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_to_a2_ratio</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">most_abundant_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">average_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">score_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">envelope</span><span class="o">=</span><span class="n">envelopes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">mz</span><span class="o">=</span><span class="n">mz</span>
+            <span class="n">average_mass</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="n">score_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">envelope</span><span class="o">=</span><span class="n">envelopes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">include_envelopes</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span> <span class="n">mz</span><span class="o">=</span><span class="n">mz</span>
         <span class="p">)</span>
         <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="n">DeconvolutedPeakSet</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
@@ -1200,6 +1256,8 @@
 
 
 <span class="k">class</span> <span class="nc">PeakSetDeserializingMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">parse_peaks</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">parse_envelopes</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="nf">deserialize_deconvoluted_peak_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan_dict</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1219,7 +1277,19 @@
         <span class="k">return</span> <span class="n">deserialize_peak_set</span><span class="p">(</span><span class="n">scan_dict</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_peaks</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="nd">@contextmanager</span>
+    <span class="k">def</span> <span class="nf">toggle_peak_loading</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_peaks</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decode_binary</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">yield</span> <span class="bp">self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_peaks</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decode_binary</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="nf">_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns information about the precursor ion,</span>
@@ -1272,21 +1342,25 @@
                     <span class="s1">&#39;precursor purity&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">pass</span>
-        <span class="k">if</span> <span class="s2">&quot;m/z array&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;No m/z array found for scan </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="p">))</span>
-            <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">PeakIndex</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">PeakSet</span><span class="p">([]))</span>
-            <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="n">DeconvolutedPeakSet</span><span class="p">([])</span>
-        <span class="k">elif</span> <span class="s2">&quot;charge array&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">PeakIndex</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">PeakSet</span><span class="p">([]))</span>
-            <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deserialize_deconvoluted_peak_set</span><span class="p">(</span>
-                <span class="n">data</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_extended_index</span><span class="p">()</span> <span class="ow">and</span> <span class="n">scan</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">:</span>
-                <span class="n">chosen_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">[</span>
-                    <span class="n">scan</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s1">&#39;msms_peaks&#39;</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="n">chosen_indices</span><span class="p">:</span>
-                    <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">.</span><span class="n">chosen_for_msms</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_peaks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;m/z array&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;No m/z array found for scan </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="p">))</span>
+                <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">PeakIndex</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">PeakSet</span><span class="p">([]))</span>
+                <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="n">DeconvolutedPeakSet</span><span class="p">([])</span>
+            <span class="k">elif</span> <span class="s2">&quot;charge array&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">PeakIndex</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">PeakSet</span><span class="p">([]))</span>
+                <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deserialize_deconvoluted_peak_set</span><span class="p">(</span>
+                    <span class="n">data</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_extended_index</span><span class="p">()</span> <span class="ow">and</span> <span class="n">scan</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">:</span>
+                    <span class="n">chosen_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extended_index</span><span class="o">.</span><span class="n">ms1_ids</span><span class="p">[</span>
+                        <span class="n">scan</span><span class="o">.</span><span class="n">id</span><span class="p">][</span><span class="s1">&#39;msms_peaks&#39;</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="n">chosen_indices</span><span class="p">:</span>
+                        <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">.</span><span class="n">chosen_for_msms</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deserialize_peak_set</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deserialize_peak_set</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">packed</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">packed</span>
@@ -1525,11 +1599,7 @@
     <span class="k">return</span> <span class="n">feature_map</span>
 
 
-<span class="k">class</span> <span class="nc">IonMobilityAware3DMzMLSerializer</span><span class="p">(</span><span class="n">MzMLSerializer</span><span class="p">):</span>
-    <span class="n">default_data_encoding</span> <span class="o">=</span> <span class="n">MzMLSerializer</span><span class="o">.</span><span class="n">default_data_encoding</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">default_data_encoding</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-        <span class="s2">&quot;feature id array&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
-    <span class="p">})</span>
+<span class="k">class</span> <span class="nc">_IonMobility3DSerializerBase</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">_get_peak_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scan</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
         <span class="n">deconvoluted</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;deconvoluted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">deconvoluted</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">deconvoluted</span><span class="p">:</span>
@@ -1569,11 +1639,19 @@
             <span class="n">intensity_array</span> <span class="o">=</span> <span class="n">peak_data</span><span class="o">.</span><span class="n">intensity</span>
             <span class="n">charge_array</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">ion_mobility_array</span> <span class="o">=</span> <span class="n">peak_data</span><span class="o">.</span><span class="n">ion_mobility</span>
-            <span class="n">other_arrays</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">,</span> <span class="n">ion_mobility_array</span><span class="p">),</span>
-            <span class="p">]</span>
+            <span class="n">other_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">ion_mobility_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">other_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">(</span><span class="s1">&#39;raw ion mobility array&#39;</span><span class="p">,</span> <span class="n">ion_mobility_array</span><span class="p">))</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">centroided</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">mz_array</span><span class="p">,</span> <span class="n">intensity_array</span><span class="p">,</span>
                 <span class="n">charge_array</span><span class="p">,</span> <span class="n">other_arrays</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">IonMobilityAware3DMzMLSerializer</span><span class="p">(</span><span class="n">_IonMobility3DSerializerBase</span><span class="p">,</span> <span class="n">MzMLSerializer</span><span class="p">):</span>
+    <span class="n">default_data_encoding</span> <span class="o">=</span> <span class="n">MzMLSerializer</span><span class="o">.</span><span class="n">default_data_encoding</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">default_data_encoding</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+        <span class="s2">&quot;feature id array&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+    <span class="p">})</span>
 
 
 <span class="k">class</span> <span class="nc">ProcessedGeneric3DIonMobilityFrameSource</span><span class="p">(</span><span class="n">Generic3DIonMobilityFrameSource</span><span class="p">):</span>
@@ -1584,7 +1662,7 @@
                 <span class="n">frame</span><span class="o">.</span><span class="n">deconvoluted_features</span> <span class="o">=</span> <span class="n">deserialize_deconvoluted_features</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">frame</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">deserialize_features</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">frame</span>
+        <span class="k">return</span> <span class="n">frame</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span>
 </pre></div>
 
       </div>

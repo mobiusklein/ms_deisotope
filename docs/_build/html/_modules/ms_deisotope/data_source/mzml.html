@@ -38,13 +38,18 @@
 
 <span class="sd">The parser is based on :mod:`pyteomics.mzml`.</span>
 <span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">zlib</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+
 <span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">pyteomics</span> <span class="kn">import</span> <span class="n">mzml</span>
-<span class="kn">from</span> <span class="nn">pyteomics.auxiliary</span> <span class="kn">import</span> <span class="n">unitfloat</span>
+<span class="kn">from</span> <span class="nn">pyteomics.xml</span> <span class="kn">import</span> <span class="n">unitfloat</span>
 <span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">PrecursorInformation</span><span class="p">,</span> <span class="n">ScanDataSource</span><span class="p">,</span>
     <span class="n">ChargeNotProvided</span><span class="p">,</span> <span class="n">ActivationInformation</span><span class="p">,</span>
@@ -61,19 +66,19 @@
 <span class="kn">from</span> <span class="nn">.metadata</span> <span class="kn">import</span> <span class="n">file_information</span>
 <span class="kn">from</span> <span class="nn">.metadata</span> <span class="kn">import</span> <span class="n">data_transformation</span>
 <span class="kn">from</span> <span class="nn">.metadata.sample</span> <span class="kn">import</span> <span class="n">Sample</span>
-<span class="kn">from</span> <span class="nn">.metadata.scan_traits</span> <span class="kn">import</span> <span class="n">FAIMS_compensation_voltage</span><span class="p">,</span> <span class="n">ION_MOBILITY_TYPES</span><span class="p">,</span> <span class="n">binary_data_arrays</span><span class="p">,</span> <span class="n">ion_mobility_attribute</span>
+<span class="kn">from</span> <span class="nn">.metadata.scan_traits</span> <span class="kn">import</span> <span class="n">FAIMS_compensation_voltage</span>
 <span class="kn">from</span> <span class="nn">.xml_reader</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">XMLReaderBase</span><span class="p">,</span> <span class="n">iterparse_until</span><span class="p">,</span>
     <span class="n">get_tag_attributes</span><span class="p">,</span> <span class="n">_find_section</span><span class="p">,</span> <span class="n">in_minutes</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.scan.mobility_frame</span> <span class="kn">import</span> <span class="n">IonMobilityFrame</span><span class="p">,</span> <span class="n">IonMobilitySourceRandomAccessFrameSource</span><span class="p">,</span> <span class="n">RawDataArrays3D</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.metadata</span> <span class="kn">import</span> <span class="n">software</span>
 
 
-<span class="k">def</span> <span class="nf">_open_if_not_file</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rt&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_open_if_not_file</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">obj</span>
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;read&#39;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">obj</span>
-    <span class="k">return</span> <span class="nb">open</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">open</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">_MzMLParser</span><span class="p">(</span><span class="n">mzml</span><span class="o">.</span><span class="n">MzML</span><span class="p">):</span>
@@ -173,8 +178,8 @@
             <span class="n">arrays</span> <span class="o">=</span> <span class="n">_find_arrays</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">decode</span><span class="o">=</span><span class="n">decode</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">zlib</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">zerr</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;An error occurred while decompressing the spectrum data arrays for scan </span><span class="si">%r</span><span class="s2">: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">scan</span><span class="p">),</span> <span class="n">zerr</span><span class="p">))</span>
+                <span class="sa">f</span><span class="s2">&quot;An error occurred while decompressing the spectrum data arrays for scan </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_scan_id</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">zerr</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
             <span class="c1"># Fall back assuming the missing key error handling below will just work *tm*</span>
             <span class="n">arrays</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">try</span><span class="p">:</span>
@@ -584,10 +589,23 @@
             <span class="n">instrument_model</span> <span class="o">=</span> <span class="n">potential_models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">instrument_model</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">config</span> <span class="o">=</span> <span class="n">InstrumentInformation</span><span class="p">(</span><span class="n">conf_id</span><span class="p">,</span> <span class="n">group_collection</span><span class="p">,</span> <span class="n">serial_number</span><span class="o">=</span><span class="n">serial_number</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">instrument_model</span><span class="p">)</span>
+        <span class="n">acq_software</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;softwareRef&#39;</span> <span class="ow">in</span> <span class="n">configuration</span><span class="p">:</span>
+            <span class="n">software_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">software_list</span><span class="p">()</span>
+            <span class="n">sw_id</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">[</span><span class="s1">&#39;softwareRef&#39;</span><span class="p">][</span><span class="s1">&#39;ref&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">sw</span> <span class="ow">in</span> <span class="n">software_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">sw</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">sw_id</span><span class="p">:</span>
+                    <span class="n">acq_software</span> <span class="o">=</span> <span class="n">sw</span>
+                    <span class="k">break</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">InstrumentInformation</span><span class="p">(</span>
+            <span class="n">conf_id</span><span class="p">,</span> <span class="n">group_collection</span><span class="p">,</span>
+            <span class="n">serial_number</span><span class="o">=</span><span class="n">serial_number</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">instrument_model</span><span class="p">,</span>
+            <span class="n">software</span><span class="o">=</span><span class="n">acq_software</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">config</span>
 
-    <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">instrument_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">InstrumentInformation</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Read the instrument configurations settings from the</span>
 <span class="sd">        ``&lt;instrumentConfigurationList&gt;``</span>
 
@@ -608,15 +626,15 @@
             <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_convert_instrument</span><span class="p">(</span><span class="n">instrument_info</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">out</span>
 
-    <span class="k">def</span> <span class="nf">software_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">software_list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">software</span><span class="o">.</span><span class="n">Software</span><span class="p">]:</span>
         <span class="n">softwares</span> <span class="o">=</span> <span class="n">_find_section</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="s2">&quot;softwareList&quot;</span><span class="p">)</span>
-        <span class="n">software_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">software_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">software</span><span class="o">.</span><span class="n">Software</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">software</span> <span class="ow">in</span> <span class="n">softwares</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;software&#39;</span><span class="p">,</span> <span class="p">[]):</span>
             <span class="n">software_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">Software</span><span class="p">(</span><span class="o">**</span><span class="n">software</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">software_list</span>
 
-    <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">data_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">data_transformation</span><span class="o">.</span><span class="n">DataProcessingInformation</span><span class="p">]:</span>
         <span class="n">data_processing_list</span> <span class="o">=</span> <span class="n">_find_section</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="s2">&quot;dataProcessingList&quot;</span><span class="p">)</span>
         <span class="n">processing_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">processing_group</span> <span class="ow">in</span> <span class="n">data_processing_list</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dataProcessing&quot;</span><span class="p">,</span> <span class="p">[]):</span>
@@ -635,7 +653,7 @@
             <span class="n">processing_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dpinfo</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">processing_list</span>
 
-    <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Sample</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Describe the sample(s) used to generate the mass spectrometry</span>
 <span class="sd">        data contained in this file.</span>
 
@@ -658,7 +676,7 @@
         <span class="k">return</span> <span class="n">get_tag_attributes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;spectrumList&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">checksum_mzml_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">checksum_mzml_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">IOBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;Calculate the SHA1 checksum of an indexed mzML file for the purposes</span>
 <span class="sd">    of validating the checksum at the end of the file.</span>
 
@@ -669,15 +687,13 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    calculated_checksum: str</span>
+<span class="sd">    calculated_checksum: bytes</span>
 <span class="sd">        The checksum calculated from the file&#39;s contents up to the first occurrence</span>
 <span class="sd">        of &lt;fileChecksum&gt;, exclusive.</span>
-<span class="sd">    obsesrved_checksum: str or :const:`None`</span>
+<span class="sd">    obsesrved_checksum: bytes or :const:`None`</span>
 <span class="sd">        The checksum written in the file within the &lt;fileChecksum&gt; tag. Will be :const:`None`</span>
 <span class="sd">        if the tag is not found and closed. Expected to match the calculated checksum.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">import</span> <span class="nn">re</span>
-    <span class="kn">import</span> <span class="nn">hashlib</span>
     <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">()</span>
     <span class="n">target</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&lt;fileChecksum&gt;&quot;</span>
     <span class="n">target_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="n">target</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot;)&quot;</span><span class="p">)</span>
@@ -705,8 +721,9 @@
     <span class="k">return</span> <span class="n">hasher</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="n">observed_checksum</span>
 
 
-<span class="k">def</span> <span class="nf">read_file_checksum</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
-    <span class="kn">import</span> <span class="nn">re</span>
+<span class="k">def</span> <span class="nf">read_file_checksum</span><span class="p">(</span><span class="n">stream</span><span class="p">:</span> <span class="n">io</span><span class="o">.</span><span class="n">IOBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Read the stored file checksum of an indexedmzML file.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">stream</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="o">-</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">chunk</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5001</span><span class="p">)</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">br</span><span class="s2">&quot;&lt;fileChecksum&gt;\s*(\S+)\s*&lt;/fileChecksum&gt;&quot;</span><span class="p">)</span>
@@ -728,6 +745,15 @@
 
     <span class="n">_parser_cls</span> <span class="o">=</span> <span class="n">_MzMLParser</span>
 
+    <span class="n">_run_information</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">_spectrum_list_information</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+    <span class="n">_decode_binary</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">_use_index</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">_instrument_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">InstrumentInformation</span><span class="p">]</span>
+    <span class="n">_file_description</span><span class="p">:</span> <span class="n">FileInformation</span>
+
+
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">,</span> <span class="n">use_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">decode_binary</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span> <span class="o">=</span> <span class="n">source_file</span>
@@ -744,6 +770,16 @@
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_file_description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_description</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">make_iterator</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">decode_binary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;Whether or not to eagerly decode binary data arrays&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decode_binary</span>
+
+    <span class="nd">@decode_binary</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">decode_binary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_decode_binary</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">decode_binary</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="k">def</span> <span class="nf">_has_msn_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">has_msn_key</span> <span class="o">=</span> <span class="n">file_information</span><span class="o">.</span><span class="n">MS_MSn_Spectrum</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_description</span>
@@ -797,9 +833,10 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
                 <span class="n">start</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-                <span class="n">start</span> <span class="o">=</span> <span class="n">start</span>
+                <span class="c1"># start already refers to the correct value</span>
+                <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot start from object </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">start</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot start from object </span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">[</span><span class="n">start</span><span class="p">:]:</span>

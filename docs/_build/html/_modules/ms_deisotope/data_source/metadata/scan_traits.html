@@ -37,14 +37,8 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">MutableSequence</span>
-<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">MutableSequence</span>
-
-
-<span class="kn">from</span> <span class="nn">pyteomics.auxiliary</span> <span class="kn">import</span> <span class="n">unitfloat</span>  <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">MutableSequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">ms_deisotope.utils</span> <span class="kn">import</span> <span class="n">_MappingOverAttributeProxy</span>
 <span class="kn">from</span> <span class="nn">.cv</span> <span class="kn">import</span> <span class="n">Term</span><span class="p">,</span> <span class="n">TermSet</span>
@@ -221,15 +215,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ScanEventInformation</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;Expected ScanEventInformation but got </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="p">))</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected ScanEventInformation but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;ScanAcquisitionInformation(combination=</span><span class="si">%r</span><span class="s2">, scan_list=</span><span class="si">%r</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ScanAcquisitionInformation(combination=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="si">}</span><span class="s2">, scan_list=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="si">}</span><span class="s2">)&quot;</span>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">combination</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">combination</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">scan_list</span>
@@ -240,9 +234,10 @@
     <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanAcquisitionInformation.copy"><a class="viewcode-back" href="../../../../data_source/common_scan.html#ms_deisotope.data_source.common.ScanAcquisitionInformation.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ScanAcquisitionInformation&#39;</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;Make a shallow copy of this object&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="p">[</span><span class="n">se</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">se</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">])</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">combination</span><span class="p">,</span> <span class="p">[</span><span class="n">se</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">se</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_list</span><span class="p">])</span></div></div>
 
 
 <span class="k">class</span> <span class="nc">_IonMobilityMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -327,10 +322,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span> <span class="o">=</span> <span class="n">injection_time</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">scan_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">scan_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39;Retrieve the scan configuration ID</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str, optional</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;preset scan configuration&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ScanEventInformation&#39;</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;Return a shallow copy of this object&#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">[:],</span>
             <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
@@ -345,16 +347,15 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;ScanEventInformation(start_time=</span><span class="si">{}</span><span class="s2">, window_list=</span><span class="si">{}{}</span><span class="s2">)&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_ion_mobility</span><span class="p">():</span>
-            <span class="n">tail</span> <span class="o">=</span> <span class="s2">&quot;, drift_time=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span><span class="p">)</span>
+            <span class="n">tail</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;, drift_time=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">drift_time</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tail</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tail</span> <span class="o">+=</span> <span class="s1">&#39;, injection_time=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span><span class="p">)</span>
+            <span class="n">tail</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;, injection_time=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">injection_time</span><span class="si">}</span><span class="s1">&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="p">:</span>
-            <span class="n">tail</span> <span class="o">+=</span> <span class="s2">&quot;, traits=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="p">)</span>
-        <span class="n">form</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="p">,</span> <span class="n">tail</span><span class="p">)</span>
+            <span class="n">tail</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, traits=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">traits</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ScanEventInformation(start_time=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="si">}</span><span class="s2">, window_list=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_list</span><span class="si">}{</span><span class="n">tail</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="k">return</span> <span class="n">form</span>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
@@ -458,7 +459,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;scan attribute&#39;, term_cls_name=&quot;ScanAttribute&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">scan_attributes</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">ScanAttribute</span><span class="p">(</span><span class="s1">&#39;mass resolution&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000011&#39;</span><span class="p">,</span>
                   <span class="p">(</span><span class="s1">&#39;Smallest mass difference between two equal magnitude peaks &#39;</span>
@@ -699,7 +700,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;binary data array&#39;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">binary_data_arrays</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">Term</span><span class="p">(</span><span class="s1">&#39;m/z array&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000514&#39;</span><span class="p">,</span>
          <span class="p">(</span><span class="s1">&#39;A data array of m/z values.&#39;</span><span class="p">),</span>
@@ -884,7 +885,7 @@
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;IsolationWindow&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanAcquisitionInformation&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanEventInformation&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ScanWindow&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanAttribute&quot;</span><span class="p">,</span> <span class="s2">&quot;scan_attributes&quot;</span><span class="p">,</span> <span class="s2">&quot;array_types&quot;</span>
+    <span class="s2">&quot;ScanWindow&quot;</span><span class="p">,</span> <span class="s2">&quot;ScanAttribute&quot;</span><span class="p">,</span> <span class="s2">&quot;scan_attributes&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 </pre></div>
 

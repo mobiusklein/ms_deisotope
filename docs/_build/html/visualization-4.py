@@ -2,7 +2,9 @@ import ms_deisotope
 from ms_deisotope import plot
 from ms_deisotope.test.common import datafile
 
-reader = ms_deisotope.MSFileLoader(datafile("20150710_3um_AGP_001_29_30.mzML.gz"))
+example_file = datafile("20150710_3um_AGP_001_29_30.mzML.gz")
+
+reader = ms_deisotope.MSFileLoader(example_file)
 bunch = next(reader)
 
 bunch.precursor.pick_peaks()

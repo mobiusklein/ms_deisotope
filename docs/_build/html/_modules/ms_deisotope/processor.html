@@ -54,9 +54,9 @@
 <span class="sd">    from ms_deisotope.test.common import datafile</span>
 
 <span class="sd">    # Locate example dataset</span>
-<span class="sd">    path = datafile(&quot;20150710_3um_AGP_001_29_30.mzML.gz&quot;)</span>
+<span class="sd">    example_file = datafile(&quot;20150710_3um_AGP_001_29_30.mzML.gz&quot;)</span>
 
-<span class="sd">    proc = processor.ScanProcessor(path, ms1_deconvolution_args={</span>
+<span class="sd">    proc = processor.ScanProcessor(example_file, ms1_deconvolution_args={</span>
 <span class="sd">        &quot;averagine&quot;: glycopeptide,</span>
 <span class="sd">        &quot;scorer&quot;: PenalizedMSDeconVFitter(20., 2.),</span>
 <span class="sd">        &quot;truncate_after&quot;: 0.95</span>
@@ -71,26 +71,33 @@
 <span class="sd">    print(bunch.precursor.deconvoluted_peak_set)</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">string_types</span> <span class="k">as</span> <span class="n">basestring</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">pick_peaks</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">,</span> <span class="n">PeakIndex</span>
+<span class="kn">from</span> <span class="nn">ms_peak_picker</span> <span class="kn">import</span> <span class="n">pick_peaks</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">,</span> <span class="n">PeakIndex</span><span class="p">,</span> <span class="n">FittedPeak</span>
 <span class="kn">from</span> <span class="nn">ms_peak_picker.scan_filter</span> <span class="kn">import</span> <span class="n">FTICRBaselineRemoval</span>
 
 <span class="kn">from</span> <span class="nn">ms_deisotope</span> <span class="kn">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.base</span> <span class="kn">import</span> <span class="n">PrecursorInformation</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.data_source.scan.loader</span> <span class="kn">import</span> <span class="n">RandomAccessScanSource</span><span class="p">,</span> <span class="n">ScanIterator</span>
+<span class="kn">from</span> <span class="nn">ms_deisotope.peak_set</span> <span class="kn">import</span> <span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">DeconvolutedPeakSet</span>
+
 <span class="kn">from</span> <span class="nn">.averagine</span> <span class="kn">import</span> <span class="n">AveragineCache</span><span class="p">,</span> <span class="n">peptide</span><span class="p">,</span> <span class="n">PROTON</span>
 <span class="kn">from</span> <span class="nn">.scoring</span> <span class="kn">import</span> <span class="n">PenalizedMSDeconVFitter</span><span class="p">,</span> <span class="n">MSDeconVFitter</span>
 <span class="kn">from</span> <span class="nn">.deconvolution</span> <span class="kn">import</span> <span class="n">deconvolute_peaks</span>
-<span class="kn">from</span> <span class="nn">.data_source</span> <span class="kn">import</span> <span class="n">MSFileLoader</span><span class="p">,</span> <span class="n">ScanIterator</span>
+<span class="kn">from</span> <span class="nn">.data_source</span> <span class="kn">import</span> <span class="n">MSFileLoader</span>
 <span class="kn">from</span> <span class="nn">.data_source.common</span> <span class="kn">import</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">ScanBunch</span><span class="p">,</span> <span class="n">ChargeNotProvided</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">Base</span><span class="p">,</span> <span class="n">TargetedDeconvolutionResultBase</span>
 <span class="kn">from</span> <span class="nn">.peak_dependency_network</span> <span class="kn">import</span> <span class="n">NoIsotopicClustersError</span>
 <span class="kn">from</span> <span class="nn">.qc.isolation</span> <span class="kn">import</span> <span class="n">PrecursorPurityEstimator</span>
 <span class="kn">from</span> <span class="nn">.task</span> <span class="kn">import</span> <span class="n">LogUtilsMixin</span>
 
-<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;deconvolution_scan_processor&quot;</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;ms_deisotope.scan_processor&quot;</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
 
 
@@ -196,9 +203,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">mz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">peak</span><span class="o">.</span><span class="n">intensity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_loader_creator</span><span class="p">(</span><span class="n">specification</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specification</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">MSFileLoader</span><span class="p">(</span><span class="n">specification</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_loader_creator</span><span class="p">(</span><span class="n">specification</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specification</span><span class="p">,</span> <span class="p">(</span><span class="n">basestring</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">MSFileLoader</span><span class="p">(</span><span class="n">specification</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specification</span><span class="p">,</span> <span class="n">ScanIterator</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">specification</span>
     <span class="k">else</span><span class="p">:</span>
@@ -265,12 +272,14 @@
 <span class="sd">        :attr:`loader_type` on :attr:`data_source`.</span>
 <span class="sd">    ms1_deconvolution_args : :class:`dict`</span>
 <span class="sd">        The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MS1</span>
-<span class="sd">        scans.</span>
+<span class="sd">        scans. This dictionary&#39;s keys should match the arguments of :func:`~ms_deisotope.deconvolution.deconvolute_peaks`,</span>
+<span class="sd">        all other arguments are passed through to configure the deconvoluter or will be ignored.</span>
 <span class="sd">    ms1_peak_picking_args : :class:`dict`</span>
 <span class="sd">        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MS1 scans.</span>
 <span class="sd">    msn_deconvolution_args : :class:`dict`</span>
 <span class="sd">        The arguments passed to :func:`~ms_deisotope.deconvolution.deconvolute_peaks` for MSn</span>
-<span class="sd">        scans.</span>
+<span class="sd">        scans. This dictionary&#39;s keys should match the arguments of :func:`~ms_deisotope.deconvolution.deconvolute_peaks`,</span>
+<span class="sd">        all other arguments are passed through to configure the deconvoluter or will be ignored.</span>
 <span class="sd">    msn_peak_picking_args : :class:`dict`</span>
 <span class="sd">        The arguments passed to :func:`ms_peak_picker.pick_peaks` for MSn scans.</span>
 <span class="sd">    pick_only_tandem_envelopes : :class:`bool`</span>
@@ -290,6 +299,27 @@
 <span class="sd">    ms1_averaging: :class:`int`</span>
 <span class="sd">        The number of adjacent MS1 scans to average prior to picking peaks.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data_source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="n">ScanIterator</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">]</span>
+    <span class="n">loader_type</span><span class="p">:</span> <span class="n">Callable</span>
+    <span class="n">_signal_source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ScanIterator</span><span class="p">,</span> <span class="n">RandomAccessScanSource</span><span class="p">]</span>
+
+    <span class="n">pick_only_tandem_envelopes</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">envelope_selector</span><span class="p">:</span> <span class="n">Callable</span>
+
+    <span class="n">ms1_averaging</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">ms1_peak_picking_args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">msn_peak_picking_args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+    <span class="n">ms1_deconvolution_args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">msn_deconvolution_args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+    <span class="n">default_precursor_ion_selection_window</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">trust_charge_hint</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">terminate_on_error</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">respect_isolation_window</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">too_many_peaks_threshold</span><span class="p">:</span> <span class="nb">int</span>
+
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">ms1_peak_picking_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">msn_peak_picking_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -386,7 +416,7 @@
                     <span class="n">charge_carrier</span><span class="o">=</span><span class="n">msn_charge_carrier</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">msn_deconvolution_args</span><span class="p">[</span><span class="s1">&#39;averagine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">averagine</span>
 
-    <span class="k">def</span> <span class="nf">_reject_candidate_precursor_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">product_scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_reject_candidate_precursor_peak</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DeconvolutedPeak</span><span class="p">,</span> <span class="n">FittedPeak</span><span class="p">],</span> <span class="n">product_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="n">isolation</span> <span class="o">=</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">isolation_window</span>
         <span class="k">if</span> <span class="n">isolation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">isolation</span><span class="o">.</span><span class="n">is_empty</span><span class="p">():</span>
             <span class="n">pinfo</span> <span class="o">=</span> <span class="n">product_scan</span><span class="o">.</span><span class="n">precursor_information</span>
@@ -396,7 +426,7 @@
             <span class="k">return</span> <span class="n">peak</span><span class="o">.</span><span class="n">mz</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">isolation</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">respect_isolation_window</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">reader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">reader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanIterator</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39;The :class:`~.ScanIterator` which generates the raw scans that will</span>
 <span class="sd">        be processed.</span>
 
@@ -406,7 +436,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_source</span>
 
-    <span class="k">def</span> <span class="nf">_get_envelopes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_envelopes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]:</span>
         <span class="sd">&quot;&quot;&quot;Get the m/z intervals to pick peaks from for the</span>
 <span class="sd">        given MS1 scan</span>
 
@@ -427,7 +457,7 @@
             <span class="n">chosen_envelopes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">envelope_selector</span><span class="p">(</span><span class="n">precursor_scan</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">chosen_envelopes</span>
 
-    <span class="k">def</span> <span class="nf">_pick_precursor_scan_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">chosen_envelopes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_pick_precursor_scan_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">chosen_envelopes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Pick peaks from the given precursor scan</span>
 
 <span class="sd">        Parameters</span>
@@ -456,7 +486,7 @@
                                     <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">ms1_peak_picking_args</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">prec_peaks</span>
 
-    <span class="k">def</span> <span class="nf">_average_ms1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_average_ms1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Average signal from :attr:`self.ms1_averaging` scans from</span>
 <span class="sd">        before and after ``precursor_scan`` and pick peaks from the</span>
 <span class="sd">        averaged arrays.</span>
@@ -477,7 +507,7 @@
                                 <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">ms1_peak_picking_args</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">prec_peaks</span>
 
-<div class="viewcode-block" id="ScanProcessor.pick_precursor_scan_peaks"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.pick_precursor_scan_peaks">[docs]</a>    <span class="k">def</span> <span class="nf">pick_precursor_scan_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.pick_precursor_scan_peaks"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.pick_precursor_scan_peaks">[docs]</a>    <span class="k">def</span> <span class="nf">pick_precursor_scan_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Picks peaks for the given ``precursor_scan`` using the</span>
 <span class="sd">        appropriate strategy.</span>
 
@@ -504,7 +534,7 @@
         <span class="n">precursor_scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">prec_peaks</span>
         <span class="k">return</span> <span class="n">prec_peaks</span></div>
 
-<div class="viewcode-block" id="ScanProcessor.pick_product_scan_peaks"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.pick_product_scan_peaks">[docs]</a>    <span class="k">def</span> <span class="nf">pick_product_scan_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_scan</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.pick_product_scan_peaks"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.pick_product_scan_peaks">[docs]</a>    <span class="k">def</span> <span class="nf">pick_product_scan_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">PeakIndex</span><span class="p">,</span> <span class="n">PeakSet</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Pick the peaks of product scan</span>
 
 <span class="sd">        Parameters</span>
@@ -530,42 +560,7 @@
         <span class="n">product_scan</span><span class="o">.</span><span class="n">peak_set</span> <span class="o">=</span> <span class="n">peaks</span>
         <span class="k">return</span> <span class="n">peaks</span></div>
 
-    <span class="k">def</span> <span class="nf">get_precursor_peak_for_product_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-        <span class="sd">&quot;&quot;&quot;A utility method to obtain :class:`PriorityTarget` objects for</span>
-<span class="sd">        each product scan of `precursor_scan`.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        precursor_scan: :class:`~.Scan`</span>
-<span class="sd">            The scan to extract.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        :class:`list` of :class:`PriorityTarget`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">priorities</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">peaks</span> <span class="o">=</span> <span class="n">precursor_scan</span><span class="o">.</span><span class="n">peak_set</span>
-        <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">precursor_scan</span><span class="o">.</span><span class="n">product_scans</span><span class="p">:</span>
-            <span class="n">precursor_ion</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span>
-            <span class="k">if</span> <span class="n">peaks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pick_precursor_scan_peaks</span><span class="p">(</span><span class="n">precursor_scan</span><span class="p">)</span>
-            <span class="n">peak</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">peaks</span><span class="o">.</span><span class="n">get_nearest_peak</span><span class="p">(</span><span class="n">precursor_ion</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
-            <span class="n">precursor_ion</span><span class="o">.</span><span class="n">peak</span> <span class="o">=</span> <span class="n">peak</span>
-            <span class="n">target</span> <span class="o">=</span> <span class="n">PriorityTarget</span><span class="p">(</span>
-                <span class="n">peak</span><span class="p">,</span>
-                <span class="n">precursor_ion</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">trust_charge_hint</span><span class="p">,</span>
-                <span class="n">isolation_window</span><span class="o">=</span><span class="n">scan</span><span class="o">.</span><span class="n">isolation_window</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reject_candidate_precursor_peak</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">scan</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-                    <span class="s2">&quot;Unable to locate a peak for precursor ion </span><span class="si">%r</span><span class="s2"> for tandem scan </span><span class="si">%s</span><span class="s2"> of precursor scan </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                        <span class="n">precursor_ion</span><span class="p">,</span> <span class="n">scan</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
-                        <span class="n">precursor_scan</span><span class="o">.</span><span class="n">title</span><span class="p">))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">priorities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">priorities</span>
-
-<div class="viewcode-block" id="ScanProcessor.process_scan_group"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.process_scan_group">[docs]</a>    <span class="k">def</span> <span class="nf">process_scan_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">product_scans</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.process_scan_group"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.process_scan_group">[docs]</a>    <span class="k">def</span> <span class="nf">process_scan_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">product_scans</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Scan</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Scan</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">PriorityTarget</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Scan</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;Performs the initial extraction of information relating</span>
 <span class="sd">        `precursor_scan` to `product_scans` and picks peaks for ``precursor_scan``.</span>
 <span class="sd">        Called by :meth:`process`. May be used separately if doing the process step</span>
@@ -596,7 +591,7 @@
                 <span class="s2">&quot;Could not pick peaks for empty precursor scan&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">product_scans</span><span class="p">:</span>
-            <span class="n">precursor_ion</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span>
+            <span class="n">precursor_ion</span><span class="p">:</span> <span class="n">PrecursorInformation</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span>
             <span class="k">if</span> <span class="n">precursor_ion</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">peak</span> <span class="o">=</span> <span class="n">prec_peaks</span><span class="o">.</span><span class="n">has_peak</span><span class="p">(</span><span class="n">precursor_ion</span><span class="o">.</span><span class="n">mz</span><span class="p">)</span>
@@ -622,12 +617,12 @@
 
         <span class="k">return</span> <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">priorities</span><span class="p">,</span> <span class="n">product_scans</span></div>
 
-    <span class="k">def</span> <span class="nf">_default_all_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scans</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_default_all_precursor_information</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scans</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Scan</span><span class="p">]):</span>
         <span class="k">for</span> <span class="n">scan</span> <span class="ow">in</span> <span class="n">scans</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">scan</span><span class="o">.</span><span class="n">ms_level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">scan</span><span class="o">.</span><span class="n">precursor_information</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">orphan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ScanProcessor.deconvolute_precursor_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_precursor_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">priorities</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">product_scans</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.deconvolute_precursor_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.deconvolute_precursor_scan">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_precursor_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">priorities</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">PriorityTarget</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">product_scans</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Scan</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">DeconvolutedPeakSet</span><span class="p">,</span> <span class="n">TargetedDeconvolutionResultBase</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Deconvolute the given precursor scan, giving priority to its product ions,</span>
 <span class="sd">        correcting the :attr:`precursor_information` attributes of priority targets,</span>
 <span class="sd">        as well as calculating the degree of precursor purity and coisolating ions.</span>
@@ -763,7 +758,7 @@
             <span class="n">precursor_information</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dec_peaks</span><span class="p">,</span> <span class="n">priority_results</span></div>
 
-<div class="viewcode-block" id="ScanProcessor.deconvolute_product_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.deconvolute_product_scan">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_product_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_scan</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.deconvolute_product_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.deconvolute_product_scan">[docs]</a>    <span class="k">def</span> <span class="nf">deconvolute_product_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeconvolutedPeakSet</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Deconvolute the peaks of `product_scan`.</span>
 
 <span class="sd">        This method will override the upper limit &quot;charge_range&quot; of</span>
@@ -817,7 +812,7 @@
         <span class="n">product_scan</span><span class="o">.</span><span class="n">deconvoluted_peak_set</span> <span class="o">=</span> <span class="n">dec_peaks</span>
         <span class="k">return</span> <span class="n">dec_peaks</span></div>
 
-    <span class="k">def</span> <span class="nf">_get_next_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_next_scans</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Scan</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Scan</span><span class="p">]]:</span>
         <span class="n">bunch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">precursor</span><span class="p">,</span> <span class="n">products</span> <span class="o">=</span> <span class="n">bunch</span>
@@ -836,7 +831,7 @@
 
         <span class="k">return</span> <span class="n">precursor</span><span class="p">,</span> <span class="n">products</span>
 
-<div class="viewcode-block" id="ScanProcessor.process"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor</span><span class="p">,</span> <span class="n">products</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.process"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">precursor</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span> <span class="n">products</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Scan</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ScanBunch</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Fully preprocesses the `precursor` and `products` scans, performing</span>
 <span class="sd">        any necessary information sharing.</span>
 
@@ -868,7 +863,7 @@
 
         <span class="k">return</span> <span class="n">ScanBunch</span><span class="p">(</span><span class="n">precursor_scan</span><span class="p">,</span> <span class="n">product_scans</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ScanProcessor.next"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.next"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanBunch</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Fetches the next bunch of scans from :attr:`reader` and</span>
 <span class="sd">        invokes :meth:`process` on them, picking peaks and deconvoluting them.</span>
 
@@ -880,7 +875,7 @@
         <span class="n">bunch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">precursor</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">bunch</span></div>
 
-    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanBunch</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Fetches the next bunch of scans from :attr:`reader` and</span>
 <span class="sd">        invokes :meth:`process` on them, picking peaks and deconvoluting them.</span>
 
@@ -890,10 +885,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ScanProcessor&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">pack_next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">pack_next</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScanBunch</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;As :meth:`next`, except instead of producing :class:`ScanBunch` of</span>
 <span class="sd">        :class:`Scan` instances, instead it uses :class:`ProcessedScan` to strip away</span>
 <span class="sd">        much of the heavy information like the raw data arrays.</span>
@@ -906,7 +901,7 @@
         <span class="n">precursor_scan</span><span class="p">,</span> <span class="n">product_scans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">precursor</span><span class="p">,</span> <span class="n">products</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ScanBunch</span><span class="p">(</span><span class="n">precursor_scan</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span> <span class="k">if</span> <span class="n">precursor_scan</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">pack</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">product_scans</span><span class="p">])</span>
 
-<div class="viewcode-block" id="ScanProcessor.start_from_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.start_from_scan">[docs]</a>    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ScanProcessor.start_from_scan"><a class="viewcode-back" href="../../deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.start_from_scan">[docs]</a>    <span class="k">def</span> <span class="nf">start_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ScanProcessor&#39;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;A wrapper around :meth:`~.RandomAccessScanSource.start_from_scan` provided by</span>
 <span class="sd">        :attr:`reader`, if available.</span>
 
@@ -1016,6 +1011,9 @@
     <span class="sd">&quot;&quot;&quot;A sub-type of :class:`ValueError` which is used to indicate</span>
 <span class="sd">    that a spectrum is empty and could not be manipulated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">scan_id</span><span class="p">:</span> <span class="nb">str</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">scan_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="ne">ValueError</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scan_id</span> <span class="o">=</span> <span class="n">scan_id</span>

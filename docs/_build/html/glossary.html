@@ -63,6 +63,17 @@ for additional information. This is the preferred open format for data exchange.
 or without additional metadata. A format may either encode multiple spectra or a single
 spectrum, depending upon design.</p>
 </dd>
+<dt id="term-scan-id">scan id<a class="headerlink" href="#term-scan-id" title="Permalink to this term">¶</a></dt><dt id="term-scan_id">scan_id<a class="headerlink" href="#term-scan_id" title="Permalink to this term">¶</a></dt><dt id="term-scan-ID">scan ID<a class="headerlink" href="#term-scan-ID" title="Permalink to this term">¶</a></dt><dd><p>A textual identifier for a scan or spectrum that uniquely identifies it within its source
+file or collection. This may be a <a class="reference internal" href="#term-nativeID"><span class="xref std std-term">nativeID</span></a> with information encoded in it or an
+arbitrary string.</p>
+</dd>
+<dt id="term-nativeID">nativeID<a class="headerlink" href="#term-nativeID" title="Permalink to this term">¶</a></dt><dd><p>A <a class="reference internal" href="#term-nativeID"><span class="xref std std-term">nativeID</span></a> is a <a class="reference internal" href="#term-scan_id"><span class="xref std std-term">scan_id</span></a> that contains specific information about how
+the spectrum was acquired in the context of the instrument run.</p>
+</dd>
+<dt id="term-scan-index">scan index<a class="headerlink" href="#term-scan-index" title="Permalink to this term">¶</a></dt><dt id="term-scan-number">scan number<a class="headerlink" href="#term-scan-number" title="Permalink to this term">¶</a></dt><dd><p>An integer value starting at 0 which specifies the position in the sequence of scans/spectra
+in a dataset. The term <a class="reference internal" href="#term-scan-number"><span class="xref std std-term">scan number</span></a> also refers to this concept but starts at 1. The
+<a class="reference internal" href="#term-scan-number"><span class="xref std std-term">scan number</span></a> is often encoded in <a class="reference internal" href="#term-nativeID"><span class="xref std std-term">nativeID</span></a> identifiers.</p>
+</dd>
 </dl>
 </div>
 </div>

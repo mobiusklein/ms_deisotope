@@ -53,10 +53,15 @@
  | <a href="#mzml"><strong>mzml</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
+ | <a href="#nativeID"><strong>nativeID</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#scan_id"><strong>scan_id</strong></a>
+ | <a href="#scan_index"><strong>scan_index</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
@@ -853,6 +858,8 @@
       <ul>
         <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.RawDataArrays.copy">(ms_deisotope.data_source.common.RawDataArrays method)</a>
 </li>
+        <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.ScanAcquisitionInformation.copy">(ms_deisotope.data_source.common.ScanAcquisitionInformation method)</a>
+</li>
         <li><a href="data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.FileInformation.copy">(ms_deisotope.data_source.metadata.file_information.FileInformation method)</a>
 </li>
       </ul></li>
@@ -896,6 +903,12 @@
 </li>
       <li><a href="deconvolution/pipeline.html#ms_deisotope.processor.ScanProcessor.data_source">data_source (ms_deisotope.processor.ScanProcessor attribute)</a>
 </li>
+      <li><a href="data_source/mzml.html#ms_deisotope.data_source.mzml.MzMLLoader.decode_binary">decode_binary (ms_deisotope.data_source.mzml.MzMLLoader property)</a>
+
+      <ul>
+        <li><a href="data_source/mzmlb.html#ms_deisotope.data_source.mzmlb.MzMLbLoader.decode_binary">(ms_deisotope.data_source.mzmlb.MzMLbLoader property)</a>
+</li>
+      </ul></li>
       <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.Scan.deconvolute">deconvolute() (ms_deisotope.data_source.common.Scan method)</a>
 
       <ul>
@@ -2051,18 +2064,32 @@
 </li>
       <li><a href="output/mzml.html#ms_deisotope.output.mzml.MzMLSerializer.n_spectra">n_spectra (ms_deisotope.output.mzml.MzMLSerializer attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="data_source/metadata/cv.html#ms_deisotope.data_source.metadata.cv.Term.name">name (ms_deisotope.data_source.metadata.cv.Term attribute)</a>
 
       <ul>
         <li><a href="data_source/metadata/file_metadata.html#ms_deisotope.data_source.metadata.file_information.SourceFile.name">(ms_deisotope.data_source.metadata.file_information.SourceFile attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="nativeID">nativeID</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="glossary.html#term-nativeID"><strong>nativeID</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="deconvolution/deconvolution.html#ms_deisotope.peak_dependency_network.NetworkedTargetedDeconvolutionResult">NetworkedTargetedDeconvolutionResult (class in ms_deisotope.peak_dependency_network)</a>
 </li>
       <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.PrecursorInformation.neutral_mass">neutral_mass (ms_deisotope.data_source.common.PrecursorInformation property)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="data_source/common_reader.html#ms_deisotope.data_source.common.ScanIterator.next">next() (ms_deisotope.data_source.common.ScanIterator method)</a>
 
       <ul>
@@ -2375,6 +2402,8 @@
         <li><a href="output/mzmlb.html#ms_deisotope.output.mzmlb.MzMLbSerializer.save_scan_bunch">(ms_deisotope.output.mzmlb.MzMLbSerializer method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="deconvolution/averagine.html#ms_deisotope.averagine.Averagine.scale">scale() (ms_deisotope.averagine.Averagine method)</a>
 
       <ul>
@@ -2411,8 +2440,42 @@
         <li><a href="data_source/thermo_raw_net.html#ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader.scan_cache">(ms_deisotope.data_source.thermo_raw_net.ThermoRawLoader property)</a>
 </li>
       </ul></li>
-      <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.Scan.scan_id">scan_id (ms_deisotope.data_source.common.Scan property)</a>
+  </ul></td>
+</tr></table>
+
+<h2 id="scan_id">scan_id</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="glossary.html#term-scan-ID"><strong>scan ID</strong></a>
 </li>
+      <li><a href="glossary.html#term-scan-id"><strong>scan id</strong></a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="glossary.html#term-scan_id"><strong>scan_id</strong></a>
+
+      <ul>
+        <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.Scan.scan_id">(ms_deisotope.data_source.common.Scan property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="scan_index">scan_index</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="glossary.html#term-scan-index"><strong>scan index</strong></a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="glossary.html#term-scan-number"><strong>scan number</strong></a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.ScanAcquisitionInformation.scan_list">scan_list (ms_deisotope.data_source.common.ScanAcquisitionInformation attribute)</a>
 </li>
       <li><a href="data_source/common_scan.html#ms_deisotope.data_source.common.Scan.scan_time">scan_time (ms_deisotope.data_source.common.Scan attribute)</a>
@@ -2449,8 +2512,6 @@
 </li>
       <li><a href="deconvolution/deconvolution.html#ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase.select_best_disjoint_subgraphs">select_best_disjoint_subgraphs() (ms_deisotope.deconvolution.PeakDependenceGraphDeconvoluterBase method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="deconvolution/averagine.html#ms_deisotope.averagine.TheoreticalIsotopicPattern.shift">shift() (ms_deisotope.averagine.TheoreticalIsotopicPattern method)</a>
 </li>
       <li><a href="glossary.html#term-single"><strong>single</strong></a>
@@ -2504,6 +2565,8 @@
         <li><a href="data_source/mzxml.html#id0">(ms_deisotope.data_source.mzxml.MzXMLLoader property)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="data_source/mgf.html#ms_deisotope.data_source.mgf.MGFLoader.source_file">source_file (ms_deisotope.data_source.mgf.MGFLoader attribute)</a>
 
       <ul>

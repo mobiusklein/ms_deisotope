@@ -62,6 +62,7 @@
 <span class="k">class</span> <span class="nc">IDParserBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A base class for ID parsing and formatting.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parse a string looking for fields defined by this ID format.</span>
 
@@ -168,6 +169,7 @@
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
 
 <span class="k">class</span> <span class="nc">FileFormat</span><span class="p">(</span><span class="n">Term</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Describes a named mass spectrometry data file format, either</span>
@@ -312,6 +314,7 @@
 <span class="sd">    id_formats : OrderedDict</span>
 <span class="sd">        A mapping of format name to :class:`IDFormat` instances</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_formats</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id_formats</span> <span class="o">=</span> <span class="n">id_formats</span>
 
@@ -353,7 +356,7 @@
 <span class="c1"># render_list(&#39;native spectrum identifier format&#39;,</span>
 <span class="c1">#             &quot;id_formats&quot;, term_cls_name=&quot;IDFormat&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">id_formats</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">IDFormat</span><span class="p">(</span><span class="s1">&#39;Thermo nativeID format&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000768&#39;</span><span class="p">,</span>
              <span class="p">(</span><span class="s1">&#39;Native format defined by &#39;</span>
@@ -482,7 +485,7 @@
 <span class="c1"># render_list(&#39;mass spectrometer file format&#39;,</span>
 <span class="c1">#             &quot;file_formats&quot;, term_cls_name=&quot;FileFormat&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">file_formats</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">FileFormat</span><span class="p">(</span><span class="s1">&#39;Waters raw format&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000526&#39;</span><span class="p">,</span>
                <span class="p">(</span><span class="s1">&#39;Waters data file format found in a Waters RAW directory, &#39;</span>
@@ -667,7 +670,7 @@
 <span class="c1"># render_list(&#39;data file content&#39;,</span>
 <span class="c1">#             &quot;content_keys&quot;, term_cls_name=&quot;FileContent&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">content_keys</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;mass spectrum&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000294&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="s1">&#39;A plot of the relative abundance of a beam or other &#39;</span>
@@ -703,6 +706,11 @@
                 <span class="p">(</span><span class="s1">&#39;Representation of electromagnetic properties versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003213&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;Specific aspect of a mass spectrometer method by which mass &#39;</span>
+                 <span class="s1">&#39;ranges are selected and possibly dissociated.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;charge inversion mass spectrum&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000322&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="s1">&#39;The measurement of the relative abundance of ions that &#39;</span>
                  <span class="s1">&#39;result from a charge inversion reaction as a function of &#39;</span>
@@ -821,6 +829,51 @@
                 <span class="p">(</span><span class="s1">&#39;Representation of light emitted by the sample versus time.&#39;</span><span class="p">),</span>
                 <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
                 <span class="p">[</span><span class="s1">&#39;electromagnetic radiation chromatogram&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;chromatogram type&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;selected ion monitoring&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000205&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;The operation of a mass spectrometer in which the &#39;</span>
+                 <span class="s1">&#39;intensities of several specific m/z values are recorded &#39;</span>
+                 <span class="s1">&#39;rather than the entire mass spectrum.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;data-independent acquisition&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method aspect&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrum generation information&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;selected reaction monitoring&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000206&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;Data acquired from specific product ions corresponding to &#39;</span>
+                 <span class="s1">&#39;m/z selected precursor ions recorded via multiple stages of &#39;</span>
+                 <span class="s1">&#39;mass spectrometry. Selected reaction monitoring can be &#39;</span>
+                 <span class="s1">&#39;performed in time or in space.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;data-independent acquisition&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method aspect&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrum generation information&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;data independent acquisition from dissociation of sequential mass ranges&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003224&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;Data independent mass spectrometer acquisition method &#39;</span>
+                 <span class="s1">&#39;wherein a preconfigured sequence of mass ranges are &#39;</span>
+                 <span class="s1">&#39;fragmented. Examples of such an approach include SWATH-MS, &#39;</span>
+                 <span class="s1">&#39;FT-ARM, HRM, and PAcIFIC.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;dissociation of sequential mass ranges&#39;</span><span class="p">,</span> <span class="s1">&#39;data-independent acquisition&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method aspect&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrum generation information&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;data independent acquisition from dissociation of sequential mass ranges after ion mobility separation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003225&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;Data independent mass spectrometer acquisition method &#39;</span>
+                 <span class="s1">&#39;wherein a preconfigured sequence of mass ranges are &#39;</span>
+                 <span class="s1">&#39;fragmented after being separated by ion mobility. An example &#39;</span>
+                 <span class="s1">&#39;of such an approach is Bruker diaPASEF.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;dissociation of sequential mass ranges&#39;</span><span class="p">,</span> <span class="s1">&#39;ion mobility separation&#39;</span><span class="p">,</span> <span class="s1">&#39;data-independent acquisition&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method aspect&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrum generation information&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;data independent acquisition from dissociation of full mass range after ion mobility separation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003226&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;Data independent mass spectrometer acquisition method &#39;</span>
+                 <span class="s1">&#39;wherein the full mass range is fragmented after being &#39;</span>
+                 <span class="s1">&#39;separated by ion mobility. Examples of such an approach &#39;</span>
+                 <span class="s1">&#39;include HDMS^E and IMS-AIF.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;dissociation of full mass range&#39;</span><span class="p">,</span> <span class="s1">&#39;ion mobility separation&#39;</span><span class="p">,</span> <span class="s1">&#39;data-independent acquisition&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method aspect&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrum generation information&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;data independent acquisition from dissociation of full mass range&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003227&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;Data independent mass spectrometer acquisition method &#39;</span>
+                 <span class="s1">&#39;wherein the full mass range is fragmented. Examples of such &#39;</span>
+                 <span class="s1">&#39;an approach include MS^E, AIF, and bbCID.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;dissociation of full mass range&#39;</span><span class="p">,</span> <span class="s1">&#39;ion mobility separation&#39;</span><span class="p">,</span> <span class="s1">&#39;data-independent acquisition&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method aspect&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrum generation information&#39;</span><span class="p">]),</span>
+    <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;data independent acquisition from dissociation of scanning quadrupole across mass range&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003228&#39;</span><span class="p">,</span>
+                <span class="p">(</span><span class="s1">&#39;Data independent mass spectrometer acquisition method &#39;</span>
+                 <span class="s1">&#39;wherein ???. An example of such an approach is Waters SONAR.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data file content&#39;</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;data-independent acquisition&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation of scanning quadrupole across a specified mass range&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method&#39;</span><span class="p">,</span> <span class="s1">&#39;mass spectrometry acquisition method aspect&#39;</span><span class="p">,</span> <span class="s1">&#39;data file content&#39;</span><span class="p">,</span> <span class="s1">&#39;acquisition parameter&#39;</span><span class="p">,</span> <span class="s1">&#39;spectrum generation information&#39;</span><span class="p">]),</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;enhanced multiply charged spectrum&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000789&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="s1">&#39;MS1 spectrum that is enriched in multiply-charged ions &#39;</span>
                  <span class="s1">&#39;compared to singly-charged ions.&#39;</span><span class="p">),</span>
@@ -843,7 +896,7 @@
 <span class="c1"># render_list(&#39;spectrum representation&#39;,</span>
 <span class="c1">#             &quot;spectrum_representation&quot;, term_cls_name=&quot;FileContent&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">spectrum_representation</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">FileContent</span><span class="p">(</span><span class="s1">&#39;centroid spectrum&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000127&#39;</span><span class="p">,</span>
                 <span class="p">(</span><span class="s1">&#39;Processing of profile data to produce spectra that contains &#39;</span>
@@ -1257,7 +1310,8 @@
             <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;raw&quot;</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">format_parameter_map</span><span class="p">[</span><span class="s1">&#39;waters&#39;</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Could not determine source file type from directory path </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="p">))</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Could not determine source file type from directory path </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="p">))</span>
                 <span class="k">return</span> <span class="n">id_fmt</span><span class="p">,</span> <span class="kc">None</span>
 
         <span class="n">parts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>

@@ -251,7 +251,7 @@
 <span class="c1"># from ms_deisotope.data_source.metadata.cv import render_list</span>
 <span class="c1"># render_list(&#39;dissociation method&#39;, term_cls_name=&quot;DissociationMethod&quot;, writer=cog.out)</span>
 <span class="c1"># ]]]</span>
-<span class="c1"># CV Version: 4.1.55</span>
+<span class="c1"># CV Version: 4.1.95</span>
 <span class="n">dissociation_methods</span> <span class="o">=</span> <span class="n">TermSet</span><span class="p">([</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000133&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="s1">&#39;The dissociation of an ion after collisional excitation. The &#39;</span>
@@ -294,11 +294,6 @@
                         <span class="s1">&#39;electron ion, which readily fragments.&#39;</span><span class="p">),</span>
                        <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
                        <span class="p">[</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;infrared multiphoton dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000262&#39;</span><span class="p">,</span>
-                       <span class="p">(</span><span class="s1">&#39;Multiphoton ionization where the reactant ion dissociates as &#39;</span>
-                        <span class="s1">&#39;a result of the absorption of multiple infrared photons.&#39;</span><span class="p">),</span>
-                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
-                       <span class="p">[</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;sustained off-resonance irradiation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000282&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="s1">&#39;A technique associated with Fourier transform ion cyclotron &#39;</span>
                         <span class="s1">&#39;resonance (FT-ICR) mass spectrometry to carry out &#39;</span>
@@ -328,7 +323,8 @@
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;electron transfer dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000598&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="s1">&#39;A process to fragment ions in a mass spectrometer by &#39;</span>
                         <span class="s1">&#39;inducing fragmentation of cations (e.g. peptides or &#39;</span>
-                        <span class="s1">&#39;proteins) by transferring electrons to them.&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;proteins) by transferring electrons from radical-anions.&quot; &#39;</span>
+                        <span class="s1">&#39;[DOI:10.1073/pnas.0402700101, PMID:15210983&#39;</span><span class="p">),</span>
                        <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
                        <span class="p">[</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;pulsed q dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000599&#39;</span><span class="p">,</span>
@@ -354,10 +350,16 @@
                         <span class="s1">&#39;[DOI:10.1007/s00216-003-2057-0&#39;</span><span class="p">),</span>
                        <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
                        <span class="p">[</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
-    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;Electron-Transfer/Higher-Energy Collision Dissociation (EThcD)&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002631&#39;</span><span class="p">,</span>
-                       <span class="p">(</span><span class="s1">&#39;A dissociation process combining electron-transfer and &#39;</span>
-                        <span class="s1">&#39;higher-energy collision dissociation (EThcD). It combines &#39;</span>
-                        <span class="s1">&#39;ETD (reaction time) followed by HCD (activation energy).&#39;</span><span class="p">),</span>
+    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;combined dissociation method&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003181&#39;</span><span class="p">,</span>
+                       <span class="p">(</span><span class="s1">&#39;Combination of two or more dissociation methods that are &#39;</span>
+                        <span class="s1">&#39;known by a special term.&#39;</span><span class="p">),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;negative electron transfer dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003247&#39;</span><span class="p">,</span>
+                       <span class="p">(</span><span class="s1">&#39;A process to fragment ions in a mass spectrometer by &#39;</span>
+                        <span class="s1">&#39;inducing fragmentation of anions (e.g. peptides or proteins) &#39;</span>
+                        <span class="s1">&#39;by transferring electrons to a radical-cation.&quot; &#39;</span>
+                        <span class="s1">&#39;[DOI:10.1016/j.jasms.2005.01.015&#39;</span><span class="p">),</span>
                        <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
                        <span class="p">[</span><span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000422&#39;</span><span class="p">,</span>
@@ -375,6 +377,28 @@
                         <span class="s1">&#39;excitation.&#39;</span><span class="p">),</span>
                        <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
                        <span class="p">[</span><span class="s1">&#39;collision-induced dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;infrared multiphoton dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1000262&#39;</span><span class="p">,</span>
+                       <span class="p">(</span><span class="s1">&#39;Multiphoton ionization where the reactant ion dissociates as &#39;</span>
+                        <span class="s1">&#39;a result of the absorption of multiple infrared photons.&#39;</span><span class="p">),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="s1">&#39;photodissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;ultraviolet photodissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003246&#39;</span><span class="p">,</span>
+                       <span class="p">(</span><span class="s1">&#39;Multiphoton ionization where the reactant ion dissociates as &#39;</span>
+                        <span class="s1">&#39;a result of the absorption of multiple UV photons.&#39;</span><span class="p">),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="s1">&#39;photodissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;electron-transfer/higher-energy collision dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002631&#39;</span><span class="p">,</span>
+                       <span class="p">(</span><span class="s1">&#39;Dissociation process combining electron-transfer &#39;</span>
+                        <span class="s1">&#39;dissociation and higher-energy collision dissociation. It &#39;</span>
+                        <span class="s1">&#39;combines ETD (reaction time) followed by HCD (activation &#39;</span>
+                        <span class="s1">&#39;energy).&#39;</span><span class="p">),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="s1">&#39;combined dissociation method&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
+    <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;electron-transfer/collision-induced dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1003182&#39;</span><span class="p">,</span>
+                       <span class="p">(</span><span class="s1">&#39;Dissociation process combining electron-transfer &#39;</span>
+                        <span class="s1">&#39;dissociation (ETD) and collision-induced dissociation (CID).&#39;</span><span class="p">),</span>
+                       <span class="s1">&#39;dissociation method&#39;</span><span class="p">,</span>
+                       <span class="p">[</span><span class="s1">&#39;combined dissociation method&#39;</span><span class="p">,</span> <span class="s1">&#39;dissociation method&#39;</span><span class="p">]),</span>
     <span class="n">DissociationMethod</span><span class="p">(</span><span class="s1">&#39;higher energy beam-type collision-induced dissociation&#39;</span><span class="p">,</span> <span class="s1">&#39;MS:1002481&#39;</span><span class="p">,</span>
                        <span class="p">(</span><span class="s1">&#39;A collision-induced dissociation process wherein the &#39;</span>
                         <span class="s1">&#39;projectile ion has the translational energy higher than &#39;</span>
