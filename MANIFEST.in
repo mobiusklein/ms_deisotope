@@ -1,9 +1,9 @@
-recursive-include ms_deisotope *.pyx
-recursive-include ms_deisotope *.pxd
-recursive-include ms_deisotope *.c
-recursive-include ms_deisotope *.h
-recursive-include ms_deisotope/data_source/_vendor *
+recursive-include src/ms_deisotope *.pyx
+recursive-include src/ms_deisotope *.pxd
+recursive-include src/ms_deisotope *.c
+recursive-include src/ms_deisotope *.h
+recursive-include src/ms_deisotope/data_source/_vendor *
 include README.rst
 include pyproject.toml
-recursive-exclude ms_deisotope *.pyd
-recursive-exclude ms_deisotope/test/test_data *
+recursive-exclude src/ms_deisotope *.pyd
+recursive-exclude src/ms_deisotope/test/test_data *

@@ -1,0 +1,74 @@
+name: debug-wheel-build
+
+on:
+  push:
+    branches:
+      - 'debug/**'
+
+jobs:
+  build-wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.9']
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel twine
+        pip install coverage pytest pytest-cov -U
+        pip install Cython --install-option="--no-cython-compile"
+        pip install --only-binary=numpy,scipy,matplotlib numpy scipy matplotlib -U
+        pip install -r test-requirements.txt
+        pip install -e .
+        python setup.py build sdist
+    - name: Install cibuildwheel
+      run: python -m pip install cibuildwheel
+    - name: Build wheels
+      run: python -m cibuildwheel --output-dir dist/
+      env:
+        CIBW_BUILD: "cp38* cp39* cp310*"
+        CIBW_SKIP: "*_i686 *win32 *musllinux* pp*"
+        CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
+        CIBW_TEST_REQUIRES: "pytest"
+        CIBW_BUILD_VERBOSITY: 5
+        CIBW_ARCHS: "auto"
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: |
+          dist/*.whl
+          dist/*.tar.gz
+          dist/*.zip
+        retention-days: 7
+
+  publish-wheels:
+    needs: [build-wheels]
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ['3.9']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+      - name: "Publish"
+        env:
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_USERNAME: __token__
+        run: |
+          ls -l dist/*
+          # twine upload dist/*.whl dist/*.tar.gz

@@ -2,7 +2,7 @@
 *.pyc
 *.pyd
 *.so
-ms_deisotope/_c/**/*.html
+src/ms_deisotope/_c/**/*.html
 .coverage
 .noseids
 /*sublime-*
@@ -21,3 +21,4 @@ test.py
 experiment/
 .coverage.*
 __pycache__
+*.pdb

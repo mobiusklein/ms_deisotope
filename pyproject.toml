@@ -6,4 +6,4 @@ requires = ["setuptools",
             "numpy==1.16.1; python_version <= '3.7' and python_version >= '3'",
             "numpy==1.13.3; python_version=='2.7'",
             "brain-isotopic-distribution >= 1.5.8",
-            "ms-peak-picker"]
+            "ms-peak-picker >= 0.1.36"]

@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.5', '3.6', '3.7', '3.8', '3.9']
+        python-version: ['3.8', '3.9', '3.10']
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -25,7 +25,7 @@ jobs:
         pip install Cython --install-option="--no-cython-compile"
         pip install --only-binary=numpy,scipy numpy scipy -U
         pip install -v -r test-requirements.txt
-        pip install -v -e .
+        pip install -v .
     - name: Test with pytest
       run: |
-        py.test -l -s -v  ms_deisotope --cov=ms_deisotope --cov-report=html --cov-report term
+        py.test -l -s -v ./tests --cov=ms_deisotope --cov-report=html --cov-report term

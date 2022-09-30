@@ -3,7 +3,7 @@ import traceback
 import os
 import platform
 
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension as _Extension, find_packages
 
 from distutils.command.build_ext import build_ext
 from distutils.errors import (CCompilerError, DistutilsExecError,
@@ -26,6 +26,8 @@ def has_option(name):
 include_diagnostics = has_option("include-diagnostics")
 force_cythonize = has_option("force-cythonize")
 no_openmp = has_option('no-openmp')
+debug_symbols = has_option("debug")
+
 
 with_openmp = not no_openmp
 
@@ -40,6 +42,19 @@ def configure_openmp(ext):
         ext.extra_compile_args.append("-fopenmp")
         ext.extra_link_args.append("-fopenmp")
 
+
+def Extension(*args, **kwargs):
+    ext = _Extension(*args, **kwargs)
+    if debug_symbols:
+        if os.name == 'nt':
+            ext.extra_compile_args.append("-Zi")
+            ext.extra_compile_args.append("-Ox")
+            ext.extra_link_args.append("-debug:full")
+        else:
+            ext.extra_compile_args.append("-g3")
+            ext.extra_compile_args.append("-O0")
+    # ext.extra_compile_args.append("/fsanitize=address")
+    return ext
 
 def OpenMPExtension(*args, **kwargs):
     ext = Extension(*args, **kwargs)
@@ -76,111 +91,126 @@ def make_extensions():
         if is_ci and include_diagnostics:
             cython_directives['linetrace'] = True
         extensions = cythonize([
-            Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.pyx"],
+            Extension(name='ms_deisotope._c.scoring', sources=["src/ms_deisotope/_c/scoring.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-            Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.pyx"],
+            Extension(name='ms_deisotope._c.averagine', sources=["src/ms_deisotope/_c/averagine.pyx"],
                       include_dirs=[brainpy.get_include()], define_macros=macros),
-            Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.pyx"],
+            Extension(name='ms_deisotope._c.deconvoluter_base', sources=["src/ms_deisotope/_c/deconvoluter_base.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
-            Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.pyx"],
+            Extension(name='ms_deisotope._c.peak_set', sources=["src/ms_deisotope/_c/peak_set.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
-                      "ms_deisotope/_c/feature_map/lcms_feature.pyx"],
+                      "src/ms_deisotope/_c/feature_map/lcms_feature.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()],
                       define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
-                      "ms_deisotope/_c/feature_map/feature_processor.pyx"],
+                      "src/ms_deisotope/_c/feature_map/feature_processor.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.feature_map', sources=[
-                      "ms_deisotope/_c/feature_map/feature_map.pyx"],
+                      "src/ms_deisotope/_c/feature_map/feature_map.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=[
-                      "ms_deisotope/_c/feature_map/feature_fit.pyx"],
+                      "src/ms_deisotope/_c/feature_map/feature_fit.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.shape_fitter', sources=[
-                      "ms_deisotope/_c/feature_map/shape_fitter.pyx"],
+                      "src/ms_deisotope/_c/feature_map/shape_fitter.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
-                      "ms_deisotope/_c/feature_map/profile_transform.pyx"],
+                      "src/ms_deisotope/_c/feature_map/profile_transform.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.dependence_network', sources=[
-                      "ms_deisotope/_c/feature_map/dependence_network.pyx"],
+                      "src/ms_deisotope/_c/feature_map/dependence_network.pyx"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()],
                       define_macros=macros),
-            Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.pyx"],
+            Extension(name='ms_deisotope._c.utils', sources=["src/ms_deisotope/_c/utils.pyx"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
             Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
-                      sources=['ms_deisotope/_c/peak_dependency_network/intervals.pyx'],
+                      sources=['src/ms_deisotope/_c/peak_dependency_network/intervals.pyx'],
                       include_dirs=[numpy.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.peak_dependency_network.subgraph',
-                      sources=['ms_deisotope/_c/peak_dependency_network/subgraph.pyx'],
+                      sources=['src/ms_deisotope/_c/peak_dependency_network/subgraph.pyx'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
-                      sources=['ms_deisotope/_c/peak_dependency_network/peak_network.pyx'],
+                      sources=['src/ms_deisotope/_c/peak_dependency_network/peak_network.pyx'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.spectrum_graph',
-                      sources=['ms_deisotope/_c/spectrum_graph.pyx'],
+                      sources=['src/ms_deisotope/_c/spectrum_graph.pyx'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.feature_graph',
+                      sources=['src/ms_deisotope/_c/feature_map/feature_graph.pyx'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             OpenMPExtension(
-                name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.pyx"],
+                name='ms_deisotope._c.similarity_methods', sources=["src/ms_deisotope/_c/similarity_methods.pyx"],
                 include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-        ], compiler_directives=cython_directives, force=force_cythonize)
+            Extension(
+                name='ms_deisotope._c.units', sources=["src/ms_deisotope/_c/units.pyx"],
+                include_dirs=[]),
+        ],
+        compiler_directives=cython_directives,
+        emit_linenums=True,
+        force=force_cythonize)
     except ImportError:
         extensions = ([
-            Extension(name='ms_deisotope._c.scoring', sources=["ms_deisotope/_c/scoring.c"],
+            Extension(name='ms_deisotope._c.scoring', sources=["src/ms_deisotope/_c/scoring.c"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
-            Extension(name='ms_deisotope._c.averagine', sources=["ms_deisotope/_c/averagine.c"],
+            Extension(name='ms_deisotope._c.averagine', sources=["src/ms_deisotope/_c/averagine.c"],
                       include_dirs=[brainpy.get_include()]),
-            Extension(name='ms_deisotope._c.deconvoluter_base', sources=["ms_deisotope/_c/deconvoluter_base.c"],
+            Extension(name='ms_deisotope._c.deconvoluter_base', sources=["src/ms_deisotope/_c/deconvoluter_base.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
-            Extension(name='ms_deisotope._c.peak_set', sources=["ms_deisotope/_c/peak_set.c"],
+            Extension(name='ms_deisotope._c.peak_set', sources=["src/ms_deisotope/_c/peak_set.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.lcms_feature', sources=[
-                      "ms_deisotope/_c/feature_map/lcms_feature.c"],
+                      "src/ms_deisotope/_c/feature_map/lcms_feature.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.feature_processor', sources=[
-                      "ms_deisotope/_c/feature_map/feature_processor.c"],
+                      "src/ms_deisotope/_c/feature_map/feature_processor.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.feature_map', sources=[
-                      "ms_deisotope/_c/feature_map/feature_map.c"],
+                      "src/ms_deisotope/_c/feature_map/feature_map.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.feature_fit', sources=[
-                      "ms_deisotope/_c/feature_map/feature_fit.c"],
+                      "src/ms_deisotope/_c/feature_map/feature_fit.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.shape_fitter', sources=[
-                      "ms_deisotope/_c/feature_map/shape_fitter.c"],
+                      "src/ms_deisotope/_c/feature_map/shape_fitter.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()],
                       define_macros=macros),
             Extension(name='ms_deisotope._c.feature_map.profile_transform', sources=[
-                      "ms_deisotope/_c/feature_map/profile_transform.c"],
+                      "src/ms_deisotope/_c/feature_map/profile_transform.c"],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include(), brainpy.get_include()]),
             Extension(name='ms_deisotope._c.feature_map.dependence_network', sources=[
-                      "ms_deisotope/_c/feature_map/dependence_network.c"],
+                      "src/ms_deisotope/_c/feature_map/dependence_network.c"],
                       include_dirs=[
                           numpy.get_include(), ms_peak_picker.get_include()],
                       define_macros=macros),
-            Extension(name='ms_deisotope._c.utils', sources=["ms_deisotope/_c/utils.c"],
+            Extension(name='ms_deisotope._c.utils', sources=["src/ms_deisotope/_c/utils.c"],
                       include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
             Extension(name='ms_deisotope._c.peak_dependency_network.intervals',
-                      sources=['ms_deisotope/_c/peak_dependency_network/intervals.c'],
+                      sources=['src/ms_deisotope/_c/peak_dependency_network/intervals.c'],
                       include_dirs=[numpy.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.peak_dependency_network.subgraph',
-                      sources=['ms_deisotope/_c/peak_dependency_network/subgraph.c'],
+                      sources=['src/ms_deisotope/_c/peak_dependency_network/subgraph.c'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.peak_dependency_network.peak_network',
-                      sources=['ms_deisotope/_c/peak_dependency_network/peak_network.c'],
+                      sources=['src/ms_deisotope/_c/peak_dependency_network/peak_network.c'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             Extension(name='ms_deisotope._c.spectrum_graph',
-                      sources=['ms_deisotope/_c/spectrum_graph.c'],
+                      sources=['src/ms_deisotope/_c/spectrum_graph.c'],
+                      include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
+            Extension(name='ms_deisotope._c.feature_map.feature_graph',
+                      sources=['src/ms_deisotope/_c/feature_map/feature_graph.c'],
                       include_dirs=[numpy.get_include(), ms_peak_picker.get_include()], define_macros=macros),
             OpenMPExtension(
-                name='ms_deisotope._c.similarity_methods', sources=["ms_deisotope/_c/similarity_methods.c"],
-                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()])
+                name='ms_deisotope._c.similarity_methods', sources=["src/ms_deisotope/_c/similarity_methods.c"],
+                include_dirs=[brainpy.get_include(), ms_peak_picker.get_include(), numpy.get_include()]),
+            Extension(
+                name='ms_deisotope._c.units', sources=["src/ms_deisotope/_c/units.c"],
+                include_dirs=[]),
         ])
     return extensions
 
@@ -242,12 +272,13 @@ install_requires = [
     "scipy",
     "six",
     "dill",
-    "ms_peak_picker",
+    "ms_peak_picker >= 0.1.38",
     "brain-isotopic-distribution >= 1.5.8",
     "pyteomics >= 4.5",
     "lxml",
-    "psims >= 0.1.35",
-    "python-idzip >=0.3.2"
+    "psims >= 0.1.44",
+    "python-idzip >=0.3.2",
+    "pyzstd",
 ]
 
 
@@ -275,7 +306,7 @@ extra_requires['all'] = [dep for feature_reqs in extra_requires.values() for dep
 
 
 def run_setup(include_cext=True):
-    with open("ms_deisotope/version.py") as version_file:
+    with open("src/ms_deisotope/version.py") as version_file:
         version = None
         for line in version_file.readlines():
             if "version = " in line:
@@ -295,7 +326,8 @@ def run_setup(include_cext=True):
     setup(
         name='ms_deisotope',
         version=version,
-        packages=find_packages(),
+        packages=find_packages(where='src'),
+        package_dir={"": "src"},
         author=', '.join(["Joshua Klein"]),
         author_email=','.join(["jaklein@bu.edu"]),
         description='Access, Deisotope, and Charge Deconvolute Mass Spectra',
@@ -318,6 +350,7 @@ def run_setup(include_cext=True):
         extras_require=extra_requires,
         include_package_data=True,
         zip_safe=False,
+        python_requires=">3.8",
         project_urls={
             'Documentation': 'https://mobiusklein.github.io/ms_deisotope',
             'Source Code': 'https://github.com/mobiusklein/ms_deisotope',
