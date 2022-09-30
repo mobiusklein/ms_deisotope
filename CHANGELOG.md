@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## [v0.0.43] - 2022-09-29
+
+### Added
 1. Add support for `os.PathLike` objects to `ms_deisotope.MSFileLoader`.
 
 ### Changed
@@ -481,8 +496,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.42...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.43...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.43]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.43
 [v0.0.42]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.42
 [v0.0.40]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.40
 [v0.0.39]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.39
