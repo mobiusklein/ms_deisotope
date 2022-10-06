@@ -411,10 +411,15 @@ class MzMLSerializer(ScanSerializerBase):
                 "name": "instrument serial number",
                 "value": instrument_serial
             })
+
+        conf_software = configuration.software
+        if conf_software is not None:
+            if isinstance(conf_software, Software):
+                conf_software = conf_software.id
         config_element = self.writer.InstrumentConfiguration(
             configuration.id, component_list,
             params=params,
-            software_reference=configuration.software.id if configuration.software else None)
+            software_reference=conf_software)
 
         self.instrument_configuration_list.append(config_element)
 
