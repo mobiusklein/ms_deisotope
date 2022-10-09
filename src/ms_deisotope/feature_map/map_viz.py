@@ -1,5 +1,6 @@
 from itertools import cycle
 from collections import defaultdict
+from typing import Optional
 
 try:
     from matplotlib import pyplot as plt
@@ -130,12 +131,34 @@ _nice_color_cycle = ([
 nice_color_cycle = cycle(_nice_color_cycle)
 
 
-def random_colorizer(profile, *args, **kwargs):
-    return mcolors.rgb2hex(np.random.rand(3))
+class Colorizer:
+
+    def __call__(self, profile, *args, **kwargs):
+        return 'blue'
 
 
-def nice_colorizer(profile, *args, **kwargs):
-    return next(nice_color_cycle)
+class RandomColorizer(Colorizer):
+    def __init__(self, seed: Optional[int]=42):
+        super().__init__()
+        self.rng = np.random.default_rng(seed)
+
+    def __call__(self, profile, *args, **kwargs):
+        return mcolors.rgb2hex(self.rng.random(3))
+
+
+class NiceColorizer(Colorizer):
+    def __init__(self, color_cycle=None):
+        if color_cycle is None:
+            color_cycle = _nice_color_cycle
+        super().__init__()
+        self.color_cycle = cycle(color_cycle)
+
+    def __call__(self, profile, *args, **kwargs):
+        return next(self.color_cycle)
+
+
+random_colorizer = RandomColorizer()
+nice_colorizer = NiceColorizer()
 
 
 def labeler(profile, *args, **kwargs):
@@ -155,10 +178,11 @@ def threshold_labeler(threshold):
 
 def draw_profiles(profiles, ax=None, smooth=False, interp=False, label_font_size=10,
                   axis_label_font_size=16, axis_font_size=16, label=True,
-                  colorizer=random_colorizer, label_function=labeler, legend=True):
+                  colorizer=None, label_function=labeler, legend=True):
     if ax is None:
         _fig, ax = plt.subplots(1)
-
+    if colorizer is None:
+        colorizer = RandomColorizer()
     if not profiles:
         return ax
     minimum_ident_time = float("inf")
@@ -260,7 +284,7 @@ def make_map(mzs, intensities):
         binner(mz_row) for mz_row in mzs
     ]
     unique_mzs = set()
-    map(unique_mzs.update, binned_mzs)
+    list(map(unique_mzs.update, binned_mzs))
     unique_mzs = np.array(sorted(unique_mzs))
     assigned_bins = []
     j = 0
