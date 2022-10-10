@@ -3,11 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [Unreleased]
+## [v0.0.44] - 2022-10-09
 
 ### Added
 
 ### Changed
+1. The minimum NumPy version on Python 3.10 was increased to 1.23.2
 
 ### Deprecated
 
