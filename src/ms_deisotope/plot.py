@@ -1,12 +1,14 @@
 '''A collection of tools for drawing and annotating mass spectra
 '''
 # pragma: no cover
+from typing import Optional, Dict, Any, Sequence, Tuple, NamedTuple, TYPE_CHECKING
 import math
 import itertools
 
 import numpy as np
 try:
     from matplotlib import pyplot as plt, gridspec
+    from matplotlib import patches as mpatch, transforms as mtransform, text as mtext, axes as maxes
     from ms_peak_picker.plot import draw_peaklist, draw_raw
     has_plot = True
 except ImportError as err:
@@ -15,6 +17,10 @@ except ImportError as err:
     pyplot = None
     gridspec = None
     has_plot = False
+
+if TYPE_CHECKING:
+    from matplotlib import path as mpath
+    from ms_deisotope.spectrum_graph import Path as PeakPath
 
 
 def _default_color_cycle():
@@ -540,3 +546,145 @@ def _draw_peak_pair(pair, edge_color='red', peak_color='orange', alpha=0.8, font
             label = str(label)
         ax.text(midx, midy, label, fontsize=fontsize,
                 ha='center', va='bottom', rotation=rotation, clip_on=clip_on)
+
+
+class BoundingBox(NamedTuple):
+    xmin: float
+    ymin: float
+    xmax: float
+    ymax: float
+
+
+def bbox_path(path: 'mpath.Path') -> BoundingBox:
+    nodes = path.vertices
+    xmin = nodes[:, 0].min()
+    xmax = nodes[:, 0].max()
+    ymin = nodes[:, 1].min()
+    ymax = nodes[:, 1].max()
+    return BoundingBox(xmin, ymin, xmax, ymax)
+
+
+def shift(path: 'mpath.Path', x: float = 0, y: float = 0) -> 'mpath.Path':
+    return path.transformed(mtransform.Affine2D().translate(x, y))
+
+
+def draw_peak_path(ax: 'maxes.Axes',
+                   peak_path: 'PeakPath',
+                   scan,
+                   peak_line_options: Optional[Dict[str, Any]] = None,
+                   seq_line_options: Optional[Dict[str, Any]] = None,
+                   text_prop: Optional['mtext.FontProperties'] = None,
+                   vertical_shift: float = 0.0):
+
+    if peak_line_options is None:
+        peak_line_options = {}
+    if seq_line_options is None:
+        seq_line_options = {}
+
+    peak_line_options.setdefault('linewidth', 1)
+    peak_line_options.setdefault('color', 'red')
+    seq_line_options.setdefault('linewidth', 2)
+    seq_line_options.setdefault('color', 'red')
+
+    # Compute the maximum height of peaks in the region to be annotated
+    # so that there is no overlap with existing peaks
+    upper = (
+        max(
+            [
+                p.intensity
+                for p in scan.deconvoluted_peak_set.between(
+                    peak_path[0].start.peak.mz, peak_path[-1].end.peak.mz, use_mz=True
+                )
+            ]
+        )
+        * 1.2
+    ) + vertical_shift
+
+    # Compute the x-axis dimension aspect
+    xlim = (min(p.mz for p in scan.deconvoluted_peak_set),
+            max(p.mz for p in scan.deconvoluted_peak_set))
+    # Compute the y-axis dimension aspect
+    ylim = (0, scan.base_peak.deconvoluted().intensity)
+
+    # Create an baseline scaling transformation for the text
+    base_trans = mtransform.Affine2D()
+    base_trans.scale((xlim[1] - xlim[0]) / 75, (ylim[1] - ylim[0]) / 25)
+
+    # Don't try to annotate a ladder that changes charge state that
+    # would involve back-tracking on the x-axis
+    start_charge = None
+    for i, edge in enumerate(peak_path):
+        if start_charge is None:
+            start_charge = edge.start.peak.charge
+
+        # We'll write the annotation glyph in the middle of the gap
+        mid = (edge.start.peak.mz + edge.end.peak.mz) / 2
+
+        # Create the glyph(s) for the peak pair annotation at unit-scale
+        # and then scale it up using the base transformation, then center it
+        # at 0 again.
+        tpath = mtext.TextPath((0, 0), edge.annotation, 1, prop=text_prop)
+        tpath = (tpath.transformed(base_trans))
+
+        if (
+            edge.start.peak.charge != start_charge
+            or edge.end.peak.charge != start_charge
+        ):
+            continue
+
+        # Move the annotation glyph(s) to the midpoint between the two peaks
+        # at the sequence line.
+        tpath = shift(tpath, mid, upper * 0.99)
+
+        # Check whether our annotation glyph(s) is too wide for the gap between
+        # the two peaks. If it is too large, draw it above the main line to avoid
+        # over-plotting.
+        xmin, ymin, xmax, ymax = bbox_path(tpath)
+        shift_up = (xmax - xmin) / \
+            (edge.end.peak.mz - edge.start.peak.mz) > 0.3
+        if shift_up:
+            tpath = shift(tpath, 0, ymax - ymin)
+
+        ax.add_patch(mpatch.PathPatch(tpath, color="black"))
+
+        # If this is the first peak pair, draw the starting point vertical
+        # peak line.
+        if i == 0:
+            ax.plot(
+                [edge.start.peak.mz, edge.start.peak.mz],
+                [upper, edge.start.peak.intensity + ylim[1] * 0.05],
+                **peak_line_options
+            )
+
+        # Draw the next vertical peak line
+        ax.plot(
+            [edge.end.peak.mz, edge.end.peak.mz],
+            [upper, edge.end.peak.intensity + ylim[1] * 0.05],
+            **peak_line_options
+        )
+
+        # Draw the horizontal line between the two peaks. If the annotation
+        # was shifted up, draw a single horizontal line connecting the two
+        # peaks.
+        if shift_up:
+            ax.plot(
+                [edge.start.peak.mz, edge.end.peak.mz],
+                [upper, upper],
+                **seq_line_options
+            )
+        else:
+            # Otherwise, draw a line from the starting peak to the annotation glyph
+            # with some padding.
+            ax.plot(
+                [edge.start.peak.mz, max(
+                    xmin - xlim[1] * 0.01, edge.start.peak.mz)],
+                [upper, upper],
+                **seq_line_options
+            )
+            # And then draw another line from the other side of the glyph with some
+            # padding to the second peak.
+            ax.plot(
+                [min(xmax + xlim[1] * 0.01, edge.end.peak.mz), edge.end.peak.mz],
+                [upper, upper],
+                **seq_line_options
+            )
