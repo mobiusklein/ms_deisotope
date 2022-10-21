@@ -4,6 +4,7 @@ try:
 except ImportError:
     pass
 
+from typing import Any
 from .infer_type import MSFileLoader
 from .mzml import MzMLLoader
 from .mzxml import MzXMLLoader
@@ -41,6 +42,9 @@ from .text import scan_from_csv
 from .memory import make_scan, ScanCollection, make_scan_collection
 
 
+ProcessedRandomAccessScanSource = RandomAccessScanSource[Any, ProcessedScan]
+
+
 __all__ = [
     "MSFileLoader", "MzMLLoader",
     "MzXMLLoader", "MGFLoader",
@@ -55,8 +59,16 @@ __all__ = [
     "ScanAcquisitionInformation", "ScanEventInformation",
     "IsolationWindow", "ScanWindow", "scan_attributes",
 
+    "FileInformation", "FileFormat", "file_formats",
+    "FileContent", "content_keys",
+    "IDFormat", "id_formats",
+
+    "Component", "ComponentGroup", "InstrumentInformation",
+    "components",
+
     "ScanDataSource", "ScanIterator", "ScanBunch",
     "ScanWindow", "RandomAccessScanSource", "ChargeNotProvided",
     "get_opener", "ScanProxyContext", 'scan_from_csv',
-    "make_scan", "ScanCollection", "make_scan_collection"
+    "make_scan", "ScanCollection", "make_scan_collection",
+    "ProcessedRandomAccessScanSource",
 ]

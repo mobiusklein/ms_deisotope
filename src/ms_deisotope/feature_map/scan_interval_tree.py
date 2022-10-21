@@ -1,26 +1,32 @@
+import io
 import json
 
 from collections import namedtuple, deque
+from typing import Iterator, List, Optional, Tuple, NamedTuple
 
+from ms_deisotope.data_source.scan import ScanBase
 from ms_deisotope.peak_dependency_network import Interval, IntervalTreeNode
 
 
-class BoundingBox(namedtuple("BoundingBox", ['mz', 'rt'])):
-    def merge(self, other):
+class BoundingBox(NamedTuple):
+    mz: Interval
+    rt: Interval
+
+    def merge(self, other: 'BoundingBox'):
         min_mz = min(self[0].start, other[0].start)
         max_mz = max(self[0].end, other[0].end)
         min_rt = min(self[1].start, other[1].start)
         max_rt = max(self[1].end, other[1].end)
         return self.__class__(Interval(min_mz, max_mz), Interval(min_rt, max_rt))
 
-    def overlaps(self, other):
+    def overlaps(self, other: 'BoundingBox'):
         return self.mz.overlaps(other.mz) and self.rt.overlaps(other.rt)
 
     def __add__(self, other):
         return self.merge(other)
 
 
-def extract_intervals(scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
+def extract_intervals(scan_iterator: Iterator[Tuple[ScanBase, List[ScanBase]]], time_radius: float=5., mz_lower: float=2., mz_higher: float=3.):
     intervals = []
     for scan, products in scan_iterator:
         for product in products:
@@ -34,7 +40,7 @@ def extract_intervals(scan_iterator, time_radius=5., mz_lower=2., mz_higher=3.):
     return intervals
 
 
-def nest_2d_intervals(intervals):
+def nest_2d_intervals(intervals: List[BoundingBox]) -> List[Interval]:
     out = []
     for interval in intervals:
         mz, rt = interval
@@ -43,13 +49,16 @@ def nest_2d_intervals(intervals):
     return out
 
 
-def make_rt_tree(intervals):
+def make_rt_tree(intervals: List[BoundingBox]) -> IntervalTreeNode:
     nested = nest_2d_intervals(intervals)
     tree = IntervalTreeNode.build(nested)
     return tree
 
 
 class ScanIntervalTree(object):
+    rt_tree: IntervalTreeNode
+    original_intervals: Optional[BoundingBox]
+
     @classmethod
     def build(cls, scan_iterator, time_radius=3., mz_lower=2., mz_higher=3.):
         intervals = extract_intervals(
@@ -61,7 +70,7 @@ class ScanIntervalTree(object):
         self.rt_tree = rt_tree
         self.original_intervals = original_intervals
 
-    def get_mz_intervals_for_rt(self, rt_point):
+    def get_mz_intervals_for_rt(self, rt_point: float) -> List[Interval]:
         if self.rt_tree is None:
             return [[0, float('inf')]]
         intervals = [
@@ -81,11 +90,11 @@ class ScanIntervalTree(object):
         out.append(last)
         return out
 
-    def __call__(self, scan):
+    def __call__(self, scan: ScanBase):
         intervals = self.get_mz_intervals_for_rt(scan.scan_time)
         return intervals
 
-    def serialize(self, handle):
+    def serialize(self, handle: io.TextIOBase):
         work_queue = deque()
         id_counter = 0
         node_id_map = {}
@@ -139,7 +148,7 @@ class ScanIntervalTree(object):
         json.dump(node_id_map[root_id], handle)
 
     @classmethod
-    def load(cls, handle):
+    def load(cls, handle: io.TextIOBase):
         data = json.load(handle)
 
         def load_contained(interval_list):
