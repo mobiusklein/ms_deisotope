@@ -191,6 +191,7 @@ class SpectrumDescription(Sequence):
         descriptors.append({
             "name": "total ion current",
             "value": sum(p.intensity for p in peak_list),
+            "unit_name": writer.DEFAULT_INTENSITY_UNIT
         })
         peaks_mz_order = sorted(peak_list, key=lambda x: x.mz)
         try:
@@ -238,6 +239,7 @@ class SpectrumDescription(Sequence):
         descriptors.append({
             "name": "total ion current",
             "value": arrays.intensity.sum(),
+            "unit_name": writer.DEFAULT_INTENSITY_UNIT
         })
         try:
             descriptors.append({
