@@ -401,6 +401,7 @@ def annotate_isotopic_peaks(
     scan: "ScanBase",
     ax: Optional["Axes"] = None,
     color_cycle: Optional[Iterable[str]] = None,
+    mz_range: Optional[Tuple[float, float]]=None,
     **kwargs
 ):
     """Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
@@ -432,17 +433,20 @@ def annotate_isotopic_peaks(
     ----------
     scan: ScanBase
         The scan to annotate
-    color_cycle: :class:`~.Iterable`
-        An iterable to draw isotopic cluster colors from
     ax: :class:`matplotlib._axes.Axes`
         An :class:`~.Axes` object to draw the plot on
+    color_cycle: :class:`~.Iterable`
+        An iterable to draw isotopic cluster colors from
+    mz_range: (float, float), optional
+        The m/z range to annotate peaks within. Defaults to
+        the full range if not specified.
 
     Returns
     -------
     :class:`matplotlib._axes.Axes`
     """
-    from .peak_set import DeconvolutedPeakSet
-
+    from .peak_set import DeconvolutedPeakSet, DeconvolutedPeak
+    from .peak_dependency_network.intervals import Interval
     if ax is None:
         _, ax = plt.subplots(1)
     if color_cycle is None:
@@ -453,7 +457,13 @@ def annotate_isotopic_peaks(
     else:
         peaks = getattr(scan, "deconvoluted_peak_set", [])
     peaks = sorted(peaks, key=lambda x: x.mz)
-    for peak in peaks:
+    if mz_range is None:
+        mz_range = (0, float('inf'))
+    mz_iv = Interval(*mz_range)
+    peaks: Iterable[DeconvolutedPeak]
+    for peak in sorted(peaks, key=lambda x: x.mz):
+        if not mz_iv.contains(peak.mz):
+            continue
         color = next(color_cycle)
         draw_peaklist(peak.envelope, ax=ax, color=color, alpha=0.75, **kwargs)
         ax.scatter(*zip(*peak.envelope), color=color, alpha=0.75)
