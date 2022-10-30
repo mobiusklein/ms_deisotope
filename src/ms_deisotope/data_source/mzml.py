@@ -56,10 +56,8 @@ class _MzMLParser(mzml.MzML):
         super(_MzMLParser, self).__init__(*args, **kwargs)
 
     def _handle_param(self, element, **kwargs):
-        try:
-            element.attrib["value"]
-        except KeyError:
-            element.attrib["value"] = ""
+        if "value" not in element.attrib:
+            element.attrib['value'] = ''
         return super(_MzMLParser, self)._handle_param(element, **kwargs)
 
     def _determine_array_dtype(self, info):
@@ -98,6 +96,7 @@ class _MzMLParser(mzml.MzML):
         else:
             super(_MzMLParser, self)._read_byte_offsets()
 
+
 def _find_arrays(data_dict, decode=False):
     arrays = dict()
     for key, value in data_dict.items():
@@ -111,6 +110,12 @@ def _find_arrays(data_dict, decode=False):
                 arrays[key] = value
     return arrays
 
+
+try:
+    from ms_deisotope._c.units import _handle_param_fill_missing_value
+    _MzMLParser._handle_param = _handle_param_fill_missing_value
+except ImportError:
+    pass
 
 class MzMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the

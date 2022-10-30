@@ -3,6 +3,10 @@ cimport cython
 
 from cpython.object cimport PyObject
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
+from cpython.list cimport PyList_Append
+
+
+from ms_deisotope._c.compat cimport PyStr_AsUTF8AndSize, PyStr_FromString
 
 
 cpdef reconstruct_unit_struct(cls, value, unit_info):
@@ -246,6 +250,111 @@ class cvstr(metaclass=CVPrimitiveWrapperMeta):
     wrapped = CVStr
 
 
+@cython.freelist(10)
+cdef class _XMLParam:
+    cdef:
+        public CVStr name
+        public object value
+        public str type
+
+    cpdef bint is_empty(self):
+        value = self.value
+        return value == "" or value is None
+
+    def __iter__(self):
+        yield self.name
+        yield self.value
+        yield self.type
+
+    def __init__(self, name, value, type):
+        self.name = name
+        self.value = value
+        self.type = type
+
+    @staticmethod
+    cdef _XMLParam _create(CVStr name, object value, str type):
+        cdef _XMLParam self = _XMLParam.__new__(_XMLParam)
+        self.name = name
+        self.value = value
+        self.type = type
+        return self
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.name}, {self.value}, {self.type})"
+
+
+cpdef str _local_name(element):
+    cdef:
+        Py_ssize_t i, n
+        char* cname
+        str tag, result
+
+    tag = element.tag
+    if tag and tag[0] == '{':
+        cname = PyStr_AsUTF8AndSize(tag, &n)
+        for i in range(n - 1, 0, -1):
+            if cname[i] == 125: # '}'
+                result = PyStr_FromString(&cname[i + 1])
+                return result
+        return tag
+    else:
+        return tag
+
+
+@cython.binding(True)
+def _handle_param(self, element, **kwargs):
+    """Unpacks cvParam and userParam tags into key-value pairs"""
+    cdef:
+        object value, attribs
+        str unit_info, unit_accession, accession, param_type
+
+    attribs = element.attrib
+    unit_info = None
+    unit_accesssion = None
+    if 'unitCvRef' in attribs or 'unitName' in attribs:
+        unit_accesssion = attribs.get('unitAccession')
+        unit_name = attribs.get('unitName', unit_accesssion)
+        unit_info = unit_name
+
+    accession = attribs.get('accession')
+    value = attribs.get('value', '')
+    param_type = attribs.get('type')
+
+    if param_type is not None:
+        if param_type == 'xsd:int':
+            value = UnitInt.create(value, unit_info)
+        elif param_type == 'xsd:float':
+            value = UnitFloat.create(value, unit_info)
+        elif param_type == 'xsd:string':
+            value = UnitStr.create(value, unit_info)
+        else:
+            try:
+                if value and value[0].isdigit():
+                    value = UnitFloat.create(value, unit_info)
+                else:
+                    value = UnitStr.create(value, unit_info)
+            except ValueError:
+                value = UnitStr.create(value, unit_info)
+    else:
+        try:
+            if value and value[0].isdigit():
+                value = UnitFloat.create(value, unit_info)
+            else:
+                value = UnitStr.create(value, unit_info)
+        except ValueError:
+            value = UnitStr.create(value, unit_info)
+
+    return _XMLParam._create(CVStr.create(attribs['name'], accession, unit_accesssion), value, _local_name(element))
+
+
+@cython.binding(True)
+def _handle_param_fill_missing_value(self, element, **kwargs):
+    attribs = element.attrib
+    if "value" not in attribs:
+        attribs['value'] = ''
+    return _handle_param(self, element)
+
+
 def patch_pyteomics():
     # Cannot patch here or else we can introduce issues
     # with pickling.
@@ -259,3 +368,5 @@ def patch_pyteomics():
     xml.unitfloat = unitfloat
     xml.unitstr = unitstr
     xml.cvstr = cvstr
+    xml.XML._handle_param = _handle_param
+    xml._local_name = _local_name
