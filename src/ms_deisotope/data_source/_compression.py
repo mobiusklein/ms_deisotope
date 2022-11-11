@@ -169,3 +169,10 @@ try:
     utils._default_compression_map['zlib compression'] = zlib.decompress
 except ImportError:
     pass
+
+try:
+    import pyzstd
+    from pyteomics.auxiliary import utils
+    utils._default_compression_map['zstd compression'] = pyzstd.decompress
+except ImportError:
+    pass

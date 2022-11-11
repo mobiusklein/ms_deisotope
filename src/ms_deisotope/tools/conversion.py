@@ -15,7 +15,7 @@ from ms_deisotope.data_source._buffer import PreBufferedStreamReader
 from ms_deisotope.data_source.metadata import activation as activation_module, data_transformation
 from ms_deisotope.output import MzMLSerializer, MGFSerializer
 
-from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook, progress
+from ms_deisotope.tools.utils import is_debug_mode, register_debug_hook, progress, type_cast
 
 
 try:
@@ -102,7 +102,7 @@ def mgf(source, output, compress=False, msn_filters=None):
 
 def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=None, msn_filters=None,
             default_activation=None, correct_precursor_mz=False, write_index=True, update_metadata=True,
-            writer_type=None, compression='zlib', close=True):
+            writer_type=None, compression='zlib', close=True, **kwargs):
     """Translate the spectra from `reader` into mzML format written to `outstream`.
 
     Wraps the process of iterating over `reader`, performing a set of simple data transformations if desired,
@@ -232,8 +232,10 @@ def to_mzml(reader, outstream, pick_peaks=False, reprofile=False, ms1_filters=No
 @click.option("--update-metadata/--no-update-metadata", default=True, help=(
     "Whether or not to add the conversion"
     " program's metadata to the mzML file."))
+@click.option('-X', '--option', 'options', type=(str, type_cast), multiple=True,
+              help="Pass an arbitrary key-value pair through to configure the writer")
 def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False, compress=False,
-         correct_precursor_mz=False, update_metadata=True):
+         correct_precursor_mz=False, update_metadata=True, options=None):
     """Convert `source` into mzML format written to `output`, applying a collection of optional data
     transformations along the way.
     """
@@ -254,6 +256,9 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
     else:
         stream = click.open_file(output, 'wb')
 
+    opt_map = {}
+    for name, value in options:
+        opt_map[name] = value
     try:
         is_a_tty = stream.isatty()
     except AttributeError: # Not all file-like objects have this method...
@@ -266,7 +271,7 @@ def mzml(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, r
     with stream:
         to_mzml(reader, stream, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
-                write_index=write_index, update_metadata=update_metadata, close=False)
+                write_index=write_index, update_metadata=update_metadata, close=False, **opt_map)
 
 
 try:
@@ -287,8 +292,10 @@ try:
     @click.option("-z", "--compression", type=click.Choice(
         ['gzip', 'blosc', 'blosc:lz4', 'blosc:lz4hc', 'blosc:zlib', 'blosc:zstd', 'zlib']), default=DEFAULT_COMPRESSOR,
         help="The compressor to use")
+    @click.option('-X', '--option', 'options', type=(str, type_cast), multiple=True,
+              help="Pass an arbitrary key-value pair through to configure the writer")
     def mzmlb(source, output, ms1_filters=None, msn_filters=None, pick_peaks=False, reprofile=False,
-              correct_precursor_mz=False, update_metadata=True, compression=DEFAULT_COMPRESSOR):
+              correct_precursor_mz=False, update_metadata=True, compression=DEFAULT_COMPRESSOR, options=None):
         """Convert `source` into mzML format written to `output`, applying a collection of optional data
         transformations along the way.
         """
@@ -316,11 +323,14 @@ try:
             base += '.mzMLb'
             output = base
 
+        opt_map = {}
+        for name, value in options:
+            opt_map[name] = value
         write_index = False
         to_mzml(reader, output, pick_peaks=pick_peaks, reprofile=reprofile, ms1_filters=ms1_filters,
                 msn_filters=msn_filters, correct_precursor_mz=correct_precursor_mz,
                 write_index=write_index, update_metadata=update_metadata,
-                writer_type=MzMLbSerializer, compression=compression)
+                writer_type=MzMLbSerializer, compression=compression, **opt_map)
 except ImportError:
     pass
 

@@ -1,4 +1,6 @@
+import ast
 import itertools
+import json
 import multiprocessing
 import os
 import re
@@ -244,3 +246,13 @@ def progress_iter(*args, **kwargs):
     prog = progress(*args, **kwargs)
     with prog:
         yield from prog
+
+
+def type_cast(value):
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        try:
+            return ast.literal_eval(value)
+        except (TypeError, ValueError):
+            return str(value)
