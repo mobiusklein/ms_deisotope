@@ -3,10 +3,7 @@ import threading
 
 import logging
 
-try:
-    from Queue import Queue, Empty as QueueEmptyException
-except ImportError:
-    from queue import Queue, Empty as QueueEmptyException
+from queue import Queue, Empty as QueueEmptyException
 
 from ms_deisotope.data_source import MSFileLoader, ScanBunch
 from ms_deisotope.data_source.metadata.file_information import (
