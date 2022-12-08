@@ -14,6 +14,7 @@ from ms_deisotope.data_source import Scan, RandomAccessScanSource, ScanIterator
 
 
 import ms_deisotope
+from ms_deisotope.data_source.scan.scan import ProcessedScan
 
 from ms_deisotope.processor import (
     ScanProcessor, MSFileLoader,
@@ -69,6 +70,12 @@ class ScanTransmissionMixin(object):
         # into the message sent back to the main process which in
         # turn can form a reference cycle and eat a lot of memory
         scan.product_scans = []
+        if isinstance(scan, ProcessedScan):
+            if scan.deconvoluted_peak_set is not None:
+                scan.peak_set = None
+                for peak in scan.deconvoluted_peak_set:
+                    if peak.fit is not None:
+                        peak.fit = None
         self.output_queue.put(
             (CompressedPickleMessage(scan), scan.index, scan.ms_level))
 
@@ -179,6 +186,7 @@ class ScanIDYieldingProcess(Process, ScanTransmissionMixin):
         return self.loader
 
     def run(self):
+        self.try_set_process_name("ms-deisotope-sched")
         self._open_ms_file()
         self._initialize_iterator()
 
@@ -533,6 +541,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
         return ScanBunchLoader(loader)
 
     def run(self):
+        self.try_set_process_name("ms-deisotope-deconv")
         self._silence_loggers()
         loader = self._open_ms_file()
         queued_loader = self._make_batch_loader(loader)
