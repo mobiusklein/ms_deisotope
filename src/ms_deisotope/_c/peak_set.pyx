@@ -1717,7 +1717,8 @@ cdef class _CPeakSet:
         cdef:
             deconvoluted_peak_set_t result
 
-        return result = deconvoluted_peak_set_all_peaks_for(self.ptr, neutral_mass, error_tolerance)
+        result = deconvoluted_peak_set_all_peaks_for(self.ptr, neutral_mass, error_tolerance)
+        return result
 
     cpdef tuple all_peaks_for(self, double neutral_mass, double error_tolerance=2e-5):
         cdef:
