@@ -2,7 +2,7 @@
 import os
 import io
 
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Iterator, List, Optional, Tuple, Union, Hashable, Deque
 import warnings
 
 import numpy as np
@@ -250,8 +250,21 @@ class LCMSMSQueryInterfaceMixin(object):
             out.append(pinfo)
         return out
 
-    def ms1_peaks_above(self, mass_threshold: float = 500, intensity_threshold: float = 1000.) -> List[Tuple[str, DeconvolutedPeak, int]]:
-        accumulate = []
+    def ms1_peaks_above(self, mass_threshold: float = 500, intensity_threshold: float = 1000.) -> Deque[Tuple[str, DeconvolutedPeak, Hashable]]:
+        '''Loop over the MS1 index, reading out peaks from the processed peak set whose
+        mass exceeds ``mass_threshold`` and whose intensity exceeds ``intensity_threshold``.
+
+        .. note::
+            The final element of returned tuples is not guaranteed to be an integer, but only
+            some hashable type.
+
+        Returns
+        -------
+        peak_records : Deque[Tuple[:class:`str`, :class:`~.DeconvolutedPeak`, :class:`Hashable`]]
+            A list of peaks associated with the MS1 scan ID they came from and an
+            arbitrary hashable value to identify the pair.
+        '''
+        accumulate = Deque()
         for ms1_id in self.extended_index.ms1_ids:
             scan = self.get_scan_by_id(ms1_id)
             for peak in scan.deconvoluted_peak_set:
