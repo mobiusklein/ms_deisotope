@@ -127,3 +127,45 @@ cdef struct index_list:
     double low
     double high
 
+
+cdef struct deconvoluted_peak_t:
+    double neutral_mass
+    double intensity
+    int charge
+    unsigned int index
+
+
+cdef enum CPeaksFlags:
+    borrowing = 0
+    owns_peaks = 1
+    owns_index = 2
+    owns_peaks_and_index = 3
+
+cdef struct deconvoluted_peak_set_t:
+    deconvoluted_peak_t* peaks
+    double* mass_index
+    size_t size
+    CPeaksFlags flags
+
+
+cdef int create_deconvoluted_peak_set_t(DeconvolutedPeakSetIndexed peak_set, deconvoluted_peak_set_t* destination) except 1
+cdef int free_deconvoluted_peak_set_t(deconvoluted_peak_set_t* destination) nogil
+
+cdef deconvoluted_peak_set_t deconvoluted_peak_set_all_peaks_for(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=*) nogil
+cdef deconvoluted_peak_t* deconvoluted_peak_set_has_peak(deconvoluted_peak_set_t* self, double neutral_mass, double error_tolerance=*) nogil
+
+cdef int deconvoluted_peak_eq(deconvoluted_peak_t* self, deconvoluted_peak_t* other) nogil
+cdef size_t deconvoluted_peak_hash(deconvoluted_peak_t* self) nogil
+
+
+cdef class _CPeakSet:
+    cdef:
+        deconvoluted_peak_set_t* ptr
+
+    cdef deconvoluted_peak_t* getitem(self, size_t i) nogil
+
+    cdef deconvoluted_peak_t* _has_peak(self, double neutral_mass, double error_tolerance=*) nogil
+    cdef deconvoluted_peak_set_t _all_peaks_for(self, double neutral_mass, double error_tolerance=*) nogil
+
+    cpdef object has_peak(self, double neutral_mass, double error_tolerance=*)
+    cpdef tuple all_peaks_for(self, double neutral_mass, double error_tolerance=*)
