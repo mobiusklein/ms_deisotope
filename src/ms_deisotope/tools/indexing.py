@@ -286,7 +286,7 @@ def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3.,
                 interval_set.extend(chunk)
                 yield 0
     work_iterator = _run()
-    with progress(work_iterator, length=total_work_items, label='Extracting Intervals') as g:
+    with progress(work_iterator, length=total_work_items, label='Extracting Intervals', color=True, fill_char=click.style('-', 'green')) as g:
         for _ in g:
             pass
     tree = scan_interval_tree.ScanIntervalTree(scan_interval_tree.make_rt_tree(interval_set))
@@ -559,7 +559,8 @@ def ms1_spectrum_diagnostics(path, output_path=None):
     products = None
     last_ms1 = None
     prog = progress(length=len(reader), label='Processing Scans',
-                    file=sys.stderr, item_show_func=lambda x: x.id if x else '')
+                    file=sys.stderr, item_show_func=lambda x: x.id if x else '',
+                    color=True, fill_char=click.style('-', 'green'))
     with prog:
         for precursor, products in reader:
             ms1_time = precursor.scan_time

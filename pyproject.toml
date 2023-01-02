@@ -8,3 +8,12 @@ requires = ["setuptools",
             "numpy==1.13.3; python_version=='2.7'",
             "brain-isotopic-distribution >= 1.5.8",
             "ms-peak-picker >= 0.1.36"]
+
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+extend-select = ["D"]
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
