@@ -44,13 +44,13 @@ def debug_printer(message):
 
 
 def simple_repr(self):  # pragma: no cover
-    '''A convenient function for automatically generating a ``__repr__``-like
+    """A convenient function for automatically generating a ``__repr__``-like
     string for arbitrary objects.
 
     Returns
     -------
     str
-    '''
+    """
     template = "{self.__class__.__name__}({d})"
 
     def formatvalue(v):
@@ -74,9 +74,9 @@ def simple_repr(self):  # pragma: no cover
 
 
 class Base(object):
-    '''A convenience base class for non-critical code to provide types
+    """A convenience base class for non-critical code to provide types
     with automatic :meth:`__repr__` methods using :func:`simple_repr`
-    '''
+    """
     __slots__ = ()
     __repr__ = simple_repr
 
@@ -273,7 +273,7 @@ def dict_proxy(attribute):
 
 
 def uid(n=128):
-    '''Generate a random "universally unique" ID number with ``n``
+    """Generate a random "universally unique" ID number with ``n``
     bits of entropy.
 
     Parameters
@@ -284,7 +284,7 @@ def uid(n=128):
     Returns
     -------
     int
-    '''
+    """
     int_ = random.getrandbits(n)
     return int_
 
@@ -352,8 +352,8 @@ def decimal_shift(x):
 
 
 class _MappingOverAttributeProxy(object):
-    '''A replacement for __dict__ for unpickling an object which once
-    has __slots__ now but did not before.'''
+    """A replacement for __dict__ for unpickling an object which once
+    has __slots__ now but did not before."""
 
     def __init__(self, obj):
         self.obj = obj

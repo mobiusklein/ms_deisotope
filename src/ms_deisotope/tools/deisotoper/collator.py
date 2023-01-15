@@ -96,14 +96,14 @@ class ScanCollator(TaskBase, Generic[T]):
         self.input_queue = input_queue
 
     def all_workers_done(self) -> bool:
-        '''
+        """
         Check if all of the worker processes have set their "work done"
         flag.
 
         Returns
         -------
         bool
-        '''
+        """
         if self.done_event.is_set():
             if self.primary_worker.all_work_done():
                 for helper in self.helper_producers:

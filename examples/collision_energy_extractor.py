@@ -8,9 +8,9 @@ import ms_deisotope
 @click.argument("infile", type=click.Path(readable=True))
 @click.argument("outfile", type=click.Path(writable=True))
 def main(infile, outfile):
-    '''Read the real HCD collision energy from a Thermo RAW file for each
+    """Read the real HCD collision energy from a Thermo RAW file for each
     scan.
-    '''
+    """
     reader = ms_deisotope.MSFileLoader(infile)
     columns = ['scan_id', 'ms_level', 'charge', 'precursor_mz', 'activation_name',
                'energy', 'Thermo_Trailer_Extra_HCD_Energy_eV',

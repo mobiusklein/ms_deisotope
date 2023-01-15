@@ -1,7 +1,7 @@
-'''Represent controlled vocabulary (CV) terms and provides the machinery used
+"""Represent controlled vocabulary (CV) terms and provides the machinery used
 for building compile-time collections of CV terms from the PSI-MS controlled
 vocabulary.
-'''
+"""
 import sys
 import textwrap
 
@@ -9,7 +9,7 @@ from six import string_types as basestring
 
 
 class Term(object):
-    '''Represents a single controlled vocabulary term.
+    """Represents a single controlled vocabulary term.
 
     :class:`Term` objects are comparable and hashable.
 
@@ -26,7 +26,7 @@ class Term(object):
     specialization: list
         A sequence of increasingly specific categories that this term
         belongs to
-    '''
+    """
     __slots__ = ("name", "id", "description", "category", "specialization")
 
     def __init__(self, name, id, description, category, specialization):
@@ -143,13 +143,13 @@ class TermSet(object):
         return term in self.terms or term in self.by_id or term in self.by_name
 
     def keys(self):
-        '''Returns the list of keys that this collection recognizes, over
+        """Returns the list of keys that this collection recognizes, over
         all of its wrapped mappings.
-        '''
+        """
         return set(self.by_id.keys()) | set(self.by_name.keys())
 
     def get(self, key, default=None):
-        '''Return the value of ``key`` or ``default`` if it is not
+        """Return the value of ``key`` or ``default`` if it is not
         found
 
         Parameters
@@ -162,7 +162,7 @@ class TermSet(object):
         Returns
         -------
         object
-        '''
+        """
         try:
             return self[key]
         except (KeyError, IndexError):
@@ -194,9 +194,9 @@ def _unique_list(items):  # pragma: no cover
 
 
 class MappingProxy(object):
-    '''An object that proxies :meth:`__getitem__` to another object
+    """An object that proxies :meth:`__getitem__` to another object
     which is loaded lazily through a callable :attr:`loader`
-    '''
+    """
     def __init__(self, loader):
         assert callable(loader)
         self.loader = loader
@@ -236,7 +236,7 @@ def _clean_definition(text):
 
 
 def type_path(term, seed):  # pragma: no cover
-    '''Traverse is-a relationships from more specialized to
+    """Traverse is-a relationships from more specialized to
     less specialized until the root term type has been found,
     accumulating types along the way.
 
@@ -250,7 +250,7 @@ def type_path(term, seed):  # pragma: no cover
     Returns
     -------
     list
-    '''
+    """
     path = []
     i = 0
     steps = []
@@ -279,9 +279,9 @@ def type_path(term, seed):  # pragma: no cover
 
 
 def render_list(seed, list_name=None, term_cls_name="Term", writer=None):  # pragma: no cover
-    '''A code generator for rendering static lists of :class:`Term`-like objects
+    """A code generator for rendering static lists of :class:`Term`-like objects
     from PSI-MS.
-    '''
+    """
     if writer is None:
         writer = sys.stdout.write
     component_type_list = [seed]

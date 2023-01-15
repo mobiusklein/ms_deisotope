@@ -399,7 +399,7 @@ class DeconvolutedPeakSet(Base):
 
 
 def merge(peaks_a, *peaks_b, **kwargs):
-    '''Combine two :class:`DeconvolutedPeakSet` objects.
+    """Combine two :class:`DeconvolutedPeakSet` objects.
 
     Parameters
     ----------
@@ -413,7 +413,7 @@ def merge(peaks_a, *peaks_b, **kwargs):
     Returns
     -------
     :class:`DeconvolutedPeakSet`
-    '''
+    """
     copy = kwargs.get("copy", True)
     tp = peaks_a.__class__
     if copy:

@@ -73,8 +73,8 @@ class ThreadsafeScanSource(object):
         return Scan(data, self).bind(self)
 
     def _patch(self, reader):
-        '''Replace the _make_scan method of `reader`
-        '''
+        """Replace the _make_scan method of `reader`
+        """
         reader._make_scan = self._make_scan
         return reader
 

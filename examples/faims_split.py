@@ -10,10 +10,10 @@ from ms_deisotope.data_source import query
 @click.argument("source_file", type=click.Path(exists=True, readable=True))
 @click.argument("output_prefix")
 def main(source_file, output_prefix):
-    '''Read in `source_file` and split it based upon FAIMS compensation voltage into separate
+    """Read in `source_file` and split it based upon FAIMS compensation voltage into separate
     mzML files whose path prefix matches `output_prefix` and ends with the compensation voltage
     dedicated to that stream.
-    '''
+    """
     reader = ms_deisotope.MSFileLoader(source_file)
 
     sinks = {}

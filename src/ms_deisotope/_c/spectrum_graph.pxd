@@ -65,7 +65,7 @@ cdef class SpectrumGraph(object):
 
 
 cdef class MassWrapper(object):
-    '''An adapter class to make types whose mass calculation is a method
+    """An adapter class to make types whose mass calculation is a method
     (:mod:`glypy` dynamic graph components) compatible with code where the
     mass calculation is an  attribute (:mod:`glycopeptidepy` objects and
     most things here)
@@ -78,7 +78,7 @@ cdef class MassWrapper(object):
         The wrapped object
     mass: float
         The mass of :attr:`obj`
-    '''
+    """
     cdef:
         public object obj
         public double mass

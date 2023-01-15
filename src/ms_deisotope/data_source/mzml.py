@@ -1,9 +1,9 @@
-'''mzML is a standard rich XML-format for raw mass spectrometry data storage.
+"""mzML is a standard rich XML-format for raw mass spectrometry data storage.
 This module provides :class:`MzMLLoader`, a :class:`~.RandomAccessScanSource`
 implementation.
 
 The parser is based on :mod:`pyteomics.mzml`.
-'''
+"""
 import io
 from typing import Any, Dict, List, Tuple
 import warnings
@@ -693,8 +693,8 @@ def checksum_mzml_stream(stream: io.IOBase) -> Tuple[bytes, bytes]:
 
 
 def read_file_checksum(stream: io.IOBase) -> bytes:
-    '''Read the stored file checksum of an indexedmzML file.
-    '''
+    """Read the stored file checksum of an indexedmzML file.
+    """
     stream.seek(-5000, 2)
     chunk = stream.read(5001)
     target = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
@@ -744,7 +744,7 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
 
     @property
     def decode_binary(self) -> bool:
-        '''Whether or not to eagerly decode binary data arrays'''
+        """Whether or not to eagerly decode binary data arrays"""
         return self._decode_binary
 
     @decode_binary.setter

@@ -133,9 +133,9 @@ class SampleRun(Base):
 
 
 class LCMSMSQueryInterfaceMixin(object):
-    '''A mixin class for querying an extended data index on a processed
+    """A mixin class for querying an extended data index on a processed
     data file.
-    '''
+    """
 
     def require_extended_index(self) -> Optional[ExtendedScanIndex]:
         if not self.has_extended_index():
@@ -251,7 +251,7 @@ class LCMSMSQueryInterfaceMixin(object):
         return out
 
     def ms1_peaks_above(self, mass_threshold: float = 500, intensity_threshold: float = 1000.) -> Deque[Tuple[str, DeconvolutedPeak, Hashable]]:
-        '''Loop over the MS1 index, reading out peaks from the processed peak set whose
+        """Loop over the MS1 index, reading out peaks from the processed peak set whose
         mass exceeds ``mass_threshold`` and whose intensity exceeds ``intensity_threshold``.
 
         .. note::
@@ -263,7 +263,7 @@ class LCMSMSQueryInterfaceMixin(object):
         peak_records : Deque[Tuple[:class:`str`, :class:`~.DeconvolutedPeak`, :class:`Hashable`]]
             A list of peaks associated with the MS1 scan ID they came from and an
             arbitrary hashable value to identify the pair.
-        '''
+        """
         accumulate = Deque()
         for ms1_id in self.extended_index.ms1_ids:
             scan = self.get_scan_by_id(ms1_id)

@@ -62,7 +62,7 @@ for tp in [MzMLSerializer, MzMLbSerializer, MGFSerializer]:
 
 
 def get_writer(filename, **kwargs):
-    '''Open a writer for a provided filename, inferring the format from
+    """Open a writer for a provided filename, inferring the format from
     the file extension.
 
     .. warning::
@@ -80,7 +80,7 @@ def get_writer(filename, **kwargs):
     Returns
     -------
     MzMLSerializer or MGFSerializer or MzMLbSerializer
-    '''
+    """
     if hasattr(filename, 'name'):
         handle = filename
         name = handle.name

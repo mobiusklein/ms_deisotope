@@ -16,7 +16,7 @@ class IsolationWindowDemultiplexerBase(Generic[FeatureForestType]):
     forest_for_isolation_window: Dict[IsolationWindow, FeatureForestType]
 
     def forest_for(self, isolation_window: IsolationWindow) -> FeatureForestType:
-        '''Get the :class:`~.DeconvolutedLCMSFeatureForest` for a specific isolation window,
+        """Get the :class:`~.DeconvolutedLCMSFeatureForest` for a specific isolation window,
         or if one does not exist, create it.
 
         Parameters
@@ -27,7 +27,7 @@ class IsolationWindowDemultiplexerBase(Generic[FeatureForestType]):
         Returns
         -------
         :class:`~.DeconvolutedLCMSFeatureForest`
-        '''
+        """
         if isolation_window is None:
             raise ValueError("An isolation window None!")
         try:
@@ -38,7 +38,7 @@ class IsolationWindowDemultiplexerBase(Generic[FeatureForestType]):
         return forest
 
     def all_forests_overlapping_window(self, isolation_window: IsolationWindow) -> List[FeatureForestType]:
-        '''Get all :class:`~.DeconvolutedLCMSFeatureForest` that are from isolation windows
+        """Get all :class:`~.DeconvolutedLCMSFeatureForest` that are from isolation windows
         which overlap with `isolation_window`.
 
         The result list is ordered by isolation window lower bound.
@@ -52,7 +52,7 @@ class IsolationWindowDemultiplexerBase(Generic[FeatureForestType]):
         -------
         list of (:class:`~.IsolationWindow`, :class:`~.DeconvolutedLCMSFeatureForest`) pairs.
             All feature
-        '''
+        """
         forests = []
         lb = isolation_window.lower_bound
         ub = isolation_window.upper_bound
@@ -65,7 +65,7 @@ class IsolationWindowDemultiplexerBase(Generic[FeatureForestType]):
 
 
 class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(IsolationWindowDemultiplexerBase[DeconvolutedLCMSFeatureForest]):
-    '''Aggregate MS2 features per isolation window over the course of a
+    """Aggregate MS2 features per isolation window over the course of a
     deconvoluted LC-MS/MS run.
 
     Attributes
@@ -81,7 +81,7 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(Isola
     delta_rt : float
         The maximum gap size to tolerate in the time dimension
 
-    '''
+    """
     forest_type = DeconvolutedLCMSFeatureForest
 
     minimum_mass: float
@@ -97,13 +97,13 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(Isola
         self.forest_for_isolation_window = dict()
 
     def handle_scan(self, scan):
-        '''Add `scan`'s peaks to the appropriate feature forest by its isolation window.
+        """Add `scan`'s peaks to the appropriate feature forest by its isolation window.
 
         Parameters
         ----------
         scan : :class:`~.ScanBase`
             The deconvoluted scan to process
-        '''
+        """
         isolation_window = scan.isolation_window
         forest = self.forest_for(isolation_window)
         time = scan.scan_time
@@ -112,17 +112,17 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(Isola
                 forest.handle_peak(peak, time)
 
     def complete(self):
-        '''Apply any last post-processing to the feature forests, smoothing
+        """Apply any last post-processing to the feature forests, smoothing
         overlapping features and breaking gaps.
-        '''
+        """
         for key, forest in self.forest_for_isolation_window.items():
             forest.smooth_overlaps()
             forest.split_sparse(self.delta_rt)
 
     def aggregate_peaks(self):
-        '''Run the aggregation process to completion, and post-process the results,
+        """Run the aggregation process to completion, and post-process the results,
         producing a fully-fledged set of :class:`~.DeconvolutedLCMSFeatureForest`
-        '''
+        """
         self.reader.reset()
         self.reader.make_iterator(grouped=False)
         n = len(self.reader)
@@ -136,7 +136,7 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(Isola
 
     @classmethod
     def demultiplex(cls, reader, minimum_mass=80.0, minimum_intensity=10.0, error_tolerance=1e-5, delta_rt=1.0):
-        '''Aggregate MS2 features per isolation window over the course of a deconvoluted LC-MS/MS run.
+        """Aggregate MS2 features per isolation window over the course of a deconvoluted LC-MS/MS run.
 
         Parameters
         ----------
@@ -154,7 +154,7 @@ class IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection(Isola
         Returns
         -------
         IsolationWindowDemultiplexingDeconvolutedLCMSFeatureForestCollection
-        '''
+        """
         task = cls(reader, minimum_mass, minimum_intensity,
                    error_tolerance, delta_rt)
         task.aggregate_peaks()
@@ -202,9 +202,9 @@ class DemultiplexingIonMobilityProfileDeconvolutedLCMSFeatureForestCollection(Is
                 forest.handle_peak(peak, time)
 
     def complete(self):
-        '''Apply any last post-processing to the feature forests, smoothing
+        """Apply any last post-processing to the feature forests, smoothing
         overlapping features and breaking gaps.
-        '''
+        """
         self.precursor_forest.smooth_overlaps().split_sparse(self.delta_rt)
         for _key, forest in self.forest_for_isolation_window.items():
             forest.smooth_overlaps()

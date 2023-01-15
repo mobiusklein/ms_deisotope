@@ -1,6 +1,6 @@
-''' Waters
+""" Waters
     MassLynx Python Chromatogram reader SDK
-'''
+"""
 import copy
 
 import ctypes

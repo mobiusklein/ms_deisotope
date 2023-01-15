@@ -1,6 +1,6 @@
-'''A simple data holder describing a sample which was used to generate
+"""A simple data holder describing a sample which was used to generate
 a mass spectrometry dataset.
-'''
+"""
 from ms_deisotope.utils import Base, dict_proxy
 
 

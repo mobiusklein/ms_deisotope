@@ -6,7 +6,7 @@ Neighbor = namedtuple("Neighbor", ('score', 'shift', 'scan_id', 'weight'))
 
 
 class SpectrumAlignmentGraph(object):
-    '''A graph of spectra that can find similar pairs of shifted spectra from
+    """A graph of spectra that can find similar pairs of shifted spectra from
     the population, constructing a support network for each spectrum.
 
     Attributes
@@ -22,7 +22,7 @@ class SpectrumAlignmentGraph(object):
         precursor mass delta is assumed to be the same and is skipped.
     match_charge : bool
         Whether or not to require charge states to match to construct an edge.
-    '''
+    """
 
     def __init__(self, scans, threshold=0.5, error_tolerance=2e-5, min_delta=0.01, match_charge=True):
         self.scans = list(scans)

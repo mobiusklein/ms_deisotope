@@ -438,7 +438,7 @@ cdef class SpectrumGraph(object):
 @cython.final
 @cython.freelist(1000)
 cdef class MassWrapper(object):
-    '''An adapter class to make types whose mass calculation is a method
+    """An adapter class to make types whose mass calculation is a method
     (:mod:`glypy` dynamic graph components) compatible with code where the
     mass calculation is an  attribute (:mod:`glycopeptidepy` objects and
     most things here)
@@ -451,7 +451,7 @@ cdef class MassWrapper(object):
         The wrapped object
     mass: float
         The mass of :attr:`obj`
-    '''
+    """
 
     @classmethod
     def wrap(cls, components, combinations=1):
@@ -757,7 +757,7 @@ cdef class PathFinder(object):
         return paths
 
     def collect_paths(self, paths):
-        '''Group together paths which share the same annotation sequence and approximate
+        """Group together paths which share the same annotation sequence and approximate
         start and end masses.
 
         Parameters
@@ -768,7 +768,7 @@ cdef class PathFinder(object):
         Returns
         -------
         :class:`list` of :class:`list` of :class:`Path` objects
-        '''
+        """
         groups = defaultdict(list)
         if not paths:
             return []

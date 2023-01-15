@@ -1,10 +1,10 @@
-'''A collection of base classes for "exhaustive" search strategies.
+"""A collection of base classes for "exhaustive" search strategies.
 These strategies attempt to assign *every* peak, but they are not meant
 to be used on their own.
 
 For complete implementations see :class:`~.AveragineDeconvoluter` and
 :class:`~.AveraginePeakDependenceGraphDeconvoluter`.
-'''
+"""
 
 import operator
 

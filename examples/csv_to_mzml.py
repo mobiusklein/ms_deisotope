@@ -1,8 +1,8 @@
-'''Convert a CSV file of peak centroids to a single spectrum mzML file.
+"""Convert a CSV file of peak centroids to a single spectrum mzML file.
 
 Useful for when you need to convert some scattering of points from a viewer's
 text export into something that a search engine can read.
-'''
+"""
 import sys
 import os
 
@@ -19,12 +19,12 @@ from ms_deisotope.output.mzml import MzMLSerializer
 @click.option("-z", "--precursor-charge", type=int, default=None, required=False, help="The selected ion charge to record")
 @click.option("-p", "--polarity", type=click.Choice(['1', '-1']), default=1, help="The scan polarity to record. Default is 1 (positive mode)")
 def main(csv_path, precursor_mz=None, precursor_charge=None, polarity=1):
-    '''Convert an m/z,intensity CSV file into a centroided mzML file.
+    """Convert an m/z,intensity CSV file into a centroided mzML file.
 
     Example:
         csv_to_mzml path/to/data.csv -m 571.63 -z -3 -p -1
     Writes to `path/to/data.mzML`
-    '''
+    """
     polarity = int(polarity)
     with open(csv_path, 'rt') as fh:
         scan = text.scan_from_csv(

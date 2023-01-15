@@ -47,7 +47,7 @@ cdef class LCMSFeatureMap(object):
         return <LCMSFeature>PyList_GetItem(self.features, i)
 
     cpdef LCMSFeature search(self, double mz, double error_tolerance=2e-5):
-        '''Search for a single feature within `error_tolerance` of `mz`.
+        """Search for a single feature within `error_tolerance` of `mz`.
 
         Parameters
         ----------
@@ -65,7 +65,7 @@ cdef class LCMSFeatureMap(object):
         --------
         find_all
         between
-        '''
+        """
 
         cdef:
             long i
@@ -78,7 +78,7 @@ cdef class LCMSFeatureMap(object):
             return out
 
     cpdef list find_all(self, double mz, double error_tolerance=2e-5):
-        '''Search for all features within `error_tolerance` of `mz`.
+        """Search for all features within `error_tolerance` of `mz`.
 
         Parameters
         ----------
@@ -95,7 +95,7 @@ cdef class LCMSFeatureMap(object):
         See Also
         --------
         between
-        '''
+        """
         cdef:
             long loout, hiout
             list result
@@ -124,7 +124,7 @@ cdef class LCMSFeatureMap(object):
         return result
 
     cpdef list between(self, double lo, double hi, double error_tolerance=2e-5):
-        '''Search for all features between `lo` and `hi`, allowing `error_tolerance`
+        """Search for all features between `lo` and `hi`, allowing `error_tolerance`
         around the edges.
 
         Parameters
@@ -144,7 +144,7 @@ cdef class LCMSFeatureMap(object):
         See Also
         --------
         find_all
-        '''
+        """
         cdef:
             Py_ssize_t n, i, lo_ix, hi_ix
             LCMSFeature f

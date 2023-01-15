@@ -217,7 +217,7 @@ class MaximizeFitSelector(FitSelectorBase):
 
 
 class IsotopicFitterBase(Base):
-    '''A base class for Isotopic Pattern Fitters, objects
+    """A base class for Isotopic Pattern Fitters, objects
     which given a set of experimental peaks and a set of matching
     theoretical peaks, returns a fit score describing how good the
     match is.
@@ -226,7 +226,7 @@ class IsotopicFitterBase(Base):
     or when the score is large (maximizing), and the appropriate
     :class:`FitSelectorBase` type will be used for :attr:`select`. This
     will also be reflected by :meth:`is_maximizing`.
-    '''
+    """
 
     def __init__(self, score_threshold=0.5):
         self.select = MinimizeFitSelector(score_threshold)
@@ -390,7 +390,7 @@ least_squares = LeastSquaresFitter()
 
 
 class MSDeconVFitter(IsotopicFitterBase):
-    '''An implementation of the scoring function used in :title-reference:`MSDeconV`
+    """An implementation of the scoring function used in :title-reference:`MSDeconV`
 
     References
     ----------
@@ -398,7 +398,7 @@ class MSDeconVFitter(IsotopicFitterBase):
     Pevzner, P. A. (2010). Deconvolution and database search of complex tandem
     mass spectra of intact proteins: a combinatorial approach. Molecular & Cellular
     Proteomics : MCP, 9(12), 2772–2782. https://doi.org/10.1074/mcp.M110.002766
-    '''
+    """
 
     def __init__(self, minimum_score=10, mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector()
@@ -451,7 +451,7 @@ class MSDeconVFitter(IsotopicFitterBase):
 
 
 class PenalizedMSDeconVFitter(IsotopicFitterBase):
-    r'''An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
+    r"""An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
     weighted by 1 - :attr:`penalty_factor` * :class:`ScaledGTestFitter` score
 
     .. math::
@@ -459,7 +459,7 @@ class PenalizedMSDeconVFitter(IsotopicFitterBase):
 
     where :math:`e` is the experimental peak list and :math:`t` is the theoretical
     peak list
-    '''
+    """
     def __init__(self, minimum_score=10, penalty_factor=1., mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector(minimum_score)
         self.msdeconv = MSDeconVFitter(mass_error_tolerance=mass_error_tolerance)

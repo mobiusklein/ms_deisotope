@@ -1,4 +1,4 @@
-'''Thermo RAW file reading implementation using the Windows-specific COM
+"""Thermo RAW file reading implementation using the Windows-specific COM
 interface provided by MSFileReader.dll library provided by Thermo.
 
 This module provides :class:`ThermoRawLoader`, a :class:`~.RandomAccessScanSource`
@@ -15,7 +15,7 @@ The public interface of this module should be identical to
     in order to understand how the Thermo libraries really worked, and to maintain
     parity with it.
 
-'''
+"""
 # pragma: no cover
 
 import os
@@ -55,7 +55,7 @@ try:
     _api_logger.setLevel("INFO")
 
     def is_thermo_raw_file(path):
-        '''Detect whether or not the file referenced by ``path``
+        """Detect whether or not the file referenced by ``path``
         is a Thermo RAW file.
 
         Parameters
@@ -67,7 +67,7 @@ try:
         -------
         :class:`bool`:
             Whether or not the file is a Thermo RAW file.
-        '''
+        """
         try:
             _ThermoRawFileAPI(path)
             return True
@@ -75,7 +75,7 @@ try:
             return False
 
     def infer_reader(path):
-        '''If the file referenced by ``path`` is a Thermo RAW
+        """If the file referenced by ``path`` is a Thermo RAW
         file, return the callable (:class:`ThermoRawLoader`) to
         open it, otherwise raise an exception.
 
@@ -93,13 +93,13 @@ try:
         ------
         :class:`ValueError`:
             If the file is not a Thermo RAW file
-        '''
+        """
         if is_thermo_raw_file(path):
             return ThermoRawLoader
         raise ValueError("Not Thermo Raw File")
 
     def determine_if_available():
-        '''Checks whether or not the COM-based Thermo
+        """Checks whether or not the COM-based Thermo
         RAW file reading feature is available.
 
         This is done by attempting to instantiate the
@@ -110,7 +110,7 @@ try:
         -------
         :class:`bool`:
             Whether or not the feature is enabled.
-        '''
+        """
         try:
             _ThermoRawFileAPI.create_com_object()
             return True
@@ -120,7 +120,7 @@ except ImportError as e:  # pragma: no cover
     message = str(e)
 
     def is_thermo_raw_file(*args, **kwargs):
-        '''Detect whether or not the file referenced by ``path``
+        """Detect whether or not the file referenced by ``path``
         is a Thermo RAW file.
 
         Parameters
@@ -132,12 +132,12 @@ except ImportError as e:  # pragma: no cover
         -------
         :class:`bool`:
             Whether or not the file is a Thermo RAW file.
-        '''
+        """
         return False
 
 
     def infer_reader(*args, **kwargs):
-        '''If the file referenced by ``path`` is a Thermo RAW
+        """If the file referenced by ``path`` is a Thermo RAW
         file, return the callable (:class:`ThermoRawLoader`) to
         open it, otherwise raise an exception.
 
@@ -155,20 +155,20 @@ except ImportError as e:  # pragma: no cover
         ------
         :class:`ValueError`:
             If the file is not a Thermo RAW file
-        '''
+        """
         raise ValueError(message)
 
 
     def register_dll(*args, **kwargs):
-        '''Register the location of Thermo's MSFileReader.dll
+        """Register the location of Thermo's MSFileReader.dll
         with the COM interop system.
-        '''
+        """
         warnings.warn(f"no-op: {message}")
         return False
 
 
     def determine_if_available():
-        '''Checks whether or not the COM-based Thermo
+        """Checks whether or not the COM-based Thermo
         RAW file reading feature is available.
 
         This is done by attempting to instantiate the
@@ -179,7 +179,7 @@ except ImportError as e:  # pragma: no cover
         -------
         :class:`bool`:
             Whether or not the feature is enabled.
-        '''
+        """
         warnings.warn(f"no-op: {message}")
         return False
 
@@ -188,8 +188,8 @@ except ImportError as e:  # pragma: no cover
 
 
 class ThermoRawDataInterface(ScanDataSource):
-    ''':class:`~.ScanDataSource` implementation for Thermo's MSFileReader API.
-    '''
+    """:class:`~.ScanDataSource` implementation for Thermo's MSFileReader API.
+    """
     def _scan_index(self, scan):
         return scan.scan_number - 1
 
@@ -421,9 +421,9 @@ class ThermoRawDataInterface(ScanDataSource):
 
 
 class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMetadataLoader):
-    '''Reads scans from Thermo Fisher RAW files directly. Provides both iterative and
+    """Reads scans from Thermo Fisher RAW files directly. Provides both iterative and
     random access.
-    '''
+    """
 
     def __init__(self, source_file, _load_metadata=True, **kwargs):
         self.source_file = source_file
@@ -517,13 +517,13 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
 
     @property
     def index(self):
-        '''Accesses the scan index
+        """Accesses the scan index
 
         Returns
         -------
         :class:`collections.OrderedDict`
             Maps scan ID to index
-        '''
+        """
         return self._index
 
     def __repr__(self):
@@ -539,8 +539,8 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
         return len(self.index)
 
     def close(self):
-        '''Close the underlying file reader.
-        '''
+        """Close the underlying file reader.
+        """
         if self._source is not None:
             self._source.Close()
             self._source = None
@@ -643,7 +643,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             return scan
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
-        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -662,7 +662,7 @@ class ThermoRawLoader(ThermoRawDataInterface, RandomAccessScanSource, _RawFileMe
             Whether the iterator must start from an MS1 scan. True by default.
         grouped: bool, optional
             whether the iterator should yield scan bunches or single scans. True by default.
-        '''
+        """
         if scan_id is not None:
             scan_number = int(str(scan_id).replace(_id_template, '')) - 1
         elif index is not None:

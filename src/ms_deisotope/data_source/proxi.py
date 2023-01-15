@@ -113,11 +113,11 @@ class PROXIDatasetAPIMixinBase(object):
 
     @property
     def peaklist_file_types(self):
-        '''Alias to allow :attr:`valid_file_types` to vary.
+        """Alias to allow :attr:`valid_file_types` to vary.
 
         Returns
         -------
-        list[str]'''
+        list[str]"""
         return self.valid_file_types
 
     def describe_dataset(self, dataset_id: str) -> PROXIDataset:
@@ -417,7 +417,7 @@ class MassSpectraDataArchiveBase(SpectrumSerializerServiceMixin, PROXIDatasetAPI
         raise NotImplementedError()
 
     def handle_usi(self, usi, convert_json=True):
-        '''Receive a USI, parse it into its constituent pieces, locate
+        """Receive a USI, parse it into its constituent pieces, locate
         the relevant spectrum, and return it formatted message.
 
         Parameters
@@ -431,7 +431,7 @@ class MassSpectraDataArchiveBase(SpectrumSerializerServiceMixin, PROXIDatasetAPI
         -------
         spectrum : dict or Scan
             The spectrum, rendered according to the `convert_json` or not.
-        '''
+        """
         usi = USI.parse(str(usi))
         mzml_uri, index_uri = self.find_ms_files_for(usi.dataset, usi.datafile)
         reader, lock = self.open_ms_file(mzml_uri, index_uri)

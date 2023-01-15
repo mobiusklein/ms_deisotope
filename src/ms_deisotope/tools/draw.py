@@ -11,8 +11,8 @@ from ms_deisotope.tools.utils import progress
 
 @click.group('draw')
 def draw():
-    '''Draw images related to mass spectrometry data!
-    '''
+    """Draw images related to mass spectrometry data!
+    """
 
 def _make_figure():
     try:

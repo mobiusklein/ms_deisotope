@@ -1,11 +1,11 @@
-'''A set of strategies for retaining peaks following deconvolution to
+"""A set of strategies for retaining peaks following deconvolution to
 recover from low quality spectra. These methods are not recommended for
 use on spectra where most ions are multiply charged.
 
 These objects are meant to be provided to :func:`~.deconvolut_peaks`'s
 `retention_strategy` argument, which will take care of calling them with
 the appropriate arguments.
-'''
+"""
 import operator
 import abc
 

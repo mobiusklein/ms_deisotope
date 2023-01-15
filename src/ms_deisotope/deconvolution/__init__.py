@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-'''This module defines a collection of isotopic envelope search strategies for
+"""This module defines a collection of isotopic envelope search strategies for
 deisotoping and charge state deconvolution. Each strategy is implemented through
 a subtype of :class:`~.DeconvoluterBase` and provide a common set of methods for
 deconvolving a peak list.
-'''
+"""
 # from .deconvolution import *
 
 from .utils import (

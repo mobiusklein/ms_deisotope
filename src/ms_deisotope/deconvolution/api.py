@@ -1,11 +1,11 @@
-'''
+"""
 High Level Deconvolution API
 ----------------------------
 
 A high-level wrapper around the deconvolution machinery, orchestrating the
 process of constructing a deconvoluter instance, performing deconvolution, and
 extracting targets of interest from the result.
-'''
+"""
 
 from ms_peak_picker import FittedPeak
 

@@ -74,8 +74,8 @@ class IsolationWindow(_IsolationWindowBase):
 
     @property
     def width(self):
-        '''The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
-        the window'''
+        """The sum of :attr:`lower` and :attr:`upper`, the total m/z space spanned by
+        the window"""
         return self.lower + self.upper
 
     def __contains__(self, x):
@@ -201,7 +201,7 @@ class ScanAcquisitionInformation(MutableSequence):
         return self.__class__, (self.combination, self.scan_list)
 
     def copy(self) -> 'ScanAcquisitionInformation':
-        '''Make a shallow copy of this object'''
+        """Make a shallow copy of this object"""
         return self.__class__(
             self.combination, [se.copy() for se in self.scan_list])
 
@@ -289,16 +289,16 @@ class ScanEventInformation(_IonMobilityMixin):
 
     @property
     def scan_configuration(self) -> Optional[str]:
-        '''Retrieve the scan configuration ID
+        """Retrieve the scan configuration ID
 
         Returns
         -------
         str, optional
-        '''
+        """
         return self.traits.get('preset scan configuration')
 
     def copy(self) -> 'ScanEventInformation':
-        '''Return a shallow copy of this object'''
+        """Return a shallow copy of this object"""
         return self.__class__(
             self.start_time, self.window_list[:],
             None, self.injection_time, self.traits.copy())

@@ -94,9 +94,9 @@ cpdef bint peak_overlap(FitNode a, FitNode b):
 
 @cython.nonecheck(False)
 cpdef list layout_layers(list envelopes, bint maximize=True):
-    '''
+    """
     Produce a non-overlapping stacked layout of individual envelopes.
-    '''
+    """
     cdef:
         list layers, layer
         size_t env_i, env_n, layer_i, layer_n, member_i, member_n

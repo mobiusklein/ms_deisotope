@@ -1,6 +1,6 @@
-'''A collection of utilities for using :mod:`ms_deisotope` to convert between mass spectrometry
+"""A collection of utilities for using :mod:`ms_deisotope` to convert between mass spectrometry
 data file formats.
-'''
+"""
 import os
 
 import click

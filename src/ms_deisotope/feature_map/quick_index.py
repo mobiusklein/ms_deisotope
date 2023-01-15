@@ -1,9 +1,9 @@
-'''Implements the infrastructure to spread indexing tasks over a single
+"""Implements the infrastructure to spread indexing tasks over a single
 :class:`~.RandomAccessScanSource` across multiple processes for speed.
 
 The primary function in this module is :func:`index`, which will perform
 this dispatch.
-'''
+"""
 import multiprocessing
 import logging
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union, Optional
@@ -166,9 +166,9 @@ def partition_work(n_items: int, n_workers: int, start_index: int=0,
 
 
 class _Indexer(object):
-    '''A pickle-able callable object which wraps :func:`index_chunk` for the call signature
+    """A pickle-able callable object which wraps :func:`index_chunk` for the call signature
     used by :func:`run_task_in_chunks`
-    '''
+    """
     def __call__(self, payload: Tuple[ScanIterator, float, float]):
         reader, start, end = payload
         try:
@@ -182,9 +182,9 @@ class _Indexer(object):
 
 
 class _TaskWrapper(object):
-    '''A simple wrapper for a callable to capture the index range for a chunk created by
+    """A simple wrapper for a callable to capture the index range for a chunk created by
     :func:`run_task_in_chunks`, so that the start index of the chunk is known.
-    '''
+    """
 
     task: _IndexingCallable
 

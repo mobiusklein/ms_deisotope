@@ -69,9 +69,9 @@ def peak_overlap(a, b):
 
 
 def layout_layers(envelopes, overlap_fn=peak_overlap, maximize=True):
-    '''
+    """
     Produce a non-overlapping stacked layout of individual envelopes.
-    '''
+    """
     layers = [[]]
     envelopes.sort(key=lambda x: x.score, reverse=maximize)
     for envelope in envelopes:

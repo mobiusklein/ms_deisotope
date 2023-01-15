@@ -1,6 +1,6 @@
-'''A Tk-based spectrum viewer that integrates :mod:`ms_deisotope`'s spectrum processing
+"""A Tk-based spectrum viewer that integrates :mod:`ms_deisotope`'s spectrum processing
 features.
-'''
+"""
 import sys
 import os
 

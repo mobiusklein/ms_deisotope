@@ -1,7 +1,7 @@
-'''This interface to the Bruker TDF file format is based upon the TimsData library
+"""This interface to the Bruker TDF file format is based upon the TimsData library
 that is part of ProteoWizard (Apache II), and a common kernel of Python ctypes functions
 found in dia-pasef and other Python wrappers of libtimsdata.
-'''
+"""
 import os
 import re
 import sqlite3
@@ -883,7 +883,7 @@ class BrukerTIMSLoader(BrukerTIMSFrameSource, BrukerTIMSScanDataSource, TIMSMeta
         return scan_obj
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
-        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -905,7 +905,7 @@ class BrukerTIMSLoader(BrukerTIMSFrameSource, BrukerTIMSScanDataSource, TIMSMeta
             Whether the iterator must start from an MS1 scan. True by default.
         grouped: bool, optional
             whether the iterator should yield scan bunches or single scans. True by default.
-        '''
+        """
         raise NotImplementedError()
 
     def _ms1_frame_iterator(self):

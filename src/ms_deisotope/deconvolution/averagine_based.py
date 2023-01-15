@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Implementations of averagine-based deconvoluters.
+"""Implementations of averagine-based deconvoluters.
 
 Averagine-based deconvoluters use an "average monomer" isotopic model
 to interpolate the isotopic patterns for any peak in the experimental
@@ -12,7 +12,7 @@ References
     masses and ion populations for large biomolecules from resolved isotopic distributions.
     Journal of the American Society for Mass Spectrometry, 6(4), 229–233.
     http://doi.org/10.1016/1044-0305(95)00017-8
-'''
+"""
 
 from ms_deisotope.averagine import PROTON, AveragineCache, peptide, glycopeptide, glycan
 from ms_deisotope.constants import IGNORE_BELOW, TRUNCATE_AFTER, SCALE_METHOD

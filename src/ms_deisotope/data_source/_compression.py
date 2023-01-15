@@ -1,5 +1,5 @@
-'''Helpers for dealing with generic compressed files.
-'''
+"""Helpers for dealing with generic compressed files.
+"""
 
 import io
 import os
@@ -22,8 +22,8 @@ try:
     import idzip
 
     class IdzipFile(idzip.IdzipFile):
-        '''Fixes io.BufferedWriter compatibility until merged upstream
-        '''
+        """Fixes io.BufferedWriter compatibility until merged upstream
+        """
         def write(self, b):
             self._check_can_write()
             value = self._impl.write(b)
@@ -108,7 +108,7 @@ def test_gzipped(f):
 
 
 def starts_with_gz_magic(bytestring):
-    '''Tests whether or not a byte string starts with
+    """Tests whether or not a byte string starts with
     the GZIP magic bytes.
 
     Parameters
@@ -119,14 +119,14 @@ def starts_with_gz_magic(bytestring):
     Returns
     -------
     bool
-    '''
+    """
     return bytestring.startswith(GZIP_MAGIC)
 
 
 ZSTD_MAGIC = b'(\xb5/\xfd'
 
 def starts_with_zstd_magic(bytestring):
-    '''Tests whether or not a byte string starts with
+    """Tests whether or not a byte string starts with
     the ZSTD magic bytes.
 
     Parameters
@@ -137,15 +137,15 @@ def starts_with_zstd_magic(bytestring):
     Returns
     -------
     bool
-    '''
+    """
     return bytestring.startswith(ZSTD_MAGIC)
 
 
 def get_opener(f, buffer_size=None):
-    '''Select the file reading type for the given path or stream.
+    """Select the file reading type for the given path or stream.
 
     Detects whether the file is gzip encoded.
-    '''
+    """
     if buffer_size is None:
         buffer_size = DEFAULT_BUFFER_SIZE
     if not hasattr(f, 'read'):

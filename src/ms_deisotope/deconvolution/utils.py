@@ -20,7 +20,7 @@ error = logger.error
 
 
 def prepare_peaklist(peaks):
-    '''Ensure ``peaks`` is a :class:`~.PeakSet` object,
+    """Ensure ``peaks`` is a :class:`~.PeakSet` object,
     converting from other compatible types as needed. Additionally, make a deep
     copy of the peaks as signal subtraction methods will modify peaks in place.
 
@@ -46,7 +46,7 @@ def prepare_peaklist(peaks):
     Returns
     -------
     :class:`~.PeakSet`
-    '''
+    """
     if isinstance(peaks, PeakIndex):
         peaks = PeakSet(peaks.peaks).clone()
     else:
@@ -91,7 +91,7 @@ def from_fitted_peak(peak, charge=1):
 
 
 def mean(numbers):
-    '''quick and dirty mean calculation
+    """quick and dirty mean calculation
     without converting to a NumPy array
 
     Parameters
@@ -101,7 +101,7 @@ def mean(numbers):
     Returns
     -------
     float
-    '''
+    """
     n = 0.
     total = 0
     for x in numbers:

@@ -135,12 +135,12 @@ def register_dll(search_paths=None):
     if not loaded:
         log.debug("Could not resolve XRawfile-related DLL")
         search_paths.extend(_default_paths)
-        msg = '''
+        msg = """
         1) The msFileReader DLL (XRawfile2.dll or XRawfile2_x64.dll) may not be installed and
            therefore not registered to the COM server.
         2) The msFileReader DLL may not be a these paths:
         %s
-        ''' % ('\n'.join(search_paths))
+        """ % ('\n'.join(search_paths))
         raise ImportError(msg)
 
 
@@ -368,7 +368,7 @@ class ThermoRawfile(object):
         return pbstrCreatorID.value
 
     def GetVersionNumber(self):
-        '''Returns the file format version number'''
+        """Returns the file format version number"""
         versionNumber = c_long()
         error = self.source.GetVersionNumber(byref(versionNumber))
         if error:
@@ -735,7 +735,7 @@ class ThermoRawfile(object):
         return pbstrInstSerialNumber.value
 
     def GetInstSoftwareVersion(self):
-        '''Returns revision information for the current controller software, if available.'''
+        """Returns revision information for the current controller software, if available."""
         InstSoftwareVersion = comtypes.automation.BSTR()
         error = self.source.GetInstSoftwareVersion(byref(InstSoftwareVersion))
         if error:
@@ -743,7 +743,7 @@ class ThermoRawfile(object):
         return InstSoftwareVersion.value
 
     def GetInstHardwareVersion(self):
-        '''Returns revision information for the current controller software, if available.'''
+        """Returns revision information for the current controller software, if available."""
         InstHardwareVersion = comtypes.automation.BSTR()
         error = self.source.GetInstHardwareVersion(byref(InstHardwareVersion))
         if error:

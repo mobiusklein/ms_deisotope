@@ -46,13 +46,13 @@ cdef str _intern_unit_or_cv(str unit_or_cv):
 @cython.final
 @cython.no_gc
 cdef class UnitInt(int):
-    '''Represents an integer value with a unit name.
+    """Represents an integer value with a unit name.
     Behaves identically to a built-in :class:`int` type.
     Attributes
     ----------
     unit_info : :class:`str`
         The name of the unit this value posseses.
-    '''
+    """
     cdef:
         public str unit_info
 
@@ -77,13 +77,13 @@ cdef class UnitInt(int):
 @cython.final
 @cython.no_gc
 cdef class UnitFloat(float):
-    '''Represents an float value with a unit name.
+    """Represents an float value with a unit name.
     Behaves identically to a built-in :class:`float` type.
     Attributes
     ----------
     unit_info : :class:`str`
         The name of the unit this value posseses.
-    '''
+    """
     cdef:
         public str unit_info
 
@@ -108,13 +108,13 @@ cdef class UnitFloat(float):
 @cython.final
 @cython.no_gc
 cdef class UnitStr(str):
-    '''Represents an string value with a unit name.
+    """Represents an string value with a unit name.
     Behaves identically to a built-in :class:`str` type.
     Attributes
     ----------
     unit_info : :class:`str`
         The name of the unit this value posseses.
-    '''
+    """
     cdef:
         public str unit_info
 
@@ -149,7 +149,7 @@ cdef dict CVStr_cache = {}
 @cython.final
 @cython.no_gc
 cdef class CVStr(str):
-    '''A helper class to associate a controlled vocabullary accession
+    """A helper class to associate a controlled vocabullary accession
     number with an otherwise plain :class:`str` object
     Attributes
     ----------
@@ -157,7 +157,7 @@ cdef class CVStr(str):
         The accession number for this parameter, e.g. MS:1000040
     unit_accession : str
         The accession number for the unit of the value, if any
-    '''
+    """
     cdef:
         public str accession
         public str unit_accession

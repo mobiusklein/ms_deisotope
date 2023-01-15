@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''mzMLb is a standard rich HDF5-based format for raw mass spectrometry data storage.
+"""mzMLb is a standard rich HDF5-based format for raw mass spectrometry data storage.
 This module provides :class:`MzMLbLoader`, a :class:`~.RandomAccessScanSource`
 implementation. It is based upon the mzML XML file format, re-using a subset of the
 features. The original design for mzMLb is described in [Bhamber]_.
@@ -13,7 +13,7 @@ References
     MzMLb: A Future-Proof Raw Mass Spectrometry Data Format Based on Standards-Compliant
     mzML and Optimized for Speed and Storage Requirements. Journal of Proteome Research,
     20(1), 172–183. https://doi.org/10.1021/acs.jproteome.0c00192
-'''
+"""
 
 import logging
 logging.getLogger("hdf5plugin").addHandler(logging.NullHandler())
@@ -73,7 +73,7 @@ class MzMLbLoader(_MzMLLoader):
 
 
 def is_mzmlb_file(path):
-    '''Detect whether or not the file referenced by ``path``
+    """Detect whether or not the file referenced by ``path``
     is a mzMLb file.
 
     Parameters
@@ -85,7 +85,7 @@ def is_mzmlb_file(path):
     -------
     :class:`bool`:
         Whether or not the file is a mzMLb file.
-    '''
+    """
     try:
         import h5py
         if mzmlb is None:
@@ -101,7 +101,7 @@ def is_mzmlb_file(path):
 
 
 def infer_reader(path):
-    '''If the file referenced by ``path`` is a mzMLb
+    """If the file referenced by ``path`` is a mzMLb
     file, return the callable (:class:`MzMLbLoader`) to
     open it, otherwise raise an exception.
 
@@ -119,21 +119,21 @@ def infer_reader(path):
     ------
     :class:`ValueError`:
         If the file is not a mzMLb file
-    '''
+    """
     if is_mzmlb_file(path):
         return MzMLbLoader
     raise ValueError("Not mzMLb File")
 
 
 def determine_if_available():
-    '''Checks whether or not the mzMLb HDF5-based
+    """Checks whether or not the mzMLb HDF5-based
     file reading feature is available.
 
     Returns
     -------
     :class:`bool`:
         Whether or not the feature is enabled.
-    '''
+    """
     try:
         import h5py
         if mzmlb is None:

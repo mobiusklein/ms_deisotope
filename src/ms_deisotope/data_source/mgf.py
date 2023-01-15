@@ -1,11 +1,11 @@
-'''MGF is a simple human-readable format for MS/MS data. It
+"""MGF is a simple human-readable format for MS/MS data. It
 allows storing MS/MS peak lists and exprimental parameters.
 
 This module provides :class:`MGFLoader`, a :class:`~.RandomAccessScanSource`
 implementation.
 
 The parser is based on :mod:`pyteomics.mgf`.
-'''
+"""
 
 import os
 from pyteomics import mgf
@@ -28,8 +28,8 @@ from ._compression import test_if_file_has_fast_random_access
 class _MGFParser(mgf.IndexedMGF):
 
     def parse_charge(self, charge_text, list_only=False):
-        '''Pyteomics _parse_charge is very general-purpose, and
-        can't be sped up, so we specialize it here.'''
+        """Pyteomics _parse_charge is very general-purpose, and
+        can't be sped up, so we specialize it here."""
         try:
             if not list_only:
                 return int(charge_text.replace('+', ''))
@@ -53,13 +53,13 @@ class _MGFMetadata(ScanFileMetadataBase):
     """
 
     def file_description(self):
-        '''Describe the file and its components, as well
+        """Describe the file and its components, as well
         as any content types it has.
 
         Returns
         -------
         :class:`~.FileInformation`
-        '''
+        """
         finfo = FileInformation()
         finfo.add_content("centroid spectrum")
         finfo.add_content(MS_MSn_Spectrum)
@@ -70,34 +70,34 @@ class _MGFMetadata(ScanFileMetadataBase):
         return finfo
 
     def instrument_configuration(self):
-        '''Describe the different instrument components and configurations used
+        """Describe the different instrument components and configurations used
         to acquire scans in this run.
 
         Returns
         -------
         :class:`list` of :class:`~.InstrumentInformation`
-        '''
+        """
         return super(_MGFMetadata, self).instrument_configuration()
 
     def data_processing(self):
-        '''Describe any preprocessing steps applied to the data described by this
+        """Describe any preprocessing steps applied to the data described by this
         instance.
 
         Returns
         -------
         :class:`list` of :class:`~.DataProcessingInformation`
-        '''
+        """
         return super(_MGFMetadata, self).data_processing()
 
 
 class MGFInterface(ScanDataSource):
-    '''Provides a basic set of widely used MASCOT Generic File (MGF)
+    """Provides a basic set of widely used MASCOT Generic File (MGF)
     data accessor mechanisms. Because MGF files lack any form of standardization,
     no strong guarantees of correctness can be made.
 
     This dialect does not know how to use the charge column of the peak data
     section, see :class:`~.ProcessedMGFLoader`.
-    '''
+    """
 
     def _scan_arrays(self, scan):
         """Returns raw data arrays for m/z and intensity
@@ -271,12 +271,12 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
 
     @property
     def header(self):
-        '''Any top-of-the-file parameters
+        """Any top-of-the-file parameters
 
         Returns
         -------
         dict
-        '''
+        """
         return self._source.header
 
     def __reduce__(self):
@@ -396,13 +396,13 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
 
     @property
     def source(self):
-        '''The file parser that this reader consumes.
-        '''
+        """The file parser that this reader consumes.
+        """
         return self._source
 
     @property
     def index(self):
-        '''The byte offset index used to achieve fast random access.
+        """The byte offset index used to achieve fast random access.
 
         Maps :class:`~.ScanBase` IDs to the byte offsets, implying
         the order the scans reside in the file.
@@ -410,15 +410,15 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
         Returns
         -------
         :class:`pyteomics.xml.ByteEncodingOrderedDict`
-        '''
+        """
         return self.source.index
 
     def __len__(self):
         return len(self.index)
 
     def close(self):
-        '''Close the underlying reader.
-        '''
+        """Close the underlying reader.
+        """
         self._source.close()
         self._dispose()
 
@@ -474,7 +474,7 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
             yield scan_source.get_by_id(key)
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
-        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -496,7 +496,7 @@ class MGFLoader(MGFInterface, RandomAccessScanSource, _MGFMetadata):
             Whether the iterator must start from an MS1 scan. True by default.
         grouped: bool, optional
             whether the iterator should yield scan bunches or single scans. True by default.
-        '''
+        """
         if scan_id is None:
             if rt is not None:
                 scan = self.get_scan_by_time(rt)

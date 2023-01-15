@@ -1,4 +1,4 @@
-'''
+"""
 Writing mzML
 ------------
 
@@ -34,7 +34,7 @@ metadata that :class:`~.MzMLSerializer` writes to an external file.
 
         writer.close()
 
-'''
+"""
 import hashlib
 import array
 import io
@@ -91,7 +91,7 @@ from .text_utils import (envelopes_to_array, decode_envelopes)
 
 
 def _param(key: Union[str, Term, Any]) -> str:
-    '''Try to coerce a name into something we can convert into a controlled
+    """Try to coerce a name into something we can convert into a controlled
     vocabulary parameter in :mod:`psims`.
 
     Parameters
@@ -103,7 +103,7 @@ def _param(key: Union[str, Term, Any]) -> str:
     -------
     identifier : :class:`str`
         The converted identifier
-    '''
+    """
     if not isinstance(key, str):
         try:
             key = key.accession
@@ -116,9 +116,9 @@ def _param(key: Union[str, Term, Any]) -> str:
 
 
 class SpectrumDescription(Sequence):
-    '''A helper class to calculate properties of a spectrum derived from
+    """A helper class to calculate properties of a spectrum derived from
     their peak data or raw signal
-    '''
+    """
     descriptors: List[Dict[str, float]]
 
     def __init__(self, attribs=None):
@@ -472,14 +472,14 @@ class MzMLSerializer(ScanSerializerBase):
         self.software_list.append(software_description)
 
     def add_file_information(self, file_information: FileInformation):
-        '''Add the information of a :class:`~.FileInformation` to the
+        """Add the information of a :class:`~.FileInformation` to the
         output document.
 
         Parameters
         ----------
         file_information: :class:`~.FileInformation`
             The information to add.
-        '''
+        """
         for key, value in file_information.contents.items():
             if value is None:
                 value = ''

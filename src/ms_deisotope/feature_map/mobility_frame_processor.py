@@ -82,13 +82,13 @@ class IonMobilityFrameProcessor(Base, LogUtilsMixin):
 
     @property
     def reader(self) -> IonMobilitySourceRandomAccessFrameSource:
-        '''The :class:`~.IonMobilitySourceRandomAccessFrameSource` which generates the raw scans that will
+        """The :class:`~.IonMobilitySourceRandomAccessFrameSource` which generates the raw scans that will
         be processed.
 
         Returns
         -------
         :class:`~.IonMobilitySourceRandomAccessFrameSource`
-        '''
+        """
         return self._signal_source
 
     def _prepopulate_averagine_cache(self):

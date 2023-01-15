@@ -1,7 +1,4 @@
-'''A collection of little command line utilities for inspecting mass
-spectrum data.
-'''
-from email.policy import default
+"""A collection of little command line utilities for inspecting mass spectrum data."""
 import io
 import logging
 import os
@@ -17,7 +14,6 @@ import six
 import numpy as np
 
 import ms_deisotope
-from ms_deisotope.data_source.scan.base import ScanBase
 from ms_deisotope.data_source.scan.scan import Scan
 
 from ms_deisotope.task.log_utils import init_logging
@@ -49,9 +45,7 @@ logger = logging.getLogger('ms_deisotope')
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 def cli():
-    '''A collection of utilities for inspecting and manipulating
-    mass spectrometry data.
-    '''
+    """A collection of utilities for inspecting and manipulating mass spectrometry data."""
     init_logging()
 
 
@@ -61,8 +55,7 @@ def cli():
 @click.option("-d", "--diagnostics", is_flag=True,
               help="Run more diagnostics, greatly increasing runtime but producing additional informatoin")
 def describe(path, diagnostics=False):
-    '''Produces a minimal textual description of a mass spectrometry data file.
-    '''
+    """Produces a minimal textual description of a mass spectrometry data file."""
     click.echo("Describing \"%s\"" % (path,))
     try:
         sf = SourceFile.from_path(path)
@@ -163,11 +156,10 @@ def describe(path, diagnostics=False):
 @cli.command("byte-index", short_help='Build an external byte offset index for a mass spectrometry data file')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
 def byte_index(paths):
-    '''Build an external byte offset index for a mass spectrometry data file, saving time when
-    opening the file with indexing enabled.
+    """Build an external byte offset index for a MS data file, saving time when opening the file with indexing enabled.
 
-    Supported Formats: mzML, mzXML
-    '''
+    Supported Formats: mzML, mzXML, MGF
+    """
     for path in paths:
         click.echo("Indexing %s" % (path, ))
         reader = ms_deisotope.MSFileLoader(path, use_index=False)
@@ -185,13 +177,13 @@ def byte_index(paths):
               'processed specifically by ms_deisotope\'s deconvolution algorithm')
 @processes_option
 def metadata_index(paths, processes=4, deconvoluted=False):
-    '''Build an external scan metadata index for a mass spectrometry data file
+    """Build an external scan metadata index for a mass spectrometry data file.
 
     This extended index is saved in a separate JSON file that can be loaded with
     :class:`~.ExtendedScanIndex`. It includes the scan time of all scans, the precursor
     mass of MSn scans, as well as the relationships between precursor and product ion
     scans, as well as other details. See :class:`~.ExtendedScanIndex` for more information
-    '''
+    """
     for path in paths:
         click.echo("Indexing %s" % (path, ))
         if deconvoluted:
@@ -209,8 +201,7 @@ def metadata_index(paths, processes=4, deconvoluted=False):
             acc = [0]
 
             def update_bar(x):
-                '''Progress Bar update callback for :func:`~.quick_index.index`
-                '''
+                """Progress Bar update callback for :func:`~.quick_index.index`."""
                 x = int(x * 100)
                 x -= acc[0]  # pylint: disable=cell-var-from-loop
                 progbar.update(x)  # pylint: disable=cell-var-from-loop
@@ -270,9 +261,10 @@ class _MSMSIntervalTask(object):
 @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False), required=False)
 @processes_option
 def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3., output=None):
-    '''Construct an interval tree spanning time and m/z domains where MSn spectra were acquired
-    in the LC-MS map. The interval tree is serialized to JSON.
-    '''
+    """Construct an interval tree spanning time and m/z domains where MSn spectra were acquired in the LC-MS map.
+
+    The interval tree is serialized to JSON.
+    """
     interval_extraction = _MSMSIntervalTask(time_radius, mz_lower, mz_higher)
     interval_set = []
     total_work_items = len(paths) * processes * 4
@@ -286,7 +278,8 @@ def msms_intervals(paths, processes=4, time_radius=5, mz_lower=2., mz_higher=3.,
                 interval_set.extend(chunk)
                 yield 0
     work_iterator = _run()
-    with progress(work_iterator, length=total_work_items, label='Extracting Intervals', color=True, fill_char=click.style('-', 'green')) as g:
+    with progress(work_iterator, length=total_work_items, label='Extracting Intervals',
+                  color=True, fill_char=click.style('-', 'green')) as g:
         for _ in g:
             pass
     tree = scan_interval_tree.ScanIntervalTree(scan_interval_tree.make_rt_tree(interval_set))
@@ -333,10 +326,10 @@ def _ensure_metadata_index(path):
 @cli.command("charge-states", short_help='Count the different precursor charge states in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def charge_states(path):
-    '''Count the different precursor charge states in a mass spectrometry data file.
+    """Count the different precursor charge states in a mass spectrometry data file.
 
     This command will construct a metadata index if it is not found.
-    '''
+    """
     _, index = _ensure_metadata_index(path)
 
     charges = Counter()
@@ -374,10 +367,10 @@ def _binsearch(array, x):
 @cli.command("precursor-clustering", short_help='Cluster precursor masses in a mass spectrometry data file')
 @click.argument("path", type=click.Path(exists=True))
 def precursor_clustering(path, grouping_error=2e-5):
-    '''Cluster precursor masses in a mass spectrometry data file.
+    """Cluster precursor masses in a mass spectrometry data file.
 
     This command will construct a metadata index if it is not found.
-    '''
+    """
     _, index = _ensure_metadata_index(path)
     points = []
     for _, msn_info in index.msn_ids.items():
@@ -432,12 +425,12 @@ def precursor_clustering(path, grouping_error=2e-5):
     "Whether to assume the spectra are deconvoluted or not"))
 def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresholds=None, output_path=None,
                         in_memory=False, deconvoluted=False, cache_size=2**10):
-    '''Cluster spectra by precursor mass and cosine similarity.
+    """Cluster spectra by precursor mass and cosine similarity.
 
     Spectrum clusters are written out to a text file recording
     cluster precursor mass, within-cluster similarity, and the
     source file and scan ID for each cluster member.
-    '''
+    """
     if not similarity_thresholds:
         similarity_thresholds = [0.1, 0.4, 0.7]
     else:
@@ -447,7 +440,8 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
     msn_scans = []
     n_spectra = 0
 
-    with progress(paths, label="Indexing", item_show_func=lambda x: str(x) if x else '', color=True, fill_char=click.style('-', 'cyan')) as progbar:
+    with progress(paths, label="Indexing", item_show_func=lambda x: str(x) if x else '',
+                  color=True, fill_char=click.style('-', 'cyan')) as progbar:
         key_seqs = []
         for path in progbar:
             if deconvoluted:
@@ -460,7 +454,8 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
             n_spectra += len(index.msn_ids)
 
     with progress(label="Loading Spectra", length=n_spectra,
-                  item_show_func=lambda x: str(x) if x else '', color=True, fill_char=click.style('-', 'green')) as progbar:
+                  item_show_func=lambda x: str(x) if x else '', color=True,
+                  fill_char=click.style('-', 'green')) as progbar:
         for reader, index in key_seqs:
             if not in_memory:
                 if not reader.has_fast_random_access:
@@ -525,9 +520,7 @@ def spectrum_clustering(paths, precursor_error_tolerance=1e-5, similarity_thresh
 @cli.command('cluster-statistics')
 @click.argument('path', type=click.Path(readable=True, dir_okay=False))
 def cluster_evaluation(path):
-    """Calculate some statistics describing the clustered mass spectra described in
-    the specified cluster file.
-    """
+    """Calculate some statistics describing the clustered mass spectra described in the specified cluster file."""
     with click.open_file(path) as fh:
         dirname = os.path.dirname(path)
         reader = ScanClusterReader(fh, _DynamicallyLoadingResolver(dirname))
@@ -544,8 +537,7 @@ def cluster_evaluation(path):
 @click.argument('path', type=click.Path(exists=True, readable=True))
 @click.option("-o", "--output-path", type=click.Path(writable=True))
 def ms1_spectrum_diagnostics(path, output_path=None):
-    '''Collect diagnostic information from MS1 spectra.
-    '''
+    """Collect diagnostic information from MS1 spectra."""
     reader = ms_deisotope.MSFileLoader(path)
 
     reader.make_iterator(grouped=True)
@@ -614,12 +606,15 @@ def ms1_spectrum_diagnostics(path, output_path=None):
 
 @cli.command("extract-reporter-ions", short_help="Extract reporter ion channels from an MS file to a CSV")
 @click.argument('path', type=click.Path(exists=True, readable=True))
-@click.option("-o", "--output-path", type=click.Path(writable=True), default='-', help="The path to write output to. Defaults to STDOUT")
+@click.option("-o", "--output-path", type=click.Path(writable=True), default='-',
+              help="The path to write output to. Defaults to STDOUT")
 @click.option("-r", "--reagent", default='tmt11', type=click.Choice(
     sorted(TMTReporterExtractor.TMT_REAGENTS)),
     required=False, help="The isobaric quantification tag reagent used")
-@click.option("-m", "--error-tolerance", type=float, default=1e-5, help="The mass accuracy error tolerance to use when matching reporter ions")
+@click.option("-m", "--error-tolerance", type=float, default=1e-5,
+              help="The mass accuracy error tolerance to use when matching reporter ions")
 def extract_reporter_ions(path, output_path=None, reagent='tmt11', error_tolerance=1e-5):
+    """Extract the reporter ions from MSn spectra."""
     reader = ms_deisotope.MSFileLoader(path)
 
     if error_tolerance > 1e-3:
@@ -631,7 +626,8 @@ def extract_reporter_ions(path, output_path=None, reagent='tmt11', error_toleran
 
     extractor = TMTReporterExtractor(reagent=reagent)
     channels = [t.name for t in extractor.signature_ions]
-    columns = ['scan_id', 'scan_time', 'precursor_mz', 'precursor_charge', 'precursor_intensity', 'tic', 'precursor_purity'] + channels
+    columns = ['scan_id', 'scan_time', 'precursor_mz', 'precursor_charge',
+               'precursor_intensity', 'tic', 'precursor_purity'] + channels
 
     out_file = click.open_file(output_path, mode='wb')
     out_file_wrapper = io.TextIOWrapper(out_file, encoding='utf8', newline='')
@@ -667,8 +663,7 @@ if _compression.has_idzip:
     @click.option("-o", "--output", type=click.Path(writable=True, file_okay=True, dir_okay=False),
                   required=False, help="The output stream to write to. Defaults to STDOUT if omitted.")
     def idzip_compression(path, output):
-        '''Compress a file using  idzip, a gzip-compatible format with random access support.
-        '''
+        """Compress a file using  idzip, a gzip-compatible format with random access support."""
         if output is None:
             output = '-'
         with click.open_file(output, mode='wb') as outfh:

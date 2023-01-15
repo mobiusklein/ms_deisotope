@@ -1074,7 +1074,7 @@ cpdef populate_graph(DeconvoluterBase self, error_tolerance=ERROR_TOLERANCE, cha
 
 @cython.binding(True)
 cpdef DeconvolutedPeak _make_deconvoluted_peak(self, IsotopicFitRecord fit, double charge_carrier):
-    '''Helper method to package a finished :class:`~.IsotopicFitRecord` into a :class:`~.DeconvolutedPeak`
+    """Helper method to package a finished :class:`~.IsotopicFitRecord` into a :class:`~.DeconvolutedPeak`
 
     Arguments
     ---------
@@ -1086,7 +1086,7 @@ cpdef DeconvolutedPeak _make_deconvoluted_peak(self, IsotopicFitRecord fit, doub
     Returns
     -------
     :class:`~.DeconvolutedPeak`
-    '''
+    """
     cdef:
         double score, total_abundance, signal_to_noise, full_width_at_half_max
         double most_abundant_mz, most_abundant_mz_intensity, average_mz, area
