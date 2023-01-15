@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [v0.0.45] - 2023-01-14
+
+### Added
+- More type annotations for `ProcessedScan`-yielding readers.
+- C accelerators for `pyteomics`'s unit-scalars and CV-params to speed up parsing and reduce memory usage.
+- Created a low level C API for stripped-down peak lists that does not use the GIL, limited use-cases currently.
+- Loads of type annotations.
+- Added a `-X` option to pass raw key-value pairs to the mzML converter in `ms-index mzml` to make experimental
+  configuration easier.
+
 ## [v0.0.44] - 2022-10-09
 
 ### Added
@@ -500,6 +510,8 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 <!-- Versions -->
 [Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.43...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.45]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.45
+[v0.0.44]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.44
 [v0.0.43]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.43
 [v0.0.42]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.42
 [v0.0.40]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.40
