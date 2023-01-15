@@ -1,5 +1,5 @@
 from .common import (
-    ScanSerializerBase, ScanDeserializerBase)
+    ScanSerializerBase, ScanDeserializerBase, ProcessedRandomAccessScanSource)
 
 from .mzml import (
     ProcessedMzMLDeserializer, ProcessedMzMLLoader, MzMLSerializer, ProcessedGeneric3DIonMobilityFrameSource, IonMobilityAware3DMzMLSerializer)
@@ -20,6 +20,7 @@ from .infer_type import (ProcessedMSFileLoader, get_writer)
 __all__ = [
     "ScanSerializerBase",
     "ScanDeserializerBase",
+    "ProcessedRandomAccessScanSource",
     "MzMLSerializer",
     "ProcessedMzMLDeserializer",
     "ProcessedMzMLLoader",
