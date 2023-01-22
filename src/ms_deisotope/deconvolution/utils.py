@@ -19,6 +19,14 @@ debug = logger.debug
 error = logger.error
 
 
+def _is_parallel_arrays(peaks):
+    if len(peaks) == 2:
+        if isinstance(peaks[0], np.ndarray) and isinstance(peaks[1], np.ndarray) and \
+                len(peaks[0]) == len(peaks[1]):
+            return True
+    return False
+
+
 def prepare_peaklist(peaks):
     """Ensure ``peaks`` is a :class:`~.PeakSet` object,
     converting from other compatible types as needed. Additionally, make a deep
@@ -31,7 +39,9 @@ def prepare_peaklist(peaks):
     2. :class:`ms_peak_picker.PeakIndex` will have its peaks extracted and copied
     3. Any other *sequence* of :class:`PeakLike` objects (objects having an mz and
        intensity attribute) will be converted into a :class:`ms_peak_picker.PeakSet`
-    4. Any *sequence* of :class:`tuple` or :class:`list` having at least two entries
+    4. A pair of parallel sequences or NumPy arrays corresponding to m/z and intensity
+       values for a series of peaks.
+    5. Any *sequence* of :class:`tuple` or :class:`list` having at least two entries
        will be converted into a :class:`ms_peak_picker.PeakSet` with the m/z value
        of each peak being the the `p[0]` of each entry and the intensity `p[1]`. Any
        other entries will be ignored.
@@ -53,7 +63,11 @@ def prepare_peaklist(peaks):
         peaks = tuple(peaks)
         if len(peaks) == 0:
             return PeakSet([])
-        if not isinstance(peaks[0], FittedPeak):
+
+        elif _is_parallel_arrays(peaks):
+            peaks = [simple_peak(x, y) for x, y in zip(*peaks)]
+
+        elif not isinstance(peaks[0], FittedPeak):
             if is_peak(peaks[0]):
                 peaks = [simple_peak(p.mz, p.intensity, 0.01) for p in peaks]
             elif isinstance(peaks[0], (list, tuple)):

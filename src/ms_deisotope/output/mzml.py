@@ -42,7 +42,7 @@ import os
 import warnings
 
 from contextlib import contextmanager
-from typing import Any, ContextManager, Dict, List, Union, Optional, OrderedDict
+from typing import Any, ContextManager, Dict, List, Tuple, Union, Optional, OrderedDict
 
 from ms_deisotope.data_source.metadata.instrument_components import InstrumentInformation, InstrumentModel
 from ms_deisotope.data_source.metadata.activation import ActivationInformation
@@ -77,12 +77,12 @@ from ms_deisotope.data_source.common import (
     _SingleScanIteratorImpl,
     _InterleavedGroupedScanIteratorImpl)
 from ms_deisotope.data_source.metadata import data_transformation
-from ms_deisotope.data_source.metadata.software import (Software, software_name)
+from ms_deisotope.data_source.metadata.software import (Software)
 from ms_deisotope.data_source.mzml import MzMLLoader
-from ms_deisotope.data_source.scan.mobility_frame import Generic3DIonMobilityFrameSource, RawDataArrays3D
+from ms_deisotope.data_source.scan.mobility_frame import FrameBase, Generic3DIonMobilityFrameSource, RawDataArrays3D, ProcessedIonMobilityFrame
 
 from ms_deisotope.feature_map import ExtendedScanIndex
-from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature, DeconvolutedLCMSFeatureTreeNode
+from ms_deisotope.feature_map.feature_fit import DeconvolutedLCMSFeature
 from ms_deisotope.feature_map.feature_map import DeconvolutedLCMSFeatureMap, LCMSFeature, LCMSFeatureMap
 
 
@@ -91,8 +91,7 @@ from .text_utils import (envelopes_to_array, decode_envelopes)
 
 
 def _param(key: Union[str, Term, Any]) -> str:
-    """Try to coerce a name into something we can convert into a controlled
-    vocabulary parameter in :mod:`psims`.
+    """Try to coerce a name into something we can convert into a controlled vocabulary parameter in :mod:`psims`.
 
     Parameters
     ----------
@@ -116,9 +115,8 @@ def _param(key: Union[str, Term, Any]) -> str:
 
 
 class SpectrumDescription(Sequence):
-    """A helper class to calculate properties of a spectrum derived from
-    their peak data or raw signal
-    """
+    """A helper class to calculate properties of a spectrum derived from their peak data or raw signal."""
+
     descriptors: List[Dict[str, float]]
 
     def __init__(self, attribs=None):
@@ -138,7 +136,7 @@ class SpectrumDescription(Sequence):
         return len(self.descriptors)
 
     def append(self, desc: dict):
-        """Add the descriptor `desc` to the collection
+        """Add the descriptor `desc` to the collection.
 
         Adds a descriptor which conforms to any of :mod:`psims`'s
         cvParam specification patterns.
@@ -162,8 +160,7 @@ class SpectrumDescription(Sequence):
 
     @classmethod
     def from_peak_set(cls, peak_list):
-        """Calculate the spectrum's descriptors from a :class:`Sequence` of :class:`~.PeakLike`
-        objects.
+        """Calculate the spectrum's descriptors from a :class:`Sequence` of :class:`~.PeakLike` objects.
 
         Parameters
         ----------
@@ -209,8 +206,7 @@ class SpectrumDescription(Sequence):
 
     @classmethod
     def from_arrays(cls, arrays):
-        """Calculate the spectrum's descriptors from a :class:`RawDataArrays`
-        instance.
+        """Calculate the spectrum's descriptors from a :class:`RawDataArrays` instance.
 
         Parameters
         ----------
@@ -415,8 +411,7 @@ class MzMLSerializer(ScanSerializerBase):
         self.processing_parameters = []
 
     def add_instrument_configuration(self, configuration: InstrumentInformation):
-        """Add an :class:`~.InstrumentInformation` object to
-        the output document.
+        """Add an :class:`~.InstrumentInformation` object to the output document.
 
         Parameters
         ----------
@@ -472,8 +467,7 @@ class MzMLSerializer(ScanSerializerBase):
         self.software_list.append(software_description)
 
     def add_file_information(self, file_information: FileInformation):
-        """Add the information of a :class:`~.FileInformation` to the
-        output document.
+        """Add the information of a :class:`~.FileInformation` to the output document.
 
         Parameters
         ----------
@@ -488,8 +482,7 @@ class MzMLSerializer(ScanSerializerBase):
             self.add_source_file(source_file)
 
     def add_file_contents(self, file_contents: Union[str, Mapping, FileContent]):
-        """Add a key to the resulting :obj:`<fileDescription>`
-        of the output document.
+        """Add a key to the resulting :obj:`<fileDescription>` of the output document.
 
         Parameters
         ----------
@@ -499,8 +492,7 @@ class MzMLSerializer(ScanSerializerBase):
         self.file_contents_list.append(file_contents)
 
     def remove_file_contents(self, name: Union[str, Mapping, FileContent]):
-        """Remove a key to the resulting :obj:`<fileDescription>`
-        of the output document.
+        """Remove a key to the resulting :obj:`<fileDescription>` of the output document.
 
         Parameters
         ----------
@@ -530,7 +522,7 @@ class MzMLSerializer(ScanSerializerBase):
         self.file_contents_list.pop(i)
 
     def add_source_file(self, source_file: SourceFile):
-        """Add the :class:`~.SourceFile` to the output document
+        """Add the :class:`~.SourceFile` to the output document.
 
         Parameters
         ----------
@@ -556,11 +548,12 @@ class MzMLSerializer(ScanSerializerBase):
             unwrapped['params'].append(str(source_file.file_format))
         self.source_file_list.append(unwrapped)
 
-    def add_data_processing(self, data_processing_description: Union[data_transformation.DataProcessingInformation, data_transformation.ProcessingMethod]):
-        """Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`
-        to the output document as a new :obj:`<dataProcessing>` entry describing one or
-        more :obj:`<processingMethod>`s for a single referenced :class:`~.Software`
-        instance.
+    def add_data_processing(self, data_processing_description: Union[data_transformation.DataProcessingInformation,
+                                                                     data_transformation.ProcessingMethod]):
+        """Add a new :class:`~.DataProcessingInformation` or :class:`~ProcessingMethod`.
+
+        Creates a new :obj:`<dataProcessing>` entry describing one or more :obj:`<processingMethod>`s
+        for a single referenced :class:`~.Software` instance.
 
         Parameters
         ----------
@@ -605,8 +598,7 @@ class MzMLSerializer(ScanSerializerBase):
             self.data_processing_list.append(data_processing_description)
 
     def add_processing_parameter(self, name: str, value: Optional[Union[str, int, float]]=None):
-        """Add a new processing method to the writer's own
-        :obj:`<dataProcessing>` element.
+        """Add a new processing method to the writer's own :obj:`<dataProcessing>` element.
 
         Parameters
         ----------
@@ -621,8 +613,7 @@ class MzMLSerializer(ScanSerializerBase):
         self.sample_list.append(sample)
 
     def copy_metadata_from(self, reader: ScanFileMetadataBase):
-        """Copies the file-level metadata from an instance of :class:`~.ScanFileMetadataBase`
-        into the metadata of the file to be written
+        """Copies the file-level metadata from an instance of :class:`~.ScanFileMetadataBase` into the metadata.
 
         Parameters
         ----------
@@ -958,8 +949,7 @@ class MzMLSerializer(ScanSerializerBase):
                 charge_array, other_arrays)
 
     def save_scan(self, scan: ScanBase, **kwargs):
-        """Write a :class:`~.Scan` to the output document
-        as a collection of related :obj:`<spectrum>` tags.
+        """Write a :class:`~.Scan` to the output document as a collection of related :obj:`<spectrum>` tags.
 
         .. note::
 
@@ -1035,8 +1025,7 @@ class MzMLSerializer(ScanSerializerBase):
             self.indexer.add_scan(scan)
 
     def save_scan_bunch(self, bunch: ScanBunch, **kwargs):
-        """Write a :class:`~.ScanBunch` to the output document
-        as a collection of related :obj:`<spectrum>` tags.
+        """Write a :class:`~.ScanBunch` to the output document as a collection of related :obj:`<spectrum>` tags.
 
         .. note::
 
@@ -1060,8 +1049,7 @@ class MzMLSerializer(ScanSerializerBase):
             self.indexer.add_scan_bunch(bunch)
 
     def extract_scan_event_parameters(self, scan: ScanBase):
-        """Package :class:`~.ScanAcquisitionInformation` into a pair of
-        :class:`list`s that :class:`~psims.mzml.writer.MzMLWriter` expects.
+        """Package :class:`~.ScanAcquisitionInformation` into a pair of :class:`list`s that :class:`~psims.mzml.writer.MzMLWriter` expects.
 
         Parameters
         ----------
@@ -1157,8 +1145,7 @@ class MzMLSerializer(ScanSerializerBase):
             pass
 
     def format(self):
-        """This method is no longer needed.
-        """
+        """A method that is no longer needed."""
         pass
 
     def close(self):
@@ -1308,8 +1295,7 @@ class PeakSetDeserializingMixin(object):
         self.decode_binary = True
 
     def _precursor_information(self, scan: ScanBase) -> PrecursorInformation:
-        """Returns information about the precursor ion,
-        if any, that this scan was derived form.
+        """Returns information about the precursor ion, if any, that this scan was derived form.
 
         Returns `None` if this scan has no precursor ion
 
@@ -1436,8 +1422,7 @@ class PeakSetDeserializingMixin(object):
 
 
 class ProcessedMzMLLoader(PeakSetDeserializingMixin, MzMLLoader, ScanDeserializerBase, LCMSMSQueryInterfaceMixin):
-    """Extends :class:`.MzMLLoader` to support deserializing preprocessed data
-    and to take advantage of additional indexing information.
+    """Extends :class:`.MzMLLoader` to support deserializing preprocessed data and to provide indexing information.
 
     Attributes
     ----------
@@ -1504,7 +1489,23 @@ except ImportError:
     has_c = False
 
 
-def extracted_features_to_3d_arrays(features):
+def extracted_features_to_3d_arrays(features: LCMSFeatureMap) -> Tuple[np.ndarray]:
+    """Convert a :class:`~.LCMSFeatureMap` into a set of parallel arrays.
+
+    The output arrays are ordered first m/z and ion mobility.
+
+    Parameters
+    ----------
+    features : LCMSFeatureMap
+        The ion mobility features to decompose.
+
+    Returns
+    -------
+    mz_array : np.ndarray
+    intensity_array : np.ndarray
+    ion_mobility_array : np.ndarray
+    feature_id_array : np.ndarray
+    """
     mz_array = array.array('d')
     intensity_array = array.array('d')
     ion_mobility_array = array.array('d')
@@ -1525,7 +1526,22 @@ def extracted_features_to_3d_arrays(features):
     return (mz_array[mask], intensity_array[mask], ion_mobility_array[mask], feature_id_array[mask])
 
 
-def deserialize_features(scan_dict, ion_mobility_array_name='raw ion mobility array'):
+def deserialize_features(scan_dict: Dict[str, Union[np.ndarray, Any]],
+                         ion_mobility_array_name: str='raw ion mobility array') -> LCMSFeatureMap:
+    """Convert a dictionary of arrays into a :class:`~.LCMSFeatureMap.
+
+    Parameters
+    ----------
+    scan_dict : Dict[str, np.ndarray]
+        The arrays defining the feature map.
+    ion_mobility_array_name : str
+        The array to read for the ion mobility dimension.
+
+
+    Returns
+    -------
+    LCMSFeatureMap
+    """
     mz_array = scan_dict['m/z array']
     intensity_array = scan_dict['intensity array']
     drift_time_array = scan_dict[ion_mobility_array_name]
@@ -1548,7 +1564,26 @@ def deserialize_features(scan_dict, ion_mobility_array_name='raw ion mobility ar
     return feature_map
 
 
-def deconvoluted_features_to_3d_arrays(features):
+def deconvoluted_features_to_3d_arrays(features: DeconvolutedLCMSFeatureMap) -> Tuple[np.ndarray]:
+    """Convert a :class:`~.DeconvolutedLCMSFeatureMap` into a set of parallel arrays.
+
+    The output arrays are ordered first m/z and ion mobility.
+
+    Parameters
+    ----------
+    features : DeconvolutedLCMSFeatureMap
+        The ion mobility features to decompose.
+
+    Returns
+    -------
+    mz_array : np.ndarray
+    intensity_array : np.ndarray
+    charge_array : np.ndarray
+    score_array : np.ndarray
+    ion_mobility_array : np.ndarray
+    envelope_array : np.ndarray
+    feature_id_array : np.ndarray
+    """
     mz_array = array.array('d')
     intensity_array = array.array('d')
     charge_array = array.array('i')
@@ -1589,7 +1624,22 @@ def deconvoluted_features_to_3d_arrays(features):
             feature_id_array[mask])
 
 
-def deserialize_deconvoluted_features(scan_dict, ion_mobility_array_name='raw ion mobility array'):
+def deserialize_deconvoluted_features(scan_dict: Dict[str, Union[np.ndarray, Any]],
+                                      ion_mobility_array_name: str='raw ion mobility array') -> DeconvolutedLCMSFeatureMap:
+    """Convert a dictionary of arrays into a :class:`~.DeconvolutedLCMSFeatureMap.
+
+    Parameters
+    ----------
+    scan_dict : Dict[str, np.ndarray]
+        The arrays defining the feature map.
+    ion_mobility_array_name : str
+        The array to read for the ion mobility dimension.
+
+
+    Returns
+    -------
+    DeconvolutedLCMSFeatureMap
+    """
     envelopes = decode_envelopes(scan_dict["isotopic envelopes array"])
     mz_array = scan_dict['m/z array']
     intensity_array = scan_dict['intensity array']
@@ -1619,7 +1669,7 @@ def deserialize_deconvoluted_features(scan_dict, ion_mobility_array_name='raw io
 
 
 class _IonMobility3DSerializerBase:
-    def _get_peak_data(self, scan, kwargs):
+    def _get_peak_data(self, scan: FrameBase, kwargs):
         deconvoluted = kwargs.get("deconvoluted", self.deconvoluted)
         if deconvoluted:
             centroided = True
@@ -1667,6 +1717,12 @@ class _IonMobility3DSerializerBase:
 
 
 class IonMobilityAware3DMzMLSerializer(_IonMobility3DSerializerBase, MzMLSerializer):
+    """An mzML writer that knows how to serialize 3D ion mobility spectra.
+
+    Instead of writing :class:`~.ScanBase` objects, this type writes :class:`~.FrameBase`
+    objects. It is otherwise identical to :class:`MzMLSerializer`.
+    """
+
     default_data_encoding = MzMLSerializer.default_data_encoding.copy()
     default_data_encoding.update({
         "feature id array": np.int32,
@@ -1674,8 +1730,13 @@ class IonMobilityAware3DMzMLSerializer(_IonMobility3DSerializerBase, MzMLSeriali
 
 
 class ProcessedGeneric3DIonMobilityFrameSource(Generic3DIonMobilityFrameSource):
-    def _make_frame(self, data):
-        frame = super(ProcessedGeneric3DIonMobilityFrameSource, self)._make_frame(data)
+    """A wrapper around a processed mzML file reader that properly reads deconvoluted IM-MS frames.
+
+    Reads :class:`~.ProcessedIonMobilityFrame` objects from the underlying scan source.
+    """
+
+    def _make_frame(self, data) -> ProcessedIonMobilityFrame:
+        frame = super()._make_frame(data)
         if 'feature id array' in frame._data:
             if 'charge array' in frame._data:
                 frame.deconvoluted_features = deserialize_deconvoluted_features(frame._data)

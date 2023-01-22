@@ -33,7 +33,7 @@ def deconvolute_peaks(peaklist, decon_config=None,
                       retention_strategy=None,
                       use_quick_charge=False,
                       **kwargs):
-    """Deconvolute a centroided mass spectrum
+    """Deconvolute a centroided mass spectrum.
 
     This function constructs a deconvoluter object using the ``deconvoluter_type`` argument
     and deconvolutes the input ``peaklist`` by calling its :meth:`deconvolute` method.
@@ -88,6 +88,11 @@ def deconvolute_peaks(peaklist, decon_config=None,
         Additional keywords included in ``decon_config``
 
 
+    See Also
+    --------
+    :func:`ms_deisotope.peak_set.decharge`
+
+
     Notes
     -----
     If speed is an issue, consider setting `use_quick_charge` :const:`True`. This will pre-screen charge
@@ -115,9 +120,11 @@ def deconvolute_peaks(peaklist, decon_config=None,
     decon_config.setdefault("use_subtraction", True)
     decon_config.setdefault("scale_method", SCALE_METHOD)
     decon_config.setdefault("use_quick_charge", use_quick_charge)
-    decon = deconvoluter_type(peaklist=peaklist, **decon_config)
 
     peaklist = prepare_peaklist(peaklist)
+
+    decon = deconvoluter_type(peaklist=peaklist, **decon_config)
+
 
     if verbose_priorities or verbose:
         decon.verbose = True

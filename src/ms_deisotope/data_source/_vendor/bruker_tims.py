@@ -6,6 +6,7 @@ import os
 import re
 import sqlite3
 import sys
+from typing import Dict
 import warnings
 
 from ctypes import cdll, c_char_p, c_uint32, c_int32, c_uint64, c_int64, c_double, c_void_p, POINTER, create_string_buffer
@@ -177,6 +178,7 @@ class TIMSMetadata(object):
         self._total_scans = total
         self._scan_count_to_frame_id = np.array(count_to_id)
         self._scan_time_to_frame_id = np.array(time_to_id)
+        self._scan_time_to_frame_id[:, 0] /= 60
 
     def _read_metadata(self):
         self._read_global_metadata()
@@ -238,7 +240,7 @@ class TIMSFrameInformation(Base):
             rowdict['SummedIntensities'],
             rowdict['T1'],
             rowdict['T2'],
-            rowdict['Time'],
+            rowdict['Time'] / 60,
             rowdict['TimsCalibration'],
             rowdict['TimsId'],
         )
@@ -462,10 +464,14 @@ class TIMSAPI(object):
 
 
 class BrukerTIMSScanDataSource(RandomAccessScanSource):
-    _scan_merging_parameters = default_scan_merging_parameters.copy()
+    _scan_merging_parameters: Dict[str, float] = default_scan_merging_parameters.copy()
+
+    _always_profile: bool = True
 
     def _is_profile(self, scan):
         if scan.is_combined():
+            return True
+        if self._always_profile:
             return True
         return False
 
@@ -605,6 +611,13 @@ class BrukerTIMSScanDataSource(RandomAccessScanSource):
             return mzs, intensities
         else:
             mzs, intensities = self.read_spectrum(scan.frame.id, scan.start_scan, scan.end_scan)
+            if self._always_profile:
+                centroids = pick_peaks(mzs, intensities, peak_mode="centroid")
+                if centroids is None:
+                    return np.array([], dtype=float), np.array([], dtype=float)
+                mzs, intensities = reprofile(
+                    centroids, dx=self._scan_merging_parameters['dx'],
+                    override_fwhm=self._scan_merging_parameters['fwhm'])
             return mzs, intensities
 
 
@@ -770,16 +783,10 @@ multi_scan_id_parser = re.compile(r"frame=(\d+) startScan=(\d+) endScan=(\d+)")
 class BrukerTIMSLoader(BrukerTIMSFrameSource, BrukerTIMSScanDataSource, TIMSMetadata, TIMSAPI):
 
     def __init__(self, analysis_directory, use_recalibrated_state=False, scan_merging_parameters=None):
-        if sys.version_info.major == 2:
-            if isinstance(analysis_directory, str):
-                analysis_directory = analysis_directory.decode('utf8')
-            if not isinstance(analysis_directory, unicode):
-                raise ValueError("analysis_directory must be a Unicode string.")
-        if sys.version_info.major == 3:
-            if isinstance(analysis_directory, bytes):
-                analysis_directory = analysis_directory.decode('utf8')
-            if not isinstance(analysis_directory, str):
-                raise ValueError("analysis_directory must be a string.")
+        if isinstance(analysis_directory, bytes):
+            analysis_directory = analysis_directory.decode('utf8')
+        if not isinstance(analysis_directory, str):
+            raise ValueError("analysis_directory must be a string.")
         if scan_merging_parameters is None:
             scan_merging_parameters = default_scan_merging_parameters.copy()
         else:

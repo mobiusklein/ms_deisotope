@@ -3,6 +3,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
+## [v0.0.46] - 2023-01-22
+
+
+### Added
+1. Documentation for the `ms_deisotope.peak_set` module.
+2. Added `FunctionScorer` to `ms_deisotope.scoring` to allow user-defined scoring functions to be used without
+   sub-classing. This incurs some extra overhead on every call, so performance may be worse than a built-in
+   sub-class.
+
+### Changed
+1. `ms_deisotope.deconvolution.prepare_peaklist` now coerces a tuple of parallel sequences or
+   `numpy` arrays of m/z and intensities properly, so the caller does not need to zip them into
+   a list of `(mz, intensity)` pairs.
+
+### Fixed
+1. `ms_deisotope.deconvolute_peaks` was incorrectly calling `ms_deisotope.deconvolution.prepare_peaklist` too late, so no useful
+   coercion was done for the user. `prepare_peaklist` is now correctly called **before** passing the
+   provided peak list to the deconvolution machinery, removing the need for users to call it explicitly.
+
+
 ## [v0.0.45] - 2023-01-14
 
 ### Added

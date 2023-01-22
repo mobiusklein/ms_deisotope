@@ -894,11 +894,12 @@ class IonMobilityFrame(FrameBase):
             scan.pick_peaks(**kwargs)
             scan.peak_set.intensity_array = None
             scan.peak_set.mz_array = None
+            drift_time = scan.drift_time
             for peak in scan:
                 peak: FittedPeak
                 if peak.intensity < minimum_intensity:
                     continue
-                lff.handle_peak(peak, scan.drift_time)
+                lff.handle_peak(peak, drift_time)
 
         del averager
         lff.split_sparse(max_gap_size, min_size).smooth_overlaps(

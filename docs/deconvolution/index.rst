@@ -14,3 +14,4 @@ monomer isotopic model or :title-reference:`averagine` [Senko]_.
     Isotopic Pattern Generation <averagine>
     Envelope Scoring <envelope_scoring>
     Deconvolution Pipeline <pipeline>
+    peaks
