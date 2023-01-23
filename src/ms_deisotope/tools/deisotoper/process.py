@@ -14,6 +14,7 @@ from ms_deisotope.data_source import Scan, RandomAccessScanSource, ScanIterator
 
 
 import ms_deisotope
+from ms_deisotope.data_source.scan.scan import ProcessedScan
 
 from ms_deisotope.processor import (
     ScanProcessor, MSFileLoader,
@@ -69,11 +70,42 @@ class ScanTransmissionMixin(object):
         # into the message sent back to the main process which in
         # turn can form a reference cycle and eat a lot of memory
         scan.product_scans = []
+        if isinstance(scan, ProcessedScan):
+            if scan.deconvoluted_peak_set is not None:
+                scan.peak_set = None
+                for peak in scan.deconvoluted_peak_set:
+                    if peak.fit is not None:
+                        peak.fit = None
         self.output_queue.put(
             (CompressedPickleMessage(scan), scan.index, scan.ms_level))
 
 
-class ScanIDYieldingProcess(Process, ScanTransmissionMixin):
+class _ProcessHelper:
+    def try_set_process_name(self, name=None):
+        """This helper method may be used to try to change a process's name
+        in order to make discriminating which role a particular process is
+        fulfilling. This uses a third-party utility library that may not behave
+        the same way on all platforms, and therefore this is done for convenience
+        only.
+
+        Parameters
+        ----------
+        name : str, optional
+            A name to set. If not provided, will check the attribute ``process_name``
+            for a non-null value, or else have no effect.
+        """
+        if name is None:
+            name = getattr(self, 'process_name', None)
+        if name is None:
+            return
+        try:
+            import setproctitle
+            setproctitle.setproctitle(name)
+        except (ImportError, AttributeError):
+            pass
+
+
+class ScanIDYieldingProcess(Process, ScanTransmissionMixin, _ProcessHelper):
     ms_file_path: os.PathLike
     scan_id_queue: multiprocessing.JoinableQueue
     loader: Union[ScanIterator, RandomAccessScanSource]
@@ -179,6 +211,7 @@ class ScanIDYieldingProcess(Process, ScanTransmissionMixin):
         return self.loader
 
     def run(self):
+        self.try_set_process_name("ms-deisotope-sched")
         self._open_ms_file()
         self._initialize_iterator()
 
@@ -300,7 +333,7 @@ class ScanBunchLoader(object):
         return (precursor, products)
 
 
-class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTransmissionMixin):
+class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTransmissionMixin, _ProcessHelper):
     """DeconvolutingScanTransformingProcess describes a child process that consumes scan id bunches
     from a shared input queue, retrieves the relevant scans, and preprocesses them using an
     instance of :class:`ms_deisotope.processor.ScanProcessor`, sending the reduced result
@@ -533,6 +566,7 @@ class DeconvolutingScanTransformingProcess(Process, ScanTransformMixin, ScanTran
         return ScanBunchLoader(loader)
 
     def run(self):
+        self.try_set_process_name("ms-deisotope-deconv")
         self._silence_loggers()
         loader = self._open_ms_file()
         queued_loader = self._make_batch_loader(loader)

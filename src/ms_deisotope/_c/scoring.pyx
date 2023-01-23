@@ -321,7 +321,7 @@ cdef class MaximizeFitSelector(FitSelectorBase):
 
 
 cdef class IsotopicFitterBase(object):
-    '''A base class for Isotopic Pattern Fitters, objects
+    """A base class for Isotopic Pattern Fitters, objects
     which given a set of experimental peaks and a set of matching
     theoretical peaks, returns a fit score describing how good the
     match is.
@@ -330,7 +330,7 @@ cdef class IsotopicFitterBase(object):
     or when the score is large (maximizing), and the appropriate
     :class:`FitSelectorBase` type will be used for :attr:`select`. This
     will also be reflected by :meth:`is_maximizing`.
-    '''
+    """
 
     def __init__(self, score_threshold=0.5):
         self.select = MinimizeFitSelector(score_threshold)
@@ -475,6 +475,10 @@ cdef class GTestFitter(IsotopicFitterBase):
 
     where :math:`o_i` is the intensity of the ith experimental peak
     and :math:`e_i` is the intensity of the ith theoretical peak.
+
+    .. note::
+
+        The G statistic is on the scale of the signal used.
     """
     @cython.cdivision
     cpdef double _evaluate(self, PeakSet peaklist, list observed, list expected):
@@ -650,7 +654,25 @@ cdef double ms_deconv_score_peak(FittedPeak obs, TheoreticalPeak theo, double ma
 
 
 cdef class MSDeconVFitter(IsotopicFitterBase):
-    '''An implementation of the scoring function used in :title-reference:`MSDeconV`
+    r"""An implementation of the scoring function used in :title-reference:`MSDeconV`
+
+    .. math::
+        :nowrap:
+
+        \begin{split}
+            s_{mz}(e, t) &= \begin{cases}
+                1 - \frac{\|mz(e) - mz(t)\|}{d} & \text{if } \|mz(e) - mz(t)\| < d,\\
+                0 & \text{otherwise}
+            \end{cases}\\
+
+            s_{int}(e, t) &= \begin{cases}
+                1 - \frac{int(t) - int(e)}{int(e)} & \text{if } int(e) < int(t) \text{ and } \frac{int(t) - int(e)}{int(e)} \le 1, \\
+                \sqrt{1 - \frac{int(e) - int(t)}{int(t)}} & \text{if } int(e) \ge int(t) \text{ and } \frac{int(e) - int(t)}{int(t)} \le 1,\\
+                0 & \text{otherwise}
+            \end{cases}\\
+
+            \text{S}(e, t) &= \sqrt{int(t)}\times s_{mz}(e,t) \times s_{int}(e, t)
+        \end{split}
 
     References
     ----------
@@ -658,7 +680,7 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
     Pevzner, P. A. (2010). Deconvolution and database search of complex tandem
     mass spectra of intact proteins: a combinatorial approach. Molecular & Cellular
     Proteomics : MCP, 9(12), 2772–2782. https://doi.org/10.1074/mcp.M110.002766
-    '''
+    """
     def __init__(self, minimum_score=10, mass_error_tolerance=0.02):
         self.mass_error_tolerance = mass_error_tolerance
         self.select = MaximizeFitSelector()
@@ -698,7 +720,7 @@ cdef class MSDeconVFitter(IsotopicFitterBase):
 
 
 cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
-    r'''An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
+    r"""An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
     weighted by 1 - :attr:`penalty_factor` * :class:`ScaledGTestFitter` score
 
     .. math::
@@ -706,7 +728,7 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
 
     where :math:`e` is the experimental peak list and :math:`t` is the theoretical
     peak list
-    '''
+    """
     def __init__(self, minimum_score=10, penalty_factor=1, mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector(minimum_score)
         self.penalty_factor = penalty_factor
@@ -757,6 +779,18 @@ cdef class PenalizedMSDeconVFitter(IsotopicFitterBase):
 
 
 cdef class FunctionScorer(IsotopicFitterBase):
+    """Use a user-provided Python function or callable object to evaluate an isotopic
+    envelope fit.
+
+    The provided function should take two arguments, a list of experimental fitted peaks
+    and a list of theoretical peaks, and return a single number as an output.
+
+    Make sure to pass the right thresholds and selector types when creating an instance
+    of this class that match the semantics of the provided function.
+
+    While this type is available for convenience, there is considerable overhead in using
+    it compared to one of the C accelerated fitters.
+    """
 
     def __init__(self, function, minimum_score=10, selector_type=MaximizeFitSelector):
         self.function = function

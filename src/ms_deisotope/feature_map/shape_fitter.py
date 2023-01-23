@@ -1,5 +1,5 @@
-'''Peak shape fitting by non-linear least squares for chromatographic peaks.
-'''
+"""Peak shape fitting by non-linear least squares for chromatographic peaks.
+"""
 from collections import OrderedDict
 
 import numpy as np

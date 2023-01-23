@@ -8,8 +8,8 @@ from .scan import ScanProxyContext
 
 
 class SubsequenceMappingProxy(object):
-    '''Poor man's radix tree.
-    '''
+    """Poor man's radix tree.
+    """
 
     def __init__(self, mapping):
         self.mapping = mapping
@@ -51,8 +51,8 @@ class SubsequenceMappingProxy(object):
 
 
 class DynamicallyLoadingResolver(object):
-    '''Dynamically open data files as they are encountered
-    '''
+    """Dynamically open data files as they are encountered
+    """
 
     def __init__(self, root_path=".", mapping=None, opener=None):
         if mapping is None:

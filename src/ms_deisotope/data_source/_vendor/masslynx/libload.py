@@ -1,8 +1,8 @@
-'''
+"""
 The Windows DLL needed for the MassLynx reader to work can be obtained from:
 https://interface.waters.com/masslynx/developers-area/sdks/, and by linking
 with them we agree to follow the associated licensing.
-'''
+"""
 
 import os
 from ctypes import WinDLL
@@ -49,14 +49,14 @@ def _load_library(lib_path):
 
 
 def determine_if_available():
-    '''Checks whether or not the Waters
+    """Checks whether or not the Waters
     RAW directory reading feature is available.
 
     Returns
     -------
     :class:`bool`:
         Whether or not the feature is enabled.
-    '''
+    """
     try:
         return _register_dll(override=False)
     except (OSError, ImportError):

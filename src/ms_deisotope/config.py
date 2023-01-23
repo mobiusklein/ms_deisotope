@@ -1,7 +1,7 @@
-'''Simple library-wide configuration management to handle
+"""Simple library-wide configuration management to handle
 the tracking of external 3rd-party libraries and machine state.
 
-'''
+"""
 import os
 import sys
 import copy

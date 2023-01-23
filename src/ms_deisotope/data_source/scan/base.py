@@ -1,6 +1,6 @@
-'''Represent the basic structures of a mass spectrum and its processed contents,
+"""Represent the basic structures of a mass spectrum and its processed contents,
 and provide an interface for manipulating that data.
-'''
+"""
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 import warnings
 
@@ -107,7 +107,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         return self._id_map[scan_id]
 
     def annotate_precursors(self, nperrow=4, ax=None):
-        '''Plot the spectra in this group as a grid, with the full
+        """Plot the spectra in this group as a grid, with the full
         MS1 spectrum in profile in the top row, and each MSn spectrum's
         precursor ion revealed in a grid panel below, with isolation
         window and selected ion/monoisotopic peak annotated.
@@ -124,7 +124,7 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         Returns
         -------
         :class:`matplotlib._axes.Axes`
-        '''
+        """
         return _annotate_precursors(
             self.precursor, self.products, nperrow=nperrow, ax=ax)
 
@@ -141,13 +141,13 @@ class ScanBunch(namedtuple("ScanBunch", ["precursor", "products"])):
         p.text(")")
 
     def pack(self):
-        '''Build a new :class:`ScanBunch` where each scan in it is returned by calling
+        """Build a new :class:`ScanBunch` where each scan in it is returned by calling
         :meth:`~.Scan.pack`
 
         Returns
         -------
         :class:`ScanBunch`
-        '''
+        """
         precursor = self.precursor.pack()
         products = [p.pack() for p in self.products]
         inst = self.__class__(precursor, products)
@@ -190,7 +190,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         return inst
 
     def has_array(self, array_type):
-        '''Check if this array set contains an array of the
+        """Check if this array set contains an array of the
         requested type.
 
         This method uses the semantic lookup mechanism to test
@@ -205,7 +205,7 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
         Returns
         -------
         bool
-        '''
+        """
         from ms_deisotope.data_source.metadata.scan_traits import binary_data_arrays
         try:
             term = binary_data_arrays[array_type]
@@ -366,12 +366,12 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
     @classmethod
     def empty(cls) -> 'RawDataArrays':
-        '''Create a new, empty instance.
+        """Create a new, empty instance.
 
         Returns
         -------
         :class:`RawDataArrays`
-        '''
+        """
         return cls(np.array([]), np.array([]))
 
     def __getitem__(self, i):
@@ -388,20 +388,20 @@ class RawDataArrays(namedtuple("RawDataArrays", ['mz', 'intensity'])):
 
 
 class ScanBase(object):
-    '''Abstract base class for Scan-like objects
-    '''
+    """Abstract base class for Scan-like objects
+    """
 
     source: 'ScanDataSource'
     peak_set: Optional[PeakSet]
     deconvoluted_peak_set: Optional[DeconvolutedPeakSet]
 
     def has_ion_mobility(self) -> bool:
-        '''Check whether this scan has drift time information associated with
+        """Check whether this scan has drift time information associated with
         it.
 
         If this scan has been aggregated, it will only check the first scan in
         the aggregate.
-        '''
+        """
         acq = self.acquisition_information
         if acq is None:
             return False
@@ -425,13 +425,13 @@ class ScanBase(object):
 
     @property
     def drift_time(self) -> Optional[float]:
-        '''A convenience method to access the first
+        """A convenience method to access the first
         scan event to retrieve its drift time.
 
         Returns
         -------
         float or None
-        '''
+        """
         acq = self.acquisition_information
         if acq is None:
             return None
@@ -440,8 +440,8 @@ class ScanBase(object):
 
     @property
     def scan_id(self) -> str:
-        '''An alias for :attr:`id`
-        '''
+        """An alias for :attr:`id`
+        """
         return self.id
 
     @property
@@ -620,32 +620,32 @@ class ScanBase(object):
     # Scan objects shouldn't be hashed.
 
     def bind(self, source: 'ScanDataSource') -> 'ScanBase':
-        '''Attach this object and its other referent members
+        """Attach this object and its other referent members
         to ``source``, letting them load information.
-        '''
+        """
         if self.precursor_information is not None:
             self.precursor_information.bind(source)
         return self
 
     def unbind(self) -> 'ScanBase':
-        '''Detattch this object and its other referent members
+        """Detattch this object and its other referent members
         from their currently bound :attr:`source`.
 
         This may cause errors if more information is requested but is not
         cached, or if requesting another :class:`ScanBase` be loaded.
-        '''
+        """
         if self.precursor_information is not None:
             self.precursor_information.unbind()
         return self
 
     @property
     def source_file_name(self) -> Optional[str]:
-        '''Get the name of the source file this :class:`~.ScanBase` object is bound to
+        """Get the name of the source file this :class:`~.ScanBase` object is bound to
 
         Returns
         -------
         :class:`str`
-        '''
+        """
         source = self.source
         if source is None:
             return None
@@ -812,19 +812,19 @@ class PrecursorInformation(_IonMobilityMixin):
         return not (self == other)
 
     def bind(self, source: 'ScanDataSource') -> 'PrecursorInformation':
-        '''Attach this object and its other referent members
+        """Attach this object and its other referent members
         to ``source``, letting them load information.
-        '''
+        """
         self.source = source
         return self
 
     def unbind(self):
-        '''Detattch this object the currently bound :attr:`source`.
-        '''
+        """Detattch this object the currently bound :attr:`source`.
+        """
         self.source = None
 
     def extract(self, peak: DeconvolutedPeak, override_charge: Optional[int]=None):
-        '''Populate the extracted attributes of this object from the attributes
+        """Populate the extracted attributes of this object from the attributes
         of a :class:`~.DeconvolutedPeak` instance.
 
         Parameters
@@ -833,7 +833,7 @@ class PrecursorInformation(_IonMobilityMixin):
             The peak to copy attributes from
         override_charge: :class:`int`, optional
             If provided, this charge will be used instead of the charge of ``peak``
-        '''
+        """
         self.extracted_neutral_mass = peak.neutral_mass
         self.extracted_charge = int(
             peak.charge) if override_charge is None else override_charge
@@ -843,7 +843,7 @@ class PrecursorInformation(_IonMobilityMixin):
         self.defaulted = False
 
     def default(self, orphan: bool=False):
-        '''Populate the extracted attributes of this object from the matching
+        """Populate the extracted attributes of this object from the matching
         original attributes.
 
         This usually reflects a failure to find an acceptable deconvolution solution,
@@ -855,7 +855,7 @@ class PrecursorInformation(_IonMobilityMixin):
         orphan: :class:`bool`
             Whether or not to set :attr:`orphan` to :const:`True`, indicating no peak was
             found near :attr:`mz`.
-        '''
+        """
         if self.charge == ChargeNotProvided:
             warnings.warn(
                 "A precursor has been defaulted with an unknown charge state.")
@@ -1667,7 +1667,7 @@ class PlottingMethods(object):
         return self._plot_api.draw_peaklist(self.scan.deconvoluted_peak_set, *args, **kwargs)
 
     def annotate_precursor(self, *args, **kwargs):
-        '''Draw a zoomed-in view of the precursor scan of :attr:`scan` surrounding the
+        """Draw a zoomed-in view of the precursor scan of :attr:`scan` surrounding the
         area around each precursor ion that gave rise to :attr:`scan`
         with monoisotopic peaks and isolation windows marked.
 
@@ -1683,7 +1683,7 @@ class PlottingMethods(object):
         See Also
         --------
         :func:`ms_deisotope.plot.annotate_scan_single`
-        '''
+        """
         precursor = kwargs.pop("precursor", None)
         if precursor is None:
             pinfo = self.scan.precursor_information

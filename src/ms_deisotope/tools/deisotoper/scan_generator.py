@@ -1,6 +1,6 @@
-'''Defines the base class for organizing the multiprocessing deconvolution algorithm
+"""Defines the base class for organizing the multiprocessing deconvolution algorithm
 encapsulating all behaviors from start to finish.
-'''
+"""
 import os
 import multiprocessing
 

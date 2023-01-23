@@ -1,6 +1,6 @@
-'''A collection of common base classes for types that
+"""A collection of common base classes for types that
 load data for :class:`~.Scan` objects.
-'''
+"""
 import abc
 import logging
 import os
@@ -337,54 +337,54 @@ class ScanIterator(ScanDataSource[DataPtrType, ScanType]):
     iteration_mode = ITERATION_MODE_GROUPED
 
     def has_ms1_scans(self) -> bool:
-        '''Checks if this :class:`ScanDataSource` contains MS1 spectra.
+        """Checks if this :class:`ScanDataSource` contains MS1 spectra.
 
         Returns
         -------
         :class:`bool` or :const:`None`
             Returns a boolean value if the presence of MS1 scans is known for certain, or :const:`None`
             if it cannot be determined in the case of missing metadata.
-        '''
+        """
         return True
 
     def has_msn_scans(self) -> bool:
-        '''Checks if this :class:`ScanDataSource` contains MSn spectra.
+        """Checks if this :class:`ScanDataSource` contains MSn spectra.
 
         Returns
         -------
         :class:`bool` or :const:`None`
             Returns a boolean value if the presence of MSn scans is known for certain, or :const:`None`
             if it cannot be determined in the case of missing metadata.
-        '''
+        """
         return True
 
     @abc.abstractmethod
     def next(self) -> Union[ScanType, ScanBunch]:
-        '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        """Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
         Returns
         -------
         :class:`~.ScanBunch` or :class:`~.ScanBase`
-        '''
+        """
         raise NotImplementedError()
 
     def __next__(self) -> Union[ScanType, ScanBunch]:
-        '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        """Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
         Returns
         -------
         :class:`~.ScanBunch` or :class:`~.ScanBase`
-        '''
+        """
         return self.next()
 
     def __iter__(self) -> Iterator[Union[ScanType, ScanBunch]]:
         return self
 
     def reset(self):
-        '''Reset the iterator, if possible, and clear any caches.
-        '''
+        """Reset the iterator, if possible, and clear any caches.
+        """
         raise NotImplementedError()
 
     def _dispose(self):
@@ -399,8 +399,8 @@ class ScanIterator(ScanDataSource[DataPtrType, ScanType]):
 
     @abc.abstractmethod
     def _make_default_iterator(self):
-        '''Set up the default iterator for the :class:`ScanIterator`.
-        '''
+        """Set up the default iterator for the :class:`ScanIterator`.
+        """
         raise NotImplementedError()
 
     def make_iterator(self, iterator=None, grouped=None, **kwargs) -> 'ScanIterator':
@@ -468,19 +468,19 @@ class ScanIterator(ScanDataSource[DataPtrType, ScanType]):
         self.scan_cache.pop(self._make_cache_key(scan), None)
 
     def initialize_scan_cache(self):
-        '''Initialize a cache which keeps track of which :class:`~.Scan`
+        """Initialize a cache which keeps track of which :class:`~.Scan`
         objects are still in memory using a :class:`weakref.WeakValueDictionary`.
 
         When a scan is requested, if the scan object is found in the cache, the
         existing object is returned rather than re-read from disk.
-        '''
+        """
         self._scan_cache = WeakValueDictionary()
 
     @property
     def scan_cache(self):
-        '''A :class:`weakref.WeakValueDictionary` mapping used to retrieve
+        """A :class:`weakref.WeakValueDictionary` mapping used to retrieve
         scans from memory if available before re-reading them from disk.
-        '''
+        """
         return self._scan_cache
 
     @scan_cache.setter
@@ -574,7 +574,7 @@ class RandomAccessScanSource(ScanIterator[DataPtrType, ScanType]):
     @abc.abstractmethod
     def start_from_scan(self, scan_id: Optional[str]=None, rt: Optional[float]=None, index: Optional[int]=None,
                         require_ms1: bool=True, grouped=True, **kwargs) -> 'RandomAccessScanSource':
-        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -596,7 +596,7 @@ class RandomAccessScanSource(ScanIterator[DataPtrType, ScanType]):
             Whether the iterator must start from an MS1 scan. True by default.
         grouped: bool, optional
             whether the iterator should yield scan bunches or single scans. True by default.
-        '''
+        """
         raise NotImplementedError()
 
     def _locate_ms1_scan(self, scan: ScanType, search_range: int=150) -> Optional[ScanType]:
@@ -622,13 +622,13 @@ class RandomAccessScanSource(ScanIterator[DataPtrType, ScanType]):
         return scan
 
     def find_previous_ms1(self, start_index: int) -> Optional[ScanType]:
-        '''Locate the MS1 scan preceding ``start_index``, iterating backwards through
+        """Locate the MS1 scan preceding ``start_index``, iterating backwards through
         scans until either the first scan is reached or an MS1 scan is found.
 
         Returns
         -------
         :class:`~.ScanBase` or :const:`None` if not found
-        '''
+        """
         if self.has_ms1_scans() is False:
             return None
         index = start_index - 1
@@ -643,13 +643,13 @@ class RandomAccessScanSource(ScanIterator[DataPtrType, ScanType]):
         return None
 
     def find_next_ms1(self, start_index: int) -> Optional[ScanType]:
-        '''Locate the MS1 scan following ``start_index``, iterating forwards through
+        """Locate the MS1 scan following ``start_index``, iterating forwards through
         scans until either the last scan is reached or an MS1 scan is found.
 
         Returns
         -------
         :class:`~.ScanBase` or :const:`None` if not found
-        '''
+        """
         if self.has_ms1_scans() is False:
             return None
         index = start_index + 1
@@ -697,12 +697,12 @@ class RandomAccessScanSource(ScanIterator[DataPtrType, ScanType]):
 
     @property
     def time(self):
-        '''A indexer facade that lets you index and slice by scan time.
+        """A indexer facade that lets you index and slice by scan time.
 
         Returns
         -------
         TimeIndex
-        '''
+        """
         return TimeIndex(self)
 
 
@@ -752,13 +752,13 @@ class ScanFileMetadataBase(object):
 
     @abc.abstractmethod
     def file_description(self):
-        '''Describe the file and its components, as well
+        """Describe the file and its components, as well
         as any content types it has.
 
         Returns
         -------
         :class:`~.FileInformation`
-        '''
+        """
         return FileInformation()
 
     @property
@@ -768,31 +768,31 @@ class ScanFileMetadataBase(object):
 
     @abc.abstractmethod
     def instrument_configuration(self) -> List[InstrumentInformation]:
-        '''Describe the different instrument components and configurations used
+        """Describe the different instrument components and configurations used
         to acquire scans in this run.
 
         Returns
         -------
         :class:`list` of :class:`~.InstrumentInformation`
-        '''
+        """
         return []
 
     @abc.abstractmethod
     def data_processing(self) -> List[DataProcessingInformation]:
-        '''Describe any preprocessing steps applied to the data described by this
+        """Describe any preprocessing steps applied to the data described by this
         instance.
 
         Returns
         -------
         :class:`list` of :class:`~.DataProcessingInformation`
-        '''
+        """
         return []
 
     def software_list(self) -> List[Software]:
-        '''Describe any software used on the data described by this instance.
+        """Describe any software used on the data described by this instance.
 
         Returns
         -------
         :class:`list` of :class:`~.Software`
-        '''
+        """
         return []

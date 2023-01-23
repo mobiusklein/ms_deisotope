@@ -1,6 +1,6 @@
-'''A common set of methods that are shared by
+"""A common set of methods that are shared by
 all :mod:`pyteomics`-based XML file readers.
-'''
+"""
 
 import warnings
 
@@ -16,7 +16,7 @@ from ._compression import get_opener, test_if_file_has_fast_random_access
 
 
 def in_minutes(x):
-    '''Convert a time quantity to minutes
+    """Convert a time quantity to minutes
 
     Parameters
     ----------
@@ -27,7 +27,7 @@ def in_minutes(x):
     -------
     unitfloat:
         The time after conversion to minutes
-    '''
+    """
     try:
         unit = x.unit_info
     except AttributeError:
@@ -46,13 +46,13 @@ def in_minutes(x):
 
 
 class XMLReaderBase(RandomAccessScanSource):
-    '''A common implementation of :mod:`pyteomics`-based XML file formats.
+    """A common implementation of :mod:`pyteomics`-based XML file formats.
 
     Attributes
     ----------
     index: :class:`pyteomics.xml.ByteEncodingOrderedDict`
         The byte offset index used to achieve fast random access
-    '''
+    """
 
     _parser_cls = None
 
@@ -85,7 +85,7 @@ class XMLReaderBase(RandomAccessScanSource):
 
     @property
     def index(self):
-        '''The byte offset index used to achieve fast random access.
+        """The byte offset index used to achieve fast random access.
 
         Maps :class:`~.ScanBase` IDs to the byte offsets, implying
         the order the scans reside in the file.
@@ -93,13 +93,13 @@ class XMLReaderBase(RandomAccessScanSource):
         Returns
         -------
         :class:`pyteomics.xml.ByteEncodingOrderedDict`
-        '''
+        """
         return self._source._offset_index
 
     @property
     def source(self):
-        '''The file parser that this reader consumes.
-        '''
+        """The file parser that this reader consumes.
+        """
         return self._source
 
     @source.setter
@@ -107,8 +107,8 @@ class XMLReaderBase(RandomAccessScanSource):
         self._source = value
 
     def close(self):
-        '''Close the underlying reader.
-        '''
+        """Close the underlying reader.
+        """
         if self.source is not None:
             self.source.close()
             self._dispose()
@@ -285,7 +285,7 @@ class XMLReaderBase(RandomAccessScanSource):
         raise NotImplementedError()
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
-        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -307,7 +307,7 @@ class XMLReaderBase(RandomAccessScanSource):
             Whether the iterator must start from an MS1 scan. True by default.
         grouped: bool, optional
             whether the iterator should yield scan bunches or single scans. True by default.
-        '''
+        """
         if scan_id is None:
             if rt is not None:
                 scan = self.get_scan_by_time(rt)
@@ -352,7 +352,7 @@ def _find_section(source, section):
 
 @xml._keepstate
 def get_tag_attributes(source, tag_name, stop_at=None):
-    '''Iteratively parse XML stream in ``source`` until encountering ``tag_name``
+    """Iteratively parse XML stream in ``source`` until encountering ``tag_name``
     at which point parsing terminates and return the attributes of the matched
     tag.
 
@@ -366,7 +366,7 @@ def get_tag_attributes(source, tag_name, stop_at=None):
     Returns
     -------
     dict
-    '''
+    """
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:
         if event == 'start':
@@ -383,7 +383,7 @@ def get_tag_attributes(source, tag_name, stop_at=None):
 
 @xml._keepstate
 def iterparse_until(source, target_name, quit_name):
-    '''Iteratively parse XML stream in ``source``, yielding XML elements
+    """Iteratively parse XML stream in ``source``, yielding XML elements
     matching ``target_name``. If at any point a tag matching ``quit_name``
     is encountered, stop parsing.
 
@@ -399,7 +399,7 @@ def iterparse_until(source, target_name, quit_name):
     Yields
     ------
     lxml.etree.Element
-    '''
+    """
     g = etree.iterparse(source, ('start', 'end'))
     for event, tag in g:
         if event == 'start':

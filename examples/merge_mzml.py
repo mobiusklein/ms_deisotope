@@ -78,8 +78,8 @@ class TimeOrderMergingIterator(object):
 @click.argument("source_paths", nargs=-1, required=True, type=click.Path(readable=True))
 @click.argument("output_path", required=True, type=click.Path(writable=True))
 def main(source_paths, output_path):
-    '''Combine multiple processed mzML files together into a single file sorted by time.
-    '''
+    """Combine multiple processed mzML files together into a single file sorted by time.
+    """
     sources = []
     for source_path in source_paths:
         click.echo("Reading %r" % source_path)

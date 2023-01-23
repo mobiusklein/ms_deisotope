@@ -34,56 +34,56 @@ class ScanIteratorProxyBase(object):
 
     @property
     def iteration_mode(self):
-        '''A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`
+        """A string denoting :const:`~.ITERATION_MODE_GROUPED` or :const:`~.ITERATION_MODE_SINGLE`
         that controls whether :class:`~.ScanBunch` or :class:`~.Scan` are produced
         by iteration.
 
         Returns
         -------
         str
-        '''
+        """
         return self.scan_source.iteration_mode
 
     def has_ms1_scans(self):
-        '''Checks if this :class:`ScanDataSource` contains MS1 spectra.
+        """Checks if this :class:`ScanDataSource` contains MS1 spectra.
 
         Returns
         -------
         :class:`bool` or :const:`None`
             Returns a boolean value if the presence of MS1 scans is known for certain, or :const:`None`
             if it cannot be determined in the case of missing metadata.
-        '''
+        """
         return self.scan_source.has_ms1_scans()
 
     def has_msn_scans(self):
-        '''Checks if this :class:`ScanDataSource` contains MSn spectra.
+        """Checks if this :class:`ScanDataSource` contains MSn spectra.
 
         Returns
         -------
         :class:`bool` or :const:`None`
             Returns a boolean value if the presence of MSn scans is known for certain, or :const:`None`
             if it cannot be determined in the case of missing metadata.
-        '''
+        """
         return self.scan_source.has_msn_scans()
 
     def next(self):
-        '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        """Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
         Returns
         -------
         :class:`~.ScanBunch` or :class:`~.ScanBase`
-        '''
+        """
         raise NotImplementedError()
 
     def __next__(self):
-        '''Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
+        """Advance the iterator, fetching the next :class:`~.ScanBunch` or :class:`~.ScanBase`
         depending upon iteration strategy.
 
         Returns
         -------
         :class:`~.ScanBunch` or :class:`~.ScanBase`
-        '''
+        """
         return self.next()
 
     def __iter__(self):
@@ -134,10 +134,10 @@ class QueryIteratorBase(ScanIteratorProxyBase):
         self.scan_source.make_iterator()
 
     def reset(self):
-        '''Reset the iterator, if possible, and clear any caches.
+        """Reset the iterator, if possible, and clear any caches.
 
         Resets the underlying :class:`~.RandomAccessScanSource`
-        '''
+        """
         self.scan_source.reset()
         self.make_iterator(grouped=self.grouped)
 

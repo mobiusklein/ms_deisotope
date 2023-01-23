@@ -1,5 +1,5 @@
-'''Deconvolution strategies using a list of compositions.
-'''
+"""Deconvolution strategies using a list of compositions.
+"""
 
 from ms_deisotope.averagine import (
     PROTON, isotopic_variants,
@@ -231,7 +231,7 @@ class CompositionListDeconvoluterBase(DeconvoluterBase):
 
 
 class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
-    '''Fit exact isotopic patterns from a list of compositions.
+    """Fit exact isotopic patterns from a list of compositions.
 
     Fits are accepted as they are made, making this algorithm unsuitable for
     complex spectra where isotopic patterns will share peaks.
@@ -262,7 +262,7 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
         times as in a multi-pass method or when peak dependence is not considered
     verbose : bool
         Produce extra logging information
-    '''
+    """
 
     def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',
@@ -310,7 +310,7 @@ class CompositionListDeconvoluter(CompositionListDeconvoluterBase):
 
 
 class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter):
-    '''Fit exact isotopic patterns from a list of compositions.
+    """Fit exact isotopic patterns from a list of compositions.
 
     Fits are added to a peak dependence graph, and the best fit is chosen after
     all fits are calculated at each iteration.
@@ -346,7 +346,7 @@ class CompositionListPeakDependenceGraphDeconvoluter(CompositionListDeconvoluter
         times as in a multi-pass method or when peak dependence is not considered
     verbose : bool
         Produce extra logging information
-    '''
+    """
 
     def __init__(self, peaklist, composition_list, scorer,
                  use_subtraction=False, scale_method='sum',

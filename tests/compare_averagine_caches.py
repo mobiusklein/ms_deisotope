@@ -1,9 +1,9 @@
-'''A helper to verify the determinism of AveragineCache objects used across multiple processes
+"""A helper to verify the determinism of AveragineCache objects used across multiple processes
 behaved identically.
 
 Usage:
     python compare_averagine_caches.py <cache_files*.pkl>
-'''
+"""
 import glob
 import sys
 import pprint

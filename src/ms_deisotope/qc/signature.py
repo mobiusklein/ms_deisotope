@@ -1,5 +1,5 @@
-'''A module for signature ion extraction.
-'''
+"""A module for signature ion extraction.
+"""
 
 from collections import namedtuple
 from numbers import Number
@@ -79,7 +79,7 @@ class SignatureIonDetector(object):
         self.method = method
 
     def scan(self, peak_list, error_tolerance=2e-5):
-        '''Scan the peak list for signature ion masses or m/zs.
+        """Scan the peak list for signature ion masses or m/zs.
 
         Parameters
         ----------
@@ -92,7 +92,7 @@ class SignatureIonDetector(object):
         Returns
         -------
         list
-        '''
+        """
         result = []
         peak_list = PeakSetMethods(peak_list)
         if peak_list.is_deconvoluted:
@@ -111,7 +111,7 @@ class SignatureIonDetector(object):
         return matches
 
     def ratio(self, peak_list, error_tolerance=2e-5):
-        '''Compute an intensity ratio of the signature ions against the
+        """Compute an intensity ratio of the signature ions against the
         base peak.
 
         Parameters
@@ -125,7 +125,7 @@ class SignatureIonDetector(object):
         Returns
         -------
         float
-        '''
+        """
         try:
             base_peak = BasePeakMethods(peak_list)()
             maximum = base_peak.intensity
@@ -143,7 +143,7 @@ class SignatureIonDetector(object):
         return oxonium / n
 
     def detect(self, peak_list, error_tolerance=2e-5):
-        '''Test the peak list for the signature ions.
+        """Test the peak list for the signature ions.
 
         Parameters
         ----------
@@ -156,7 +156,7 @@ class SignatureIonDetector(object):
         Returns
         -------
         float
-        '''
+        """
         if self.method == 'ratio':
             return self.ratio(peak_list, error_tolerance)
         else:
@@ -251,10 +251,10 @@ IBT10_INFO = [
 
 
 class SignatureIonExtractor(SignatureIonDetector):
-    '''Extracts signal for a set of target ions from each scan.
-    '''
+    """Extracts signal for a set of target ions from each scan.
+    """
     def extract(self, peak_list, error_tolerance=2e-5):
-        '''Extract the intensity for each signature ion.
+        """Extract the intensity for each signature ion.
 
         Parameters
         ----------
@@ -268,7 +268,7 @@ class SignatureIonExtractor(SignatureIonDetector):
         -------
         channels: dict[str, float]
             A mapping from signature ion name to its intensity.
-        '''
+        """
         result = {}
         peak_list = PeakSetMethods(peak_list)
         if peak_list.is_deconvoluted:
@@ -293,8 +293,8 @@ class SignatureIonExtractor(SignatureIonDetector):
 
 
 class TMTReporterExtractor(SignatureIonExtractor):
-    '''A :class:`~.SignatureIonExtractor` for TMT reporter ions.
-    '''
+    """A :class:`~.SignatureIonExtractor` for TMT reporter ions.
+    """
     TMT_REAGENTS = {
         "tmt16": TMT16_INFO,
         "tmt11": TMT11_INFO,

@@ -17,10 +17,10 @@ from .common import (
 
 
 class MemoryScanInterface(ScanDataSource):
-    '''A dummy :class:`~.ScanDataSource` that stores as much data as
+    """A dummy :class:`~.ScanDataSource` that stores as much data as
     possible on the :class:`~.Scan` instance, with the exception of
     :attr:`~.Scan.index`.
-    '''
+    """
 
     @classmethod
     def make_scan(cls,
@@ -41,7 +41,7 @@ class MemoryScanInterface(ScanDataSource):
                   peak_set: Optional[PeakSet]=None,
                   deconvoluted_peak_set: Optional[DeconvolutedPeakSet]=None,
                   **kwargs) -> WrappedScan:
-        '''
+        """
         Parameters
         ----------
         arrays: :class:`RawDataArrays`
@@ -82,7 +82,7 @@ class MemoryScanInterface(ScanDataSource):
         deconvoluted_peak_set : :class:`ms_deisotope.DeconvolutedPeakSet` or None
             Deconvoluted peaks resulting from charge state deconvolution and deisotoping. Will
             be `None` if deconvolution has not been done.
-        '''
+        """
         if annotations is None:
             annotations = {}
         if arrays is None:
@@ -296,9 +296,9 @@ make_scan = MemoryScanInterface.make_scan
 
 
 class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
-    '''A :class:`~.RandomAccessScanSource` implementation which contains scan objects
+    """A :class:`~.RandomAccessScanSource` implementation which contains scan objects
     materialized from other sources or which have already been fully specified in memory.
-    '''
+    """
     _scans: List[ProcessedScan]
     _binds: bool
     _scan_id_map: Dict[str, ProcessedScan]
@@ -321,8 +321,8 @@ class ScanCollection(MemoryScanInterface, RandomAccessScanSource):
 
     @classmethod
     def build(cls, scans: Iterable[ProcessedScan], binds: bool=True, **kwargs):
-        '''Construct an :class:`ScanCollection`
-        '''
+        """Construct an :class:`ScanCollection`
+        """
         scans = tuple(scans)
         try:
             scan = scans[0]

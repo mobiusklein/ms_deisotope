@@ -3,17 +3,49 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog][Keep a Changelog] and this project adheres to [Semantic Versioning][Semantic Versioning].
 
-## [Unreleased]
+## [v0.0.46] - 2023-01-22
+
+
+### Added
+1. Documentation for the `ms_deisotope.peak_set` module.
+2. Added `FunctionScorer` to `ms_deisotope.scoring` to allow user-defined scoring functions to be used without
+   sub-classing. This incurs some extra overhead on every call, so performance may be worse than a built-in
+   sub-class.
+
+### Changed
+1. `ms_deisotope.deconvolution.prepare_peaklist` now coerces a tuple of parallel sequences or
+   `numpy` arrays of m/z and intensities properly, so the caller does not need to zip them into
+   a list of `(mz, intensity)` pairs.
+
+### Fixed
+1. `ms_deisotope.deconvolute_peaks` was incorrectly calling `ms_deisotope.deconvolution.prepare_peaklist` too late, so no useful
+   coercion was done for the user. `prepare_peaklist` is now correctly called **before** passing the
+   provided peak list to the deconvolution machinery, removing the need for users to call it explicitly.
+
+
+## [v0.0.45] - 2023-01-14
+
+### Added
+- More type annotations for `ProcessedScan`-yielding readers.
+- C accelerators for `pyteomics`'s unit-scalars and CV-params to speed up parsing and reduce memory usage.
+- Created a low level C API for stripped-down peak lists that does not use the GIL, limited use-cases currently.
+- Loads of type annotations.
+- Added a `-X` option to pass raw key-value pairs to the mzML converter in `ms-index mzml` to make experimental
+  configuration easier.
+
+## [v0.0.44] - 2022-10-09
 
 ### Added
 
 ### Changed
+1. The minimum NumPy version on Python 3.10 was increased to 1.23.2
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+1. Fix software ID in mzML writing.
 
 ### Security
 
@@ -496,8 +528,11 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.43...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.46...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.46]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.46
+[v0.0.45]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.45
+[v0.0.44]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.44
 [v0.0.43]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.43
 [v0.0.42]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.42
 [v0.0.40]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.40

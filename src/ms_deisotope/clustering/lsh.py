@@ -1,4 +1,4 @@
-'''Implementation based upon [1].
+"""Implementation based upon [1].
 
 .. warning::
 
@@ -8,7 +8,7 @@ References
 ----------
 [1] Kretizberg, P. A., Bern, M., Shu, Q., Yang, F., & Serang, O. (2019). The alphabet projection of spectra.
     Journal of Proteome Research, acs.jproteome.9b00216. https://doi.org/10.1021/acs.jproteome.9b00216
-'''
+"""
 
 # -*- coding: utf-8 -*-
 

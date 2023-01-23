@@ -1,7 +1,7 @@
 import operator
 import math
 from collections import namedtuple
-from typing import Any, Optional, Sequence, TYPE_CHECKING
+from typing import Any, List, Optional, Sequence, TYPE_CHECKING
 
 from brainpy import mass_charge_ratio, neutral_mass as calc_neutral_mass, PROTON
 
@@ -61,6 +61,7 @@ class Envelope(Sequence[EnvelopePair]):
     pairs : tuple of tuple of (float, float)
         list of (mz, intensity) pairs
     """
+
     __slots__ = ['pairs']
 
     def __init__(self, pairs):
@@ -86,8 +87,7 @@ class Envelope(Sequence[EnvelopePair]):
 
 
 class DeconvolutedPeak(Base):
-    """
-    Represent a single deconvoluted peak which represents an aggregated isotopic
+    """Represent a single deconvoluted peak which represents an aggregated isotopic
     pattern collapsed to its monoisotopic peak, with a known charge state
 
     Attributes
@@ -119,6 +119,7 @@ class DeconvolutedPeak(Base):
     signal_to_noise : float
         The average signal-to-noise ratio of the peaks in the isotopic pattern this peak captures
     """
+
     __slots__ = [
         "neutral_mass", "intensity", "signal_to_noise",
         "index", "full_width_at_half_max", "charge",
@@ -242,6 +243,7 @@ class DeconvolutedPeakSolution(DeconvolutedPeak):
     solution : object
         Representation of the "source" of the isotopic fit
     """
+
     __slots__ = [
         "solution", "fit",
         "neutral_mass", "intensity", "signal_to_noise",
@@ -297,6 +299,7 @@ class DeconvolutedPeakSet(Base):
     _mz_ordered: tuple of DeconvolutedPeak
         Collection of peaks ordered by `mz`
     """
+
     def __init__(self, peaks):
         self.peaks = peaks
         self._mz_ordered = None
@@ -399,7 +402,7 @@ class DeconvolutedPeakSet(Base):
 
 
 def merge(peaks_a, *peaks_b, **kwargs):
-    '''Combine two :class:`DeconvolutedPeakSet` objects.
+    """Combine two :class:`DeconvolutedPeakSet` objects.
 
     Parameters
     ----------
@@ -413,7 +416,7 @@ def merge(peaks_a, *peaks_b, **kwargs):
     Returns
     -------
     :class:`DeconvolutedPeakSet`
-    '''
+    """
     copy = kwargs.get("copy", True)
     tp = peaks_a.__class__
     if copy:
@@ -546,7 +549,23 @@ except ImportError:
     has_c = False
 
 
-def window_peak_set(peak_set, window_size=100.0, peaks_per_window=10):
+def window_peak_set(peak_set: DeconvolutedPeakSet, window_size: float=100.0, peaks_per_window: int=10) -> List[List[DeconvolutedPeak]]:
+    """Generate non-overlapping windows over a :class:`~.DeconvolutedPeakSet`, selecting the most
+    abundant peaks in each window.
+
+    Parameters
+    ----------
+    peak_set : DeconvolutedPeakSet
+        The peak set to generate windows from.
+    window_size : float
+        The width of the window in daltons. The default is 100.
+    peaks_per_window : int
+        The number of peaks to retain per window, by intensity. Default is 10.
+
+    Returns
+    -------
+    List[List[DeconvolutedPeak]]
+    """
     lower_bound = math.floor(peak_set[0].neutral_mass / window_size) * window_size
     upper_bound = math.ceil(peak_set[-1].neutral_mass / window_size) * window_size
 

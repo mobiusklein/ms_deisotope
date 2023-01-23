@@ -9,7 +9,7 @@ _CoIsolation = namedtuple(
 
 
 class CoIsolation(_CoIsolation):
-    '''Records the properties of a co-isolating ion associated with a primary ion.
+    """Records the properties of a co-isolating ion associated with a primary ion.
 
     Attributes
     ----------
@@ -21,16 +21,16 @@ class CoIsolation(_CoIsolation):
         The charge of the ion
     mz: float
         The calculated m/z of the ion
-    '''
+    """
 
     @property
     def mz(self):
-        '''The calculated m/z of the ion
+        """The calculated m/z of the ion
 
         Returns
         -------
         float
-        '''
+        """
         return mass_charge_ratio(self.neutral_mass, self.charge)
 
 

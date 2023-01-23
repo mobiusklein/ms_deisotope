@@ -92,12 +92,12 @@ def register_dll_dir(search_paths=None):
     if not loaded:
         log.debug("Could not resolve Agilent-related DLL")
         search_paths.extend(_default_paths)
-        msg = '''
+        msg = """
         1) The MassSpecDataReader, BaseCommon, BaseDataAccess DLLs/TLBs may not be installed and
            therefore not registered to the COM server.
         2) The MassSpecDataReader, BaseCommon, BaseDataAccess DLLs/TLBs may not be on these paths:
         %s
-        ''' % ('\n'.join(search_paths))
+        """ % ('\n'.join(search_paths))
         raise ImportError(msg)
 
 
@@ -652,7 +652,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
                 lo = mid
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True):
-        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -671,7 +671,7 @@ class AgilentDLoader(AgilentDDataInterface, _ADD, RandomAccessScanSource, _ADM):
             Whether the iterator must start from an MS1 scan. True by default.
         grouped: bool, optional
             whether the iterator should yield scan bunches or single scans. True by default.
-        '''
+        """
         if scan_id is not None:
             scan_number = self.get_scan_by_id(scan_id).index
         elif index is not None:

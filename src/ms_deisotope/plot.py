@@ -1,43 +1,76 @@
-'''A collection of tools for drawing and annotating mass spectra
-'''
+"""A collection of tools for drawing and annotating mass spectra
+"""
 # pragma: no cover
+from typing import (
+    Iterable,
+    Optional,
+    Dict,
+    Any,
+    Sequence,
+    Tuple,
+    NamedTuple,
+    TYPE_CHECKING,
+)
 import math
 import itertools
 
 import numpy as np
+
 try:
     from matplotlib import pyplot as plt, gridspec
+    from matplotlib import (
+        patches as mpatch,
+        transforms as mtransform,
+        text as mtext,
+        axes as maxes,
+    )
     from ms_peak_picker.plot import draw_peaklist, draw_raw
+
     has_plot = True
 except ImportError as err:
     import warnings
-    warnings.warn("Could not import matplotlib, plotting tools will not work\n%s" % (err, ))
+
+    warnings.warn(
+        "Could not import matplotlib, plotting tools will not work\n%s" % (err,)
+    )
     pyplot = None
     gridspec = None
     has_plot = False
 
+if TYPE_CHECKING:
+    from matplotlib import path as mpath
+    from matplotlib.axes import Axes
+    from ms_deisotope.spectrum_graph import Path as PeakPath
+    from ms_deisotope.data_source.scan import ScanBase
+
 
 def _default_color_cycle():
-    c = plt.rcParams['axes.prop_cycle']
+    c = plt.rcParams["axes.prop_cycle"]
     colors = c.by_key().get("color")
     if not colors:
         colors = [
-            '#1f77b4',
-            '#ff7f0e',
-            '#2ca02c',
-            '#d62728',
-            '#9467bd',
-            '#8c564b',
-            '#e377c2',
-            '#7f7f7f',
-            '#bcbd22',
-            '#17becf'
+            "#1f77b4",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728",
+            "#9467bd",
+            "#8c564b",
+            "#e377c2",
+            "#7f7f7f",
+            "#bcbd22",
+            "#17becf",
         ]
     return colors
 
 
-def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
-    '''Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of
+def annotate_scan(
+    scan: "ScanBase",
+    products: Sequence["ScanBase"],
+    nperrow: int = 4,
+    ax: Optional["Axes"] = None,
+    label: bool = True,
+) -> "Axes":
+    """Given an MS1 :class:`~.ScanBase` ``scan`` and a :class:`~.Sequence` of
     :class:`~.ScanBase` product scans, draw the MS1 spectrum in full profile,
     and then in a subplot grid below it, draw a zoomed-in view of the MS1 spectrum
     surrounding the area around each precursor ion that gave rise to the scans in
@@ -82,7 +115,7 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
     -------
     :class:`matplotlib._axes.Axes`:
         The axes of the full MS1 profile plot
-    '''
+    """
     if ax is None:
         figure = plt.figure()
     else:
@@ -122,19 +155,28 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
             # obtain the interval around the precursor
             pinfo = product_scan.precursor_information
             if not product_scan.isolation_window.is_empty():
-                lower, upper = (product_scan.isolation_window.lower_bound - 2,
-                                product_scan.isolation_window.upper_bound + 2)
+                lower, upper = (
+                    product_scan.isolation_window.lower_bound - 2,
+                    product_scan.isolation_window.upper_bound + 2,
+                )
             else:
                 lower = pinfo.mz - 4
                 upper = pinfo.mz + 4
             try:
-                peak = max(scan.peak_set.between(lower - 1.2, upper + 1.2), key=lambda x: x.intensity)
+                peak = max(
+                    scan.peak_set.between(lower - 1.2, upper + 1.2),
+                    key=lambda x: x.intensity,
+                )
                 local_intensity = peak.intensity
             except ValueError:
                 if scan.deconvoluted_peak_set:
                     try:
-                        peak = max(scan.deconvoluted_peak_set.between(lower - 1.2, upper + 1.2, use_mz=True),
-                                   key=lambda x: x.intensity)
+                        peak = max(
+                            scan.deconvoluted_peak_set.between(
+                                lower - 1.2, upper + 1.2, use_mz=True
+                            ),
+                            key=lambda x: x.intensity,
+                        )
                         local_intensity = peak.intensity
                     except ValueError:
                         local_intensity = 1e3
@@ -152,31 +194,51 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
             if scan.deconvoluted_peak_set:
                 draw_peaklist(
                     scan.deconvoluted_peak_set.between(
-                        lower - 1.2, upper + 1.2, use_mz=True),
-                    ax=ax, alpha=0.9, color='blue')
+                        lower - 1.2, upper + 1.2, use_mz=True
+                    ),
+                    ax=ax,
+                    alpha=0.9,
+                    color="blue",
+                )
 
             if label:
-                label_peaks(scan, lower, upper, ax=ax,
-                            is_deconvoluted=bool(scan.deconvoluted_peak_set))
+                label_peaks(
+                    scan,
+                    lower,
+                    upper,
+                    ax=ax,
+                    is_deconvoluted=bool(scan.deconvoluted_peak_set),
+                )
             ax.set_ylim(0, local_intensity * 1.25)
             ax.set_xlim(lower, upper)
             upper_intensity = local_intensity
 
             # draw the precursor isolation annotations
-            ax.vlines(target_mz, 0, upper_intensity * 1.5, alpha=0.50,
-                      color='red', lw=1)
+            ax.vlines(
+                target_mz, 0, upper_intensity * 1.5, alpha=0.50, color="red", lw=1
+            )
             if product_scan.isolation_window.lower != 0:
-                ax.vlines(product_scan.isolation_window.lower_bound, 0,
-                          upper_intensity * 1.5, linestyle='--', alpha=0.5)
+                ax.vlines(
+                    product_scan.isolation_window.lower_bound,
+                    0,
+                    upper_intensity * 1.5,
+                    linestyle="--",
+                    alpha=0.5,
+                )
             if product_scan.isolation_window.upper != 0:
-                ax.vlines(product_scan.isolation_window.upper_bound, 0,
-                          upper_intensity * 1.5, linestyle='--', alpha=0.5)
-            ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+                ax.vlines(
+                    product_scan.isolation_window.upper_bound,
+                    0,
+                    upper_intensity * 1.5,
+                    linestyle="--",
+                    alpha=0.5,
+                )
+            ax.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
             ax.set_ylabel("")
             ax.set_xlabel("")
             if pinfo.extracted_charge == 0:
                 if pinfo.charge == "ChargeNotProvided":
-                    charge = '?'
+                    charge = "?"
                 else:
                     charge = str(pinfo.charge)
             else:
@@ -189,8 +251,14 @@ def annotate_scan(scan, products, nperrow=4, ax=None, label=True):
     return ax
 
 
-def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=True):
-    '''Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the
+def annotate_scan_single(
+    scan: "ScanBase",
+    product_scan: "ScanBase",
+    ax: Optional["Axes"] = None,
+    label: bool = True,
+    standalone=True,
+) -> "Axes":
+    """Draw a zoomed-in view of the MS1 spectrum ``scan`` surrounding the
     area around each precursor ion that gave rise to ``product_scan``
     with monoisotopic peaks and isolation windows marked.
 
@@ -228,7 +296,7 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
     Returns
     -------
     :class:`matplotlib._axes.Axes`
-    '''
+    """
     if ax is None:
         _, ax = plt.subplots(1)
 
@@ -242,21 +310,29 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
 
     pinfo = product_scan.precursor_information
     if not product_scan.isolation_window.is_empty():
-        lower, upper = (product_scan.isolation_window.lower_bound - 2,
-                        product_scan.isolation_window.upper_bound + 2)
+        lower, upper = (
+            product_scan.isolation_window.lower_bound - 2,
+            product_scan.isolation_window.upper_bound + 2,
+        )
     else:
         lower = pinfo.mz - 4
         upper = pinfo.mz + 4
 
     peak_set = scan.peak_set
     try:
-        peak = max(peak_set.between(lower - 1.2, upper + 1.2), key=lambda x: x.intensity)
+        peak = max(
+            peak_set.between(lower - 1.2, upper + 1.2), key=lambda x: x.intensity
+        )
         local_intensity = peak.intensity
     except ValueError:
         if scan.deconvoluted_peak_set:
             try:
-                peak = max(scan.deconvoluted_peak_set.between(lower - 1.2, upper + 1.2, use_mz=True),
-                           key=lambda x: x.intensity)
+                peak = max(
+                    scan.deconvoluted_peak_set.between(
+                        lower - 1.2, upper + 1.2, use_mz=True
+                    ),
+                    key=lambda x: x.intensity,
+                )
                 local_intensity = peak.intensity
             except ValueError:
                 local_intensity = 1e3
@@ -273,33 +349,45 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
     draw_peaklist(scan.peak_set, ax=ax, alpha=0.5, lw=0.5)
     if scan.deconvoluted_peak_set:
         draw_peaklist(
-            scan.deconvoluted_peak_set.between(
-                lower - 1.2, upper + 1.2, use_mz=True),
-            ax=ax, alpha=0.9, color='blue')
+            scan.deconvoluted_peak_set.between(lower - 1.2, upper + 1.2, use_mz=True),
+            ax=ax,
+            alpha=0.9,
+            color="blue",
+        )
 
     if label:
-        label_peaks(scan, lower, upper, ax=ax,
-                    is_deconvoluted=bool(scan.deconvoluted_peak_set))
+        label_peaks(
+            scan, lower, upper, ax=ax, is_deconvoluted=bool(scan.deconvoluted_peak_set)
+        )
 
     ax.set_ylim(0, local_intensity * 1.25)
     ax.set_xlim(lower, upper)
     upper_intensity = local_intensity
 
     # draw the precursor isolation annotations
-    ax.vlines(target_mz, 0, upper_intensity * 1.5, alpha=0.50,
-              color='red', lw=1)
+    ax.vlines(target_mz, 0, upper_intensity * 1.5, alpha=0.50, color="red", lw=1)
     if product_scan.isolation_window.lower != 0:
-        ax.vlines(product_scan.isolation_window.lower_bound, 0,
-                  upper_intensity * 1.5, linestyle='--', alpha=0.5)
+        ax.vlines(
+            product_scan.isolation_window.lower_bound,
+            0,
+            upper_intensity * 1.5,
+            linestyle="--",
+            alpha=0.5,
+        )
     if product_scan.isolation_window.upper != 0:
-        ax.vlines(product_scan.isolation_window.upper_bound, 0,
-                  upper_intensity * 1.5, linestyle='--', alpha=0.5)
-    ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        ax.vlines(
+            product_scan.isolation_window.upper_bound,
+            0,
+            upper_intensity * 1.5,
+            linestyle="--",
+            alpha=0.5,
+        )
+    ax.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
     ax.set_ylabel("")
     ax.set_xlabel("")
     if pinfo.extracted_charge == 0:
         if pinfo.charge == "ChargeNotProvided":
-            charge = '?'
+            charge = "?"
         else:
             charge = str(pinfo.charge)
     else:
@@ -309,8 +397,14 @@ def annotate_scan_single(scan, product_scan, ax=None, label=True, standalone=Tru
     return ax
 
 
-def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
-    '''Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
+def annotate_isotopic_peaks(
+    scan: "ScanBase",
+    ax: Optional["Axes"] = None,
+    color_cycle: Optional[Iterable[str]] = None,
+    mz_range: Optional[Tuple[float, float]]=None,
+    **kwargs
+):
+    """Mark distinct isotopic peaks from the :class:`~.DeconvolutedPeakSet`
     in ``scan``.
 
     .. plot::
@@ -339,17 +433,20 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
     ----------
     scan: ScanBase
         The scan to annotate
-    color_cycle: :class:`~.Iterable`
-        An iterable to draw isotopic cluster colors from
     ax: :class:`matplotlib._axes.Axes`
         An :class:`~.Axes` object to draw the plot on
+    color_cycle: :class:`~.Iterable`
+        An iterable to draw isotopic cluster colors from
+    mz_range: (float, float), optional
+        The m/z range to annotate peaks within. Defaults to
+        the full range if not specified.
 
     Returns
     -------
     :class:`matplotlib._axes.Axes`
-    '''
-    from .peak_set import DeconvolutedPeakSet
-
+    """
+    from .peak_set import DeconvolutedPeakSet, DeconvolutedPeak
+    from .peak_dependency_network.intervals import Interval
     if ax is None:
         _, ax = plt.subplots(1)
     if color_cycle is None:
@@ -360,14 +457,28 @@ def annotate_isotopic_peaks(scan, ax=None, color_cycle=None, **kwargs):
     else:
         peaks = getattr(scan, "deconvoluted_peak_set", [])
     peaks = sorted(peaks, key=lambda x: x.mz)
-    for peak in peaks:
+    if mz_range is None:
+        mz_range = (0, float('inf'))
+    mz_iv = Interval(*mz_range)
+    peaks: Iterable[DeconvolutedPeak]
+    for peak in sorted(peaks, key=lambda x: x.mz):
+        if not mz_iv.contains(peak.mz):
+            continue
         color = next(color_cycle)
         draw_peaklist(peak.envelope, ax=ax, color=color, alpha=0.75, **kwargs)
         ax.scatter(*zip(*peak.envelope), color=color, alpha=0.75)
     return ax
 
 
-def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, threshold=None, **kwargs):
+def label_peaks(
+    scan: "ScanBase",
+    min_mz: Optional[float] = None,
+    max_mz: Optional[float] = None,
+    ax: Optional["Axes"] = None,
+    is_deconvoluted: Optional[bool] = None,
+    threshold: Optional[float] = None,
+    **kwargs
+):
     """Label a region of the peak list, marking centroids with their m/z or mass. If the peaks
     of `scan` have been deconvoluted, the most abundant peak will be annotated with
     "<neutral mass> (<charge>)", otherwise just "<m/z>".
@@ -415,21 +526,18 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
     annotations = []
     # select the peak sub range
     if is_deconvoluted:
-        subset = scan.deconvoluted_peak_set.between(
-            min_mz, max_mz, use_mz=True)
+        subset = scan.deconvoluted_peak_set.between(min_mz, max_mz, use_mz=True)
     else:
-        subset = scan.peak_set.between(
-            min_mz, max_mz)
+        subset = scan.peak_set.between(min_mz, max_mz)
     if not subset:
         return
     # guess the threshold
     if threshold is None:
         threshold = 0.0
         if is_deconvoluted:
-            threshold_list = ([max(i.intensity for i in p.envelope)
-                               for p in subset])
+            threshold_list = [max(i.intensity for i in p.envelope) for p in subset]
         else:
-            threshold_list = ([p.intensity for p in subset])
+            threshold_list = [p.intensity for p in subset]
         if threshold_list:
             threshold = np.mean(threshold_list)
         threshold_list = [v > threshold for v in threshold_list]
@@ -441,7 +549,7 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
     if is_deconvoluted:
         for peak in subset:
             if peak.intensity > threshold:
-                label = '%0.2f (%d)' % (peak.neutral_mass, peak.charge)
+                label = "%0.2f (%d)" % (peak.neutral_mass, peak.charge)
                 # set the y-position to the highest peak in the isotopic
                 # pattern
                 pt = max(peak.envelope, key=lambda x: x.intensity)
@@ -450,21 +558,28 @@ def label_peaks(scan, min_mz=None, max_mz=None, ax=None, is_deconvoluted=None, t
                 # isotopic pattern
                 x = np.average(
                     [p.mz for p in peak.envelope],
-                    weights=[p.intensity for p in peak.envelope])
-                annotations.append(
-                    ax.text(x, y, label, ha='center', **kwargs))
+                    weights=[p.intensity for p in peak.envelope],
+                )
+                annotations.append(ax.text(x, y, label, ha="center", **kwargs))
     else:
         for peak in subset:
             if peak.intensity > threshold:
-                label = "%0.2f" % (peak.mz, )
+                label = "%0.2f" % (peak.mz,)
                 y = peak.intensity * 1.05
                 x = peak.mz
-                annotations.append(
-                    ax.text(x, y, label, ha='center', **kwargs))
+                annotations.append(ax.text(x, y, label, ha="center", **kwargs))
     return annotations, ax
 
 
-def draw_spectrum_paths(graph, edge_color='red', peak_color='orange', alpha=0.8, fontsize=12, ax=None, **kwargs):
+def draw_spectrum_paths(
+    graph,
+    edge_color="red",
+    peak_color="orange",
+    alpha=0.8,
+    fontsize=12,
+    ax=None,
+    **kwargs
+):
     """Draw all the paths given by `graph` over a rendered peak list.
 
     This function will draw all peaks which an edge connects in `peak_color`, and
@@ -506,23 +621,45 @@ def draw_spectrum_paths(graph, edge_color='red', peak_color='orange', alpha=0.8,
             for p1 in edge.start:
                 for p2 in edge.end:
                     _draw_peak_pair(
-                        (p1, p2), edge_color, peak_color, alpha, fontsize,
-                        label=edge.annotation, ax=ax, **kwargs)
+                        (p1, p2),
+                        edge_color,
+                        peak_color,
+                        alpha,
+                        fontsize,
+                        label=edge.annotation,
+                        ax=ax,
+                        **kwargs
+                    )
 
 
-def _draw_peak_pair(pair, edge_color='red', peak_color='orange', alpha=0.8, fontsize=12, label=None, rotation=45,
-                    ax=None, **kwargs):
+def _draw_peak_pair(
+    pair,
+    edge_color="red",
+    peak_color="orange",
+    alpha=0.8,
+    fontsize=12,
+    label=None,
+    rotation=45,
+    ax=None,
+    **kwargs
+):
     p1, p2 = pair
-    ax.plot((p1.mz, p2.mz), (p1.intensity, p2.intensity),
-            color=edge_color, alpha=alpha, **kwargs)
+    ax.plot(
+        (p1.mz, p2.mz),
+        (p1.intensity, p2.intensity),
+        color=edge_color,
+        alpha=alpha,
+        **kwargs
+    )
     kwargs.setdefault("clip_on", False)
-    clip_on = kwargs['clip_on']
+    clip_on = kwargs["clip_on"]
     draw_peaklist(pair, ax=ax, alpha=0.4, color=peak_color)
     if label:
         midx = (p1.mz + p2.mz) / 2
         # interpolate the midpoint's height
-        midy = (p1.intensity * (p2.mz - midx) +
-                p2.intensity * (midx - p1.mz)) / (p2.mz - p1.mz)
+        midy = (p1.intensity * (p2.mz - midx) + p2.intensity * (midx - p1.mz)) / (
+            p2.mz - p1.mz
+        )
 
         # find the angle of the line connecting the two peaks
         xlo = min(p1.mz, p2.mz)
@@ -531,12 +668,164 @@ def _draw_peak_pair(pair, edge_color='red', peak_color='orange', alpha=0.8, font
         ylo = min(p1.intensity, p2.intensity)
         yhi = max(p1.intensity, p2.intensity)
         opp = yhi - ylo
-        hypot = np.hypot(adj, opp) # pylint: disable=assignment-from-no-return
+        hypot = np.hypot(adj, opp)  # pylint: disable=assignment-from-no-return
         rotation = np.arccos(adj / hypot)  # pylint: disable=assignment-from-no-return
 
         if isinstance(label, (list, tuple)):
-            label = '-'.join(map(str, label))
+            label = "-".join(map(str, label))
         else:
             label = str(label)
-        ax.text(midx, midy, label, fontsize=fontsize,
-                ha='center', va='bottom', rotation=rotation, clip_on=clip_on)
+        ax.text(
+            midx,
+            midy,
+            label,
+            fontsize=fontsize,
+            ha="center",
+            va="bottom",
+            rotation=rotation,
+            clip_on=clip_on,
+        )
+
+
+class BoundingBox(NamedTuple):
+    xmin: float
+    ymin: float
+    xmax: float
+    ymax: float
+
+
+def bbox_path(path: "mpath.Path") -> BoundingBox:
+    nodes = path.vertices
+    xmin = nodes[:, 0].min()
+    xmax = nodes[:, 0].max()
+    ymin = nodes[:, 1].min()
+    ymax = nodes[:, 1].max()
+    return BoundingBox(xmin, ymin, xmax, ymax)
+
+
+def shift(path: "mpath.Path", x: float = 0, y: float = 0) -> "mpath.Path":
+    return path.transformed(mtransform.Affine2D().translate(x, y))
+
+
+def draw_peak_path(
+    ax: "maxes.Axes",
+    peak_path: "PeakPath",
+    scan: 'ScanBase',
+    peak_line_options: Optional[Dict[str, Any]] = None,
+    seq_line_options: Optional[Dict[str, Any]] = None,
+    text_prop: Optional["mtext.FontProperties"] = None,
+    vertical_shift: float = 0.0,
+):
+
+    if peak_line_options is None:
+        peak_line_options = {}
+    if seq_line_options is None:
+        seq_line_options = {}
+
+    peak_line_options.setdefault("linewidth", 1)
+    peak_line_options.setdefault("color", "red")
+    seq_line_options.setdefault("linewidth", 2)
+    seq_line_options.setdefault("color", "red")
+
+    # Compute the maximum height of peaks in the region to be annotated
+    # so that there is no overlap with existing peaks
+    upper = (
+        max(
+            [
+                p.intensity
+                for p in scan.deconvoluted_peak_set.between(
+                    peak_path[0].start.peak.mz, peak_path[-1].end.peak.mz, use_mz=True
+                )
+            ]
+        )
+        * 1.2
+    ) + vertical_shift
+
+    # Compute the x-axis dimension aspect
+    xlim = (
+        min(p.mz for p in scan.deconvoluted_peak_set),
+        max(p.mz for p in scan.deconvoluted_peak_set),
+    )
+    # Compute the y-axis dimension aspect
+    ylim = (0, scan.base_peak.deconvoluted().intensity)
+
+    # Create an baseline scaling transformation for the text
+    base_trans = mtransform.Affine2D()
+    base_trans.scale((xlim[1] - xlim[0]) / 75, (ylim[1] - ylim[0]) / 25)
+
+    # Don't try to annotate a ladder that changes charge state that
+    # would involve back-tracking on the x-axis
+    start_charge = None
+    for i, edge in enumerate(peak_path):
+        if start_charge is None:
+            start_charge = edge.start.peak.charge
+
+        # We'll write the annotation glyph in the middle of the gap
+        mid = (edge.start.peak.mz + edge.end.peak.mz) / 2
+
+        # Create the glyph(s) for the peak pair annotation at unit-scale
+        # and then scale it up using the base transformation, then center it
+        # at 0 again.
+        tpath = mtext.TextPath((0, 0), edge.annotation, 1, prop=text_prop)
+        tpath = tpath.transformed(base_trans)
+
+        if (
+            edge.start.peak.charge != start_charge
+            or edge.end.peak.charge != start_charge
+        ):
+            continue
+
+        # Move the annotation glyph(s) to the midpoint between the two peaks
+        # at the sequence line.
+        tpath = shift(tpath, mid, upper * 0.99)
+
+        # Check whether our annotation glyph(s) is too wide for the gap between
+        # the two peaks. If it is too large, draw it above the main line to avoid
+        # over-plotting.
+        xmin, ymin, xmax, ymax = bbox_path(tpath)
+        shift_up = (xmax - xmin) / (edge.end.peak.mz - edge.start.peak.mz) > 0.3
+        if shift_up:
+            tpath = shift(tpath, 0, ymax - ymin)
+
+        ax.add_patch(mpatch.PathPatch(tpath, color="black"))
+
+        # If this is the first peak pair, draw the starting point vertical
+        # peak line.
+        if i == 0:
+            ax.plot(
+                [edge.start.peak.mz, edge.start.peak.mz],
+                [upper, edge.start.peak.intensity + ylim[1] * 0.05],
+                **peak_line_options
+            )
+
+        # Draw the next vertical peak line
+        ax.plot(
+            [edge.end.peak.mz, edge.end.peak.mz],
+            [upper, edge.end.peak.intensity + ylim[1] * 0.05],
+            **peak_line_options
+        )
+
+        # Draw the horizontal line between the two peaks. If the annotation
+        # was shifted up, draw a single horizontal line connecting the two
+        # peaks.
+        if shift_up:
+            ax.plot(
+                [edge.start.peak.mz, edge.end.peak.mz],
+                [upper, upper],
+                **seq_line_options
+            )
+        else:
+            # Otherwise, draw a line from the starting peak to the annotation glyph
+            # with some padding.
+            ax.plot(
+                [edge.start.peak.mz, max(xmin - xlim[1] * 0.01, edge.start.peak.mz)],
+                [upper, upper],
+                **seq_line_options
+            )
+            # And then draw another line from the other side of the glyph with some
+            # padding to the second peak.
+            ax.plot(
+                [min(xmax + xlim[1] * 0.01, edge.end.peak.mz), edge.end.peak.mz],
+                [upper, upper],
+                **seq_line_options
+            )

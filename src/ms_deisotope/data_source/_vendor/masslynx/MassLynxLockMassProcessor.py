@@ -1,7 +1,7 @@
-'''
+"""
     Waters
     MassLynx Python SDK
-'''
+"""
 
 import copy
 import ctypes

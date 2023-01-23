@@ -233,7 +233,7 @@ cdef class PeakDependenceGraphBase(object):
             self.nodes[peak.index] = PeakNode(peak)
 
     cpdef add_fit_dependence(self, IsotopicFitRecord fit_record):
-        '''Add the relatoinship between the experimental peaks
+        """Add the relatoinship between the experimental peaks
         in `fit_record` to the graph, expressed as a hyper-edge
         denoted by `fit_record`.
 
@@ -245,7 +245,7 @@ cdef class PeakDependenceGraphBase(object):
         Parameters
         ----------
         fit_record: :class:`~.IsotopicFitRecord`
-        '''
+        """
         cdef:
             size_t i, n
             FittedPeak peak
@@ -289,9 +289,9 @@ cdef class PeakDependenceGraphBase(object):
                 return result
 
     cpdef drop_fit_dependence(self, IsotopicFitRecord fit_record):
-        '''Remove this fit from the graph, deleting all
+        """Remove this fit from the graph, deleting all
         hyper-edges.
-        '''
+        """
         cdef:
             list nodes
             size_t i, n
@@ -306,9 +306,9 @@ cdef class PeakDependenceGraphBase(object):
                 pass
 
     cpdef best_exact_fits(self):
-        '''For each distinct group of experimental peaks, retain only
+        """For each distinct group of experimental peaks, retain only
         the best scoring fit using exactly those peaks.
-        '''
+        """
         cdef:
             dict by_peaks
             list best_fits, fits_for

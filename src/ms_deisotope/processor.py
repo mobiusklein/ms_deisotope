@@ -1,4 +1,4 @@
-'''
+"""
 Deconvolution Pipeline
 ----------------------
 
@@ -35,7 +35,7 @@ with fewer configurable parameters.
     bunch = next(proc)
     print(bunch)
     print(bunch.precursor.deconvoluted_peak_set)
-'''
+"""
 import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -118,24 +118,24 @@ class PriorityTarget(Base):
 
     @property
     def mz(self):
-        '''
+        """
         The m/z of the matched peak
 
         Returns
         -------
         float
-        '''
+        """
         return self.peak.mz
 
     @property
     def charge(self):
-        '''
+        """
         The charge state of the precursor ion reported by the source.
 
         Returns
         -------
         int
-        '''
+        """
         try:
             return int(self.info.charge)
         except TypeError:
@@ -393,13 +393,13 @@ class ScanProcessor(Base, LogUtilsMixin):
 
     @property
     def reader(self) -> ScanIterator:
-        '''The :class:`~.ScanIterator` which generates the raw scans that will
+        """The :class:`~.ScanIterator` which generates the raw scans that will
         be processed.
 
         Returns
         -------
         :class:`~.ScanIterator`
-        '''
+        """
         return self._signal_source
 
     def _get_envelopes(self, precursor_scan: Scan) -> Optional[List[Tuple[float, float]]]:

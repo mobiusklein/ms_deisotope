@@ -107,15 +107,22 @@ def check_if_profile(loader):
     return is_profile
 
 
-def determine_output_format(output_file):
+def determine_output_format(output_file: str):
     base, ext = os.path.splitext(output_file)
+    gzip_compress_file = False
+    if ext.lower() == '.gz':
+        gzip_compress_file = True
+        base, ext = os.path.splitext(base)
     if ext.lower() == '.mzml':
-        return output.ThreadedMzMLScanStorageHandler
+        storage_handler_type = output.ThreadedMzMLScanStorageHandler
     elif ext.lower() == '.mgf':
-        return output.ThreadedMGFScanStorageHandler
+        storage_handler_type = output.ThreadedMGFScanStorageHandler
+    elif ext.lower() == '.mzmlb':
+        storage_handler_type = output.ThreadedMzMLbScanStorageHandler
     else:
         click.secho("Could not infer output file format. Assuming mzML.", fg='yellow')
-        return output.ThreadedMzMLScanStorageHandler
+        storage_handler_type = output.ThreadedMzMLScanStorageHandler
+    return storage_handler_type, os.path.basename(base), gzip_compress_file
 
 
 @click.command("deisotope",
@@ -183,8 +190,8 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
               ignore_msn=False, isotopic_strictness=2.0, ms1_averaging=0,
               msn_isotopic_strictness=0.0, signal_to_noise_threshold=1.0, mass_offset=0.0,
               default_precursor_ion_selection_window=1.5, deconvolute=True, verbose=False):
-    '''Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.
-    '''
+    """Convert raw mass spectra data into deisotoped neutral mass peak lists written to mzML.
+    """
     init_logging()
     if transform is None:
         transform = []
@@ -197,7 +204,7 @@ def deisotope(ms_file, outfile_path, averagine=None, start_time=None, end_time=N
             fg='red')
         raise click.Abort("Cannot use both --ignore-msn and --extract-only-tandem-envelopes")
 
-    cache_handler_type = determine_output_format(outfile_path)
+    cache_handler_type, _output_basename, _should_gzip_compress_output_file  = determine_output_format(outfile_path)
     click.echo("Preprocessing %s" % ms_file)
     minimum_charge = 1 if maximum_charge > 0 else -1
     charge_range = (minimum_charge, maximum_charge)

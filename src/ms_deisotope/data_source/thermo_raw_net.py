@@ -1,4 +1,4 @@
-'''Thermo RAW file reading implementation using the pure .NET
+"""Thermo RAW file reading implementation using the pure .NET
 RawFileReader library released in 2017.
 
 This module provides :class:`ThermoRawLoader`, a :class:`~.RandomAccessScanSource`
@@ -15,7 +15,7 @@ The public interface of this module should be identical to
     This interface was largely based upon the APIs that ProteoWizard used, both
     in order to understand how the Thermo libraries really worked, and to maintain
     parity with it.
-'''
+"""
 
 import sys
 import os
@@ -88,7 +88,7 @@ def _open_raw_file(path):
 
 
 def is_thermo_raw_file(path):
-    '''Detect whether or not the file referenced by ``path``
+    """Detect whether or not the file referenced by ``path``
     is a Thermo RAW file.
 
     Parameters
@@ -100,7 +100,7 @@ def is_thermo_raw_file(path):
     -------
     :class:`bool`:
         Whether or not the file is a Thermo RAW file.
-    '''
+    """
     if not _test_dll_loaded():
         try:
             register_dll()
@@ -120,7 +120,7 @@ def is_thermo_raw_file(path):
 
 
 def infer_reader(path):
-    '''If the file referenced by ``path`` is a Thermo RAW
+    """If the file referenced by ``path`` is a Thermo RAW
     file, return the callable (:class:`ThermoRawLoader`) to
     open it, otherwise raise an exception.
 
@@ -138,21 +138,21 @@ def infer_reader(path):
     ------
     :class:`ValueError`:
         If the file is not a Thermo RAW file
-    '''
+    """
     if is_thermo_raw_file(path):
         return ThermoRawLoader
     raise ValueError("Not Thermo Raw File")
 
 
 def determine_if_available():
-    '''Checks whether or not the .NET-based Thermo
+    """Checks whether or not the .NET-based Thermo
     RAW file reading feature is available.
 
     Returns
     -------
     :class:`bool`:
         Whether or not the feature is enabled.
-    '''
+    """
     try:
         return _register_dll([_DEFAULT_DLL_PATH])
     except (OSError, ImportError):
@@ -160,7 +160,7 @@ def determine_if_available():
 
 
 def _register_dll(search_paths=None):
-    '''Start the Common Language Runtime interop service by importing
+    """Start the Common Language Runtime interop service by importing
     the :mod:`clr` module from Pythonnet, and then populate the global
     names referring to .NET entities, and finally attempt to locate the
     ThermoRawFileReader DLLs by searching alogn ``search_paths``.
@@ -174,7 +174,7 @@ def _register_dll(search_paths=None):
     -------
     :class:`bool`:
         Whether or not the .NET library successfully loaded
-    '''
+    """
     from ms_deisotope.config import get_config
     if search_paths is None:
         search_paths = []
@@ -211,7 +211,7 @@ def _register_dll(search_paths=None):
 
 
 def register_dll(search_paths=None):
-    '''Register the location of the Thermo RawFileReader DLL bundle with
+    """Register the location of the Thermo RawFileReader DLL bundle with
     the Common Language Runtime interop system and load the .NET symbols
     used by this feature.
 
@@ -220,12 +220,12 @@ def register_dll(search_paths=None):
     search_paths: list
         The paths to check along for the ThermoRawFileReader DLL bundle.
 
-    '''
+    """
     if search_paths is None:
         search_paths = []
     loaded = _register_dll(search_paths)
     if not loaded:
-        msg = '''The ThermoFisher.CommonCore libraries could not be located and loaded.'''
+        msg = """The ThermoFisher.CommonCore libraries could not be located and loaded."""
         raise ImportError(msg)
 
 
@@ -234,14 +234,14 @@ def _test_dll_loaded():
 
 
 def _copy_double_array(src):
-    '''A quick and dirty implementation of the fourth technique shown in
+    """A quick and dirty implementation of the fourth technique shown in
     https://mail.python.org/pipermail/pythondotnet/2014-May/001525.html for
     copying a .NET Array[Double] to a NumPy ndarray[np.float64] via a raw
     memory copy.
 
     ``int_ptr_tp`` must be an integer type that can hold a pointer. On Python 2
     this is :class:`long`, and on Python 3 it is :class:`int`.
-    '''
+    """
     # When the input .NET array pointer is None, return an empty array. On Py2
     # this would happen automatically, but not on Py3, and perhaps not safely on
     # all Py2 because it relies on pythonnet and the .NET runtime properly checking
@@ -257,9 +257,9 @@ def _copy_double_array(src):
 
 
 class RawReaderInterface(ScanDataSource):
-    ''':class:`~.ScanDataSource` implementation for Thermo's RawFileReader API.
+    """:class:`~.ScanDataSource` implementation for Thermo's RawFileReader API.
     Not intended for direct instantiation.
-    '''
+    """
 
     def _scan_arrays(self, scan):
         scan_number = scan.scan_number + 1
@@ -520,9 +520,9 @@ def _trailer_float(value):
 
 
 class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetadataLoader):
-    '''Reads scans from Thermo Fisher RAW files directly. Provides both iterative and
+    """Reads scans from Thermo Fisher RAW files directly. Provides both iterative and
     random access.
-    '''
+    """
 
     def __init__(self, source_file, _load_metadata=True, **kwargs):
         if not _test_dll_loaded():
@@ -616,13 +616,13 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
 
     @property
     def index(self):
-        '''Accesses the scan index
+        """Accesses the scan index
 
         Returns
         -------
         :class:`collections.OrderedDict`
             Maps scan ID to index
-        '''
+        """
         return self._index
 
     def __len__(self):
@@ -637,8 +637,8 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             self._source = None
 
     def close(self):
-        '''Close the underlying file reader.
-        '''
+        """Close the underlying file reader.
+        """
         self._close_handle()
         self._dispose()
 
@@ -782,7 +782,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             return scan
 
     def start_from_scan(self, scan_id=None, rt=None, index=None, require_ms1=True, grouped=True, **kwargs):
-        '''Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
+        """Reconstruct an iterator which will start from the scan matching one of ``scan_id``,
         ``rt``, or ``index``. Only one may be provided.
 
         After invoking this method, the iterator this object wraps will be changed to begin
@@ -801,7 +801,7 @@ class ThermoRawLoader(RawReaderInterface, RandomAccessScanSource, _RawFileMetada
             Whether the iterator must start from an MS1 scan. True by default.
         grouped: bool, optional
             whether the iterator should yield scan bunches or single scans. True by default.
-        '''
+        """
         if scan_id is not None:
             scan_number = int(str(scan_id).replace(_id_template, '')) - 1
         elif index is not None:

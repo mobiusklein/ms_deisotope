@@ -268,7 +268,7 @@ data_transformations = TermSet([
 
 
 def data_transformation(name):
-    '''Translate a given name or identifier into a :class:`DataTransformation`
+    """Translate a given name or identifier into a :class:`DataTransformation`
     instance.
 
     If no match is found in the database of known :class:`DataTransformation`
@@ -278,7 +278,7 @@ def data_transformation(name):
     Returns
     -------
     DataTransformation
-    '''
+    """
     try:
         return data_transformations[name]
     except KeyError:
@@ -286,7 +286,7 @@ def data_transformation(name):
 
 
 class ProcessingMethod(object):
-    '''Describes a single action applied to the associated spectra, composed of one
+    """Describes a single action applied to the associated spectra, composed of one
     or more data transformation operations.
 
     Attributes
@@ -304,7 +304,7 @@ class ProcessingMethod(object):
     See Also
     --------
     :class:`DataTransformation`
-    '''
+    """
     operations: OrderedDict[
         DataTransformation,
         Union[Any, List[Any]]
@@ -337,7 +337,7 @@ class ProcessingMethod(object):
         return self.operations.pop(operation, None)
 
     def add(self, operation: DataTransformationOrStr, value: Any = ''):
-        '''Add a new :class:`DataTransformation` operation to this method.
+        """Add a new :class:`DataTransformation` operation to this method.
 
         Parameters
         ----------
@@ -346,7 +346,7 @@ class ProcessingMethod(object):
             into a :class:`DataTransformation`.
         value: :class:`object`
             A parameter value associated with the operation. Defaults to the empty string.
-        '''
+        """
         if isinstance(operation, basestring):
             operation = data_transformation(operation)
         if operation in self.operations:
@@ -369,7 +369,7 @@ class ProcessingMethod(object):
                 return default
 
     def update(self, operations):
-        '''Add each operation in ``operations`` to this method.
+        """Add each operation in ``operations`` to this method.
 
         Parameters
         ----------
@@ -377,7 +377,7 @@ class ProcessingMethod(object):
             If given a :class:`~.Mapping`, add each key-value
             pair using :meth:`add`. Otherwise extract keys or key-value pairs
             if :class:`Iterable` is supported, adding each in succession
-        '''
+        """
         if isinstance(operations, dict):
             for op, val in operations.items():
                 self.add(op, val)
@@ -392,7 +392,7 @@ class ProcessingMethod(object):
 
 
 class DataProcessingInformation(object):
-    '''A :class:`Sequence` of :class:`ProcessingMethod` instances, describing the sequence
+    """A :class:`Sequence` of :class:`ProcessingMethod` instances, describing the sequence
     of data transformations applied to the spectra in the data associated with this instance.
 
     Attributes
@@ -402,7 +402,7 @@ class DataProcessingInformation(object):
         in an ordered fashion.
     id: int
         A within-source unique identifier
-    '''
+    """
 
     def __init__(self, methods=None, id=None):
         self.methods = methods or []

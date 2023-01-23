@@ -504,7 +504,7 @@ cdef class LCMSFeature(FeatureBase):
         return self._end_time
 
     cpdef bint overlaps_in_time(self, FeatureBase interval):
-        '''Test whether or not this feature overlaps with `interval`.
+        """Test whether or not this feature overlaps with `interval`.
 
         Parameters
         ----------
@@ -516,7 +516,7 @@ cdef class LCMSFeature(FeatureBase):
         bool:
             Whether this feature spans `interval` or the `interval` spans this feature,
             partially or one is fully contained in the other.
-        '''
+        """
         cdef:
             double self_start_time, self_end_time
             double other_start_time, other_end_time
@@ -536,7 +536,7 @@ cdef class LCMSFeature(FeatureBase):
         return cond
 
     cpdef bint spans_in_time(self, double time):
-        '''Test whether or not `time` is between :attr:`start_time`
+        """Test whether or not `time` is between :attr:`start_time`
         and :attr:`end_time`.
 
         Parameters
@@ -548,11 +548,11 @@ cdef class LCMSFeature(FeatureBase):
         -------
         bool:
             Whether or not the time is contained
-        '''
+        """
         return self.get_start_time() <= time <= self.get_end_time()
 
     def as_arrays(self, dtype=np.float64):
-        '''Convert this object into a pair of time and intensity arrays, summing
+        """Convert this object into a pair of time and intensity arrays, summing
         all peaks at the same time point.
 
         Returns
@@ -561,7 +561,7 @@ cdef class LCMSFeature(FeatureBase):
             The time array for this feature.
         intensities : np.ndarray
             The intensity array for this feature.
-        '''
+        """
         rts = np.array(
             [node.time for node in self.nodes], dtype=dtype)
         signal = np.array([node.total_intensity()
@@ -578,7 +578,7 @@ cdef class LCMSFeature(FeatureBase):
         return x
 
     def split_at(self, time):
-        '''Split this feature at a specific time point into two pieces, before
+        """Split this feature at a specific time point into two pieces, before
         and after that point in time.
 
         Parameters
@@ -592,7 +592,7 @@ cdef class LCMSFeature(FeatureBase):
             The component up to the provided time
         after : LCMSFeature
             The component after the provided time
-        '''
+        """
         _, i = self.nodes.find_time(time)
         if self.nodes[i].time < time:
             i += 1
@@ -611,7 +611,7 @@ cdef class LCMSFeature(FeatureBase):
         return self._copy_chunk(self.nodes[i:j + 1])
 
     cpdef list split_sparse(self, double delta_rt=1.):
-        '''Split this feature at any point where the distance from the
+        """Split this feature at any point where the distance from the
         time between one observed peak and the next exceeds `delta_rt`.
 
         Parameters
@@ -624,7 +624,7 @@ cdef class LCMSFeature(FeatureBase):
         -------
         list of :class:`LCMSFeature`
             The feature components broken at the gaps.
-        '''
+        """
         cdef:
             list chunks, current_chunk
             double last_rt
@@ -680,7 +680,7 @@ cdef class LCMSFeature(FeatureBase):
         return c
 
     cpdef insert_node(self, LCMSFeatureTreeNode node):
-        '''Insert a fully formed :class:`LCMSFeatureTreeNode` into this feature
+        """Insert a fully formed :class:`LCMSFeatureTreeNode` into this feature
         at the appropriate locaton in the time sequence.
 
         The node's :attr:`members` attribute will update the peak averager and
@@ -690,13 +690,13 @@ cdef class LCMSFeature(FeatureBase):
         ----------
         node : LCMSFeatureTreeNode
             The node to add.
-        '''
+        """
         self._peak_averager._update(node.members)
         self.nodes.insert_node(node)
         self._invalidate()
 
     cpdef insert(self, PeakBase peak, double time):
-        '''Insert a peak at a known time into this feature.
+        """Insert a peak at a known time into this feature.
 
         The peak updates the peak averager and triggers state invalidation.
 
@@ -706,13 +706,13 @@ cdef class LCMSFeature(FeatureBase):
             The a peak with known m/z and intensity
         time : float
             The time point at which this peak was observed
-        '''
+        """
         self._peak_averager.add(peak)
         self.nodes.insert(time, [peak])
         self._invalidate()
 
     def merge(self, other):
-        '''Create a copy of this feature and copies all nodes from `other` into it,
+        """Create a copy of this feature and copies all nodes from `other` into it,
         combining information from both features in a new instance.
 
         Parameters
@@ -724,7 +724,7 @@ cdef class LCMSFeature(FeatureBase):
         Returns
         -------
         LCMSFeature
-        '''
+        """
         new = self.clone()
         for node in other.nodes:
             node = node.clone()

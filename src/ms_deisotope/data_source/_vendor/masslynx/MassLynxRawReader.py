@@ -1,6 +1,6 @@
-''' Waters
+""" Waters
     MassLynx Python SDK
-'''
+"""
 
 import string
 import ctypes

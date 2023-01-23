@@ -40,7 +40,7 @@ waters_frame_id_pattern = re.compile(r"function=(\d+) process=(\d+) startScan=(\
 
 
 def is_waters_raw_dir(path):
-    '''Detect whether or not the file referenced by ``path``
+    """Detect whether or not the file referenced by ``path``
     is a Waters RAW directory.
 
     Parameters
@@ -52,7 +52,7 @@ def is_waters_raw_dir(path):
     -------
     :class:`bool`:
         Whether or not the file is a Waters RAW directory.
-    '''
+    """
     if not libload.proxy._is_loaded():
         try:
             libload.register_dll()
@@ -66,7 +66,7 @@ def is_waters_raw_dir(path):
 
 
 def infer_reader(path):
-    '''If the file referenced by ``path`` is a Waters RAW
+    """If the file referenced by ``path`` is a Waters RAW
     directory, return the callable (:class:`MassLynxRawLoader`) to
     open it, otherwise raise an exception.
 
@@ -84,7 +84,7 @@ def infer_reader(path):
     ------
     :class:`ValueError`:
         If the file is not a Waters RAW file
-    '''
+    """
     if is_waters_raw_dir(path):
         return MassLynxRawLoader
     raise ValueError("Not Waters Raw Directory")

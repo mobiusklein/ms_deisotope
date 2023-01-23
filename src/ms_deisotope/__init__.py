@@ -1,9 +1,9 @@
-'''
+"""
 ms_deisotope
 ------------
 A deisotoping and charge state deconvolution library for high resolution mass spectra
 with integrated support for reading and writing common mass spectrometry data formats.
-'''
+"""
 try:
     import dill
 except ImportError:

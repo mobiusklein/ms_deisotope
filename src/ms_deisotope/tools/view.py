@@ -1,6 +1,6 @@
-'''A Tk-based spectrum viewer that integrates :mod:`ms_deisotope`'s spectrum processing
+"""A Tk-based spectrum viewer that integrates :mod:`ms_deisotope`'s spectrum processing
 features.
-'''
+"""
 import sys
 import os
 
@@ -15,20 +15,11 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,)
 from matplotlib.widgets import SpanSelector
 import numpy as np
 
-try:
-    import Tkinter as tk
-    from Tkinter import Tk
-    import ttk
-except ImportError:
-    import tkinter as tk
-    from tkinter import Tk
-    from tkinter import ttk
+import tkinter as tk
+from tkinter import Tk
+from tkinter import ttk
 
-
-try:
-    import tkFileDialog as tkfiledialog
-except ImportError:
-    import tkinter.filedialog as tkfiledialog
+import tkinter.filedialog as tkfiledialog
 
 import ms_deisotope
 from ms_deisotope.data_source import ScanBunch, ChargeNotProvided

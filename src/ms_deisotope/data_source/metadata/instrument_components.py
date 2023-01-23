@@ -2373,7 +2373,7 @@ class ComponentGroup(object):
 
 
 class InstrumentInformation(object):
-    '''Describes a single configuration of an instrument for acquiring spectra.
+    """Describes a single configuration of an instrument for acquiring spectra.
 
     Parameters
     ----------
@@ -2383,7 +2383,7 @@ class InstrumentInformation(object):
         The component groups, sorted by :attr:`ComponentGroup.order`, in this configuraton
     analyzers: list
         A convenience list for storing the :class:`Component` objects which are ``analyzer``s
-    '''
+    """
 
     id: Union[str, int]
     groups: List[ComponentGroup]

@@ -1,9 +1,9 @@
-'''mzML is a standard rich XML-format for raw mass spectrometry data storage.
+"""mzML is a standard rich XML-format for raw mass spectrometry data storage.
 This module provides :class:`MzMLLoader`, a :class:`~.RandomAccessScanSource`
 implementation.
 
 The parser is based on :mod:`pyteomics.mzml`.
-'''
+"""
 import io
 from typing import Any, Dict, List, Tuple
 import warnings
@@ -56,10 +56,8 @@ class _MzMLParser(mzml.MzML):
         super(_MzMLParser, self).__init__(*args, **kwargs)
 
     def _handle_param(self, element, **kwargs):
-        try:
-            element.attrib["value"]
-        except KeyError:
-            element.attrib["value"] = ""
+        if "value" not in element.attrib:
+            element.attrib['value'] = ''
         return super(_MzMLParser, self)._handle_param(element, **kwargs)
 
     def _determine_array_dtype(self, info):
@@ -98,6 +96,7 @@ class _MzMLParser(mzml.MzML):
         else:
             super(_MzMLParser, self)._read_byte_offsets()
 
+
 def _find_arrays(data_dict, decode=False):
     arrays = dict()
     for key, value in data_dict.items():
@@ -111,6 +110,12 @@ def _find_arrays(data_dict, decode=False):
                 arrays[key] = value
     return arrays
 
+
+try:
+    from ms_deisotope._c.units import _handle_param_fill_missing_value
+    _MzMLParser._handle_param = _handle_param_fill_missing_value
+except ImportError:
+    pass
 
 class MzMLDataInterface(ScanDataSource):
     """Provides implementations of all of the methods needed to implement the
@@ -688,8 +693,8 @@ def checksum_mzml_stream(stream: io.IOBase) -> Tuple[bytes, bytes]:
 
 
 def read_file_checksum(stream: io.IOBase) -> bytes:
-    '''Read the stored file checksum of an indexedmzML file.
-    '''
+    """Read the stored file checksum of an indexedmzML file.
+    """
     stream.seek(-5000, 2)
     chunk = stream.read(5001)
     target = re.compile(br"<fileChecksum>\s*(\S+)\s*</fileChecksum>")
@@ -739,7 +744,7 @@ class MzMLLoader(MzMLDataInterface, XMLReaderBase, _MzMLMetadataLoader):
 
     @property
     def decode_binary(self) -> bool:
-        '''Whether or not to eagerly decode binary data arrays'''
+        """Whether or not to eagerly decode binary data arrays"""
         return self._decode_binary
 
     @decode_binary.setter

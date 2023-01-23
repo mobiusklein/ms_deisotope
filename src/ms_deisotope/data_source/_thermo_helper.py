@@ -1,6 +1,6 @@
-'''Helper types and functions shared between the COM
+"""Helper types and functions shared between the COM
 and .NET Thermo Reader implementations.
-'''
+"""
 
 import re
 from collections import defaultdict
@@ -76,7 +76,7 @@ if TYPE_CHECKING:
 
 
 class FilterString(str):
-    '''A string type that includes parsing of filter string fields
+    """A string type that includes parsing of filter string fields
     exposing a :meth:`get` method to read specific fields.
 
     Attributes
@@ -87,14 +87,14 @@ class FilterString(str):
     See Also
     --------
     :func:`filter_string_parser`
-    '''
+    """
     def __init__(self, value):
         super().__init__()
         self.data = self._parse()
 
     def get(self, key: str) -> Any:
-        '''Get a field from the parsed filter string.
-        '''
+        """Get a field from the parsed filter string.
+        """
         return self.data.get(key)
 
     def _parse(self):
@@ -319,8 +319,8 @@ class _InstrumentMethod(object):
          self.isolation_width_by_segment_and_ms_level) = method_parser(self.text)
 
     def isolation_width_for(self, segment, event=None, ms_level=None) -> float:
-        '''Find the isolation window width for the specified scan
-        '''
+        """Find the isolation window width for the specified scan
+        """
         if event is not None:
             try:
                 width = self.isolation_width_by_segment_and_event[segment][event]
@@ -338,7 +338,7 @@ class _InstrumentMethod(object):
 
 
 def method_parser(method_text: str):
-    '''Parse a Thermo method defined in text.
+    """Parse a Thermo method defined in text.
 
     Parameters
     ----------
@@ -351,7 +351,7 @@ def method_parser(method_text: str):
         Mapping from scan acquisition segment and scan type to isolation window width
     isolation_width_by_segment_and_ms_level : DefaultDict[int, Dict[int, float]]
         Mapping from scan acquisition segment and :term:`MS level` to isolation window width
-    '''
+    """
     scan_segment_re = re.compile(r"\s*Segment (\d+) Information\s*")
     scan_event_re = re.compile(r"\s*(\d+):.*")
     scan_event_isolation_width_re = re.compile(r"\s*Isolation Width:\s*(\S+)\s*")
@@ -425,7 +425,7 @@ def method_parser(method_text: str):
 
 
 class ThermoRawScanPtr(Base):
-    '''A spectrum identity wrapper that encapsulates the scan number for uniquely identifying
+    """A spectrum identity wrapper that encapsulates the scan number for uniquely identifying
     each spectrum and provides some caches for expensive-to-parse attributes not cached
     already by :class:`~.Scan`.
 
@@ -437,7 +437,7 @@ class ThermoRawScanPtr(Base):
         The filter string for this scan, parsed on demand
     trailer_values : Optional[OrderedDict[str, Any]]
         The parsed trailer-extras values
-    '''
+    """
 
     scan_number: int
     filter_string: Optional[FilterString]
@@ -449,7 +449,7 @@ class ThermoRawScanPtr(Base):
         self.trailer_values = None
 
     def validate(self, source: 'ScanDataSource') -> bool:
-        '''Check that this is a valid spectrum reference'''
+        """Check that this is a valid spectrum reference"""
         try:
             source._scan_time(self)
             return True

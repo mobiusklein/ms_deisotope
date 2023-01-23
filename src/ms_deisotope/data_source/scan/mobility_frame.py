@@ -151,19 +151,19 @@ class IonMobilitySourceRandomAccessFrameSource(IonMobilitySource):
         raise NotImplementedError()
 
     def initialize_frame_cache(self):
-        '''Initialize a cache which keeps track of which :class:`~.IonMobilityFrame`
+        """Initialize a cache which keeps track of which :class:`~.IonMobilityFrame`
         objects are still in memory using a :class:`weakref.WeakValueDictionary`.
 
         When a frame is requested, if the frame object is found in the cache, the
         existing object is returned rather than re-read from disk.
-        '''
+        """
         self._frame_cache = WeakValueDictionary()
 
     @property
     def frame_cache(self):
-        '''A :class:`weakref.WeakValueDictionary` mapping used to retrieve
+        """A :class:`weakref.WeakValueDictionary` mapping used to retrieve
         frames from memory if available before re-reading them from disk.
-        '''
+        """
         return self._frame_cache
 
     @frame_cache.setter
@@ -232,7 +232,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return self.ion_mobility
 
     def has_array(self, array_type):
-        '''Check if this array set contains an array of the
+        """Check if this array set contains an array of the
         requested type.
 
         This method uses the semantic lookup mechanism to test
@@ -247,7 +247,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         Returns
         -------
         bool
-        '''
+        """
         from ms_deisotope.data_source.metadata.scan_traits import binary_data_arrays
         try:
             term = binary_data_arrays[array_type]
@@ -321,7 +321,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
 
     @classmethod
     def stack(cls, scans, ion_mobility_array_type=None):
-        '''Combine multiple :class:`~.Scan` objects or (ion mobility, :class:`~.RawDataArrays`)
+        """Combine multiple :class:`~.Scan` objects or (ion mobility, :class:`~.RawDataArrays`)
         pairs into a single :class:`~.RawDataArrays3D`
 
         Parameters
@@ -330,7 +330,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             The single ion mobility point arrays to combine
         ion_mobility_array_type : :class:`~.Term` or :class:`str`
             The type of ion mobility array
-        '''
+        """
         mz = array.array('d')
         intensity = array.array('d')
         ion_mobility = array.array('d')
@@ -366,7 +366,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
 
     @classmethod
     def from_arrays(cls, mz_array, intensity_array, ion_mobility_array, ion_mobility_array_type=None, data_arrays=None):
-        '''Build a new :class:`~.RawDataArrays3D` from parallel arrays.
+        """Build a new :class:`~.RawDataArrays3D` from parallel arrays.
 
         This will sort all arrays w.r.t. m/z and ion mobility.
 
@@ -384,7 +384,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         Returns
         -------
         :class:`~.RawDataArrays3D`
-        '''
+        """
         mz_array = np.asarray(mz_array)
         ion_mobility_array = np.asarray(ion_mobility_array)
         distinct_ion_mobility = np.sort(np.unique(ion_mobility_array))
@@ -413,7 +413,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             self.ion_mobility_array_type, data_arrays)
 
     def unstack(self, include_empty=True):
-        '''Convert this 3D array into a list of (ion mobility, :class:`~.RawDataArrays`) pairs
+        """Convert this 3D array into a list of (ion mobility, :class:`~.RawDataArrays`) pairs
 
         Parameters
         ----------
@@ -424,7 +424,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         -------
         arrays : list[tuple[float, :class:`~.RawDataArrays`]]
             The split arrays arranged by drift time
-        '''
+        """
         # Sort by m/z first, then by ion mobility
         mask = np.lexsort(np.stack((self.mz, self.ion_mobility)))
         sorted_dim = self.ion_mobility[mask]
@@ -447,7 +447,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
         return acc
 
     def grid(self):
-        '''Convert this 3D array into an intensity grid with
+        """Convert this 3D array into an intensity grid with
         m/z along the rows and ion mobility along the columns.
 
         Returns
@@ -458,7 +458,7 @@ class RawDataArrays3D(namedtuple("RawDataArrays3D", ['mz', 'intensity', 'ion_mob
             The ion mobility value for each column
         intensity : np.ndarray
             A 2D array of intensity values at each axis position
-        '''
+        """
         mz_axis = np.unique(self.mz)
         im_axis = (self.distinct_ion_mobility)
         intensity = np.zeros((mz_axis.shape[0], im_axis.shape[0]))
@@ -622,12 +622,12 @@ class FrameBase(object):
 
 
 class IonMobilityFrame(FrameBase):
-    '''A :class:`IonMobilityFrame` represents an single time point acquisition of
+    """A :class:`IonMobilityFrame` represents an single time point acquisition of
     multiple mass spectra across multiple ion mobility drift time points. Because
     of its drift time by m/z structure, it does not have 1-D peak sets, but pseudo-
     :class:`~.LCMSFeatureMap`-like data structures which conserve the over-time
     property.
-    '''
+    """
 
     source: IonMobilitySource
 
@@ -894,11 +894,12 @@ class IonMobilityFrame(FrameBase):
             scan.pick_peaks(**kwargs)
             scan.peak_set.intensity_array = None
             scan.peak_set.mz_array = None
+            drift_time = scan.drift_time
             for peak in scan:
                 peak: FittedPeak
                 if peak.intensity < minimum_intensity:
                     continue
-                lff.handle_peak(peak, scan.drift_time)
+                lff.handle_peak(peak, drift_time)
 
         del averager
         lff.split_sparse(max_gap_size, min_size).smooth_overlaps(

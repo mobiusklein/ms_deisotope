@@ -2,13 +2,13 @@
 import os
 import io
 
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Iterator, List, Optional, Tuple, Union, Hashable, Deque
 import warnings
 
 import numpy as np
 
 from six import string_types as basestring
-from ms_deisotope.data_source import Scan, ProcessedScan
+from ms_deisotope.data_source import Scan, ProcessedScan, ProcessedRandomAccessScanSource
 from ms_deisotope.peak_set import DeconvolutedPeak
 
 from ms_deisotope.utils import Base
@@ -133,11 +133,22 @@ class SampleRun(Base):
 
 
 class LCMSMSQueryInterfaceMixin(object):
-    '''A mixin class for querying an extended data index on a processed
-    data file.
-    '''
+    """A mixin class for querying an extended data index on a processed data file."""
 
     def require_extended_index(self) -> Optional[ExtendedScanIndex]:
+        """Require the extended index is initialized.
+
+        Either load the index if it exists, or build a new one.
+
+        The new index is built within a the calling process, and may
+        be considerably slower than the multiprocess index building
+        tools.
+
+
+        Returns
+        -------
+        ExtendedIndex
+        """
         if not self.has_extended_index():
             try:
                 if self.has_index_file():
@@ -152,9 +163,14 @@ class LCMSMSQueryInterfaceMixin(object):
         return self.extended_index
 
     def has_extended_index(self) -> bool:
+        """Check if the extended index is initialized."""
         return self.extended_index is not None
 
     def read_index_file(self, index_path=None):
+        """Attempt to read the extended index from the file system.
+
+        This updates :attr:`extended_index`.
+        """
         if index_path is None:
             index_path = self._index_file_name
         with get_opener(index_path) as handle:
@@ -163,6 +179,12 @@ class LCMSMSQueryInterfaceMixin(object):
             self.extended_index = ExtendedScanIndex.deserialize(handle)
 
     def has_index_file(self) -> bool:
+        """Checks if an extended index file exists for this reader.
+
+        Returns
+        -------
+        bool
+        """
         try:
             return os.path.exists(self._index_file_name)
         except (TypeError, AttributeError):
@@ -179,6 +201,11 @@ class LCMSMSQueryInterfaceMixin(object):
                 return None
 
     def build_extended_index(self, header_only=True):
+        """Build the extended index for this reader.
+
+        This method builds the index in-process and may be slower
+        than the multiprocessing builders.
+        """
         self.reset()
         indexer = ExtendedScanIndex()
         iterator = self
@@ -200,6 +227,7 @@ class LCMSMSQueryInterfaceMixin(object):
             warnings.warn(str(err))
 
     def get_index_information_by_scan_id(self, scan_id: str) -> dict:
+        """Get the scan description from the extended index."""
         try:
             try:
                 return self.extended_index.msn_ids[scan_id]
@@ -250,8 +278,23 @@ class LCMSMSQueryInterfaceMixin(object):
             out.append(pinfo)
         return out
 
-    def ms1_peaks_above(self, mass_threshold: float = 500, intensity_threshold: float = 1000.) -> List[Tuple[str, DeconvolutedPeak, int]]:
-        accumulate = []
+    def ms1_peaks_above(self, mass_threshold: float = 500, intensity_threshold: float = 1000.) -> Deque[Tuple[str, DeconvolutedPeak, Hashable]]:
+        """Read out all MS1 peaks from this spectrum source, if they satisfy the requested minimum values.
+
+        Loop over the MS1 index, reading out peaks from the processed peak set whose
+        mass exceeds ``mass_threshold`` and whose intensity exceeds ``intensity_threshold``.
+
+        .. note::
+            The final element of returned tuples is not guaranteed to be an integer, but only
+            some hashable type.
+
+        Returns
+        -------
+        peak_records : Deque[Tuple[:class:`str`, :class:`~.DeconvolutedPeak`, :class:`Hashable`]]
+            A list of peaks associated with the MS1 scan ID they came from and an
+            arbitrary hashable value to identify the pair.
+        """
+        accumulate = Deque()
         for ms1_id in self.extended_index.ms1_ids:
             scan = self.get_scan_by_id(ms1_id)
             for peak in scan.deconvoluted_peak_set:

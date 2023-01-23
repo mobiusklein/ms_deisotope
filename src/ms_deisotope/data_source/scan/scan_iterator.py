@@ -1,6 +1,6 @@
-'''A collection of different strategies for iterating over streams
+"""A collection of different strategies for iterating over streams
 of :class:`~.Scan`-like objects.
-'''
+"""
 import bisect
 import warnings
 
@@ -62,8 +62,8 @@ class _ScanIteratorImplBase(Generic[ScanType, ScanGroupType]):
         return self
 
     def next(self):
-        '''Py2 compatible iterator
-        '''
+        """Py2 compatible iterator
+        """
         if self._producer is None:
             self._producer = self._make_producer()
         return next(self._producer)
@@ -119,10 +119,10 @@ class _SingleScanIteratorImpl(_ScanIteratorImplBase[ScanType, ScanGroupType], It
 
 
 class _FakeGroupedScanIteratorImpl(_SingleScanIteratorImpl[ScanType, ScanGroupType], Iterator[ScanGroupType]):
-    '''Mimics the interface of :class:`_GroupedScanIteratorImpl` for
+    """Mimics the interface of :class:`_GroupedScanIteratorImpl` for
     scan sequences which only support single scans, or which do not
     guarantee sequential access to precursor/product collections.
-    '''
+    """
 
     _producer: Iterator[ScanGroupType]
 
@@ -280,7 +280,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
         return self.product_mapping.pop(precursor_id, [])
 
     def deque_group(self, flush_products=False) -> ScanGroupType:
-        '''Remove the next scan from the MS1 queue, grouped with
+        """Remove the next scan from the MS1 queue, grouped with
         any associated MSn scans.
 
         Parameters
@@ -292,7 +292,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
         Returns
         -------
         ScanBunch
-        '''
+        """
         precursor = self.ms1_buffer.popleft()
         _empty = []
         products = self.pop_precursor(precursor.id)
@@ -358,14 +358,14 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
         return ScanBunch(precursor, products)
 
     def add_product(self, scan: ScanType):
-        '''Add MSn scan to :attr:`product_mapping` for the associated
+        """Add MSn scan to :attr:`product_mapping` for the associated
         precursor scan ID.
 
         Parameters
         ----------
         scan : :class:`~.ScanBase`
             The scan to track.
-        '''
+        """
         pinfo = scan.precursor_information
         if pinfo is None:
             precursor_id = None
@@ -381,7 +381,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
         self.product_mapping[precursor_id].append(scan)
 
     def add_precursor(self, scan: ScanType) -> bool:
-        '''Add MS1 scan to :attr:`ms1_buffer`
+        """Add MS1 scan to :attr:`ms1_buffer`
 
         Parameters
         ----------
@@ -392,7 +392,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
         -------
         buffer_full : bool
             Whether or not :attr:`ms1_buffer` is full.
-        '''
+        """
         self.ms1_buffer.append(scan)
         return len(self.ms1_buffer) >= self.buffering
 
@@ -435,7 +435,7 @@ class _InterleavedGroupedScanIteratorImpl(_GroupedScanIteratorImpl[ScanType, Sca
 
 
 class MSEIterator(_GroupedScanIteratorImpl[ScanType, ScanGroupType]):
-    '''A scan iterator implementation for grouping MS^E spectra according
+    """A scan iterator implementation for grouping MS^E spectra according
     to the specified functions.
 
     Attributes
@@ -446,7 +446,7 @@ class MSEIterator(_GroupedScanIteratorImpl[ScanType, ScanGroupType]):
     lock_mass_config : int
         The function corresponding to the lockmass. Lockmass scans
         will be skipped.
-    '''
+    """
 
     low_energy_config: int = 1
     lock_mass_config: int = 3

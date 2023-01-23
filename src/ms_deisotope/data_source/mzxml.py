@@ -1,10 +1,10 @@
-'''**mzXML** is a standard XML-format for raw mass spectrometry data storage created
+"""**mzXML** is a standard XML-format for raw mass spectrometry data storage created
 by the Institute for Systems Biology, intended to be replaced with **mzML**.
 This module provides :class:`MzXMLLoader`, a :class:`~.RandomAccessScanSource`
 implementation.
 
 The parser is based on :mod:`pyteomics.mzxml`.
-'''
+"""
 from typing import List
 from six import string_types as basestring
 

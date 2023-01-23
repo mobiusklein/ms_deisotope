@@ -37,6 +37,7 @@ class IsotopicFitRecord(object):
     theoretical : list of TheoreticalPeak
         The theoretical isotopic pattern being fitted on the experimental data
     """
+
     __slots__ = ["seed_peak", "score", "charge", "experimental", "theoretical",
                  "monoisotopic_peak", "data", "missed_peaks"]
 
@@ -51,7 +52,13 @@ class IsotopicFitRecord(object):
         self.data = data
         self.missed_peaks = missed_peaks
 
-    def clone(self):
+    def clone(self) -> 'IsotopicFitRecord':
+        """Make a shallow copy of this object.
+
+        Returns
+        -------
+        IsotopicFitRecord
+        """
         return self.__class__(
             self.seed_peak, self.score, self.charge, self.theoretical, self.experimental, self.data, self.missed_peaks)
 
@@ -88,6 +95,12 @@ class IsotopicFitRecord(object):
 
     @property
     def npeaks(self):
+        """The number of experimental peaks covered in the fit.
+
+        Returns
+        -------
+        int
+        """
         return len(self.experimental)
 
     def __repr__(self):
@@ -105,6 +118,7 @@ class FitSelectorBase(Base):
         The minimum score needed to be a candidate for selection. If the
         FitSelector is `minimizing` it is the maximal score to be a candidate.
     """
+
     minimum_score = 0
 
     def __init__(self, minimum_score=0):
@@ -127,8 +141,8 @@ class FitSelectorBase(Base):
 
 
 class MinimizeFitSelector(FitSelectorBase):
-    """A FitSelector which tries to minimize the score of the best fit.
-    """
+    """A FitSelector which tries to minimize the score of the best fit."""
+
     def best(self, results):
         """Returns the IsotopicFitRecord with the smallest score
 
@@ -172,8 +186,8 @@ class MinimizeFitSelector(FitSelectorBase):
 
 
 class MaximizeFitSelector(FitSelectorBase):
-    """A FitSelector which tries to maximize the score of the best fit.
-    """
+    """A FitSelector which tries to maximize the score of the best fit."""
+
     def best(self, results):
         """Returns the IsotopicFitRecord with the largest score
 
@@ -217,7 +231,7 @@ class MaximizeFitSelector(FitSelectorBase):
 
 
 class IsotopicFitterBase(Base):
-    '''A base class for Isotopic Pattern Fitters, objects
+    """A base class for Isotopic Pattern Fitters, objects
     which given a set of experimental peaks and a set of matching
     theoretical peaks, returns a fit score describing how good the
     match is.
@@ -226,7 +240,7 @@ class IsotopicFitterBase(Base):
     or when the score is large (maximizing), and the appropriate
     :class:`FitSelectorBase` type will be used for :attr:`select`. This
     will also be reflected by :meth:`is_maximizing`.
-    '''
+    """
 
     def __init__(self, score_threshold=0.5):
         self.select = MinimizeFitSelector(score_threshold)
@@ -308,6 +322,7 @@ class GTestFitter(IsotopicFitterBase):
     where :math:`o_i` is the intensity of the ith experimental peak
     and :math:`e_i` is the intensity of the ith theoretical peak.
     """
+
     def evaluate(self, peaklist, observed, expected, **kwargs):
         g_score = 2 * sum([obs.intensity * np.log(
             obs.intensity / theo.intensity) for obs, theo in zip(observed, expected)])
@@ -327,6 +342,7 @@ class ScaledGTestFitter(IsotopicFitterBase):
     where :math:`o_i` is the intensity of the ith experimental peak
     and :math:`e_i` is the intensity of the ith theoretical peak.
     """
+
     def evaluate(self, peaklist, observed, expected, **kwargs):
         total_observed = sum(p.intensity for p in observed)
         total_expected = sum(p.intensity for p in expected)
@@ -390,7 +406,7 @@ least_squares = LeastSquaresFitter()
 
 
 class MSDeconVFitter(IsotopicFitterBase):
-    '''An implementation of the scoring function used in :title-reference:`MSDeconV`
+    """An implementation of the scoring function used in :title-reference:`MSDeconV`
 
     References
     ----------
@@ -398,7 +414,7 @@ class MSDeconVFitter(IsotopicFitterBase):
     Pevzner, P. A. (2010). Deconvolution and database search of complex tandem
     mass spectra of intact proteins: a combinatorial approach. Molecular & Cellular
     Proteomics : MCP, 9(12), 2772–2782. https://doi.org/10.1074/mcp.M110.002766
-    '''
+    """
 
     def __init__(self, minimum_score=10, mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector()
@@ -451,7 +467,7 @@ class MSDeconVFitter(IsotopicFitterBase):
 
 
 class PenalizedMSDeconVFitter(IsotopicFitterBase):
-    r'''An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
+    r"""An Isotopic Fitter which uses the :class:`MSDeconVFitter` score
     weighted by 1 - :attr:`penalty_factor` * :class:`ScaledGTestFitter` score
 
     .. math::
@@ -459,7 +475,8 @@ class PenalizedMSDeconVFitter(IsotopicFitterBase):
 
     where :math:`e` is the experimental peak list and :math:`t` is the theoretical
     peak list
-    '''
+    """
+
     def __init__(self, minimum_score=10, penalty_factor=1., mass_error_tolerance=0.02):
         self.select = MaximizeFitSelector(minimum_score)
         self.msdeconv = MSDeconVFitter(mass_error_tolerance=mass_error_tolerance)
@@ -570,7 +587,7 @@ try:
     from ._c.scoring import (
         IsotopicFitRecord, LeastSquaresFitter, MSDeconVFitter,
         ScaledGTestFitter, PenalizedMSDeconVFitter, DistinctPatternFitter,
-        DotProductFitter)
+        DotProductFitter, FunctionScorer)
 except ImportError as e:
     _has_c = False
 

@@ -1,5 +1,6 @@
 import unittest
 import logging
+from ms_deisotope.peak_set import DeconvolutedPeakSet
 import numpy as np
 
 import brainpy
@@ -47,6 +48,43 @@ class TestAveragineDeconvolution(unittest.TestCase):
         for point in points:
             self.assertIsNotNone(scan.peak_set.has_peak(point[0]))
         return scan
+
+    def test_parallel_arrays_conversion(self):
+        """Test that the automatic peak conversion works."""
+        scan = self.make_scan()
+
+        mzs = np.array([p.mz for p in scan])
+        intensities = np.array([p.intensity for p in scan])
+
+        algorithm_type = AveraginePeakDependenceGraphDeconvoluter
+        deconresult = deconvolute_peaks(
+            (mzs, intensities), {
+                "averagine": peptide,
+                "scorer": PenalizedMSDeconVFitter(5., 1.)
+            }, deconvoluter_type=algorithm_type)
+        dpeaks: DeconvolutedPeakSet = deconresult.peak_set
+        assert len(dpeaks) == 2
+        for point in points:
+            peak = dpeaks.has_peak(neutral_mass(point[0], point[1]))
+            self.assertIsNotNone(peak)
+
+    def test_pairs_conversion(self):
+        """Test that the automatic peak conversion works."""
+        scan = self.make_scan()
+
+        peaks = [(p.mz, p.intensity) for p in scan.peak_set]
+
+        algorithm_type = AveraginePeakDependenceGraphDeconvoluter
+        deconresult = deconvolute_peaks(
+            peaks, {
+                "averagine": peptide,
+                "scorer": PenalizedMSDeconVFitter(5., 1.)
+            }, deconvoluter_type=algorithm_type)
+        dpeaks: DeconvolutedPeakSet = deconresult.peak_set
+        assert len(dpeaks) == 2
+        for point in points:
+            peak = dpeaks.has_peak(neutral_mass(point[0], point[1]))
+            self.assertIsNotNone(peak)
 
     def test_quick_charge(self):
         scan = self.make_scan()

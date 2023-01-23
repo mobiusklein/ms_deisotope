@@ -1,4 +1,4 @@
-'''
+"""
 Writing mzMLb
 -------------
 
@@ -32,7 +32,7 @@ All behavior available for the :class:`~.ProcessedMzMLLoader` are available for
                 product.deconvolute()
             writer.save(bunch)
 
-'''
+"""
 
 import numpy as np
 

@@ -1,9 +1,9 @@
-'''Defines proxy objects which appear to be :class:`~.Scan` objects without
+"""Defines proxy objects which appear to be :class:`~.Scan` objects without
 issueing any I/O operations until a scan's attributes are requested, and the a
 LRU cache for keeping only recently used full scans in memory. This allows
 a large number of scans to be "loaded" at once without requiring storing all of
 the backing information.
-'''
+"""
 import weakref
 import logging
 import operator
@@ -58,7 +58,7 @@ class ScanProxyContext(object):
         return value
 
     def get_scan_by_id(self, scan_id):
-        '''Retrieve a real scan by its identifier.
+        """Retrieve a real scan by its identifier.
 
         This method first checks the in-memory cache for the scan identifier
         and returns it if already loaded. If not, the scan is retrieved from
@@ -73,7 +73,7 @@ class ScanProxyContext(object):
         Returns
         -------
         :class:`~.Scan`
-        '''
+        """
         if scan_id in self.cache:
             return self._refresh(scan_id)
         scan = self.source.get_scan_by_id(scan_id)
@@ -81,7 +81,7 @@ class ScanProxyContext(object):
         return scan
 
     def get_scan_by_index(self, index):
-        '''Retrieve a real scan by its index.
+        """Retrieve a real scan by its index.
 
         This method first checks the in-memory cache for the scan index
         and returns it if already loaded. If not, the scan is retrieved from
@@ -96,7 +96,7 @@ class ScanProxyContext(object):
         Returns
         -------
         :class:`~.Scan`
-        '''
+        """
         if index in self.cache:
             return self._refresh(index)
         scan = self.source.get_scan_by_index(index)
@@ -143,17 +143,17 @@ class ScanProxyContext(object):
         return proxy
 
     def clear(self):
-        '''Clear the reference cache.
+        """Clear the reference cache.
 
         If the scans that were previously held in the cache were not
         strong-referenced anywhere else, any extant proxies which depend
         upon this context will have to reload their spectra from disk.
-        '''
+        """
         self.cache.clear()
 
 
 class proxyproperty(object):
-    '''An descriptor that integrates with :class:`ScanProxy` to retrieve attributes
+    """An descriptor that integrates with :class:`ScanProxy` to retrieve attributes
     from a wrapped :class:`~.ScanBase` object referenced by :class:`ScanProxy`,
     potentially loading the scan from disk if it has been purged from the memory
     cache.
@@ -162,7 +162,7 @@ class proxyproperty(object):
     ----------
     name: :class:`str`
         The name of the attribute to retrieve from the wrapped scan
-    '''
+    """
 
     __slots__ = ('name', 'caching', 'is_null_slot', 'cache_slot', '_null_getter', '_cache_getter', '_name_getter')
 
@@ -268,12 +268,12 @@ class ScanProxy(ScanBase):
 
     @property
     def source(self):
-        '''The source of the scan data this proxy is bound to.
+        """The source of the scan data this proxy is bound to.
 
         Returns
         -------
         :class:`RandomAccessScanSource`
-        '''
+        """
         return self.context.source
 
     def _clear_scan(self, *args, **kwargs):
@@ -308,18 +308,18 @@ class ScanProxy(ScanBase):
 
     @property
     def scan(self):
-        '''The proxied scan.
+        """The proxied scan.
 
         Accessing this property may require loading the scan's data
         from disk and/or triggering a cache eviction.
-        '''
+        """
         self._require_scan()
         return self._scan
 
     def pick_peaks(self, *args, **kwargs):
-        '''Request the proxied scan picked peaks if they are not
+        """Request the proxied scan picked peaks if they are not
         already available and then cache them in memory.
-        '''
+        """
         self._require_scan()
         peaks = self.peak_set
         if peaks is None:
@@ -347,7 +347,7 @@ class ScanProxy(ScanBase):
         return len(self._resolve_sequence())
 
     def has_peak(self, *args, **kwargs):
-        '''Query the wrapped scan's peaks using it's :meth:`Scan.has_peak`
+        """Query the wrapped scan's peaks using it's :meth:`Scan.has_peak`
         method. If no peaks are available, this will call :meth:`pick_peaks`
         first to resolve the peak set and then query its peaks instead.
 
@@ -367,7 +367,7 @@ class ScanProxy(ScanBase):
         See Also
         --------
         :meth:`Scan.has_peak`
-        '''
+        """
         try:
             return self.scan.has_peak(*args, **kwargs)
         except ValueError:

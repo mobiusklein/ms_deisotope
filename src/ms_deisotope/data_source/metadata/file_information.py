@@ -271,7 +271,7 @@ class NativeIDParser(IDParserBase):
 
 
 class MultipleIDFormats(Mapping, IDParserBase):
-    '''Represent an ambiguous group of multiple nativeID formats.
+    """Represent an ambiguous group of multiple nativeID formats.
 
     Implements the :class:`~collections.abc.Mapping` interface.
 
@@ -279,7 +279,7 @@ class MultipleIDFormats(Mapping, IDParserBase):
     ----------
     id_formats : OrderedDict
         A mapping of format name to :class:`IDFormat` instances
-    '''
+    """
 
     def __init__(self, id_formats):
         self.id_formats = id_formats
@@ -892,7 +892,7 @@ MS_MSn_Spectrum = content_keys.get('MSn spectrum')
 
 
 def id_format(name):
-    '''Translate a given name or identifier into a :class:`IDFormat`
+    """Translate a given name or identifier into a :class:`IDFormat`
     instance.
 
     If no match is found in the database of known :class:`IDFormat`
@@ -902,7 +902,7 @@ def id_format(name):
     Returns
     -------
     IDFormat
-    '''
+    """
     try:
         return id_formats[name]
     except KeyError:
@@ -912,7 +912,7 @@ def id_format(name):
 
 
 def file_format(name):
-    '''Translate a given name or identifier into a :class:`FileFormat`
+    """Translate a given name or identifier into a :class:`FileFormat`
     instance.
 
     If no match is found in the database of known :class:`FileFormat`
@@ -922,7 +922,7 @@ def file_format(name):
     Returns
     -------
     FileFormat
-    '''
+    """
     try:
         return file_formats[name]
     except KeyError:
@@ -932,7 +932,7 @@ def file_format(name):
 
 
 def content_key(name):
-    '''Translate a given name or identifier into a :class:`FileContent`
+    """Translate a given name or identifier into a :class:`FileContent`
     instance.
 
     If no match is found in the database of known :class:`FileContent`
@@ -942,7 +942,7 @@ def content_key(name):
     Returns
     -------
     FileContent
-    '''
+    """
     try:
         return content_keys[name]
     except KeyError:
@@ -1036,7 +1036,7 @@ class FileInformation(MutableMapping):
         self.contents.pop(key, None)
 
     def get_content(self, key):
-        '''Retrieve the value of ``key`` from :attr:`contents`.
+        """Retrieve the value of ``key`` from :attr:`contents`.
 
         This method is aliased to :meth:`__getitem__`
 
@@ -1047,11 +1047,11 @@ class FileInformation(MutableMapping):
         Returns
         -------
         object
-        '''
+        """
         return self.contents[key]
 
     def has_content(self, key):
-        '''Check if ``key`` is found in :attr:`content`
+        """Check if ``key`` is found in :attr:`content`
 
         Parameters
         ----------
@@ -1060,7 +1060,7 @@ class FileInformation(MutableMapping):
         Returns
         -------
         bool
-        '''
+        """
         return key in self.contents
 
     def __getitem__(self, key):
@@ -1086,12 +1086,12 @@ class FileInformation(MutableMapping):
         return iter(self.contents)
 
     def copy(self):
-        '''Create a deep copy of this object
+        """Create a deep copy of this object
 
         Returns
         -------
         FileInformation
-        '''
+        """
         return self.__class__(
             self.contents.copy(), [f.copy() for f in self.source_files])
 
@@ -1182,7 +1182,7 @@ class SourceFile(object):
 
     @classmethod
     def from_path(cls, path):
-        '''Construct a new :class:`SourceFile` from a path to a real file on the local
+        """Construct a new :class:`SourceFile` from a path to a real file on the local
         file system.
 
         Parameters
@@ -1193,7 +1193,7 @@ class SourceFile(object):
         Returns
         -------
         SourceFile
-        '''
+        """
         path = os.path.realpath(path)
         name = os.path.basename(path)
         location = os.path.dirname(path)
