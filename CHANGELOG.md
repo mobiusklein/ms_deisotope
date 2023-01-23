@@ -528,8 +528,9 @@ The format is based on [Keep a Changelog][Keep a Changelog] and this project adh
 [Semantic Versioning]: https://semver.org/
 
 <!-- Versions -->
-[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.43...HEAD
+[Unreleased]: https://github.com/mobiusklein/ms_deisotope/compare/v0.0.46...HEAD
 [Released]: https://github.com/mobiusklein/ms_deisotope/releases
+[v0.0.46]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.46
 [v0.0.45]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.45
 [v0.0.44]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.44
 [v0.0.43]: https://github.com/mobiusklein/ms_deisotope/releases/v0.0.43
